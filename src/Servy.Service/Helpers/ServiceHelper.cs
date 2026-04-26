@@ -108,7 +108,8 @@ namespace Servy.Service.Helpers
                   $"- workingDir: {options.WorkingDirectory}\n" +
                   $"- priority: {options.Priority}\n" +
                   $"- startTimeoutInSeconds: {options.StartTimeout}\n" +
-                  $"- stopTimeoutInSeconds: {options.StopTimeout}\n\n" +
+                  $"- stopTimeoutInSeconds: {options.StopTimeout}\n" +
+                  $"- enableConsoleUI: {options.EnableConsoleUI}\n\n" +
 
                   "--------Logging----------------\n" +
                   $"- stdoutFilePath: {options.StdOutPath}\n" +

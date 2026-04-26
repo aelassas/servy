@@ -641,6 +641,9 @@ function Install-ServyService {
     .PARAMETER Priority
         Process priority. Options: Idle, BelowNormal, Normal, AboveNormal, High, RealTime. Optional.
 
+    .PARAMETER EnableConsoleUI
+        Switch to enable the console user interface for the service. When enabled, stdout/stderr redirection is disabled and the service will run in console mode.
+
     .PARAMETER Stdout
         File path for capturing standard output logs. Optional.
 
@@ -863,6 +866,8 @@ function Install-ServyService {
 
     [ValidateSet("Idle", "BelowNormal", "Normal", "AboveNormal", "High", "RealTime")]
     [string] $Priority,
+
+    [switch] EnableConsoleUI,
 
     # Logging
     [ValidateScript({ 
@@ -1110,7 +1115,8 @@ function Install-ServyService {
   }
 
   # 3. Handle standalone Flags/Switches separately
-  if ($EnableRotation) { Write-Warning "-EnableRotation is deprecated. Use -EnableSizeRotation instead." }
+  if ($EnableConsoleUI)                        { $argsList = Add-Arg $argsList "--enableConsoleUI" -Flag }
+  if ($EnableRotation)                         { Write-Warning "-EnableRotation is deprecated. Use -EnableSizeRotation instead." }
   if ($EnableRotation -or $EnableSizeRotation) { $argsList = Add-Arg $argsList "--enableSizeRotation" -Flag }
   if ($EnableDateRotation)                     { $argsList = Add-Arg $argsList "--enableDateRotation" -Flag }
   if ($UseLocalTimeForRotation)                { $argsList = Add-Arg $argsList "--useLocalTimeForRotation" -Flag }

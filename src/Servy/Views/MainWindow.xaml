@@ -11,7 +11,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         Title="Servy"
         MinWidth="640"
-        MinHeight="750"
+        MinHeight="800"
         SizeToContent="WidthAndHeight"
         ResizeMode="CanMinimize"
         AutomationProperties.Name="Servy Configuration Window"
@@ -102,6 +102,7 @@
                          AutomationProperties.HelpText="General configuration options for the service.">
                     <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="520">
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
@@ -277,6 +278,16 @@
                                    FontStyle="Normal" 
                                    Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                                    TextWrapping="Wrap"/>
+                        <CheckBox Grid.Row="16" Grid.Column="1" Grid.ColumnSpan="2"
+                                  IsChecked="{Binding EnableConsoleUI, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Margin="0,10"
+                                  AutomationProperties.Name="{x:Static resx:Strings.Label_EnableConsoleUI}"
+                                  AutomationProperties.AutomationId="CheckBoxEnableConsoleUI"
+                                  AutomationProperties.HelpText="Check to enable console UI support.">
+                            <CheckBox.Content>
+                                <TextBlock Text="{x:Static resx:Strings.Label_EnableConsoleUI}" TextWrapping="Wrap" />
+                            </CheckBox.Content>
+                        </CheckBox>
                     </Grid>
                 </TabItem>
 
@@ -1199,4 +1210,3 @@
 
     </DockPanel>
 </Window>
-    

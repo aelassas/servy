@@ -33,6 +33,7 @@ namespace Servy.Core.Mappers
                 Parameters = domain.Parameters,
                 StartupType = (int)domain.StartupType,
                 Priority = (int)domain.Priority,
+                EnableConsoleUI = domain.EnableConsoleUI,
                 StdoutPath = domain.StdoutPath,
                 StderrPath = domain.StderrPath,
                 EnableSizeRotation = domain.EnableSizeRotation,
@@ -110,6 +111,8 @@ namespace Servy.Core.Mappers
                 // Validate Enum ranges before mapping from DTO using shared parser
                 StartupType = ConfigParser.ParseEnum(dto.StartupType, AppConfig.DefaultStartupType),
                 Priority = ConfigParser.ParseEnum(dto.Priority, AppConfig.DefaultPriority),
+
+                EnableConsoleUI = dto.EnableConsoleUI ?? AppConfig.DefaultEnableConsoleUI,
 
                 StdoutPath = dto.StdoutPath,
                 StderrPath = dto.StderrPath,

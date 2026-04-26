@@ -4,8 +4,11 @@
   <DisplayName>ConsoleAppCursorVisible</DisplayName>
   <Description>ConsoleAppCursorVisible</Description>
   <ExecutablePath>E:\dev\servy\ConsoleAppCursorVisible\ConsoleAppCursorVisible\bin\Debug\ConsoleAppCursorVisible.exe</ExecutablePath>
-  <StartupType>3</StartupType>
+  <StartupType>2</StartupType>
   <Priority>2</Priority>
+  <EnableConsoleUI>true</EnableConsoleUI>
+  <StdoutPath>E:\dev\servy\ConsoleAppCursorVisible\stdout.log</StdoutPath>
+  <StderrPath>E:\dev\servy\ConsoleAppCursorVisible\stderr.log</StderrPath>
   <EnableSizeRotation>false</EnableSizeRotation>
   <RotationSize>10</RotationSize>
   <EnableDateRotation>false</EnableDateRotation>

@@ -76,7 +76,7 @@ namespace Servy.CLI.Commands
                 int stopTimeout = int.TryParse(opts.StopTimeout, out var spTimeout) ? spTimeout : AppConfig.DefaultStopTimeout;
                 int preStopTimeout = int.TryParse(opts.PreStopTimeout, out var psTimeout) ? psTimeout : AppConfig.DefaultPreStopTimeoutSeconds;
 
-                var options = new Core.Services.InstallServiceOptions
+                var options = new InstallServiceOptions
                 {
                     ServiceName = opts.ServiceName!,
                     Description = opts.ServiceDescription ?? string.Empty,
@@ -86,6 +86,7 @@ namespace Servy.CLI.Commands
                     RealArgs = opts.ProcessParameters ?? string.Empty,
                     StartType = startupType,
                     ProcessPriority = processPriority,
+                    EnableConsoleUI = opts.EnableConsoleUI,
                     StdoutPath = opts.StdoutPath,
                     StderrPath = opts.StderrPath,
                     EnableSizeRotation = opts.EnableRotation || opts.EnableSizeRotation,

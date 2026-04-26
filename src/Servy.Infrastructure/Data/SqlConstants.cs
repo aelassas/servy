@@ -22,6 +22,7 @@ namespace Servy.Infrastructure.Data
             "Priority",
             "StartTimeout",
             "StopTimeout",
+            "EnableConsoleUI",
             
             // Logging Tab
             "StdoutPath",

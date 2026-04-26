@@ -38,6 +38,7 @@ $installParams = @{
     Priority                  = "BelowNormal"
     StartTimeout              = 15
     StopTimeout               = 10
+    EnableConsoleUI           = $false
 
     EnableSizeRotation        = $true
     RotationSize              = 1

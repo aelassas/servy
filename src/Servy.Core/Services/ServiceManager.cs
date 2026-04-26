@@ -344,6 +344,7 @@ namespace Servy.Core.Services
                         Parameters = options.RealArgs,
                         StartupType = (int)options.StartType,
                         Priority = (int)options.ProcessPriority,
+                        EnableConsoleUI = options.EnableConsoleUI,
                         StdoutPath = options.StdoutPath,
                         StderrPath = options.StderrPath,
                         EnableSizeRotation = options.EnableSizeRotation,

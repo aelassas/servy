@@ -69,6 +69,12 @@ namespace Servy.Core.DTOs
         public int? Priority { get; set; }
 
         /// <summary>
+        /// Whether to enable the console user interface for the service.
+        /// When enabled, stdout/stderr redirection is disabled, and the service runs in a console window.
+        /// </summary>
+        public bool? EnableConsoleUI { get; set; }
+
+        /// <summary>
         /// Optional path for the standard output log.
         /// </summary>
         public string? StdoutPath { get; set; }
@@ -362,6 +368,7 @@ namespace Servy.Core.DTOs
                 Parameters = Parameters,
                 StartupType = StartupType,
                 Priority = Priority,
+                EnableConsoleUI = EnableConsoleUI,
                 StdoutPath = StdoutPath,
                 StderrPath = StderrPath,
                 EnableSizeRotation = EnableSizeRotation,
@@ -472,7 +479,8 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializePostStopExecutablePath() => !string.IsNullOrWhiteSpace(PostStopExecutablePath);
         public bool ShouldSerializePostStopStartupDirectory() => !string.IsNullOrWhiteSpace(PostStopStartupDirectory);
         public bool ShouldSerializePostStopParameters() => !string.IsNullOrWhiteSpace(PostStopParameters);
-
+        public bool ShouldSerializeEnableConsoleUI() => EnableConsoleUI.HasValue;
+        
         #endregion
 
     }

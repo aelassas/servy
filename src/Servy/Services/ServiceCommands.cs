@@ -116,6 +116,7 @@ namespace Servy.Services
                 Parameters = config.Parameters,
                 StartupType = (int)config.StartupType,
                 Priority = (int)config.Priority,
+                EnableConsoleUI = config.EnableConsoleUI,
                 StdoutPath = config.StdoutPath,
                 StderrPath = config.StderrPath,
                 EnableSizeRotation = config.EnableSizeRotation,
@@ -124,6 +125,7 @@ namespace Servy.Services
                 DateRotationType = (int)config.DateRotationType,
                 MaxRotations = int.TryParse(config.MaxRotations, out var mrn) ? mrn : -1,
                 UseLocalTimeForRotation = config.UseLocalTimeForRotation,
+                EnableDebugLogs = config.EnableDebugLogs,
                 EnableHealthMonitoring = config.EnableHealthMonitoring,
                 HeartbeatInterval = int.TryParse(config.HeartbeatInterval, out var hi) ? hi : -1,
                 MaxFailedChecks = int.TryParse(config.MaxFailedChecks, out var mf) ? mf : -1,
@@ -206,6 +208,7 @@ namespace Servy.Services
                     RealArgs = dto.Parameters,
                     StartType = (ServiceStartType)dto.StartupType,
                     ProcessPriority = (ProcessPriority)dto.Priority,
+                    EnableConsoleUI = dto.EnableConsoleUI ?? AppConfig.DefaultEnableConsoleUI,
                     Username = dto.UserAccount,
                     Password = dto.Password,
 

@@ -153,6 +153,15 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to enable the console user interface for the service.
+        /// </summary>
+        public bool EnableConsoleUI
+        {
+            get => _config.EnableConsoleUI;
+            set { _config.EnableConsoleUI = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
         /// Gets the list of available startup types for services.
         /// </summary>
         public List<StartupTypeItem> StartupTypes { get; } = new List<StartupTypeItem>
@@ -829,6 +838,7 @@ namespace Servy.ViewModels
             ProcessParameters = string.Empty;
             SelectedStartupType = ServiceStartType.Automatic;
             SelectedProcessPriority = ProcessPriority.Normal;
+            EnableConsoleUI = false;
             StartTimeout = DefaultStartTimeout.ToString();
             StopTimeout = DefaultStopTimeout.ToString();
             EnableSizeRotation = false;
@@ -1163,6 +1173,7 @@ namespace Servy.ViewModels
             ProcessParameters = string.Empty;
             SelectedStartupType = ServiceStartType.Automatic;
             SelectedProcessPriority = ProcessPriority.Normal;
+            EnableConsoleUI = false;
             EnableSizeRotation = false;
             RotationSize = DefaultRotationSize.ToString();
             MaxRotations = DefaultMaxRotations.ToString();
@@ -1323,6 +1334,7 @@ namespace Servy.ViewModels
             ProcessParameters = dto.Parameters;
             SelectedStartupType = dto.StartupType == null ? ServiceStartType.Automatic : (ServiceStartType)dto.StartupType;
             SelectedProcessPriority = dto.Priority == null ? ProcessPriority.Normal : (ProcessPriority)dto.Priority;
+            EnableConsoleUI = dto.EnableConsoleUI ?? false;
             StdoutPath = dto.StdoutPath;
             StderrPath = dto.StderrPath;
             EnableSizeRotation = dto.EnableSizeRotation ?? false;
@@ -1401,6 +1413,7 @@ namespace Servy.ViewModels
                 Parameters = ProcessParameters,
                 StartupType = (int)SelectedStartupType,
                 Priority = (int)SelectedProcessPriority,
+                EnableConsoleUI = EnableConsoleUI,
                 StdoutPath = StdoutPath,
                 StderrPath = StderrPath,
                 EnableSizeRotation = EnableSizeRotation,

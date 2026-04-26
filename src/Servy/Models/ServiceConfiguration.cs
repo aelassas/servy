@@ -50,6 +50,12 @@ namespace Servy.Models
         public ProcessPriority Priority { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to enable the console user interface for the service.
+        /// When enabled, stdout/stderr redirection is disabled, and the service runs in a console window.
+        /// </summary>
+        public bool EnableConsoleUI { get; set; }
+
+        /// <summary>
         /// Gets or sets the path to the standard output log file.
         /// </summary>
         public string StdoutPath { get; set; }

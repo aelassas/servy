@@ -29,14 +29,14 @@ namespace Servy.Service.ProcessManagement
             var finalArgs = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.Arguments ?? string.Empty, expandedEnv);
 
             // 2. Configure ProcessStartInfo with service-safe defaults
-            var redirectOutput = options.RedirectToWriters && !options.FireAndForget;
+            var redirectOutput = !options.EnableConsoleUI && options.RedirectToWriters && !options.FireAndForget;
             var psi = new ProcessStartInfo
             {
                 FileName = options.ExecutablePath,
                 Arguments = finalArgs,
                 WorkingDirectory = options.WorkingDirectory ?? Path.GetDirectoryName(options.ExecutablePath) ?? string.Empty,
                 UseShellExecute = false,
-                CreateNoWindow = true,
+                CreateNoWindow = !options.EnableConsoleUI,
                 RedirectStandardOutput = redirectOutput && !string.IsNullOrWhiteSpace(options.StdOutPath),
                 RedirectStandardError = redirectOutput && !string.IsNullOrWhiteSpace(options.StdErrPath),
             };

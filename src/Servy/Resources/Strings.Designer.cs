@@ -476,6 +476,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Enable Console UI (required for apps that attempt to manipulate the cursor, text colors, or window size. stdout/stderr redirection disabled).
+        /// </summary>
+        public static string Label_EnableConsoleUI {
+            get {
+                return ResourceManager.GetString("Label_EnableConsoleUI", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Enable date-based Rotation.
         /// </summary>
         public static string Label_EnableDateRotation {

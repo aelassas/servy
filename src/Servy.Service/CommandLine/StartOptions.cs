@@ -32,6 +32,11 @@ namespace Servy.Service.CommandLine
         public ProcessPriorityClass Priority { get; set; } = ProcessPriorityClass.Normal;
 
         /// <summary>
+        /// Whether to enable the console user interface for the service.
+        /// </summary>
+        public bool EnableConsoleUI { get; set; }
+
+        /// <summary>
         /// Gets or sets the path to the standard output log file.
         /// </summary>
         public string? StdOutPath { get; set; }
