@@ -281,23 +281,29 @@ begin
   Result := sVersionString;
 end;
 
-function NumericVersion(const Version: string): Integer;
+function NumericVersion(const Version: string): Int64;
 var
   Parts: TStringList;
+  Major, Minor, Patch: Integer;
 begin
   Parts := TStringList.Create;
   try
     Parts.Delimiter := '.';
     Parts.DelimitedText := Version;
 
-    Result :=
-      StrToIntDef(Parts[0], 0) * 1000 +
-      StrToIntDef(Parts[1], 0);
+    Major := 0;
+    Minor := 0;
+    Patch := 0;
+
+    if Parts.Count > 0 then Major := StrToIntDef(Parts[0], 0);
+    if Parts.Count > 1 then Minor := StrToIntDef(Parts[1], 0);
+    if Parts.Count > 2 then Patch := StrToIntDef(Parts[2], 0);
+
+    Result := Int64(Major) * 1000000 + Int64(Minor) * 1000 + Int64(Patch);
   finally
     Parts.Free;
   end;
 end;
-
 function InitializeSetup(): Boolean;
 var
   sInstalledVersion, message: String;
