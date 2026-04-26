@@ -167,7 +167,12 @@ if (-not (Test-Path $helperScript)) {
 $lastProcessed = $null
 if (Test-Path $timestampFile) {
   try {
-    $lastProcessed = [DateTime]::Parse((Get-Content $timestampFile -ErrorAction Stop))
+    $lastProcessed = [DateTime]::ParseExact(
+        (Get-Content $timestampFile -ErrorAction Stop),
+        'o',
+        [System.Globalization.CultureInfo]::InvariantCulture,
+        [System.Globalization.DateTimeStyles]::RoundtripKind
+    )
   } catch { 
     Write-Warning "Could not parse timestamp file. Will process all available events."
   }
