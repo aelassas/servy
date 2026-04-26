@@ -81,7 +81,7 @@ namespace Servy.CLI.Options
         /// <summary>
         /// Gets or sets a value indicating whether to enable the console user interface for the service.
         /// </summary>
-        [Option("enableConsoleUI", HelpText = "Enable console user interface for the service. When enabled, stdout/stderr redirection is disabled and the service will run in console mode.")]
+        [Option("enableConsoleUI", HelpText = "Enable console user interface for the service. When enabled, stdout/stderr redirection is disabled.")]
         public bool EnableConsoleUI { get; set; }
 
         /// <summary>

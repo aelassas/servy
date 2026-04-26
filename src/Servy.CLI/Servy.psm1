@@ -642,7 +642,7 @@ function Install-ServyService {
         Process priority. Options: Idle, BelowNormal, Normal, AboveNormal, High, RealTime. Optional.
 
     .PARAMETER EnableConsoleUI
-        Switch to enable the console user interface for the service. When enabled, stdout/stderr redirection is disabled and the service will run in console mode.
+        Switch to enable the console user interface for the service. When enabled, stdout/stderr redirection is disabled.
 
     .PARAMETER Stdout
         File path for capturing standard output logs. Optional.
@@ -867,7 +867,7 @@ function Install-ServyService {
     [ValidateSet("Idle", "BelowNormal", "Normal", "AboveNormal", "High", "RealTime")]
     [string] $Priority,
 
-    [switch] EnableConsoleUI,
+    [switch] $EnableConsoleUI,
 
     # Logging
     [ValidateScript({ 
