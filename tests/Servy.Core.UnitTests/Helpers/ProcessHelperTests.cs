@@ -261,7 +261,7 @@ namespace Servy.Core.UnitTests.Helpers
 
         // 5. Complex Realistic Scenarios
         [InlineData(@"/D ""config=C:\temp\""", "\"/D \\\"config=C:\\temp\\\\\\\"\"")]
-        public void EscapeProcessArgument_ShouldMatchWin32ParsingRules(string input, string expected)
+        public void EscapeProcessArgument_ShouldMatchWin32ParsingRules(string? input, string expected)
         {
             // Act
             var result = _processHelper.EscapeProcessArgument(input);
