@@ -1,5 +1,7 @@
 ﻿#nullable enable
 
+using Servy.Core.Logging;
+
 namespace Servy.UI.Commands
 {
     /// <inheritdoc/>
@@ -29,7 +31,15 @@ namespace Servy.UI.Commands
         /// <inheritdoc/>
         public async void Execute(object? parameter)
         {
-            await ExecuteAsync(parameter);
+            try
+            {
+                await ExecuteAsync(parameter);
+            }
+            catch (Exception ex)
+            {
+                // Log and surface — never let an async void exception escape into the dispatcher.
+                Logger.Error("AsyncCommand execution failed.", ex);
+            }
         }
 
         /// <inheritdoc/>
