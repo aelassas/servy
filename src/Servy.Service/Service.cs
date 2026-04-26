@@ -167,6 +167,7 @@ namespace Servy.Service
         private volatile bool _isTearingDown = false;
         private volatile bool _isRebooting = false;
         private readonly IProcessHelper _processHelper;
+        private readonly IProcessKiller _processKiller;
 
         #endregion
 
@@ -197,7 +198,8 @@ namespace Servy.Service
             new TimerFactory(),
             new ProcessFactory(),
             new PathValidator(),
-            new ProcessHelper()
+            new ProcessHelper(),
+            new ProcessKiller()
           )
         {
         }
@@ -213,6 +215,8 @@ namespace Servy.Service
         /// <param name="pathValidator">The path validator.</param>
         /// <param name="serviceRepository">The service repository.</param>
         /// <param name="processHelper">The process helper.</param>
+        /// <param name="processKiller">The process killer.</param>
+        /// <pa
         /// <remarks>
         /// <b>NOTE:</b> This constructor is primarily intended for <b>Unit Testing</b> and <b>Inversion of Control (IoC)</b> containers.
         /// <para>
@@ -233,7 +237,9 @@ namespace Servy.Service
             IProcessFactory processFactory,
             IPathValidator pathValidator,
             IServiceRepository serviceRepository,
-            IProcessHelper processHelper) // allow injection
+            IProcessHelper processHelper,
+            IProcessKiller processKiller
+            ) // allow injection
         {
             ServiceName = AppConfig.EventSource;
 
@@ -245,6 +251,7 @@ namespace Servy.Service
             _pathValidator = pathValidator ?? throw new ArgumentNullException(nameof(pathValidator));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
+            _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
             _options = null;
         }
 
@@ -269,7 +276,9 @@ namespace Servy.Service
             ITimerFactory timerFactory,
             IProcessFactory processFactory,
             IPathValidator pathValidator,
-            IProcessHelper processHelper)
+            IProcessHelper processHelper,
+            IProcessKiller processKiller
+            )
         {
             Logger.Initialize("Servy.Service.log");
 
@@ -287,6 +296,7 @@ namespace Servy.Service
                 _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
                 _pathValidator = pathValidator ?? throw new ArgumentNullException(nameof(pathValidator));
                 _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
+                _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
                 _options = null;
 
                 // Load configuration from appsettings.json
@@ -374,7 +384,7 @@ namespace Servy.Service
 
                 // Copy service executable from embedded resources
                 var asm = Assembly.GetExecutingAssembly();
-                var resourceHelper = new ResourceHelper(_serviceRepository);
+                var resourceHelper = new ResourceHelper(_serviceRepository, _processHelper, _processKiller);
 
                 if (!resourceHelper.CopyEmbeddedResourceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe"))
                 {

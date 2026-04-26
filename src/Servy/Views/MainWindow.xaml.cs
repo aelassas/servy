@@ -14,16 +14,19 @@ namespace Servy.Views
     public partial class MainWindow : Window
     {
         private readonly MainViewModel _mainViewModel;
+        private readonly IProcessKiller _processKiller;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MainWindow"/> class using constructor injection.
         /// </summary>
         /// <param name="mainViewModel">The primary DataContext for the application.</param>
-        public MainWindow(MainViewModel mainViewModel)
+        /// <param name="processKiller">Service responsible for terminating child processes.</param>
+        public MainWindow(MainViewModel mainViewModel, IProcessKiller processKiller)
         {
             InitializeComponent();
 
             _mainViewModel = mainViewModel ?? throw new ArgumentNullException(nameof(mainViewModel));
+            _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
             DataContext = _mainViewModel;
         }
 
@@ -58,7 +61,7 @@ namespace Servy.Views
             try
             {
                 var currentPID = Process.GetCurrentProcess().Id;
-                ProcessKiller.KillChildren(currentPID);
+                _processKiller.KillChildren(currentPID);
             }
             catch (Exception ex)
             {

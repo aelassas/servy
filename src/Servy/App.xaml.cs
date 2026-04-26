@@ -150,6 +150,14 @@ namespace Servy
         /// </remarks>
         public App()
         {
+            var services = new ServiceCollection();
+
+            // Register dependencies
+            services.AddSingleton<IProcessHelper, ProcessHelper>();
+            services.AddSingleton<IProcessKiller, ProcessKiller>();
+
+            Services = services.BuildServiceProvider();
+
             var options = new BootstrapperOptions
             {
                 LogFileName = "Servy.log",
@@ -165,6 +173,7 @@ namespace Servy
                 {
                     // 0. Retrieve DI-managed services
                     var processHelper = Services.GetRequiredService<IProcessHelper>();
+                    var processKiller = Services.GetRequiredService<IProcessKiller>();
 
                     // 1. Initialize Infrastructure & Domain Services
                     Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
@@ -214,7 +223,7 @@ namespace Servy
                     );
 
                     // 5. Inject dependencies into the View and initialize
-                    var mainWindow = new MainWindow(viewModel);
+                    var mainWindow = new MainWindow(viewModel, processKiller);
                     mainWindow.Show();
 
                     if (!string.IsNullOrWhiteSpace(serviceName))
@@ -246,7 +255,11 @@ namespace Servy
                 }
             };
 
-            _bootstrapper = new AppBootstrapper(options);
+            _bootstrapper = new AppBootstrapper(
+                options,
+                Services.GetRequiredService<IProcessHelper>(),
+                Services.GetRequiredService<IProcessKiller>()
+                );
         }
 
         #endregion
@@ -321,13 +334,6 @@ namespace Servy
         /// <param name="e">The startup event arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
         {
-            var services = new ServiceCollection();
-
-            // Register dependencies
-            services.AddSingleton<IProcessHelper, ProcessHelper>();
-
-            Services = services.BuildServiceProvider();
-
             _bootstrapper.OnStartup(this, e);
             base.OnStartup(e);
 

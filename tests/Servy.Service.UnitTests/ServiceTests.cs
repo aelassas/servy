@@ -34,6 +34,7 @@ namespace Servy.Service.UnitTests
         private readonly Mock<IProcessWrapper> _mockProcess;
         private readonly Mock<IServiceRepository> _mockServiceRepository;
         private readonly Mock<IProcessHelper> _mockProcessHelper;
+        private readonly Mock<IProcessKiller> _mockProcessKiller;
 
         public ServiceTests(ITestOutputHelper output)
         {
@@ -68,6 +69,7 @@ namespace Servy.Service.UnitTests
 
             _mockServiceRepository = new Mock<IServiceRepository>();
             _mockProcessHelper = new Mock<IProcessHelper>();
+            _mockProcessKiller = new Mock<IProcessKiller>();
 
             _service = new Service(
                 _mockServiceHelper.Object,
@@ -77,7 +79,8 @@ namespace Servy.Service.UnitTests
                 _mockProcessFactory.Object,
                 _mockPathValidator.Object,
                 _mockServiceRepository.Object,
-                _mockProcessHelper.Object
+                _mockProcessHelper.Object,
+                _mockProcessKiller.Object
             );
         }
 
@@ -323,7 +326,8 @@ namespace Servy.Service.UnitTests
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
                 _mockServiceRepository.Object,
-                _mockProcessHelper.Object
+                _mockProcessHelper.Object,
+                _mockProcessKiller.Object
             );
             service.SetChildProcess(mockProcess.Object);
 
@@ -357,7 +361,8 @@ namespace Servy.Service.UnitTests
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
                 _mockServiceRepository.Object,
-                _mockProcessHelper.Object
+                _mockProcessHelper.Object,
+                _mockProcessKiller.Object
             );
             service.SetChildProcess(mockProcess.Object);
 
@@ -390,7 +395,8 @@ namespace Servy.Service.UnitTests
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
                 _mockServiceRepository.Object,
-                _mockProcessHelper.Object
+                _mockProcessHelper.Object,
+                _mockProcessKiller.Object
             );
 
             var options = new StartOptions
@@ -448,7 +454,8 @@ namespace Servy.Service.UnitTests
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
                 _mockServiceRepository.Object,
-                _mockProcessHelper.Object
+                _mockProcessHelper.Object,
+                _mockProcessKiller.Object
             );
 
             var options = new StartOptions
@@ -492,7 +499,8 @@ namespace Servy.Service.UnitTests
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
                 _mockServiceRepository.Object,
-                _mockProcessHelper.Object
+                _mockProcessHelper.Object,
+                _mockProcessKiller.Object
             );
 
             var options = new StartOptions

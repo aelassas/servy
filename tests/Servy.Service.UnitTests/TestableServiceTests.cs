@@ -17,10 +17,12 @@ namespace Servy.Service.UnitTests
     public class TestableServiceTests
     {
         private readonly Mock<IProcessHelper> _mockProcessHelper;
+        private readonly Mock<IProcessKiller> _mockProcessKiller;
 
         public TestableServiceTests()
         {
             _mockProcessHelper = new Mock<IProcessHelper>();
+            _mockProcessKiller = new Mock<IProcessKiller>();
         }
 
         [Fact]
@@ -62,7 +64,8 @@ namespace Servy.Service.UnitTests
                 processFactory.Object,
                 pathValidator.Object,
                 serviceRepository.Object,
-                _mockProcessHelper.Object
+                _mockProcessHelper.Object,
+                _mockProcessKiller.Object
                 );
 
             // Act
@@ -111,7 +114,8 @@ namespace Servy.Service.UnitTests
                 processFactory.Object,
                 pathValidator.Object,
                 serviceRepository.Object,
-                _mockProcessHelper.Object
+                _mockProcessHelper.Object,
+                _mockProcessKiller.Object
                 );
 
             // Act
@@ -154,7 +158,8 @@ namespace Servy.Service.UnitTests
                 processFactory.Object,
                 pathValidator.Object,
                 serviceRepository.Object,
-                _mockProcessHelper.Object
+                _mockProcessHelper.Object,
+                _mockProcessKiller.Object
                 );
 
             // Act
@@ -197,7 +202,8 @@ namespace Servy.Service.UnitTests
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
                 serviceRepository.Object,
-                _mockProcessHelper.Object
+                _mockProcessHelper.Object,
+                _mockProcessKiller.Object
             );
 
             var options = new StartOptions
@@ -245,7 +251,8 @@ namespace Servy.Service.UnitTests
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
                 serviceRepository.Object,
-                _mockProcessHelper.Object
+                _mockProcessHelper.Object,
+                _mockProcessKiller.Object
             );
 
             var options = new StartOptions

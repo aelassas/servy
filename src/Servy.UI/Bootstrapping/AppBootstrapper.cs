@@ -68,14 +68,24 @@ namespace Servy.UI.Bootstrapping
         #endregion
 
         private readonly BootstrapperOptions _options;
+        private readonly IProcessHelper _processHelper;
+        private readonly IProcessKiller _processKiller;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppBootstrapper"/> class.
         /// </summary>
         /// <param name="options">Configuration options for the bootstrap process.</param>
-        public AppBootstrapper(BootstrapperOptions options)
+        /// <param name="processHelper">The process helper used to manage processes. Cannot be null.</param>
+        /// <param name="processKiller">Service responsible for terminating child processes.</param>
+        public AppBootstrapper(
+            BootstrapperOptions options,
+            IProcessHelper processHelper,
+            IProcessKiller processKiller
+            )
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
+            _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
+            _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
         }
 
         /// <summary>
@@ -240,7 +250,7 @@ namespace Servy.UI.Bootstrapping
                     var jsonSerializer = new JsonServiceSerializer();
 
                     ServiceRepository = new ServiceRepository(dapperExecutor, SecureData, xmlSerializer, jsonSerializer);
-                    var resourceHelper = new ResourceHelper(ServiceRepository);
+                    var resourceHelper = new ResourceHelper(ServiceRepository, _processHelper, _processKiller);
 
                     // Copy embedded files
                     await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "exe");

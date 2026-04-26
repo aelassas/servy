@@ -153,6 +153,7 @@ namespace Servy.CLI
                     );
 
                 var processHelper = new ProcessHelper();
+                var processKiller = new ProcessKiller();
                 var serviceValidationRules = new ServiceValidationRules(processHelper);
                 var installValidator = new ServiceInstallValidator(serviceValidationRules);
 
@@ -163,13 +164,13 @@ namespace Servy.CLI
                 var uninstallCommand = new UninstallServiceCommand(serviceManager, serviceRepository);
                 var serviceStatusCommand = new ServiceStatusCommand(serviceManager);
                 var exportCommand = new ExportServiceCommand(serviceRepository);
-                
+
                 var xmlServiceValidator = new XmlServiceValidator(processHelper);
                 var jsonServiceValidator = new JsonServiceValidator(processHelper);
                 var importCommand = new ImportServiceCommand(
-                    serviceRepository, 
-                    xmlSerializer, 
-                    jsonSerializer, 
+                    serviceRepository,
+                    xmlSerializer,
+                    jsonSerializer,
                     serviceManager,
                     xmlServiceValidator,
                     jsonServiceValidator,
@@ -186,7 +187,7 @@ namespace Servy.CLI
 
                     var asm = Assembly.GetExecutingAssembly();
 
-                    var resourceHelper = new ResourceHelper(serviceRepository);
+                    var resourceHelper = new ResourceHelper(serviceRepository, processHelper, processKiller);
 
                     // Copy service executable from embedded resources
                     if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe", true, true))
