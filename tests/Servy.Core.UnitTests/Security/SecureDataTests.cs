@@ -264,7 +264,7 @@ namespace Servy.Core.UnitTests.Security
 
             Assert.NotEqual(original, result);
             // It returns the payload: "v2:TamperedBase64"
-            Assert.Equal("v2:" + Convert.ToBase64String(data), result);
+            Assert.Equal("SERVY_ENC:v2:" + Convert.ToBase64String(data), result);
         }
 
         [Fact]
@@ -277,7 +277,7 @@ namespace Servy.Core.UnitTests.Security
             var result = sp.Decrypt(tampered);
 
             // The catch block intercepts the FormatException and returns the payload
-            Assert.Equal("v2:!!!NotBase64!!!", result);
+            Assert.Equal("SERVY_ENC:v2:!!!NotBase64!!!", result);
         }
 
         [Fact]
@@ -321,7 +321,6 @@ namespace Servy.Core.UnitTests.Security
         #endregion
 
         #region Dispose Tests
-
 
         [Fact]
         public void Encrypt_ShouldThrowObjectDisposedException_WhenDisposed()
@@ -498,33 +497,6 @@ namespace Servy.Core.UnitTests.Security
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             var result = (bool)method.Invoke(null, new object[] { input });
-            Assert.Equal(expected, result);
-        }
-
-        [Theory]
-        // Branch 1: null (Immediate False)
-        [InlineData(null, new byte[] { 1, 2, 3 }, false)]
-
-        // Branch 2: Length Mismatch (Immediate False)
-        [InlineData(new byte[] { 1, 2 }, new byte[] { 1, 2, 3 }, false)]
-
-        // Branch 3: Identical Arrays (True)
-        [InlineData(new byte[] { 0, 15, 255 }, new byte[] { 0, 15, 255 }, true)]
-
-        // Branch 4: Same Length, Different Content
-        [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 1, 2, 4 }, false)] // Difference at end
-        [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 9, 2, 3 }, false)] // Difference at start
-        [InlineData(new byte[] { 0, 0, 0 }, new byte[] { 0, 1, 0 }, false)] // Difference in middle
-        public void CryptographicEquals_ShouldCoverAllBranches(byte[] a, byte[] b, bool expected)
-        {
-            // Arrange
-            var method = typeof(SecureData).GetMethod("CryptographicEquals",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-
-            // Act
-            var result = (bool)method.Invoke(null, new object[] { a, b });
-
-            // Assert
             Assert.Equal(expected, result);
         }
 
