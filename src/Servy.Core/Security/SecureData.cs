@@ -214,7 +214,7 @@ namespace Servy.Core.Security
                 // Elevated from Debug to Warn. 
                 // If a string HAS an encryption marker but fails to decrypt, it's a security event or data corruption.
                 Logger.Warn($"Decryption failed for marked payload ({ex.GetType().Name}): {ex.Message} Returning original input.");
-                return payload.ToString();
+                return cipherText;
             }
         }
 
