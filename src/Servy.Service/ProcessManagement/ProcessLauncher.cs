@@ -91,14 +91,13 @@ namespace Servy.Service.ProcessManagement
             if (psi.RedirectStandardError) process.BeginErrorReadLine();
 
             // Synchronous mode: Wait for exit while pulsing the SCM
-            if (options.TimeoutMs > 0)
+            if (options.TimeoutMs <= 0)
             {
-                WaitForExitWithHeartbeat(process, options, logger); // pass null-safe heartbeat
+                throw new ArgumentException(
+                    "Synchronous launch requires TimeoutMs > 0. Set FireAndForget = true for unbounded launches.",
+                    nameof(options));
             }
-            else
-            {
-                process.UnderlyingProcess.WaitForExit();
-            }
+            WaitForExitWithHeartbeat(process, options, logger);
 
             // Ensure all async reads are finished
             process.UnderlyingProcess.WaitForExit();
