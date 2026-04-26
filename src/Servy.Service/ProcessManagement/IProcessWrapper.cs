@@ -63,6 +63,11 @@ namespace Servy.Service.ProcessManagement
         StreamReader StandardError { get; }
 
         /// <summary>
+        /// Process start information, including the executable path, arguments, and other settings.
+        /// </summary>
+        ProcessStartInfo StartInfo { get; }
+
+        /// <summary>
         /// Underlying Process.
         /// </summary>
         Process UnderlyingProcess { get; }

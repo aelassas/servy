@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ServiceDto xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>ConsoleAppCursorVisible</Name>
+  <DisplayName>ConsoleAppCursorVisible</DisplayName>
+  <Description>ConsoleAppCursorVisible</Description>
+  <ExecutablePath>E:\dev\servy\ConsoleAppCursorVisible\ConsoleAppCursorVisible\bin\Debug\ConsoleAppCursorVisible.exe</ExecutablePath>
+  <StartupType>3</StartupType>
+  <Priority>2</Priority>
+  <EnableSizeRotation>false</EnableSizeRotation>
+  <RotationSize>10</RotationSize>
+  <EnableDateRotation>false</EnableDateRotation>
+  <DateRotationType>0</DateRotationType>
+  <MaxRotations>0</MaxRotations>
+  <UseLocalTimeForRotation>false</UseLocalTimeForRotation>
+  <EnableHealthMonitoring>false</EnableHealthMonitoring>
+  <HeartbeatInterval>30</HeartbeatInterval>
+  <MaxFailedChecks>3</MaxFailedChecks>
+  <RecoveryAction>1</RecoveryAction>
+  <MaxRestartAttempts>3</MaxRestartAttempts>
+  <PreLaunchTimeoutSeconds>30</PreLaunchTimeoutSeconds>
+  <PreLaunchRetryAttempts>0</PreLaunchRetryAttempts>
+  <PreLaunchIgnoreFailure>false</PreLaunchIgnoreFailure>
+  <EnableDebugLogs>false</EnableDebugLogs>
+  <StartTimeout>10</StartTimeout>
+  <StopTimeout>5</StopTimeout>
+  <PreStopTimeoutSeconds>5</PreStopTimeoutSeconds>
+  <PreStopLogAsError>false</PreStopLogAsError>
+</ServiceDto>

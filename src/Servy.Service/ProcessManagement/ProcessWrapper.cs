@@ -161,6 +161,16 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <inheritdoc/>
+        public ProcessStartInfo StartInfo
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.StartInfo;
+            }
+        }
+
+        /// <inheritdoc/>
         public Process UnderlyingProcess
         {
             get

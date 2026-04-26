@@ -2234,13 +2234,17 @@ namespace Servy.Service
                 {
                     SafeKillProcess(_childProcess, ClampTimeout(_options!.StopTimeout));
 
-                    // Stop async reads first
-                    _childProcess.CancelOutputRead();
-                    _childProcess.CancelErrorRead();
-
-                    // Unsubscribe output only after the process is dead to catch final logs
-                    _childProcess.OutputDataReceived -= OnOutputDataReceived;
-                    _childProcess.ErrorDataReceived -= OnErrorDataReceived;
+                    // Only cancel if redirection was active AND the stream is actually open
+                    if (_childProcess.StartInfo.RedirectStandardOutput)
+                    {
+                        try { _childProcess.CancelOutputRead(); } catch { /* Ignore if already stopped */ }
+                        _childProcess.OutputDataReceived -= OnOutputDataReceived;
+                    }
+                    if (_childProcess.StartInfo.RedirectStandardError)
+                    {
+                        try { _childProcess.CancelErrorRead(); } catch { /* Ignore if already stopped */ }
+                        _childProcess.ErrorDataReceived -= OnErrorDataReceived;
+                    }
                 }
 
                 // 4. Final Cleanup of all tracked processes
