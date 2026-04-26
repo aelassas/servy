@@ -205,7 +205,6 @@ namespace Servy.Service
         /// <param name="serviceRepository">The service repository.</param>
         /// <param name="processHelper">The process helper.</param>
         /// <param name="processKiller">The process killer.</param>
-        /// <pa
         /// <remarks>
         /// <b>NOTE:</b> This constructor is primarily intended for <b>Unit Testing</b> and <b>Inversion of Control (IoC)</b> containers.
         /// <para>
