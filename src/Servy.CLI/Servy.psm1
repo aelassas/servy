@@ -434,7 +434,7 @@ function Invoke-ServyCli {
   finally {
     if ($null -ne $process) {
       try { $process.CancelErrorRead() } catch {}
-      try { $process.WaitForExit() } catch {}  # let in-flight events drain
+      try { [void]$process.WaitForExit(5000) } catch {}  # let in-flight events drain
     }    
 
     # CRITICAL: Clean up events gracefully
