@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ServiceDto xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <Name>ConsoleAppCursorVisible</Name>
-  <DisplayName>ConsoleAppCursorVisible</DisplayName>
+  <DisplayName />
   <Description>ConsoleAppCursorVisible</Description>
   <ExecutablePath>E:\dev\servy\ConsoleAppCursorVisible\ConsoleAppCursorVisible\bin\Debug\ConsoleAppCursorVisible.exe</ExecutablePath>
   <StartupType>2</StartupType>
