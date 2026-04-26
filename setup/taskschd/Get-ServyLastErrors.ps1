@@ -34,7 +34,7 @@ function Get-ServyLastErrors {
     $LastProcessed
   )
 
-  # 1. Self-derive location for logging (PS 2.0+ compatible)
+  # 1. Self-derive location for logging
   $scriptHome = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Definition }
 
   if ($null -ne $LastProcessed -and -not ($LastProcessed -is [datetime])) {
@@ -76,7 +76,7 @@ function Get-ServyLastErrors {
     }
     catch {
       # Fallback B: Try the local file log
-      $logPath = Join-Path $scriptHome "ServyFailureEmail.log"
+      $logPath = Join-Path $scriptHome "Get-ServyLastErrors.log"
       $timestampedMsg = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $errorMsg"
       $timestampedMsg | Out-File -FilePath $logPath -Append
     }
