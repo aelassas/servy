@@ -22,10 +22,30 @@ namespace Servy.Service.Helpers
         /// </summary>
         private static readonly HashSet<string> SensitiveKeyWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "PASSWORD", "PWD", "SECRET", "KEY", "TOKEN", "AUTH", "CREDENTIAL", "CONNECTIONSTRING",
-            "CERTIFICATE", // For PFX/PEM paths or thumbprints
-            "API",         // Catches API_URL_KEY or API_SECRET
-            "PRIVATE"      // Catches PRIVATE_KEY or PRIVATE_TOKEN
+            // --- Core Credentials ---
+            "PASSWORD", "PWD", "PASSPHRASE", "PIN", "USERPWD",
+
+            // --- Web & Mobile Auth (JWT/OAuth) ---
+            "TOKEN", "AUTH", "CREDENTIAL", "BEARER", "JWT",
+            "SESSION", "COOKIE", "CLIENT_SECRET",
+
+            // --- Cloud & Infrastructure (AWS/Azure/GCP) ---
+            "SECRET", "SAS", "ACCOUNTKEY", "ACCESSKEY", "SKEY",
+            "SIGNATURE", "TENANT_ID", // Often sensitive when paired with secrets
+
+            // --- Databases & Storage ---
+            "CONNECTIONSTRING", "CONNSTR", "DSN", "DATABASE_URL",
+            "PROVIDER_CONNECTION_STRING",
+
+            // --- Cryptography & Identity ---
+            "KEY", "PRIVATE", "CERTIFICATE", "CERT", "THUMBPRINT",
+            "PFX", "PEM", "SALT", "PEPPER",
+
+            // --- API Service Identifiers ---
+            "API",          // Catches API_KEY, API_SECRET, etc.
+            "APP_SECRET",
+            "BROWSER_KEY",
+            "WEBHOOK_URL"   // These often contain embedded tokens
         };
 
         /// <summary>
@@ -37,7 +57,23 @@ namespace Servy.Service.Helpers
         /// The value pattern handles both quoted strings and standard tokens.
         /// </remarks>
         private static readonly Regex MaskingRegex = new Regex(
-            @"(?i)(password|pwd|secret|key|token|auth|api|private)([:=\s]+)(?:""[^""]*""|[^\s""]+)",
+            // 1. Keyword: Negative lookarounds allow _, ., and - as valid boundaries without consuming them
+            @"(?i)(?<![a-zA-Z0-9])(" + string.Join("|", SensitiveKeyWords.Select(Regex.Escape)) + @")(?![a-zA-Z0-9])" +
+
+            // 2. Separator & Value (Two Branches)
+            @"(?:" +
+                // BRANCH A: Explicit Separators (:, =, /)
+                // Aggressively consumes spaces for unquoted strings (e.g., "KEY=---BEGIN RSA---") 
+                // as long as the next word isn't another CLI flag.
+                @"(\s*[:=]\s*|/)" +
+                @"(?:""[^""]*""|'[^']*'|(?:[^\s""']+(?:\s+(?![\-/]+[a-zA-Z])[^\s""']+)*))" +
+                @"|" +
+                // BRANCH B: Space Separator
+                // Strictly consumes only a single unquoted word to prevent over-masking 
+                // subsequent commands (e.g., protects 'run' in "--password secret run")
+                @"(\s+)(?![\-/]+[a-zA-Z])" +
+                @"(?:""[^""]*""|'[^']*'|[^\s""']+)" +
+            @")",
             RegexOptions.Compiled,
             AppConfig.InputRegexTimeout);
 
@@ -445,9 +481,15 @@ namespace Servy.Service.Helpers
 
             try
             {
-                // $1: Key (e.g., password)
-                // $2: Original separator (e.g., " ", ":", or "=")
-                return MaskingRegex.Replace(args, "$1$2********");
+                return MaskingRegex.Replace(args, m =>
+                {
+                    // m.Groups[1] is the Keyword
+                    // m.Groups[2] is the Explicit Separator (Branch A)
+                    // m.Groups[3] is the Space Separator (Branch B)
+                    string separator = m.Groups[2].Success ? m.Groups[2].Value : m.Groups[3].Value;
+
+                    return $"{m.Groups[1].Value}{separator}********";
+                });
             }
             catch (RegexMatchTimeoutException)
             {
