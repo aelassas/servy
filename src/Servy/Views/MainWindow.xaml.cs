@@ -60,7 +60,11 @@ namespace Servy.Views
         {
             try
             {
-                var currentPID = Process.GetCurrentProcess().Id;
+                int currentPID;
+                using (var current = Process.GetCurrentProcess())
+                {
+                    currentPID = current.Id;
+                }
                 _processKiller.KillChildren(currentPID);
             }
             catch (Exception ex)
