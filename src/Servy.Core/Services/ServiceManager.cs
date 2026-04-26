@@ -851,6 +851,7 @@ namespace Servy.Core.Services
                 {
                     try
                     {
+                        // Check token before starting any worker-level logic
                         if (cancellationToken.IsCancellationRequested) return;
 
                         ServiceInfo info = new ServiceInfo
@@ -862,14 +863,36 @@ namespace Servy.Core.Services
                             Description = string.Empty,
                         };
 
-                        // Fetch deep details natively
-                        PopulateNativeDetails(scmHandle, info);
+                        // Pattern: Supervisor Worker with Timeout
+                        try
+                        {
+                            // We use Task.Run to offload the native call to a thread-pool thread
+                            var nativeQueryTask = Task.Run(() => PopulateNativeDetails(scmHandle, info), cancellationToken);
+
+                            // Wait for the native call OR the timeout OR the cancellation token
+                            bool completed = nativeQueryTask.Wait(AppConfig.PopulateNativeDetailsTimeoutMs, cancellationToken);
+
+                            if (!completed)
+                            {
+                                info.Description = "(details unavailable: native query timed out)";
+                                Logger.Warn($"Native SCM query timed out for service: {info.Name}");
+                            }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            return; // The user clicked cancel; exit the worker immediately
+                        }
+                        catch (Exception ex)
+                        {
+                            // If the task itself faulted (e.g. Access Denied), log it but don't crash the Bag
+                            Logger.Debug($"Native details collection faulted for {info.Name}: {ex.Message}");
+                            info.Description = $"(details unavailable: {ex.GetType().Name})";
+                        }
 
                         results.Add(info);
                     }
                     finally
                     {
-                        // CRITICAL for .NET Framework to prevent handle exhaustion
                         service.Dispose();
                     }
                 });
@@ -878,10 +901,7 @@ namespace Servy.Core.Services
             }
             finally
             {
-                if (scmHandle != null)
-                {
-                    scmHandle.Dispose();
-                }
+                scmHandle?.Dispose();
             }
         }
 
