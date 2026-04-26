@@ -206,7 +206,12 @@ if (-not (Test-Path $helperScript)) {
 $lastProcessed = $null
 if (Test-Path $timestampFile) {
   try {
-    $lastProcessed = [DateTime]::Parse((Get-Content $timestampFile -ErrorAction Stop))
+    $lastProcessed = [DateTime]::ParseExact(
+        (Get-Content $timestampFile -ErrorAction Stop),
+        'o',
+        [System.Globalization.CultureInfo]::InvariantCulture,
+        [System.Globalization.DateTimeStyles]::RoundtripKind
+    )
   } catch { 
     # Fallback to null if file is corrupt, resulting in processing the most recent event
   }
