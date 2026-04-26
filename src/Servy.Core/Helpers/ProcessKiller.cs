@@ -21,11 +21,43 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Safelist of processes that should NEVER be targeted by Servy's auto-killer
         /// </summary>
-        private readonly HashSet<string> CriticalSystemProcesses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> CriticalSystemProcesses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
+            // Original core system
             "system", "idle", "csrss", "lsass", "wininit", "services",
-            "winlogon", "smss", "svchost", "explorer", "runtimebroker"
+            "winlogon", "smss", "svchost", "explorer", "runtimebroker",
+
+            // New additions for host stability
+            "dwm", "fontdrvhost", "audiodg", "MsMpEng", "MsSense", "LsaIso",
+            "WUDFHost", "wmiprvse", "conhost", "taskhostw", "sihost",
+            "ctfmon", "dllhost", "searchindexer", "searchhost"
         };
+
+        /// <summary>
+        /// Determines if a process is protected from termination based on its PID or its process name.
+        /// </summary>
+        /// <param name="pid">The process ID to check.</param>
+        /// <param name="processName">The name of the process to check.</param>
+        /// <param name="protectedPids">A set of PIDs that are considered protected.</param>
+        private bool IsProtected(int pid, string processName, HashSet<int> protectedPids)
+        {
+            // 1. PID-based protection (Self, Ancestors, System PID 4)
+            if (pid <= 4 || protectedPids.Contains(pid))
+                return true;
+
+            // 2. Name-based protection
+            if (!string.IsNullOrEmpty(processName))
+            {
+                string cleanName = processName;
+                if (cleanName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                    cleanName = cleanName.Substring(0, cleanName.Length - 4);
+
+                if (CriticalSystemProcesses.Contains(cleanName))
+                    return true;
+            }
+
+            return false;
+        }
 
         /// <inheritdoc/>
         public void KillChildren(int parentPid)
@@ -80,7 +112,14 @@ namespace Servy.Core.Helpers
                 {
                     do
                     {
-                        if (pe32.th32ParentProcessID == parentPid && pe32.th32ProcessID != selfPid)
+                        string exeName = pe32.szExeFile;
+                        int childPid = (int)pe32.th32ProcessID;
+
+                        // PRE-CHECK: Skip if the name is in the critical list or it's us
+                        if (CriticalSystemProcesses.Contains(Path.GetFileNameWithoutExtension(exeName)) || childPid == selfPid)
+                            continue;
+
+                        if (pe32.th32ParentProcessID == parentPid)
                         {
                             try
                             {
@@ -379,6 +418,13 @@ namespace Servy.Core.Helpers
 
                 var parent = allProcesses.FirstOrDefault(p => p.Id == parentId);
                 if (parent == null) return;
+
+                // Check parent name against safelist
+                if (IsProtected(parent.Id, parent.ProcessName, protectedPids))
+                {
+                    Logger.Debug($"Aborting parent kill walk: {parent.ProcessName} (PID {parent.Id}) is protected.");
+                    return;
+                }
 
                 try
                 {
