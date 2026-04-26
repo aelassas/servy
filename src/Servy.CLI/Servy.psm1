@@ -1111,9 +1111,6 @@ function Install-ServyService {
       # Use $PSBoundParameters to ensure we only pass what the user explicitly provided
       if ($PSBoundParameters.ContainsKey($paramName)) {
           $val = $PSBoundParameters[$paramName]
-          
-          # Skip password (handled via environment variables)
-          if ($paramName -eq "Password") { continue }
 
           $argsList = Add-Arg $argsList $cliFlag $val
       }
