@@ -42,8 +42,9 @@ namespace Servy.Service.ProcessManagement
         public bool FireAndForget { get; set; } = false;
 
         /// <summary>
-        /// Gets or sets the maximum time, in milliseconds, to wait for the process to exit.
-        /// Only applicable when <see cref="FireAndForget"/> is false. A value of 0 indicates an infinite wait.
+        /// A positive timeout, in milliseconds, to wait for the process to exit.
+        /// Only applicable when <see cref="FireAndForget"/> is false; required to be &gt; 0
+        /// in synchronous mode. Use <see cref="FireAndForget"/> = true for unbounded launches.
         /// </summary>
         public int TimeoutMs { get; set; } = 0;
 
