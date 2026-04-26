@@ -255,8 +255,25 @@ namespace Servy.Core.Security
                         }
                         else
                         {
-                            // Trip the warning so admins can diagnose I/O or permission issues.
-                            Logger.Warn($"[EventID: 3002] {baseMsg} (Attempt {failCount}/{MigrationFailureEscalationThreshold}): {ex.Message}");
+                            // Fix for #850: Actually emit the 3002 Warning to the Windows Event Log
+                            string warningMsg = $"{baseMsg} (Attempt {failCount}/{MigrationFailureEscalationThreshold}): {ex.Message}";
+
+                            try
+                            {
+                                using (var eventLog = new EventLog("Application"))
+                                {
+                                    eventLog.Source = AppConfig.EventSource;
+                                    // Option (a): Mirror the escalated pattern with a Warning type and ID 3002
+                                    eventLog.WriteEntry($"[{AppConfig.EventSource}] {warningMsg}", EventLogEntryType.Warning, 3002);
+                                }
+                            }
+                            catch
+                            {
+                                // Fallback: If we can't write to the Event Log (e.g. permission issues), 
+                                // the file logger is our only hope.
+                            }
+
+                            Logger.Warn($"[EventID: 3002] {warningMsg}");
                         }
 
                         // We still return the data so the service remains operational.
