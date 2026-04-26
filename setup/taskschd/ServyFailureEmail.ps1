@@ -1,3 +1,4 @@
+#Requires -Version 3.0
 <#
 .SYNOPSIS
     Monitors Servy error events in the Windows Application log and sends notification emails.
@@ -22,8 +23,7 @@
     Repository  : https://github.com/aelassas/servy
     
     Requirements:
-      - PowerShell 2.0 or later (Compatible with legacy Windows Server environments).
-      - .NET Framework 3.5+ (Standard on most Windows systems).
+      - PowerShell 3.0 or later.
       - 'smtp-config.xml' and 'smtp-cred.xml' must exist in the script directory.
 
     Setup (Secure Credentials):
