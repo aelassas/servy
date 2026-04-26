@@ -822,6 +822,7 @@ namespace Servy.Service
                 RedirectToWriters = !fireAndForget,
                 FireAndForget = fireAndForget,
                 LogErrorAsWarning = options.PreLaunchIgnoreFailure,
+                EnableConsoleUI = options.EnableConsoleUI,
             };
 
             // 2. Handle Fire-and-Forget Mode
@@ -1079,6 +1080,8 @@ namespace Servy.Service
             // Log any remaining unexpanded placeholders
             LogUnexpandedPlaceholders(_realArgs, "Arguments");
 
+            var enableConsoleUI = _options?.EnableConsoleUI == true;
+
             // Configure the process start info
             var psi = new ProcessStartInfo
             {
@@ -1086,16 +1089,27 @@ namespace Servy.Service
                 Arguments = _realArgs,
                 WorkingDirectory = _workingDir,
                 UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                StandardOutputEncoding = Encoding.UTF8,
-                StandardErrorEncoding = Encoding.UTF8,
-                CreateNoWindow = true,
+                // If UI support is enabled, we MUST show the window (in Session 0 it remains invisible)
+                // and we MUST NOT redirect, otherwise the child gets a File Handle instead of a Console Handle.
+                CreateNoWindow = !enableConsoleUI,
+                RedirectStandardOutput = !enableConsoleUI,
+                RedirectStandardError = !enableConsoleUI,
             };
+
+            if (enableConsoleUI)
+            {
+                _logger?.Info("Console UI support enabled. Standard output is being rendered to an internal console; stdout/stderr redirection is bypassed.");
+            }
+
+            if (!enableConsoleUI)
+            {
+                psi.StandardOutputEncoding = Encoding.UTF8;
+                psi.StandardErrorEncoding = Encoding.UTF8;
+            }
 
             foreach (var envVar in expandedEnv)
             {
-                psi.EnvironmentVariables[envVar.Key] = envVar.Value;
+                psi.Environment[envVar.Key] = envVar.Value ?? string.Empty;
             }
 
             // Ensure UTF-8 encoding and buffered mode for python
@@ -1106,8 +1120,11 @@ namespace Servy.Service
 
             // Enable events and attach output/error handlers
             _childProcess.EnableRaisingEvents = true;
-            _childProcess.OutputDataReceived += OnOutputDataReceived;
-            _childProcess.ErrorDataReceived += OnErrorDataReceived;
+            if (!enableConsoleUI)
+            {
+                _childProcess.OutputDataReceived += OnOutputDataReceived;
+                _childProcess.ErrorDataReceived += OnErrorDataReceived;
+            }
             _childProcess.Exited += OnProcessExited;
 
             // Start the process safely
@@ -1127,12 +1144,13 @@ namespace Servy.Service
 
                 CleanupFailedProcess();
 
+                _ = FreeConsole();
+
                 // Re-throw so the caller (OnStart) stops the service and signals the SCM
                 throw;
             }
             finally
             {
-                _ = FreeConsole();
                 _ = SetConsoleCtrlHandler(null, true);
             }
 
@@ -1142,8 +1160,11 @@ namespace Servy.Service
             PersistProcessState(_childProcess.Id, true);
 
             // Begin async reading of output and error streams
-            _childProcess.BeginOutputReadLine();
-            _childProcess.BeginErrorReadLine();
+            if (!enableConsoleUI)
+            {
+                _childProcess.BeginOutputReadLine();
+                _childProcess.BeginErrorReadLine();
+            }
 
             // Fire and forget the post-launch script when process confirmed running
             _cancellationSource?.Dispose();
@@ -1292,6 +1313,7 @@ namespace Servy.Service
                     WorkingDirectory = workingDir,
                     EnvironmentVariables = _options.EnvironmentVariables,
                     FireAndForget = true, // Post-launch does not block service startup
+                    EnableConsoleUI = _options.EnableConsoleUI,
                 };
 
                 _logger?.Info($"Running post-launch program: {launchOptions.ExecutablePath}");
@@ -1351,7 +1373,7 @@ namespace Servy.Service
                     Arguments = args,
                     WorkingDirectory = workingDir,
                     UseShellExecute = false,
-                    CreateNoWindow = true
+                    CreateNoWindow = !_options.EnableConsoleUI,
                 };
 
                 // Fire-and-forget: start the process without waiting
@@ -2264,6 +2286,7 @@ namespace Servy.Service
                     ScmAdditionalTimeMs = _scmAdditionalTimeMs,
                     OnScmHeartbeat = time => _serviceHelper.RequestAdditionalTime(this, time, _logger),
                     LogErrorAsWarning = !logAsError,
+                    EnableConsoleUI = options.EnableConsoleUI,
                 };
 
                 // 3. Launch and Evaluate
@@ -2498,7 +2521,8 @@ namespace Servy.Service
                     Arguments = args,
                     WorkingDirectory = workingDir,
                     EnvironmentVariables = _options.EnvironmentVariables,
-                    FireAndForget = true // Post-stop is always fire-and-forget
+                    FireAndForget = true, // Post-stop is always fire-and-forget
+                    EnableConsoleUI = _options.EnableConsoleUI,
                 };
 
                 _logger?.Info($"Running post-stop program: {launchOptions.ExecutablePath}");

@@ -195,6 +195,11 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Real Time (use with caution)</value>
   </data>
 
+  <!--EnableConsoleUI-->
+  <data name="Label_EnableConsoleUI" xml:space="preserve">
+    <value>Enable Console UI (required for apps that attempt to manipulate the cursor, text colors, or window size. stdout/stderr redirection disabled)</value>
+  </data>
+
   <!-- I/O redirection -->
   <data name="Label_StdoutPath" xml:space="preserve">
     <value>Stdout File Path</value>

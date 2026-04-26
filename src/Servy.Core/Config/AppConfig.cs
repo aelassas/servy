@@ -331,6 +331,11 @@ namespace Servy.Core.Config
         public const ProcessPriority DefaultPriority = ProcessPriority.Normal;
 
         /// <summary>
+        /// The default value for <c>EnableConsoleUI</c>. Default is <c>false</c>.
+        /// </summary>
+        public const bool DefaultEnableConsoleUI = false;
+
+        /// <summary>
         /// The default interval used when date-based log rotation is enabled.
         /// Default is <see cref="DateRotationType.Daily"/>.
         /// </summary>

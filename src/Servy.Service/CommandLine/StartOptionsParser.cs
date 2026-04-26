@@ -46,19 +46,25 @@ namespace Servy.Service.CommandLine
 
             return new StartOptions
             {
+                // Main
+                ServiceName = serviceName,
                 ExecutablePath = processHelper.ResolvePath(serviceDto.ExecutablePath ?? string.Empty),
                 ExecutableArgs = Helper.EscapeBackslashes(serviceDto.Parameters ?? string.Empty),
                 WorkingDirectory = processHelper.ResolvePath(serviceDto.StartupDirectory ?? string.Empty),
                 Priority = MapPriority((ProcessPriority)(serviceDto.Priority ?? (int)ProcessPriority.Normal)),
+                EnableConsoleUI = serviceDto.EnableConsoleUI ?? false,
+
+                // Logging
                 StdOutPath = serviceDto.StdoutPath,
                 StdErrPath = serviceDto.StderrPath,
                 RotationSizeInBytes = (serviceDto.RotationSize ?? AppConfig.DefaultRotationSize) * 1024L * 1024L, // Convert from MB to Bytes
                 UseLocalTimeForRotation = serviceDto.UseLocalTimeForRotation ?? AppConfig.DefaultUseLocalTimeForRotation,
+
+                // Health Monitoring
                 EnableHealthMonitoring = serviceDto.EnableHealthMonitoring ?? false,
                 HeartbeatInterval = serviceDto.HeartbeatInterval ?? AppConfig.DefaultHeartbeatInterval,
                 MaxFailedChecks = serviceDto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks,
                 RecoveryAction = (serviceDto.EnableHealthMonitoring ?? false) ? (RecoveryAction)(serviceDto.RecoveryAction ?? (int)RecoveryAction.None) : RecoveryAction.None,
-                ServiceName = serviceName,
                 MaxRestartAttempts = serviceDto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
                 EnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.EnvironmentVariables ?? string.Empty),
 

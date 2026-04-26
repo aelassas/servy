@@ -32,6 +32,9 @@ namespace Servy.Core.Services
         /// <summary>Optional process priority for the service. Defaults to Normal.</summary>
         public ProcessPriority ProcessPriority { get; set; } = ProcessPriority.Normal;
 
+        /// <summary>Whether to enable the console user interface for the service.</summary>
+        public bool? EnableConsoleUI { get; set; } = AppConfig.DefaultEnableConsoleUI;
+
         /// <summary>Optional path for standard output redirection. If null, no redirection is performed.</summary>
         public string StdoutPath { get; set; }
 

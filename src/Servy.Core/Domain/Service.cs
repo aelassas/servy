@@ -116,6 +116,12 @@ namespace Servy.Core.Domain
         public ProcessPriority Priority { get; set; } = AppConfig.DefaultPriority;
 
         /// <summary>
+        /// Whether to enable the console user interface for the service.
+        /// When enabled, stdout/stderr redirection is disabled, and the service runs in a console window.
+        /// </summary>
+        public bool EnableConsoleUI { get; set; }
+
+        /// <summary>
         /// Gets or sets the optional file path for redirecting standard output.
         /// </summary>
         public string StdoutPath { get; set; }
@@ -500,6 +506,7 @@ namespace Servy.Core.Domain
                 RealArgs = Parameters ?? string.Empty,
                 StartType = StartupType,
                 ProcessPriority = Priority,
+                EnableConsoleUI = EnableConsoleUI,
                 StdoutPath = StdoutPath,
                 StderrPath = StderrPath,
                 EnableSizeRotation = EnableSizeRotation,

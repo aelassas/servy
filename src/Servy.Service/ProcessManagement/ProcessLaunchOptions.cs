@@ -52,6 +52,11 @@ namespace Servy.Service.ProcessManagement
         /// </summary>
         public bool LogErrorAsWarning { get; set; } = false;
 
+        /// <summary>
+        /// Whether to enable the console user interface for the service.
+        /// </summary>
+        public bool EnableConsoleUI { get; set; }
+
         #endregion
 
         #region Timing Configuration

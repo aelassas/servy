@@ -57,8 +57,16 @@ namespace Servy.Infrastructure.Data
                 currentVersion = 2;
             }
 
+            // Version 3 Migration to add EnableConsoleUI for interactive console apps support
+            if (currentVersion < 3)
+            {
+                ApplyVersion3(connection);
+                UpdateSchemaVersion(connection, 3);
+                currentVersion = 3;
+            }
+
             // --- FUTURE MIGRATIONS GO HERE ---
-            // if (currentVersion < 3) { ... }
+            // if (currentVersion < 4) { ... }
         }
 
         /// <summary>
@@ -236,6 +244,40 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
+        /// Applies the Version 3 schema migration, adding the 'EnableConsoleUI' column 
+        /// to the 'Services' table to support allocating a console for interactive apps.
+        /// </summary>
+        private static void ApplyVersion3(DbConnection connection)
+        {
+            using (var transaction = connection.BeginTransaction())
+            {
+                try
+                {
+                    var existingColumns = new HashSet<string>(
+                        connection.Query("PRAGMA table_info(Services);", transaction: transaction)
+                                  .Select(row => (string)row.name),
+                        StringComparer.OrdinalIgnoreCase
+                    );
+
+                    if (!existingColumns.Contains("EnableConsoleUI"))
+                    {
+                        Logger.Info("Migrating database to Version 3: Adding 'EnableConsoleUI' column.");
+                        connection.Execute("ALTER TABLE Services ADD COLUMN EnableConsoleUI INTEGER;", transaction: transaction);
+                    }
+
+                    transaction.Commit();
+                    Logger.Info("Database successfully migrated to Version 3.");
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    Logger.Error("CRITICAL: Version 3 database migration failed. Transaction rolled back.", ex);
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
         /// Infers the SQLite data type and constraints for a given column name.
         /// </summary>
         /// <param name="columnName">The name of the column.</param>
@@ -260,7 +302,8 @@ namespace Servy.Infrastructure.Data
             {
                 "Pid", "EnableDebugLogs", "MaxRotations", "EnableDateRotation",
                 "DateRotationType", "StartTimeout", "StopTimeout", "PreviousStopTimeout",
-                "PreStopTimeoutSeconds", "PreStopLogAsError", "UseLocalTimeForRotation"
+                "PreStopTimeoutSeconds", "PreStopLogAsError", "UseLocalTimeForRotation",
+                "EnableConsoleUI"
             };
 
             if (originalNotNullInts.Contains(columnName))
