@@ -174,36 +174,35 @@ namespace Servy.Core.Helpers
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(processName))
-                    return false;
+                if (string.IsNullOrWhiteSpace(processName)) return false;
 
                 if (processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
                     processName = processName.Substring(0, processName.Length - 4);
 
-                var allProcesses = Process.GetProcesses();
-                // CRITICAL: Identify the current process and its ancestors to avoid IDE suicide
+                int selfPid = Process.GetCurrentProcess().Id;
                 var protectedPids = GetAncestorPids();
 
+                // 1. Initial Snapshot strictly for finding the root targets by name
+                var allProcesses = Process.GetProcesses();
                 try
                 {
                     var targetProcesses = allProcesses
                         .Where(p => string.Equals(p.ProcessName, processName, StringComparison.OrdinalIgnoreCase))
-                        .Where(p => !protectedPids.Contains(p.Id)) // Never kill protected processes
+                        .Where(p => !protectedPids.Contains(p.Id))
                         .ToList();
 
-                    if (targetProcesses.Count == 0)
-                        return true;
+                    if (targetProcesses.Count == 0) return true;
 
                     foreach (var proc in targetProcesses)
                     {
-                        KillProcessTree(proc, allProcesses, protectedPids);
+                        KillProcessTree(proc, selfPid, protectedPids);
                     }
 
                     if (killParents)
                     {
                         foreach (var proc in targetProcesses)
                         {
-                            KillParentProcesses(proc, allProcesses, protectedPids);
+                            KillParentProcesses(proc, protectedPids);
                         }
                     }
 
@@ -225,7 +224,6 @@ namespace Servy.Core.Helpers
         {
             if (pid <= 0) return false;
 
-            // CRITICAL: Protect the current process, IDE, and critical system components
             var protectedPids = GetAncestorPids();
             if (protectedPids.Contains(pid))
             {
@@ -233,40 +231,33 @@ namespace Servy.Core.Helpers
                 return false;
             }
 
-            var allProcesses = Process.GetProcesses();
+            int selfPid = Process.GetCurrentProcess().Id;
+
+            Process target;
             try
             {
-                var target = allProcesses.FirstOrDefault(p => p.Id == pid);
-                if (target == null) return true; // Already gone
+                // No need for a global snapshot just to find one PID
+                target = Process.GetProcessById(pid);
+            }
+            catch (ArgumentException)
+            {
+                return true; // Process already gone
+            }
 
-                // 1. Kill the children first (Bottom-up)
-                KillProcessTree(target, allProcesses, protectedPids);
+            try
+            {
+                KillProcessTree(target, selfPid, protectedPids);
 
-                // 2. Kill the parents if requested
                 if (killParents)
                 {
-                    KillParentProcesses(target, allProcesses, protectedPids);
-                }
-
-                // 3. Finally, kill the target itself if it survived the tree walk
-                try
-                {
-                    if (!target.HasExited)
-                    {
-                        target.Kill(true);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Final termination failed for PID {pid}.", ex);
-                    return false;
+                    KillParentProcesses(target, protectedPids);
                 }
 
                 return true;
             }
             finally
             {
-                foreach (var p in allProcesses) p.Dispose();
+                target.Dispose();
             }
         }
 
@@ -355,35 +346,19 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Recursively kills the specified process and all its child processes, 
-        /// validating the parent-child relationship using process start times.
+        /// Recursively kills the specified process and all its child processes 
+        /// using live Toolhelp32 snapshots to prevent mid-walk evasion.
         /// </summary>
-        /// <param name="process">The process to kill.</param>
-        /// <param name="allProcesses">All currently running processes.</param>
-        private void KillProcessTree(Process process, Process[] allProcesses, HashSet<int> protectedPids)
+        private void KillProcessTree(Process process, int selfPid, HashSet<int> protectedPids)
         {
             try
             {
                 if (protectedPids.Contains(process.Id)) return;
 
-                int parentId = process.Id;
-                DateTime parentStartTime = process.StartTime;
+                // 1. Live-Snapshot Recursion: Walk downwards and kill all descendants
+                KillChildrenInternal(process.Id, process.StartTime, selfPid);
 
-                var children = allProcesses.Where(p =>
-                {
-                    try
-                    {
-                        return GetParentProcessId(p) == parentId &&
-                               p.StartTime >= parentStartTime.AddSeconds(-2);
-                    }
-                    catch { return false; }
-                }).ToArray();
-
-                foreach (var child in children)
-                {
-                    KillProcessTree(child, allProcesses, protectedPids);
-                }
-
+                // 2. Finally, kill the target itself
                 if (!process.HasExited)
                 {
                     process.Kill();
@@ -401,9 +376,7 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Recursively kills the parent processes of the specified process.
         /// </summary>
-        /// <param name="process">The process whose parents to kill.</param>
-        /// <param name="allProcesses">All currently running processes.</param>
-        private void KillParentProcesses(Process process, Process[] allProcesses, HashSet<int> protectedPids)
+        private void KillParentProcesses(Process process, HashSet<int> protectedPids)
         {
             try
             {
@@ -412,34 +385,50 @@ namespace Servy.Core.Helpers
                 // Stop at System/Idle or if the parent is part of the current execution chain
                 if (parentId <= 4 || protectedPids.Contains(parentId)) return;
 
-                var parent = allProcesses.FirstOrDefault(p => p.Id == parentId);
-                if (parent == null) return;
-
-                // Check parent name against safelist
-                if (IsProtected(parent.Id, parent.ProcessName, protectedPids))
+                // Fetch parent dynamically instead of relying on a stale snapshot
+                Process parent;
+                try
                 {
-                    Logger.Debug($"Aborting parent kill walk: {parent.ProcessName} (PID {parent.Id}) is protected.");
-                    return;
+                    parent = Process.GetProcessById(parentId);
+                }
+                catch (ArgumentException)
+                {
+                    return; // Parent no longer exists
                 }
 
                 try
                 {
-                    if (parent.StartTime > process.StartTime.AddSeconds(2)) return;
+                    // Check parent name against safelist
+                    if (IsProtected(parent.Id, parent.ProcessName, protectedPids))
+                    {
+                        Logger.Debug($"Aborting parent kill walk: {parent.ProcessName} (PID {parent.Id}) is protected.");
+                        return;
+                    }
+
+                    // Verify identity to prevent recycled PID accidents
+                    try
+                    {
+                        if (parent.StartTime > process.StartTime.AddSeconds(2)) return;
+                    }
+                    catch (Win32Exception) { return; }
+
+                    // Move up first
+                    KillParentProcesses(parent, protectedPids);
+
+                    if (!parent.HasExited)
+                    {
+                        parent.Kill();
+                        parent.WaitForExit(AppConfig.KillParentWaitMs);
+                    }
                 }
-                catch (Win32Exception) { return; }
-
-                // Move up first
-                KillParentProcesses(parent, allProcesses, protectedPids);
-
-                if (!parent.HasExited)
+                finally
                 {
-                    parent.Kill();
-                    parent.WaitForExit(AppConfig.KillParentWaitMs);
+                    parent.Dispose();
                 }
             }
             catch
             {
-                // We catch all exceptions to ensure that a failure in killing one parent does not prevent attempts to kill others.
+                // Catch all to ensure one failing parent doesn't stop the chain
             }
         }
 
