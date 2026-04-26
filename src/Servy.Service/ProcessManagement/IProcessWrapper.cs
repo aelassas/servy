@@ -101,7 +101,7 @@ namespace Servy.Service.ProcessManagement
         /// This method polls the process state every 500 milliseconds until the timeout
         /// is reached. If the process exits during this time, the method returns <c>false</c>.
         /// </remarks>
-        Task<bool> WaitUntilRunningAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
+        Task<bool> WaitForExitOrTimeoutAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Stops the associated process.
