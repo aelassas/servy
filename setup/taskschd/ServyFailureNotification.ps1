@@ -231,7 +231,13 @@ foreach ($evt in $eventsToProcess) {
               # Read current file text to catch concurrent updates from other script instances
               $currentFileContent = [System.IO.File]::ReadAllText($timestampFile).Trim()
               if (-not [string]::IsNullOrWhiteSpace($currentFileContent)) {
-                  $fileTimestamp = [DateTime]::Parse($currentFileContent)
+                  $fileTimestamp = [DateTime]::ParseExact(
+                      $currentFileContent,
+                      'o',
+                      [System.Globalization.CultureInfo]::InvariantCulture,
+                      [System.Globalization.DateTimeStyles]::RoundtripKind
+                  )
+
                   if ($newestTimestamp -le $fileTimestamp) {
                       $shouldWrite = $false
                   }
