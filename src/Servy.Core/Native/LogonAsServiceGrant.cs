@@ -1,5 +1,4 @@
-﻿using Servy.Core.Logging;
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
@@ -28,51 +27,44 @@ namespace Servy.Core.Native
         /// </exception>
         public static void Ensure(string accountName)
         {
-            if (string.IsNullOrWhiteSpace(accountName))
-            {
-                throw new ArgumentException("Account name cannot be empty.", nameof(accountName));
-            }
-
-            var sid = AccountToSid(accountName);
-
-            if (sid == null)
-            {
-                throw new InvalidOperationException("Cannot resolve SID for: " + accountName);
-            }
-
-            if (!HasLogonAsService(sid))
-            {
-                GrantLogonAsService(sid);
-            }
+            var sid = AccountToSidOrThrow(accountName);
+            if (!HasLogonAsService(sid)) GrantLogonAsService(sid);
         }
 
         /// <summary>
-        /// Resolves an NT account name to a <see cref="SecurityIdentifier"/>.
-        /// Replaces ".\" with the local machine name automatically.
+        /// Translates a Windows account name into its corresponding <see cref="SecurityIdentifier"/>.
         /// </summary>
-        /// <param name="account">Account name to resolve.</param>
-        /// <returns>The <see cref="SecurityIdentifier"/> of the account, or null if it cannot be resolved.</returns>
-        private static SecurityIdentifier AccountToSid(string account)
+        /// <param name="account">The account name to resolve. Handles the ".\" shorthand for local machine accounts.</param>
+        /// <returns>A <see cref="SecurityIdentifier"/> representing the specified account.</returns>
+        /// <exception cref="ArgumentException">Thrown if the account name is null or whitespace.</exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if the account cannot be resolved to a SID, often due to a non-existent account 
+        /// or an unreachable Domain Controller.
+        /// </exception>
+        private static SecurityIdentifier AccountToSidOrThrow(string account)
         {
             if (string.IsNullOrWhiteSpace(account))
-                return null;
+                throw new ArgumentException("Account name cannot be empty.", nameof(account));
+
+            // Clean up potential copy-paste whitespace
+            account = account.Trim();
+
+            // Replace ".\" with machine name for local accounts
+            if (account.StartsWith(@".\", StringComparison.OrdinalIgnoreCase))
+            {
+                string machine = Environment.MachineName;
+                account = $"{machine}\\{account.Substring(2)}";
+            }
 
             try
             {
-                // Replace ".\" with machine name for local accounts
-                if (account.StartsWith(@".\", StringComparison.OrdinalIgnoreCase))
-                {
-                    string machine = Environment.MachineName;
-                    account = $"{machine}\\{account.Substring(2)}";
-                }
-
-                var nt = new NTAccount(account);
-                return (SecurityIdentifier)nt.Translate(typeof(SecurityIdentifier));
+                return (SecurityIdentifier)new NTAccount(account).Translate(typeof(SecurityIdentifier));
             }
             catch (Exception ex)
             {
-                Logger.Warn($"Failed to resolve SID for account '{account}'.", ex);
-                return null;
+                throw new InvalidOperationException(
+                    $"Cannot resolve SID for '{account}'. The account may not exist, be misspelled, or the domain controller may be unreachable.",
+                    ex);
             }
         }
 
