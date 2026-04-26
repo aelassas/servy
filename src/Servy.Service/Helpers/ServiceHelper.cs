@@ -49,6 +49,15 @@ namespace Servy.Service.Helpers
         };
 
         /// <summary>
+        /// A specialized regex for matching sensitive keys. 
+        /// Uses the same boundary logic as MaskingRegex to avoid false positives like 'MONKEY_TYPE'.
+        /// </summary>
+        private static readonly Regex KeyMatcherRegex = new Regex(
+            @"(?i)(?<![a-zA-Z0-9])(" + string.Join("|", SensitiveKeyWords.Select(Regex.Escape)) + @")(?![a-zA-Z0-9])",
+            RegexOptions.Compiled,
+            AppConfig.InputRegexTimeout);
+
+        /// <summary>
         /// A compiled regular expression designed to identify and mask sensitive credentials 
         /// within raw command-line argument strings.
         /// </summary>
@@ -464,7 +473,8 @@ namespace Servy.Service.Helpers
         {
             if (string.IsNullOrWhiteSpace(value)) return value;
 
-            bool isSensitive = SensitiveKeyWords.Any(k => key.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0);
+            // Use the strict key matcher to avoid greedy substring matches
+            bool isSensitive = KeyMatcherRegex.IsMatch(key);
 
             return isSensitive ? "********" : value;
         }
