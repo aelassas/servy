@@ -476,12 +476,17 @@ function Assert-Administrator {
     .NOTES
         Requires the System.Security.Principal namespace.
   #>
-  $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-  $principal = New-Object Security.Principal.WindowsPrincipal($identity)
-    
-  if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    throw "This operation requires Administrator privileges. Run PowerShell as Administrator."
-  }
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    try {
+        $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+
+        if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+            throw "This operation requires Administrator privileges. Run PowerShell as Administrator."
+        }
+    }
+    finally {
+        $identity.Dispose()
+    }
 }
 
 function Invoke-ServyServiceCommand {
