@@ -396,21 +396,9 @@ namespace Servy.Core.Helpers
         /// <inheritdoc />
         public string EscapeArgument(string arg)
         {
-            if (string.IsNullOrEmpty(arg)) return "\"\"";
-
-            // 1. Escape existing double quotes by doubling them or prefixing with \ 
-            // (Win32 standard for arguments is backslash-escaping quotes)
-            string escaped = arg.Replace("\"", "\\\"");
-
-            // 2. If the string ends with a backslash, it will escape our closing quote.
-            // We must double trailing backslashes.
-            if (escaped.EndsWith("\\"))
-            {
-                escaped += "\\";
-            }
-
-            // 3. Wrap the whole thing in quotes
-            return $"\"{escaped}\"";
+            // Redirect to the robust implementation to ensure Win32 CommandLineToArgvW compatibility.
+            // This resolves #827 where internal backslashes preceding quotes were not handled correctly.
+            return EscapeProcessArgument(arg);
         }
     }
 }
