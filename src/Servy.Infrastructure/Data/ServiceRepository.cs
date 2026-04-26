@@ -135,17 +135,21 @@ namespace Servy.Infrastructure.Data
             for (int i = 0; i < serviceList.Count; i += chunkSize)
             {
                 var currentChunk = serviceList.Skip(i).Take(chunkSize).ToList();
-                var names = currentChunk.Select(s => s.Name).ToList();
 
-                // Fetch the generated IDs for the names in this chunk
+                // Normalize the input names to match the functional index requirement
+                var lowerNames = currentChunk.Select(s => s.Name?.ToLowerInvariant()).ToList();
+
+                // Fetch the generated IDs using LOWER(Name) to ensure index usage and case-insensitivity
                 var idMap = (await _dapper.QueryAsync<(int Id, string Name)>(
-                    "SELECT Id, Name FROM Services WHERE Name IN @names",
-                    new { names }, cancellationToken))
+                    "SELECT Id, Name FROM Services WHERE LOWER(Name) IN @names",
+                    new { names = lowerNames }, cancellationToken))
                     .ToDictionary(x => x.Name, x => x.Id, StringComparer.OrdinalIgnoreCase);
 
                 // Update the original DTO references
                 foreach (var service in currentChunk)
                 {
+                    // OrdinalIgnoreCase here handles the mapping between the 
+                    // user's input (MyService) and the DB's stored casing (myservice).
                     if (idMap.TryGetValue(service.Name, out var id))
                     {
                         service.Id = id;
