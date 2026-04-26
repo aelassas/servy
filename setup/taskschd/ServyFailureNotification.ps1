@@ -45,7 +45,8 @@ function Show-Notification {
     [string]$scriptDir
   )
 
-  $LogText = $LogText -replace '(?i)(password|secret|key|token)\s*[:=]\s*\S+', '$1=***'
+  # Mask sensitive data in the notification before sending
+  $LogText = Protect-SensitiveString -Text $LogText
 
   if ($PSVersionTable.PSVersion.Major -lt 5) {
     Write-FallbackError -Message "ServyToast: Toasts require PowerShell 5.0+." -scriptDir $scriptDir
@@ -96,7 +97,7 @@ function Show-Notification {
     # Event Handlers (Async Error Capture)
     $null = $toast.add_Failed({
         param($evtSender, $evtArgs)
-        Write-FallbackError -Message "ServyToast: Delivery failed (0x$($evtArgs.ErrorCode.ToString('X')))." -scriptDir $scriptDir
+        Write-FallbackError -Message "ServyToast: Delivery failed (0x$($evtArgs.ErrorCode.ToString('X')))." -scriptDir $PSScriptRoot
       })
 
     $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("PowerShell")
@@ -140,26 +141,33 @@ $timestampFile = Join-Path $scriptDir "last-processed-toast.dat"
 # -------------------------------
 # 2. Imports
 # -------------------------------
-$helperScript = Join-Path $scriptDir "Get-ServyLastErrors.ps1"
+$requiredScripts = @(
+    "Get-ServyLastErrors.ps1",
+    "ServySecurity.ps1"
+)
 
-if (-not (Test-Path $helperScript)) {
-  $errorMsg = "Servy Notification Error: Required dependency not found at '$helperScript'. Please ensure the file exists in the script directory."
-    
-  # 1. Attempt to log to Event Log for administrator visibility
-  try {
-    Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_ERROR_DEP `
-      -EntryType Error -Message $errorMsg -ErrorAction Stop
-  } catch {
-    # 2. Fallback to stderr if Event Log fails (or source isn't registered)
-    Write-Error $errorMsg
-  }
+foreach ($scriptName in $requiredScripts) {
+    $scriptPath = Join-Path $scriptDir $scriptName
 
-  # 3. Exit with error code
-  exit 1
+    if (-not (Test-Path $scriptPath)) {
+        $errorMsg = "Servy Notification Error: Required dependency not found at '$scriptPath'. Please ensure the file exists in the script directory."
+        
+        # 1. Attempt to log to Event Log for administrator visibility
+        try {
+            Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_ERROR_DEP `
+                -EntryType Error -Message $errorMsg -ErrorAction Stop
+        } catch {
+            # 2. Fallback to stderr if Event Log fails (or source isn't registered)
+            Write-Error $errorMsg
+        }
+
+        # 3. Exit with error code
+        exit 1
+    }
+
+    # File exists, proceed with dot-sourcing
+    . $scriptPath
 }
-
-# File exists, proceed with dot-sourcing
-. $helperScript
 
 # -------------------------------
 # 3. Read Last Processed Timestamp

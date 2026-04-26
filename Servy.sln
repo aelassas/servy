@@ -111,6 +111,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "taskschd", "taskschd", "{92
 		setup\taskschd\ServyFailureNotification.ps1 = setup\taskschd\ServyFailureNotification.ps1
 		setup\taskschd\ServyFailureNotification.vbs = setup\taskschd\ServyFailureNotification.vbs
 		setup\taskschd\ServyFailureNotification.xml = setup\taskschd\ServyFailureNotification.xml
+		setup\taskschd\ServySecurity.ps1 = setup\taskschd\ServySecurity.ps1
 		setup\taskschd\smtp-config.xml = setup\taskschd\smtp-config.xml
 	EndProjectSection
 EndProject

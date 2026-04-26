@@ -40,6 +40,7 @@
 # Event ID Taxonomy (Refer to src/Servy.Core/Logging/EventIds.cs for updates)
 # 3000-3099: Core Errors | 3100-3199: Script Errors
 $EVENT_ID_ERROR = 3103
+$EVENT_ID_ERROR_DEP = 3104
 
 # -------------------------------
 # 1. Determine Script Root (PS 2.0+ Compatible)
@@ -101,7 +102,7 @@ function Send-NotificationEmail {
   )
 
   # Mask sensitive data in the body before sending
-  $Body = $Body -replace '(?i)(password|secret|key|token)\s*[:=]\s*\S+', '$1=***'
+  $Body = Protect-SensitiveString -Text $Body
 
   # --- HARDENED CONFIGURATION ACCESS ---
   
@@ -190,16 +191,33 @@ function Send-NotificationEmail {
 # 5. Imports and Timestamp Init
 # -------------------------------
 $timestampFile = Join-Path $scriptDir "last-processed-email.dat"
-$helperScript = Join-Path $scriptDir "Get-ServyLastErrors.ps1"
+$requiredScripts = @(
+    "Get-ServyLastErrors.ps1",
+    "ServySecurity.ps1"
+)
 
-if (-not (Test-Path $helperScript)) {
-  $errorMsg = "Servy Notification Error: Required dependency not found at '$helperScript'."
-  Write-FallbackError -Message $errorMsg -scriptDir $scriptDir
-  exit 1
+foreach ($scriptName in $requiredScripts) {
+    $scriptPath = Join-Path $scriptDir $scriptName
+
+    if (-not (Test-Path $scriptPath)) {
+        $errorMsg = "Servy Notification Error: Required dependency not found at '$scriptPath'. Please ensure the file exists in the script directory."
+        
+        # 1. Attempt to log to Event Log for administrator visibility
+        try {
+            Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_ERROR_DEP `
+                -EntryType Error -Message $errorMsg -ErrorAction Stop
+        } catch {
+            # 2. Fallback to stderr if Event Log fails (or source isn't registered)
+            Write-Error $errorMsg
+        }
+
+        # 3. Exit with error code
+        exit 1
+    }
+
+    # File exists, proceed with dot-sourcing
+    . $scriptPath
 }
-
-# Dot-source the helper script
-. $helperScript
 
 $lastProcessed = $null
 if (Test-Path $timestampFile) {
