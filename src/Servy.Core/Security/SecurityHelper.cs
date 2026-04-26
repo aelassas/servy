@@ -49,7 +49,11 @@ namespace Servy.Core.Security
                 // Default behavior fetches Owner and Group. A non-admin account cannot 
                 // persist Owner/Group back to the filesystem, causing an UnauthorizedAccessException.
                 var security = dirInfo.GetAccessControl(AccessControlSections.Access);
-                var currentUserSid = WindowsIdentity.GetCurrent().User;
+                SecurityIdentifier currentUserSid;
+                using (var identity = WindowsIdentity.GetCurrent())
+                {
+                    currentUserSid = identity.User;
+                }
 
                 ApplySecurityRules(security, currentUserSid, breakInheritance);
 
