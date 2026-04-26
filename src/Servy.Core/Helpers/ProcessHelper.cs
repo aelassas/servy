@@ -398,12 +398,5 @@ namespace Servy.Core.Helpers
             return sb.ToString();
         }
 
-        /// <inheritdoc />
-        public string EscapeArgument(string arg)
-        {
-            // Redirect to the robust implementation to ensure Win32 CommandLineToArgvW compatibility.
-            // This resolves #827 where internal backslashes preceding quotes were not handled correctly.
-            return EscapeProcessArgument(arg);
-        }
     }
 }

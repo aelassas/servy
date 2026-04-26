@@ -125,9 +125,5 @@
         /// <returns>A shell-safe, quoted string ready for use in a process start command.</returns>
         string EscapeProcessArgument(string arg);
 
-        /// <summary>
-        /// Escapes an argument for the Windows command line to prevent breakout.
-        /// </summary>
-        string EscapeArgument(string arg);
     }
 }
