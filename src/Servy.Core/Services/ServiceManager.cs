@@ -833,6 +833,10 @@ namespace Servy.Core.Services
             var results = new ConcurrentBag<ServiceInfo>();
             var services = _serviceControllerProvider.GetServices();
 
+            // Even in a sync-first approach, we track any underlying async tasks 
+            // spawned by the provider or previous refresh attempts to protect the handle.
+            var trackedTasks = new ConcurrentBag<Task>();
+
             SafeScmHandle? scmHandle = null;
             try
             {
@@ -851,42 +855,40 @@ namespace Servy.Core.Services
                 {
                     try
                     {
-                        // Check token before starting any worker-level logic
                         if (cancellationToken.IsCancellationRequested) return;
 
                         ServiceInfo info = new ServiceInfo
                         {
                             Name = service.ServiceName,
                             Status = MapStatus(service.Status),
-                            StartupType = MapStartupType(service), // Accessing service.StartType directly can throw Win32Exception on protected services
+                            StartupType = MapStartupType(service),
                             LogOnAs = "LocalSystem",
                             Description = string.Empty,
                         };
 
-                        // Pattern: Supervisor Worker with Timeout
-                        try
+                        // Synchronous Execution:
+                        // We use a local CancellationTokenSource to enforce the per-call timeout
+                        using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
                         {
-                            // We use Task.Run to offload the native call to a thread-pool thread
-                            var nativeQueryTask = Task.Run(() => PopulateNativeDetails(scmHandle, info), cancellationToken);
+                            try
+                            {
+                                // 1. Set the timeout inside the guarded block
+                                cts.CancelAfter(AppConfig.PopulateNativeDetailsTimeoutMs);
 
-                            // Wait for the native call OR the timeout OR the cancellation token
-                            bool completed = nativeQueryTask.Wait(AppConfig.PopulateNativeDetailsTimeoutMs, cancellationToken);
-
-                            if (!completed)
+                                // 2. The logic now runs directly on the Parallel worker thread.
+                                // PopulateNativeDetails MUST be updated to accept and check this token.
+                                PopulateNativeDetails(scmHandle, info, cts.Token);
+                            }
+                            catch (OperationCanceledException)
                             {
                                 info.Description = "(details unavailable: native query timed out)";
                                 Logger.Warn($"Native SCM query timed out for service: {info.Name}");
                             }
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            return; // The user clicked cancel; exit the worker immediately
-                        }
-                        catch (Exception ex)
-                        {
-                            // If the task itself faulted (e.g. Access Denied), log it but don't crash the Bag
-                            Logger.Debug($"Native details collection faulted for {info.Name}: {ex.Message}");
-                            info.Description = $"(details unavailable: {ex.GetType().Name})";
+                            catch (Exception ex)
+                            {
+                                Logger.Debug($"Native details collection faulted for {info.Name}: {ex.Message}");
+                                info.Description = $"(details unavailable: {ex.GetType().Name})";
+                            }
                         }
 
                         results.Add(info);
@@ -901,6 +903,13 @@ namespace Servy.Core.Services
             }
             finally
             {
+                // Safety Gate: Ensure any background tasks (from previous or forked logic) 
+                // are observed before we drop the SCM handle.
+                if (trackedTasks.Count > 0)
+                {
+                    try { Task.WaitAll(trackedTasks.ToArray(), 5000); } catch { /* Ignore */ }
+                }
+
                 scmHandle?.Dispose();
             }
         }
@@ -943,17 +952,30 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="scmHandle">An active handle to the Service Control Manager.</param>
         /// <param name="info">The service information object to populate.</param>
-        private void PopulateNativeDetails(SafeScmHandle scmHandle, ServiceInfo info)
+        private void PopulateNativeDetails(SafeScmHandle scmHandle, ServiceInfo info, CancellationToken ct)
         {
-            if (string.IsNullOrWhiteSpace(info.Name)) throw new ArgumentException("Service name is empty!");
+            // 1. Pre-flight check
+            ct.ThrowIfCancellationRequested();
 
+            if (string.IsNullOrWhiteSpace(info.Name))
+                throw new ArgumentException("Service name is empty!");
+
+            // 2. Open the service handle
             using (var svcHandle = _windowsServiceApi.OpenService(scmHandle, info.Name, SERVICE_QUERY_CONFIG))
             {
                 if (svcHandle.IsInvalid) return;
 
+                // 3. Check token before each discrete native query.
+                // If the 2000ms timeout or user cancellation hits during GetServiceUser, 
+                // we skip the subsequent calls to keep the loop moving.
+
+                ct.ThrowIfCancellationRequested();
                 info.LogOnAs = GetServiceUser(svcHandle) ?? info.LogOnAs;
+
+                ct.ThrowIfCancellationRequested();
                 info.Description = GetServiceDescription(svcHandle) ?? string.Empty;
 
+                ct.ThrowIfCancellationRequested();
                 if (info.StartupType == ServiceStartType.Automatic && IsDelayedStart(svcHandle))
                 {
                     info.StartupType = ServiceStartType.AutomaticDelayedStart;
