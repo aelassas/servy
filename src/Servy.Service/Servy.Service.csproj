@@ -73,6 +73,7 @@
     <Compile Include="CommandLine\CommandLineProvider.cs" />
     <Compile Include="CommandLine\StartOptions.cs" />
     <Compile Include="CommandLine\ICommandLineProvider.cs" />
+    <Compile Include="Helpers\ConsoleAppDetector.cs" />
     <Compile Include="Helpers\EnvironmentVariableHelper.cs" />
     <Compile Include="Helpers\ProcessHelper.cs" />
     <Compile Include="ProcessManagement\Hook.cs" />
