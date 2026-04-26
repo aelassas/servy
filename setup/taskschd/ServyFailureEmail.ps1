@@ -182,9 +182,7 @@ function Send-NotificationEmail {
     return $false 
   } finally {
     if ($null -ne $mailMessage) { $mailMessage.Dispose() }
-    # .NET 3.5 SmtpClient doesn't implement IDisposable (PS 2.0 limitation)
-    # but we null it for GC safety.
-    $smtp = $null
+    if ($null -ne $smtp) { $smtp.Dispose() }
   }
 }
 
