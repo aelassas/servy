@@ -261,7 +261,7 @@ namespace Servy.Core.UnitTests.Security
 
             Assert.NotEqual(original, result);
             // It returns the payload: "v2:TamperedBase64"
-            Assert.Equal("v2:" + Convert.ToBase64String(data), result);
+            Assert.Equal("SERVY_ENC:v2:" + Convert.ToBase64String(data), result);
         }
 
         [Fact]
@@ -274,7 +274,7 @@ namespace Servy.Core.UnitTests.Security
             var result = sp.Decrypt(tampered);
 
             // The catch block intercepts the FormatException and returns the payload
-            Assert.Equal("v2:!!!NotBase64!!!", result);
+            Assert.Equal("SERVY_ENC:v2:!!!NotBase64!!!", result);
         }
 
         [Fact]
