@@ -80,23 +80,24 @@ function Update-FileContent {
     param([string]$Path, [string]$Pattern, [string]$Replacement)
     
     if (Test-Path $Path) {
-        # 1. Detect existing encoding before we touch the file
         $encoding = Get-FileEncoding $Path
-        
-        # 2. Read content using the detected encoding
         $content = [System.IO.File]::ReadAllText($Path, $encoding)
         
-        # 3. Perform the regex replacement
+        # Count matches before attempting replacement
+        $matches = [regex]::Matches($content, $Pattern)
+        if ($matches.Count -eq 0) {
+            Write-Error "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern"
+            return
+        }
+        
+        # Perform replacement
         $newContent = [regex]::Replace($content, $Pattern, { 
             param($m) "$($m.Groups[1].Value)$Replacement$($m.Groups[2].Value)" 
         })
         
-        # 4. Write back using the EXACT same encoding/BOM status
         [System.IO.File]::WriteAllText($Path, $newContent, $encoding)
-        
-        Write-Host "Successfully updated ($($encoding.BodyName)): $Path" -ForegroundColor Green
+        Write-Host "Successfully updated ($($encoding.BodyName)): $Path ($($matches.Count) replacements)" -ForegroundColor Green
     } else {
-        # Prevents build pipeline crashes if files are moved/renamed
         Write-Warning "Skipping missing file: $Path"
     }
 }
