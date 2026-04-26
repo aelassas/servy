@@ -134,7 +134,8 @@ namespace Servy.CLI.Commands
 
             // 3. UNC Path Block (Exfiltration Guard)
             // Prevents writing sensitive config data (including encrypted passwords) to remote shares.
-            if (fullPath.StartsWith(@"\\", StringComparison.Ordinal) || new Uri(fullPath).IsUnc)
+            bool isUncUri = Uri.TryCreate(fullPath, UriKind.Absolute, out var uri) && uri.IsUnc;
+            if (fullPath.StartsWith(@"\\", StringComparison.Ordinal) || isUncUri)
             {
                 throw new SecurityException("Security Alert: Exporting to UNC paths is prohibited to prevent data exfiltration.");
             }
