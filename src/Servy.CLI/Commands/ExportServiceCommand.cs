@@ -25,21 +25,17 @@ namespace Servy.CLI.Commands
         #region Export Security Constants
 
         /// <summary>
-        /// A collection of legacy Windows reserved device names that cannot be used as filenames.
+        /// A complete collection of legacy Windows reserved device names that cannot be used as filenames,
+        /// including COM/LPT ports (0-9) and their Unicode superscript variants (¹, ², ³).
         /// </summary>
         private static readonly HashSet<string> ReservedDeviceNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "CON", "PRN", "AUX", "NUL"
+            "CON", "PRN", "AUX", "NUL",
+            "COM0", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+            "COM¹", "COM²", "COM³",
+            "LPT0", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+            "LPT¹", "LPT²", "LPT³"
         };
-
-        /// <summary>
-        /// Matches legacy Windows serial (COM) and parallel (LPT) port names (1-9).
-        /// Includes a 200ms timeout to mitigate ReDoS.
-        /// </summary>
-        private static readonly Regex ReservedPortRegex = new Regex(
-            @"^(COM|LPT)[1-9]$",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase,
-            AppConfig.InputRegexTimeout);
 
         #endregion
 
@@ -145,11 +141,13 @@ namespace Servy.CLI.Commands
             // 2. Resolve Final Path (Junction/Symlink Protection)
             string finalResolvedPath = GetFinalPathName(fullPath);
 
-            // 3. Reserved Device Name Block
+            // 3. Reserved Device Name Block (DOS/Data Loss Guard)
+            // Prevents writing to CON, NUL, COM0, COM1, etc., which can hang the process or discard data.
             string fileName = Path.GetFileNameWithoutExtension(finalResolvedPath);
-            if (ReservedDeviceNames.Contains(fileName) || ReservedPortRegex.IsMatch(fileName))
+
+            if (ReservedDeviceNames.Contains(fileName))
             {
-                throw new ArgumentException($"Security Alert: '{fileName}' is a reserved Windows device name.");
+                throw new ArgumentException($"Security Alert: '{fileName}' is a reserved Windows device name and cannot be used.");
             }
 
             // 4. System Protection Check
