@@ -2,12 +2,10 @@
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
-using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using System.Security;
-using System.Text.RegularExpressions;
 
 namespace Servy.CLI.Commands
 {
@@ -19,21 +17,17 @@ namespace Servy.CLI.Commands
         #region Export Security Constants
 
         /// <summary>
-        /// A collection of legacy Windows reserved device names that cannot be used as filenames.
+        /// A complete collection of legacy Windows reserved device names that cannot be used as filenames,
+        /// including COM/LPT ports (0-9) and their Unicode superscript variants (¹, ², ³).
         /// </summary>
         private static readonly HashSet<string> ReservedDeviceNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "CON", "PRN", "AUX", "NUL"
+            "CON", "PRN", "AUX", "NUL",
+            "COM0", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+            "COM¹", "COM²", "COM³",
+            "LPT0", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+            "LPT¹", "LPT²", "LPT³"
         };
-
-        /// <summary>
-        /// Matches legacy Windows serial (COM) and parallel (LPT) port names (1-9).
-        /// Includes a 200ms timeout to mitigate ReDoS.
-        /// </summary>
-        private static readonly Regex ReservedPortRegex = new Regex(
-            @"^(COM|LPT)[1-9]$",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase,
-            AppConfig.InputRegexTimeout);
 
         #endregion
 
@@ -168,19 +162,12 @@ namespace Servy.CLI.Commands
             }
 
             // 5. Reserved Device Name Block (DOS/Data Loss Guard)
-            // Prevents writing to CON, NUL, COM1, etc., which can hang the process or discard data.
+            // Prevents writing to CON, NUL, COM0, COM1, etc., which can hang the process or discard data.
             string fileName = Path.GetFileNameWithoutExtension(finalResolvedPath);
-            try
+
+            if (ReservedDeviceNames.Contains(fileName))
             {
-                if (ReservedDeviceNames.Contains(fileName) || ReservedPortRegex.IsMatch(fileName))
-                {
-                    throw new ArgumentException($"Security Alert: '{fileName}' is a reserved Windows device name and cannot be used.");
-                }
-            }
-            catch (RegexMatchTimeoutException)
-            {
-                // Fallback: If regex fails to validate the filename in time, block the write.
-                throw new SecurityException("Security Alert: Filename validation timed out. Export aborted for safety.");
+                throw new ArgumentException($"Security Alert: '{fileName}' is a reserved Windows device name and cannot be used.");
             }
 
             // 6. System Protection: Block writing to critical Windows directories
