@@ -3,7 +3,6 @@ name: changelog
 on:
   # release:
   #   types: [published]
-
   workflow_run:             # auto-trigger after bump-version.yml
     workflows: ["bump-version"]    # must match the `name:` in bump-version.yml
     types:
@@ -51,7 +50,9 @@ jobs:
           $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 
           Write-Host "Fetching releases for $repo..."
-          $releases = gh api repos/$repo/releases --paginate | ConvertFrom-Json
+          # Filter out drafts ($_.draft -eq $false) to avoid empty 'published_at' strings
+          # Wrap in @() to guarantee an array even if only 1 release exists
+          $releases = @(gh api repos/$repo/releases --paginate | ConvertFrom-Json | Where-Object { $_.draft -eq $false })
 
           if ($null -eq $releases -or $releases.Count -eq 0) {
               Write-Host "No releases found. Exiting."
@@ -63,7 +64,14 @@ jobs:
 
               $title = if ([string]::IsNullOrWhiteSpace($Release.name)) { $Release.tag_name } else { $Release.name }
               $url = $Release.html_url
-              $date = [datetime]::Parse($Release.published_at).ToString("yyyy-MM-dd")
+              
+              # Safely parse the date, falling back to "Pending" if missing (e.g., edge cases)
+              $date = if (![string]::IsNullOrWhiteSpace($Release.published_at)) { 
+                  [datetime]::Parse($Release.published_at).ToString("yyyy-MM-dd") 
+              } else { 
+                  "Pending" 
+              }
+              
               $tag = $Release.tag_name
               $body = if ([string]::IsNullOrWhiteSpace($Release.body)) { "*No release notes provided.*" } else { $Release.body.Trim() }
 
