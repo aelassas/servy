@@ -14,23 +14,26 @@ namespace Servy.Core.Logging
     public class EventLogReader : IEventLogReader
     {
         ///<inheritdoc/>
-        public IEnumerable<ServyEventLogEntry> ReadEvents(EventLogQuery query)
+        public IEnumerable<ServyEventLogEntry> ReadEvents(EventLogQuery query, int maxReadCount)
         {
             using (var reader = new System.Diagnostics.Eventing.Reader.EventLogReader(query))
             {
-                var results = new List<ServyEventLogEntry>();
+                int processedCount = 0;
 
                 for (EventRecord evt = reader.ReadEvent(); evt != null; evt = reader.ReadEvent())
                 {
-                    // EventRecord implements IDisposable and must be disposed 
-                    // after its properties (like FormatDescription) are accessed.
+                    // Hard stop: Stop reading from the Windows SCM cursor immediately
+                    if (processedCount >= maxReadCount) yield break;
+
+                    ServyEventLogEntry dto;
                     using (evt)
                     {
-                        results.Add(MapToDto(evt));
+                        dto = MapToDto(evt);
                     }
-                }
 
-                return results;
+                    processedCount++;
+                    yield return dto;
+                }
             }
         }
 

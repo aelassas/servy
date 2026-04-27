@@ -266,7 +266,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         {
             // Scenario: Base64 padding uses '=' which shouldn't require escaping in the value field.
             string error;
-            var input = "AUTH_TOKEN=SGVsbG8gd29ybGQ=";
+            var input = "VAR=SGVsbG8gd29ybGQ=";
             var result = EnvironmentVariablesValidator.Validate(input, out error);
 
             Assert.True(result);

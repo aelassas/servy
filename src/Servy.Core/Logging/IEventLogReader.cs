@@ -17,9 +17,10 @@ namespace Servy.Core.Logging
         /// <param name="query">
         /// The query that defines which log to read and the conditions to filter events.
         /// </param>
+        /// <param name="maxReadCount">Maximum number of events to read.</param>
         /// <returns>
         /// A collection of <see cref="ServyEventLogEntry"/> objects that match the query.
         /// </returns>
-        IEnumerable<ServyEventLogEntry> ReadEvents(EventLogQuery query);
+        IEnumerable<ServyEventLogEntry> ReadEvents(EventLogQuery query, int maxReadCount);
     }
 }
