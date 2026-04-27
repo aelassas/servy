@@ -351,6 +351,9 @@ namespace Servy.Service
                     Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
                 }
 
+                if (int.TryParse(config["MaxBackupLogFiles"], out var maxBackupFiles) && maxBackupFiles >= 0) Logger.SetMaxBackupLogFiles(maxBackupFiles);
+                else Logger.SetMaxBackupLogFiles(Logger.DefaultMaxBackupLogFiles);
+
                 string rawUseLocalTimeForRotationConfig = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
 
                 if (!bool.TryParse(rawUseLocalTimeForRotationConfig, out bool useLocalTimeForRotation))

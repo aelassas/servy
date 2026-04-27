@@ -101,6 +101,9 @@ namespace Servy.Restarter
                     Logger.SetLogRotationSize(size);
                 }
 
+                if (int.TryParse(config["MaxBackupLogFiles"], out var maxBackupFiles) && maxBackupFiles >= 0) Logger.SetMaxBackupLogFiles(maxBackupFiles);
+                else Logger.SetMaxBackupLogFiles(Logger.DefaultMaxBackupLogFiles);
+
                 // Set Local Time preference
                 if (!bool.TryParse(config["UseLocalTimeForRotation"], out bool useLocalTimeForRotation))
                 {
