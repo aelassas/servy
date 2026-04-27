@@ -38,7 +38,7 @@ namespace Servy.Core.Logging
         /// The maximum number of backup log files to keep. 
         /// Set to 0 to allow an unlimited number of backup files.
         /// </summary>
-        private static int _maxBackupFiles = DefaultMaxBackupLogFiles;
+        private static int _maxBackupLogFiles = DefaultMaxBackupLogFiles;
 
         /// <summary>
         /// Pre-computed, uppercase string representations of LogLevels.
@@ -63,14 +63,14 @@ namespace Servy.Core.Logging
         /// Defaults to <see cref="DateRotationType.None"/>.
         /// </param>
         /// <param name="useLocalTimeForRotation">Indicates whether to use local system time for log rotation (Default: false (UTC)).</param>
-        /// <param name="maxBackupFiles">The maximum number of backup files to retain. Defaults to 10. Set to 0 for unlimited backups.</param>
+        /// <param name="maxBackupLogFiles">The maximum number of backup files to retain. Defaults to 10. Set to 0 for unlimited backups.</param>
         public static void Initialize(
             string fileName,
             LogLevel initialLevel = LogLevel.Info,
             int logRotationSizeMB = 10,
             DateRotationType dateRotationType = DateRotationType.None,
             bool useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation,
-            int maxBackupFiles = DefaultMaxBackupLogFiles
+            int maxBackupLogFiles = DefaultMaxBackupLogFiles
             )
         {
             lock (_lock)
@@ -80,7 +80,7 @@ namespace Servy.Core.Logging
                 _logRotationSizeMB = logRotationSizeMB;
                 _dateRotationType = dateRotationType;
                 _useLocalTimeForRotation = useLocalTimeForRotation;
-                _maxBackupFiles = maxBackupFiles;
+                _maxBackupLogFiles = maxBackupLogFiles;
 
                 InternalInitialize();
             }
@@ -116,7 +116,7 @@ namespace Servy.Core.Logging
                     rotationSizeInBytes: rotationSizeInBytes,
                     enableDateRotation: _dateRotationType != DateRotationType.None,
                     dateRotationType: _dateRotationType,
-                    maxRotations: _maxBackupFiles,
+                    maxRotations: _maxBackupLogFiles,
                     useLocalTimeForRotation: _useLocalTimeForRotation
                 );
             }
@@ -164,14 +164,14 @@ namespace Servy.Core.Logging
         /// <summary>
         /// Sets the maximum number of backup log files to retain.
         /// </summary>
-        /// <param name="maxBackupFiles">Maximum number of backup files. Set to 0 for unlimited backups.</param>
-        public static void SetMaxBackupLogFiles(int maxBackupFiles)
+        /// <param name="maxBackupLogFiles">Maximum number of backup files. Set to 0 for unlimited backups.</param>
+        public static void SetMaxBackupLogFiles(int maxBackupLogFiles)
         {
             lock (_lock)
             {
-                if (maxBackupFiles >= 0 && _maxBackupFiles != maxBackupFiles)
+                if (maxBackupLogFiles >= 0 && _maxBackupLogFiles != maxBackupLogFiles)
                 {
-                    _maxBackupFiles = maxBackupFiles;
+                    _maxBackupLogFiles = maxBackupLogFiles;
 
                     // If we have an active writer, recreate it to apply the new max backup files constraint
                     if (_writer != null)
