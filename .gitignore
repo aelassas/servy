@@ -439,3 +439,4 @@ repomix-output.xml
 *.dat
 
 smtp-cred.xml
+tmp.ps1

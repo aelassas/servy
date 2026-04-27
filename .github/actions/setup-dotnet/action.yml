@@ -1,5 +1,5 @@
 # ==============================================================================
-# GitHub Composite Action — Setup Custom .NET
+# GitHub Composite Action - Setup Custom .NET
 # ------------------------------------------------------------------------------
 # Security: Prevents script injection by mapping user-controlled inputs 
 # to environment variables instead of using inline expressions in 'run' blocks.

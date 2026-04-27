@@ -1,5 +1,5 @@
 # ===========================================
-# GitHub Actions Workflow — Security Audit
+# GitHub Actions Workflow â€” Security Audit
 # -------------------------------------------
 # Performs security checks for the Servy project:
 # 1. Dependency Scanning (NuGet Audit)

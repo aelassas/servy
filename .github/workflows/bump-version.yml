@@ -1,5 +1,5 @@
 # ===========================================
-# GitHub Actions Workflow — Bump Version
+# GitHub Actions Workflow â€” Bump Version
 # -------------------------------------------
 # Automatically bumps the Servy version number
 # after a completed "choco" workflow.

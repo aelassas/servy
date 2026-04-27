@@ -1,13 +1,13 @@
 # ===========================================
-# GitHub Actions Workflow — Scoop
+# GitHub Actions Workflow â€” Scoop
 # -------------------------------------------
-# Automates the update of Servy’s Scoop manifest.
+# Automates the update of Servyâ€™s Scoop manifest.
 # When a new release is published (or triggered
 # manually), this workflow:
-#   • Downloads the latest installer
-#   • Computes its SHA256 hash
-#   • Updates the manifest in `aelassas/scoop-bucket`
-#   • Optionally creates a PR to update the manifest
+#   â€¢ Downloads the latest installer
+#   â€¢ Computes its SHA256 hash
+#   â€¢ Updates the manifest in `aelassas/scoop-bucket`
+#   â€¢ Optionally creates a PR to update the manifest
 #     in `ScoopInstaller/Extras`
 # ===========================================
 
