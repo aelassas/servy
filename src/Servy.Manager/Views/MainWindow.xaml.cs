@@ -495,7 +495,7 @@ namespace Servy.Manager.Views
             dependenciesVM?.StopMonitoring();
 
             // Run search for logs tab if applicable
-            if (logsVm != null && logsVm.LogsView.IsEmpty)
+            if (logsVm?.LogsView?.IsEmpty ?? false)
                 await logsVm.SearchCommand.ExecuteAsync(null);
         }
 
