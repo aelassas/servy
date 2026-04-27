@@ -189,6 +189,7 @@ namespace Servy.Services
 
             try
             {
+                _cursorService.SetWaitCursor();
                 var rotationSizeValue = dto.RotationSize > 0
                     ? (ulong)dto.RotationSize * 1024 * 1024
                     : 0;
@@ -289,6 +290,10 @@ namespace Servy.Services
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
+            finally
+            {
+                _cursorService.ResetCursor();
+            }
         }
 
         /// <inheritdoc />
@@ -308,6 +313,7 @@ namespace Servy.Services
 
             try
             {
+                _cursorService.SetWaitCursor();
                 var res = await _serviceManager.UninstallServiceAsync(serviceName, cancellationToken);
                 if (res.IsSuccess)
                 {
@@ -330,6 +336,10 @@ namespace Servy.Services
                 Logger.Error(UnexpectedError, ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
+            }
+            finally
+            {
+                _cursorService.ResetCursor();
             }
         }
 
