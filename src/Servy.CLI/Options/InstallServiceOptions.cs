@@ -48,7 +48,7 @@ namespace Servy.CLI.Options
         /// Gets or sets additional command-line parameters for the process.
         /// Optional.
         /// </summary>
-        [Option("params", HelpText = "Additional parameters for the process. Supports environment variable expansion, example: --param=\"%ProgramData%\\MyApp\" --param=\"%MY_VAR%\\bin\"")]
+        [Option("params", HelpText = "Additional parameters for the process. Supports environment variable expansion, example: --params=\"%ProgramData%\\MyApp\" --params=\"%MY_VAR%\\bin\"")]
         public string? ProcessParameters { get; set; }
 
         /// <summary>
