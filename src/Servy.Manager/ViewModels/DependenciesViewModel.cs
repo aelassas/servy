@@ -59,7 +59,7 @@ namespace Servy.Manager.ViewModels
 
                 CopyPidCommand?.RaiseCanExecuteChanged();
 
-                StopMonitoring(); // Pass false so we don't clear the zeros we just added
+                StopMonitoring(false); // Pass false so we don't clear the zeros we just added
                 StartMonitoring();
             }
         }

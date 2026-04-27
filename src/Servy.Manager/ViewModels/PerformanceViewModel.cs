@@ -406,14 +406,14 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Stops the performance monitoring timer and optionally clears existing graph data.
         /// </summary>
-        /// <param name="clearPoints">True to reset the graph visualizations.</param>
-        public override void StopMonitoring(bool clearPoints)
+        /// <param name="clearView">True to reset the graph visualizations.</param>
+        public override void StopMonitoring(bool clearView = false)
         {
-            base.StopMonitoring(clearPoints);
+            base.StopMonitoring(clearView);
 
 
             // Clear points
-            if (clearPoints)
+            if (clearView)
             {
                 CpuPointCollection = new PointCollection();
                 CpuFillPoints = new PointCollection();
