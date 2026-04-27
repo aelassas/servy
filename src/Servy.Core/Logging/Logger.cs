@@ -348,9 +348,16 @@ namespace Servy.Core.Logging
                     _writer.WriteLine(logEntry);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Fail-silent
+                try
+                {
+                    var logDir = Path.Combine(AppConfig.ProgramDataPath, "logs");
+                    var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+                    File.AppendAllText(Path.Combine(logDir, "LoggerWriteErrors.log"),
+                        $"[{now:yyyy-MM-dd HH:mm:ss}] Failed to write log entry: {ex.Message}{Environment.NewLine}");
+                }
+                catch { /* truly fail-silent only as last resort */ }
             }
         }
 
