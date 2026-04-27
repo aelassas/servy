@@ -33,32 +33,32 @@ namespace Servy.UI.Bootstrapping
         /// <summary>
         /// Gets the initialized database context.
         /// </summary>
-        public AppDbContext DbContext { get; private set; }
+        public AppDbContext? DbContext { get; private set; }
 
         /// <summary>
         /// Gets the repository for service data access.
         /// </summary>
-        public IServiceRepository ServiceRepository { get; private set; }
+        public IServiceRepository? ServiceRepository { get; private set; }
 
         /// <summary>
         /// Gets the secure data provider for encryption operations.
         /// </summary>
-        public ISecureData SecureData { get; private set; }
+        public ISecureData? SecureData { get; private set; }
 
         /// <summary>
         /// Gets the active database connection string.
         /// </summary>
-        public string ConnectionString { get; private set; }
+        public string? ConnectionString { get; private set; }
 
         /// <summary>
         /// Gets the file path for the AES encryption key.
         /// </summary>
-        public string AESKeyFilePath { get; private set; }
+        public string? AESKeyFilePath { get; private set; }
 
         /// <summary>
         /// Gets the file path for the AES initialization vector.
         /// </summary>
-        public string AESIVFilePath { get; private set; }
+        public string? AESIVFilePath { get; private set; }
 
         /// <summary>
         /// Gets a value indicating whether software rendering has been forced.
@@ -96,13 +96,18 @@ namespace Servy.UI.Bootstrapping
         /// <param name="e">Startup arguments.</param>
         public void OnStartup(Application app, StartupEventArgs e)
         {
+            if (_options == null)
+            {
+                throw new InvalidOperationException("Bootstrapper options must be provided.");
+            }
+
             // 1. Initialize Logger
             Logger.Initialize(_options.LogFileName);
 
             // 2. Global AppDomain exceptions (Fatal)
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {
-                Exception ex = args.ExceptionObject as Exception;
+                Exception? ex = args.ExceptionObject as Exception;
                 Logger.Error("FATAL: AppDomain Unhandled Exception. Process is terminating.", ex);
                 MessageBox.Show(
                     "A fatal error occurred and the application must close. Detailed diagnostics have been saved to the log file.",
@@ -145,7 +150,7 @@ namespace Servy.UI.Bootstrapping
             // 5. Security Check: SQLite Environment
             if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
             {
-                string message = string.Format(_options.SqliteVersionWarningMessageFormat, detectedVersion, AppConfig.MinRequiredSqliteVersion);
+                string message = string.Format(_options.SqliteVersionWarningMessageFormat!, detectedVersion, AppConfig.MinRequiredSqliteVersion);
                 MessageBox.Show(message, _options.SqliteVersionWarningTitle, MessageBoxButton.OK, MessageBoxImage.Error);
                 app.Shutdown();
                 return;
@@ -175,7 +180,7 @@ namespace Servy.UI.Bootstrapping
         /// <returns>A <see cref="Task"/> representing the asynchronous initialization process.</returns>
         public async Task InitializeAppAsync(Application app, StartupEventArgs e, IProcessHelper processHelper)
         {
-            string serviceName = null;
+            string? serviceName = null;
             var showSplash = true;
 
             if (e.Args != null)
@@ -185,7 +190,7 @@ namespace Servy.UI.Bootstrapping
                 if (positionalArgs.Count > 1) serviceName = positionalArgs[1];
             }
 
-            Window splash = null;
+            Window? splash = null;
             try
             {
                 // 1. Splash Screen
@@ -204,10 +209,10 @@ namespace Servy.UI.Bootstrapping
                 // 2. Configuration Loading
                 var builder = new ConfigurationBuilder();
 #if DEBUG
-                builder.AddJsonFile(_options.AppSettingsFileName, optional: true, reloadOnChange: true);
+                builder.AddJsonFile(_options.AppSettingsFileName!, optional: true, reloadOnChange: true);
 #else
                 builder.SetBasePath(AppFoldersHelper.GetAppDirectory())
-                       .AddJsonFile(_options.AppSettingsFileName, optional: true, reloadOnChange: true);
+                       .AddJsonFile(_options.AppSettingsFileName!, optional: true, reloadOnChange: true);
 #endif
                 var config = builder.Build();
 
@@ -256,11 +261,11 @@ namespace Servy.UI.Bootstrapping
                     var resourceHelper = new ResourceHelper(ServiceRepository, _processHelper, _processKiller);
 
                     // Copy embedded files
-                    await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "exe");
-                    await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false);
+                    await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "exe");
+                    await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.HandleExeFileName, "exe", false);
 
 #if DEBUG
-                    await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false);
+                    await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "pdb", false);
 #endif
                     stopwatch.Stop();
 

@@ -29,7 +29,7 @@ namespace Servy.Manager
         /// <param name="calculatePerf">Whether to calculate CPU and RAM usage.</param>
         /// <param name="processHelper">Injected process helper used to gather usage metrics.</param>
         /// <returns>A UI-friendly <see cref="Service"/> model.</returns>
-        public static async Task<Service> ToModelAsync(Core.Domain.Service service, bool isDesktopAppAvailable, bool calculatePerf, IProcessHelper processHelper)
+        public static async Task<Service?> ToModelAsync(Core.Domain.Service? service, bool isDesktopAppAvailable, bool calculatePerf, IProcessHelper processHelper)
         {
             if (service == null) return null;
 
@@ -48,17 +48,17 @@ namespace Servy.Manager
                 Description = service.Description ?? string.Empty,
                 StartupType = null,
                 Status = ServiceStatus.None,
-                LogOnAs = service.RunAsLocalSystem ? AppConfig.LocalSystem : GetLogOnAsDisplayName(service.UserAccount) ?? string.Empty,
+                LogOnAs = service.RunAsLocalSystem ? AppConfig.LocalSystem : !string.IsNullOrEmpty(service.UserAccount) ? GetLogOnAsDisplayName(service.UserAccount) ?? string.Empty : string.Empty,
                 IsInstalled = false,
                 IsDesktopAppAvailable = isDesktopAppAvailable,
                 Pid = service.Pid,
                 IsPidEnabled = service.Pid != null,
                 CpuUsage = cpuUsage,
                 RamUsage = ramUsage,
-                StdoutPath = service.StdoutPath,
-                StderrPath = service.StderrPath,
-                ActiveStdoutPath = service.ActiveStdoutPath,
-                ActiveStderrPath = service.ActiveStderrPath,
+                StdoutPath = service.StdoutPath ?? string.Empty,
+                StderrPath = service.StderrPath ?? string.Empty,
+                ActiveStdoutPath = service.ActiveStdoutPath ?? string.Empty,
+                ActiveStderrPath = service.ActiveStderrPath ?? string.Empty,
             };
         }
 
@@ -71,7 +71,7 @@ namespace Servy.Manager
         {
             return new Service
             {
-                Name = service.Name,
+                Name = service.Name ?? string.Empty,
                 Pid = service.Pid,
                 IsPidEnabled = service.Pid != null,
             };
@@ -86,11 +86,11 @@ namespace Servy.Manager
         {
             return new Service
             {
-                Name = service.Name,
+                Name = service.Name ?? string.Empty,
                 Pid = service.Pid,
                 IsPidEnabled = service.Pid != null,
-                StdoutPath = service.StdoutPath,
-                StderrPath = service.StderrPath,
+                StdoutPath = service.StdoutPath ?? string.Empty,
+                StderrPath = service.StderrPath ?? string.Empty,
             };
         }
 
@@ -103,7 +103,7 @@ namespace Servy.Manager
         {
             return new Service
             {
-                Name = service.Name,
+                Name = service.Name ?? string.Empty,
                 Pid = service.Pid,
                 IsPidEnabled = service.Pid != null,
             };

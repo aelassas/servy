@@ -22,7 +22,7 @@ namespace Servy.Manager.Converters
                 return string.Empty;
 
             var text = value.ToString();
-            var firstLine = text
+            var firstLine = text?
                 .Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None)
                 .FirstOrDefault();
 

@@ -24,7 +24,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Manages the cancellation lifecycle for the current service search operation.
         /// </summary>
-        protected CancellationTokenSource _serviceSearchCts;
+        protected CancellationTokenSource? _serviceSearchCts;
 
         protected readonly ICursorService _cursorService;
 
@@ -35,22 +35,22 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public ObservableCollection<ServiceItemBase> Services { get; } = new ObservableCollection<ServiceItemBase>();
 
-        private string _searchText;
+        private string? _searchText;
         /// <summary>
         /// Gets or sets the text filter used for searching services.
         /// </summary>
-        public string SearchText
+        public string? SearchText
         {
             get => _searchText;
             set => Set(ref _searchText, value);
         }
 
-        private string _searchButtonText = Strings.Button_Search;
+        private string? _searchButtonText = Strings.Button_Search;
         /// <summary>
         /// Gets or sets the text displayed on the search button, dynamically toggling 
         /// between 'Search' and 'Searching...' states.
         /// </summary>
-        public string SearchButtonText
+        public string? SearchButtonText
         {
             get => _searchButtonText;
             set => Set(ref _searchButtonText, value);
@@ -70,7 +70,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Gets or sets the command engine for executing service-level operations.
         /// </summary>
-        public IServiceCommands ServiceCommands { get; set; }
+        public IServiceCommands? ServiceCommands { get; set; }
 
         /// <summary>
         /// Gets the command triggered by the UI to start a new search.
@@ -93,7 +93,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="service">The raw service entity returned from the repository.</param>
         /// <returns>A specialized <see cref="ServiceItemBase"/> instance.</returns>
-        protected abstract ServiceItemBase CreateServiceItem(Service service);
+        protected abstract ServiceItemBase CreateServiceItem(Service? service);
 
         /// <summary>
         /// Orchestrates the asynchronous search process.
@@ -109,8 +109,14 @@ namespace Servy.Manager.ViewModels
         /// <item><description>Thread-safe population of the <see cref="Services"/> collection.</description></item>
         /// </list>
         /// </remarks>
-        private async Task SearchServicesAsync(object parameter)
+        private async Task SearchServicesAsync(object? parameter)
         {
+            if(ServiceCommands == null)
+            {
+                Logger.Warn($"ServiceCommands is not set in {GetType().Name}. Search operation aborted.");
+                return;
+            }
+
             var newCts = new CancellationTokenSource();
             var oldCts = Interlocked.Exchange(ref _serviceSearchCts, newCts);
             if (oldCts != null)

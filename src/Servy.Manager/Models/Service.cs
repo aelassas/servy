@@ -10,26 +10,26 @@ namespace Servy.Manager.Models
     /// </summary>
     public class Service : INotifyPropertyChanged
     {
-        private string _name;
-        private string _description;
+        private string? _name;
+        private string? _description;
         private ServiceStatus? _status;
         private bool _isInstalled;
         private bool _isDesktopAppAvailable;
         private ServiceStartType? _startupType;
-        private string _userSession;
+        private string? _userSession;
         private int? _pid;
         private bool _isPidEnabled;
         private double? _cpuUsage;
         private long? _ramUsage;
-        private string _stdoutPath;
-        private string _stderrPath;
-        private string _activeStdoutPath;
-        private string _activeStderrPath;
+        private string? _stdoutPath;
+        private string? _stderrPath;
+        private string? _activeStdoutPath;
+        private string? _activeStderrPath;
 
         /// <summary>
         /// Gets or sets the service name.
         /// </summary>
-        public string Name
+        public string? Name
         {
             get => _name;
             set => SetProperty(ref _name, value);
@@ -38,7 +38,7 @@ namespace Servy.Manager.Models
         /// <summary>
         /// Gets or sets the service description.
         /// </summary>
-        public string Description
+        public string? Description
         {
             get => _description;
             set => SetProperty(ref _description, value);
@@ -83,7 +83,7 @@ namespace Servy.Manager.Models
         /// <summary>
         /// Gets or sets the user session under which the service runs.
         /// </summary>
-        public string LogOnAs
+        public string? LogOnAs
         {
             get => _userSession;
             set => SetProperty(ref _userSession, value);
@@ -129,7 +129,7 @@ namespace Servy.Manager.Models
         /// <summary>
         /// Gets or sets the file system path where standard output is redirected.
         /// </summary>
-        public string StdoutPath
+        public string? StdoutPath
         {
             get => _stdoutPath;
             set => SetProperty(ref _stdoutPath, value);
@@ -138,7 +138,8 @@ namespace Servy.Manager.Models
         /// <summary>
         /// Gets or sets the file system path where standard error output is redirected.
         /// </summary>
-        public string StderrPath {
+        public string? StderrPath
+        {
             get => _stderrPath;
             set => SetProperty(ref _stderrPath, value);
         }
@@ -146,7 +147,7 @@ namespace Servy.Manager.Models
         /// <summary>
         /// Gets or sets the active file system path where standard output is redirected.
         /// </summary>
-        public string ActiveStdoutPath
+        public string? ActiveStdoutPath
         {
             get => _activeStdoutPath;
             set => SetProperty(ref _activeStdoutPath, value);
@@ -155,7 +156,7 @@ namespace Servy.Manager.Models
         /// <summary>
         /// Gets or sets the active file system path where standard error output is redirected.
         /// </summary>
-        public string ActiveStderrPath
+        public string? ActiveStderrPath
         {
             get => _activeStderrPath;
             set => SetProperty(ref _activeStderrPath, value);
@@ -163,13 +164,13 @@ namespace Servy.Manager.Models
 
         #region INotifyPropertyChanged
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Raises PropertyChanged event for the specified property.
         /// </summary>
         /// <param name="propertyName">Name of the property that changed.</param>
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
@@ -177,7 +178,7 @@ namespace Servy.Manager.Models
         /// <summary>
         /// Helper to set property and raise PropertyChanged if value is different.
         /// </summary>
-        private bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        private bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
             if (Equals(field, value)) return false;
             field = value;

@@ -12,7 +12,7 @@ namespace Servy.UI.ViewModels
         /// <summary>
         /// Occurs when a property value changes.
         /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Checks if a property already matches a desired value. Sets the property and
@@ -24,7 +24,7 @@ namespace Servy.UI.ViewModels
         /// <param name="propertyName">Name of the property used to notify listeners. 
         /// This value is optional and can be provided automatically when invoked from compilers that support <see cref="CallerMemberNameAttribute"/>.</param>
         /// <returns>True if the value was changed, false if the existing value coincided with the desired value.</returns>
-        protected bool Set<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        protected bool Set<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
             if (Equals(field, value))
                 return false;
@@ -39,7 +39,7 @@ namespace Servy.UI.ViewModels
         /// </summary>
         /// <param name="propertyName">Name of the property used to notify listeners.
         /// This value is optional and can be provided automatically when invoked from compilers that support <see cref="CallerMemberNameAttribute"/>.</param>
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

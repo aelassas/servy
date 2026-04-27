@@ -8,9 +8,9 @@ namespace Servy.Manager.Models
     public class LogEntryModel : INotifyPropertyChanged
     {
         private DateTime _time;
-        private string _level;
+        private string? _level;
         private int _eventId;
-        private string _message;
+        private string? _message;
 
         /// <summary>
         /// Gets or sets the timestamp of the log entry.
@@ -32,7 +32,7 @@ namespace Servy.Manager.Models
         /// Gets or sets the severity level of the log entry 
         /// (e.g. Information, Warning, Error).
         /// </summary>
-        public string Level
+        public string? Level
         {
             get => _level;
             set
@@ -65,7 +65,7 @@ namespace Servy.Manager.Models
         /// <summary>
         /// Gets or sets the message text of the log entry.
         /// </summary>
-        public string Message
+        public string? Message
         {
             get => _message;
             set
@@ -97,7 +97,7 @@ namespace Servy.Manager.Models
         }
 
         /// <inheritdoc />
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Raises the <see cref="PropertyChanged"/> event for the specified property.

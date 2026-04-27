@@ -85,7 +85,7 @@ namespace Servy.Core.Services
         private readonly IServiceControllerProvider _serviceControllerProvider;
         private readonly IWindowsServiceApi _windowsServiceApi;
         private readonly IWin32ErrorProvider _win32ErrorProvider;
-        private readonly IServiceRepository _serviceRepository;
+        private readonly IServiceRepository? _serviceRepository;
 
         #endregion
 
@@ -104,7 +104,7 @@ namespace Servy.Core.Services
             IServiceControllerProvider serviceControllerProvider,
             IWindowsServiceApi windowsServiceApi,
             IWin32ErrorProvider win32ErrorProvider,
-            IServiceRepository serviceRepository
+            IServiceRepository? serviceRepository
             )
         {
             _controllerFactory = controllerFactory;
@@ -278,6 +278,7 @@ namespace Servy.Core.Services
         public async Task<OperationResult> InstallServiceAsync(InstallServiceOptions options)
         {
             if (options == null) throw new ArgumentNullException(nameof(options));
+            if (_serviceRepository == null) throw new InvalidOperationException("Service repository is not initialized. Cannot install service without a repository.");
             if (string.IsNullOrWhiteSpace(options.ServiceName)) throw new ArgumentException("Value is required.", nameof(options));
             if (string.IsNullOrWhiteSpace(options.WrapperExePath)) throw new ArgumentException("Value is required.", nameof(options));
             if (string.IsNullOrWhiteSpace(options.RealExePath)) throw new ArgumentException("Value is required.", nameof(options));
@@ -529,8 +530,11 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public async Task<OperationResult> UninstallServiceAsync(string serviceName, CancellationToken cancellationToken = default)
+        public async Task<OperationResult> UninstallServiceAsync(string? serviceName, CancellationToken cancellationToken = default)
         {
+            if (_serviceRepository == null) throw new InvalidOperationException("Service repository is not initialized. Cannot install service without a repository.");
+            if (string.IsNullOrWhiteSpace(serviceName)) throw new ArgumentException("serviceName is required.", nameof(serviceName));
+
             SafeScmHandle? scmHandle = null;
             try
             {
@@ -621,8 +625,11 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc/>
-        public async Task<OperationResult> StartServiceAsync(string serviceName, bool logSuccessfulStart = true)
+        public async Task<OperationResult> StartServiceAsync(string? serviceName, bool logSuccessfulStart = true)
         {
+            if (_serviceRepository == null) throw new InvalidOperationException("Service repository is not initialized. Cannot install service without a repository.");
+            if (string.IsNullOrWhiteSpace(serviceName)) throw new ArgumentException("serviceName is required.", nameof(serviceName));
+
             int timeout = 0;
             try
             {
@@ -668,8 +675,11 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public async Task<OperationResult> StopServiceAsync(string serviceName, bool logSuccessfulStop = true)
+        public async Task<OperationResult> StopServiceAsync(string? serviceName, bool logSuccessfulStop = true)
         {
+            if (_serviceRepository == null) throw new InvalidOperationException("Service repository is not initialized. Cannot install service without a repository.");
+            if (string.IsNullOrWhiteSpace(serviceName)) throw new ArgumentException("serviceName is required.", nameof(serviceName));
+
             int timeout = 0;
             try
             {
@@ -711,7 +721,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public async Task<OperationResult> RestartServiceAsync(string serviceName)
+        public async Task<OperationResult> RestartServiceAsync(string? serviceName)
         {
             if (!(await StopServiceAsync(serviceName, logSuccessfulStop: false)).IsSuccess)
                 return OperationResult.Failure($"Failed to restart service '{serviceName}'.");
@@ -731,7 +741,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public ServiceControllerStatus GetServiceStatus(string serviceName, CancellationToken cancellationToken = default(CancellationToken))
+        public ServiceControllerStatus GetServiceStatus(string? serviceName, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
@@ -745,7 +755,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public bool IsServiceInstalled(string serviceName)
+        public bool IsServiceInstalled(string? serviceName)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
@@ -755,7 +765,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public ServiceStartType? GetServiceStartupType(string serviceName, CancellationToken cancellationToken = default(CancellationToken))
+        public ServiceStartType? GetServiceStartupType(string? serviceName, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
@@ -915,7 +925,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc/>
-        public ServiceDependencyNode? GetDependencies(string serviceName)
+        public ServiceDependencyNode? GetDependencies(string? serviceName)
         {
             try
             {

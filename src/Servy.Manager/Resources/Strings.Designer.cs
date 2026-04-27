@@ -754,6 +754,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Invalid service name..
+        /// </summary>
+        public static string Msg_InvalidServiceName {
+            get {
+                return ResourceManager.GetString("Msg_InvalidServiceName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service wrapper executable not found..
         /// </summary>
         public static string Msg_InvalidWrapperExePath {

@@ -12,32 +12,32 @@ namespace Servy.Models
         /// <summary>
         /// Gets or sets the name of the service.
         /// </summary>
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         /// Gets or sets the display name of the service.
         /// </summary>
-        public string DisplayName { get; set; }
+        public string? DisplayName { get; set; }
 
         /// <summary>
         /// Gets or sets the description of the service.
         /// </summary>
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// Gets or sets the path to the executable process to run.
         /// </summary>
-        public string ExecutablePath { get; set; }
+        public string? ExecutablePath { get; set; }
 
         /// <summary>
         /// Gets or sets the startup directory for the executable.
         /// </summary>
-        public string StartupDirectory { get; set; }
+        public string? StartupDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the command line parameters to pass to the executable.
         /// </summary>
-        public string Parameters { get; set; }
+        public string? Parameters { get; set; }
 
         /// <summary>
         /// Gets or sets the selected startup type for the service.
@@ -58,12 +58,12 @@ namespace Servy.Models
         /// <summary>
         /// Gets or sets the path to the standard output log file.
         /// </summary>
-        public string StdoutPath { get; set; }
+        public string? StdoutPath { get; set; }
 
         /// <summary>
         /// Gets or sets the path to the standard error log file.
         /// </summary>
-        public string StderrPath { get; set; }
+        public string? StderrPath { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether size-based log rotation is enabled.
@@ -73,7 +73,7 @@ namespace Servy.Models
         /// <summary>
         /// Gets or sets the rotation size in MB.
         /// </summary>
-        public string RotationSize { get; set; }
+        public string? RotationSize { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether date-based log rotation is enabled.
@@ -88,7 +88,7 @@ namespace Servy.Models
         /// <summary>
         /// Gets or sets the maximum number of rotated log files to keep.
         /// </summary>
-        public string MaxRotations { get; set; }
+        public string? MaxRotations { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to use local system time for log rotation.
@@ -110,12 +110,12 @@ namespace Servy.Models
         /// <summary>
         /// Gets or sets the heartbeat interval in seconds.
         /// </summary>
-        public string HeartbeatInterval { get; set; }
+        public string? HeartbeatInterval { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum number of allowed failed health checks.
         /// </summary>
-        public string MaxFailedChecks { get; set; }
+        public string? MaxFailedChecks { get; set; }
 
         /// <summary>
         /// Gets or sets the recovery action to take if the service fails.
@@ -125,32 +125,32 @@ namespace Servy.Models
         /// <summary>
         /// Gets or sets the maximum number of restart attempts.
         /// </summary>
-        public string MaxRestartAttempts { get; set; }
+        public string? MaxRestartAttempts { get; set; }
 
         /// <summary>
         /// Gets or sets the path to the process to run on failure.
         /// </summary>
-        public string FailureProgramPath { get; set; }
+        public string? FailureProgramPath { get; set; }
 
         /// <summary>
         /// Gets or sets the working directory for the failure program.
         /// </summary>
-        public string FailureProgramStartupDirectory { get; set; }
+        public string? FailureProgramStartupDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the command-line parameters for the failure program.
         /// </summary>
-        public string FailureProgramParameters { get; set; }
+        public string? FailureProgramParameters { get; set; }
 
         /// <summary>
         /// Environment Variables.
         /// </summary>
-        public string EnvironmentVariables { get; set; }
+        public string? EnvironmentVariables { get; set; }
 
         /// <summary>
         /// Windows Service Dependencies.
         /// </summary>
-        public string ServiceDependencies { get; set; }
+        public string? ServiceDependencies { get; set; }
 
         /// <summary>
         /// Indicates whether to run the Windows Service as the Local System account.
@@ -160,60 +160,60 @@ namespace Servy.Models
         /// <summary>
         /// The service account username (e.g., <c>.\username</c>, <c>DOMAIN\username</c>).
         /// </summary>
-        public string UserAccount { get; set; }
+        public string? UserAccount { get; set; }
 
         /// <summary>
         /// The password for the service account.
         /// </summary>
-        public string Password { get; set; }
+        public string? Password { get; set; }
 
         /// <summary>
         /// The confirmation of the service account password.
         /// </summary>
-        public string ConfirmPassword { get; set; }
+        public string? ConfirmPassword { get; set; }
 
         /// <summary>
         /// Gets or sets the path to the pre-launch executable process to run.
         /// </summary>
-        public string PreLaunchExecutablePath { get; set; }
+        public string? PreLaunchExecutablePath { get; set; }
 
         /// <summary>
         /// Gets or sets the working directory for the pre-launch executable.
         /// </summary>
-        public string PreLaunchStartupDirectory { get; set; }
+        public string? PreLaunchStartupDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the command-line parameters for the pre-launch executable.
         /// </summary>
-        public string PreLaunchParameters { get; set; }
+        public string? PreLaunchParameters { get; set; }
 
         /// <summary>
         /// Gets or sets the environment variables for the pre-launch executable.
         /// Format: key=value, one per line or separated by semicolons.
         /// </summary>
-        public string PreLaunchEnvironmentVariables { get; set; }
+        public string? PreLaunchEnvironmentVariables { get; set; }
 
         /// <summary>
         /// Gets or sets the path to the standard output log file for the pre-launch process.
         /// </summary>
-        public string PreLaunchStdoutPath { get; set; }
+        public string? PreLaunchStdoutPath { get; set; }
 
         /// <summary>
         /// Gets or sets the path to the standard error log file for the pre-launch process.
         /// </summary>
-        public string PreLaunchStderrPath { get; set; }
+        public string? PreLaunchStderrPath { get; set; }
 
         /// <summary>
         /// Gets or sets the timeout in seconds for each pre-launch execution attempt.
         /// Default is 30 seconds.
         /// </summary>
-        public string PreLaunchTimeoutSeconds { get; set; } = "30";
+        public string? PreLaunchTimeoutSeconds { get; set; } = "30";
 
         /// <summary>
         /// Gets or sets the number of retry attempts if the pre-launch process fails.
         /// Default is 0.
         /// </summary>
-        public string PreLaunchRetryAttempts { get; set; } = "0";
+        public string? PreLaunchRetryAttempts { get; set; } = "0";
 
         /// <summary>
         /// Gets or sets a value indicating whether to start the main service even if the pre-launch process fails.
@@ -224,17 +224,17 @@ namespace Servy.Models
         /// <summary>
         /// Gets or sets the path to the post-launch executable process to run.
         /// </summary>
-        public string PostLaunchExecutablePath { get; set; }
+        public string? PostLaunchExecutablePath { get; set; }
 
         /// <summary>
         /// Gets or sets the working directory for the post-launch executable.
         /// </summary>
-        public string PostLaunchStartupDirectory { get; set; }
+        public string? PostLaunchStartupDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the command-line parameters for the post-launch executable.
         /// </summary>
-        public string PostLaunchParameters { get; set; }
+        public string? PostLaunchParameters { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether debug logs are enabled.
@@ -246,32 +246,32 @@ namespace Servy.Models
         /// <summary>
         /// Gets or sets the timeout in seconds to wait for the process to start successfully before considering the startup as failed.
         /// </summary>
-        public string StartTimeout { get; set; }
+        public string? StartTimeout { get; set; }
 
         /// <summary>
         /// Gets or sets the timeout in seconds to wait for the process to exit.
         /// </summary>
-        public string StopTimeout { get; set; }
+        public string? StopTimeout { get; set; }
 
         /// <summary>
         /// Optional path to an executable that runs before the service stops.
         /// </summary>
-        public string PreStopExecutablePath { get; set; }
+        public string? PreStopExecutablePath { get; set; }
 
         /// <summary>
         /// Optional startup directory for the pre-stop executable.
         /// </summary>
-        public string PreStopStartupDirectory { get; set; }
+        public string? PreStopStartupDirectory { get; set; }
 
         /// <summary>
         /// Optional parameters for the pre-stop executable.
         /// </summary>
-        public string PreStopParameters { get; set; }
+        public string? PreStopParameters { get; set; }
 
         /// <summary>
         /// Maximum time in seconds to wait for the pre-stop executable to complete.
         /// </summary>
-        public string PreStopTimeoutSeconds { get; set; } = AppConfig.DefaultPreStopTimeoutSeconds.ToString();
+        public string? PreStopTimeoutSeconds { get; set; } = AppConfig.DefaultPreStopTimeoutSeconds.ToString();
 
         /// <summary>
         /// Whether to log pre-stop failure as error.
@@ -281,17 +281,17 @@ namespace Servy.Models
         /// <summary>
         /// Optional path to an executable that runs after the service stops.
         /// </summary>
-        public string PostStopExecutablePath { get; set; }
+        public string? PostStopExecutablePath { get; set; }
 
         /// <summary>
         /// Optional startup directory for the post-stop executable.
         /// </summary>
-        public string PostStopStartupDirectory { get; set; }
+        public string? PostStopStartupDirectory { get; set; }
 
         /// <summary>
         /// Optional parameters for the post-stop executable.
         /// </summary>
-        public string PostStopParameters { get; set; }
+        public string? PostStopParameters { get; set; }
 
     }
 }

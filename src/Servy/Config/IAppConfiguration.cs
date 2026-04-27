@@ -15,7 +15,7 @@ namespace Servy.Config
         /// <summary>
         /// Gets the file path to the published Servy Manager application executable.
         /// </summary>
-        string ManagerAppPublishPath { get; }
+        string? ManagerAppPublishPath { get; }
 
         /// <summary>
         /// Gets a value indicating whether WPF software rendering is forced for the current session.

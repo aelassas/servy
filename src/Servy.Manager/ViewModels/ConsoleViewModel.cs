@@ -38,15 +38,15 @@ namespace Servy.Manager.ViewModels
         private readonly IServiceRepository _serviceRepository;
 
         // Controls console log filter debouncing
-        private CancellationTokenSource _logFilterCts;
+        private CancellationTokenSource? _logFilterCts;
         // Controls the lifecycle of the background LogTailer streams
-        private CancellationTokenSource _tailingCts;
+        private CancellationTokenSource? _tailingCts;
 
         private bool _hadSelectedService;
-        private string _consoleSearchText;
+        private string? _consoleSearchText;
         private readonly int _maxLines;
-        private string _stdoutPath;
-        private string _stderrPath;
+        private string? _stdoutPath;
+        private string? _stderrPath;
         private int _currentSessionId = 0; // Track the "active" switch request
         private volatile bool _isSelectionActive;
         private int _tickErrorCount = 0;
@@ -54,11 +54,11 @@ namespace Servy.Manager.ViewModels
         private readonly IAppConfiguration _appConfig;
 
         // Active tailers and their handlers to prevent memory leaks during service switching
-        private LogTailer _activeStdoutTailer;
-        private NewLinesHandler _stdoutTailerHandler;
+        private LogTailer? _activeStdoutTailer;
+        private NewLinesHandler? _stdoutTailerHandler;
 
-        private LogTailer _activeStderrTailer;
-        private NewLinesHandler _stderrTailerHandler;
+        private LogTailer? _activeStderrTailer;
+        private NewLinesHandler? _stderrTailerHandler;
 
         #endregion
 
@@ -68,12 +68,12 @@ namespace Servy.Manager.ViewModels
         /// Occurs when the view should scroll to the bottom. 
         /// Boolean parameter indicates if the scroll is a "forced" reset (e.g., after clearing search).
         /// </summary>
-        public event Action<bool> RequestScroll;
+        public event Action<bool>? RequestScroll;
 
         /// <summary>
         /// Event to signal the view to capture its state.
         /// </summary>
-        public event Action<bool> RequestStatePreservation;
+        public event Action<bool>? RequestStatePreservation;
 
         #endregion
 
@@ -93,7 +93,7 @@ namespace Servy.Manager.ViewModels
         /// Gets or sets the text used to filter the console logs.
         /// Triggering a refresh on the <see cref="VisibleLines"/> and requesting a scroll if cleared.
         /// </summary>
-        public string ConsoleSearchText
+        public string? ConsoleSearchText
         {
             get => _consoleSearchText;
             set
@@ -121,7 +121,7 @@ namespace Servy.Manager.ViewModels
 
         #region Properties - Service Data
 
-        private ConsoleService _selectedService;
+        private ConsoleService? _selectedService;
 
         /// <summary>
         /// Gets or sets the currently selected service for console monitoring.
@@ -145,7 +145,7 @@ namespace Servy.Manager.ViewModels
         /// </item>
         /// </list>
         /// </remarks>
-        public ConsoleService SelectedService
+        public ConsoleService? SelectedService
         {
             get => _selectedService;
             set
@@ -207,13 +207,13 @@ namespace Servy.Manager.ViewModels
         /// <param name="appConfig">Application configuration settings.</param>
         /// <param name="cursorService">Service used to control the cursor state.</param>
         public ConsoleViewModel(
-            IServiceRepository serviceRepository,
+            IServiceRepository? serviceRepository,
             IServiceCommands serviceCommands,
             IAppConfiguration appConfig,
             ICursorService cursorService
             ) : base(cursorService)
         {
-            _serviceRepository = serviceRepository;
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             ServiceCommands = serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
@@ -241,9 +241,9 @@ namespace Servy.Manager.ViewModels
         protected override int RefreshIntervalMs => _appConfig.ConsoleRefreshIntervalInMs;
 
         /// <inheritdoc/>
-        protected override ServiceItemBase CreateServiceItem(Service service)
+        protected override ServiceItemBase CreateServiceItem(Service? service)
         {
-            return new ConsoleService { Name = service.Name, Pid = null, StdoutPath = null, StderrPath = null };
+            return new ConsoleService { Name = service?.Name, Pid = null, StdoutPath = null, StderrPath = null };
         }
 
         /// <inheritdoc/>
@@ -266,28 +266,35 @@ namespace Servy.Manager.ViewModels
                 }
                 _hadSelectedService = true;
 
-                var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection.Name, token);
+                var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection?.Name, token);
                 var stateSnapshot = serviceDto?.Clone() as ServiceConsoleStateDto;
 
                 if (stateSnapshot?.Pid == null)
                 {
                     ResetConsole(true);
-                    SelectedService.Pid = null;
-                    SelectedService.StdoutPath = null;
-                    SelectedService.StderrPath = null;
+                    if (SelectedService != null)
+                    {
+                        SelectedService.Pid = null;
+                        SelectedService.StdoutPath = null;
+                        SelectedService.StderrPath = null;
+                    }
                     CopyPidCommand?.RaiseCanExecuteChanged();
                     return;
                 }
 
-                if (currentSelection.Pid != stateSnapshot.Pid
+                if (currentSelection?.Pid != stateSnapshot.Pid
                     || _stdoutPath != stateSnapshot.ActiveStdoutPath
                     || _stderrPath != stateSnapshot.ActiveStderrPath)
                 {
-                    currentSelection.Pid = stateSnapshot.Pid;
+                    if (currentSelection != null)
+                        currentSelection.Pid = stateSnapshot.Pid;
                     _stdoutPath = stateSnapshot.ActiveStdoutPath;
                     _stderrPath = stateSnapshot.ActiveStderrPath;
-                    SelectedService.StdoutPath = stateSnapshot.ActiveStdoutPath;
-                    SelectedService.StderrPath = stateSnapshot.ActiveStderrPath;
+                    if (SelectedService != null)
+                    {
+                        SelectedService.StdoutPath = stateSnapshot.ActiveStdoutPath;
+                        SelectedService.StderrPath = stateSnapshot.ActiveStderrPath;
+                    }
 
                     _ = SwitchServiceAsync(stateSnapshot.ActiveStdoutPath, stateSnapshot.ActiveStderrPath);
                     CopyPidCommand?.RaiseCanExecuteChanged();
@@ -393,7 +400,7 @@ namespace Servy.Manager.ViewModels
         /// </remarks>
         /// <param name="stdoutPath">Path to the standard output log.</param>
         /// <param name="stderrPath">Path to the standard error log.</param>
-        private async Task SwitchServiceAsync(string stdoutPath, string stderrPath)
+        private async Task SwitchServiceAsync(string? stdoutPath, string? stderrPath)
         {
             try
             {
@@ -426,11 +433,11 @@ namespace Servy.Manager.ViewModels
                 {
                     var stdoutTask = !string.IsNullOrWhiteSpace(stdoutPath)
                         ? stdoutHistoryTailer.GetHistoryAsync(stdoutPath, LogType.StdOut, historyLimit)
-                        : Task.FromResult<HistoryResult>(null);
+                        : Task.FromResult<HistoryResult?>(null);
 
                     var stderrTask = hasUniqueStderr
                         ? stderrHistoryTailer.GetHistoryAsync(stderrPath, LogType.StdErr, historyLimit)
-                        : Task.FromResult<HistoryResult>(null);
+                        : Task.FromResult<HistoryResult?>(null);
 
                     // Wait for the necessary reads to complete
                     var results = await Task.WhenAll(stdoutTask, stderrTask);
@@ -512,7 +519,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="created">The file creation time for rotation detection.</param>
         /// <param name="token">Cancellation token for the tailing task.</param>
         /// <param name="sessionId">The session ID this tailer belongs to.</param>
-        private void StartLiveTail(string path, LogType type, long pos, DateTime created, CancellationToken token, int sessionId)
+        private void StartLiveTail(string? path, LogType type, long pos, DateTime created, CancellationToken token, int sessionId)
         {
             var tailer = new LogTailer();
 
@@ -570,9 +577,9 @@ namespace Servy.Manager.ViewModels
         /// Updates the PID display text based on the selected service's current state.
         /// </summary>
         /// <param name="service">Service model.</param>
-        private void SetPidText(ServiceItemBase service)
+        private void SetPidText(ServiceItemBase? service)
         {
-            var pidTxt = service.Pid?.ToString() ?? UiConstants.NotAvailable;
+            var pidTxt = service?.Pid?.ToString() ?? UiConstants.NotAvailable;
             if (Pid != pidTxt) Pid = pidTxt;
         }
 
@@ -580,8 +587,14 @@ namespace Servy.Manager.ViewModels
         /// Copies the Process ID of the currently selected service to the system clipboard.
         /// </summary>
         /// <param name="parameter">Unused command parameter.</param>
-        private async Task CopyPidAsync(object parameter)
+        private async Task CopyPidAsync(object? parameter)
         {
+            if (ServiceCommands == null)
+            {
+                Logger.Warn("ServiceCommands is null. Cannot copy PID.");
+                return;
+            }
+
             if (SelectedService?.Pid != null)
             {
                 var service = ServiceMapper.ToModel(SelectedService);

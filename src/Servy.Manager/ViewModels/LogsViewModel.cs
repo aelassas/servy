@@ -27,16 +27,16 @@ namespace Servy.Manager.ViewModels
         private readonly ICursorService _cursorService;
         private bool _isBusy;
         private string _searchButtonText = Strings.Button_Search;
-        private LogEntryModel _selectedLog;
+        private LogEntryModel? _selectedLog;
         private DateTime? _fromDate;
         private DateTime? _fromDateMaxDate;
         private DateTime? _toDate;
         private DateTime? _toDateMinDate;
         private string _keyword = string.Empty;
-        private CancellationTokenSource _cancellationTokenSource;
+        private CancellationTokenSource? _cancellationTokenSource;
         private readonly ObservableCollection<LogEntryModel> _logs = new ObservableCollection<LogEntryModel>();
-        private string _selectedLogMessage;
-        private string _footerText;
+        private string? _selectedLogMessage;
+        private string? _footerText;
         private bool _disposedValue;
 
         #endregion
@@ -46,13 +46,13 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Scroll DataGrid to top event.
         /// </summary>
-        public event Action ScrollLogsToTopRequested;
+        public event Action? ScrollLogsToTopRequested;
 
         /// <summary>
         /// Occurs when a property value changes.
         /// Used to update data bindings in the UI.
         /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Raises the <see cref="PropertyChanged"/> event for the given property.
@@ -92,7 +92,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Gets or sets footer text displayed in the UI.
         /// </summary>
-        public string FooterText
+        public string? FooterText
         {
             get => _footerText;
             set
@@ -214,7 +214,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Gets or sets the currently selected log entry in the UI.
         /// </summary>
-        public LogEntryModel SelectedLog
+        public LogEntryModel? SelectedLog
         {
             get => _selectedLog;
             set
@@ -229,7 +229,7 @@ namespace Servy.Manager.ViewModels
         /// Gets the message of the currently selected log entry.
         /// Returns an empty string if none is selected.
         /// </summary>
-        public string SelectedLogMessage
+        public string? SelectedLogMessage
         {
             get => _selectedLogMessage;
             set
@@ -310,7 +310,7 @@ namespace Servy.Manager.ViewModels
         /// Updates <see cref="Logs"/> with the results.
         /// </summary>
         /// <param name="parameter">Optional command parameter (not used).</param>
-        private async Task Search(object parameter)
+        private async Task Search(object? parameter)
         {
             var stopwatch = Stopwatch.StartNew();
 
@@ -388,7 +388,7 @@ namespace Servy.Manager.ViewModels
         /// Updates the <see cref="SelectedLog"/>.
         /// </summary>
         /// <param name="parameter">The clicked row's bound model.</param>
-        private void OnRowClick(object parameter)
+        private void OnRowClick(object? parameter)
         {
             if (parameter is LogEntryModel model)
             {

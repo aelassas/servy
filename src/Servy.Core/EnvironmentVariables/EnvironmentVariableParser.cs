@@ -14,7 +14,7 @@ namespace Servy.Core.EnvironmentVariables
         /// <param name="input">Normalized environment variables string (semicolon or newline-separated, with escapes).</param>
         /// <returns>List of parsed environment variables as <see cref="EnvironmentVariable"/> instances.</returns>
         /// <exception cref="FormatException">Thrown if any variable is missing an unescaped '=' or has an empty key.</exception>
-        public static List<EnvironmentVariable> Parse(string input)
+        public static List<EnvironmentVariable> Parse(string? input)
         {
             if (string.IsNullOrEmpty(input))
                 return new List<EnvironmentVariable>();

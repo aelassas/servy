@@ -24,10 +24,10 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="service">The service model for this row.</param>
         /// <param name="serviceCommands">Service commands for row operations.</param>
-        public ServiceRowViewModel(Service service, IServiceCommands serviceCommands)
+        public ServiceRowViewModel(Service? service, IServiceCommands? serviceCommands)
         {
-            Service = service;
-            _serviceCommands = serviceCommands;
+            Service = service ?? throw new ArgumentNullException(nameof(service));
+            _serviceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
 
             // Subscribe to property changes in the Service model
             Service.PropertyChanged += Service_PropertyChanged;
@@ -50,7 +50,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// The underlying service model.
         /// </summary>
-        public Service Service { get; }
+        public Service? Service { get; }
 
         /// <summary>
         /// Gets or sets whether this service row is selected in the UI.
@@ -84,29 +84,29 @@ namespace Servy.Manager.ViewModels
             }
         }
 
-        public string Name => Service.Name;
-        public string Description => Service.Description;
-        public ServiceStatus? Status => Service.Status;
-        public ServiceStartType? StartupType => Service.StartupType;
-        public string LogOnAs => Service.LogOnAs;
-        public bool IsInstalled => Service.IsInstalled;
-        public bool IsDesktopAppAvailable => Service.IsDesktopAppAvailable;
-        public int? Pid => Service.Pid;
-        public bool IsPidEnabled => Service.IsPidEnabled;
-        public double? CpuUsage => Service.CpuUsage;
-        public long? RamUsage => Service.RamUsage;
+        public string Name => Service?.Name ?? string.Empty;
+        public string Description => Service?.Description ?? string.Empty;
+        public ServiceStatus? Status => Service?.Status;
+        public ServiceStartType? StartupType => Service?.StartupType;
+        public string LogOnAs => Service?.LogOnAs ?? string.Empty;
+        public bool IsInstalled => Service?.IsInstalled ?? false;
+        public bool IsDesktopAppAvailable => Service?.IsDesktopAppAvailable ?? false;
+        public int? Pid => Service?.Pid;
+        public bool IsPidEnabled => Service?.IsPidEnabled ?? false;
+        public double? CpuUsage => Service?.CpuUsage;
+        public long? RamUsage => Service?.RamUsage;
 
         #endregion
 
         #region INotifyPropertyChanged
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Raises the <see cref="PropertyChanged"/> event.
         /// </summary>
         /// <param name="propertyName">Name of the changed property.</param>
-        private void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
@@ -114,8 +114,10 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Handles property changes in the underlying <see cref="Service"/> and forwards them to the UI.
         /// </summary>
-        private void Service_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void Service_PropertyChanged(object? sender, PropertyChangedEventArgs? e)
         {
+            if (e == null) return;
+
             // Forward all property changes from Service to ViewModel
             switch (e.PropertyName)
             {
@@ -220,34 +222,34 @@ namespace Servy.Manager.ViewModels
 
         #region Command Handlers
 
-        private async Task StartServiceAsync(object parameter) =>
+        private async Task StartServiceAsync(object? parameter) =>
             await ExecuteSafeAsync(() => _serviceCommands.StartServiceAsync(Service));
 
-        private async Task StopServiceAsync(object parameter) =>
+        private async Task StopServiceAsync(object? parameter) =>
             await ExecuteSafeAsync(() => _serviceCommands.StopServiceAsync(Service));
 
-        private async Task RestartServiceAsync(object parameter) =>
+        private async Task RestartServiceAsync(object? parameter) =>
             await ExecuteSafeAsync(() => _serviceCommands.RestartServiceAsync(Service));
 
-        private async Task ConfigureServiceAsync(object parameter) =>
+        private async Task ConfigureServiceAsync(object? parameter) =>
             await ExecuteSafeAsync(() => _serviceCommands.ConfigureServiceAsync(Service));
 
-        private async Task InstallServiceAsync(object parameter) =>
+        private async Task InstallServiceAsync(object? parameter) =>
             await ExecuteSafeAsync(() => _serviceCommands.InstallServiceAsync(Service));
 
-        private async Task UninstallServiceAsync(object parameter) =>
+        private async Task UninstallServiceAsync(object? parameter) =>
             await ExecuteSafeAsync(() => _serviceCommands.UninstallServiceAsync(Service));
 
-        private async Task RemoveServiceAsync(object parameter) =>
+        private async Task RemoveServiceAsync(object? parameter) =>
             await ExecuteSafeAsync(() => _serviceCommands.RemoveServiceAsync(Service));
 
-        private async Task ExportServiceToXmlAsync(object parameter) =>
+        private async Task ExportServiceToXmlAsync(object? parameter) =>
             await ExecuteSafeAsync(() => _serviceCommands.ExportServiceToXmlAsync(Service));
 
-        private async Task ExportServiceToJsonAsync(object parameter) =>
+        private async Task ExportServiceToJsonAsync(object? parameter) =>
             await ExecuteSafeAsync(() => _serviceCommands.ExportServiceToJsonAsync(Service));
 
-        private async Task CopyPidAsync(object parameter) =>
+        private async Task CopyPidAsync(object? parameter) =>
             await ExecuteSafeAsync(() => _serviceCommands.CopyPid(Service));
 
         #endregion
@@ -259,7 +261,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="parameter">Optional command parameter.</param>
         /// <returns>True if service is valid; otherwise false.</returns>
-        private bool CanExecuteServiceCommand(object parameter)
+        private bool CanExecuteServiceCommand(object? parameter)
         {
             return Service != null && !string.IsNullOrWhiteSpace(Service.Name);
         }

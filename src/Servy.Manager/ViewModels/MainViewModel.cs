@@ -38,22 +38,22 @@ namespace Servy.Manager.ViewModels
 
         #region Private Fields
 
-        private readonly Dispatcher _dispatcher;
-        private readonly IServiceManager _serviceManager;
-        private readonly IServiceRepository _serviceRepository;
-        private readonly IMessageBoxService _messageBoxService;
-        private readonly IHelpService _helpService;
-        private readonly ICursorService _cursorService;
+        private readonly Dispatcher? _dispatcher;
+        private readonly IServiceManager? _serviceManager;
+        private readonly IServiceRepository? _serviceRepository;
+        private readonly IMessageBoxService? _messageBoxService;
+        private readonly IHelpService? _helpService;
+        private readonly ICursorService? _cursorService;
 
-        private CancellationTokenSource _cts;
+        private CancellationTokenSource? _cts;
 
-        private DispatcherTimer _refreshTimer;
+        private DispatcherTimer? _refreshTimer;
         private readonly BulkObservableCollection<ServiceRowViewModel> _services = new BulkObservableCollection<ServiceRowViewModel>();
         private bool _isBusy;
         private string _searchButtonText = Strings.Button_Search;
         private bool _isConfiguratorEnabled = false;
-        private string _searchText;
-        private string _footerText;
+        private string? _searchText;
+        private string? _footerText;
         private bool? _selectAll;
         private bool _isUpdatingSelectAll;
         private readonly object _servicesLock = new object();
@@ -61,7 +61,7 @@ namespace Servy.Manager.ViewModels
         private readonly IAppConfiguration _appConfig;
         private readonly IProcessHelper _processHelper;
 
-        private IDisposable _busyCursor; // Manages the busy cursor explicitly for Sequential tasks
+        private IDisposable? _busyCursor; // Manages the busy cursor explicitly for Sequential tasks
 
         #endregion
 
@@ -71,7 +71,7 @@ namespace Servy.Manager.ViewModels
         /// Occurs when a property value changes.
         /// Used for data binding updates.
         /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Raises the <see cref="PropertyChanged"/> event for the specified property name.
@@ -120,7 +120,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Gets or sets footer text displayed in the UI.
         /// </summary>
-        public string FooterText
+        public string? FooterText
         {
             get => _footerText;
             set
@@ -152,7 +152,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Gets or sets the search text used for filtering or querying services.
         /// </summary>
-        public string SearchText
+        public string? SearchText
         {
             get => _searchText;
             set
@@ -165,12 +165,12 @@ namespace Servy.Manager.ViewModels
             }
         }
 
-        private IServiceCommands _serviceCommands;
+        private IServiceCommands? _serviceCommands;
 
         /// <summary>
         /// The set of service commands available for each service row.
         /// </summary>
-        public IServiceCommands ServiceCommands
+        public IServiceCommands? ServiceCommands
         {
             get => _serviceCommands;
             set
@@ -314,18 +314,18 @@ namespace Servy.Manager.ViewModels
         /// Initializes a new instance of <see cref="MainViewModel"/>.
         /// </summary>
         public MainViewModel(
-            IServiceManager serviceManager,
-            IServiceRepository serviceRepository,
-            IServiceCommands serviceCommands,
-            IHelpService helpService,
-            IMessageBoxService messageBoxService,
-            PerformanceViewModel performanceVM,
-            ConsoleViewModel consoleVM,
-            DependenciesViewModel dependenciesVM,
-            IAppConfiguration appConfig,
-            ICursorService cursorService,
-            IProcessHelper processHelper,
-            Dispatcher dispatcher = null
+            IServiceManager? serviceManager,
+            IServiceRepository? serviceRepository,
+            IServiceCommands? serviceCommands,
+            IHelpService? helpService,
+            IMessageBoxService? messageBoxService,
+            PerformanceViewModel? performanceVM,
+            ConsoleViewModel? consoleVM,
+            DependenciesViewModel? dependenciesVM,
+            IAppConfiguration? appConfig,
+            ICursorService? cursorService,
+            IProcessHelper? processHelper,
+            Dispatcher? dispatcher = null
             )
         {
             _serviceManager = serviceManager;
@@ -390,9 +390,9 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// PropertyChanged event handler to capture dynamically updated settings from the application.
         /// </summary>
-        private void AppConfig_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void AppConfig_PropertyChanged(object? sender, PropertyChangedEventArgs? e)
         {
-            if (e.PropertyName == nameof(IAppConfiguration.IsDesktopAppAvailable))
+            if (e?.PropertyName == nameof(IAppConfiguration.IsDesktopAppAvailable))
             {
                 IsConfiguratorEnabled = _appConfig.IsDesktopAppAvailable;
             }
@@ -401,9 +401,9 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Triggers when a property on a service row changes.
         /// </summary>
-        private void Service_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void Service_PropertyChanged(object? sender, PropertyChangedEventArgs? e)
         {
-            if (e.PropertyName == nameof(ServiceRowViewModel.IsChecked))
+            if (e?.PropertyName == nameof(ServiceRowViewModel.IsChecked))
             {
                 UpdateSelectAllState();
                 OnPropertyChanged(nameof(HasSelectedServices));
@@ -459,7 +459,7 @@ namespace Servy.Manager.ViewModels
         /// Stops the timer before invoking <see cref="RefreshAllServicesAsync"/> to prevent overlapping ticks,
         /// and restarts the timer afterward if it still exists.
         /// </summary>
-        private async void OnTick(object sender, EventArgs e)
+        private async void OnTick(object? sender, EventArgs? e)
         {
             if (Interlocked.CompareExchange(ref _isRefreshingFlag, 1, 0) == 1)
             {
@@ -497,8 +497,14 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Performs search of services asynchronously.
         /// </summary>
-        private async Task SearchServicesAsync(object parameter)
+        private async Task SearchServicesAsync(object? parameter)
         {
+            if (_dispatcher == null)
+            {
+                Logger.Warn("Dispatcher is not available. Cannot perform search.");
+                return;
+            }
+
             // Thread-safe CTS swap
             var newCts = new CancellationTokenSource();
             var oldCts = Interlocked.Exchange(ref _cts, newCts);
@@ -517,7 +523,7 @@ namespace Servy.Manager.ViewModels
                 FooterText = string.Empty; // Clear footer text before search
 
                 // Step 1: show "Searching..." immediately
-                _cursorService.SetWaitCursor();
+                _cursorService?.SetWaitCursor();
                 SearchButtonText = Strings.Button_Searching;
                 IsBusy = true;
 
@@ -526,7 +532,7 @@ namespace Servy.Manager.ViewModels
 
                 // Step 3: fetch data off UI thread
                 var sw = Stopwatch.StartNew();
-                var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, true, token), token);
+                var results = await Task.Run(() => ServiceCommands?.SearchServicesAsync(SearchText, true, token), token);
                 sw.Stop();
                 Debug.WriteLine($"Created {results.Count} SearchServicesAsync in {sw.ElapsedMilliseconds} ms");
 
@@ -602,7 +608,7 @@ namespace Servy.Manager.ViewModels
             finally
             {
                 // Step 7: restore button text and IsBusy
-                _cursorService.ResetCursor();
+                _cursorService?.ResetCursor();
                 SearchButtonText = Strings.Button_Search;
                 IsBusy = false;
             }
@@ -611,51 +617,66 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Launches configuration for the given service.
         /// </summary>
-        private async Task ConfigureServiceAsync(object parameter)
+        private async Task ConfigureServiceAsync(object? parameter)
         {
+            if (ServiceCommands == null) throw new InvalidOperationException("ServiceCommands is not initialized.");
             await ServiceCommands.ConfigureServiceAsync(parameter as Service);
         }
 
         /// <summary>
         /// Imports XML configuration for services.
         /// </summary>
-        private async Task ImportXmlConfigAsync(object parameter)
+        private async Task ImportXmlConfigAsync(object? parameter)
         {
+            if (ServiceCommands == null) throw new InvalidOperationException("ServiceCommands is not initialized.");
             await ServiceCommands.ImportXmlConfigAsync();
         }
 
         /// <summary>
         /// Imports JSON configuration for services.
         /// </summary>
-        private async Task ImportJsonConfigAsync(object parameter)
+        private async Task ImportJsonConfigAsync(object? parameter)
         {
+            if (ServiceCommands == null) throw new InvalidOperationException("ServiceCommands is not initialized.");
             await ServiceCommands.ImportJsonConfigAsync();
         }
 
         /// <summary>
         /// Start all selected services.
         /// </summary>
-        private Task StartSelectedAsync(object parameter) =>
+        private Task StartSelectedAsync(object? parameter) =>
             ExecuteBulkOperationAsync(
-                s => ServiceCommands.StartServiceAsync(s, showMessageBox: false),
+                s =>
+                {
+                    if (ServiceCommands == null) throw new InvalidOperationException("ServiceCommands is not initialized.");
+                    return ServiceCommands.StartServiceAsync(s, showMessageBox: false);
+                },
                 Strings.Confirm_StartSelectedServices,
                 "Failed to start selected services");
 
         /// <summary>
         /// Stop all selected services.
         /// </summary>
-        private Task StopSelectedAsync(object parameter) =>
+        private Task StopSelectedAsync(object? parameter) =>
             ExecuteBulkOperationAsync(
-                s => ServiceCommands.StopServiceAsync(s, showMessageBox: false),
+                s =>
+                {
+                    if (ServiceCommands == null) throw new InvalidOperationException("ServiceCommands is not initialized.");
+                    return ServiceCommands.StopServiceAsync(s, showMessageBox: false);
+                },
                 Strings.Confirm_StopSelectedServices,
                 "Failed to stop selected services");
 
         /// <summary>
         /// Restart all selected services.
         /// </summary>
-        private Task RestartSelectedAsync(object parameter) =>
+        private Task RestartSelectedAsync(object? parameter) =>
             ExecuteBulkOperationAsync(
-                s => ServiceCommands.RestartServiceAsync(s, showMessageBox: false),
+                s =>
+                {
+                    if (ServiceCommands == null) throw new InvalidOperationException("ServiceCommands is not initialized.");
+                    return ServiceCommands.RestartServiceAsync(s, showMessageBox: false);
+                },
                 Strings.Confirm_RestartSelectedServices,
                 "Failed to restart selected services");
 
@@ -666,24 +687,39 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Opens the Servy documentation page in the default browser.
         /// </summary>
-        private async Task OpenDocumentation(object parameter)
+        private async Task OpenDocumentation(object? parameter)
         {
+            if (_helpService == null)
+            {
+                Logger.Warn("Help service is not available.");
+                return;
+            }
             await _helpService.OpenDocumentation(AppConfig.Caption);
         }
 
         /// <summary>
         /// Checks for the latest Servy release on GitHub and prompts the user if an update is available.
         /// </summary>
-        private async Task CheckUpdatesAsync(object parameter)
+        private async Task CheckUpdatesAsync(object? parameter)
         {
+            if (_helpService == null)
+            {
+                Logger.Warn("Help service is not available.");
+                return;
+            }
             await _helpService.CheckUpdates(AppConfig.Caption);
         }
 
         /// <summary>
         /// Displays the "About Servy" dialog with version and copyright information.
         /// </summary>
-        private async Task OpenAboutDialog(object parameter)
+        private async Task OpenAboutDialog(object? parameter)
         {
+            if (_helpService == null)
+            {
+                Logger.Warn("Help service is not available.");
+                return;
+            }
             await _helpService.OpenAboutDialog(
                string.Format(Strings.Text_About,
                Core.Config.AppConfig.Version,
@@ -766,17 +802,23 @@ namespace Servy.Manager.ViewModels
         /// Executes a bulk operation on all selected and installed services.
         /// </summary>
         private async Task ExecuteBulkOperationAsync(
-            Func<Service, Task<bool>> operation,
+            Func<Service?, Task<bool>> operation,
             string confirmMessage,
             string logErrorMessage)
         {
             try
             {
+                if (_messageBoxService == null)
+                {
+                    Logger.Warn("MessageBoxService is not available. Cannot confirm bulk operation.");
+                    return;
+                }
+
                 // 1. Identify selected and installed services
                 var selectedServices = _services
-                    .Where(s => s.IsInstalled && s.IsChecked)
-                    .Select(s => s.Service)
-                    .ToList();
+                .Where(s => s.IsInstalled && s.IsChecked)
+                .Select(s => s.Service)
+                .ToList();
 
                 if (selectedServices.Count == 0)
                 {
@@ -801,7 +843,7 @@ namespace Servy.Manager.ViewModels
                         try
                         {
                             bool success = await operation(service);
-                            return new { ServiceName = service.Name, Success = success };
+                            return new { ServiceName = service?.Name ?? string.Empty, Success = success };
                         }
                         finally
                         {
@@ -849,8 +891,20 @@ namespace Servy.Manager.ViewModels
             {
                 token.ThrowIfCancellationRequested();
 
+                if (_serviceRepository == null)
+                {
+                    Logger.Warn("ServiceRepository is not available. Cannot refresh services.");
+                    return;
+                }
+
+                if (_serviceManager == null)
+                {
+                    Logger.Warn("ServiceManager is not available. Cannot refresh services.");
+                    return;
+                }
+
                 // 1. Take snapshot of services safely
-                List<Service> snapshot;
+                List<Service?> snapshot;
                 lock (_servicesLock)
                 {
                     snapshot = _services.Select(r => r.Service).ToList();
@@ -861,7 +915,7 @@ namespace Servy.Manager.ViewModels
                 var allServicesList = await Task.Run(() => _serviceManager.GetAllServices(token), token);
                 stopwatch.Stop();
                 Debug.WriteLine($"GetAllServices finished in {stopwatch.ElapsedMilliseconds}ms");
-                var allServicesDict = allServicesList.ToDictionary(s => s.Name, StringComparer.OrdinalIgnoreCase);
+                var allServicesDict = allServicesList.ToDictionary(s => s.Name!, StringComparer.OrdinalIgnoreCase);
 
                 // 3. Fetch all Repository DTOs in bulk
                 var allDtosList = await _serviceRepository.GetAllAsync(decrypt: true, token);
@@ -879,6 +933,7 @@ namespace Servy.Manager.ViewModels
                         await semaphore.WaitAsync(token);
                         try
                         {
+                            if (service == null || string.IsNullOrWhiteSpace(service.Name)) return;
                             allDtosDict.TryGetValue(service.Name, out var dto);
 
                             // Collect updates without touching the UI model yet
@@ -904,7 +959,7 @@ namespace Servy.Manager.ViewModels
                 // property changes happen in a controlled, sequential batch.
                 if (!uiUpdates.IsEmpty)
                 {
-                    await _dispatcher.InvokeAsync(() =>
+                    await _dispatcher!.InvokeAsync(() =>
                     {
                         foreach (var info in uiUpdates)
                         {
@@ -935,10 +990,10 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Pure logic method to calculate what needs to change without touching UI models.
         /// </summary>
-        private async Task<(ServiceUpdateInfo UpdateInfo, ServiceDto UpdatedDto)> GetServiceUpdateInfoAsync(
+        private async Task<(ServiceUpdateInfo? UpdateInfo, ServiceDto? UpdatedDto)> GetServiceUpdateInfoAsync(
             Service service,
-            Dictionary<string, ServiceInfo> allServices,
-            ServiceDto serviceDto,
+            Dictionary<string, ServiceInfo>? allServices,
+            ServiceDto? serviceDto,
             CancellationToken token)
         {
             try
@@ -948,7 +1003,7 @@ namespace Servy.Manager.ViewModels
                 var update = new ServiceUpdateInfo(service);
 
                 // 1. Evaluate OS Status First
-                if (allServices.TryGetValue(service.Name, out var info) && info != null)
+                if (allServices != null && !string.IsNullOrWhiteSpace(service.Name) && allServices.TryGetValue(service.Name, out var info) && info != null)
                 {
                     update.IsInstalled = true;
                     update.Status = info.Status;
@@ -984,10 +1039,10 @@ namespace Servy.Manager.ViewModels
 
                 if (service.StartupType == null && serviceDto != null)
                 {
-                    update.StartupType = (ServiceStartType)serviceDto.StartupType;
+                    update.StartupType = serviceDto.StartupType.HasValue ? (ServiceStartType?)serviceDto.StartupType.Value : null;
                 }
 
-                ServiceDto resultDto = null;
+                ServiceDto? resultDto = null;
                 if (serviceDto != null)
                 {
                     // 4. Sync PID to UI. Because we use targetPid, this correctly pushes 'null' 
@@ -1084,8 +1139,8 @@ namespace Servy.Manager.ViewModels
             public bool IsInstalled { get; set; }
             public ServiceStatus? Status { get; set; }
             public ServiceStartType? StartupType { get; set; }
-            public string LogOnAs { get; set; }
-            public string Description { get; set; }
+            public string? LogOnAs { get; set; }
+            public string? Description { get; set; }
 
             public ServiceUpdateInfo(Service target)
             {
@@ -1098,14 +1153,14 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task SetBusyStateAsync(bool busy)
         {
-            await _dispatcher.InvokeAsync(() =>
+            await _dispatcher!.InvokeAsync(() =>
             {
                 IsBusy = busy;
                 if (busy)
                 {
                     if (_busyCursor == null)
                     {
-                        _busyCursor = _cursorService.SetWaitCursor();
+                        _busyCursor = _cursorService?.SetWaitCursor();
                     }
                 }
                 else
@@ -1125,14 +1180,14 @@ namespace Servy.Manager.ViewModels
             Action action = () =>
             {
                 var stopwatch = Stopwatch.StartNew();
-                ServiceRowViewModel itemToRemove;
+                ServiceRowViewModel? itemToRemove;
 
                 lock (_servicesLock)
                 {
-                    itemToRemove = _services.FirstOrDefault(s => s.Service.Name == serviceName);
+                    itemToRemove = _services.FirstOrDefault(s => s.Service?.Name == serviceName);
                     if (itemToRemove == null) return;
 
-                    itemToRemove.PropertyChanged -= Service_PropertyChanged;
+                    itemToRemove.PropertyChanged -= Service_PropertyChanged!;
                     _services.Remove(itemToRemove);
                 }
 
@@ -1144,7 +1199,7 @@ namespace Servy.Manager.ViewModels
                 UpdateSelectAllState();
             };
 
-            if (_dispatcher.CheckAccess())
+            if (_dispatcher!.CheckAccess())
             {
                 action();
             }

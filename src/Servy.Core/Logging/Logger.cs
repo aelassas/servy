@@ -63,7 +63,7 @@ namespace Servy.Core.Logging
         /// <param name="useLocalTimeForRotation">Indicates whether to use local system time for log rotation (Default: false (UTC)).</param>
         /// <param name="maxBackupLogFiles">The maximum number of backup files to retain. Defaults to 10. Set to 0 for unlimited backups.</param>
         public static void Initialize(
-            string fileName,
+            string? fileName,
             LogLevel initialLevel = LogLevel.Info,
             int logRotationSizeMB = 10,
             DateRotationType dateRotationType = DateRotationType.None,

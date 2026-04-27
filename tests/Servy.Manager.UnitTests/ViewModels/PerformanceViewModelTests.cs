@@ -51,7 +51,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 var vm = CreateViewModel();
-                var mockData = new List<Service>
+                var mockData = new List<Service?>
                 {
                     new Service { Name = "TestSvc", Pid = 123 }
                 };

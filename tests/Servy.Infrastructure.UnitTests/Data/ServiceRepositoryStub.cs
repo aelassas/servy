@@ -31,8 +31,10 @@ namespace Servy.Infrastructure.UnitTests.Data
         /// Generates a consistent ServiceDto for the stub to return, 
         /// applying simulated encryption if requested.
         /// </summary>
-        private ServiceDto CreateConsistentDto(int id, string name, bool decrypt)
+        private ServiceDto CreateConsistentDto(int id, string? name, bool decrypt)
         {
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException(nameof(name));
+
             string FormatValue(string value) => decrypt ? value : $"{EncryptedPrefix}{value}";
 
             return new ServiceDto
@@ -55,7 +57,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         public override Task<int> UpdateAsync(ServiceDto service, CancellationToken token = default) => Task.FromResult(1);
         public override Task<int> UpsertAsync(ServiceDto service, CancellationToken token = default) => Task.FromResult(1);
         public override Task<int> DeleteAsync(int id, CancellationToken token = default) => Task.FromResult(1);
-        public override Task<int> DeleteAsync(string name, CancellationToken token = default) => Task.FromResult(1);
+        public override Task<int> DeleteAsync(string? name, CancellationToken token = default) => Task.FromResult(1);
 
         public override Task<ServiceDto?> GetByIdAsync(int id, bool decrypt = true, CancellationToken token = default)
         {
@@ -64,7 +66,7 @@ namespace Servy.Infrastructure.UnitTests.Data
                 : Task.FromResult<ServiceDto?>(CreateConsistentDto(id, "StubService", decrypt));
         }
 
-        public override Task<ServiceDto?> GetByNameAsync(string name, bool decrypt = true, CancellationToken token = default)
+        public override Task<ServiceDto?> GetByNameAsync(string? name, bool decrypt = true, CancellationToken token = default)
         {
             // Fixes the asymmetry bug by returning the same shape as GetByIdAsync
             return _returnNullDto
@@ -82,9 +84,9 @@ namespace Servy.Infrastructure.UnitTests.Data
             return Task.FromResult<IEnumerable<ServiceDto>>(new List<ServiceDto> { CreateConsistentDto(1, "StubService", decrypt) });
         }
 
-        public override Task<string> ExportXmlAsync(string name, CancellationToken token = default) => Task.FromResult("<xml></xml>");
+        public override Task<string> ExportXmlAsync(string? name, CancellationToken token = default) => Task.FromResult("<xml></xml>");
         public override Task<bool> ImportXmlAsync(string xml, CancellationToken token = default) => Task.FromResult(true);
-        public override Task<string> ExportJsonAsync(string name, CancellationToken token = default) => Task.FromResult("{ }");
+        public override Task<string> ExportJsonAsync(string? name, CancellationToken token = default) => Task.FromResult("{ }");
         public override Task<bool> ImportJsonAsync(string json, CancellationToken token = default) => Task.FromResult(true);
     }
 

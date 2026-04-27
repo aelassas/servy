@@ -46,13 +46,13 @@ namespace Servy.ViewModels
         /// Occurs when a property value changes.
         /// Used for data binding updates.
         /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Raises the <see cref="PropertyChanged"/> event for the specified property name.
         /// </summary>
         /// <param name="propertyName">Name of the property that changed.</param>
-        private void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
@@ -79,7 +79,7 @@ namespace Servy.ViewModels
         /// Gets or sets the name of the Windows service. 
         /// Updating this property also updates the associated ServiceControllerWrapper instance.
         /// </summary>
-        public string ServiceName
+        public string? ServiceName
         {
             get => _config.Name;
             set
@@ -95,7 +95,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets the display name of the Windows service. 
         /// </summary>
-        public string ServiceDisplayName
+        public string? ServiceDisplayName
         {
             get => _config.DisplayName;
             set
@@ -111,7 +111,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets the description of the service.
         /// </summary>
-        public string ServiceDescription
+        public string? ServiceDescription
         {
             get => _config.Description;
             set { _config.Description = value; OnPropertyChanged(); }
@@ -120,7 +120,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets the path to the executable process to be run by the service.
         /// </summary>
-        public string ProcessPath
+        public string? ProcessPath
         {
             get => _config.ExecutablePath;
             set { _config.ExecutablePath = value; OnPropertyChanged(); }
@@ -129,7 +129,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets the startup directory for the process.
         /// </summary>
-        public string StartupDirectory
+        public string? StartupDirectory
         {
             get => _config.StartupDirectory;
             set { _config.StartupDirectory = value; OnPropertyChanged(); }
@@ -138,7 +138,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets additional command line parameters for the process.
         /// </summary>
-        public string ProcessParameters
+        public string? ProcessParameters
         {
             get => _config.Parameters;
             set { _config.Parameters = value; OnPropertyChanged(); }
@@ -198,7 +198,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets the path for standard output redirection.
         /// </summary>
-        public string StdoutPath
+        public string? StdoutPath
         {
             get => _config.StdoutPath;
             set { _config.StdoutPath = value; OnPropertyChanged(); }
@@ -207,25 +207,25 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets the path for standard error redirection.
         /// </summary>
-        public string StderrPath
+        public string? StderrPath
         {
             get => _config.StderrPath;
             set { _config.StderrPath = value; OnPropertyChanged(); }
         }
 
         /// <summary>
-        /// Gets or sets the start timeout as a string (in seconds).
+        /// Gets or sets the start timeout as a string? (in seconds).
         /// </summary>
-        public string StartTimeout
+        public string? StartTimeout
         {
             get => _config.StartTimeout;
             set { _config.StartTimeout = value; OnPropertyChanged(); }
         }
 
         /// <summary>
-        /// Gets or sets the start timeout as a string (in seconds).
+        /// Gets or sets the start timeout as a string? (in seconds).
         /// </summary>
-        public string StopTimeout
+        public string? StopTimeout
         {
             get => _config.StopTimeout;
             set { _config.StopTimeout = value; OnPropertyChanged(); }
@@ -246,9 +246,9 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets the log rotation size as a string (in MB).
+        /// Gets or sets the log rotation size as a string? (in MB).
         /// </summary>
-        public string RotationSize
+        public string? RotationSize
         {
             get => _config.RotationSize;
             set { _config.RotationSize = value; OnPropertyChanged(); }
@@ -296,7 +296,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets the maximum number of rotated log files to keep.
         /// </summary>
-        public string MaxRotations
+        public string? MaxRotations
         {
             get => _config.MaxRotations;
             set { _config.MaxRotations = value; OnPropertyChanged(); }
@@ -334,7 +334,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets the heartbeat interval (seconds) as a string.
         /// </summary>
-        public string HeartbeatInterval
+        public string? HeartbeatInterval
         {
             get => _config.HeartbeatInterval;
             set { _config.HeartbeatInterval = value; OnPropertyChanged(); }
@@ -343,7 +343,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets the maximum allowed failed health checks as a string.
         /// </summary>
-        public string MaxFailedChecks
+        public string? MaxFailedChecks
         {
             get => _config.MaxFailedChecks;
             set { _config.MaxFailedChecks = value; OnPropertyChanged(); }
@@ -372,7 +372,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets the maximum number of restart attempts as a string.
         /// </summary>
-        public string MaxRestartAttempts
+        public string? MaxRestartAttempts
         {
             get => _config.MaxRestartAttempts;
             set { _config.MaxRestartAttempts = value; OnPropertyChanged(); }
@@ -381,7 +381,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets failure program path as a string.
         /// </summary>
-        public string FailureProgramPath
+        public string? FailureProgramPath
         {
             get => _config.FailureProgramPath;
             set { _config.FailureProgramPath = value; OnPropertyChanged(); }
@@ -390,7 +390,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets failure program startup directory as a string.
         /// </summary>
-        public string FailureProgramStartupDirectory
+        public string? FailureProgramStartupDirectory
         {
             get => _config.FailureProgramStartupDirectory;
             set { _config.FailureProgramStartupDirectory = value; OnPropertyChanged(); }
@@ -399,7 +399,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets failure program parameters as a string.
         /// </summary>
-        public string FailureProgramParameters
+        public string? FailureProgramParameters
         {
             get => _config.FailureProgramParameters;
             set { _config.FailureProgramParameters = value; OnPropertyChanged(); }
@@ -408,7 +408,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets environment variables as a string.
         /// </summary>
-        public string EnvironmentVariables
+        public string? EnvironmentVariables
         {
             get => _config.EnvironmentVariables;
             set { _config.EnvironmentVariables = value; OnPropertyChanged(); }
@@ -417,7 +417,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets service dependencies as a string.
         /// </summary>
-        public string ServiceDependencies
+        public string? ServiceDependencies
         {
             get => _config.ServiceDependencies;
             set { _config.ServiceDependencies = value; OnPropertyChanged(); }
@@ -435,7 +435,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets user account as a string.
         /// </summary>
-        public string UserAccount
+        public string? UserAccount
         {
             get => _config.UserAccount;
             set { _config.UserAccount = value; OnPropertyChanged(); }
@@ -444,7 +444,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets user password as a string.
         /// </summary>
-        public string Password
+        public string? Password
         {
             get => _config.Password;
             set { _config.Password = value; OnPropertyChanged(); }
@@ -453,7 +453,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets user password confirmation as a string.
         /// </summary>
-        public string ConfirmPassword
+        public string? ConfirmPassword
         {
             get => _config.ConfirmPassword;
             set { _config.ConfirmPassword = value; OnPropertyChanged(); }
@@ -462,7 +462,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets pre-launch executable path as a string.
         /// </summary>
-        public string PreLaunchExecutablePath
+        public string? PreLaunchExecutablePath
         {
             get => _config.PreLaunchExecutablePath;
             set { _config.PreLaunchExecutablePath = value; OnPropertyChanged(); }
@@ -471,7 +471,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets pre-launch startup directory as a string.
         /// </summary>
-        public string PreLaunchStartupDirectory
+        public string? PreLaunchStartupDirectory
         {
             get => _config.PreLaunchStartupDirectory;
             set { _config.PreLaunchStartupDirectory = value; OnPropertyChanged(); }
@@ -480,7 +480,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets pre-launch parameters as a string.
         /// </summary>
-        public string PreLaunchParameters
+        public string? PreLaunchParameters
         {
             get => _config.PreLaunchParameters;
             set { _config.PreLaunchParameters = value; OnPropertyChanged(); }
@@ -489,7 +489,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets pre-launch environment variables as a string.
         /// </summary>
-        public string PreLaunchEnvironmentVariables
+        public string? PreLaunchEnvironmentVariables
         {
             get => _config.PreLaunchEnvironmentVariables;
             set { _config.PreLaunchEnvironmentVariables = value; OnPropertyChanged(); }
@@ -498,7 +498,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets pre-launch stdout log file path as a string.
         /// </summary>
-        public string PreLaunchStdoutPath
+        public string? PreLaunchStdoutPath
         {
             get => _config.PreLaunchStdoutPath;
             set { _config.PreLaunchStdoutPath = value; OnPropertyChanged(); }
@@ -507,7 +507,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets pre-launch stderr log file path as a string.
         /// </summary>
-        public string PreLaunchStderrPath
+        public string? PreLaunchStderrPath
         {
             get => _config.PreLaunchStderrPath;
             set { _config.PreLaunchStderrPath = value; OnPropertyChanged(); }
@@ -516,7 +516,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets pre-launch timeout as a string.
         /// </summary>
-        public string PreLaunchTimeoutSeconds
+        public string? PreLaunchTimeoutSeconds
         {
             get => _config.PreLaunchTimeoutSeconds;
             set { _config.PreLaunchTimeoutSeconds = value; OnPropertyChanged(); }
@@ -525,7 +525,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets pre-launch retry attempts as a string.
         /// </summary>
-        public string PreLaunchRetryAttempts
+        public string? PreLaunchRetryAttempts
         {
             get => _config.PreLaunchRetryAttempts;
             set { _config.PreLaunchRetryAttempts = value; OnPropertyChanged(); }
@@ -552,7 +552,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets post-launch executable path as a string.
         /// </summary>
-        public string PostLaunchExecutablePath
+        public string? PostLaunchExecutablePath
         {
             get => _config.PostLaunchExecutablePath;
             set { _config.PostLaunchExecutablePath = value; OnPropertyChanged(); }
@@ -561,7 +561,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets post-launch startup directory as a string.
         /// </summary>
-        public string PostLaunchStartupDirectory
+        public string? PostLaunchStartupDirectory
         {
             get => _config.PostLaunchStartupDirectory;
             set { _config.PostLaunchStartupDirectory = value; OnPropertyChanged(); }
@@ -570,7 +570,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets post-launch parameters as a string.
         /// </summary>
-        public string PostLaunchParameters
+        public string? PostLaunchParameters
         {
             get => _config.PostLaunchParameters;
             set { _config.PostLaunchParameters = value; OnPropertyChanged(); }
@@ -588,7 +588,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets pre-stop executable path as a string.
         /// </summary>
-        public string PreStopExecutablePath
+        public string? PreStopExecutablePath
         {
             get => _config.PreStopExecutablePath;
             set { _config.PreStopExecutablePath = value; OnPropertyChanged(); }
@@ -597,7 +597,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets pre-stop startup directory as a string.
         /// </summary>
-        public string PreStopStartupDirectory
+        public string? PreStopStartupDirectory
         {
             get => _config.PreStopStartupDirectory;
             set { _config.PreStopStartupDirectory = value; OnPropertyChanged(); }
@@ -606,7 +606,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets pre-stop parameters as a string.
         /// </summary>
-        public string PreStopParameters
+        public string? PreStopParameters
         {
             get => _config.PreStopParameters;
             set { _config.PreStopParameters = value; OnPropertyChanged(); }
@@ -615,7 +615,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets pre-stop timeout as a string.
         /// </summary>
-        public string PreStopTimeoutSeconds
+        public string? PreStopTimeoutSeconds
         {
             get => _config.PreStopTimeoutSeconds;
             set { _config.PreStopTimeoutSeconds = value; OnPropertyChanged(); }
@@ -633,7 +633,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets post-stop executable path as a string.
         /// </summary>
-        public string PostStopExecutablePath
+        public string? PostStopExecutablePath
         {
             get => _config.PostStopExecutablePath;
             set { _config.PostStopExecutablePath = value; OnPropertyChanged(); }
@@ -642,7 +642,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets post-stop startup directory as a string.
         /// </summary>
-        public string PostStopStartupDirectory
+        public string? PostStopStartupDirectory
         {
             get => _config.PostStopStartupDirectory;
             set { _config.PostStopStartupDirectory = value; OnPropertyChanged(); }
@@ -651,7 +651,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets or sets post-stop parameters as a string.
         /// </summary>
-        public string PostStopParameters
+        public string? PostStopParameters
         {
             get => _config.PostStopParameters;
             set { _config.PostStopParameters = value; OnPropertyChanged(); }
@@ -824,12 +824,13 @@ namespace Servy.ViewModels
         /// <param name="serviceRepository">Service Repository.</param>
         /// <param name="helpService">Help service.</param>
         /// <param name="appConfig">Application configuration.</param>
-        public MainViewModel(IFileDialogService dialogService,
-            IServiceCommands serviceCommands,
-            IMessageBoxService messageBoxService,
-            IServiceRepository serviceRepository,
-            IHelpService helpService,
-            IAppConfiguration appConfig
+        public MainViewModel(
+            IFileDialogService dialogService,
+            IServiceCommands? serviceCommands,
+            IMessageBoxService? messageBoxService,
+            IServiceRepository? serviceRepository,
+            IHelpService? helpService,
+            IAppConfiguration? appConfig
             )
         {
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
@@ -971,7 +972,7 @@ namespace Servy.ViewModels
         /// </summary>
         /// <param name="serviceName">Service Name.</param>
         /// <returns>A task representing the asynchronous load operation.</returns>
-        public async Task LoadServiceConfiguration(string serviceName)
+        public async Task LoadServiceConfiguration(string? serviceName)
         {
             try
             {
@@ -999,11 +1000,11 @@ namespace Servy.ViewModels
         /// <summary>
         /// PropertyChanged event handler to capture dynamically updated settings from the application.
         /// </summary>
-        private void AppConfig_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void AppConfig_PropertyChanged(object? sender, PropertyChangedEventArgs? e)
         {
-            if (e.PropertyName == nameof(IAppConfiguration.IsManagerAppAvailable))
+            if (e?.PropertyName == nameof(IAppConfiguration.IsManagerAppAvailable))
             {
-                IsManagerAppAvailable = ((IAppConfiguration)sender).IsManagerAppAvailable;
+                IsManagerAppAvailable = ((IAppConfiguration)sender!).IsManagerAppAvailable;
             }
         }
 
@@ -1015,13 +1016,13 @@ namespace Servy.ViewModels
         /// Executes a file or folder dialog and assigns the resulting path to a property if the selection is valid.
         /// </summary>
         /// <param name="dialogAction">A function that invokes the specific <see cref="IFileDialogService"/> method (e.g., OpenExecutable or OpenFolder).</param>
-        /// <param name="propertySetter">An action that assigns the returned string to the target ViewModel property.</param>
+        /// <param name="propertySetter">An action that assigns the returned string? to the target ViewModel property.</param>
         /// <remarks>
         /// This helper encapsulates the common pattern of checking for null or empty strings 
         /// before updating configuration properties, ensuring that user cancellation of a dialog 
         /// does not overwrite existing valid paths.
         /// </remarks>
-        private void BrowseAndAssign(Func<string> dialogAction, Action<string> propertySetter)
+        private void BrowseAndAssign(Func<string?> dialogAction, Action<string> propertySetter)
         {
             var result = dialogAction();
             if (!string.IsNullOrEmpty(result)) propertySetter(result);
@@ -1122,7 +1123,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Calls <see cref="IServiceCommands.InstallService"/> with the current property values.
         /// </summary>
-        private async Task InstallService(object parameter)
+        private async Task InstallService(object? parameter)
         {
             try
             {
@@ -1138,7 +1139,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Calls <see cref="IServiceCommands.UninstallService"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private async Task UninstallService(object parameter)
+        private async Task UninstallService(object? parameter)
         {
             try
             {
@@ -1154,7 +1155,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Calls <see cref="IServiceCommands.StartService"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private async Task StartService(object parameter)
+        private async Task StartService(object? parameter)
         {
             try
             {
@@ -1170,7 +1171,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Calls <see cref="IServiceCommands.StopService"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private async Task StopService(object parameter)
+        private async Task StopService(object? parameter)
         {
             try
             {
@@ -1186,7 +1187,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Calls <see cref="IServiceCommands.RestartService"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private async Task RestartService(object parameter)
+        private async Task RestartService(object? parameter)
         {
             try
             {
@@ -1202,7 +1203,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Calls <see cref="IServiceCommands.OpenManager"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private async Task OpenManager(object parameter)
+        private async Task OpenManager(object? parameter)
         {
             await ServiceCommands.OpenManager();
         }
@@ -1214,7 +1215,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Clears all form fields and resets to default values.
         /// </summary>
-        private async Task ClearForm(object parameter)
+        private async Task ClearForm(object? parameter)
         {
             // Ask for confirmation before clearing everything
             bool confirm = await _messageBoxService.ShowConfirmAsync(Strings.Confirm_ClearAll, AppConfig.Caption);
@@ -1296,7 +1297,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Exports the current service configuration to an XML file selected by the user.
         /// </summary>
-        private async Task ExportXmlConfig(object parameter)
+        private async Task ExportXmlConfig(object? parameter)
         {
             await ServiceCommands.ExportXmlConfig(ConfirmPassword);
         }
@@ -1304,7 +1305,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Exports the current service configuration to a JSON file selected by the user.
         /// </summary>
-        private async Task ExportJsonConfig(object parameter)
+        private async Task ExportJsonConfig(object? parameter)
         {
             await ServiceCommands.ExportJsonConfig(ConfirmPassword);
         }
@@ -1315,7 +1316,7 @@ namespace Servy.ViewModels
         /// and maps the values to the main view model.
         /// Shows an error message if the XML is invalid, deserialization fails, or any exception occurs.
         /// </summary>
-        private async Task ImportXmlConfig(object parameter)
+        private async Task ImportXmlConfig(object? parameter)
         {
             await ServiceCommands.ImportXmlConfig();
         }
@@ -1326,7 +1327,7 @@ namespace Servy.ViewModels
         /// and maps the values to the main view model.
         /// Shows an error message if the JSON is invalid, deserialization fails, or any exception occurs.
         /// </summary>
-        private async Task ImportJsonConfig(object parameter)
+        private async Task ImportJsonConfig(object? parameter)
         {
             await ServiceCommands.ImportJsonConfig();
         }
@@ -1338,7 +1339,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens the Servy documentation page in the default browser.
         /// </summary>
-        private async Task OpenDocumentation(object parameter)
+        private async Task OpenDocumentation(object? parameter)
         {
             await _helpService.OpenDocumentation(AppConfig.Caption);
         }
@@ -1347,7 +1348,7 @@ namespace Servy.ViewModels
         /// Checks for the latest Servy release on GitHub and prompts the user if an update is available.
         /// If a newer version exists, opens the latest release page in the default browser; otherwise shows an informational message.
         /// </summary>
-        private async Task CheckUpdatesAsync(object parameter)
+        private async Task CheckUpdatesAsync(object? parameter)
         {
             await _helpService.CheckUpdates(AppConfig.Caption);
         }
@@ -1355,7 +1356,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Displays the "About Servy" dialog with version and copyright information.
         /// </summary>
-        private async Task OpenAboutDialog(object parameter)
+        private async Task OpenAboutDialog(object? parameter)
         {
             await _helpService.OpenAboutDialog(
                 string.Format(Strings.Text_About,
@@ -1386,63 +1387,63 @@ namespace Servy.ViewModels
         {
             ServiceName = dto.Name;
             ServiceDisplayName = dto.DisplayName;
-            ServiceDescription = dto.Description;
+            ServiceDescription = dto.Description ?? string.Empty;
             ProcessPath = dto.ExecutablePath;
-            StartupDirectory = dto.StartupDirectory;
-            ProcessParameters = dto.Parameters;
+            StartupDirectory = dto.StartupDirectory ?? string.Empty;
+            ProcessParameters = dto.Parameters ?? string.Empty;
             SelectedStartupType = dto.StartupType == null ? ServiceStartType.Automatic : (ServiceStartType)dto.StartupType;
             SelectedProcessPriority = dto.Priority == null ? ProcessPriority.Normal : (ProcessPriority)dto.Priority;
             EnableConsoleUI = dto.EnableConsoleUI ?? false;
-            StdoutPath = dto.StdoutPath;
-            StderrPath = dto.StderrPath;
+            StdoutPath = dto.StdoutPath ?? string.Empty;
+            StderrPath = dto.StderrPath ?? string.Empty;
             EnableSizeRotation = dto.EnableSizeRotation ?? false;
-            RotationSize = dto.RotationSize == null ? DefaultRotationSize.ToString() : dto.RotationSize.ToString();
+            RotationSize = dto.RotationSize == null ? DefaultRotationSize.ToString() : dto.RotationSize.Value.ToString();
             EnableDateRotation = dto.EnableDateRotation ?? false;
             SelectedDateRotationType = dto.DateRotationType == null ? DateRotationType.Daily : (DateRotationType)dto.DateRotationType;
-            MaxRotations = dto.MaxRotations == null ? DefaultMaxRotations.ToString() : dto.MaxRotations.ToString();
+            MaxRotations = dto.MaxRotations == null ? DefaultMaxRotations.ToString() : dto.MaxRotations.Value.ToString();
             UseLocalTimeForRotation = dto.UseLocalTimeForRotation ?? DefaultUseLocalTimeForRotation;
             EnableHealthMonitoring = dto.EnableHealthMonitoring ?? false;
-            HeartbeatInterval = dto.HeartbeatInterval == null ? DefaultHeartbeatInterval.ToString() : dto.HeartbeatInterval.ToString();
-            MaxFailedChecks = dto.MaxFailedChecks == null ? DefaultMaxFailedChecks.ToString() : dto.MaxFailedChecks.ToString();
+            HeartbeatInterval = dto.HeartbeatInterval == null ? DefaultHeartbeatInterval.ToString() : dto.HeartbeatInterval.Value.ToString();
+            MaxFailedChecks = dto.MaxFailedChecks == null ? DefaultMaxFailedChecks.ToString() : dto.MaxFailedChecks.Value.ToString();
             SelectedRecoveryAction = dto.RecoveryAction == null ? RecoveryAction.RestartService : (RecoveryAction)dto.RecoveryAction;
-            MaxRestartAttempts = dto.MaxRestartAttempts == null ? DefaultMaxRestartAttempts.ToString() : dto.MaxRestartAttempts.ToString();
-            FailureProgramPath = dto.FailureProgramPath;
-            FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory;
-            FailureProgramParameters = dto.FailureProgramParameters;
-            EnvironmentVariables = StringHelper.FormatEnvironmentVariables(dto.EnvironmentVariables);
-            ServiceDependencies = StringHelper.FormatServiceDependencies(dto.ServiceDependencies);
+            MaxRestartAttempts = dto.MaxRestartAttempts == null ? DefaultMaxRestartAttempts.ToString() : dto.MaxRestartAttempts.Value.ToString();
+            FailureProgramPath = dto.FailureProgramPath ?? string.Empty;
+            FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory ?? string.Empty;
+            FailureProgramParameters = dto.FailureProgramParameters ?? string.Empty;
+            EnvironmentVariables = StringHelper.FormatEnvironmentVariables(dto.EnvironmentVariables) ?? string.Empty;
+            ServiceDependencies = StringHelper.FormatServiceDependencies(dto.ServiceDependencies) ?? string.Empty;
             RunAsLocalSystem = dto.RunAsLocalSystem ?? true;
-            UserAccount = dto.UserAccount;
-            Password = dto.Password;
+            UserAccount = dto.UserAccount ?? string.Empty;
+            Password = dto.Password ?? string.Empty;
             ConfirmPassword = string.Empty;
-            PreLaunchExecutablePath = dto.PreLaunchExecutablePath;
-            PreLaunchStartupDirectory = dto.PreLaunchStartupDirectory;
-            PreLaunchParameters = dto.PreLaunchParameters;
-            PreLaunchEnvironmentVariables = StringHelper.FormatEnvironmentVariables(dto.PreLaunchEnvironmentVariables);
-            PreLaunchStdoutPath = dto.PreLaunchStdoutPath;
-            PreLaunchStderrPath = dto.PreLaunchStderrPath;
-            PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds == null ? DefaultPreLaunchTimeoutSeconds.ToString() : dto.PreLaunchTimeoutSeconds.ToString();
-            PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts == null ? DefaultPreLaunchRetryAttempts.ToString() : dto.PreLaunchRetryAttempts.ToString();
+            PreLaunchExecutablePath = dto.PreLaunchExecutablePath ?? string.Empty;
+            PreLaunchStartupDirectory = dto.PreLaunchStartupDirectory ?? string.Empty;
+            PreLaunchParameters = dto.PreLaunchParameters ?? string.Empty;
+            PreLaunchEnvironmentVariables = StringHelper.FormatEnvironmentVariables(dto.PreLaunchEnvironmentVariables) ?? string.Empty;
+            PreLaunchStdoutPath = dto.PreLaunchStdoutPath ?? string.Empty;
+            PreLaunchStderrPath = dto.PreLaunchStderrPath ?? string.Empty;
+            PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds == null ? DefaultPreLaunchTimeoutSeconds.ToString() : dto.PreLaunchTimeoutSeconds.Value.ToString();
+            PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts == null ? DefaultPreLaunchRetryAttempts.ToString() : dto.PreLaunchRetryAttempts.Value.ToString();
             PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure ?? false;
 
-            PostLaunchExecutablePath = dto.PostLaunchExecutablePath;
-            PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory;
-            PostLaunchParameters = dto.PostLaunchParameters;
+            PostLaunchExecutablePath = dto.PostLaunchExecutablePath ?? string.Empty;
+            PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory ?? string.Empty;
+            PostLaunchParameters = dto.PostLaunchParameters ?? string.Empty;
 
             EnableDebugLogs = dto.EnableDebugLogs ?? false;
 
-            StartTimeout = dto.StartTimeout == null ? DefaultStartTimeout.ToString() : dto.StartTimeout.ToString();
-            StopTimeout = dto.StopTimeout == null ? DefaultStopTimeout.ToString() : dto.StopTimeout.ToString();
+            StartTimeout = dto.StartTimeout == null ? DefaultStartTimeout.ToString() : dto.StartTimeout.Value.ToString();
+            StopTimeout = dto.StopTimeout == null ? DefaultStopTimeout.ToString() : dto.StopTimeout.Value.ToString();
 
-            PreStopExecutablePath = dto.PreStopExecutablePath;
-            PreStopStartupDirectory = dto.PreStopStartupDirectory;
-            PreStopParameters = dto.PreStopParameters;
-            PreStopTimeoutSeconds = dto.PreStopTimeoutSeconds == null ? DefaultPreStopTimeoutSeconds.ToString() : dto.PreStopTimeoutSeconds.ToString();
+            PreStopExecutablePath = dto.PreStopExecutablePath ?? string.Empty;
+            PreStopStartupDirectory = dto.PreStopStartupDirectory ?? string.Empty;
+            PreStopParameters = dto.PreStopParameters ?? string.Empty;
+            PreStopTimeoutSeconds = dto.PreStopTimeoutSeconds == null ? DefaultPreStopTimeoutSeconds.ToString() : dto.PreStopTimeoutSeconds.Value.ToString();
             PreStopLogAsError = dto.PreStopLogAsError ?? false;
 
-            PostStopExecutablePath = dto.PostStopExecutablePath;
-            PostStopStartupDirectory = dto.PostStopStartupDirectory;
-            PostStopParameters = dto.PostStopParameters;
+            PostStopExecutablePath = dto.PostStopExecutablePath ?? string.Empty;
+            PostStopStartupDirectory = dto.PostStopStartupDirectory ?? string.Empty;
+            PostStopParameters = dto.PostStopParameters ?? string.Empty;
         }
 
         /// <summary>
@@ -1454,7 +1455,7 @@ namespace Servy.ViewModels
         /// <remarks>
         /// This method performs the inverse operation of <see cref="BindServiceDtoToModel(ServiceDto)"/>.
         /// It maps all ViewModel properties back into the DTO, converting text-based numeric values into integers
-        /// and normalizing certain string inputs (such as environment variables and dependencies) into 
+        /// and normalizing certain string? inputs (such as environment variables and dependencies) into 
         /// semicolon-delimited format suitable for persistence or serialization.
         /// 
         /// If parsing fails for numeric fields, safe defaults are applied (e.g., <c>0</c> or <c>30</c> seconds for timeouts).
@@ -1463,10 +1464,10 @@ namespace Servy.ViewModels
         {
             var dto = new ServiceDto
             {
-                Name = ServiceName,
-                DisplayName = ServiceDisplayName,
+                Name = ServiceName ?? string.Empty,
+                DisplayName = ServiceDisplayName ?? string.Empty,
                 Description = ServiceDescription,
-                ExecutablePath = ProcessPath,
+                ExecutablePath = ProcessPath ?? string.Empty,
                 StartupDirectory = StartupDirectory,
                 Parameters = ProcessParameters,
                 StartupType = (int)SelectedStartupType,

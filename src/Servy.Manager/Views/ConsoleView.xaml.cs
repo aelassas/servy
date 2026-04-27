@@ -24,7 +24,7 @@ namespace Servy.Manager.Views
         /// <summary>
         /// Gets or sets the current view model displayed in the console interface.
         /// </summary>
-        private ConsoleViewModel CurrentViewModel;
+        private ConsoleViewModel? CurrentViewModel;
 
         /// <summary>
         /// Define a small tolerance for floating point comparisons 
@@ -70,9 +70,9 @@ namespace Servy.Manager.Views
         /// Since we now use "Option A" (no background updates while paused),
         /// we only need to handle the scroll snap when resuming.
         /// </summary>
-        private void OnVmPropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs? e)
         {
-            if (e.PropertyName == nameof(ConsoleViewModel.IsPaused) && sender is ConsoleViewModel vm && !vm.IsPaused)
+            if (e?.PropertyName == nameof(ConsoleViewModel.IsPaused) && sender is ConsoleViewModel vm && !vm.IsPaused)
             {
                 // Clear UI selection
                 LogList.SelectedItems.Clear();
@@ -154,7 +154,7 @@ namespace Servy.Manager.Views
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The event data.</param>
-        private void CopyMenuItem_Click(object sender, RoutedEventArgs e)
+        private void CopyMenuItem_Click(object? sender, RoutedEventArgs? e)
         {
             var selected = LogList.SelectedItems
                                   .OfType<LogLine>()

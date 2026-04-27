@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
@@ -38,8 +39,14 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="service">The service DTO to serialize.</param>
         /// <param name="filePath">The full path to the file to write.</param>
-        public static void ExportXml(ServiceDto service, string filePath)
+        public static void ExportXml(ServiceDto? service, string filePath)
         {
+            if(service == null)
+            {
+                Logger.Warn($"Attempted to export a null ServiceDto to XML at '{filePath}'. Operation aborted.");
+                return;
+            }
+
             var settings = new XmlWriterSettings
             {
                 Indent = true,
@@ -74,8 +81,13 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="service">The service DTO to serialize.</param>
         /// <param name="filePath">The full path to the file to write.</param>
-        public static void ExportJson(ServiceDto service, string filePath)
+        public static void ExportJson(ServiceDto? service, string filePath)
         {
+            if(service == null)
+            {
+                Logger.Warn($"Attempted to export a null ServiceDto to JSON at '{filePath}'. Operation aborted.");
+                return;
+            }
             var jsonContent = ExportJson(service);
 
             Helper.WriteFileAtomic(filePath, stream =>

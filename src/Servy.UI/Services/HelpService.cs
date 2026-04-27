@@ -94,7 +94,7 @@ namespace Servy.UI.Services
 
                     var content = await response.Content.ReadAsStringAsync();
                     var json = JsonConvert.DeserializeObject<JObject>(content);
-                    string tagName = json?["tag_name"]?.ToString();
+                    string? tagName = json?["tag_name"]?.ToString();
 
                     if (string.IsNullOrEmpty(tagName))
                     {

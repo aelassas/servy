@@ -47,7 +47,7 @@ namespace Servy.Manager
         /// <summary>
         /// Service provider for dependency injection, initialized by the bootstrapper.
         /// </summary>
-        public static IServiceProvider Services { get; private set; }
+        public static IServiceProvider? Services { get; private set; }
 
         #endregion
 
@@ -55,9 +55,9 @@ namespace Servy.Manager
 
         private readonly AppBootstrapper _bootstrapper;
         private bool _isDesktopAppAvailable;
-        private FileSystemWatcher _availabilityWatcher;
-        private FileSystemEventHandler _availabilityChangedHandler;
-        private RenamedEventHandler _availabilityRenamedHandler;
+        private FileSystemWatcher? _availabilityWatcher;
+        private FileSystemEventHandler? _availabilityChangedHandler;
+        private RenamedEventHandler? _availabilityRenamedHandler;
 
         #endregion
 
@@ -66,12 +66,12 @@ namespace Servy.Manager
         /// <summary>
         /// Occurs when a property value changes.
         /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Raises the <see cref="PropertyChanged"/> event for the specified property name.
         /// </summary>
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
@@ -80,9 +80,9 @@ namespace Servy.Manager
 
         #region Internal Properties
 
-        internal AppDbContext DbContext => _bootstrapper.DbContext;
-        internal IServiceRepository ServiceRepository => _bootstrapper.ServiceRepository;
-        internal ISecureData SecureData => _bootstrapper.SecureData;
+        internal AppDbContext? DbContext => _bootstrapper.DbContext;
+        internal IServiceRepository? ServiceRepository => _bootstrapper.ServiceRepository;
+        internal ISecureData? SecureData => _bootstrapper.SecureData;
 
         #endregion
 
@@ -91,17 +91,17 @@ namespace Servy.Manager
         /// <summary>
         /// Connection string.
         /// </summary>
-        public string ConnectionString => _bootstrapper.ConnectionString;
+        public string? ConnectionString => _bootstrapper.ConnectionString;
 
         /// <summary>
         /// Gets the file path for the AES encryption key.
         /// </summary>
-        public string AESKeyFilePath => _bootstrapper.AESKeyFilePath;
+        public string? AESKeyFilePath => _bootstrapper.AESKeyFilePath;
 
         /// <summary>
         /// Gets the file path for the AES initialization vector (IV).
         /// </summary>
-        public string AESIVFilePath => _bootstrapper.AESIVFilePath;
+        public string? AESIVFilePath => _bootstrapper.AESIVFilePath;
 
         /// <summary>
         /// Service status refresh interval in seconds.
@@ -126,7 +126,7 @@ namespace Servy.Manager
         /// <summary>
         /// Servy Desktop App publish path.
         /// </summary>
-        public string DesktopAppPublishPath { get; private set; }
+        public string? DesktopAppPublishPath { get; private set; }
 
         /// <summary>
         /// Indicates whether the configuration application is available.
@@ -229,7 +229,7 @@ namespace Servy.Manager
                     var logsVm = new LogsViewModel(eventLogService, cursorService);
 
                     // Break the circular dependency using local proxy functions
-                    MainViewModel viewModel = null;
+                    MainViewModel? viewModel = null;
                     Action<string> removeServiceProxy = (name) => viewModel?.RemoveService(name);
                     Func<Task> refreshProxy = () => viewModel != null ? viewModel.Refresh() : Task.CompletedTask;
 
@@ -319,7 +319,7 @@ namespace Servy.Manager
         {
             if (string.IsNullOrEmpty(DesktopAppPublishPath)) return;
 
-            string directory = Path.GetDirectoryName(DesktopAppPublishPath);
+            string? directory = Path.GetDirectoryName(DesktopAppPublishPath);
             string fileName = Path.GetFileName(DesktopAppPublishPath);
 
             if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName)) return;
@@ -379,6 +379,11 @@ namespace Servy.Manager
         /// <param name="e">The startup event arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
         {
+            if (Services == null)
+            {
+                throw new InvalidOperationException("Service provider is not initialized.");
+            }
+
             _bootstrapper.OnStartup(this, e);
             base.OnStartup(e);
 

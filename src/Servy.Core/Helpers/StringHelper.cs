@@ -34,7 +34,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="vars">The raw environment variables string.</param>
         /// <returns>A string where each environment variable is on a separate line.</returns>
-        public static string FormatEnvironmentVariables(string vars)
+        public static string FormatEnvironmentVariables(string? vars)
         {
             var normalizedEnvVars = EnvironmentVariableParser.Parse(vars)
                 .Select(v => $"{Escape(v.Name)}={Escape(v.Value)}");
@@ -47,7 +47,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="deps">The semicolon-separated list of service dependencies.</param>
         /// <returns>A string with each dependency on a separate line, or null if input is null.</returns>
-        public static string? FormatServiceDependencies(string deps)
+        public static string? FormatServiceDependencies(string? deps)
         {
             return deps?.Replace(";", Environment.NewLine);
         }

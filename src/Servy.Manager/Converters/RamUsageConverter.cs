@@ -24,6 +24,10 @@ namespace Servy.Manager.Converters
         /// </summary>
         public RamUsageConverter()
         {
+            if (App.Services == null)
+            {
+                throw new InvalidOperationException("App.Services is not initialized. Ensure that the application is configured for dependency injection.");
+            }
             _processHelper = App.Services.GetRequiredService<IProcessHelper>();
         }
 

@@ -40,7 +40,7 @@ namespace Servy.Manager.Config
         /// <summary>
         /// Gets the file path to the published Servy Desktop application executable.
         /// </summary>
-        string DesktopAppPublishPath { get; }
+        string? DesktopAppPublishPath { get; }
 
         /// <summary>
         /// Gets a value indicating whether WPF software rendering is forced for the current session.

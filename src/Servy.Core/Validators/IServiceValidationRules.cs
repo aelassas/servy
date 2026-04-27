@@ -44,6 +44,6 @@ namespace Servy.Core.Validators
         /// </item>
         /// </list>
         /// </remarks>
-        ValidationResult Validate(ServiceDto? dto, string? wrapperExePath = null, string confirmPassword = "");
+        ValidationResult Validate(ServiceDto? dto, string? wrapperExePath = null, string? confirmPassword = "");
     }
 }

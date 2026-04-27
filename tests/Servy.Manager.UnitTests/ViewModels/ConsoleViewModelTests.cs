@@ -115,14 +115,14 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 var vm = CreateViewModel();
-                var searchResults = new List<Service>
+                var searchResults = new List<Service?>
                 {
                     new Service { Name = "AuthService" },
                     new Service { Name = "Gateway" }
                 };
 
                 _serviceCommandsMock
-                    .Setup(x => x.SearchServicesAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
+                    .Setup(x => x.SearchServicesAsync(It.IsAny<string?>(), false, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(searchResults);
 
                 // Act

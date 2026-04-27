@@ -10,7 +10,7 @@
         /// <summary>
         /// Gets or sets the display name or system name of the Windows service.
         /// </summary>
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         /// Gets or sets the Process Identifier (PID) of the service.

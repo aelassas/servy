@@ -43,7 +43,7 @@ namespace Servy.Core.Services
         /// <param name="serviceName">The service name.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True if the service was uninstalled; otherwise false.</returns>
-        Task<OperationResult> UninstallServiceAsync(string serviceName, CancellationToken cancellationToken = default);
+        Task<OperationResult> UninstallServiceAsync(string? serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Starts the specified service.
@@ -51,7 +51,7 @@ namespace Servy.Core.Services
         /// <param name="serviceName">The service name.</param>
         /// <param name="logSuccessfulStart">Indicates whether to log a message when the service starts successfully.</param>
         /// <returns>True if the service was started; otherwise false.</returns>
-        Task<OperationResult> StartServiceAsync(string serviceName, bool logSuccessfulStart = true);
+        Task<OperationResult> StartServiceAsync(string? serviceName, bool logSuccessfulStart = true);
 
         /// <summary>
         /// Stops the specified service.
@@ -59,14 +59,14 @@ namespace Servy.Core.Services
         /// <param name="serviceName">The service name.</param>
         /// <param name="logSuccessfulStop">Indicates whether to log a message when the service stops successfully.</param>
         /// <returns>True if the service was stopped; otherwise false.</returns>
-        Task<OperationResult> StopServiceAsync(string serviceName, bool logSuccessfulStop = true);
+        Task<OperationResult> StopServiceAsync(string? serviceName, bool logSuccessfulStop = true);
 
         /// <summary>
         /// Restarts the specified service.
         /// </summary>
         /// <param name="serviceName">The service name.</param>
         /// <returns>True if the service was restarted; otherwise false.</returns>
-        Task<OperationResult> RestartServiceAsync(string serviceName);
+        Task<OperationResult> RestartServiceAsync(string? serviceName);
 
         /// <summary>
         /// Gets the current status of the specified Windows service.
@@ -74,7 +74,7 @@ namespace Servy.Core.Services
         /// <param name="serviceName">The name of the service.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The current <see cref="ServiceControllerStatus"/> of the service.</returns>
-        ServiceControllerStatus GetServiceStatus(string serviceName, CancellationToken cancellationToken = default);
+        ServiceControllerStatus GetServiceStatus(string? serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Determines whether a Windows service with the specified name is installed 
@@ -85,7 +85,7 @@ namespace Servy.Core.Services
         /// <c>true</c> if a service with the specified name is installed; 
         /// otherwise, <c>false</c>.
         /// </returns>
-        bool IsServiceInstalled(string serviceName);
+        bool IsServiceInstalled(string? serviceName);
 
         /// <summary>
         /// Gets the startup type of a Windows service by its name.
@@ -95,7 +95,7 @@ namespace Servy.Core.Services
         /// <returns>
         /// A <see cref="ServiceStartType"/> value if the service is found; otherwise, <c>null</c>.
         /// </returns>
-        ServiceStartType? GetServiceStartupType(string serviceName, CancellationToken cancellationToken = default);
+        ServiceStartType? GetServiceStartupType(string? serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Retrieves all Windows services on the local machine and maps them to <see cref="ServiceInfo"/> objects.
@@ -116,6 +116,6 @@ namespace Servy.Core.Services
         /// dependency hierarchy, or <c>null</c> if the dependencies could
         /// not be resolved.
         /// </returns>
-        ServiceDependencyNode? GetDependencies(string serviceName);
+        ServiceDependencyNode? GetDependencies(string? serviceName);
     }
 }

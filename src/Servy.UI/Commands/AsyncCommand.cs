@@ -1,5 +1,4 @@
-﻿#nullable enable
-using System.Windows.Input;
+﻿using System.Windows.Input;
 
 namespace Servy.UI.Commands
 {
@@ -19,7 +18,7 @@ namespace Servy.UI.Commands
         /// <param name="execute">The asynchronous task to execute when the command is invoked.</param>
         /// <param name="canExecute">An optional predicate to determine if the command is allowed to execute.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="execute"/> is null.</exception>
-        public AsyncCommand(Func<object?, Task> execute, Predicate<object?>? canExecute = null)
+        public AsyncCommand(Func<object?, Task>? execute, Predicate<object?>? canExecute = null)
         {
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;

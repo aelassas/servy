@@ -26,7 +26,7 @@ namespace Servy.Manager.ViewModels
         private readonly IServiceRepository _serviceRepository;
         private readonly IServiceManager _serviceManager;
 
-        private CancellationTokenSource _loadTreeCts;
+        private CancellationTokenSource? _loadTreeCts;
 
         private bool _hadSelectedService;
         private bool _disposedValue;
@@ -36,12 +36,12 @@ namespace Servy.Manager.ViewModels
 
         #region Properties - Service Data
 
-        private DependencyService _selectedService;
+        private DependencyService? _selectedService;
         /// <summary>
         /// Gets or sets the currently selected service. 
         /// Changing this resets the console history and restarts file tailing for the new service paths.
         /// </summary>
-        public DependencyService SelectedService
+        public DependencyService? SelectedService
         {
             get => _selectedService;
             set
@@ -127,13 +127,13 @@ namespace Servy.Manager.ViewModels
         /// <param name="appConfig">Application configuration settings.</param>
         /// <param name="cursorService">Service used to control the cursor state.</param>
         public DependenciesViewModel(
-            IServiceRepository serviceRepository,
+            IServiceRepository? serviceRepository,
             IServiceManager serviceManager,
             IServiceCommands serviceCommands,
             IAppConfiguration appConfig,
             ICursorService cursorService) : base(cursorService)
         {
-            _serviceRepository = serviceRepository;
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _serviceManager = serviceManager;
             ServiceCommands = serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
@@ -155,9 +155,9 @@ namespace Servy.Manager.ViewModels
         protected override int RefreshIntervalMs => _appConfig.DependenciesRefreshIntervalInMs;
 
         /// <inheritdoc/>
-        protected override ServiceItemBase CreateServiceItem(Service service)
+        protected override ServiceItemBase CreateServiceItem(Service? service)
         {
-            return new DependencyService { Name = service.Name, Pid = null };
+            return new DependencyService { Name = service?.Name, Pid = null };
         }
 
         /// <inheritdoc/>
@@ -185,7 +185,10 @@ namespace Servy.Manager.ViewModels
                 if (!currentPid.HasValue)
                 {
                     ResetPid();
-                    SelectedService.Pid = null;
+                    if (SelectedService != null)
+                    {
+                        SelectedService.Pid = null;
+                    }
                     CopyPidCommand?.RaiseCanExecuteChanged();
                     return;
                 }
@@ -260,8 +263,14 @@ namespace Servy.Manager.ViewModels
         /// Updates the <see cref="Services"/> collection on the UI thread.
         /// </summary>
         /// <param name="parameter">Unused command parameter.</param>
-        private async Task SearchServicesAsync(object parameter)
+        private async Task SearchServicesAsync(object? parameter)
         {
+            if (ServiceCommands == null)
+            {
+                Logger.Warn("ServiceCommands is null. Cannot perform search.");
+                return;
+            }
+
             // Thread-safe atomic swap for left-panel search
             // This prevents searching from destroying the active monitoring token
             var newCts = new CancellationTokenSource();
@@ -290,7 +299,7 @@ namespace Servy.Manager.ViewModels
                 Services.Clear();
                 foreach (var s in results)
                 {
-                    Services.Add(new DependencyService { Name = s.Name, Pid = null });
+                    Services.Add(new DependencyService { Name = s?.Name, Pid = null });
                 }
             }
             catch (OperationCanceledException)
@@ -313,8 +322,14 @@ namespace Servy.Manager.ViewModels
         /// Copies the Process ID of the currently selected service to the system clipboard.
         /// </summary>
         /// <param name="parameter">Unused command parameter.</param>
-        private async Task CopyPidAsync(object parameter)
+        private async Task CopyPidAsync(object? parameter)
         {
+            if (ServiceCommands == null)
+            {
+                Logger.Warn("ServiceCommands is null. Cannot copy PID.");
+                return;
+            }
+
             if (SelectedService?.Pid != null)
             {
                 var service = ServiceMapper.ToModel(SelectedService);
@@ -329,7 +344,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Asynchronously retrieves and sets the dependency tree for the current selected service.
         /// </summary>
-        public async Task LoadDependencyTreeAsync(object parameter)
+        public async Task LoadDependencyTreeAsync(object? parameter)
         {
             // 1. Thread-safe atomic swap to cancel any existing load operation
             var newCts = new CancellationTokenSource();

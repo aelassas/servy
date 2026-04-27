@@ -111,14 +111,14 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(async () =>
             {
                 var vm = CreateViewModel(Dispatcher.CurrentDispatcher);
-                var services = new List<Service>
+                var services = new List<Service?>
                 {
                     new Service { Name = "S1" },
                     new Service { Name = "S2" }
                 };
 
                 _serviceCommandsMock
-                    .Setup(s => s.SearchServicesAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                    .Setup(s => s.SearchServicesAsync(It.IsAny<string?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(services);
 
                 await vm.SearchCommand.ExecuteAsync(null);
@@ -127,8 +127,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var items = view.Cast<ServiceRowViewModel>().ToList();
 
                 Assert.Equal(2, items.Count);
-                Assert.Contains(items, s => s.Service.Name == "S1");
-                Assert.Contains(items, s => s.Service.Name == "S2");
+                Assert.Contains(items, s => s?.Service?.Name == "S1");
+                Assert.Contains(items, s => s?.Service?.Name == "S2");
             }, createApp: true);
         }
 
@@ -183,7 +183,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 var items = vm.ServicesView.Cast<ServiceRowViewModel>().ToList();
                 Assert.Single(items);
-                Assert.Equal("S2", items.First().Service.Name);
+                Assert.Equal("S2", items.First()?.Service?.Name);
             }, createApp: true);
         }
 

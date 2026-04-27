@@ -65,7 +65,7 @@ namespace Servy.Manager.Utils
         /// <summary>
         /// Occurs when new lines are read from the file or during the initial history load.
         /// </summary>
-        public event NewLinesHandler OnNewLines;
+        public event NewLinesHandler? OnNewLines;
 
         /// <summary>
         /// Starts a continuous tailing loop for a specific file, beginning at a designated position.
@@ -77,7 +77,7 @@ namespace Servy.Manager.Utils
         /// <param name="startCreated">The creation timestamp of the file when history was loaded, used to detect rotation.</param>
         /// <param name="token">A token used to stop the tailing loop when switching services or closing the app.</param>
         /// <returns>A Task representing the long-running polling operation.</returns>
-        public async Task RunFromPosition(string path, LogType type, long startPos, DateTime startCreated, CancellationToken externalToken)
+        public async Task RunFromPosition(string? path, LogType type, long startPos, DateTime startCreated, CancellationToken externalToken)
         {
             if (string.IsNullOrEmpty(path)) return;
 
@@ -100,7 +100,7 @@ namespace Servy.Manager.Utils
                         }
 
                         FileInfo info = new FileInfo(path);
-                        FileStream fs = null;
+                        FileStream? fs = null;
 
                         try
                         {
@@ -168,7 +168,7 @@ namespace Servy.Manager.Utils
 #endif
 
                                         List<LogLine> batch = new List<LogLine>();
-                                        string line;
+                                        string? line;
 
                                         while ((line = await reader.ReadLineAsync()) != null)
                                         {
@@ -256,7 +256,7 @@ namespace Servy.Manager.Utils
         /// <summary>
         /// Just loads the history and returns the state without starting the tailing loop.
         /// </summary>
-        public async Task<HistoryResult> GetHistoryAsync(string path, LogType type, int maxLines)
+        public async Task<HistoryResult?> GetHistoryAsync(string? path, LogType type, int maxLines)
         {
             long pos = 0;
             DateTime created = DateTime.MinValue;
@@ -273,7 +273,7 @@ namespace Servy.Manager.Utils
         /// <param name="finalPos">Outputs the file position where the history ended (to start tailing from).</param>
         /// <param name="creationTime">Outputs the creation time of the file used for rotation detection.</param>
         /// <returns>A list of log lines retrieved from the end of the file.</returns>
-        private List<LogLine> LoadHistory(string path, LogType type, int maxLines, out long finalPos, out DateTime creationTime)
+        private List<LogLine> LoadHistory(string? path, LogType type, int maxLines, out long finalPos, out DateTime creationTime)
         {
             // Initialize out parameters immediately to satisfy the compiler
             finalPos = 0;
@@ -323,7 +323,7 @@ namespace Servy.Manager.Utils
                     fs.Seek(pos, SeekOrigin.Begin);
                     using (StreamReader sr = new StreamReader(fs))
                     {
-                        string line;
+                        string? line;
                         var tempLines = new List<string>();
                         while ((line = sr.ReadLine()) != null && tempLines.Count < maxLines)
                         {

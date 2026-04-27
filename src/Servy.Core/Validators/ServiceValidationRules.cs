@@ -27,7 +27,7 @@ namespace Servy.Core.Validators
         }
 
         /// <inheritdoc/>
-        public ValidationResult Validate(ServiceDto? dto, string? wrapperExePath = null, string confirmPassword = "")
+        public ValidationResult Validate(ServiceDto? dto, string? wrapperExePath = null, string? confirmPassword = "")
         {
             var result = new ValidationResult();
 

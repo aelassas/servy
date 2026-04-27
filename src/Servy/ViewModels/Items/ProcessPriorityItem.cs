@@ -15,6 +15,6 @@ namespace Servy.ViewModels.Items
         /// <summary>
         /// Gets or sets the localized display name of the process priority.
         /// </summary>
-        public string DisplayName { get; set; }
+        public string? DisplayName { get; set; }
     }
 }

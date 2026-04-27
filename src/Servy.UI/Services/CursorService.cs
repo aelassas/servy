@@ -26,7 +26,7 @@ namespace Servy.UI.Services
         /// Safely sets the cursor, marshaling to the UI thread if necessary, 
         /// and ignoring calls during headless unit tests.
         /// </summary>
-        private static void SetCursorSafe(Cursor cursor)
+        private static void SetCursorSafe(Cursor? cursor)
         {
             // Skip in unit test environments where Application.Current or its Dispatcher might be null
             if (Application.Current?.Dispatcher == null) return;

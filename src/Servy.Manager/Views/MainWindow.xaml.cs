@@ -1,6 +1,4 @@
-﻿#nullable enable
-
-using Servy.Core.Helpers;
+﻿using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Manager.Config;
 using Servy.Manager.Resources;

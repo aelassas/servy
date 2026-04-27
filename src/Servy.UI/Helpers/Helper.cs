@@ -15,7 +15,7 @@ namespace Servy.UI.Helpers
         /// <typeparam name="T">The type of the visual child to find.</typeparam>
         /// <param name="parent">The parent object to start the search from.</param>
         /// <returns>The found child of type T, or null if not found.</returns>
-        public static T GetVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        public static T? GetVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {

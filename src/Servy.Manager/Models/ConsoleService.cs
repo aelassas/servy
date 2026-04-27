@@ -8,12 +8,12 @@
         /// <summary>
         /// Gets or sets the stdout path.
         /// </summary>
-        public string StdoutPath { get; set; }
+        public string? StdoutPath { get; set; }
 
         /// <summary>
         /// Gets or sets the stderr path.
         /// </summary>
-        public string StderrPath { get; set; }
+        public string? StderrPath { get; set; }
 
     }
 }

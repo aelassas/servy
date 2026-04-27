@@ -25,6 +25,6 @@ namespace Servy.Validators
         /// <returns>
         /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the configuration is valid; otherwise <c>false</c>.
         /// </returns>
-        Task<bool> Validate(ServiceDto dto, string wrapperExePath = null, bool checkServiceStatus = true, string confirmPassword = "");
+        Task<bool> Validate(ServiceDto? dto, string? wrapperExePath = null, bool checkServiceStatus = true, string? confirmPassword = "");
     }
 }

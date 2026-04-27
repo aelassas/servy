@@ -46,9 +46,9 @@ namespace Servy.Manager.UnitTests.Utils
             var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 3);
 
             // Assert
-            Assert.Equal(3, result.Lines.Count);
-            Assert.Equal("L3", result.Lines[0].Text);
-            Assert.Equal("L5", result.Lines[2].Text);
+            Assert.Equal(3, result?.Lines.Count);
+            Assert.Equal("L3", result?.Lines[0].Text);
+            Assert.Equal("L5", result?.Lines[2].Text);
         }
 
 #if DEBUG
@@ -141,9 +141,9 @@ namespace Servy.Manager.UnitTests.Utils
             var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10);
 
             // Assert
-            Assert.Equal(2, result.Lines.Count);
+            Assert.Equal(2, result?.Lines.Count);
             // Verify chronologically ordered
-            Assert.True(result.Lines[0].Timestamp < result.Lines[1].Timestamp);
+            Assert.True(result?.Lines[0].Timestamp < result?.Lines[1].Timestamp);
         }
     }
 }

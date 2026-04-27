@@ -34,7 +34,7 @@ namespace Servy.Services
 
         #region Private Fields
 
-        private readonly Func<ServiceDto> _modelToServiceDto;
+        private readonly Func<ServiceDto?> _modelToServiceDto;
         private readonly Action<ServiceDto> _bindServiceDtoToModel;
         private readonly IServiceManager _serviceManager;
         private readonly IMessageBoxService _messageBoxService;
@@ -66,7 +66,7 @@ namespace Servy.Services
         /// Thrown when <paramref name="serviceManager"/>, <paramref name="messageBoxService"/>, or <paramref name="serviceRepository"/> is <c>null</c>.
         /// </exception>
         public ServiceCommands(
-            Func<ServiceDto> modelToServiceDto,
+            Func<ServiceDto?> modelToServiceDto,
             Action<ServiceDto> bindServiceDtoToModel,
             IServiceManager serviceManager,
             IMessageBoxService messageBoxService,
@@ -74,7 +74,7 @@ namespace Servy.Services
             IServiceConfigurationValidator serviceConfigurationValidator,
             IXmlServiceValidator xmlServiceValidator,
             IJsonServiceValidator jsonServiceValidator,
-            IAppConfiguration appConfig,
+            IAppConfiguration? appConfig,
             ICursorService cursorService
             )
         {
@@ -108,10 +108,10 @@ namespace Servy.Services
             // 1. Build the DTO (The Single Source of Truth for this operation)
             var dto = new ServiceDto
             {
-                Name = config.Name,
-                DisplayName = config.DisplayName,
+                Name = config.Name ?? string.Empty,
+                DisplayName = config.DisplayName ?? string.Empty,
                 Description = config.Description,
-                ExecutablePath = config.ExecutablePath,
+                ExecutablePath = config.ExecutablePath ?? string.Empty,
                 StartupDirectory = config.StartupDirectory,
                 Parameters = config.Parameters,
                 StartupType = (int)config.StartupType,
@@ -202,7 +202,7 @@ namespace Servy.Services
                 {
                     ServiceName = dto.Name,
                     DisplayName = dto.DisplayName,
-                    Description = dto.Description,
+                    Description = dto.Description ?? string.Empty,
                     WrapperExePath = wrapperExePath,
                     RealExePath = dto.ExecutablePath,
                     WorkingDirectory = dto.StartupDirectory,
@@ -297,7 +297,7 @@ namespace Servy.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> UninstallService(string serviceName, CancellationToken cancellationToken = default)
+        public async Task<bool> UninstallService(string? serviceName, CancellationToken cancellationToken = default)
         {
             if (!await IsServiceNameValid(serviceName))
             {
@@ -344,7 +344,7 @@ namespace Servy.Services
         }
 
         /// <inheritdoc />
-        public Task<bool> StartService(string serviceName) =>
+        public Task<bool> StartService(string? serviceName) =>
             ExecuteServiceCommandAsync(
                 serviceName,
                 (name) => _serviceManager.StartServiceAsync(name, logSuccessfulStart: true),
@@ -352,7 +352,7 @@ namespace Servy.Services
                 checkDisabled: true);
 
         /// <inheritdoc />
-        public Task<bool> StopService(string serviceName) =>
+        public Task<bool> StopService(string? serviceName) =>
             ExecuteServiceCommandAsync(
                 serviceName,
                 (name) => _serviceManager.StopServiceAsync(name, logSuccessfulStop: true),
@@ -360,11 +360,11 @@ namespace Servy.Services
                 checkDisabled: false);
 
         /// <inheritdoc />
-        public Task<bool> RestartService(string serviceName) =>
+        public Task<bool> RestartService(string? serviceName) =>
             ExecuteServiceCommandAsync(serviceName, _serviceManager.RestartServiceAsync, Strings.Msg_ServiceRestarted, checkDisabled: true);
 
         ///<inheritdoc/>
-        public Task ExportXmlConfig(string confirmPassword) =>
+        public Task ExportXmlConfig(string? confirmPassword) =>
             ExportConfigAsync(
                 confirmPassword,
                 () => _dialogService.SaveXml(Strings.SaveFileDialog_XmlTitle),
@@ -373,7 +373,7 @@ namespace Servy.Services
                 Strings.ExportXml_Success);
 
         ///<inheritdoc/>
-        public Task ExportJsonConfig(string confirmPassword) =>
+        public Task ExportJsonConfig(string? confirmPassword) =>
             ExportConfigAsync(
                 confirmPassword,
                 () => _dialogService.SaveJson(Strings.SaveFileDialog_JsonTitle),
@@ -453,8 +453,8 @@ namespace Servy.Services
         /// logging and error reporting remain consistent across all management commands.
         /// </remarks>
         private async Task<bool> ExecuteServiceCommandAsync(
-            string serviceName,
-            Func<string, Task<OperationResult>> operation,
+            string? serviceName,
+            Func<string?, Task<OperationResult>> operation,
             string successMessage,
             bool checkDisabled)
         {
@@ -505,7 +505,7 @@ namespace Servy.Services
         /// </summary>
         /// <param name="serviceName">Service name.</param>
         /// <returns>Returns true if valid; otherwise, false.</returns>
-        private async Task<bool> IsServiceNameValid(string serviceName)
+        private async Task<bool> IsServiceNameValid(string? serviceName)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
             {
@@ -531,9 +531,9 @@ namespace Servy.Services
         /// preventing the export of invalid or inconsistent configurations.
         /// </remarks>
         private async Task ExportConfigAsync(
-            string confirmPassword,
-            Func<string> getFilePath,
-            Action<ServiceDto, string> exportAction,
+            string? confirmPassword,
+            Func<string?> getFilePath,
+            Action<ServiceDto?, string> exportAction,
             string formatName,
             string successMessage)
         {
@@ -578,9 +578,9 @@ namespace Servy.Services
         /// Only after passing all gates is the UI model updated.
         /// </remarks>
         private async Task ImportConfigAsync(
-            Func<string> getFilePath,
-            Func<string, (bool IsValid, string ErrorMsg)> validateContent,
-            Func<string, ServiceDto> deserialize,
+            Func<string?> getFilePath,
+            Func<string, (bool IsValid, string? ErrorMsg)> validateContent,
+            Func<string, ServiceDto?> deserialize,
             string formatName,
             string loadErrorMessage)
         {

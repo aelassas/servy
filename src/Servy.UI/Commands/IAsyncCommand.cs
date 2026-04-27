@@ -1,6 +1,4 @@
-﻿#nullable enable
-
-using System.Windows.Input;
+﻿using System.Windows.Input;
 
 namespace Servy.UI.Commands
 {

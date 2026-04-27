@@ -56,12 +56,12 @@ namespace Servy.Manager.ViewModels
 
         #region Properties - Service Data
 
-        private PerformanceService _selectedService;
+        private PerformanceService? _selectedService;
         /// <summary>
         /// Gets or sets the currently selected service for monitoring.
         /// Resets and restarts monitoring upon change.
         /// </summary>
-        public PerformanceService SelectedService
+        public PerformanceService? SelectedService
         {
             get => _selectedService;
             set
@@ -162,14 +162,14 @@ namespace Servy.Manager.ViewModels
         /// <param name="cursorService">Service used to control the cursor state.</param>
         /// <param name="processHelper">The process helper used to format process commands.</param>
         public PerformanceViewModel(
-            IServiceRepository serviceRepository,
+            IServiceRepository? serviceRepository,
             IServiceCommands serviceCommands,
             IAppConfiguration appConfig,
             ICursorService cursorService,
             IProcessHelper processHelper
             ) : base(cursorService)
         {
-            _serviceRepository = serviceRepository;
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             ServiceCommands = serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
@@ -186,8 +186,9 @@ namespace Servy.Manager.ViewModels
         protected override int RefreshIntervalMs => _appConfig.PerformanceRefreshIntervalInMs;
 
         /// <inheritdoc/>
-        protected override ServiceItemBase CreateServiceItem(Service service)
+        protected override ServiceItemBase CreateServiceItem(Service? service)
         {
+            if (service == null) throw new ArgumentNullException(nameof(service));
             return new PerformanceService { Name = service.Name, Pid = service.Pid };
         }
 
@@ -215,7 +216,7 @@ namespace Servy.Manager.ViewModels
                 if (!currentPid.HasValue)
                 {
                     ResetGraphs(true);
-                    SelectedService.Pid = null;
+                    if (SelectedService != null) SelectedService.Pid = null;
                     CopyPidCommand?.RaiseCanExecuteChanged();
                     return;
                 }
@@ -384,8 +385,14 @@ namespace Servy.Manager.ViewModels
         /// <param name="parameter">An optional parameter that can be used to pass additional data for the copy operation. This parameter is not
         /// used by the method.</param>
         /// <returns>A task that represents the asynchronous copy operation.</returns>
-        private async Task CopyPidAsync(object parameter)
+        private async Task CopyPidAsync(object? parameter)
         {
+            if (ServiceCommands == null)
+            {
+                Logger.Warn("ServiceCommands is null in CopyPidAsync");
+                return;
+            }
+
             if (SelectedService?.Pid != null)
             {
                 var service = ServiceMapper.ToModel(SelectedService);

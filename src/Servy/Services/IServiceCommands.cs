@@ -43,37 +43,37 @@ namespace Servy.Services
         /// </summary>
         /// <param name="serviceName">The name of the service to uninstall.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        Task<bool> UninstallService(string serviceName, CancellationToken cancellationToken = default);
+        Task<bool> UninstallService(string? serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Starts the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service to start.</param>
-        Task<bool> StartService(string serviceName);
+        Task<bool> StartService(string? serviceName);
 
         /// <summary>
         /// Stops the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service to stop.</param>
-        Task<bool> StopService(string serviceName);
+        Task<bool> StopService(string? serviceName);
 
         /// <summary>
         /// Restarts the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service to restart.</param>
-        Task<bool> RestartService(string serviceName);
+        Task<bool> RestartService(string? serviceName);
 
         /// <summary>
         /// Exports the service configuration to an XML file selected by the user.
         /// </summary>
         /// <param name="confirmPassword">The confirmation of the service account password.</param>
-        Task ExportXmlConfig(string confirmPassword);
+        Task ExportXmlConfig(string? confirmPassword);
 
         /// <summary>
         /// Exports the service configuration to an JSON file selected by the user.
         /// </summary>
         /// <param name="confirmPassword">The confirmation of the service account password.</param>
-        Task ExportJsonConfig(string confirmPassword);
+        Task ExportJsonConfig(string? confirmPassword);
 
         /// <summary>
         /// Opens a file dialog to select an XML configuration file for a service,

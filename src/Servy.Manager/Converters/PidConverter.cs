@@ -27,7 +27,7 @@ namespace Servy.Manager.Converters
             if (value == null)
                 return UnknownPid;
 
-            return value.ToString();
+            return value?.ToString() ?? UnknownPid;
         }
 
         /// <summary>

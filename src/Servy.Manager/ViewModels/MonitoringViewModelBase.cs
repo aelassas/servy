@@ -17,12 +17,12 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// The timer used to trigger periodic monitoring updates on the UI thread dispatcher.
         /// </summary>
-        protected DispatcherTimer _timer;
+        protected DispatcherTimer? _timer;
 
         /// <summary>
         /// Provides a cancellation token to background tasks associated with the current active monitoring session.
         /// </summary>
-        protected CancellationTokenSource _monitoringCts;
+        protected CancellationTokenSource? _monitoringCts;
 
         /// <summary>
         /// Atomic flag representing the overall monitoring state. 
@@ -78,7 +78,7 @@ namespace Servy.Manager.ViewModels
         /// during the asynchronous execution of <see cref="OnTickAsync"/> and restarted in the finally block 
         /// only if <see cref="_isMonitoringFlag"/> indicates monitoring is still requested.
         /// </remarks>
-        private async void OnTick(object sender, EventArgs e)
+        private async void OnTick(object? sender, EventArgs? e)
         {
             // 1. Atomic Guard: Must be monitoring AND not already running a tick
             if (Interlocked.CompareExchange(ref _isMonitoringFlag, 1, 1) == 0 ||

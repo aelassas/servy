@@ -164,7 +164,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<int> DeleteAsync(string name, CancellationToken cancellationToken = default)
+        public virtual async Task<int> DeleteAsync(string? name, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(name)) return 0;
 
@@ -184,8 +184,9 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<ServiceDto?> GetByNameAsync(string name, bool decrypt = true, CancellationToken cancellationToken = default)
+        public virtual async Task<ServiceDto?> GetByNameAsync(string? name, bool decrypt = true, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(name)) return null;
             var sql = "SELECT * FROM Services WHERE LOWER(Name) = LOWER(@Name);";
             var cmd = new CommandDefinition(sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
             var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(cmd);
@@ -195,8 +196,9 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual ServiceDto? GetByName(string name, bool decrypt = true)
+        public virtual ServiceDto? GetByName(string? name, bool decrypt = true)
         {
+            if (string.IsNullOrWhiteSpace(name)) return null;
             const string sql = "SELECT * FROM Services WHERE LOWER(Name) = LOWER(@Name);";
             var dto = _dapper.QuerySingleOrDefault<ServiceDto>(sql, new { Name = name.Trim() });
 
@@ -205,15 +207,17 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public async Task<int?> GetServicePidAsync(string serviceName, CancellationToken cancellationToken = default)
+        public async Task<int?> GetServicePidAsync(string? serviceName, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(serviceName)) return null;
             const string sql = "SELECT Pid FROM Services WHERE LOWER(Name) = LOWER(@Name) LIMIT 1;";
-            return await _dapper.QueryFirstOrDefaultAsync<int?>(sql, new { Name = serviceName }, cancellationToken);
+            return await _dapper.QueryFirstOrDefaultAsync<int?>(sql, new { Name = serviceName.Trim() }, cancellationToken);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceConsoleStateDto?> GetServiceConsoleStateAsync(string serviceName, CancellationToken cancellationToken = default)
+        public async Task<ServiceConsoleStateDto?> GetServiceConsoleStateAsync(string? serviceName, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(serviceName)) return null;
             const string sql = @"
                 SELECT Pid, ActiveStdoutPath, ActiveStderrPath 
                 FROM Services 
@@ -279,8 +283,9 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<string> ExportXmlAsync(string name, CancellationToken cancellationToken = default)
+        public virtual async Task<string> ExportXmlAsync(string? name, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(name)) return string.Empty;
             var service = await GetByNameAsync(name, decrypt: true, cancellationToken: cancellationToken);
             if (service == null) return string.Empty;
 
@@ -312,8 +317,9 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<string> ExportJsonAsync(string name, CancellationToken cancellationToken = default)
+        public virtual async Task<string> ExportJsonAsync(string? name, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(name)) return string.Empty;
             var service = await GetByNameAsync(name, decrypt: true, cancellationToken: cancellationToken);
             if (service == null) return string.Empty;
 

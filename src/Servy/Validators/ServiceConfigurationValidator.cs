@@ -41,8 +41,10 @@ namespace Servy.Validators
         /// This method prioritizes warnings over errors, displaying only the first identified issue 
         /// to the user to maintain a clean "fail-fast" UI experience.
         /// </remarks>
-        public async Task<bool> Validate(ServiceDto dto, string wrapperExePath = null, bool checkServiceStatus = true, string confirmPassword = "")
+        public async Task<bool> Validate(ServiceDto? dto, string? wrapperExePath = null, bool checkServiceStatus = true, string? confirmPassword = "")
         {
+            if (dto == null) return false;
+
             // Delegate logic to the shared Core rules engine
             var result = _serviceValidationRules.Validate(dto, wrapperExePath, confirmPassword);
 
