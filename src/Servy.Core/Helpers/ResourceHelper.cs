@@ -92,10 +92,7 @@ namespace Servy.Core.Helpers
 
                     using (resourceStream)
                     {
-                        using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
-                        {
-                            await resourceStream.CopyToAsync(fileStream);
-                        }
+                        await Helper.WriteFileAtomicAsync(targetPath, resourceStream.CopyToAsync);
                     }
                 }
                 finally
@@ -150,10 +147,7 @@ namespace Servy.Core.Helpers
 
                 using (resourceStream)
                 {
-                    using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
-                    {
-                        resourceStream.CopyTo(fileStream);
-                    }
+                    Helper.WriteFileAtomic(targetPath, resourceStream.CopyTo);
                 }
 
                 Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
@@ -263,11 +257,8 @@ namespace Servy.Core.Helpers
 
                             using (resourceStream)
                             {
-                                using (FileStream fileStream = new FileStream(resourceItem.TargetPath, FileMode.Create, FileAccess.Write))
-                                {
-                                    await resourceStream.CopyToAsync(fileStream);
-                                    Logger.Info($"Successfully copied embedded resource '{resourceItem.ResourceName}' to '{resourceItem.TargetPath}'.");
-                                }
+                                await Helper.WriteFileAtomicAsync(resourceItem.TargetPath, resourceStream.CopyToAsync);
+                                Logger.Info($"Successfully copied embedded resource '{resourceItem.ResourceName}' to '{resourceItem.TargetPath}'.");
                             }
                         }
                         catch (Exception ex)
@@ -377,7 +368,7 @@ namespace Servy.Core.Helpers
 #endif
 
             var targetPathDir = Path.GetDirectoryName(targetPath);
-            
+
             if (string.IsNullOrEmpty(targetPathDir))
             {
                 throw new IOException($"Could not resolve parent directory for extraction: {targetPath}");

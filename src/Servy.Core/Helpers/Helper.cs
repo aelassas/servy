@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Logging;
+using Servy.Core.Native;
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -9,6 +10,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Versioning;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Servy.Core.Helpers
 {
@@ -345,5 +348,78 @@ namespace Servy.Core.Helpers
             return AppDomain.CurrentDomain.GetAssemblies().Any(a => a.FullName != null && a.FullName.StartsWith("xunit"));
         }
 
+        /// <summary>
+        /// Writes content to a file atomically by writing to a temporary file first and then performing an atomic move.
+        /// </summary>
+        /// <param name="path">The full destination path where the file should be written.</param>
+        /// <param name="writeContent">A delegate that receives a <see cref="Stream"/> to write the actual file content.</param>
+        /// <param name="ct">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous write operation.</returns>
+        /// <remarks>
+        /// This method prevents file corruption or partial writes (zero-byte files) by ensuring the target path 
+        /// is only updated via an atomic <see cref="File.Move(string, string, bool)"/> after the stream is fully 
+        /// flushed to disk. On NTFS, a move on the same volume is an atomic metadata operation.
+        /// </remarks>
+        public static async Task WriteFileAtomicAsync(string path, Func<Stream, Task> writeContent, CancellationToken ct = default)
+        {
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+
+            var tmp = path + ".tmp";
+            try
+            {
+                using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    await writeContent(fs);
+                    await fs.FlushAsync(ct); // Ensure all bytes hit the disk before closing
+                }
+
+                NativeMethods.AtomicSecureMove(tmp, path);
+            }
+            finally
+            {
+                // Cleanup the temporary file if the move failed or an exception occurred during writing
+                if (File.Exists(tmp))
+                {
+                    try { File.Delete(tmp); } catch { /* swallow cleanup errors to avoid masking primary exceptions */ }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Writes content to a file atomically by writing to a temporary file first and then performing an atomic move.
+        /// </summary>
+        /// <param name="path">The full destination path where the file should be written.</param>
+        /// <param name="writeContent">An action that receives a <see cref="Stream"/> to write the actual file content.</param>
+        /// <remarks>
+        /// This method prevents file corruption or partial writes by ensuring the target path is only updated 
+        /// via an atomic move after the stream is successfully flushed. If the write fails, the original file 
+        /// at <paramref name="path"/> remains untouched.
+        /// </remarks>
+        public static void WriteFileAtomic(string path, Action<Stream> writeContent)
+        {
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+
+            var tmp = path + ".tmp";
+            try
+            {
+                using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    writeContent(fs);
+                    fs.Flush(); // Ensure all bytes hit the disk before closing
+                }
+
+                NativeMethods.AtomicSecureMove(tmp, path);
+            }
+            finally
+            {
+                // Cleanup the temporary file if the move failed or an exception occurred during writing
+                if (File.Exists(tmp))
+                {
+                    try { File.Delete(tmp); } catch { /* swallow cleanup errors */ }
+                }
+            }
+        }
     }
 }
