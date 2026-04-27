@@ -920,8 +920,8 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Theory]
-        [InlineData(true)] 
-        [InlineData(false)] 
+        [InlineData(true)]
+        [InlineData(false)]
         public void CheckRotation_SizeRotation_TernaryCoverage(bool useLocal)
         {
             var filePath = Path.Combine(_testDir, $"size_ternary_{useLocal}.log");
@@ -991,30 +991,49 @@ namespace Servy.Core.UnitTests.IO
 
             using (var writer = CreateWriter(filePath))
             {
+                // Use a signal to ensure the background task has actually started
+                var startedSignal = new ManualResetEventSlim(false);
+
                 // 1. Lock the file
-                var locker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-
-                // 2. Start rotation in a background task
-                var rotateTask = Task.Run(() =>
+                using (var locker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    var method = typeof(RotatingStreamWriter).GetMethod("Rotate", BindingFlags.NonPublic | BindingFlags.Instance);
-                    method!.Invoke(writer, null);
-                }, TestContext.Current.CancellationToken);
 
-                // 3. Wait ~20ms. Because our SpinWait is now 50ms, this ensures we 
-                // release the lock exactly between Attempt 0 and Attempt 1.
-                await Task.Delay(20, TestContext.Current.CancellationToken);
-                locker.Dispose();
+                    // 2. Start rotation
+                    var rotateTask = Task.Run(() =>
+                    {
+                        startedSignal.Set(); // Signal that we are entering the method
+                        var method = typeof(RotatingStreamWriter).GetMethod("Rotate", BindingFlags.NonPublic | BindingFlags.Instance);
+                        method!.Invoke(writer, null);
+                    }, TestContext.Current.CancellationToken);
 
-                await rotateTask;
+                    // 3. Ensure the task has at least context-switched in
+                    startedSignal.Wait(500, TestContext.Current.CancellationToken);
 
-                // 4. Assert
-                bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled")!;
-                DateTime cooldown = (DateTime)GetPrivateField(writer, "_rotationCooldownUntil")!;
+                    // Give the background thread a moment to hit the lock and enter its first retry/SpinWait
+                    // We use a slightly longer delay here because your SpinWait is 50ms.
+                    await Task.Delay(100, TestContext.Current.CancellationToken);
 
-                Assert.False(isDisabled, "Breaker should not trip on IOException.");
-                Assert.Equal(DateTime.MinValue, cooldown);
-                Assert.False(File.Exists(filePath), "File should have been moved successfully on the second attempt.");
+                    // 4. Release the lock
+                    locker.Dispose();
+
+                    // Allow a small "settle" time for the Windows handle to actually close
+                    await Task.Delay(50, TestContext.Current.CancellationToken);
+
+                    await rotateTask;
+
+                    // 5. Assert
+                    bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled")!;
+                    DateTime cooldown = (DateTime)GetPrivateField(writer, "_rotationCooldownUntil")!;
+
+                    Assert.False(isDisabled, "Breaker should not trip on IOException.");
+
+                    // Use a small epsilon for the date or verify it's less than "now" 
+                    // to avoid millisecond racing in the assertion itself.
+                    Assert.True(cooldown == DateTime.MinValue,
+                        $"Cooldown should be MinValue but was {cooldown:O}. This means the rotation failed all retries.");
+
+                    Assert.False(File.Exists(filePath), "File should have been moved successfully.");
+                }
             }
         }
 
