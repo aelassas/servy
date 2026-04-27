@@ -222,6 +222,9 @@ namespace Servy.UI.Bootstrapping
                 if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0) Logger.SetLogRotationSize(size);
                 else Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
 
+                if (int.TryParse(config["MaxBackupLogFiles"], out var maxBackupFiles) && maxBackupFiles >= 0) Logger.SetMaxBackupLogFiles(maxBackupFiles);
+                else Logger.SetMaxBackupLogFiles(Logger.DefaultMaxBackupLogFiles);
+
                 string rawUseLocalTime = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
                 if (!bool.TryParse(rawUseLocalTime, out bool useLocalTime)) useLocalTime = AppConfig.DefaultUseLocalTimeForRotation;
                 Logger.SetUseLocalTimeForRotation(useLocalTime);
