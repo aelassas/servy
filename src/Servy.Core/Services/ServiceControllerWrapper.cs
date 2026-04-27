@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.Core.Logging;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -169,10 +170,15 @@ namespace Servy.Core.Services
                     return node;
                 }
             }
-            catch
+            catch (InvalidOperationException ex)
             {
-                // Unavailable services are still returned so the user sees the broken link
+                Logger.Debug($"Dependency '{serviceName}' unavailable: {ex.Message}");
                 return new ServiceDependencyNode(serviceName, $"{serviceName} (Unavailable)", false, false);
+            }
+            catch (System.ComponentModel.Win32Exception ex)
+            {
+                Logger.Warn($"Win32 error resolving dependency '{serviceName}': {ex.Message}", ex);
+                return new ServiceDependencyNode(serviceName, $"{serviceName} (Access Denied)", false, false);
             }
         }
 
