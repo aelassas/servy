@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Servy.Core.DTOs;
+using Servy.Core.Helpers;
 using System.IO;
 using System.Text;
 using System.Xml;
@@ -33,7 +34,8 @@ namespace Servy.Core.Services
 
         /// <summary>
         /// Serializes a <see cref="ServiceDto"/> instance to XML and writes it directly to a file.
-        /// This ensures the file encoding matches the XML declaration (UTF-8 without BOM).
+        /// This ensures the file encoding matches the XML declaration (UTF-8 without BOM)
+        /// and guarantees an atomic write to prevent zero-byte files on interruption.
         /// </summary>
         /// <param name="service">The service DTO to serialize.</param>
         /// <param name="filePath">The full path to the file to write.</param>
@@ -42,14 +44,17 @@ namespace Servy.Core.Services
             var settings = new XmlWriterSettings
             {
                 Indent = true,
-                Encoding = new UTF8Encoding(false) // UTF-8 without BOM
+                Encoding = new UTF8Encoding(false), // UTF-8 without BOM
+                CloseOutput = false // Explicitly prevent the XmlWriter from closing the underlying atomic stream
             };
 
-            using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
-            using (var writer = XmlWriter.Create(stream, settings))
+            Helper.WriteFileAtomic(filePath, stream =>
             {
-                Serializer.Serialize(writer, service);
-            }
+                using (var writer = XmlWriter.Create(stream, settings))
+                {
+                    Serializer.Serialize(writer, service);
+                }
+            });
         }
 
         /// <summary>
@@ -66,10 +71,23 @@ namespace Servy.Core.Services
 
         /// <summary>
         /// Serializes a <see cref="ServiceDto"/> instance to JSON and writes it to a file.
+        /// Guarantees an atomic write to prevent zero-byte or partial files on interruption.
         /// </summary>
+        /// <param name="service">The service DTO to serialize.</param>
+        /// <param name="filePath">The full path to the file to write.</param>
         public static void ExportJson(ServiceDto service, string filePath)
         {
-            File.WriteAllText(filePath, ExportJson(service));
+            var jsonContent = ExportJson(service);
+
+            Helper.WriteFileAtomic(filePath, stream =>
+            {
+                // We use leaveOpen: true so the using block doesn't prematurely close the stream,
+                // allowing the outer WriteFileAtomic to properly flush before the atomic move.
+                using (var writer = new StreamWriter(stream, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
+                {
+                    writer.Write(jsonContent);
+                }
+            });
         }
 
         /// <summary>
