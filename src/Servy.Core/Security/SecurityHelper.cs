@@ -144,7 +144,12 @@ namespace Servy.Core.Security
             security.AddAccessRule(new FileSystemAccessRule(systemSid, FileSystemRights.FullControl, accessFlags, PropagationFlags.None, AccessControlType.Allow));
 
             // 5. Add current user key
-            if (currentUserSid != null && !currentUserSid.Equals(systemSid) && !currentUserSid.Equals(adminSid))
+            // Skip redundant explicit ACLs if the current user already receives Full Control 
+            // via BuiltinAdministrators group membership or LocalSystem pseudo-account identity.
+            bool isSystem = currentUserSid != null && currentUserSid.Equals(systemSid);
+            bool isAdminMember = IsAdministrator();
+
+            if (currentUserSid != null && !isSystem && !isAdminMember)
             {
                 security.AddAccessRule(new FileSystemAccessRule(currentUserSid, FileSystemRights.FullControl, accessFlags, PropagationFlags.None, AccessControlType.Allow));
             }
