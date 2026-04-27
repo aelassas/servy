@@ -29,7 +29,6 @@ namespace Servy.Core.Helpers
         /// Initializes a new instance of the ResourceHelper class using the specified service repository.
         /// </summary>
         /// <param name="serviceRepository">The service repository used to access and manage service-related resources. Cannot be null.</param>
-        /// <param name="processHelper">The process helper used to manage processes. Cannot be null.</param>
         /// <param name="processKiller">The process killer used to terminate processes. Cannot be null.</param>
         public ResourceHelper(
             IServiceRepository serviceRepository,

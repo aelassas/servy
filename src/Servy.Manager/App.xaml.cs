@@ -302,7 +302,6 @@ namespace Servy.Manager
 
             _bootstrapper = new AppBootstrapper(
                 options,
-                Services.GetRequiredService<IProcessHelper>(),
                 Services.GetRequiredService<IProcessKiller>()
                 );
         }
