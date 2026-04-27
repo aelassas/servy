@@ -33,7 +33,7 @@ namespace Servy.Core.Helpers
         /// <param name="processHelper">The process helper used to manage processes. Cannot be null.</param>
         /// <param name="processKiller">The process killer used to terminate processes. Cannot be null.</param>
         public ResourceHelper(
-            IServiceRepository serviceRepository, 
+            IServiceRepository serviceRepository,
             IProcessHelper processHelper,
             IProcessKiller processKiller)
         {
@@ -95,10 +95,7 @@ namespace Servy.Core.Helpers
 
                     using (resourceStream)
                     {
-                        using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
-                        {
-                            await resourceStream.CopyToAsync(fileStream);
-                        }
+                        await Helper.WriteFileAtomicAsync(targetPath, resourceStream.CopyToAsync);
                     }
                 }
                 finally
@@ -151,10 +148,7 @@ namespace Servy.Core.Helpers
 
                 using (resourceStream)
                 {
-                    using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
-                    {
-                        resourceStream.CopyTo(fileStream);
-                    }
+                    Helper.WriteFileAtomic(targetPath, resourceStream.CopyTo);
                 }
 
                 Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
