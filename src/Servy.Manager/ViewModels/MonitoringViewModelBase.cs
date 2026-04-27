@@ -1,4 +1,5 @@
-﻿using Servy.UI.Services;
+﻿using Servy.Core.Logging;
+using Servy.UI.Services;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -94,6 +95,15 @@ namespace Servy.Manager.ViewModels
             try
             {
                 await OnTickAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected behavior during shutdown or monitoring reset.
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Monitoring tick failed in {GetType().Name}.", ex);
+                // Do NOT rethrow — async void would terminate the dispatcher and crash the Manager UI.
             }
             finally
             {
