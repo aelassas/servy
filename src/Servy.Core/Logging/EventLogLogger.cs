@@ -12,6 +12,10 @@ namespace Servy.Core.Logging
     {
         #region Private Fields
 
+        // The Windows Event Log has a strict per-entry size limit (approx 31,839 chars).
+        // We truncate at 31,000 to leave a comfortable safety margin for Unicode bytes.
+        private const int EventLogMessageMaxChars = 31000;
+
         private EventLog _eventLog;
         private LogLevel _currentLogLevel;
         private bool _isEventLogEnabled;
@@ -111,7 +115,7 @@ namespace Servy.Core.Logging
                 var formattedMessage = Format(message);
                 if (_isEventLogEnabled)
                 {
-                    _eventLog?.WriteEntry(formattedMessage, EventLogEntryType.Information, EventIds.Info);
+                    SafeWriteToEventLog(formattedMessage, EventLogEntryType.Information, EventIds.Info);
                 }
                 Logger.Info(formattedMessage);
             }
@@ -125,7 +129,7 @@ namespace Servy.Core.Logging
                 var formattedMessage = Format(message);
                 if (_isEventLogEnabled)
                 {
-                    _eventLog?.WriteEntry(formattedMessage, EventLogEntryType.Warning, EventIds.Warning);
+                    SafeWriteToEventLog(formattedMessage, EventLogEntryType.Warning, EventIds.Warning);
                 }
                 Logger.Warn(formattedMessage);
             }
@@ -139,7 +143,7 @@ namespace Servy.Core.Logging
                 var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
                 if (_isEventLogEnabled)
                 {
-                    _eventLog?.WriteEntry(fullMessage, EventLogEntryType.Error, EventIds.Error);
+                    SafeWriteToEventLog(fullMessage, EventLogEntryType.Error, EventIds.Error);
                 }
                 Logger.Error(fullMessage);
             }
@@ -182,6 +186,29 @@ namespace Servy.Core.Logging
         #endregion
 
         #region Private Helpers
+
+        /// <summary>
+        /// Safely writes an entry to the Windows Event Log, truncating oversized messages
+        /// and catching any transient I/O exceptions so the pipeline continues to file logging.
+        /// </summary>
+        /// <param name="message">The formatted log message.</param>
+        /// <param name="type">The severity level of the event.</param>
+        /// <param name="eventId">The application-specific event identifier.</param>
+        private void SafeWriteToEventLog(string message, EventLogEntryType type, int eventId)
+        {
+            try
+            {
+                var safeMessage = message.Length > EventLogMessageMaxChars
+                    ? message.Substring(0, EventLogMessageMaxChars) + "...[truncated]"
+                    : message;
+
+                _eventLog?.WriteEntry(safeMessage, type, eventId);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"EventLog write failed: {ex.Message}");
+            }
+        }
 
         /// <summary>
         /// Initializes the EventLog component and ensures the event source exists.
