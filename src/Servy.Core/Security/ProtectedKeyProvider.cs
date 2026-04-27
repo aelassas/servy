@@ -196,8 +196,8 @@ namespace Servy.Core.Security
                             throw;
                         }
 
-                        // Exponential backoff: Wait longer with each failure
-                        Thread.Sleep(100 * (attempt + 1));
+                        // Exponential backoff: 100ms, 200ms, 400ms
+                        Thread.Sleep(100 * (1 << attempt));
                     }
                 }
 
