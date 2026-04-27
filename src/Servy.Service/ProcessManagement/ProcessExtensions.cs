@@ -107,9 +107,11 @@ namespace Servy.Service.ProcessManagement
                                 child.Dispose(); // Not our child, dispose it immediately
                             }
                         }
-                        catch
+                        catch (ArgumentException) { /* PID gone, expected */ }
+                        catch (System.ComponentModel.Win32Exception) { /* Access denied, expected */ }
+                        catch (Exception ex)
                         {
-                            // Process exited before we could hook it, or Access Denied. Safe to ignore.
+                            Logger.Debug($"Unexpected error while resolving child PID {pe32.th32ProcessID}: {ex.Message}");
                         }
                     }
                 } while (NativeMethods.Process32Next(hSnapshot, ref pe32));
