@@ -217,8 +217,14 @@ namespace Servy.Core.Helpers
                     foreach (var p in allProcesses) p.Dispose();
                 }
             }
-            catch
+            catch (Win32Exception ex)
             {
+                Logger.Error($"Win32 error in KillProcessTreeAndParents('{processName}'): {ex.Message}", ex);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Unexpected error in KillProcessTreeAndParents('{processName}'): {ex.Message}", ex);
                 return false;
             }
         }
