@@ -36,6 +36,7 @@ namespace Servy.ViewModels
         private readonly IHelpService _helpService;
         private bool _isManagerAppAvailable;
         private readonly IAppConfiguration _appConfig;
+        private bool _isBusy;
 
         #endregion
 
@@ -64,6 +65,15 @@ namespace Servy.ViewModels
         /// Service commands.
         /// </summary>
         public IServiceCommands ServiceCommands { get; set; }
+
+        /// <summary>
+        /// Indicates whether the ViewModel is currently performing a long-running operation.
+        /// </summary>
+        public bool IsBusy
+        {
+            get => _isBusy;
+            set { _isBusy = value; OnPropertyChanged(); }
+        }
 
         /// <summary>
         /// Gets or sets the name of the Windows service. 
@@ -884,11 +894,11 @@ namespace Servy.ViewModels
             BrowseStdoutPathCommand = new RelayCommand<object>(_ => BrowseStdoutPath());
             BrowseStderrPathCommand = new RelayCommand<object>(_ => BrowseStderrPath());
 
-            InstallCommand = new AsyncCommand(InstallService);
-            UninstallCommand = new AsyncCommand(UninstallService);
-            StartCommand = new AsyncCommand(StartService);
-            StopCommand = new AsyncCommand(StopService);
-            RestartCommand = new AsyncCommand(RestartService);
+            InstallCommand = new AsyncCommand(InstallService, _ => !IsBusy);
+            UninstallCommand = new AsyncCommand(UninstallService, _ => !IsBusy);
+            StartCommand = new AsyncCommand(StartService, _ => !IsBusy);
+            StopCommand = new AsyncCommand(StopService, _ => !IsBusy);
+            RestartCommand = new AsyncCommand(RestartService, _ => !IsBusy);
 
             ManagerCommand = new AsyncCommand(OpenManager);
 
@@ -1102,11 +1112,27 @@ namespace Servy.ViewModels
         #region Service Command Handlers
 
         /// <summary>
+        /// Resets the <see cref="IsBusy"/> property to false.
+        /// </summary>
+        private void ResetIsBusy()
+        {
+            IsBusy = false;
+        }
+
+        /// <summary>
         /// Calls <see cref="IServiceCommands.InstallService"/> with the current property values.
         /// </summary>
         private async Task InstallService(object parameter)
         {
-            await ServiceCommands.InstallService(_config);
+            try
+            {
+                IsBusy = true;
+                await Task.Run(() => ServiceCommands.InstallService(_config));
+            }
+            finally
+            {
+                ResetIsBusy();
+            }
         }
 
         /// <summary>
@@ -1114,7 +1140,15 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task UninstallService(object parameter)
         {
-            await ServiceCommands.UninstallService(ServiceName);
+            try
+            {
+                IsBusy = true;
+                await Task.Run(() => ServiceCommands.UninstallService(ServiceName));
+            }
+            finally
+            {
+                ResetIsBusy();
+            }
         }
 
         /// <summary>
@@ -1122,7 +1156,15 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task StartService(object parameter)
         {
-            await ServiceCommands.StartService(ServiceName);
+            try
+            {
+                IsBusy = true;
+                await Task.Run(() => ServiceCommands.StartService(ServiceName));
+            }
+            finally
+            {
+                ResetIsBusy();
+            }
         }
 
         /// <summary>
@@ -1130,7 +1172,15 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task StopService(object parameter)
         {
-            await ServiceCommands.StopService(ServiceName);
+            try
+            {
+                IsBusy = true;
+                await Task.Run(() => ServiceCommands.StopService(ServiceName));
+            }
+            finally
+            {
+                ResetIsBusy();
+            }
         }
 
         /// <summary>
@@ -1138,7 +1188,15 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task RestartService(object parameter)
         {
-            await ServiceCommands.RestartService(ServiceName);
+            try
+            {
+                IsBusy = true;
+                await Task.Run(() => ServiceCommands.RestartService(ServiceName));
+            }
+            finally
+            {
+                ResetIsBusy();
+            }
         }
 
         /// <summary>

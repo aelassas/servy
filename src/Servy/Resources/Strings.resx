@@ -197,7 +197,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
 
   <!--EnableConsoleUI-->
   <data name="Label_EnableConsoleUI" xml:space="preserve">
-    <value>Enable Console UI (required for apps that attempt to manipulate the cursor, text colors, or window size. stdout/stderr redirection disabled)</value>
+    <value>Enable Console UI (for interactive console apps; disables stdout/stderr redirection)</value>
   </data>
 
   <!-- I/O redirection -->
