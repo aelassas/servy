@@ -107,7 +107,7 @@ namespace Servy.Core.Services
                     var eventQuery = new EventLogQuery(LogName, PathType.LogName, query);
 
                     // This is where the service handle is requested and the query is validated
-                    records = _reader.ReadEvents(eventQuery);
+                    records = _reader.ReadEvents(eventQuery, MaxResults);
                 }
                 catch (EventLogException ex)
                 {

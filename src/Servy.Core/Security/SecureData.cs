@@ -201,7 +201,6 @@ namespace Servy.Core.Security
                 }
 
                 // Explicitly log when data is processed as plaintext.
-                // This allows admins to find unencrypted passwords or config values in the DB (#568).
                 Logger.Warn("Decryption bypassed: Input does not match any known encryption format. Returning as plaintext.");
                 return rawPayload;
             }
