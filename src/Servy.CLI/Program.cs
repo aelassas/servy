@@ -190,7 +190,7 @@ namespace Servy.CLI
 
                     var asm = Assembly.GetExecutingAssembly();
 
-                    var resourceHelper = new ResourceHelper(serviceRepository, processHelper, processKiller);
+                    var resourceHelper = new ResourceHelper(serviceRepository, processKiller);
 
                     // Copy service executable from embedded resources
                     if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe", true, true))

@@ -258,7 +258,7 @@ namespace Servy.UI.Bootstrapping
                     var jsonSerializer = new JsonServiceSerializer();
 
                     ServiceRepository = new ServiceRepository(dapperExecutor, SecureData, xmlSerializer, jsonSerializer);
-                    var resourceHelper = new ResourceHelper(ServiceRepository, _processHelper, _processKiller);
+                    var resourceHelper = new ResourceHelper(ServiceRepository, _processKiller);
 
                     // Copy embedded files
                     await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "exe");

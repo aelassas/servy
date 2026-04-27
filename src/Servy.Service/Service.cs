@@ -386,7 +386,7 @@ namespace Servy.Service
 
                 // Copy service executable from embedded resources
                 var asm = Assembly.GetExecutingAssembly();
-                var resourceHelper = new ResourceHelper(_serviceRepository, _processHelper, _processKiller);
+                var resourceHelper = new ResourceHelper(_serviceRepository, _processKiller);
 
                 if (!resourceHelper.CopyEmbeddedResourceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe"))
                 {

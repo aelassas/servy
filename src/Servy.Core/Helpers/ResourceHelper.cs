@@ -23,7 +23,6 @@ namespace Servy.Core.Helpers
         private const int ResourceStalenessThresholdMinutes = 20; // Time delta in minutes to consider an embedded resource as "newer" than an existing file
 
         private readonly ServiceHelper _serviceHelper;
-        private readonly IProcessHelper _processHelper;
         private readonly IProcessKiller _processKiller;
 
         /// <summary>
@@ -34,11 +33,9 @@ namespace Servy.Core.Helpers
         /// <param name="processKiller">The process killer used to terminate processes. Cannot be null.</param>
         public ResourceHelper(
             IServiceRepository serviceRepository,
-            IProcessHelper processHelper,
             IProcessKiller processKiller)
         {
             _serviceHelper = new ServiceHelper(serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository)));
-            _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
             _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
         }
 
