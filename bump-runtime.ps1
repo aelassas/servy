@@ -63,15 +63,15 @@ $script:filesModified     = 0
 $script:totalReplacements = 0
 
 # ----------------------------------------------------------------------
-# Helper: Get-FileEncoding (Preserves UTF-8 BOM status)
+# Dot-source shared helpers
 # ----------------------------------------------------------------------
-function Get-FileEncoding {
-    param([string]$Path)
-    $bytes = [System.IO.File]::ReadAllBytes($Path)
-    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
-        return [System.Text.Encoding]::UTF8 # With BOM
-    }
-    return New-Object System.Text.UTF8Encoding($false) # Without BOM
+$helperFile = "Get-FileEncoding.ps1"
+$helperPath = Join-Path $baseDir $helperFile
+
+if (Test-Path $helperPath) {
+    . $helperPath
+} else {
+    throw "Critical dependency missing: '$helperFile' was not found at '$helperPath'. Ensure the helper is in the same directory as this script."
 }
 
 # ----------------------------------------------------------------------

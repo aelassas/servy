@@ -46,30 +46,15 @@ Write-Host "Updating Servy version to $Version..."
 $baseDir = $PSScriptRoot
 
 # ----------------------------------------------------------------------
-# Helper: Get-FileEncoding
-# Detects if a file is UTF8 with or without BOM
+# Dot-source shared helpers
 # ----------------------------------------------------------------------
-function Get-FileEncoding {
-    param([string]$Path)
-    [byte[]]$bytes = [System.IO.File]::ReadAllBytes($Path)
+$helperFile = "Get-FileEncoding.ps1"
+$helperPath = Join-Path $baseDir $helperFile
 
-    # UTF-8 with BOM (EF BB BF)
-    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
-        return [System.Text.Encoding]::UTF8
-    }
-
-    # UTF-16 LE / Unicode (FF FE)
-    if ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE) {
-        return [System.Text.Encoding]::Unicode
-    }
-
-    # UTF-16 BE / BigEndianUnicode (FE FF)
-    if ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFE -and $bytes[1] -eq 0xFF) {
-        return [System.Text.Encoding]::BigEndianUnicode
-    }
-
-    # Default: UTF-8 without BOM (Standard for modern .NET and Git)
-    return New-Object System.Text.UTF8Encoding($false)
+if (Test-Path $helperPath) {
+    . $helperPath
+} else {
+    throw "Critical dependency missing: '$helperFile' was not found at '$helperPath'. Ensure the helper is in the same directory as this script."
 }
 
 # ----------------------------------------------------------------------

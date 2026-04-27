@@ -12,6 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{02EA68
 		bump-version.ps1 = bump-version.ps1
 		CHANGELOG.md = CHANGELOG.md
 		codecov.yml = codecov.yml
+		Get-FileEncoding.ps1 = Get-FileEncoding.ps1
 		global.json = global.json
 		LICENSE.txt = LICENSE.txt
 		NOTES.md = NOTES.md
