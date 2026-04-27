@@ -11,7 +11,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         Title="Servy"
         MinWidth="640"
-        MinHeight="800"
+        MinHeight="760"
         SizeToContent="WidthAndHeight"
         ResizeMode="CanMinimize"
         AutomationProperties.Name="Servy Configuration Window"
@@ -213,7 +213,7 @@
                         <TextBlock Grid.Row="8" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
                         <TextBox Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,5" 
                                  Text="{Binding ProcessParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 AcceptsReturn="False" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="120"
+                                 AcceptsReturn="False" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="80"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_ProcessParameters}"
                                  AutomationProperties.AutomationId="TextBoxProcessParameters"
                                  AutomationProperties.HelpText="Enter the command line parameters for the process."/>
@@ -969,7 +969,7 @@
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
                         <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,5" 
                                  Text="{Binding PostLaunchParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 AcceptsReturn="False" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="120"
+                                 AcceptsReturn="False" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="80"
                                  AutomationProperties.Name="Post-Launch Process Parameters"
                                  AutomationProperties.AutomationId="TextBoxPostLaunchParams"
                                  AutomationProperties.HelpText="Enter command line parameters for the post-launch process."/>
@@ -1055,7 +1055,7 @@
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
                         <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,5" 
                                  Text="{Binding PreStopParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 AcceptsReturn="False" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="120"
+                                 AcceptsReturn="False" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="80"
                                  AutomationProperties.Name="Pre-Stop Process Parameters"
                                  AutomationProperties.AutomationId="TextBoxPreStopParams"
                                  AutomationProperties.HelpText="Enter command line parameters for the pre-stop process."/>
@@ -1163,7 +1163,7 @@
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
                         <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,5" 
                                  Text="{Binding PostStopParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 AcceptsReturn="False" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="120"
+                                 AcceptsReturn="False" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="80"
                                  AutomationProperties.Name="Post-Stop Process Parameters"
                                  AutomationProperties.AutomationId="TextBoxPostStopParams"
                                  AutomationProperties.HelpText="Enter command line parameters for the post-stop process."/>
