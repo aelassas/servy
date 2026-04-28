@@ -1175,9 +1175,8 @@ namespace Servy.Service
                 psi.Environment[envVar.Key] = envVar.Value ?? string.Empty;
             }
 
-            // Ensure UTF-8 encoding and buffered mode for python
+            // Apply runtime-specific fixes
             ProcessLauncher.ApplyLanguageFixes(psi);
-            EnsureJavaUTF8Encoding(psi);
 
             _childProcess = _processFactory.Create(psi, _logger);
 
@@ -1309,25 +1308,6 @@ namespace Servy.Service
             finally
             {
                 _childProcess = null;
-            }
-        }
-
-        /// <summary>
-        /// Ensures that Java processes use UTF-8 as the default file encoding.
-        /// </summary>
-        /// <param name="psi">The <see cref="ProcessStartInfo"/> used to start the Java process.</param>
-        /// <remarks>
-        /// This method checks if the Java process already specifies a <c>-Dfile.encoding</c> option.
-        /// If not, it prepends <c>-Dfile.encoding=UTF-8</c> to the argument list to enforce UTF-8 encoding.
-        /// </remarks>
-        private void EnsureJavaUTF8Encoding(ProcessStartInfo psi)
-        {
-            if ((psi.FileName.Contains("java", StringComparison.OrdinalIgnoreCase) ||
-                 psi.Arguments.Contains(".java", StringComparison.OrdinalIgnoreCase)
-                )
-                && !psi.Arguments.Contains("-Dfile.encoding", StringComparison.OrdinalIgnoreCase))
-            {
-                psi.Arguments = $"-Dfile.encoding=UTF-8 {psi.Arguments}".Trim();
             }
         }
 
