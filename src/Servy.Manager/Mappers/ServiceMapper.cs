@@ -65,50 +65,32 @@ namespace Servy.Manager
         }
 
         /// <summary>
-        /// Converts a <see cref="PerformanceService"/> instance to a <see cref="Service"/> model.
+        /// Converts a <see cref="ServiceItemBase"/> into its corresponding <see cref="Service"/> domain model representation.
         /// </summary>
-        /// <param name="service">The <see cref="PerformanceService"/> instance to convert. Cannot be null.</param>
-        /// <returns>A new <see cref="Service"/> object populated with values from the specified <paramref name="service"/>.</returns>
-        public static Service ToModel(PerformanceService service)
+        /// <param name="item">The source service item to be converted.</param>
+        /// <returns>
+        /// A populated <see cref="Service"/> object if <paramref name="item"/> is not null; otherwise, <see langword="null"/>.
+        /// </returns>
+        /// <remarks>
+        /// This method facilitates the mapping between UI/DTO service items and the core domain model. 
+        /// It includes polymorphic handling: if the input is a <see cref="ConsoleService"/>, the 
+        /// <c>StdoutPath</c> and <c>StderrPath</c> properties are also preserved in the resulting model.
+        /// </remarks>
+        public static Service ToModel(ServiceItemBase item)
         {
-            return new Service
+            if (item == null) return null;
+            var service = new Service
             {
-                Name = service.Name,
-                Pid = service.Pid,
-                IsPidEnabled = service.Pid != null,
+                Name = item.Name,
+                Pid = item.Pid,
+                IsPidEnabled = item.Pid != null,
             };
-        }
-
-        /// <summary>
-        /// Converts a <see cref="ConsoleService"/> instance to a <see cref="Service"/> model.
-        /// </summary>
-        /// <param name="service">The <see cref="ConsoleService"/> instance to convert. Cannot be null.</param>
-        /// <returns>A new <see cref="Service"/> object populated with values from the specified <paramref name="service"/>.</returns>
-        public static Service ToModel(ConsoleService service)
-        {
-            return new Service
+            if (item is ConsoleService consoleService)
             {
-                Name = service.Name,
-                Pid = service.Pid,
-                IsPidEnabled = service.Pid != null,
-                StdoutPath = service.StdoutPath,
-                StderrPath = service.StderrPath,
-            };
-        }
-
-        /// <summary>
-        /// Converts a <see cref="DependencyService"/> instance to a <see cref="Service"/> model.
-        /// </summary>
-        /// <param name="service">The <see cref="DependencyService"/> instance to convert. Cannot be null.</param>
-        /// <returns>A new <see cref="Service"/> object populated with values from the specified <paramref name="service"/>.</returns>
-        public static Service ToModel(DependencyService service)
-        {
-            return new Service
-            {
-                Name = service.Name,
-                Pid = service.Pid,
-                IsPidEnabled = service.Pid != null,
-            };
+                service.StdoutPath = consoleService.StdoutPath;
+                service.StderrPath = consoleService.StderrPath;
+            }
+            return service;
         }
 
         /// <summary>
