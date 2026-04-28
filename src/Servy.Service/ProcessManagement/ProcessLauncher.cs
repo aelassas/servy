@@ -23,9 +23,9 @@ namespace Servy.Service.ProcessManagement
         /// <returns>An initialized and started <see cref="IProcessWrapper"/>.</returns>
         /// <exception cref="TimeoutException">Thrown if a synchronous wait operation exceeds the configured timeout.</exception>
         public static IProcessWrapper Start(
-            ProcessLaunchOptions options,
-            IProcessFactory factory,
-            IServyLogger logger)
+                   ProcessLaunchOptions options,
+                   IProcessFactory factory,
+                   IServyLogger logger)
         {
             // 1. Resolve environment variables and arguments
             var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.EnvironmentVariables);
@@ -56,7 +56,7 @@ namespace Servy.Service.ProcessManagement
                 psi.Environment[envVar.Key] = envVar.Value ?? string.Empty;
             }
 
-            // 4. Apply runtime-specific fixes (Python/Java encoding)
+            // 4. Apply runtime-specific fixes
             ApplyLanguageFixes(psi);
 
             // 5. Launch the process
@@ -72,14 +72,17 @@ namespace Servy.Service.ProcessManagement
 
             StreamWriter stdoutWriter = null;
             StreamWriter stderrWriter = null;
-            var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false); // UTF-8 without BOM
 
-            // Determine if stdout and stderr are pointing to the exact same file
+            // Sync objects with strong identity (local to this execution)
+            object stdoutLock = new object();
+            object stderrLock = new object();
+
+            var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
             bool pathsMatch = string.Equals(options.StdOutPath, options.StdErrPath, StringComparison.OrdinalIgnoreCase);
 
             try
             {
-                // --- Directory Pre-flight Check ---
+                // Ensure directories exist for the log files
                 Helper.EnsureDirectoryExists(options.StdOutPath);
                 if (!pathsMatch) Helper.EnsureDirectoryExists(options.StdErrPath);
 
@@ -96,7 +99,8 @@ namespace Servy.Service.ProcessManagement
                     {
                         if (e.Data != null)
                         {
-                            lock (stdoutWriter) { stdoutWriter.WriteLine(e.Data); }
+                            // Lock on the dedicated sync object, not the resource itself
+                            lock (stdoutLock) { stdoutWriter.WriteLine(e.Data); }
                         }
                     };
                 }
@@ -104,10 +108,10 @@ namespace Servy.Service.ProcessManagement
                 // Setup StdErr Writer
                 if (psi.RedirectStandardError && !string.IsNullOrWhiteSpace(options.StdErrPath))
                 {
-                    // Reuse the stdout writer if paths match to prevent concurrent file locking exceptions and interleaved garbage writes
                     if (pathsMatch && stdoutWriter != null)
                     {
                         stderrWriter = stdoutWriter;
+                        stderrLock = stdoutLock; // Use the same lock if writing to the same file
                     }
                     else
                     {
@@ -121,7 +125,7 @@ namespace Servy.Service.ProcessManagement
                     {
                         if (e.Data != null)
                         {
-                            lock (stderrWriter) { stderrWriter.WriteLine(e.Data); }
+                            lock (stderrLock) { stderrWriter.WriteLine(e.Data); }
                         }
                     };
                 }
