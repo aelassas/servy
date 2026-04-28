@@ -84,16 +84,17 @@ jobs:
         shell: pwsh
         run: |
           $v = $env:CYCLONEDX_CLI_VERSION
-          
-          # Use the pre-installed GitHub CLI to download the release.
-          # This is faster, more reliable, and handles transient timeouts better.
-          gh release download $v --repo CycloneDX/cyclonedx-cli --pattern 'cyclonedx-win-x64.exe' --output "$env:USERPROFILE\cyclonedx.exe"
-
-          # Verify the file actually exists and isn't an empty/error file
-          if (-not (Test-Path "$env:USERPROFILE\cyclonedx.exe")) {
-              throw "Download failed: cyclonedx.exe not found."
+          if (-not $v) { 
+              throw "CYCLONEDX_CLI_VERSION environment variable not set" 
           }
-
+          
+          # Force a hard stop if the download fails (e.g., GitHub is down or version is wrong)
+          $uri = "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe"
+          Write-Host "Downloading CycloneDX CLI from $uri"
+          Invoke-WebRequest -Uri $uri `
+                            -OutFile "$env:USERPROFILE\cyclonedx.exe" `
+                            -ErrorAction Stop
+          
           Add-Content -Path $env:GITHUB_PATH -Value $env:USERPROFILE
 
           # Continue with the .NET tool installation

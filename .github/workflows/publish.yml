@@ -91,7 +91,9 @@ jobs:
           }
           
           # Force a hard stop if the download fails (e.g., GitHub is down or version is wrong)
-          Invoke-WebRequest -Uri "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe" `
+          $uri = "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe"
+          Write-Host "Downloading CycloneDX CLI from $uri"
+          Invoke-WebRequest -Uri $uri `
                             -OutFile "$env:USERPROFILE\cyclonedx.exe" `
                             -ErrorAction Stop
           
