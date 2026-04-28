@@ -323,7 +323,7 @@ namespace Servy.Infrastructure.Data
             var service = await GetByNameAsync(name, decrypt: true, cancellationToken: cancellationToken);
             if (service == null) return string.Empty;
 
-            return JsonConvert.SerializeObject(service, Formatting.Indented);
+            return _jsonServiceSerializer.Serialize(service) ?? string.Empty;
         }
 
         /// <inheritdoc />

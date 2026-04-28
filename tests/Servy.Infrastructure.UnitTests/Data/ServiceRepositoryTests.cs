@@ -5,8 +5,6 @@ using Servy.Core.DTOs;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
-using System.Reflection;
-using static Xunit.MicrosoftTestingPlatform.TestConfig;
 
 namespace Servy.Infrastructure.UnitTests.Data
 {
@@ -1072,12 +1070,28 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task ExportJSON_ReturnsSerializedService()
         {
-            var dto = new ServiceDto { Name = "A" };
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
+            // Arrange
+            var name = "A";
+            var dto = new ServiceDto { Name = name };
+            var expectedJson = "{\"Name\": \"A\"}"; // The string we expect the mock to return
+
+            // 1. Setup Dapper to return the DTO
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
+                       .ReturnsAsync(dto);
+
+            // 2. Setup the Serializer to return our dummy JSON string
+            // This is the missing piece!
+            _mockJsonServiceSerializer
+                .Setup(s => s.Serialize(It.IsAny<ServiceDto>()))
+                .Returns(expectedJson);
 
             var repo = CreateRepository();
-            var json = await repo.ExportJsonAsync("A", TestContext.Current.CancellationToken);
 
+            // Act
+            var json = await repo.ExportJsonAsync(name, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.Equal(expectedJson, json);
             Assert.Contains("\"Name\": \"A\"", json);
         }
 
