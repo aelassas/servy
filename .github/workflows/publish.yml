@@ -27,6 +27,7 @@ jobs:
       RUNTIME: win-x64
       TFM: net10.0-windows
       ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+      CYCLONEDX_VERSION: "6.2.0"
       CYCLONEDX_CLI_VERSION: "v0.30.0"
 
     steps:
@@ -78,7 +79,7 @@ jobs:
       - name: Install CycloneDX .NET Tool
         shell: pwsh
         run: |
-          dotnet tool install --global CycloneDX --version 6.2.0
+          dotnet tool install --global CycloneDX --version $env:CYCLONEDX_VERSION
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
 
       - name: Install CycloneDX CLI from GitHub
