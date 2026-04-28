@@ -174,6 +174,13 @@ namespace Servy.Core.Helpers
                 if (processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
                     processName = processName.Substring(0, processName.Length - 4);
 
+                // SECURITY: Reject critical system process names up-front
+                if (CriticalSystemProcesses.Contains(processName))
+                {
+                    Logger.Warn($"Refused to kill critical system process by name: '{processName}'.");
+                    return false;
+                }
+
                 int selfPid = Process.GetCurrentProcess().Id;
                 var protectedPids = GetAncestorPids();
                 var byParent = BuildParentChildMapNative();
@@ -227,21 +234,23 @@ namespace Servy.Core.Helpers
             if (pid <= 0) return false;
 
             var protectedPids = GetAncestorPids();
-            if (protectedPids.Contains(pid))
-            {
-                Logger.Warn($"Execution blocked: Attempted to kill protected process (PID {pid}).");
-                return false;
-            }
 
-            int selfPid = Process.GetCurrentProcess().Id;
-            var byParent = BuildParentChildMapNative();
-
+            // SECURITY: Resolve process handle and apply full safety check (PID chain + Name)
             Process target;
             try { target = Process.GetProcessById(pid); }
             catch (ArgumentException) { return true; } // Already exited
 
             try
             {
+                if (IsProtected(target.Id, target.ProcessName, protectedPids))
+                {
+                    Logger.Warn($"Execution blocked: Attempted to kill protected process {target.ProcessName} (PID {pid}).");
+                    return false;
+                }
+
+                int selfPid = Process.GetCurrentProcess().Id;
+                var byParent = BuildParentChildMapNative();
+
                 KillProcessTree(target, selfPid, protectedPids, byParent);
                 if (killParents) KillParentProcesses(target, protectedPids);
                 return true;
@@ -256,7 +265,9 @@ namespace Servy.Core.Helpers
         {
             try
             {
-                if (protectedPids.Contains(process.Id)) return;
+                // SECURITY: Use IsProtected instead of a simple PID check to ensure 
+                // system-critical names are never targeted as the root of a tree.
+                if (IsProtected(process.Id, process.ProcessName, protectedPids)) return;
 
                 // Step 1: Kill descendants first
                 WalkAndKillChildren(process.Id, process.StartTime, selfPid, byParent);
@@ -314,7 +325,6 @@ namespace Servy.Core.Helpers
                     }
 
                     // 3. Surgical Kill by PID
-                    // Ensure KillProcessTreeAndParents has an overload that accepts 'int pid'
                     if (!KillProcessTreeAndParents(procInfo.ProcessId))
                     {
                         Logger.Error($"Failed to kill process {procInfo.ProcessName} (PID {procInfo.ProcessId}).");
