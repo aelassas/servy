@@ -15,5 +15,20 @@ namespace Servy.Core.Services
         /// The deserialized <see cref="ServiceDto"/> instance, or <c>null</c> if deserialization fails.
         /// </returns>
         ServiceDto Deserialize(string json);
+
+        /// <summary>
+        /// Serializes a <see cref="ServiceDto"/> into an indented JSON string.
+        /// </summary>
+        /// <param name="dto">The service data transfer object to serialize.</param>
+        /// <returns>
+        /// A formatted JSON string representation of the <paramref name="dto"/>, 
+        /// or <see langword="null"/> if the input is null or serialization fails.
+        /// </returns>
+        /// <remarks>
+        /// This method utilizes the same <see cref="JsonSecurity.UntrustedDataSettings"/> 
+        /// as the deserialization path to ensure perfect round-trip symmetry for custom 
+        /// converters, enum formatting, and contract resolvers.
+        /// </remarks>
+        string Serialize(ServiceDto dto);
     }
 }

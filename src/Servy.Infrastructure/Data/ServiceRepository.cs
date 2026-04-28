@@ -320,10 +320,11 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<string> ExportJsonAsync(string name, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(name)) return string.Empty;
             var service = await GetByNameAsync(name, decrypt: true, cancellationToken: cancellationToken);
             if (service == null) return string.Empty;
 
-            return JsonConvert.SerializeObject(service, Formatting.Indented);
+            return _jsonServiceSerializer.Serialize(service) ?? string.Empty;
         }
 
         /// <inheritdoc />

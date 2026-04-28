@@ -3,6 +3,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
+using System;
 
 namespace Servy.Core.Services
 {
@@ -40,5 +41,23 @@ namespace Servy.Core.Services
             }
         }
 
+        /// <inheritdoc />
+        public string Serialize(ServiceDto dto)
+        {
+            if (dto == null)
+                return null;
+
+            try
+            {
+                // Use the exact same settings as deserialization to guarantee round-trip symmetry,
+                // while adding Formatting.Indented for human-readable output files.
+                return JsonConvert.SerializeObject(dto, Formatting.Indented, JsonSecurity.UntrustedDataSettings);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"JSON Serialization failed for service: {dto.Name}", ex);
+                return null;
+            }
+        }
     }
 }

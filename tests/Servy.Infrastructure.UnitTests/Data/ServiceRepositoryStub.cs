@@ -170,6 +170,11 @@ namespace Servy.Infrastructure.UnitTests.Data
     public class JsonServiceSerializerStub : IJsonServiceSerializer
     {
         public ServiceDto Deserialize(string json) => new ServiceDto { Name = "StubService" };
+
+        public string Serialize(ServiceDto dto)
+        {
+            return dto == null ? null : "{ \"Name\": \"" + dto.Name + "\" }";
+        }
     }
 
 }
