@@ -421,5 +421,21 @@ namespace Servy.Core.Helpers
                 }
             }
         }
+
+        /// <summary>
+        /// Extracts the directory from a file path and ensures it exists on disk.
+        /// </summary>
+        /// <param name="filePath">The file path for which to ensure the directory exists.</param>
+        public static void EnsureDirectoryExists(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath)) return;
+
+            var directory = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+        }
+
     }
 }

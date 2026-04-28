@@ -1,4 +1,5 @@
-﻿using Servy.Core.Logging;
+﻿using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.Service.Helpers;
 using System;
 using System.Diagnostics;
@@ -69,64 +70,91 @@ namespace Servy.Service.ProcessManagement
                 return process;
             }
 
-            var stdoutBuffer = new StringBuilder();
-            var stderrBuffer = new StringBuilder();
-
-            if (psi.RedirectStandardOutput)
-            {
-                process.UnderlyingProcess.OutputDataReceived += (_, e) =>
-                {
-                    if (e.Data != null)
-                        stdoutBuffer.AppendLine(e.Data);
-                };
-            }
-            if (psi.RedirectStandardError)
-            {
-                process.UnderlyingProcess.ErrorDataReceived += (_, e) =>
-                {
-                    if (e.Data != null)
-                        stderrBuffer.AppendLine(e.Data);
-                };
-            }
-
-            if (psi.RedirectStandardOutput) process.BeginOutputReadLine();
-            if (psi.RedirectStandardError) process.BeginErrorReadLine();
-
-            // Synchronous mode: Wait for exit while pulsing the SCM
-            if (options.TimeoutMs <= 0)
-            {
-                throw new ArgumentException(
-                    "Synchronous launch requires TimeoutMs > 0. Set FireAndForget = true for unbounded launches.",
-                    nameof(options));
-            }
-            WaitForExitWithHeartbeat(process, options, logger);
-
-            // Ensure all async reads are finished
-            process.UnderlyingProcess.WaitForExit();
-
+            StreamWriter stdoutWriter = null;
+            StreamWriter stderrWriter = null;
             var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false); // UTF-8 without BOM
 
-            // Save logs if paths are set
-            if (!string.IsNullOrWhiteSpace(options.StdOutPath))
+            // Determine if stdout and stderr are pointing to the exact same file
+            bool pathsMatch = string.Equals(options.StdOutPath, options.StdErrPath, StringComparison.OrdinalIgnoreCase);
+
+            try
             {
-                try
+                // --- Directory Pre-flight Check ---
+                Helper.EnsureDirectoryExists(options.StdOutPath);
+                if (!pathsMatch) Helper.EnsureDirectoryExists(options.StdErrPath);
+
+                // Setup StdOut Writer
+                if (psi.RedirectStandardOutput && !string.IsNullOrWhiteSpace(options.StdOutPath))
                 {
-                    File.AppendAllText(options.StdOutPath, stdoutBuffer.ToString(), encoding);
+                    // Use FileShare.ReadWrite so external tools (like tail) can still read the log while it's locked for appending
+                    stdoutWriter = new StreamWriter(new FileStream(options.StdOutPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite), encoding)
+                    {
+                        AutoFlush = true
+                    };
+
+                    process.UnderlyingProcess.OutputDataReceived += (_, e) =>
+                    {
+                        if (e.Data != null)
+                        {
+                            lock (stdoutWriter) { stdoutWriter.WriteLine(e.Data); }
+                        }
+                    };
                 }
-                catch (Exception ex)
+
+                // Setup StdErr Writer
+                if (psi.RedirectStandardError && !string.IsNullOrWhiteSpace(options.StdErrPath))
                 {
-                    logger.Error($"Failed to persist captured stdout to '{options.StdOutPath}': {ex.Message}. First 512 chars: {stdoutBuffer.ToString().Substring(0, Math.Min(512, stdoutBuffer.Length))}", ex);
+                    // Reuse the stdout writer if paths match to prevent concurrent file locking exceptions and interleaved garbage writes
+                    if (pathsMatch && stdoutWriter != null)
+                    {
+                        stderrWriter = stdoutWriter;
+                    }
+                    else
+                    {
+                        stderrWriter = new StreamWriter(new FileStream(options.StdErrPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite), encoding)
+                        {
+                            AutoFlush = true
+                        };
+                    }
+
+                    process.UnderlyingProcess.ErrorDataReceived += (_, e) =>
+                    {
+                        if (e.Data != null)
+                        {
+                            lock (stderrWriter) { stderrWriter.WriteLine(e.Data); }
+                        }
+                    };
                 }
+
+                if (psi.RedirectStandardOutput) process.BeginOutputReadLine();
+                if (psi.RedirectStandardError) process.BeginErrorReadLine();
+
+                // Synchronous mode: Wait for exit while pulsing the SCM
+                if (options.TimeoutMs <= 0)
+                {
+                    throw new ArgumentException(
+                        "Synchronous launch requires TimeoutMs > 0. Set FireAndForget = true for unbounded launches.",
+                        nameof(options));
+                }
+
+                WaitForExitWithHeartbeat(process, options, logger);
+
+                // Ensure all async reads are finished before disposing streams
+                process.UnderlyingProcess.WaitForExit();
             }
-            if (!string.IsNullOrWhiteSpace(options.StdErrPath))
+            catch (Exception ex)
             {
-                try
+                logger.Error($"Failed during synchronous execution or log flushing for '{options.ExecutablePath}': {ex.Message}", ex);
+                throw;
+            }
+            finally
+            {
+                // Dispose writers safely to release file locks. 
+                // Only dispose stderrWriter if it's not the exact same instance as stdoutWriter.
+                stdoutWriter?.Dispose();
+                if (!pathsMatch)
                 {
-                    File.AppendAllText(options.StdErrPath, stderrBuffer.ToString(), encoding);
-                }
-                catch (Exception ex)
-                {
-                    logger.Error($"Failed to persist captured stderr to '{options.StdErrPath}': {ex.Message}. First 512 chars: {stderrBuffer.ToString().Substring(0, Math.Min(512, stderrBuffer.Length))}", ex);
+                    stderrWriter?.Dispose();
                 }
             }
 
