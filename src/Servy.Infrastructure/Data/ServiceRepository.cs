@@ -1,13 +1,12 @@
 ﻿using Dapper;
-using Newtonsoft.Json;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
+using Servy.Core.IO;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -292,10 +291,13 @@ namespace Servy.Infrastructure.Data
         public virtual async Task<string> ExportXmlAsync(string name, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+
             var service = await GetByNameAsync(name, decrypt: true, cancellationToken: cancellationToken);
             if (service == null) return string.Empty;
 
-            using (var stringWriter = new StringWriter())
+            // Use Utf8StringWriter so the XML preamble declares 'utf-8' 
+            // instead of 'utf-16', matching the bytes written to disk.
+            using (var stringWriter = new Utf8StringWriter())
             {
                 ServiceDtoSerializer.Serialize(stringWriter, service);
                 return stringWriter.ToString();

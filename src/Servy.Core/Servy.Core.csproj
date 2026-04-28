@@ -96,6 +96,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Common\OperationResult.cs" />
+    <Compile Include="IO\Utf8StringWriter.cs" />
     <Compile Include="Config\AppConfig.cs" />
     <Compile Include="Data\IAppDbContext.cs" />
     <Compile Include="Data\IDapperExecutor.cs" />
