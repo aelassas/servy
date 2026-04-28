@@ -153,7 +153,7 @@ function Format-SecureLogMessage {
     .EXAMPLE
         $rawLog = 'Error 1: --password="MySecret" --user admin --preLaunchEnv "API_KEY=12345"'
         $safeLog = Format-SecureLogMessage -Text $rawLog
-        # Returns: 'Error 1: --password "***" --user admin --preLaunchEnv "***"'
+        # Returns: 'Error 1: --password="***" --user admin --preLaunchEnv "***"'
   #>
   param(
     [string]$Text
