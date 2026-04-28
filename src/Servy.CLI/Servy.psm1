@@ -1315,111 +1315,130 @@ function Get-ServyServiceStatus {
 }
 
 function Export-ServyServiceConfig {
-  <#
+    <#
     .SYNOPSIS
         Exports a Servy Windows service configuration to a file.
 
     .DESCRIPTION
         Wraps the Servy CLI `export` command to export the configuration of a service
-        to a file. Supports XML and JSON file types. Requires Administrator privileges.
+        to a file. Supports XML and JSON file types. Requires Administrator privileges
+        to read the service database.
 
     .PARAMETER Quiet
-        Suppress spinner and run in non-interactive mode. Optional.
+        Suppress the spinner and run the CLI in non-interactive mode. Optional.
 
     .PARAMETER Name
-        The name of the service to export. (Required)
+        The unique internal name of the service to export. This name is used to 
+        locate the record in the database. (Required)
 
     .PARAMETER ConfigFileType
-        The export file type. Valid values are 'xml' or 'json'. (Required)
+        The format of the export file. Valid values are 'xml' or 'json'. (Required)
 
     .PARAMETER Path
-        The full path of the configuration file to export. (Required)
+        The full destination path where the configuration file will be saved. 
+        The parent directory must exist and be writable. (Required)
 
     .EXAMPLE
         Export-ServyServiceConfig -Name "MyService" -ConfigFileType "json" -Path "C:\Configs\MyService.json"
         # Exports the configuration of 'MyService' to a JSON file at the specified path.
+
+    .NOTES
+        The function calls Assert-Administrator to ensure the session has the 
+        necessary permissions to access the Servy ProgramData directory.
     #>
-  [CmdletBinding()]
-  param(
-    [switch] $Quiet,
-    [Parameter(Mandatory = $true)]
-    [ValidateNotNullOrEmpty()]
-    [string] $Name,
+    [CmdletBinding()]
+    param(
+        [switch] $Quiet,
 
-    [Parameter(Mandatory = $true)]
-    [ValidateSet("xml", "json")]
-    [string] $ConfigFileType,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Name,
 
-    # Export: Validate that the target directory is writable/exists
-    [Parameter(Mandatory = $true)]
-    [ValidateNotNullOrEmpty()]
-    [ValidateScript({
-        $parent = Split-Path $_ -Parent
-        if ([string]::IsNullOrEmpty($parent)) { return $true }
-        Test-Path $parent -PathType Container
-      })]
-    [string] $Path
-  )
+        [Parameter(Mandatory = $true)]
+        [ValidateSet("xml", "json")]
+        [string] $ConfigFileType,
 
-  $argsList = @()
-  $argsList = Add-Arg $argsList "--name" $Name
-  $argsList = Add-Arg $argsList "--config" $ConfigFileType
-  $argsList = Add-Arg $argsList "--path" $Path
+        # Export: Validate that the target directory is writable/exists
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [ValidateScript({
+            $parent = Split-Path $_ -Parent
+            if ([string]::IsNullOrEmpty($parent)) { return $true }
+            Test-Path $parent -PathType Container
+        })]
+        [string] $Path
+    )
 
-  Invoke-ServyCli -Command "export" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to export configuration for service '$Name'"
+    # Enforce elevation to allow CLI access to %ProgramData%\Servy
+    Assert-Administrator
+
+    $argsList = @()
+    $argsList = Add-Arg $argsList "--name" $Name
+    $argsList = Add-Arg $argsList "--config" $ConfigFileType
+    $argsList = Add-Arg $argsList "--path" $Path
+
+    Invoke-ServyCli -Command "export" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to export configuration for service '$Name'"
 }
 
 function Import-ServyServiceConfig {
-  <#
+    <#
     .SYNOPSIS
         Imports a Windows service configuration into Servy's database.
 
     .DESCRIPTION
         Wraps the Servy CLI `import` command to import a service configuration file
-        (XML or JSON) into Servy's database. Requires Administrator privileges.
+        (XML or JSON) into Servy's database. If the service already exists, it 
+        will be updated. Requires Administrator privileges to write to the 
+        service database and potentially modify Windows services.
 
     .PARAMETER Quiet
-        Suppress spinner and run in non-interactive mode. Optional.
+        Suppress the spinner and run the CLI in non-interactive mode. Optional.
 
     .PARAMETER ConfigFileType
-        The configuration file type. Valid values are 'xml' or 'json'. (Required)
+        The configuration file type being imported. Valid values are 'xml' or 'json'. (Required)
 
     .PARAMETER Path
-        The full path of the configuration file to import. (Required)
+        The full path of the source configuration file to import. The file 
+        must exist and be readable. (Required)
 
     .PARAMETER Install
-        Install the service after import. If the service is already installed, restarting it is required for changes to take effect.
-        Optional.
+        If specified, the service will be automatically installed (or updated in the SCM) 
+        immediately after the database import. Optional.
 
     .EXAMPLE
         Import-ServyServiceConfig -ConfigFileType "json" -Path "C:\Configs\MyService.json" -Install
-        # Imports the configuration file into Servy's database.
-    
+        # Imports the configuration file into Servy's database and updates the Windows service.
+
     .NOTES
-        The service name is read from the configuration file during import.
-        No -Name parameter is needed.
+        The service name is derived from the content of the configuration file.
+        The function calls Assert-Administrator to ensure the session is elevated.
     #>
-  [CmdletBinding()]
-  param(
-    [switch] $Quiet,
-    [Parameter(Mandatory = $true)]
-    [ValidateSet("xml", "json")]
-    [string] $ConfigFileType,
+    [CmdletBinding()]
+    param(
+        [switch] $Quiet,
 
-    # Import: Validate that the source file actually exists
-    [Parameter(Mandatory = $true)]
-    [ValidateNotNullOrEmpty()]
-    [ValidateScript({ Test-Path $_ -PathType Leaf })]
-    [string] $Path,
-    [switch] $Install
-  )
+        [Parameter(Mandatory = $true)]
+        [ValidateSet("xml", "json")]
+        [string] $ConfigFileType,
 
-  $argsList = @()
-  $argsList = Add-Arg $argsList "--config" $ConfigFileType
-  $argsList = Add-Arg $argsList "--path" $Path
-  if ($Install) { $argsList = Add-Arg $argsList "--install" -Flag }
+        # Import: Validate that the source file actually exists
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [ValidateScript({ Test-Path $_ -PathType Leaf })]
+        [string] $Path,
 
-  Invoke-ServyCli -Command "import" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to import configuration from '$Path'"
+        [switch] $Install
+    )
+
+    # Enforce elevation to allow CLI to write to the database and manage services
+    Assert-Administrator
+
+    $argsList = @()
+    $argsList = Add-Arg $argsList "--config" $ConfigFileType
+    $argsList = Add-Arg $argsList "--path" $Path
+    if ($Install) { $argsList = Add-Arg $argsList "--install" -Flag }
+
+    Invoke-ServyCli -Command "import" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to import configuration from '$Path'"
 }
 
 # PS 2.0 Compatible Alias declaration
