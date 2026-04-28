@@ -178,7 +178,7 @@ jobs:
       # -----------------------------------------------------
       - name: Run unit tests
         shell: pwsh
-        run: dotnet test Servy.sln --configuration Debug
+        run: dotnet test Servy.sln --configuration $env:CONFIGURATION
 
       # -----------------------------------------------------
       # Build and Publish SBOM
