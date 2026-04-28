@@ -108,10 +108,11 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<int> UpsertBatchAsync(IEnumerable<ServiceDto> services, CancellationToken cancellationToken = default)
         {
-            if (services == null || !services.Any()) return 0;
+            var serviceList = services?.ToList();
+            if (serviceList == null || !serviceList.Any()) return 0;
 
             // 1. Create encrypted clones for database storage
-            var encryptedServices = services.Select(CreateEncryptedClone).ToList();
+            var encryptedServices = serviceList.Select(CreateEncryptedClone).ToList();
 
             var sql = $@"
                 INSERT INTO Services ({SqlConstants.InsertColumns}) 
@@ -125,7 +126,6 @@ namespace Servy.Infrastructure.Data
             // 3. Sync IDs back to the original DTOs
             // SQLite has a default limit of 999 parameters. For larger batches, 
             // we process the ID sync in chunks to avoid 'Too many SQL variables' errors.
-            var serviceList = services.ToList();
             const int chunkSize = 900;
 
             for (int i = 0; i < serviceList.Count; i += chunkSize)
