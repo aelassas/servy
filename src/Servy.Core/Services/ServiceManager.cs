@@ -542,7 +542,7 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public async Task<OperationResult> UninstallServiceAsync(string? serviceName, CancellationToken cancellationToken = default)
         {
-            if (_serviceRepository == null) throw new InvalidOperationException("Service repository is not initialized. Cannot install service without a repository.");
+            if (_serviceRepository == null) throw new InvalidOperationException("Service repository is not initialized. Cannot uninstall service without a repository.");
             if (string.IsNullOrWhiteSpace(serviceName)) throw new ArgumentException("serviceName is required.", nameof(serviceName));
 
             SafeScmHandle? scmHandle = null;
@@ -557,7 +557,9 @@ namespace Servy.Core.Services
                     return OperationResult.Failure("Failed to open Service Control Manager.");
                 }
 
-                uint uninstallRights = SERVICE_STOP | SERVICE_QUERY_STATUS | SERVICE_DELETE;
+                // Added SERVICE_CHANGE_CONFIG to permit the start-type modification.
+                uint uninstallRights = SERVICE_STOP | SERVICE_QUERY_STATUS | SERVICE_DELETE | SERVICE_CHANGE_CONFIG;
+
                 using (var serviceHandle = _windowsServiceApi.OpenService(scmHandle, serviceName, uninstallRights))
                 {
                     if (serviceHandle.IsInvalid)
@@ -565,8 +567,9 @@ namespace Servy.Core.Services
                         return OperationResult.Failure($"Failed to open service '{serviceName}' for uninstallation. It may not exist.");
                     }
 
-                    // Standardize start type before stopping
-                    _windowsServiceApi.ChangeServiceConfig(
+                    // Standardize start type before stopping to prevent auto-restart attempts during deletion.
+                    // We now capture and check the result of this call.
+                    bool configSuccess = _windowsServiceApi.ChangeServiceConfig(
                         serviceHandle,
                         SERVICE_NO_CHANGE,
                         SERVICE_DEMAND_START,
@@ -578,6 +581,13 @@ namespace Servy.Core.Services
                         null,
                         null,
                         null);
+
+                    if (!configSuccess)
+                    {
+                        // We log this as a warning rather than a failure, as we can still attempt 
+                        // the stop and delete commands, but it's important for diagnostic visibility.
+                        Logger.Warn($"Failed to standardize start type before uninstall for '{serviceName}': Win32 Error {Marshal.GetLastWin32Error()}");
+                    }
 
                     // Trigger the stop command
                     var status = new NativeMethods.ServiceStatus();
@@ -612,7 +622,7 @@ namespace Servy.Core.Services
                     }
                     else
                     {
-                        string errorMsg = $"Failed to uninstall service '{serviceName}'.";
+                        string errorMsg = $"Failed to uninstall service '{serviceName}'. Win32 Error {Marshal.GetLastWin32Error()}";
                         Logger.Error(errorMsg);
                         return OperationResult.Failure(errorMsg);
                     }
