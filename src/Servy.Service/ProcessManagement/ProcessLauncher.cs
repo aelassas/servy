@@ -23,9 +23,9 @@ namespace Servy.Service.ProcessManagement
         /// <returns>An initialized and started <see cref="IProcessWrapper"/>.</returns>
         /// <exception cref="TimeoutException">Thrown if a synchronous wait operation exceeds the configured timeout.</exception>
         public static IProcessWrapper Start(
-                   ProcessLaunchOptions options,
-                   IProcessFactory factory,
-                   IServyLogger logger)
+                    ProcessLaunchOptions options,
+                    IProcessFactory factory,
+                    IServyLogger logger)
         {
             // 1. Resolve environment variables and arguments
             var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.EnvironmentVariables);
@@ -62,26 +62,30 @@ namespace Servy.Service.ProcessManagement
             // 5. Launch the process
             var process = factory.Create(psi, logger);
 
-            process.Start();
-
-            // 6. Handle execution mode
-            if (options.FireAndForget)
-            {
-                return process;
-            }
+            // ROBUSTNESS: Track ownership. If the method fails before returning, 
+            // we must dispose the process to prevent handle leaks.
+            bool returnedOwnership = false;
 
             StreamWriter stdoutWriter = null;
             StreamWriter stderrWriter = null;
-
-            // Sync objects with strong identity (local to this execution)
-            object stdoutLock = new object();
-            object stderrLock = new object();
-
-            var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
             bool pathsMatch = string.Equals(options.StdOutPath, options.StdErrPath, StringComparison.OrdinalIgnoreCase);
 
             try
             {
+                process.Start();
+
+                // 6. Handle execution mode
+                if (options.FireAndForget)
+                {
+                    returnedOwnership = true;
+                    return process;
+                }
+
+                // Sync objects with strong identity (local to this execution)
+                object stdoutLock = new object();
+                object stderrLock = new object();
+                var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+
                 // Ensure directories exist for the log files
                 Helper.EnsureDirectoryExists(options.StdOutPath);
                 if (!pathsMatch) Helper.EnsureDirectoryExists(options.StdErrPath);
@@ -89,11 +93,19 @@ namespace Servy.Service.ProcessManagement
                 // Setup StdOut Writer
                 if (psi.RedirectStandardOutput && !string.IsNullOrWhiteSpace(options.StdOutPath))
                 {
-                    // Use FileShare.ReadWrite so external tools (like tail) can still read the log while it's locked for appending
-                    stdoutWriter = new StreamWriter(new FileStream(options.StdOutPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite), encoding)
+                    // ROBUSTNESS: Use the safe StreamWriter pattern to ensure the FileStream 
+                    // is disposed if the StreamWriter constructor throws.
+                    FileStream stdoutFs = null;
+                    try
                     {
-                        AutoFlush = true
-                    };
+                        stdoutFs = new FileStream(options.StdOutPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                        stdoutWriter = new StreamWriter(stdoutFs, encoding) { AutoFlush = true };
+                    }
+                    catch
+                    {
+                        stdoutFs?.Dispose();
+                        throw;
+                    }
 
                     process.UnderlyingProcess.OutputDataReceived += (_, e) =>
                     {
@@ -115,10 +127,17 @@ namespace Servy.Service.ProcessManagement
                     }
                     else
                     {
-                        stderrWriter = new StreamWriter(new FileStream(options.StdErrPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite), encoding)
+                        FileStream stderrFs = null;
+                        try
                         {
-                            AutoFlush = true
-                        };
+                            stderrFs = new FileStream(options.StdErrPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                            stderrWriter = new StreamWriter(stderrFs, encoding) { AutoFlush = true };
+                        }
+                        catch
+                        {
+                            stderrFs?.Dispose();
+                            throw;
+                        }
                     }
 
                     process.UnderlyingProcess.ErrorDataReceived += (_, e) =>
@@ -145,6 +164,9 @@ namespace Servy.Service.ProcessManagement
 
                 // Ensure all async reads are finished before disposing streams
                 process.UnderlyingProcess.WaitForExit();
+
+                returnedOwnership = true;
+                return process;
             }
             catch (Exception ex)
             {
@@ -153,16 +175,20 @@ namespace Servy.Service.ProcessManagement
             }
             finally
             {
-                // Dispose writers safely to release file locks. 
-                // Only dispose stderrWriter if it's not the exact same instance as stdoutWriter.
+                // Dispose writers safely to release file locks.
                 stdoutWriter?.Dispose();
                 if (!pathsMatch)
                 {
                     stderrWriter?.Dispose();
                 }
-            }
 
-            return process;
+                // ROBUSTNESS: If we didn't reach a 'return' statement successfully, 
+                // clean up the process wrapper to prevent a handle leak.
+                if (!returnedOwnership)
+                {
+                    process?.Dispose();
+                }
+            }
         }
 
         /// <summary>
@@ -245,6 +271,5 @@ namespace Servy.Service.ProcessManagement
                 }
             }
         }
-
     }
 }
