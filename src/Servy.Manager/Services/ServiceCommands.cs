@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -422,18 +423,37 @@ namespace Servy.Manager.Services
         ///<inheritdoc/>
         public async Task CopyPid(Service service)
         {
+            if (service?.Pid == null) return;
+
             try
             {
-                if (service == null) throw new ArgumentException("Service cannot be null.", nameof(service));
-                var pid = service.Pid;
-                if (pid == null) return;
-                Clipboard.SetText(pid.Value.ToString());
+                string pidValue = service.Pid.Value.ToString();
+                string serviceName = service.Name ?? "Unknown";
+
+                // Accessing the Clipboard requires the STA thread (UI Thread)
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    const int maxRetries = 5;
+                    for (int i = 0; i < maxRetries; i++)
+                    {
+                        try
+                        {
+                            Clipboard.SetText(pidValue);
+                            return;
+                        }
+                        catch (COMException) when (i < maxRetries - 1)
+                        {
+                            Thread.Sleep(50);
+                        }
+                    }
+                });
+
                 await _messageBoxService.ShowInfoAsync(Strings.Msg_PidCopied, AppConfig.Caption);
-                Logger.Info($"PID {service.Pid} of service {service.Name} copied to clipboard.");
+                Logger.Info($"PID {pidValue} of service {serviceName} copied to clipboard.");
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to copy PID to clipboard.", ex);
+                Logger.Error("Failed to copy PID to clipboard.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
             }
         }
