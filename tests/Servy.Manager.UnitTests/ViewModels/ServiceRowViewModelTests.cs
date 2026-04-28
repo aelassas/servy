@@ -48,7 +48,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             var vm = CreateViewModel();
             var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.StartServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<bool>()))
+            _serviceCommandsMock.Setup(s => s.StartServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 
@@ -65,7 +65,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             var service = new Service { Name = "S" };
 
             _serviceCommandsMock
-                .Setup(s => s.StopServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<bool>()))
+                .Setup(s => s.StopServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 
@@ -81,7 +81,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             var vm = CreateViewModel();
             var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.RestartServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<bool>()))
+            _serviceCommandsMock.Setup(s => s.RestartServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 
@@ -109,7 +109,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             var vm = CreateViewModel();
             var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.InstallServiceAsync(It.Is<Service>(srv => srv.Name == "S")))
+            _serviceCommandsMock.Setup(s => s.InstallServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 

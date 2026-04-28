@@ -27,24 +27,27 @@ namespace Servy.Manager.Services
         /// </summary>
         /// <param name="service">The service to start.</param>
         /// <param name="showMessageBox"">Whether to show a message box on success or failure.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True if the service started successfully; otherwise, false.</returns>
-        Task<bool> StartServiceAsync(Service service, bool showMessageBox = true);
+        Task<bool> StartServiceAsync(Service service, bool showMessageBox = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Stops the specified service.
         /// </summary>
         /// <param name="service">The service to stop.</param>
         /// <param name="showMessageBox"">Whether to show a message box on success or failure.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True if the service stopped successfully; otherwise, false.</returns>
-        Task<bool> StopServiceAsync(Service service, bool showMessageBox = true);
+        Task<bool> StopServiceAsync(Service service, bool showMessageBox = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Restarts the specified service.
         /// </summary>
         /// <param name="service">The service to restart.</param>
         /// <param name="showMessageBox"">Whether to show a message box on success or failure.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True if the service restarted successfully; otherwise, false.</returns>
-        Task<bool> RestartServiceAsync(Service service, bool showMessageBox = true);
+        Task<bool> RestartServiceAsync(Service service, bool showMessageBox = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Opens the configuration app for the specified service.
@@ -56,8 +59,9 @@ namespace Servy.Manager.Services
         /// Installs the specified service, optionally using a custom wrapper executable directory.
         /// </summary>
         /// <param name="service">The service to install.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True if the service was installed successfully; otherwise, false.</returns>
-        Task<bool> InstallServiceAsync(Service service);
+        Task<bool> InstallServiceAsync(Service service, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Uninstalls the specified service.

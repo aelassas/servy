@@ -169,16 +169,15 @@ namespace Servy.Manager.Services
         }
 
         /// <inheritdoc />
-        public Task<bool> StartServiceAsync(Service service, bool showMessageBox = true) =>
-            ExecuteServiceCommandAsync(service, d => d.Start(), ServiceStatus.Running, Strings.Msg_ServiceStarted, checkDisabled: true, showMessageBox);
+        public Task<bool> StartServiceAsync(Service service, bool showMessageBox = true, CancellationToken cancellationToken = default) =>
+            ExecuteServiceCommandAsync(service, d => d.Start(cancellationToken), ServiceStatus.Running, Strings.Msg_ServiceStarted, checkDisabled: true, showMessageBox);
 
         /// <inheritdoc />
-        public Task<bool> StopServiceAsync(Service service, bool showMessageBox = true) =>
-            ExecuteServiceCommandAsync(service, d => d.Stop(), ServiceStatus.Stopped, Strings.Msg_ServiceStopped, checkDisabled: false, showMessageBox);
-
+        public Task<bool> StopServiceAsync(Service service, bool showMessageBox = true, CancellationToken cancellationToken = default) =>
+            ExecuteServiceCommandAsync(service, d => d.Stop(cancellationToken), ServiceStatus.Stopped, Strings.Msg_ServiceStopped, checkDisabled: false, showMessageBox);
         /// <inheritdoc />
-        public Task<bool> RestartServiceAsync(Service service, bool showMessageBox = true) =>
-            ExecuteServiceCommandAsync(service, d => d.Restart(), ServiceStatus.Running, Strings.Msg_ServiceRestarted, checkDisabled: true, showMessageBox);
+        public Task<bool> RestartServiceAsync(Service service, bool showMessageBox = true, CancellationToken cancellationToken = default) =>
+            ExecuteServiceCommandAsync(service, d => d.Restart(cancellationToken), ServiceStatus.Running, Strings.Msg_ServiceRestarted, checkDisabled: true, showMessageBox);
 
         /// <inheritdoc />
         public async Task ConfigureServiceAsync(Service service)
@@ -209,6 +208,12 @@ namespace Servy.Manager.Services
                         return;
                     }
 
+                    if (string.IsNullOrWhiteSpace(service.Name))
+                    {
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidServiceName, AppConfig.Caption);
+                        return;
+                    }
+
                     var serviceDomain = await GetServiceDomain(service.Name);
                     if (serviceDomain == null)
                     {
@@ -231,9 +236,10 @@ namespace Servy.Manager.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> InstallServiceAsync(Service service)
+        public async Task<bool> InstallServiceAsync(Service service, CancellationToken cancellationToken = default)
         {
             if (service == null) return false;
+            if (string.IsNullOrWhiteSpace(service.Name)) return false;
 
             return await ExecuteLockedAsync(service.Name, async () =>
             {
@@ -271,7 +277,7 @@ namespace Servy.Manager.Services
                         return false;
                     }
 #endif
-                    var res = await Task.Run(() => serviceDomain.Install(wrapperExeDir));
+                    var res = await Task.Run(() => serviceDomain.Install(wrapperExeDir, cancellationToken: cancellationToken), cancellationToken);
                     if (res.IsSuccess)
                     {
                         service.IsInstalled = true;
@@ -297,6 +303,7 @@ namespace Servy.Manager.Services
         public async Task<bool> UninstallServiceAsync(Service service, CancellationToken cancellationToken = default)
         {
             if (service == null) return false;
+            if (string.IsNullOrWhiteSpace(service.Name)) return false;
 
             return await ExecuteLockedAsync(service.Name, async () =>
             {
@@ -312,7 +319,7 @@ namespace Servy.Manager.Services
                         return false;
                     }
 
-                    var res = await Task.Run(() => serviceDomain.Uninstall(cancellationToken));
+                    var res = await Task.Run(() => serviceDomain.Uninstall(cancellationToken), cancellationToken);
                     if (res.IsSuccess) await Task.Run(() => RemoveService(service));
 
                     return res.IsSuccess;
@@ -330,6 +337,7 @@ namespace Servy.Manager.Services
         public async Task<bool> RemoveServiceAsync(Service service)
         {
             if (service == null) return false;
+            if (string.IsNullOrWhiteSpace(service.Name)) return false;
 
             return await ExecuteLockedAsync(service.Name, async () =>
             {
@@ -416,6 +424,7 @@ namespace Servy.Manager.Services
         {
             try
             {
+                if (service == null) throw new ArgumentException("Service cannot be null.", nameof(service));
                 var pid = service.Pid;
                 if (pid == null) return;
                 Clipboard.SetText(pid.Value.ToString());
@@ -513,6 +522,7 @@ namespace Servy.Manager.Services
             bool showMessageBox)
         {
             if (service == null) return false;
+            if (string.IsNullOrWhiteSpace(service.Name)) return false;
 
             return await ExecuteLockedAsync(service.Name, async () =>
             {
@@ -611,6 +621,8 @@ namespace Servy.Manager.Services
         {
             try
             {
+                if (service == null) throw new ArgumentException("Service cannot be null.", nameof(service));
+
                 var path = getFilePath();
                 if (string.IsNullOrEmpty(path)) return;
 
@@ -628,7 +640,7 @@ namespace Servy.Manager.Services
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to export {formatName} of {service.Name}.", ex);
+                Logger.Error($"Failed to export {formatName} of {service?.Name}.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
             }
         }
@@ -715,6 +727,7 @@ namespace Servy.Manager.Services
         /// <param name="service">The service to remove.</param>
         private void RemoveService(Service service)
         {
+            if (service == null) throw new ArgumentException("Service cannot be null.", nameof(service));
             _removeServiceCallback?.Invoke(service.Name);
         }
 

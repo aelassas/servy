@@ -35,10 +35,11 @@ namespace Servy.Core.Services
         /// with specified arguments and working directory.
         /// </summary>
         /// <param name="options">The options containing all configuration parameters for the service installation.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <see cref="InstallServiceOptions.ServiceName"/>, <see cref="InstallServiceOptions.WrapperExePath"/>, or <see cref="InstallServiceOptions.RealExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
-        Task<OperationResult> InstallServiceAsync(InstallServiceOptions options);
+        Task<OperationResult> InstallServiceAsync(InstallServiceOptions options, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Uninstalls the specified service.
@@ -53,23 +54,27 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="serviceName">The service name.</param>
         /// <param name="logSuccessfulStart">Indicates whether to log a message when the service starts successfully.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True if the service was started; otherwise false.</returns>
-        Task<OperationResult> StartServiceAsync(string serviceName, bool logSuccessfulStart = true);
+        Task<OperationResult> StartServiceAsync(string serviceName, bool logSuccessfulStart = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Stops the specified service.
         /// </summary>
         /// <param name="serviceName">The service name.</param>
         /// <param name="logSuccessfulStop">Indicates whether to log a message when the service stops successfully.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True if the service was stopped; otherwise false.</returns>
-        Task<OperationResult> StopServiceAsync(string serviceName, bool logSuccessfulStop = true);
+        Task<OperationResult> StopServiceAsync(string serviceName, bool logSuccessfulStop = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Restarts the specified service.
         /// </summary>
         /// <param name="serviceName">The service name.</param>
+        /// <param name="logSuccessfulRestart">Indicates whether to log a message when the service restarts successfully.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True if the service was restarted; otherwise false.</returns>
-        Task<OperationResult> RestartServiceAsync(string serviceName);
+        Task<OperationResult> RestartServiceAsync(string serviceName, bool logSuccessfulRestart = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the current status of the specified Windows service.

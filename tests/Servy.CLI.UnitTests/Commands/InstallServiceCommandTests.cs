@@ -4,10 +4,10 @@ using Servy.CLI.Models;
 using Servy.CLI.Validators;
 using Servy.Core.Common;
 using Servy.Core.Config;
-using Servy.Core.Data;
 using Servy.Core.Services;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -39,7 +39,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
 
             // Updated to use the new options object signature
-            _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<Servy.Core.Services.InstallServiceOptions>()))
+            _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
 
             // Create a dummy Servy.Service.exe for the test
@@ -91,7 +91,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
 
             // Updated to use the new options object signature
-            _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<Servy.Core.Services.InstallServiceOptions>()))
+            _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Failure("Failed to install service."));
 
             var wrapperExePath = AppConfig.GetServyCLIServicePath();
@@ -126,7 +126,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
 
             // Updated to use the new options object signature
-            _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<Servy.Core.Services.InstallServiceOptions>()))
+            _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .Throws<UnauthorizedAccessException>();
 
             var wrapperExePath = AppConfig.GetServyCLIServicePath();
@@ -161,7 +161,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
 
             // Updated to use the new options object signature
-            _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<Servy.Core.Services.InstallServiceOptions>()))
+            _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .Throws<Exception>();
 
             var wrapperExePath = AppConfig.GetServyCLIServicePath();

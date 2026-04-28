@@ -52,10 +52,10 @@ namespace Servy.Manager.UnitTests.Services
             _removedServiceName = null;
 
             // Default safe returns for ServiceManager to prevent internal NullRefs
-            _serviceManagerMock.Setup(m => m.StartServiceAsync(It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync(OperationResult.Success());
-            _serviceManagerMock.Setup(m => m.StopServiceAsync(It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync(OperationResult.Success());
-            _serviceManagerMock.Setup(m => m.RestartServiceAsync(It.IsAny<string>())).ReturnsAsync(OperationResult.Success());
-            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>())).ReturnsAsync(OperationResult.Success());
+            _serviceManagerMock.Setup(m => m.StartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
+            _serviceManagerMock.Setup(m => m.StopServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
+            _serviceManagerMock.Setup(m => m.RestartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
+            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
             _serviceManagerMock.Setup(m => m.UninstallServiceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
         }
 
@@ -238,7 +238,7 @@ namespace Servy.Manager.UnitTests.Services
             var result = await sut.StartServiceAsync(service, showMessageBox: false);
 
             Assert.True(result);
-            _serviceManagerMock.Verify(m => m.StartServiceAsync(service.Name, It.IsAny<bool>()), Times.Once);
+            _serviceManagerMock.Verify(m => m.StartServiceAsync(service.Name, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -253,7 +253,7 @@ namespace Servy.Manager.UnitTests.Services
             var result = await sut.StopServiceAsync(service, showMessageBox: false);
 
             Assert.True(result);
-            _serviceManagerMock.Verify(m => m.StopServiceAsync(service.Name, It.IsAny<bool>()), Times.Once);
+            _serviceManagerMock.Verify(m => m.StopServiceAsync(service.Name, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -270,7 +270,7 @@ namespace Servy.Manager.UnitTests.Services
             var result = await sut.RestartServiceAsync(service, showMessageBox: false);
 
             Assert.True(result);
-            _serviceManagerMock.Verify(m => m.RestartServiceAsync(service.Name), Times.Once);
+            _serviceManagerMock.Verify(m => m.RestartServiceAsync(service.Name, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -301,7 +301,7 @@ namespace Servy.Manager.UnitTests.Services
             var result = await sut.InstallServiceAsync(service);
 
             Assert.True(result, "InstallServiceAsync returned false. The Directory.Exists validation likely failed.");
-            _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.Is<InstallServiceOptions>(o => o.ServiceName == service.Name)), Times.Once);
+            _serviceManagerMock.Verify(m => m.InstallServiceAsync(It.Is<InstallServiceOptions>(o => o.ServiceName == service.Name), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

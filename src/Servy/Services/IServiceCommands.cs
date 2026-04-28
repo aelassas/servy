@@ -17,6 +17,7 @@ namespace Servy.Services
         /// The <see cref="ServiceConfiguration"/> containing all process paths, 
         /// startup parameters, and lifecycle hook settings.
         /// </param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task representing the asynchronous installation operation.</returns>
         /// <remarks>
         /// <para>
@@ -38,7 +39,7 @@ namespace Servy.Services
         /// </remarks>
         /// <exception cref="UnauthorizedAccessException">Thrown if the application lacks the administrative privileges required to install a service.</exception>
         /// <exception cref="Exception">Thrown if an unexpected error occurs during the SCM communication or file I/O.</exception>
-        Task<bool> InstallService(ServiceConfiguration config);
+        Task<bool> InstallService(ServiceConfiguration config, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Uninstalls the specified Windows service.
@@ -51,19 +52,22 @@ namespace Servy.Services
         /// Starts the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service to start.</param>
-        Task<bool> StartService(string serviceName);
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        Task<bool> StartService(string serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Stops the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service to stop.</param>
-        Task<bool> StopService(string serviceName);
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        Task<bool> StopService(string serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Restarts the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service to restart.</param>
-        Task<bool> RestartService(string serviceName);
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        Task<bool> RestartService(string serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Exports the service configuration to an XML file selected by the user.

@@ -98,7 +98,7 @@ namespace Servy.Services
         #region IServiceCommands Implementation
 
         /// <inheritdoc />
-        public async Task<bool> InstallService(ServiceConfiguration config)
+        public async Task<bool> InstallService(ServiceConfiguration config, CancellationToken cancellationToken = default)
         {
             var wrapperExePath = AppConfig.GetServyUIServicePath();
 
@@ -111,10 +111,10 @@ namespace Servy.Services
             // 1. Build the DTO (The Single Source of Truth for this operation)
             var dto = new ServiceDto
             {
-                Name = config.Name,
-                DisplayName = config.DisplayName,
+                Name = config.Name ?? string.Empty,
+                DisplayName = config.DisplayName ?? string.Empty,
                 Description = config.Description,
-                ExecutablePath = config.ExecutablePath,
+                ExecutablePath = config.ExecutablePath ?? string.Empty,
                 StartupDirectory = config.StartupDirectory,
                 Parameters = config.Parameters,
                 StartupType = (int)config.StartupType,
@@ -205,7 +205,7 @@ namespace Servy.Services
                 {
                     ServiceName = dto.Name,
                     DisplayName = dto.DisplayName,
-                    Description = dto.Description,
+                    Description = dto.Description ?? string.Empty,
                     WrapperExePath = wrapperExePath,
                     RealExePath = dto.ExecutablePath,
                     WorkingDirectory = dto.StartupDirectory,
@@ -347,24 +347,28 @@ namespace Servy.Services
         }
 
         /// <inheritdoc />
-        public Task<bool> StartService(string serviceName) =>
+        public Task<bool> StartService(string serviceName, CancellationToken cancellationToken = default) =>
             ExecuteServiceCommandAsync(
                 serviceName,
-                (name) => _serviceManager.StartServiceAsync(name, logSuccessfulStart: true),
+                (name) => _serviceManager.StartServiceAsync(name, logSuccessfulStart: true, cancellationToken: cancellationToken),
                 Strings.Msg_ServiceStarted,
                 checkDisabled: true);
 
         /// <inheritdoc />
-        public Task<bool> StopService(string serviceName) =>
+        public Task<bool> StopService(string serviceName, CancellationToken cancellationToken = default) =>
             ExecuteServiceCommandAsync(
                 serviceName,
-                (name) => _serviceManager.StopServiceAsync(name, logSuccessfulStop: true),
+                (name) => _serviceManager.StopServiceAsync(name, logSuccessfulStop: true, cancellationToken: cancellationToken),
                 Strings.Msg_ServiceStopped,
                 checkDisabled: false);
 
         /// <inheritdoc />
-        public Task<bool> RestartService(string serviceName) =>
-            ExecuteServiceCommandAsync(serviceName, _serviceManager.RestartServiceAsync, Strings.Msg_ServiceRestarted, checkDisabled: true);
+        public Task<bool> RestartService(string serviceName, CancellationToken cancellationToken = default) =>
+            ExecuteServiceCommandAsync(
+                serviceName,
+                (name) => _serviceManager.RestartServiceAsync(name, logSuccessfulRestart: true, cancellationToken: cancellationToken),
+                Strings.Msg_ServiceRestarted,
+                checkDisabled: true);
 
         ///<inheritdoc/>
         public Task ExportXmlConfig(string confirmPassword) =>

@@ -28,7 +28,7 @@ namespace Servy.CLI.UnitTests.Commands
             var options = new RestartServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
             _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
-            _mockServiceManager.Setup(sm => sm.RestartServiceAsync("TestService")).ReturnsAsync(OperationResult.Success());
+            _mockServiceManager.Setup(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
             // Act
             var result = await _command.Execute(options);
@@ -59,7 +59,7 @@ namespace Servy.CLI.UnitTests.Commands
             var options = new RestartServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
             _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
-            _mockServiceManager.Setup(sm => sm.RestartServiceAsync("TestService")).ReturnsAsync(OperationResult.Failure("Failed to restart service."));
+            _mockServiceManager.Setup(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to restart service."));
 
             // Act
             var result = await _command.Execute(options);
@@ -76,7 +76,7 @@ namespace Servy.CLI.UnitTests.Commands
             var options = new RestartServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
             _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
-            _mockServiceManager.Setup(sm => sm.RestartServiceAsync("TestService")).Throws<UnauthorizedAccessException>();
+            _mockServiceManager.Setup(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).Throws<UnauthorizedAccessException>();
 
             // Act
             var result = await _command.Execute(options);
@@ -93,7 +93,7 @@ namespace Servy.CLI.UnitTests.Commands
             var options = new RestartServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
             _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
-            _mockServiceManager.Setup(sm => sm.RestartServiceAsync("TestService")).Throws<Exception>();
+            _mockServiceManager.Setup(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).Throws<Exception>();
 
             // Act
             var result = await _command.Execute(options);
