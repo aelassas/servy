@@ -69,7 +69,8 @@ namespace Servy.Infrastructure.Data
                     Thread.Sleep(delay);
                 }
             }
-            return default;
+
+            throw new InvalidOperationException("Retry loop exited without returning or rethrowing - retry count must be > 0.");
         }
 
         /// <summary>
@@ -97,7 +98,8 @@ namespace Servy.Infrastructure.Data
                     await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
                 }
             }
-            return default;
+
+            throw new InvalidOperationException("Retry loop exited without returning or rethrowing - retry count must be > 0.");
         }
 
         /// <summary>
