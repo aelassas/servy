@@ -1,9 +1,10 @@
 {
   "Name": "notepad",
-  "DisplayName": "",
+  "DisplayName": "notepad",
   "ExecutablePath": "C:\\Windows\\System32\\notepad.exe",
   "StartupType": 3,
   "Priority": 2,
+  "EnableConsoleUI": false,
   "EnableSizeRotation": false,
   "RotationSize": 10,
   "EnableDateRotation": false,

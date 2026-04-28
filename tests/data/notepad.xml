@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <Name>notepad</Name>
-  <DisplayName />
+  <DisplayName>notepad</DisplayName>
   <ExecutablePath>C:\Windows\System32\notepad.exe</ExecutablePath>
   <StartupType>3</StartupType>
   <Priority>2</Priority>
+  <EnableConsoleUI>false</EnableConsoleUI>
   <EnableSizeRotation>false</EnableSizeRotation>
   <RotationSize>10</RotationSize>
   <EnableDateRotation>false</EnableDateRotation>

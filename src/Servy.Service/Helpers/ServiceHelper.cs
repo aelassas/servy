@@ -141,9 +141,6 @@ namespace Servy.Service.Helpers
                 return;
             }
 
-            string envVarsFormatted = EnvironmentVariablesToString(options.EnvironmentVariables);
-            string preLaunchEnvVarsFormatted = EnvironmentVariablesToString(options.PreLaunchEnvironmentVariables);
-
             // 1. PUBLIC DATA: Logged to both Local Log and Windows Event Log (logger?.Info)
             logger?.Info(
                   $"[Startup Parameters]\n" +
@@ -202,6 +199,9 @@ namespace Servy.Service.Helpers
             // This is only triggered if EnableDebugLogs is true.
             if (options.EnableDebugLogs)
             {
+                string envVarsFormatted = EnvironmentVariablesToString(options.EnvironmentVariables);
+                string preLaunchEnvVarsFormatted = EnvironmentVariablesToString(options.PreLaunchEnvironmentVariables);
+
                 Logger.Info(
                     $"[Startup Parameters - SENSITIVE DATA]\n" +
                     "NOTE: This section contains sensitive parameters including executable arguments and environment variables.\n" +
