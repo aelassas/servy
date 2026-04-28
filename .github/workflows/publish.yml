@@ -190,15 +190,8 @@ jobs:
 
           Write-Host "Using vstest.console.exe at: $vsTest"
 
-          Write-Host "Building Servy.sln in Debug..."
-          msbuild Servy.sln `
-            /t:Clean,Rebuild `
-            /p:Configuration=Debug `
-            /p:Platform=$env:PLATFORM `
-            /p:AllowUnsafeBlocks=true
-
           # Find all test assemblies
-          $testDlls = Get-ChildItem -Path "tests/*/bin/*/Debug/*.UnitTests.dll" -File
+          $testDlls = Get-ChildItem -Path "tests/*/bin/*/$env:BUILD_CONFIG/*.UnitTests.dll" -File
 
           if (-not $testDlls) {
               throw "No test assemblies with *.UnitTests.dll found!"
