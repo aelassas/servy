@@ -264,10 +264,18 @@ function Invoke-ServyCli {
   }
 
   $process = $null
+  $outEvent = $null
+  $errorEvent = $null
 
   try {
     # 1. Create a standalone buffer object for this specific run.
-    # This eliminates the need for $global tracking variables.
+    $stdoutBuffer = @{
+        Lines     = New-Object System.Collections.ArrayList
+        ByteCount = 0
+        MaxChars  = $script:ServyMaxBufferChars
+        Truncated = $false
+    }
+    
     $stderrBuffer = @{
         Lines     = New-Object System.Collections.ArrayList
         ByteCount = 0
@@ -280,7 +288,7 @@ function Invoke-ServyCli {
     }
     
     # Using .NET Process class is the most robust way in PS 2.0 to pass 
-    # complex raw argument strings WHILE retaining pipeline output capture.  
+    # complex raw argument strings WHILE retaining pipeline output capture. 
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $script:ServyCliPath
     $psi.Arguments = $argString
@@ -289,7 +297,7 @@ function Invoke-ServyCli {
     $psi.RedirectStandardError = $true
     $psi.CreateNoWindow = $true
 
-    # SECURITY FIX: Inject environment variables securely directly into the child process block
+    # SECURITY: Inject environment variables securely directly into the child process block
     if ($EnvironmentVariables) {
       foreach ($key in $EnvironmentVariables.Keys) {
         $psi.EnvironmentVariables[$key] = $EnvironmentVariables[$key]
@@ -299,13 +307,30 @@ function Invoke-ServyCli {
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $psi
 
-    # 2. Register the event, passing the buffer via -MessageData to bypass PS dynamic scoping issues.
+    # 2. Register events WITH -Action blocks. 
+    # This securely consumes the output in the background preventing console duplication.
+    $outEvent = Register-ObjectEvent -InputObject $process `
+      -EventName "OutputDataReceived" `
+      -MessageData $stdoutBuffer `
+      -Action {
+          if ($null -ne $EventArgs.Data) { 
+              $buf = $Event.MessageData
+              if ($buf.ByteCount -lt $buf.MaxChars) {
+                  [void]$buf.Lines.Add($EventArgs.Data)
+                  $buf.ByteCount += $EventArgs.Data.Length
+              }
+              elseif (-not $buf.Truncated) {
+                  [void]$buf.Lines.Add("... [Output truncated to prevent memory exhaustion] ...")
+                  $buf.Truncated = $true
+              }
+          }
+      }
+
     $errorEvent = Register-ObjectEvent -InputObject $process `
       -EventName "ErrorDataReceived" `
       -MessageData $stderrBuffer `
       -Action {
-          if ($EventArgs.Data) { 
-              # $Event.MessageData provides direct access to the memory reference
+          if ($null -ne $EventArgs.Data) { 
               $buf = $Event.MessageData
               if ($buf.ByteCount -lt $buf.MaxChars) {
                   [void]$buf.Lines.Add($EventArgs.Data)
@@ -330,48 +355,31 @@ function Invoke-ServyCli {
       "Verify the file exists, is not locked, and the current user has execute permissions."
     }
 
-    # BEGIN ASYNC READ
+    # 3. Begin Async reading
+    $process.BeginOutputReadLine()
     $process.BeginErrorReadLine()
 
-    $stdoutBuilder = New-Object System.Text.StringBuilder
-    $isTruncated = $false
+    # 4. Block main thread for the specified timeout using a non-blocking loop
+    # Yielding the thread with Start-Sleep allows the PS engine to execute the -Action blocks!
+    $timeoutStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    $timeoutMilliseconds = $script:ServyTimeoutSeconds * 1000
+    $hasExited = $false
 
-    # Read stdout synchronously, line-by-line to prevent OOM
-    try {
-      while (-not $process.StandardOutput.EndOfStream) {
-        $line = $process.StandardOutput.ReadLine()
-            
-        if ($stdoutBuilder.Length -lt $script:ServyMaxBufferChars) {
-          [void]$stdoutBuilder.AppendLine($line)
-        }
-        elseif (-not $isTruncated) {
-          [void]$stdoutBuilder.AppendLine("... [Output truncated to prevent memory exhaustion] ...")
-          $isTruncated = $true
-        }
-            
-        # CRITICAL: We must continue iterating even after the truncation limit is hit 
-        # to drain the stdout pipe. If we simply 'break' the loop, the child process 
-        # will deadlock once its OS output buffer (typically 4KB) fills up.
+    while ($timeoutStopwatch.ElapsedMilliseconds -lt $timeoutMilliseconds) {
+      if ($process.HasExited) {
+        $hasExited = $true
+        break
       }
-      $stdout = $stdoutBuilder.ToString()
+      Start-Sleep -Milliseconds 50
     }
-    catch {
-      $stdout = $null
-      Write-Warning "Failed to read CLI stdout: $_"
-    }
-
-    # Start the wait with the defined timeout
-    $hasExited = $process.WaitForExit($script:ServyTimeoutSeconds * 1000)
 
     if (-not $hasExited) {
-      # Handle Timeout: The process is still running!
-      # We must manually kill it to prevent orphaned processes.
       $killed = $false
       try {
         $process.Kill()
         $process.WaitForExit(5000)
         $killed = $process.HasExited
-        if ($killed) { $process.WaitForExit() }  # Flush async stderr
+        if ($killed) { [void]$process.WaitForExit() }
       }
       catch { 
         Write-Warning "Failed to kill process: $_"
@@ -379,32 +387,27 @@ function Invoke-ServyCli {
 
       if ($killed) {
         throw "$($ErrorContext): Operation timed out after $($script:ServyTimeoutSeconds) seconds and was terminated."
-      }
-      else {
+      } else {
         throw "$($ErrorContext): Operation timed out after $($script:ServyTimeoutSeconds) seconds. WARNING: Failed to terminate the process (PID: $($process.Id)) - it may still be running."
       }
-    }    
-
-    # Flush async streams with a bounded wait
-    if (-not $process.WaitForExit(5000)) {
-      # Async flush timed out - proceed with whatever stderr we captured
-    }
-
-    # COLLECT stderr securely from our local reference
-    if ($stderrBuffer.Lines.Count -gt 0) {
-        $stderr = $stderrBuffer.Lines -join [Environment]::NewLine
     } else {
-        $stderr = ""
+      # CRITICAL: Since the process is confirmed dead, a parameterless WaitForExit() 
+      # safely blocks just long enough to guarantee all async streams are flushed entirely.
+      [void]$process.WaitForExit()
+      # Give the PS engine a tiny window to process the final flushed -Action events
+      Start-Sleep -Milliseconds 50
     }
 
-    # CRITICAL: Capture the exit code while the process object is still active
+    # 5. Extract safely from the memory buffers
+    $stdout = if ($stdoutBuffer.Lines.Count -gt 0) { $stdoutBuffer.Lines -join [Environment]::NewLine } else { "" }
+    $stderr = if ($stderrBuffer.Lines.Count -gt 0) { $stderrBuffer.Lines -join [Environment]::NewLine } else { "" }
     $exitCode = $process.ExitCode
 
+    # 6. Emit results
     if (-not [string]::IsNullOrEmpty($stdout)) { 
       Write-Output $stdout.TrimEnd() 
     }
 
-    # Emit the captured stderr
     if (-not [string]::IsNullOrEmpty($stderr)) {
       $scrubbedStderr = Format-SecureLogMessage -Text $stderr.TrimEnd()
       Write-Warning $scrubbedStderr
@@ -413,13 +416,16 @@ function Invoke-ServyCli {
   catch {
     $partialOutput = ""
     
-    # NEW SAFETY NET: If the script aborted before normal collection (e.g., Ctrl+C or crash), 
-    # harvest whatever we managed to catch in the local memory buffer!
-    if ([string]::IsNullOrEmpty($stderr) -and $null -ne $stderrBuffer -and $stderrBuffer.Lines.Count -gt 0) {
+    # SAFETY NET: If the script aborted before normal collection,
+    # pull directly from the buffers.
+    if ($null -ne $stdoutBuffer -and $stdoutBuffer.Lines.Count -gt 0) {
+        $stdout = $stdoutBuffer.Lines -join [Environment]::NewLine
+    }
+    if ($null -ne $stderrBuffer -and $stderrBuffer.Lines.Count -gt 0) {
         $stderr = $stderrBuffer.Lines -join [Environment]::NewLine
     }
 
-    # SECURITY FIX: Scrub stdout and stderr in the generic catch block
+    # SECURITY: Scrub stdout and stderr in the generic catch block
     if (-not [string]::IsNullOrEmpty($stdout)) { 
       $scrubbedStdout = Format-SecureLogMessage -Text $stdout.TrimEnd()
       $partialOutput += " Stdout: $scrubbedStdout" 
@@ -433,25 +439,26 @@ function Invoke-ServyCli {
   }
   finally {
     if ($null -ne $process) {
+      try { $process.CancelOutputRead() } catch {}
       try { $process.CancelErrorRead() } catch {}
       try { [void]$process.WaitForExit(5000) } catch {}  # let in-flight events drain
     }    
 
     # CRITICAL: Clean up events gracefully
+    if ($outEvent) {
+      Unregister-Event -SourceIdentifier $outEvent.Name -ErrorAction SilentlyContinue
+    }
     if ($errorEvent) {
       Unregister-Event -SourceIdentifier $errorEvent.Name -ErrorAction SilentlyContinue
     }
     
-    # We no longer need Remove-Variable because $stderrBuffer is a local object.
-    # PowerShell's Garbage Collector will automatically clean it up when the function exits.
-
     if ($null -ne $process) {
       $process.Dispose()
     }
   }
 
   if ($null -ne $exitCode -and $exitCode -ne 0) {
-    # SECURITY FIX: Scrub stderr before pushing to the session-persistent exit code exception
+    # SECURITY: Scrub stderr before pushing to the session-persistent exit code exception
     $scrubbedStderrFinal = Format-SecureLogMessage -Text $stderr
     $errorMessage = if ($null -ne $scrubbedStderrFinal -and $scrubbedStderrFinal.Trim() -ne "") { $scrubbedStderrFinal.TrimEnd() } else { "Unknown error" }
     
