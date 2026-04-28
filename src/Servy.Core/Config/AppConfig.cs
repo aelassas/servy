@@ -9,7 +9,7 @@ namespace Servy.Core.Config
     /// </summary>
     public static class AppConfig
     {
-        #region Constants
+        #region Application Info & Links
 
         /// <summary>
         /// Servy's current version.
@@ -17,113 +17,41 @@ namespace Servy.Core.Config
         public static readonly string Version = "8.4";
 
         /// <summary>
+        /// The name of the Windows service and the associated Event Log source.
+        /// Used for service registration and writing logs to the Windows Event Viewer.
+        /// </summary>
+        public static readonly string EventSource = "Servy";
+
+        /// <summary>
+        /// Servy's official documentation link.
+        /// </summary>
+        public static readonly string DocumentationLink = "https://github.com/aelassas/servy/wiki";
+
+        /// <summary>
+        /// Latest GitHub release link.
+        /// </summary>
+        public static readonly string LatestReleaseLink = "https://github.com/aelassas/servy/releases/latest";
+
+        /// <summary>
+        /// Command-line argument used to bypass hardware acceleration and force 
+        /// the application to use software-based rendering.
+        /// </summary>
+        /// <remarks>
+        /// This is primarily used to resolve "blank UI" issues in remote management 
+        /// environments (like MeshCentral or specialized RDP configurations) where 
+        /// the hardware DirectX pipeline cannot be correctly captured.
+        /// </remarks>
+        public const string ForceSoftwareRenderingArg = "--force-sr";
+
+        /// <summary>
         /// The minimum required SQLite version to mitigate CVE-2025-6965.
         /// Version 3.50.2 introduced critical fixes for memory corruption.
         /// </summary>
         public static readonly Version MinRequiredSqliteVersion = new Version(3, 50, 2);
 
-        /// <summary>
-        /// The default timeout in milliseconds for regular expression matching operations.
-        /// </summary>
-        /// <remarks>
-        /// A 200ms timeout is used as a security measure to prevent Regular Expression Denial of Service (ReDoS) 
-        /// attacks while providing enough headroom for complex service name or log filtering patterns.
-        /// </remarks>
-        public const int InputRegexTimeoutMs = 200;
+        #endregion
 
-        /// <summary>
-        /// Gets a <see cref="TimeSpan"/> representation of the <see cref="InputRegexTimeoutMs"/>.
-        /// </summary>
-        /// <remarks>
-        /// This static readonly field is used to provide a pre-allocated <see cref="TimeSpan"/> object 
-        /// for high-performance reuse in regex engine calls across the application.
-        /// </remarks>
-        public static readonly TimeSpan InputRegexTimeout = TimeSpan.FromMilliseconds(InputRegexTimeoutMs);
-
-        /// <summary>
-        /// Gets the timeout duration for Regex operations used to parse output from handle.exe.
-        /// </summary>
-        /// <remarks>
-        /// A longer budget is intentional to accommodate cases where handle.exe produces voluminous output, 
-        /// such as when a single large file is associated with thousands of owners or handles.
-        /// </remarks>
-        public static readonly TimeSpan HandleExeRegexTimeout = TimeSpan.FromSeconds(1);
-
-        /// <summary>
-        /// Default Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.
-        /// </summary>
-        public const int DefaultWaitChunkMs = 5000;
-
-        /// <summary>
-        /// Specifies the default additional time, in milliseconds, used for Service Control Manager (SCM) operations.
-        /// </summary>
-        /// <remarks>This constant can be used to extend timeouts or delays when interacting with the
-        /// Windows Service Control Manager to account for potential processing overhead.</remarks>
-        public const int DefaultScmAdditionalTimeMs = 15_000;
-
-        /// <summary>
-        /// Default timeout in seconds to wait for a Windows Service to stop. Default is 60 seconds.
-        /// </summary>
-        public const int DefaultServiceStopTimeoutSeconds = 60;
-
-        /// <summary>
-        /// Populate native service details timeout in milliseconds. This is the maximum time allowed for retrieving native service details.
-        /// </summary>
-        public const int PopulateNativeDetailsTimeoutMs = 5000;
-
-        /// <summary>
-        /// The maximum character length for a Windows Service name.
-        /// </summary>
-        /// <remarks>
-        /// This is a hard limit imposed by the Windows Service Control Manager (SCM).
-        /// </remarks>
-        public const int MaxServiceNameLength = 256;
-
-        /// <summary>
-        /// The maximum character length for a Windows Service display name.
-        /// </summary>
-        /// <remarks>
-        /// This matches the SCM constraint for display strings in the Services console (services.msc).
-        /// </remarks>
-        public const int MaxDisplayNameLength = 256;
-
-        /// <summary>
-        /// The maximum permitted length for a service description.
-        /// </summary>
-        /// <remarks>
-        /// While the registry can technically store larger strings, this limit prevents 
-        /// unnecessary bloat in the Windows Registry and the local SQLite database.
-        /// </remarks>
-        public const int MaxDescriptionLength = 8192;
-
-        /// <summary>
-        /// The maximum permitted length for command-line arguments.
-        /// </summary>
-        /// <remarks>
-        /// The theoretical Win32 limit for the CreateProcess argument string is 32,767 characters. 
-        /// This value is set slightly lower to provide a safety margin for internal path canonicalization.
-        /// </remarks>
-        public const int MaxArgumentLength = 32000;
-
-        /// <summary>
-        /// Safety threshold that defines the maximum number of recursive expansion passes 
-        /// allowed when resolving nested environment variables. This prevents infinite 
-        /// loops caused by circular references.
-        /// </summary>
-        public const int MaxEnvVarExpansionPasses = 5;
-
-        /// <summary>
-        /// The maximum allowed length for a fully expanded environment variable string. 
-        /// Set to 32,768 characters to align with the maximum environment variable 
-        /// size limit on modern Windows systems.
-        /// </summary>
-        public const int MaxEnvVarExpandedLength = 32768;
-
-        /// <summary>
-        /// The name of the Windows service and the associated Event Log source.
-        /// Used for service registration and writing logs to the Windows Event Viewer.
-        /// </summary>
-        public static readonly string EventSource = "Servy";
+        #region File Paths & Directories
 
         /// <summary>
         /// The default file name of the Sysinternals Handle executable used to detect
@@ -192,46 +120,6 @@ namespace Servy.Core.Config
         public static readonly string ServyServiceCLIExe = $"{ServyServiceCLIFileName}.exe";
 
         /// <summary>
-        /// Default services refresh interval when not set in appsettings. Default is 4 seconds.
-        /// </summary>
-        public static readonly int DefaultRefreshIntervalInSeconds = 4;
-
-        /// <summary>
-        /// Default performance (CPU/RAM graphs) refresh interval when not set in appsettings. Default is 800 ms.
-        /// </summary>
-        public static readonly int DefaultPerformanceRefreshIntervalInMs = 800;
-
-        /// <summary>
-        /// Default console refresh interval when not set in appsettings. Default is 800 ms.
-        /// </summary>
-        public static readonly int DefaultConsoleRefreshIntervalInMs = 800;
-
-        /// <summary>
-        /// Default maximum number of lines that can be displayed in the console output.
-        /// </summary>
-        public static readonly int DefaultConsoleMaxLines = 20_000;
-
-        /// <summary>
-        /// Default dependencies tab refresh interval when not set in appsettings. Default is 800 ms.
-        /// </summary>
-        public static readonly int DefaultDependenciesRefreshIntervalInMs = 800;
-
-        /// <summary>
-        /// Extra buffer to ensure SCM doesn't kill the service before cleanup finishes.
-        /// </summary>
-        public static readonly int ScmTimeoutBufferSeconds = 15;
-
-        /// <summary>
-        /// Servy's official documentation link.
-        /// </summary>
-        public static readonly string DocumentationLink = "https://github.com/aelassas/servy/wiki";
-
-        /// <summary>
-        /// Latest GitHub release link.
-        /// </summary>
-        public static readonly string LatestReleaseLink = "https://github.com/aelassas/servy/releases/latest";
-
-        /// <summary>
         /// The root folder name under ProgramData.
         /// </summary>
         public static readonly string AppFolderName = "Servy";
@@ -267,26 +155,96 @@ namespace Servy.Core.Config
         /// </summary>
         public static readonly string DefaultAESIVPath = Path.Combine(SecurityFolderPath, "aes_iv.dat");
 
-        /// <summary>
-        /// Default log rotation size in Megabytes (MB). Default is 10 MB.
-        /// </summary>
-        public const int DefaultRotationSize = 10;
+        #endregion
+
+        #region Default Options & UI Tunables
 
         /// <summary>
-        /// Default maximum number of rotated log files to keep by default. 
-        /// A value of 0 indicates no limit (unlimited retention).
+        /// Default services refresh interval when not set in appsettings. Default is 4 seconds.
         /// </summary>
-        public const int DefaultMaxRotations = 0;
+        public static readonly int DefaultRefreshIntervalInSeconds = 4;
 
         /// <summary>
-        /// The default value for <c>UseLocalTimeForRotation</c>.
+        /// Default performance (CPU/RAM graphs) refresh interval when not set in appsettings. Default is 800 ms.
         /// </summary>
-        /// <remarks>
-        /// <para>Default is <c>false</c> (UTC).</para>
-        /// <para>When set to <c>false</c>, log rotation intervals are calculated using Coordinated Universal Time (UTC). 
-        /// This ensures a consistent, monotonic rotation schedule that is unaffected by Daylight Saving Time transitions.</para>
-        /// </remarks>
-        public const bool DefaultUseLocalTimeForRotation = false;
+        public static readonly int DefaultPerformanceRefreshIntervalInMs = 800;
+
+        /// <summary>
+        /// Default console refresh interval when not set in appsettings. Default is 800 ms.
+        /// </summary>
+        public static readonly int DefaultConsoleRefreshIntervalInMs = 800;
+
+        /// <summary>
+        /// Default maximum number of lines that can be displayed in the console output.
+        /// </summary>
+        public static readonly int DefaultConsoleMaxLines = 20_000;
+
+        /// <summary>
+        /// Default dependencies tab refresh interval when not set in appsettings. Default is 800 ms.
+        /// </summary>
+        public static readonly int DefaultDependenciesRefreshIntervalInMs = 800;
+
+        /// <summary>
+        /// Default Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.
+        /// </summary>
+        public const int DefaultWaitChunkMs = 5000;
+
+        /// <summary>
+        /// Specifies the default additional time, in milliseconds, used for Service Control Manager (SCM) operations.
+        /// </summary>
+        /// <remarks>This constant can be used to extend timeouts or delays when interacting with the
+        /// Windows Service Control Manager to account for potential processing overhead.</remarks>
+        public const int DefaultScmAdditionalTimeMs = 15_000;
+
+        /// <summary>
+        /// Extra buffer to ensure SCM doesn't kill the service before cleanup finishes.
+        /// </summary>
+        public static readonly int ScmTimeoutBufferSeconds = 15;
+
+        /// <summary>
+        /// Default timeout in seconds to wait for a Windows Service to stop. Default is 60 seconds.
+        /// </summary>
+        public const int DefaultServiceStopTimeoutSeconds = 60;
+
+        /// <summary>
+        /// Populate native service details timeout in milliseconds. This is the maximum time allowed for retrieving native service details.
+        /// </summary>
+        public const int PopulateNativeDetailsTimeoutMs = 5000;
+
+        /// <summary>
+        /// The default startup type for a new service.
+        /// Default is <see cref="ServiceStartType.Automatic"/>.
+        /// </summary>
+        public const ServiceStartType DefaultStartupType = ServiceStartType.Automatic;
+
+        /// <summary>
+        /// The default CPU priority class for the managed process.
+        /// Default is <see cref="ProcessPriority.Normal"/>.
+        /// </summary>
+        public const ProcessPriority DefaultPriority = ProcessPriority.Normal;
+
+        /// <summary>
+        /// The default value for <c>EnableConsoleUI</c>. Default is <c>false</c>.
+        /// </summary>
+        public const bool DefaultEnableConsoleUI = false;
+
+        /// <summary>
+        /// Gets a value indicating whether the service should run under the 
+        /// LocalSystem account by default. Default is <c>true</c>.
+        /// </summary>
+        public const bool DefaultRunAsLocalSystem = true;
+
+        /// <summary>
+        /// Gets a value indicating whether verbose debug-level logging is enabled by default.
+        /// Default is <c>false</c>.
+        /// </summary>
+        public const bool DefaultEnableDebugLogs = false;
+
+        /// <summary>
+        /// Gets a value indicating whether process health monitoring (heartbeat checks) 
+        /// is enabled by default. Default is <c>false</c>.
+        /// </summary>
+        public const bool DefaultEnableHealthMonitoring = false;
 
         /// <summary>
         /// Default heartbeat interval in seconds. Default is 30 seconds.
@@ -309,6 +267,16 @@ namespace Servy.Core.Config
         public const RecoveryAction DefaultRecoveryAction = RecoveryAction.RestartService;
 
         /// <summary>
+        /// Default start timeout in seconds to wait for the process to start successfully before considering the startup as failed. Default is 10 seconds.
+        /// </summary>
+        public const int DefaultStartTimeout = 10;
+
+        /// <summary>
+        /// Default stop timeout in seconds to wait for exit. Default is 5 seconds.
+        /// </summary>
+        public const int DefaultStopTimeout = 5;
+
+        /// <summary>
         /// Default timeout in seconds before considering a pre-launch task as failed. Default is 30 seconds.
         /// </summary>
         public const int DefaultPreLaunchTimeoutSeconds = 30;
@@ -317,64 +285,6 @@ namespace Servy.Core.Config
         /// Default number of retry attempts for pre-launch tasks. Default is 0 attempts.
         /// </summary>
         public const int DefaultPreLaunchRetryAttempts = 0;
-
-        /// <summary>
-        /// Default start timeout in seconds to wait for the process to start successfully before considering the startup as failed. Default is 10 seconds.
-        /// </summary>
-        public const int DefaultStartTimeout = 10;
-
-        /// <summary>
-        /// The default startup type for a new service.
-        /// Default is <see cref="ServiceStartType.Automatic"/>.
-        /// </summary>
-        public const ServiceStartType DefaultStartupType = ServiceStartType.Automatic;
-
-        /// <summary>
-        /// The default CPU priority class for the managed process.
-        /// Default is <see cref="ProcessPriority.Normal"/>.
-        /// </summary>
-        public const ProcessPriority DefaultPriority = ProcessPriority.Normal;
-
-        /// <summary>
-        /// The default value for <c>EnableConsoleUI</c>. Default is <c>false</c>.
-        /// </summary>
-        public const bool DefaultEnableConsoleUI = false;
-
-        /// <summary>
-        /// The default interval used when date-based log rotation is enabled.
-        /// Default is <see cref="DateRotationType.Daily"/>.
-        /// </summary>
-        public const DateRotationType DefaultDateRotationType = DateRotationType.Daily;
-
-        /// <summary>
-        /// Gets a value indicating whether size-based log rotation is enabled by default.
-        /// Default is <c>false</c>.
-        /// </summary>
-        public const bool DefaultEnableRotation = false;
-
-        /// <summary>
-        /// Gets a value indicating whether date-based log rotation is enabled by default.
-        /// Default is <c>false</c>.
-        /// </summary>
-        public const bool DefaultEnableDateRotation = false;
-
-        /// <summary>
-        /// Gets a value indicating whether process health monitoring (heartbeat checks) 
-        /// is enabled by default. Default is <c>false</c>.
-        /// </summary>
-        public const bool DefaultEnableHealthMonitoring = false;
-
-        /// <summary>
-        /// Gets a value indicating whether the service should run under the 
-        /// LocalSystem account by default. Default is <c>true</c>.
-        /// </summary>
-        public const bool DefaultRunAsLocalSystem = true;
-
-        /// <summary>
-        /// Gets a value indicating whether verbose debug-level logging is enabled by default.
-        /// Default is <c>false</c>.
-        /// </summary>
-        public const bool DefaultEnableDebugLogs = false;
 
         /// <summary>
         /// Gets a value indicating whether the service should continue starting if the 
@@ -394,141 +304,74 @@ namespace Servy.Core.Config
         public const bool DefaultPreStopLogAsError = false;
 
         /// <summary>
-        /// Default stop timeout in seconds to wait for exit. Default is 5 seconds.
+        /// Gets a value indicating whether size-based log rotation is enabled by default.
+        /// Default is <c>false</c>.
         /// </summary>
-        public const int DefaultStopTimeout = 5;
+        public const bool DefaultEnableRotation = false;
 
         /// <summary>
-        /// Default minimum timeout in seconds to wait for the process to start successfully before considering the startup as failed. Default is 1 second.
+        /// Gets a value indicating whether date-based log rotation is enabled by default.
+        /// Default is <c>false</c>.
         /// </summary>
-        public const int MinStartTimeout = 1;
+        public const bool DefaultEnableDateRotation = false;
 
         /// <summary>
-        /// Default minimum timeout in seconds to wait for exit. Default is 1 second.
+        /// Default log rotation size in Megabytes (MB). Default is 10 MB.
         /// </summary>
-        public const int MinStopTimeout = 1;
+        public const int DefaultRotationSize = 10;
 
         /// <summary>
-        /// Specifies the minimum allowed value, in seconds, for the pre-stop timeout setting.
+        /// Default maximum number of rotated log files to keep by default. 
+        /// A value of 0 indicates no limit (unlimited retention).
         /// </summary>
-        public const int MinPreStopTimeoutSeconds = 0;
+        public const int DefaultMaxRotations = 0;
 
         /// <summary>
-        /// Minimum rotation size in MB.
+        /// The default interval used when date-based log rotation is enabled.
+        /// Default is <see cref="DateRotationType.Daily"/>.
         /// </summary>
-        public const int MinRotationSize = 1;
+        public const DateRotationType DefaultDateRotationType = DateRotationType.Daily;
 
         /// <summary>
-        /// Minimum heartbeat interval in seconds.
-        /// </summary>
-        public const int MinHeartbeatInterval = 5;
-
-        /// <summary>
-        /// Minimum max failed checks.
-        /// </summary>
-        public const int MinMaxFailedChecks = 1;
-
-        /// <summary>
-        /// Minimum max restart attempts. Set to 0 for unlimited.
-        /// </summary>
-        public const int MinMaxRestartAttempts = 0;
-
-        /// <summary>
-        /// Minimum pre-launch timeout in seconds.
-        /// Set to 0 to run the pre-launch  hook in fire-and-forget mode.
-        /// </summary>
-        public const int MinPreLaunchTimeoutSeconds = 0;
-
-        /// <summary>
-        /// Minimum pre-launch retry attempts.
-        /// </summary>
-        public const int MinPreLaunchRetryAttempts = 0;
-
-        /// <summary>
-        /// Maximum timeout in seconds to wait for the process to start (24 hours).
-        /// </summary>
-        public const int MaxStartTimeout = 86400;
-
-        /// <summary>
-        /// Maximum timeout in seconds to wait for exit (24 hours).
-        /// </summary>
-        public const int MaxStopTimeout = 86400;
-
-        /// <summary>
-        /// Maximum allowed pre-stop timeout in seconds (24 hours).
-        /// </summary>
-        public const int MaxPreStopTimeoutSeconds = 86400;
-
-        /// <summary>
-        /// Maximum rotation size in MB (10 GB).
-        /// </summary>
-        public const int MaxRotationSize = 10240;
-
-        /// <summary>
-        /// Maximum number of rotated log files to keep.
-        /// </summary>
-        public const int MaxMaxRotations = 10_000;
-
-        /// <summary>
-        /// Minimum number of rotated log files to keep. 0 means unlimited.
-        /// </summary>
-        public const int MinMaxRotations = 0;
-
-        /// <summary>
-        /// Maximum heartbeat interval in seconds (24 hours).
-        /// </summary>
-        public const int MaxHeartbeatInterval = 86400;
-
-        /// <summary>
-        /// Maximum allowed failed health checks.
-        /// </summary>
-        public const int MaxMaxFailedChecks = int.MaxValue;
-
-        /// <summary>
-        /// Maximum allowed restart attempts.
-        /// </summary>
-        public const int MaxMaxRestartAttempts = int.MaxValue;
-
-        /// <summary>
-        /// Maximum pre-launch timeout in seconds (24 hours).
-        /// </summary>
-        public const int MaxPreLaunchTimeoutSeconds = 86400;
-
-        /// <summary>
-        /// Maximum pre-launch retry attempts.
-        /// </summary>
-        public const int MaxPreLaunchRetryAttempts = int.MaxValue;
-
-        /// <summary>
-        /// The maximum allowed size for imported configuration files (XML or JSON) in Megabytes.
+        /// The default value for <c>UseLocalTimeForRotation</c>.
         /// </summary>
         /// <remarks>
-        /// This constant acts as a safety threshold to prevent "Out of Memory" exceptions or 
-        /// Large Object Heap (LOH) fragmentation when parsing malformed or excessively large files.
-        /// Default is 10 MB.
+        /// <para>Default is <c>false</c> (UTC).</para>
+        /// <para>When set to <c>false</c>, log rotation intervals are calculated using Coordinated Universal Time (UTC). 
+        /// This ensures a consistent, monotonic rotation schedule that is unaffected by Daylight Saving Time transitions.</para>
         /// </remarks>
-        public const int MaxConfigFileSizeMB = 10;
+        public const bool DefaultUseLocalTimeForRotation = false;
+
+        #endregion
+
+        #region Limits, Thresholds & Constraints
 
         /// <summary>
-        /// Command-line argument used to bypass hardware acceleration and force 
-        /// the application to use software-based rendering.
+        /// The default timeout in milliseconds for regular expression matching operations.
         /// </summary>
         /// <remarks>
-        /// This is primarily used to resolve "blank UI" issues in remote management 
-        /// environments (like MeshCentral or specialized RDP configurations) where 
-        /// the hardware DirectX pipeline cannot be correctly captured.
+        /// A 200ms timeout is used as a security measure to prevent Regular Expression Denial of Service (ReDoS) 
+        /// attacks while providing enough headroom for complex service name or log filtering patterns.
         /// </remarks>
-        public const string ForceSoftwareRenderingArg = "--force-sr";
+        public const int InputRegexTimeoutMs = 200;
 
         /// <summary>
-        /// The maximum allowed character count for imported configuration payloads (JSON or XML).
+        /// Gets a <see cref="TimeSpan"/> representation of the <see cref="InputRegexTimeoutMs"/>.
         /// </summary>
         /// <remarks>
-        /// This limit is a security measure to prevent Denial of Service (DoS) attacks via 
-        /// memory exhaustion. 1,024,000 characters represent approximately 2MB of memory 
-        /// usage for the raw string in UTF-16.
+        /// This static readonly field is used to provide a pre-allocated <see cref="TimeSpan"/> object 
+        /// for high-performance reuse in regex engine calls across the application.
         /// </remarks>
-        public const int MaxImportPayloadSizeChars = 1_024_000;
+        public static readonly TimeSpan InputRegexTimeout = TimeSpan.FromMilliseconds(InputRegexTimeoutMs);
+
+        /// <summary>
+        /// Gets the timeout duration for Regex operations used to parse output from handle.exe.
+        /// </summary>
+        /// <remarks>
+        /// A longer budget is intentional to accommodate cases where handle.exe produces voluminous output, 
+        /// such as when a single large file is associated with thousands of owners or handles.
+        /// </remarks>
+        public static readonly TimeSpan HandleExeRegexTimeout = TimeSpan.FromSeconds(1);
 
         /// <summary>
         /// Timeout in milliseconds to wait for an individual child process to exit after a termination signal.
@@ -557,6 +400,248 @@ namespace Servy.Core.Config
         /// Timeout in milliseconds for external handle-utility execution (e.g., handle.exe).
         /// </summary>
         public const int HandleExeTimeoutMs = 5_000;
+
+        /// <summary>
+        /// The maximum character length for a Windows Service name.
+        /// </summary>
+        /// <remarks>
+        /// This is a hard limit imposed by the Windows Service Control Manager (SCM).
+        /// </remarks>
+        public const int MaxServiceNameLength = 256;
+
+        /// <summary>
+        /// The maximum character length for a Windows Service display name.
+        /// </summary>
+        /// <remarks>
+        /// This matches the SCM constraint for display strings in the Services console (services.msc).
+        /// </remarks>
+        public const int MaxDisplayNameLength = 256;
+
+        /// <summary>
+        /// The maximum permitted length for a service description.
+        /// </summary>
+        /// <remarks>
+        /// While the registry can technically store larger strings, this limit prevents 
+        /// unnecessary bloat in the Windows Registry and the local SQLite database.
+        /// </remarks>
+        public const int MaxDescriptionLength = 8192;
+
+        /// <summary>
+        /// The maximum permitted length for command-line arguments.
+        /// </summary>
+        /// <remarks>
+        /// The theoretical Win32 limit for the CreateProcess argument string is 32,767 characters. 
+        /// This value is set slightly lower to provide a safety margin for internal path canonicalization.
+        /// </remarks>
+        public const int MaxArgumentLength = 32000;
+
+        /// <summary>
+        /// Safety threshold that defines the maximum number of recursive expansion passes 
+        /// allowed when resolving nested environment variables. This prevents infinite 
+        /// loops caused by circular references.
+        /// </summary>
+        public const int MaxEnvVarExpansionPasses = 5;
+
+        /// <summary>
+        /// The maximum allowed length for a fully expanded environment variable string. 
+        /// Set to 32,768 characters to align with the maximum environment variable 
+        /// size limit on modern Windows systems.
+        /// </summary>
+        public const int MaxEnvVarExpandedLength = 32768;
+
+        /// <summary>
+        /// The maximum allowed size for imported configuration files (XML or JSON) in Megabytes.
+        /// </summary>
+        /// <remarks>
+        /// This constant acts as a safety threshold to prevent "Out of Memory" exceptions or 
+        /// Large Object Heap (LOH) fragmentation when parsing malformed or excessively large files.
+        /// Default is 10 MB.
+        /// </remarks>
+        public const int MaxConfigFileSizeMB = 10;
+
+        /// <summary>
+        /// The maximum allowed character count for imported configuration payloads (JSON or XML).
+        /// </summary>
+        /// <remarks>
+        /// This limit is a security measure to prevent Denial of Service (DoS) attacks via 
+        /// memory exhaustion. 1,024,000 characters represent approximately 2MB of memory 
+        /// usage for the raw string in UTF-16.
+        /// </remarks>
+        public const int MaxImportPayloadSizeChars = 1_024_000;
+
+        #endregion
+
+        #region Minimum Constraints
+
+        /// <summary>
+        /// Default minimum timeout in seconds to wait for the process to start successfully before considering the startup as failed. Default is 1 second.
+        /// </summary>
+        public const int MinStartTimeout = 1;
+
+        /// <summary>
+        /// Default minimum timeout in seconds to wait for exit. Default is 1 second.
+        /// </summary>
+        public const int MinStopTimeout = 1;
+
+        /// <summary>
+        /// Specifies the minimum allowed value, in seconds, for the pre-stop timeout setting.
+        /// </summary>
+        public const int MinPreStopTimeoutSeconds = 0;
+
+        /// <summary>
+        /// Minimum rotation size in MB.
+        /// </summary>
+        public const int MinRotationSize = 1;
+
+        /// <summary>
+        /// Minimum number of rotated log files to keep. 0 means unlimited.
+        /// </summary>
+        public const int MinMaxRotations = 0;
+
+        /// <summary>
+        /// Minimum heartbeat interval in seconds.
+        /// </summary>
+        public const int MinHeartbeatInterval = 5;
+
+        /// <summary>
+        /// Minimum max failed checks.
+        /// </summary>
+        public const int MinMaxFailedChecks = 1;
+
+        /// <summary>
+        /// Minimum max restart attempts. Set to 0 for unlimited.
+        /// </summary>
+        public const int MinMaxRestartAttempts = 0;
+
+        /// <summary>
+        /// Minimum pre-launch timeout in seconds.
+        /// Set to 0 to run the pre-launch  hook in fire-and-forget mode.
+        /// </summary>
+        public const int MinPreLaunchTimeoutSeconds = 0;
+
+        /// <summary>
+        /// Minimum pre-launch retry attempts.
+        /// </summary>
+        public const int MinPreLaunchRetryAttempts = 0;
+
+        #endregion
+
+        #region Maximum Constraints
+
+        /// <summary>
+        /// Maximum timeout in seconds to wait for the process to start (24 hours).
+        /// </summary>
+        public const int MaxStartTimeout = 86400;
+
+        /// <summary>
+        /// Maximum timeout in seconds to wait for exit (24 hours).
+        /// </summary>
+        public const int MaxStopTimeout = 86400;
+
+        /// <summary>
+        /// Maximum allowed pre-stop timeout in seconds (24 hours).
+        /// </summary>
+        public const int MaxPreStopTimeoutSeconds = 86400;
+
+        /// <summary>
+        /// Maximum rotation size in MB (10 GB).
+        /// </summary>
+        public const int MaxRotationSize = 10240;
+
+        /// <summary>
+        /// Maximum number of rotated log files to keep.
+        /// </summary>
+        public const int MaxMaxRotations = 10_000;
+
+        /// <summary>
+        /// Maximum heartbeat interval in seconds (24 hours).
+        /// </summary>
+        public const int MaxHeartbeatInterval = 86400;
+
+        /// <summary>
+        /// Maximum allowed failed health checks.
+        /// </summary>
+        public const int MaxMaxFailedChecks = int.MaxValue;
+
+        /// <summary>
+        /// Maximum allowed restart attempts.
+        /// </summary>
+        public const int MaxMaxRestartAttempts = int.MaxValue;
+
+        /// <summary>
+        /// Maximum pre-launch timeout in seconds (24 hours).
+        /// </summary>
+        public const int MaxPreLaunchTimeoutSeconds = 86400;
+
+        /// <summary>
+        /// Maximum pre-launch retry attempts.
+        /// </summary>
+        public const int MaxPreLaunchRetryAttempts = int.MaxValue;
+
+        #endregion
+
+        #region Timing & Retry Policies
+
+        /// <summary>
+        /// Delay before retrying when the log file is not found (usually during initial startup).
+        /// </summary>
+        public const int LogTailerFileNotFoundRetryDelayMs = 1000;
+
+        /// <summary>
+        /// Delay before retrying after a file I/O error (sharing violation).
+        /// </summary>
+        public const int LogTailerIoErrorRetryDelayMs = 200;
+
+        /// <summary>
+        /// Polling interval to check for new lines when at the End Of File (EOF).
+        /// </summary>
+        public const int LogTailerEofPollIntervalMs = 150;
+
+        /// <summary>
+        /// Grace period in milliseconds to wait for a process to fully terminate and release kernel handles 
+        /// before the restarter attempts to launch the new instance.
+        /// </summary>
+        public const int RestarterKillGracePeriodMs = 3000;
+
+        /// <summary>
+        /// Max retries for asynchronous SQLite operations encountering "Database is locked".
+        /// </summary>
+        public const int DbAsyncMaxRetries = 3;
+
+        /// <summary>
+        /// Initial exponential backoff delay for async database retries.
+        /// </summary>
+        public const int DbAsyncInitialDelayMs = 100;
+
+        /// <summary>
+        /// Maximum random jitter applied to database backoff to prevent thundering herd issues.
+        /// </summary>
+        public const int DbAsyncMaxJitterMs = 50;
+
+        /// <summary>
+        /// Max retries for synchronous SQLite operations (intentionally lower to avoid UI thread hangs).
+        /// </summary>
+        public const int DbSyncMaxRetries = 3;
+
+        /// <summary>
+        /// Initial delay for synchronous database retries.
+        /// </summary>
+        public const int DbSyncInitialDelayMs = 25;
+
+        /// <summary>
+        /// Max jitter for synchronous database retries.
+        /// </summary>
+        public const int DbSyncMaxJitterMs = 10;
+
+        /// <summary>
+        /// Interval at which the CPU metrics cache is pruned of dead/recycled process entries.
+        /// </summary>
+        public static readonly TimeSpan ProcessHelperPruneInterval = TimeSpan.FromMinutes(5);
+
+        /// <summary>
+        /// Safety cap for filename collision retries when creating rotated or unique log files.
+        /// </summary>
+        public const int RotatingStreamWriterMaxUniqueFilenameRetries = 10_000;
 
         #endregion
 

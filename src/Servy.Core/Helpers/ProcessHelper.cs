@@ -1,4 +1,5 @@
-﻿using Servy.Core.Logging;
+﻿using Servy.Core.Config;
+using Servy.Core.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -23,7 +24,6 @@ namespace Servy.Core.Helpers
     public class ProcessHelper : IProcessHelper
     {
         private long _lastPruneTicks = DateTime.MinValue.Ticks;
-        private readonly TimeSpan PruneInterval = TimeSpan.FromMinutes(5);
 
         /// <summary>
         /// Maintains a lightweight sync object for each PID to allow concurrent metrics gathering 
@@ -145,7 +145,7 @@ namespace Servy.Core.Helpers
             long now = DateTime.UtcNow.Ticks;
             long last = Interlocked.Read(ref _lastPruneTicks);
 
-            if (now - last < PruneInterval.Ticks) return;
+            if (now - last < AppConfig.ProcessHelperPruneInterval.Ticks) return;
 
             // 2. Atomic CompareExchange: Only the winning thread proceeds to prune.
             // This prevents multiple parallel 'Refresh' tasks from iterating the dictionary simultaneously.

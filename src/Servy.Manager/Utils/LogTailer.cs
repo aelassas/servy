@@ -1,4 +1,5 @@
-﻿using Servy.Core.Logging;
+﻿using Servy.Core.Config;
+using Servy.Core.Logging;
 using Servy.Manager.Models;
 using System;
 using System.Collections.Generic;
@@ -99,7 +100,7 @@ namespace Servy.Manager.Utils
                     {
                         if (!File.Exists(path))
                         {
-                            await Task.Delay(1000, token);
+                            await Task.Delay(AppConfig.LogTailerFileNotFoundRetryDelayMs, token);
                             continue;
                         }
 
@@ -118,7 +119,7 @@ namespace Servy.Manager.Utils
                         }
                         catch (IOException)
                         {
-                            await Task.Delay(200, token);
+                            await Task.Delay(AppConfig.LogTailerIoErrorRetryDelayMs, token);
                             continue;
                         }
 
@@ -234,7 +235,7 @@ namespace Servy.Manager.Utils
                                             break; // Break the inner loop to drop the stale handle and reopen
                                         }
 
-                                        await Task.Delay(150, token);
+                                        await Task.Delay(AppConfig.LogTailerEofPollIntervalMs, token);
                                     }
                                 }
                                 finally

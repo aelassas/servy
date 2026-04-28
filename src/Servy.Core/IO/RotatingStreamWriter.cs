@@ -305,7 +305,6 @@ namespace Servy.Core.IO
                 namePart = Path.GetFileNameWithoutExtension(fileName);
             }
 
-            const int MaxRetryLimit = 10000;
             int count = 1;
             string newPath;
 
@@ -313,10 +312,10 @@ namespace Servy.Core.IO
             {
                 // Safety bound: Prevent the process from hanging or causing high I/O latency 
                 // if the directory is pathologically full or locked.
-                if (count > MaxRetryLimit)
+                if (count > AppConfig.RotatingStreamWriterMaxUniqueFilenameRetries)
                 {
                     throw new IOException(
-                        $"Failed to generate a unique filename for '{basePath}' after {MaxRetryLimit} attempts. " +
+                        $"Failed to generate a unique filename for '{basePath}' after {AppConfig.RotatingStreamWriterMaxUniqueFilenameRetries} attempts. " +
                         "Please verify directory permissions or clean up orphaned files.");
                 }
 
