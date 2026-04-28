@@ -103,17 +103,21 @@ namespace Servy.Manager.Services
 
         #region Locking Orchestrator
 
-        /// <summary>
+        //// <summary>
         /// Executes an asynchronous operation within a per-service lock.
-        /// Automatically prunes the lock from the dictionary when the operation is complete
-        /// and no other threads are waiting.
+        /// Uses a persistent ConcurrentDictionary of SemaphoreSlim instances to guarantee 
+        /// absolute mutual exclusion per service name across the application lifecycle.
         /// </summary>
         private async Task<T> ExecuteLockedAsync<T>(string serviceName, Func<Task<T>> action)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
 
-            // Get or create the lock
+            // Get or create the lock for this specific service.
+            // We intentionally DO NOT eagerly evict these semaphores when they become idle. 
+            // Evicting a semaphore while other threads might be concurrently calling GetOrAdd 
+            // introduces a race condition where multiple threads can acquire different 
+            // semaphore instances for the same service key, violating mutual exclusion.
             var sem = _serviceLocks.GetOrAdd(serviceName, _ => new SemaphoreSlim(1, 1));
 
             await sem.WaitAsync();
@@ -124,23 +128,6 @@ namespace Servy.Manager.Services
             finally
             {
                 sem.Release();
-
-                // EAGER EVICTION:
-                // If the semaphore is now idle (CurrentCount == 1), try to remove it.
-                // We use the KeyValuePair overload to ensure we don't remove a NEW 
-                // semaphore that might have been added by a concurrent GetOrAdd.
-                if (sem.CurrentCount == 1)
-                {
-                    var collection = (ICollection<KeyValuePair<string, SemaphoreSlim>>)_serviceLocks;
-                    var kvp = new KeyValuePair<string, SemaphoreSlim>(serviceName, sem);
-
-                    collection.Remove(kvp);
-
-                    // NOTE: Do NOT dispose 'sem' here. If another thread managed to get 
-                    // a reference to it via GetOrAdd just before we removed it, 
-                    // disposing it would cause an ObjectDisposedException for them.
-                    // Let the GC handle the cleanup of the evicted object.
-                }
             }
         }
 
