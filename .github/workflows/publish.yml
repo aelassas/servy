@@ -78,7 +78,7 @@ jobs:
       - name: Install CycloneDX .NET Tool
         shell: pwsh
         run: |
-          dotnet tool install --global CycloneDX
+          dotnet tool install --global CycloneDX --version 6.2.0
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
 
       - name: Install CycloneDX CLI from GitHub
