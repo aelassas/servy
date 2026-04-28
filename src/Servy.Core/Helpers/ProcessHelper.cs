@@ -165,8 +165,16 @@ namespace Servy.Core.Helpers
 
                 if (!isAlive)
                 {
-                    _prevCpuTimes.TryRemove(pid, out _);
-                    _pidLocks.TryRemove(pid, out _);
+                    // Synchronize eviction with any in-flight metric requests for this recycled PID.
+                    lock (GetLockForPid(pid))
+                    {
+                        _prevCpuTimes.TryRemove(pid, out _);
+
+                        // NOTE: We intentionally DO NOT remove from _pidLocks. 
+                        // Evicting lock objects creates a TOCTOU race where a concurrent GetProcessMetrics 
+                        // could allocate a new lock, resulting in two threads mutating _prevCpuTimes 
+                        // simultaneously. The dictionary is bounded by the OS PID limit, so memory growth is negligible.
+                    }
                 }
             }
         }
@@ -222,8 +230,12 @@ namespace Servy.Core.Helpers
             }
             catch (ArgumentException)
             {
-                _prevCpuTimes.TryRemove(pid, out _);
-                _pidLocks.TryRemove(pid, out _); // Clean up the lock too
+                // The process has exited or is inaccessible. Safely evict the CPU sample.
+                lock (GetLockForPid(pid))
+                {
+                    _prevCpuTimes.TryRemove(pid, out _);
+                    // Intentionally preserving the lock in _pidLocks
+                }
                 return new ProcessMetrics(0, 0);
             }
             catch (Exception ex)
