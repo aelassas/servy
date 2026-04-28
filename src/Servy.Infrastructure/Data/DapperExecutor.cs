@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Logging;
 using System.Data.SQLite;
@@ -18,16 +19,6 @@ namespace Servy.Infrastructure.Data
     public class DapperExecutor : IDapperExecutor
     {
         private readonly IAppDbContext _dbContext;
-
-        // Async Retry Limits (Longer budget for non-blocking operations)
-        private const int MaxRetries = 3;
-        private const int InitialDelayMs = 100;
-        private const int MaxJitterMs = 50;
-
-        // Sync Retry Limits (Aggressively capped to prevent thread pool starvation)
-        private const int SyncMaxRetries = 3;
-        private const int SyncInitialDelayMs = 25;
-        private const int SyncMaxJitterMs = 10;
 
         // Thread-safe Random
         private static readonly ThreadLocal<Random> _random = new ThreadLocal<Random>(() => new Random());
@@ -49,7 +40,7 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         private T? ExecuteWithRetry<T>(Func<T> action)
         {
-            for (int i = 0; i < SyncMaxRetries; i++)
+            for (int i = 0; i < AppConfig.DbSyncMaxRetries; i++)
             {
                 try
                 {
@@ -57,18 +48,18 @@ namespace Servy.Infrastructure.Data
                 }
                 catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Busy || ex.ResultCode == SQLiteErrorCode.Locked)
                 {
-                    if (i == SyncMaxRetries - 1)
+                    if (i == AppConfig.DbSyncMaxRetries - 1)
                     {
                         Logger.Warn("Sync database operation exhausted bounded retry budget.");
                         throw;
                     }
 
                     // Shorter delay calculation specifically for the sync path
-                    int backoff = SyncInitialDelayMs * (int)Math.Pow(2, i);
-                    int jitter = _random.Value!.Next(0, SyncMaxJitterMs + 1);
+                    int backoff = AppConfig.DbSyncInitialDelayMs * (int)Math.Pow(2, i);
+                    int jitter = _random.Value!.Next(0, AppConfig.DbSyncMaxJitterMs + 1);
                     int delay = backoff + jitter;
 
-                    Logger.Warn($"Database busy (sync attempt {i + 1}/{SyncMaxRetries}). Spinning for {delay}ms...");
+                    Logger.Warn($"Database busy (sync attempt {i + 1}/{AppConfig.DbSyncMaxRetries}). Spinning for {delay}ms...");
 
                     Thread.Sleep(delay);
                 }
@@ -81,7 +72,7 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         private async Task<T?> ExecuteWithRetryAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken)
         {
-            for (int i = 0; i < MaxRetries; i++)
+            for (int i = 0; i < AppConfig.DbAsyncMaxRetries; i++)
             {
                 // Fail fast if the operation was cancelled before or during the retry loop
                 cancellationToken.ThrowIfCancellationRequested();
@@ -92,10 +83,10 @@ namespace Servy.Infrastructure.Data
                 }
                 catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Busy || ex.ResultCode == SQLiteErrorCode.Locked)
                 {
-                    if (i == MaxRetries - 1) throw;
+                    if (i == AppConfig.DbAsyncMaxRetries - 1) throw;
 
                     int delay = CalculateBackoff(i);
-                    Logger.Warn($"Database busy (async attempt {i + 1}/{MaxRetries}). Retrying in {delay}ms...");
+                    Logger.Warn($"Database busy (async attempt {i + 1}/{AppConfig.DbAsyncMaxRetries}). Retrying in {delay}ms...");
 
                     // Critical: Pass the token to Task.Delay so we don't hang if cancelled during backoff
                     await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
@@ -112,10 +103,10 @@ namespace Servy.Infrastructure.Data
         private int CalculateBackoff(int attempt)
         {
             // Exponential: 100, 200, 400...
-            int backoff = InitialDelayMs * (int)Math.Pow(2, attempt);
+            int backoff = AppConfig.DbAsyncInitialDelayMs * (int)Math.Pow(2, attempt);
 
             // Jitter: 0 to 50ms (Thread-safe and lock-free)
-            int jitter = _random.Value!.Next(0, MaxJitterMs + 1);
+            int jitter = _random.Value!.Next(0, AppConfig.DbAsyncMaxJitterMs + 1);
 
             return backoff + jitter;
         }

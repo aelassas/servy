@@ -377,7 +377,7 @@ namespace Servy.Service.Helpers
                             process.Kill();
 
                             // 3. Brief wait to ensure kernel cleanup is complete before we return control
-                            if (!process.WaitForExit(3000))
+                            if (!process.WaitForExit(AppConfig.RestarterKillGracePeriodMs))
                             {
                                 logger?.Warn("Restarter killed, but kernel cleanup is taking longer than 3s.");
                             }
