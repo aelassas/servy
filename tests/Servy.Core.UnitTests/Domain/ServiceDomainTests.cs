@@ -29,36 +29,36 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Start_ShouldCallServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.StartServiceAsync("TestService", It.IsAny<bool>())).ReturnsAsync(OperationResult.Success());
+            _serviceManagerMock.Setup(s => s.StartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
-            var result = await service.Start();
+            var result = await service.Start(TestContext.Current.CancellationToken);
 
             Assert.True(result.IsSuccess);
-            _serviceManagerMock.Verify(s => s.StartServiceAsync("TestService", It.IsAny<bool>()), Times.Once);
+            _serviceManagerMock.Verify(s => s.StartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task Stop_ShouldCallServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.StopServiceAsync("TestService", It.IsAny<bool>())).ReturnsAsync(OperationResult.Success());
+            _serviceManagerMock.Setup(s => s.StopServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
-            var result = await service.Stop();
+            var result = await service.Stop(TestContext.Current.CancellationToken);
 
             Assert.True(result.IsSuccess);
-            _serviceManagerMock.Verify(s => s.StopServiceAsync("TestService", It.IsAny<bool>()), Times.Once);
+            _serviceManagerMock.Verify(s => s.StopServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task Restart_ShouldCallServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.RestartServiceAsync("TestService")).ReturnsAsync(OperationResult.Success());
+            _serviceManagerMock.Setup(s => s.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
-            var result = await service.Restart();
+            var result = await service.Restart(TestContext.Current.CancellationToken);
 
             Assert.True(result.IsSuccess);
-            _serviceManagerMock.Verify(s => s.RestartServiceAsync("TestService"), Times.Once);
+            _serviceManagerMock.Verify(s => s.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -162,12 +162,12 @@ namespace Servy.Core.UnitTests.Domain
                      o.PreLaunchExePath == service.PreLaunchExecutablePath &&
                      o.PreStopTimeout == service.PreStopTimeoutSeconds &&
                      o.PostStopArgs == service.PostStopParameters
-                 )))
+                 ), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(OperationResult.Success())
                  .Verifiable();
 
             // Act
-            var result = await service.Install("C:\\wrapper");
+            var result = await service.Install("C:\\wrapper", cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -195,12 +195,12 @@ namespace Servy.Core.UnitTests.Domain
                      o.RotationSizeInBytes == (ulong)service.RotationSize * 1024 * 1024 &&
                      o.EnableHealthMonitoring == true &&
                      o.RecoveryAction == service.RecoveryAction
-                 )))
+                 ), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(OperationResult.Success())
                  .Verifiable();
 
             // Act
-            var result = await service.Install();
+            var result = await service.Install(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -221,12 +221,12 @@ namespace Servy.Core.UnitTests.Domain
                  .Setup(s => s.InstallServiceAsync(It.Is<InstallServiceOptions>(o =>
                      o.ServiceName == service.Name &&
                      o.WrapperExePath != null && o.WrapperExePath.Contains(".CLI")
-                 )))
+                 ), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(OperationResult.Success())
                  .Verifiable();
 
             // Act
-            var result = await service.Install(isCLI: true);
+            var result = await service.Install(isCLI: true, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -249,12 +249,12 @@ namespace Servy.Core.UnitTests.Domain
                     o.ServiceName == service.Name &&
                     o.WorkingDirectory == string.Empty &&
                     o.RealArgs == string.Empty
-                )))
+                ), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success())
                 .Verifiable();
 
             // Act
-            var result = await service.Install();
+            var result = await service.Install(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);

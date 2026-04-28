@@ -164,16 +164,15 @@ namespace Servy.Manager.Services
         }
 
         /// <inheritdoc />
-        public Task<bool> StartServiceAsync(Service? service, bool showMessageBox = true) =>
-            ExecuteServiceCommandAsync(service, d => d.Start(), ServiceStatus.Running, Strings.Msg_ServiceStarted, checkDisabled: true, showMessageBox);
+        public Task<bool> StartServiceAsync(Service? service, bool showMessageBox = true, CancellationToken cancellationToken = default) =>
+            ExecuteServiceCommandAsync(service, d => d.Start(cancellationToken), ServiceStatus.Running, Strings.Msg_ServiceStarted, checkDisabled: true, showMessageBox);
 
         /// <inheritdoc />
-        public Task<bool> StopServiceAsync(Service? service, bool showMessageBox = true) =>
-            ExecuteServiceCommandAsync(service, d => d.Stop(), ServiceStatus.Stopped, Strings.Msg_ServiceStopped, checkDisabled: false, showMessageBox);
-
+        public Task<bool> StopServiceAsync(Service? service, bool showMessageBox = true, CancellationToken cancellationToken = default) =>
+            ExecuteServiceCommandAsync(service, d => d.Stop(cancellationToken), ServiceStatus.Stopped, Strings.Msg_ServiceStopped, checkDisabled: false, showMessageBox);
         /// <inheritdoc />
-        public Task<bool> RestartServiceAsync(Service? service, bool showMessageBox = true) =>
-            ExecuteServiceCommandAsync(service, d => d.Restart(), ServiceStatus.Running, Strings.Msg_ServiceRestarted, checkDisabled: true, showMessageBox);
+        public Task<bool> RestartServiceAsync(Service? service, bool showMessageBox = true, CancellationToken cancellationToken = default) =>
+            ExecuteServiceCommandAsync(service, d => d.Restart(cancellationToken), ServiceStatus.Running, Strings.Msg_ServiceRestarted, checkDisabled: true, showMessageBox);
 
         /// <inheritdoc />
         public async Task ConfigureServiceAsync(Service? service)
@@ -232,7 +231,7 @@ namespace Servy.Manager.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> InstallServiceAsync(Service? service)
+        public async Task<bool> InstallServiceAsync(Service? service, CancellationToken cancellationToken = default)
         {
             if (service == null) return false;
             if (string.IsNullOrWhiteSpace(service.Name)) return false;
@@ -273,7 +272,7 @@ namespace Servy.Manager.Services
                         return false;
                     }
 #endif
-                    var res = await Task.Run(() => serviceDomain.Install(wrapperExeDir));
+                    var res = await Task.Run(() => serviceDomain.Install(wrapperExeDir, cancellationToken: cancellationToken), cancellationToken);
                     if (res.IsSuccess)
                     {
                         service.IsInstalled = true;
@@ -315,7 +314,7 @@ namespace Servy.Manager.Services
                         return false;
                     }
 
-                    var res = await Task.Run(() => serviceDomain.Uninstall(cancellationToken));
+                    var res = await Task.Run(() => serviceDomain.Uninstall(cancellationToken), cancellationToken);
                     if (res.IsSuccess) await Task.Run(() => RemoveService(service));
 
                     return res.IsSuccess;

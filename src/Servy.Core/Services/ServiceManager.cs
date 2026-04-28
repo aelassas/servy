@@ -275,8 +275,10 @@ namespace Servy.Core.Services
         #region IServiceManager Implementation
 
         /// <inheritdoc />
-        public async Task<OperationResult> InstallServiceAsync(InstallServiceOptions options)
+        public async Task<OperationResult> InstallServiceAsync(InstallServiceOptions options, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (options == null) throw new ArgumentNullException(nameof(options));
             if (_serviceRepository == null) throw new InvalidOperationException("Service repository is not initialized. Cannot install service without a repository.");
             if (string.IsNullOrWhiteSpace(options.ServiceName)) throw new ArgumentException("Value is required.", nameof(options));
@@ -311,9 +313,12 @@ namespace Servy.Core.Services
 
                     if (!isLocalSystem && !isGmsa)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         _windowsServiceApi.EnsureLogOnAsServiceRight(lpServiceStartName);
                         Logger.Info($"Ensured 'Log on as a service' right for account '{lpServiceStartName}' for service '{options.ServiceName}'.");
                     }
+
+                    cancellationToken.ThrowIfCancellationRequested();
 
                     // Create the service if it does not exist
                     serviceHandle = _windowsServiceApi.CreateService(
@@ -392,6 +397,7 @@ namespace Servy.Core.Services
                         PostStopParameters = options.PostStopArgs,
                     };
 
+                    cancellationToken.ThrowIfCancellationRequested();
                     var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName);
                     dto.Pid = serviceDto?.Pid;
 
@@ -444,6 +450,7 @@ namespace Servy.Core.Services
                         var isInstalled = IsServiceInstalled(options.ServiceName);
                         if (isInstalled)
                         {
+                            cancellationToken.ThrowIfCancellationRequested();
                             var updated = UpdateServiceConfig(
                                 scmHandle: scmHandle,
                                 serviceName: options.ServiceName,
@@ -463,6 +470,7 @@ namespace Servy.Core.Services
 
                             if (options.StartType == ServiceStartType.AutomaticDelayedStart || options.StartType == ServiceStartType.Automatic)
                             {
+                                cancellationToken.ThrowIfCancellationRequested();
                                 using (var existingServiceHandle = _windowsServiceApi.OpenService(
                                     scmHandle,
                                     options.ServiceName,
@@ -491,6 +499,7 @@ namespace Servy.Core.Services
                                 }
                             }
 
+                            cancellationToken.ThrowIfCancellationRequested();
                             await _serviceRepository.UpsertAsync(dto);
                             Logger.Info($"Service '{options.ServiceName}' already exists. Updated its configuration.");
                             return OperationResult.Success();
@@ -501,6 +510,7 @@ namespace Servy.Core.Services
                         return OperationResult.Failure(creationErrorMsg);
                     }
 
+                    cancellationToken.ThrowIfCancellationRequested();
                     SetServiceDescription(serviceHandle, options.Description);
                     await _serviceRepository.UpsertAsync(dto);
                     Logger.Info($"Service '{options.ServiceName}' installed successfully.");
@@ -625,7 +635,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc/>
-        public async Task<OperationResult> StartServiceAsync(string? serviceName, bool logSuccessfulStart = true)
+        public async Task<OperationResult> StartServiceAsync(string? serviceName, bool logSuccessfulStart = true, CancellationToken cancellationToken = default)
         {
             if (_serviceRepository == null) throw new InvalidOperationException("Service repository is not initialized. Cannot install service without a repository.");
             if (string.IsNullOrWhiteSpace(serviceName)) throw new ArgumentException("serviceName is required.", nameof(serviceName));
@@ -633,6 +643,7 @@ namespace Servy.Core.Services
             int timeout = 0;
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var service = await _serviceRepository.GetByNameAsync(serviceName);
                 if (service == null) return OperationResult.Failure($"Service '{serviceName}' was not found in the repository.");
 
@@ -650,7 +661,22 @@ namespace Servy.Core.Services
 
                     Logger.Info($"Attempting to start service '{serviceName}' with a timeout of {timeout} seconds.");
                     sc.Start();
-                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(timeout));
+
+                    // Replace blocking WaitForStatus with an async polling loop to respect cancellation
+                    var stopwatch = Stopwatch.StartNew();
+                    var timeoutSpan = TimeSpan.FromSeconds(timeout);
+
+                    while (sc.Status != ServiceControllerStatus.Running)
+                    {
+                        if (stopwatch.Elapsed > timeoutSpan)
+                        {
+                            throw new System.ServiceProcess.TimeoutException();
+                        }
+
+                        cancellationToken.ThrowIfCancellationRequested();
+                        await Task.Delay(250, cancellationToken);
+                        sc.Refresh();
+                    }
 
                     if (logSuccessfulStart)
                     {
@@ -675,7 +701,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public async Task<OperationResult> StopServiceAsync(string? serviceName, bool logSuccessfulStop = true)
+        public async Task<OperationResult> StopServiceAsync(string? serviceName, bool logSuccessfulStop = true, CancellationToken cancellationToken = default)
         {
             if (_serviceRepository == null) throw new InvalidOperationException("Service repository is not initialized. Cannot install service without a repository.");
             if (string.IsNullOrWhiteSpace(serviceName)) throw new ArgumentException("serviceName is required.", nameof(serviceName));
@@ -683,6 +709,7 @@ namespace Servy.Core.Services
             int timeout = 0;
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var service = await _serviceRepository.GetByNameAsync(serviceName);
 
                 if (service == null) return OperationResult.Failure($"Service '{serviceName}' was not found in the repository.");
@@ -696,7 +723,22 @@ namespace Servy.Core.Services
 
                     Logger.Info($"Attempting to stop service '{serviceName}' with a timeout of {timeout} seconds.");
                     sc.Stop();
-                    sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(timeout));
+
+                    // Replace blocking WaitForStatus with an async polling loop to respect cancellation
+                    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                    var timeoutSpan = TimeSpan.FromSeconds(timeout);
+
+                    while (sc.Status != ServiceControllerStatus.Stopped)
+                    {
+                        if (stopwatch.Elapsed > timeoutSpan)
+                        {
+                            throw new System.ServiceProcess.TimeoutException();
+                        }
+
+                        cancellationToken.ThrowIfCancellationRequested();
+                        await Task.Delay(250, cancellationToken);
+                        sc.Refresh();
+                    }
 
                     if (logSuccessfulStop)
                     {
@@ -721,12 +763,12 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public async Task<OperationResult> RestartServiceAsync(string? serviceName)
+        public async Task<OperationResult> RestartServiceAsync(string? serviceName, bool logSuccessfulRestart = true,CancellationToken cancellationToken = default)
         {
-            if (!(await StopServiceAsync(serviceName, logSuccessfulStop: false)).IsSuccess)
+            if (!(await StopServiceAsync(serviceName, logSuccessfulStop: logSuccessfulRestart, cancellationToken)).IsSuccess)
                 return OperationResult.Failure($"Failed to restart service '{serviceName}'.");
 
-            var res = await StartServiceAsync(serviceName, logSuccessfulStart: false);
+            var res = await StartServiceAsync(serviceName, logSuccessfulStart: logSuccessfulRestart, cancellationToken);
 
             if (res.IsSuccess)
             {

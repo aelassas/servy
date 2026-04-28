@@ -158,7 +158,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Service Debug Folder (Manager).
         /// </summary>
-        public static readonly string ServyServiceManagerDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy.Manager\bin\Debug\net10.0-windows\");
+        public static readonly string ServyServiceManagerDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy.Manager\bin\Debug\net10.0-windows\win-x64\");
 
         /// <summary>
         /// Servy Desktop App Publish Path.

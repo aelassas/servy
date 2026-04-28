@@ -197,7 +197,7 @@ namespace Servy.UnitTests.ViewModels
                     c.PostStopExecutablePath == _viewModel.PostStopExecutablePath &&
                     c.PostStopStartupDirectory == _viewModel.PostStopStartupDirectory &&
                     c.PostStopParameters == _viewModel.PostStopParameters
-                )), Times.Once);
+                ), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -268,7 +268,7 @@ namespace Servy.UnitTests.ViewModels
 
             await _viewModel.StartCommand.ExecuteAsync(null);
 
-            _serviceCommandsMock.Verify(s => s.StartService("MyService"), Times.Once);
+            _serviceCommandsMock.Verify(s => s.StartService("MyService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -278,7 +278,7 @@ namespace Servy.UnitTests.ViewModels
 
             await _viewModel.StopCommand.ExecuteAsync(null);
 
-            _serviceCommandsMock.Verify(s => s.StopService("MyService"), Times.Once);
+            _serviceCommandsMock.Verify(s => s.StopService("MyService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -288,7 +288,7 @@ namespace Servy.UnitTests.ViewModels
 
             await _viewModel.RestartCommand.ExecuteAsync(null);
 
-            _serviceCommandsMock.Verify(s => s.RestartService("MyService"), Times.Once);
+            _serviceCommandsMock.Verify(s => s.RestartService("MyService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

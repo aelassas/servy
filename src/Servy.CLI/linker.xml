@@ -6,6 +6,10 @@
     <type fullname="Servy.Core.DTOs.*" preserve="all" />
   </assembly>
 
+  <assembly fullname="System.Security.Claims" preserve="all" />
+  <assembly fullname="System.Security.Principal.Windows" preserve="all" />
+  <assembly fullname="System.Security.AccessControl" preserve="all" />
+
   <assembly fullname="System.Threading.Thread" preserve="all" />
 
   <assembly fullname="System.IO.FileSystem.AccessControl" preserve="all" />

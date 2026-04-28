@@ -36,19 +36,19 @@ namespace Servy.UnitTests.Services
             _cursorServiceMock = new Mock<ICursorService>();
 
             // Setup safe defaults for ServiceManager to prevent NullReferenceExceptions internally
-            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>()))
+            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
 
             _serviceManagerMock.Setup(m => m.UninstallServiceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
 
-            _serviceManagerMock.Setup(m => m.StartServiceAsync(It.IsAny<string>(), It.IsAny<bool>()))
+            _serviceManagerMock.Setup(m => m.StartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
 
-            _serviceManagerMock.Setup(m => m.StopServiceAsync(It.IsAny<string>(), It.IsAny<bool>()))
+            _serviceManagerMock.Setup(m => m.StopServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
 
-            _serviceManagerMock.Setup(m => m.RestartServiceAsync(It.IsAny<string>()))
+            _serviceManagerMock.Setup(m => m.RestartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
 
             // Setup CursorService to return a dummy disposable for 'using' blocks
@@ -154,7 +154,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(true);
 
             // Act
-            var result = await sut.InstallService(config);
+            var result = await sut.InstallService(config, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result, "InstallService returned false. The validation or File.Exists check failed.");
@@ -222,7 +222,7 @@ namespace Servy.UnitTests.Services
                     c.PostStopExePath == config.PostStopExecutablePath &&
                     c.PostStopWorkingDirectory == config.PostStopStartupDirectory &&
                     c.PostStopArgs == config.PostStopParameters
-                )), Times.Once);
+                ), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -247,9 +247,9 @@ namespace Servy.UnitTests.Services
             _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName)).Returns(true);
             _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Automatic);
 
-            await sut.StartService(serviceName);
+            await sut.StartService(serviceName, TestContext.Current.CancellationToken);
 
-            _serviceManagerMock.Verify(m => m.StartServiceAsync(serviceName, It.IsAny<bool>()), Times.Once);
+            _serviceManagerMock.Verify(m => m.StartServiceAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -260,9 +260,9 @@ namespace Servy.UnitTests.Services
 
             _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName)).Returns(true);
 
-            await sut.StopService(serviceName);
+            await sut.StopService(serviceName, TestContext.Current.CancellationToken);
 
-            _serviceManagerMock.Verify(m => m.StopServiceAsync(serviceName, It.IsAny<bool>()), Times.Once);
+            _serviceManagerMock.Verify(m => m.StopServiceAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -274,9 +274,9 @@ namespace Servy.UnitTests.Services
             _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName)).Returns(true);
             _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Automatic);
 
-            await sut.RestartService(serviceName);
+            await sut.RestartService(serviceName, TestContext.Current.CancellationToken);
 
-            _serviceManagerMock.Verify(m => m.RestartServiceAsync(serviceName), Times.Once);
+            _serviceManagerMock.Verify(m => m.RestartServiceAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -369,7 +369,8 @@ namespace Servy.UnitTests.Services
                 It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>())).ReturnsAsync(true);
 
             bool bindCalled = false;
-            var sut = CreateSut(d => {
+            var sut = CreateSut(d =>
+            {
                 bindCalled = true;
                 Assert.Equal("TestService", d.Name);
             });

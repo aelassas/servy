@@ -376,34 +376,37 @@ namespace Servy.Core.Domain
         /// <summary>
         /// Starts the Windows service represented by this instance.
         /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// <c>true</c> if the service was successfully started; otherwise, <c>false</c>.
         /// </returns>
-        public async Task<OperationResult> Start()
+        public async Task<OperationResult> Start(CancellationToken cancellationToken = default)
         {
-            return await _serviceManager.StartServiceAsync(Name);
+            return await _serviceManager.StartServiceAsync(Name, logSuccessfulStart:true, cancellationToken);
         }
 
         /// <summary>
         /// Stops the Windows service represented by this instance.
         /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// <c>true</c> if the service was successfully stopped; otherwise, <c>false</c>.
         /// </returns>
-        public virtual async Task<OperationResult> Stop()
+        public virtual async Task<OperationResult> Stop(CancellationToken cancellationToken = default)
         {
-            return await _serviceManager.StopServiceAsync(Name);
+            return await _serviceManager.StopServiceAsync(Name, logSuccessfulStop:true, cancellationToken);
         }
 
         /// <summary>
         /// Restarts the Windows service represented by this instance.
         /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// <c>true</c> if the service was successfully restarted; otherwise, <c>false</c>.
         /// </returns>
-        public async Task<OperationResult> Restart()
+        public async Task<OperationResult> Restart(CancellationToken cancellationToken = default)
         {
-            return await _serviceManager.RestartServiceAsync(Name);
+            return await _serviceManager.RestartServiceAsync(Name, logSuccessfulRestart:true, cancellationToken);
         }
 
         /// <summary>
@@ -467,6 +470,7 @@ namespace Servy.Core.Domain
         /// </returns>
         /// <param name="wrapperExeDir">Wrapper exe parent directory.</param>
         /// <param name="isCLI">Indicates if install is from the CLI.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if required properties such as <see cref="Name"/> or 
         /// <see cref="ExecutablePath"/> are null or empty.
@@ -475,7 +479,7 @@ namespace Servy.Core.Domain
         /// Thrown if the Service Control Manager cannot be accessed or the service 
         /// cannot be created/updated.
         /// </exception>
-        public async Task<OperationResult> Install(string? wrapperExeDir = null, bool isCLI = false)
+        public async Task<OperationResult> Install(string? wrapperExeDir = null, bool isCLI = false, CancellationToken cancellationToken = default)
         {
             var servyServiceFilename = isCLI ? AppConfig.ServyServiceCLIExe : AppConfig.ServyServiceUIExe;
 #if DEBUG
@@ -555,7 +559,7 @@ namespace Servy.Core.Domain
                 PostStopArgs = PostStopParameters,
             };
 
-            return await _serviceManager.InstallServiceAsync(options);
+            return await _serviceManager.InstallServiceAsync(options, cancellationToken);
         }
 
         /// <summary>
