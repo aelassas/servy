@@ -306,6 +306,9 @@ namespace Servy.Infrastructure.Data
                 var service = _xmlServiceSerializer.Deserialize(xml);
                 if (service == null) return false;
 
+                // Preserve runtime state (PID, Stdout/Stderr paths) if the service exists and is running.
+                await PatchRuntimeStateAsync(service, cancellationToken);
+
                 await UpsertAsync(service, cancellationToken);
                 return true;
             }
@@ -336,6 +339,9 @@ namespace Servy.Infrastructure.Data
                 var service = _jsonServiceSerializer.Deserialize(json);
                 if (service == null) return false;
 
+                // Prevent NULL clobbering of Pid and Active paths during UPSERT.
+                await PatchRuntimeStateAsync(service, cancellationToken);
+
                 await UpsertAsync(service, cancellationToken);
                 return true;
             }
@@ -349,6 +355,30 @@ namespace Servy.Infrastructure.Data
         #endregion
 
         #region Private Helpers
+
+        /// <summary>
+        /// Retrieves the existing runtime state from the database and applies it to the incoming DTO.
+        /// This ensures that importing a configuration over a running service does not clobber
+        /// its PID or active log paths, which would break Manager tracking.
+        /// </summary>
+        /// <param name="incoming">The DTO deserialized from an import file.</param>
+        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        private async Task PatchRuntimeStateAsync(ServiceDto incoming, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(incoming.Name)) return;
+
+            // Fetch current state without decryption (performance optimization)
+            var existing = await GetByNameAsync(incoming.Name, decrypt: false, cancellationToken: cancellationToken);
+
+            if (existing != null)
+            {
+                // These fields are not serialized in export files (ShouldSerialize*() => false).
+                // If we don't copy them here, UpsertAsync will overwrite the DB with NULL.
+                incoming.Pid = existing.Pid;
+                incoming.ActiveStdoutPath = existing.ActiveStdoutPath;
+                incoming.ActiveStderrPath = existing.ActiveStderrPath;
+            }
+        }
 
         /// <summary>
         /// Creates a shallow clone of the ServiceDto and encrypts sensitive fields.
