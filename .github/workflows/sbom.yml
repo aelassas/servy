@@ -46,6 +46,7 @@ jobs:
     env:
       # Mapping to an environment variable prevents Expression Injection attacks
       INPUT_VERSION: ${{ github.event.inputs.version }}
+      CYCLONEDX_VERSION: "6.2.0"
       CYCLONEDX_CLI_VERSION: "v0.30.0"
 
     steps:
@@ -87,13 +88,16 @@ jobs:
           }
           
           # Force a hard stop if the download fails (e.g., GitHub is down or version is wrong)
-          Invoke-WebRequest -Uri "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe" `
+          $uri = "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe"
+          Write-Host "Downloading CycloneDX CLI from $uri"
+          Invoke-WebRequest -Uri $uri `
                             -OutFile "$env:USERPROFILE\cyclonedx.exe" `
                             -ErrorAction Stop
-
+          
           Add-Content -Path $env:GITHUB_PATH -Value $env:USERPROFILE
 
-          dotnet tool install --global CycloneDX --version 6.2.0
+          # Continue with the .NET tool installation
+          dotnet tool install --global CycloneDX --version $env:CYCLONEDX_VERSION
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
 
       - name: Generate SBOM
