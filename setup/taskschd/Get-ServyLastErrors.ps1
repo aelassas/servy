@@ -35,7 +35,7 @@ function Get-ServyLastErrors {
   )
 
   # 1. Self-derive location for logging
-  $scriptHome = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Definition }
+  $scriptHome = $PSScriptRoot
 
   if ($null -ne $LastProcessed -and -not ($LastProcessed -is [datetime])) {
       try {

@@ -43,13 +43,9 @@ $EVENT_ID_ERROR = 3103
 $EVENT_ID_ERROR_DEP = 3104
 
 # -------------------------------
-# 1. Determine Script Root (PS 2.0+ Compatible)
+# 1. Determine Script Root (PS 3.0+ Compatible)
 # -------------------------------
-if ($PSVersionTable.PSVersion.Major -ge 3) {
-  $scriptDir = $PSScriptRoot
-} else {
-  $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-}
+$scriptDir = $PSScriptRoot
 
 # -------------------------------
 # 2. Helper: Fallback Logging

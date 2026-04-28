@@ -48,11 +48,6 @@ function Show-Notification {
   # Mask sensitive data in the notification before sending
   $LogText = Protect-SensitiveString -Text $LogText
 
-  if ($PSVersionTable.PSVersion.Major -lt 5) {
-    Write-FallbackError -Message "ServyToast: Toasts require PowerShell 5.0+." -scriptDir $scriptDir
-    return
-  }
-
   $ToastTitle = "Servy - $ServiceName"
     
   try {
