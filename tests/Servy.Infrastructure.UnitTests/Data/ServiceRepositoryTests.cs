@@ -1006,6 +1006,10 @@ namespace Servy.Infrastructure.UnitTests.Data
                 .Setup(s => s.Decrypt("p1"))
                 .Returns("p1"); // return the same value or "plain" if you prefer
 
+            _mockXmlServiceSerializer
+                .Setup(s => s.Serialize(dto))
+                .Returns((ServiceDto d) => $"<ServiceDto><Name>{d.Name}</Name></ServiceDto>");
+
             var repo = CreateRepository();
             var xml = await repo.ExportXmlAsync("A");
 

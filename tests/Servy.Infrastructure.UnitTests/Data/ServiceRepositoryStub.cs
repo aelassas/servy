@@ -165,6 +165,8 @@ namespace Servy.Infrastructure.UnitTests.Data
     public class XmlServiceSerializerStub : IXmlServiceSerializer
     {
         public ServiceDto Deserialize(string xml) => new ServiceDto { Name = "StubService" };
+
+        public string Serialize(ServiceDto dto) => dto != null ? "<xml><Name>" + dto.Name + "</Name></xml>" : null;
     }
 
     public class JsonServiceSerializerStub : IJsonServiceSerializer
