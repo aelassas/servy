@@ -2,7 +2,7 @@
 # GitHub Actions Workflow - Test (net48)
 # -------------------------------------------
 # Builds the Servy solution targeting .NET Framework 4.8,
-# runs all unit tests, collects coverage for all components,
+# runs all tests, collects coverage for all components,
 # normalizes paths, and uploads coverage to Codecov and Coveralls.
 # ===========================================
 
@@ -58,7 +58,7 @@ jobs:
         run: echo "$env:PATH += ';$env:USERPROFILE\.dotnet\tools'"  
         shell: pwsh
 
-      - name: Run all unit tests with coverage
+      - name: Run all tests with coverage
         shell: pwsh
         run: |
           $testProjects = @(
@@ -164,7 +164,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}  
           files: CoverageMerged/fixed/coverage.cobertura.xml
-          flags: unittests
+          flags: unittests,integrationtests
           name: codecov-coverage-report
           fail_ci_if_error: false
           verbose: false
