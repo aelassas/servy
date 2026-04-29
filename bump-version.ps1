@@ -10,7 +10,7 @@
     - All *.csproj files recursively
 
     It updates:
-    - The script version variable in publish.ps1
+    - The script version variable in publish.ps1, publish-sc.ps1 and publish-fd.ps1
     - The public static Version string in AppConfig.cs
     - The <Version>, <FileVersion>, and <AssemblyVersion> XML elements in csproj files
 
@@ -88,12 +88,14 @@ function Update-FileContent {
 }
 
 # -----------------------------
-# 1. Update setup\publish.ps1
+# 1. Update setup\publish.ps1, publish-sc.ps1, publish-fd.ps1
 # -----------------------------
-Update-FileContent `
-    -Path (Join-Path $baseDir "setup\publish.ps1") `
-    -Pattern '(\[string\]\$Version\s*=\s*")[^"]*(")' `
-    -Replacement $Version
+foreach ($f in @('setup\publish.ps1', 'setup\publish-sc.ps1', 'setup\publish-fd.ps1')) {
+    Update-FileContent `
+        -Path (Join-Path $baseDir $f) `
+        -Pattern '(\[string\]\$Version\s*=\s*")[^"]*(")' `
+        -Replacement $Version
+}
 
 # -----------------------------
 # 2. Update src\Servy.Core\Config\AppConfig.cs
