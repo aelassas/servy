@@ -59,10 +59,10 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_WrapperNotFound);
 
                 // Parse enums safely with defaults
-                var startupType = ParseEnumOption(opts.ServiceStartType, ServiceStartType.Automatic);
-                var processPriority = ParseEnumOption(opts.ProcessPriority, ProcessPriority.Normal);
-                var dateRotationType = ParseEnumOption(opts.DateRotationType, DateRotationType.Daily);
-                var recoveryAction = ParseEnumOption(opts.RecoveryAction, RecoveryAction.RestartService);
+                var startupType = ParseEnumOption(opts.ServiceStartType, AppConfig.DefaultStartupType);
+                var processPriority = ParseEnumOption(opts.ProcessPriority, AppConfig.DefaultPriority);
+                var dateRotationType = ParseEnumOption(opts.DateRotationType, AppConfig.DefaultDateRotationType);
+                var recoveryAction = ParseEnumOption(opts.RecoveryAction, AppConfig.DefaultRecoveryAction);
 
                 // Parse numeric options
                 ulong rotationSize = (ulong.TryParse(opts.RotationSize, out var rot) ? rot : (ulong)AppConfig.DefaultRotationSizeMB) * 1024 * 1024;
