@@ -1,7 +1,7 @@
 ﻿# ===========================================
 # GitHub Actions Workflow - Test
 # -------------------------------------------
-# Runs unit tests for all Servy projects on push
+# Runs tests for all Servy projects on push
 # to the main branch. Generates code coverage for
 # core components, merges Cobertura reports, and
 # uploads results to Codecov and Coveralls.
@@ -41,7 +41,7 @@ jobs:
       - name: Build solution
         run: dotnet build Servy.sln --configuration Debug --no-restore
 
-      - name: Run all unit tests with coverage
+      - name: Run all tests with coverage
         shell: pwsh
         run: |
           $testProjects = @(
@@ -138,7 +138,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}          
           files: TestResults/fixed/coverage.cobertura.xml
-          flags: unittests
+          flags: unittests,integrationtests
           name: codecov-coverage-report
           fail_ci_if_error: false
           verbose: false

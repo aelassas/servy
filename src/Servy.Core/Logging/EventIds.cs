@@ -31,26 +31,5 @@
 
         #endregion
 
-        #region PowerShell / Helper Script Ranges (1100 - 3199)
-
-        /// <summary>
-        /// Base ID for informational events emitted by setup or notification scripts.
-        /// Range: 1100 - 1199.
-        /// </summary>
-        public const int ScriptInfo = 1100;
-
-        /// <summary>
-        /// Base ID for warning events emitted by setup or notification scripts.
-        /// Range: 2100 - 2199.
-        /// </summary>
-        public const int ScriptWarning = 2100;
-
-        /// <summary>
-        /// Base ID for error events emitted by setup or notification scripts (e.g., SMTP failures).
-        /// Range: 3100 - 3199.
-        /// </summary>
-        public const int ScriptError = 3100;
-
-        #endregion
     }
 }
