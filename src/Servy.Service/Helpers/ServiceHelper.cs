@@ -131,13 +131,6 @@ namespace Servy.Service.Helpers
         #region IServiceHelper implementation
 
         /// <inheritdoc />
-        public string[] GetSanitizedArgs()
-        {
-            var args = _commandLineProvider.GetArgs();
-            return args.Select(a => a.Trim(' ', '"')).ToArray();
-        }
-
-        /// <inheritdoc />
         public void LogStartupArguments(IServyLogger logger, string[] args, StartOptions options)
         {
             if (options == null)
@@ -247,22 +240,6 @@ namespace Servy.Service.Helpers
                 options.WorkingDirectory = Path.GetDirectoryName(options.ExecutablePath) ?? system32;
                 logger?.Warn($"Working directory fallback applied: {options.WorkingDirectory}");
             }
-        }
-
-        /// <inheritdoc />
-        public StartOptions InitializeStartup(IServiceRepository serviceRepository, IProcessHelper processHelper, IServyLogger logger)
-        {
-            var fullArgs = _commandLineProvider.GetArgs();
-            var options = StartOptionsParser.Parse(serviceRepository, processHelper, fullArgs);
-
-            LogStartupArguments(logger, fullArgs, options);
-
-            if (!ValidateStartupOptions(logger, processHelper, options))
-            {
-                return null;
-            }
-
-            return options;
         }
 
         /// <inheritdoc />
@@ -376,7 +353,7 @@ namespace Servy.Service.Helpers
                     // 1. Wait for the restarter to complete the Stop/Start cycle
                     if (!process.WaitForExit(RestarterExeMaxWaitMs))
                     {
-                        logger?.Error("Servy.Restarter.Net48.exe timed out after 4 minutes. Forcing termination to prevent orphan conflicts.");
+                        logger?.Error($"Servy.Restarter.exe timed out after {RestarterExeMaxWaitMs / 60_000} minutes minutes. Forcing termination to prevent orphan conflicts.");
 
                         try
                         {
@@ -386,7 +363,7 @@ namespace Servy.Service.Helpers
                             // 3. Brief wait to ensure kernel cleanup is complete before we return control
                             if (!process.WaitForExit(AppConfig.RestarterKillGracePeriodMs))
                             {
-                                logger?.Warn("Restarter killed, but kernel cleanup is taking longer than 3s.");
+                                logger?.Warn($"Restarter killed, but kernel cleanup is taking longer than {AppConfig.RestarterKillGracePeriodMs / 1000} seconds.");
                             }
                         }
                         catch (Exception killEx)
@@ -591,6 +568,30 @@ namespace Servy.Service.Helpers
             if (!string.IsNullOrWhiteSpace(options.PostLaunchWorkingDirectory) && !processHelper.ValidatePath(options.PostLaunchWorkingDirectory, false))
             {
                 logger?.Error($"Post-launch process working directory {options.PostLaunchWorkingDirectory} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PreStopExecutablePath) && !processHelper.ValidatePath(options.PreStopExecutablePath))
+            {
+                logger?.Error($"Pre-stop process path {options.PreStopExecutablePath} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PostStopExecutablePath) && !processHelper.ValidatePath(options.PostStopExecutablePath))
+            {
+                logger?.Error($"Post-stop process path {options.PostStopExecutablePath} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PreStopWorkingDirectory) && !processHelper.ValidatePath(options.PreStopWorkingDirectory, false))
+            {
+                logger?.Error($"Pre-stop process working directory {options.PreStopWorkingDirectory} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PostStopWorkingDirectory) && !processHelper.ValidatePath(options.PostStopWorkingDirectory, false))
+            {
+                logger?.Error($"Post-stop process working directory {options.PostStopWorkingDirectory} is invalid.");
                 return false;
             }
 

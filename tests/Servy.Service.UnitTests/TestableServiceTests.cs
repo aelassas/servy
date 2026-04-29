@@ -103,7 +103,7 @@ namespace Servy.Service.UnitTests
             // 1. Mock GetArgs to return a valid array
             mockHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
 
-            // 2. Mock ParseOptions to return null (the new "InitializeStartup returns null" equivalent)
+            // 2. Mock ParseOptions to return null
             mockHelper
                 .Setup(h => h.ParseOptions(serviceRepository.Object, _mockProcessHelper.Object, fullArgs))
                 .Returns((StartOptions)null);

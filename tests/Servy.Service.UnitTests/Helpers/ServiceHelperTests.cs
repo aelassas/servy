@@ -55,23 +55,6 @@ namespace Servy.Service.UnitTests.Helpers
             mockLog.Verify(l => l.Info(It.Is<string>(s => s.Contains("serviceName: TestService"))), Times.Once);
         }
 
-        [Fact]
-        public void GetSanitizedArgs_RemovesQuotesAndWhitespace()
-        {
-            // Arrange
-            var originalArgs = new[] { "ignored.exe", " \"arg1\" ", "\"arg2\"" };
-            var expectedArgs = new[] { "arg1", "arg2" };
-
-            _mockCommandLineProvider.Setup(p => p.GetArgs()).Returns(originalArgs);
-
-            // Act
-            var result = _helper.GetSanitizedArgs();
-
-            // Assert
-            Assert.Contains(expectedArgs[0], result);
-            Assert.Contains(expectedArgs[1], result);
-        }
-
         // Helper: create a temporary file
         private string TempFile() => Path.GetTempFileName();
 
@@ -627,16 +610,5 @@ namespace Servy.Service.UnitTests.Helpers
             mockLog.Verify(l => l.Info(It.Is<string>(s => s.Contains("[Startup Parameters]"))), Times.Once);
         }
 
-        [Fact]
-        public void InitializeStartup_Throws_IfServiceNameIsEmpty()
-        {
-            // Arrange
-            _mockCommandLineProvider.Setup(p => p.GetArgs()).Returns(new string[] { "ignored.exe" }); // no valid args
-            var mockLog = new Mock<IServyLogger>();
-            var mockServiceRepo = new Mock<IServiceRepository>();
-
-            // Assert
-            var result = Assert.Throws<ArgumentException>(() => _helper.InitializeStartup(mockServiceRepo.Object, _mockProcessHelper.Object, mockLog.Object));
-        }
     }
 }
