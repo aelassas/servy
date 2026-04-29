@@ -177,7 +177,7 @@ if (Test-Path $timestampFile) {
         [System.Globalization.DateTimeStyles]::RoundtripKind
     )
   } catch { 
-    Write-Warning "Could not parse timestamp file. Will process all available events."
+    Write-Warning "Could not parse timestamp file; treating as first run - will only show the most recent event."
   }
 }
 

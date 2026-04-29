@@ -225,7 +225,7 @@ if (Test-Path $timestampFile) {
         [System.Globalization.DateTimeStyles]::RoundtripKind
     )
   } catch { 
-    # Fallback to null if file is corrupt, resulting in processing the most recent event
+    Write-Warning "Could not parse timestamp file; treating as first run - will only show the most recent event."
   }
 }
 
