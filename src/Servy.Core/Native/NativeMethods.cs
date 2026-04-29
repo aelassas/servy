@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using Servy.Core.Config;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Security;
@@ -736,7 +737,7 @@ namespace Servy.Core.Native
             // Skip regex validation for known built-in identities to avoid false negatives 
             // on specialized formats.
             const string invalidMsg = "Username format is invalid. Expected .\\Username, DOMAIN\\Username, or NT AUTHORITY\\ServiceAccount.";
-            if (!isBuiltIn && !Regex.IsMatch(username, pattern))
+            if (!isBuiltIn && !Regex.IsMatch(username, pattern, RegexOptions.IgnoreCase, AppConfig.InputRegexTimeout))
             {
                 throw new ArgumentException(invalidMsg);
             }
