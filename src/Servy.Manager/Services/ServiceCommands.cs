@@ -213,7 +213,7 @@ namespace Servy.Manager.Services
                     }
 
                     // Pass false to skip splash screen
-                    process.StartInfo.Arguments = $"\"false\" {_processHelper.EscapeProcessArgument(service.Name)}{forceFlag}";
+                    process.StartInfo.Arguments = $"\"false\" {Core.Helpers.Helper.Quote(service.Name)}{forceFlag}";
 
                     StartProcess(process);
                 }

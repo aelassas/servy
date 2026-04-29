@@ -115,7 +115,7 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Escapes special characters in a command-line argument without surrounding quotes.
+        /// Escapes special characters in a command-line argument without surrounding quotes according to the Win32 'CommandLineToArgvW' rules.
         /// </summary>
         /// <param name="input">The argument string to escape. May be <see langword="null"/> or empty.</param>
         /// <returns>
@@ -138,6 +138,12 @@ namespace Servy.Core.Helpers
                 input = input.Replace("\0", "\\0");
             }
 
+            // Replace " with \"
+            // But we must also handle backslashes that precede a "
+            // because \" is treated as a literal quote, and \\" is a literal backslash + quote.
+            // The logic: 2n backslashes + " => n backslashes + literal "
+            // 2n+1 backslashes + " => n backslashes + literal " + escape next... 
+            // Actually, a simpler way for standard .NET/Windows:
             var sb = new StringBuilder();
 
             int backslashCount = 0;
