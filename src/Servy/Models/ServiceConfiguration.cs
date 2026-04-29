@@ -155,7 +155,7 @@ namespace Servy.Models
         /// <summary>
         /// Indicates whether to run the Windows Service as the Local System account.
         /// </summary>
-        public bool RunAsLocalSystem { get; set; } = true;
+        public bool RunAsLocalSystem { get; set; } = AppConfig.DefaultRunAsLocalSystem;
 
         /// <summary>
         /// The service account username (e.g., <c>.\username</c>, <c>DOMAIN\username</c>).
@@ -207,19 +207,19 @@ namespace Servy.Models
         /// Gets or sets the timeout in seconds for each pre-launch execution attempt.
         /// Default is 30 seconds.
         /// </summary>
-        public string? PreLaunchTimeoutSeconds { get; set; } = "30";
+        public string? PreLaunchTimeoutSeconds { get; set; } = AppConfig.DefaultPreLaunchTimeoutSeconds.ToString();
 
         /// <summary>
         /// Gets or sets the number of retry attempts if the pre-launch process fails.
         /// Default is 0.
         /// </summary>
-        public string? PreLaunchRetryAttempts { get; set; } = "0";
+        public string? PreLaunchRetryAttempts { get; set; } = AppConfig.DefaultPreLaunchRetryAttempts.ToString();
 
         /// <summary>
         /// Gets or sets a value indicating whether to start the main service even if the pre-launch process fails.
         /// Default is false.
         /// </summary>
-        public bool PreLaunchIgnoreFailure { get; set; } = false;
+        public bool PreLaunchIgnoreFailure { get; set; } = AppConfig.DefaultPreLaunchIgnoreFailure;
 
         /// <summary>
         /// Gets or sets the path to the post-launch executable process to run.
@@ -276,7 +276,7 @@ namespace Servy.Models
         /// <summary>
         /// Whether to log pre-stop failure as error.
         /// </summary>
-        public bool PreStopLogAsError { get; set; } = false;
+        public bool PreStopLogAsError { get; set; } = AppConfig.DefaultPreStopLogAsError;
 
         /// <summary>
         /// Optional path to an executable that runs after the service stops.
