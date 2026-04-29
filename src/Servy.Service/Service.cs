@@ -522,7 +522,7 @@ namespace Servy.Service
                     // By wrapping this in a Task.Delay, we allow ServiceBase's internal OnStart() 
                     // sequence to complete and report SERVICE_RUNNING first. We then safely overwrite 
                     // the state to include SERVICE_ACCEPT_PRESHUTDOWN, bypassing .NET's internal limitations.
-                    _ = Task.Run(async () =>
+                    _ = Task.Run((Func<Task>)(async () =>
                     {
                         try
                         {
@@ -536,7 +536,7 @@ namespace Servy.Service
                                 return;
                             }
 
-                            SERVICE_STATUS status = new SERVICE_STATUS
+                            var status = new SERVICE_STATUS
                             {
                                 dwServiceType = SERVICE_WIN32_OWN_PROCESS,
                                 dwCurrentState = SERVICE_RUNNING,
@@ -567,7 +567,7 @@ namespace Servy.Service
                             // 4. Prevent unobserved task exceptions from crashing the finalizer thread
                             _logger?.Error($"Unexpected error during PRESHUTDOWN registration: {ex.Message}", ex);
                         }
-                    }, token); // Pass token to Task.Run to prevent execution if already cancelled
+                    }), token); // Pass token to Task.Run to prevent execution if already cancelled
                 }
             }
             catch (Exception ex)

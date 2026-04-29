@@ -92,7 +92,7 @@ namespace Servy.Manager.Utils
 
                 long lastPosition = startPos;
                 DateTime lastCreationTime = startCreated;
-                FileIdentity? knownIdentity = null;
+                FILE_IDENTITY? knownIdentity = null;
 
                 while (!token.IsCancellationRequested)
                 {

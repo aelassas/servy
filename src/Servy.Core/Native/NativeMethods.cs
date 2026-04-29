@@ -101,7 +101,7 @@ namespace Servy.Core.Native
 
         /// <summary>Represents a service description structure.</summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct ServiceDescription
+        public struct SERVICE_DESCRIPTION
         {
             /// <summary>Pointer to the description string. Use null if no description exists.</summary>
             public IntPtr lpDescription;
@@ -109,7 +109,7 @@ namespace Servy.Core.Native
 
         /// <summary>Specifies the delayed auto-start setting of an auto-start service.</summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct ServiceDelayedAutoStartInfo
+        public struct SERVICE_DELAYED_AUTO_START_INFO
         {
             /// <summary>If true, the service is started after other auto-start services have finished.</summary>
             [MarshalAs(UnmanagedType.Bool)]
@@ -118,7 +118,7 @@ namespace Servy.Core.Native
 
         /// <summary>Specifies the pre-shutdown timeout setting for a service.</summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct ServicePreShutdownInfo
+        public struct SERVICE_PRE_SHUTDOWN_INFO
         {
             /// <summary>The timeout value in milliseconds.</summary>
             public uint dwPreshutdownTimeout;
@@ -150,7 +150,7 @@ namespace Servy.Core.Native
 
         /// <summary>Contains status information for a service.</summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct ServiceStatus
+        public struct SERVICE_STATUS
         {
             /// <summary>Type of service.</summary>
             public int dwServiceType;
@@ -165,19 +165,6 @@ namespace Servy.Core.Native
             /// <summary>Check-point value the service increments periodically during a lengthy operation.</summary>
             public int dwCheckPoint;
             /// <summary>Estimated time required for a pending operation in milliseconds.</summary>
-            public int dwWaitHint;
-        }
-
-        /// <summary>Internal representation of service status for SetServiceStatus calls.</summary>
-        [StructLayout(LayoutKind.Sequential)]
-        public struct SERVICE_STATUS
-        {
-            public int dwServiceType;
-            public int dwCurrentState;
-            public int dwControlsAccepted;
-            public int dwWin32ExitCode;
-            public int dwServiceSpecificExitCode;
-            public int dwCheckPoint;
             public int dwWaitHint;
         }
 
@@ -210,7 +197,7 @@ namespace Servy.Core.Native
 
         /// <summary>Contains basic information about a process for NT internal queries.</summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct ProcessBasicInformation
+        public struct PROCESS_BASIC_INFORMATION
         {
             public IntPtr Reserved1;
             public IntPtr PebBaseAddress;
@@ -270,10 +257,10 @@ namespace Servy.Core.Native
 
         /// <summary>Contains basic and extended limit information for a job object.</summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct JobobjectExtendedLimitInformation
+        public struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION
         {
-            public JobobjectBasicLimitInformation BasicLimitInformation;
-            public IoCounters IoInfo;
+            public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation;
+            public IO_COUNTERS IoInfo;
             public UIntPtr ProcessMemoryLimit;
             public UIntPtr JobMemoryLimit;
             public UIntPtr PeakProcessMemoryUsed;
@@ -282,7 +269,7 @@ namespace Servy.Core.Native
 
         /// <summary>Contains basic limit information for a job object.</summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct JobobjectBasicLimitInformation
+        public struct JOBOBJECT_BASIC_LIMIT_INFORMATION
         {
             public Int64 PerProcessUserTimeLimit;
             public Int64 PerJobUserTimeLimit;
@@ -297,7 +284,7 @@ namespace Servy.Core.Native
 
         /// <summary>Contains I/O accounting information for a job object.</summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct IoCounters
+        public struct IO_COUNTERS
         {
             public UInt64 ReadOperationCount;
             public UInt64 WriteOperationCount;
@@ -330,7 +317,7 @@ namespace Servy.Core.Native
         }
 
         /// <summary>Represents a unique identifier for a file based on its volume and index.</summary>
-        public struct FileIdentity
+        public struct FILE_IDENTITY
         {
             /// <summary>Unique index of the file on the disk volume.</summary>
             public ulong FileIndex;
@@ -342,7 +329,7 @@ namespace Servy.Core.Native
             public bool IsValidHandleInfo;
 
             /// <summary>Compares two identities to determine if the underlying file has changed.</summary>
-            public bool IsDifferentFrom(FileIdentity other)
+            public bool IsDifferentFrom(FILE_IDENTITY other)
             {
                 if (IsValidHandleInfo && other.IsValidHandleInfo)
                 {
@@ -398,7 +385,7 @@ namespace Servy.Core.Native
 
         /// <summary>Sends a control code to a service.</summary>
         [DllImport("advapi32.dll", SetLastError = true)]
-        public static extern bool ControlService(SafeServiceHandle hService, int dwControl, ref ServiceStatus lpServiceStatus);
+        public static extern bool ControlService(SafeServiceHandle hService, int dwControl, ref SERVICE_STATUS lpServiceStatus);
 
         /// <summary>Retrieves the configuration parameters of the specified service.</summary>
         [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
@@ -413,7 +400,7 @@ namespace Servy.Core.Native
         public static extern bool QueryServiceConfig2(
             SafeServiceHandle hService,
             uint dwInfoLevel,
-            ref ServiceDelayedAutoStartInfo lpBuffer,
+            ref SERVICE_DELAYED_AUTO_START_INFO lpBuffer,
             int cbBufSize,
             ref int pcbBytesNeeded);
 
@@ -446,14 +433,14 @@ namespace Servy.Core.Native
         public static extern bool ChangeServiceConfig2(
               SafeServiceHandle hService,
               int dwInfoLevel,
-              ref ServiceDescription lpInfo);
+              ref SERVICE_DESCRIPTION lpInfo);
 
         /// <summary>Changes the optional configuration parameters of a service (Delayed Auto Start).</summary>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern bool ChangeServiceConfig2(
               SafeServiceHandle hService,
               int dwInfoLevel,
-              ref ServiceDelayedAutoStartInfo lpInfo);
+              ref SERVICE_DELAYED_AUTO_START_INFO lpInfo);
 
         /// <summary>Changes the optional configuration parameters of a service using a raw buffer.</summary>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
@@ -507,7 +494,7 @@ namespace Servy.Core.Native
         public static extern int NtQueryInformationProcess(
             IntPtr processHandle,
             int processInformationClass,
-            ref ProcessBasicInformation processInformation,
+            ref PROCESS_BASIC_INFORMATION processInformation,
             uint processInformationLength,
             out uint returnLength);
 
@@ -516,7 +503,7 @@ namespace Servy.Core.Native
         public static extern int NtQueryInformationProcess(
             IntPtr processHandle,
             ProcessInfoClass processInformationClass,
-            out ProcessBasicInformation processInformation,
+            out PROCESS_BASIC_INFORMATION processInformation,
             int processInformationLength,
             IntPtr returnLength = default(IntPtr));
 
@@ -612,7 +599,7 @@ namespace Servy.Core.Native
 
         /// <summary>Used in LSA calls to represent a unicode string.</summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct LsaUnicodeString
+        public struct LSA_UNICODE_STRING
         {
             public ushort Length;
             public ushort MaximumLength;
@@ -621,7 +608,7 @@ namespace Servy.Core.Native
 
         /// <summary>Used in LsaOpenPolicy to specify attributes of the policy connection.</summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct LsaObjectAttributes
+        public struct LSA_OBJECT_ATTRIBUTES
         {
             public int Length;
             public IntPtr RootDir;
@@ -632,7 +619,7 @@ namespace Servy.Core.Native
         }
 
         /// <summary>Defines access rights for the LSA policy database.</summary>
-        public static class PolicyAccess
+        public static class POLICY_ACCESS
         {
             public const uint POLICY_LOOKUP_NAMES = 0x00000800;
             public const uint POLICY_CREATE_ACCOUNT = 0x00000010;
@@ -651,7 +638,7 @@ namespace Servy.Core.Native
         [DllImport("advapi32.dll")]
         public static extern int LsaOpenPolicy(
             IntPtr systemName,
-            ref LsaObjectAttributes objectAttributes,
+            ref LSA_OBJECT_ATTRIBUTES objectAttributes,
             uint desiredAccess,
             out IntPtr policyHandle);
 
@@ -660,7 +647,7 @@ namespace Servy.Core.Native
         public static extern int LsaAddAccountRights(
             IntPtr policyHandle,
             IntPtr accountSid,
-            LsaUnicodeString[] userRights,
+            LSA_UNICODE_STRING[] userRights,
             int count);
 
         /// <summary>Retrieves the privileges assigned to an account.</summary>
@@ -881,14 +868,14 @@ namespace Servy.Core.Native
         }
 
         /// <summary>
-        /// Extracts the <see cref="FileIdentity"/> (Volume Serial and File Index) from an open <see cref="FileStream"/>.
+        /// Extracts the <see cref="FILE_IDENTITY"/> (Volume Serial and File Index) from an open <see cref="FileStream"/>.
         /// This is used to track file identity regardless of path or renaming.
         /// </summary>
         /// <param name="fs">The open file stream.</param>
-        /// <returns>A populated <see cref="FileIdentity"/> structure.</returns>
-        public static FileIdentity GetFileIdentity(FileStream fs)
+        /// <returns>A populated <see cref="FILE_IDENTITY"/> structure.</returns>
+        public static FILE_IDENTITY GetFileIdentity(FileStream fs)
         {
-            var identity = new FileIdentity();
+            var identity = new FILE_IDENTITY();
             try
             {
                 if (GetFileInformationByHandle(fs.SafeFileHandle.DangerousGetHandle(), out var info))
