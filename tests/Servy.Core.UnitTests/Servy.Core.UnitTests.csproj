@@ -132,7 +132,6 @@
     <Compile Include="Helpers\ProcessHelperTests.cs" />
     <Compile Include="Helpers\ProcessKillerTests.cs" />
     <Compile Include="Helpers\ServiceDtoHelperTests.cs" />
-    <Compile Include="Helpers\ServiceValidatorTests.cs" />
     <Compile Include="Native\HandleTests.cs" />
     <Compile Include="Security\SecureDataStressTests.cs" />
     <Compile Include="Security\SecurityHelperTests.cs" />

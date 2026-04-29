@@ -122,7 +122,6 @@
     <Compile Include="Helpers\HandleHelper.cs" />
     <Compile Include="Helpers\Helper.cs" />
     <Compile Include="Helpers\ServiceDtoHelper.cs" />
-    <Compile Include="Helpers\ServiceValidator.cs" />
     <Compile Include="Logging\EventIds.cs" />
     <Compile Include="Logging\Logger.cs" />
     <Compile Include="Logging\LogLevel.cs" />

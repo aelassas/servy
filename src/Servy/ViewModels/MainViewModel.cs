@@ -958,8 +958,8 @@ namespace Servy.ViewModels
                 new MessageBoxService(),
                 new FileDialogService(),
                 new ServiceConfigurationValidator(new MessageBoxService(), new ServiceValidationRules(new ProcessHelper())),
-                new XmlServiceValidator(new ProcessHelper()),
-                new JsonServiceValidator(new ProcessHelper()),
+                new XmlServiceValidator(new ProcessHelper(), new ServiceValidationRules(new ProcessHelper())),
+                new JsonServiceValidator(new ProcessHelper(), new ServiceValidationRules(new ProcessHelper())),
                 null,
                 new CursorService()
             );

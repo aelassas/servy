@@ -4,7 +4,9 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
+using Servy.Core.Validators;
 using System;
+using System.Linq;
 
 namespace Servy.Core.Services
 {
@@ -15,15 +17,18 @@ namespace Servy.Core.Services
     public class JsonServiceValidator : IJsonServiceValidator
     {
         private readonly IProcessHelper _processHelper;
+        private readonly IServiceValidationRules _serviceValidationRules;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JsonServiceValidator"/> class with the specified process helper.
         /// </summary>
         /// <param name="processHelper">Provides methods to validate executable paths and gather process metrics.</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="processHelper"/> is null.</exception>
-        public JsonServiceValidator(IProcessHelper processHelper)
+        /// <param name="serviceValidationRules">Provides rules for validating service properties.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="processHelper"/> or <paramref name="serviceValidationRules"/> is null.</exception>
+        public JsonServiceValidator(IProcessHelper processHelper, IServiceValidationRules serviceValidationRules)
         {
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
+            _serviceValidationRules = serviceValidationRules ?? throw new ArgumentNullException(nameof(serviceValidationRules));
         }
 
         /// <inheritdoc/>
@@ -65,10 +70,10 @@ namespace Servy.Core.Services
             }
 
             // 2. DEEP DOMAIN VALIDATION
-            var validation = ServiceValidator.ValidateDto(dto);
-            if (!validation.IsValid)
+            var validation = _serviceValidationRules.Validate(dto);
+            if (validation.Errors.Any() || validation.Warnings.Any())
             {
-                errorMessage = validation.ErrorMessage;
+                errorMessage = string.Join("\n", validation.Errors.Concat(validation.Warnings));
 
                 // Sanitize the untrusted name to prevent log injection
                 // We strip newlines and carriage returns to keep the log entry on a single line.
