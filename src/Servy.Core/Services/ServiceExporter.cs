@@ -2,6 +2,7 @@
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
@@ -68,11 +69,8 @@ namespace Servy.Core.Services
         /// </summary>
         public static string ExportJson(ServiceDto service)
         {
-            return JsonConvert.SerializeObject(service, Newtonsoft.Json.Formatting.Indented,
-                new JsonSerializerSettings
-                {
-                    NullValueHandling = NullValueHandling.Ignore
-                });
+            // ROBUSTNESS: Switched to centralized UntrustedDataSettings to resolve asymmetry with IJsonServiceSerializer.
+            return JsonConvert.SerializeObject(service, Newtonsoft.Json.Formatting.Indented, JsonSecurity.UntrustedDataSettings);
         }
 
         /// <summary>
