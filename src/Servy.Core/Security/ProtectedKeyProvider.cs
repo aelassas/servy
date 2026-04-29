@@ -121,7 +121,11 @@ namespace Servy.Core.Security
         /// </remarks>
         private static byte[] GetMachineEntropy()
         {
-            using (var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Cryptography"))
+            // ROBUSTNESS: Force the 64-bit registry view to prevent WoW64 redirection.
+            // On 64-bit Windows, the Cryptography key is not present in the WoW6432Node,
+            // which previously caused 32-bit callers to silently fall back to MachineName.
+            using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+            using (var key = hklm.OpenSubKey(@"SOFTWARE\Microsoft\Cryptography"))
             {
                 var guid = key?.GetValue("MachineGuid") as string;
 
