@@ -21,13 +21,10 @@ using System.Windows.Media;
 namespace Servy.UI.Bootstrapping
 {
     /// <summary>
-    /// Serves as the Composition Root for Servy desktop applications, centralizing startup, 
-    /// initialization, and teardown logic.
+    /// Serves as the Composition Root for Servy desktop applications, centralizing startup, initialization, and teardown logic.
     /// </summary>
     /// <remarks>
-    /// This class orchestrates environment validation, global exception handling, rendering 
-    /// configuration, and asynchronous resource extraction to ensure a consistent startup 
-    /// experience across both the main application and the manager.
+    /// This class orchestrates environment validation, global exception handling, rendering configuration, and asynchronous resource extraction to ensure a consistent startup experience across both the main application and the manager.
     /// </remarks>
     public class AppBootstrapper
     {
@@ -64,8 +61,7 @@ namespace Servy.UI.Bootstrapping
         public string AESIVFilePath { get; private set; }
 
         /// <summary>
-        /// Gets a value indicating whether software rendering has been forced due to 
-        /// environment constraints or manual override.
+        /// Gets a value indicating whether software rendering has been forced due to environment constraints or manual override.
         /// </summary>
         public bool ForceSoftwareRendering { get; private set; }
 
@@ -76,7 +72,7 @@ namespace Servy.UI.Bootstrapping
         private readonly IProcessKiller _processKiller;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AppBootstrapper"/> class.
+        /// Initializes a new instance of the AppBootstrapper class.
         /// </summary>
         /// <param name="options">Configuration options for the bootstrap process.</param>
         /// <param name="processHelper">The process helper used to manage processes. Cannot be null.</param>
@@ -93,17 +89,20 @@ namespace Servy.UI.Bootstrapping
         }
 
         /// <summary>
-        /// Handles the initial, synchronous startup logic including logging initialization, 
-        /// global exception subscriptions, and rendering tier detection.
+        /// Handles the initial, synchronous startup logic including logging initialization, global exception subscriptions, and rendering tier detection.
         /// </summary>
         /// <param name="app">The active WPF application instance.</param>
         /// <param name="e">The startup event arguments.</param>
         public void OnStartup(Application app, StartupEventArgs e)
         {
-            // 1. Initialize Logger immediately to capture subsequent startup events
-            Logger.Initialize(_options.LogFileName);
+            // 1. Initialize Configuration and Logger settings immediately
+            LoadConfiguration();
 
-            // 2. Global AppDomain exceptions (Fatal crashes outside the UI dispatcher)
+            // 2. Initialize Logger with the correct settings before any logging occurs
+            Logger.Initialize(_options.LogFileName);
+            ApplyLoggerSettings();
+
+            // 3. Global AppDomain exceptions (Fatal crashes outside the UI dispatcher)
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {
                 Exception ex = args.ExceptionObject as Exception;
@@ -115,7 +114,7 @@ namespace Servy.UI.Bootstrapping
                     MessageBoxImage.Error);
             };
 
-            // 3. UI Thread exceptions (Dispatcher errors)
+            // 4. UI Thread exceptions (Dispatcher errors)
             app.DispatcherUnhandledException += (sender, args) =>
             {
                 Logger.Error("UI Dispatcher Exception", args.Exception);
@@ -138,7 +137,7 @@ namespace Servy.UI.Bootstrapping
                 }
             };
 
-            // 4. Environmental Security Checks
+            // 5. Environmental Security Checks
             if (!SecurityHelper.IsAdministrator())
             {
                 MessageBox.Show(_options.SecurityWarningMessage, _options.SecurityWarningTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -154,7 +153,7 @@ namespace Servy.UI.Bootstrapping
                 return;
             }
 
-            // 5. Hardware Acceleration Check
+            // 6. Hardware Acceleration Check
             var renderingTier = RenderCapability.Tier >> 16;
             var isRemote = SystemParameters.IsRemoteSession;
             ForceSoftwareRendering = e.Args.Any(arg => arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase));
@@ -170,13 +169,51 @@ namespace Servy.UI.Bootstrapping
         }
 
         /// <summary>
-        /// Asynchronously handles heavy initialization tasks such as database migrations, 
-        /// configuration loading, resource extraction, and window orchestration.
+        /// Loads the application configuration from the application settings synchronously to ensure settings are available for immediate use.
+        /// </summary>
+        private void LoadConfiguration()
+        {
+            var config = ConfigurationManager.AppSettings;
+            ConnectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
+            AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
+            AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+        }
+
+        /// <summary>
+        /// Applies the loaded logger settings to the static logger instance based on the standard configuration parameters.
+        /// </summary>
+        private void ApplyLoggerSettings()
+        {
+            var config = ConfigurationManager.AppSettings;
+
+            // Logging verbosity and rotation setup
+            if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel)) logLevel = LogLevel.Info;
+            Logger.SetLogLevel(logLevel);
+
+            if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType)) dateRotationType = DateRotationType.None;
+            Logger.SetDateRotationType(dateRotationType);
+
+            if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0) Logger.SetLogRotationSize(size);
+            else Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
+
+            if (int.TryParse(config["MaxBackupLogFiles"], out var maxBackupFiles) && maxBackupFiles >= 0) Logger.SetMaxBackupLogFiles(maxBackupFiles);
+            else Logger.SetMaxBackupLogFiles(Logger.DefaultMaxBackupLogFiles);
+
+            string rawUseLocalTime = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
+            if (!bool.TryParse(rawUseLocalTime, out bool useLocalTime)) useLocalTime = AppConfig.DefaultUseLocalTimeForRotation;
+            Logger.SetUseLocalTimeForRotation(useLocalTime);
+
+            // Invoke project-specific configuration logic
+            _options.CustomConfigAction?.Invoke(config);
+        }
+
+        /// <summary>
+        /// Asynchronously handles heavy initialization tasks such as database migrations, configuration loading, resource extraction, and window orchestration.
         /// </summary>
         /// <param name="app">The active WPF application instance.</param>
         /// <param name="e">The startup event arguments.</param>
-        /// <param name="processHelper">An instance of <see cref="IProcessHelper"/> used to query running processes.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous initialization process.</returns>
+        /// <param name="processHelper">An instance of the process helper used to query running processes.</param>
+        /// <returns>A Task representing the asynchronous initialization process.</returns>
         public async Task InitializeAppAsync(Application app, StartupEventArgs e, IProcessHelper processHelper)
         {
             string serviceName = null;
@@ -206,35 +243,15 @@ namespace Servy.UI.Bootstrapping
 
                 Helper.EnsureEventSourceExists();
 
-                // 2. Configuration Orchestration
-                var config = ConfigurationManager.AppSettings;
-                ConnectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
-                AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
-                AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
-
-                // Logging verbosity and rotation setup
-                if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel)) logLevel = LogLevel.Info;
-                Logger.SetLogLevel(logLevel);
-
-                if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType)) dateRotationType = DateRotationType.None;
-                Logger.SetDateRotationType(dateRotationType);
-
-                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0) Logger.SetLogRotationSize(size);
-                else Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
-
-                if (int.TryParse(config["MaxBackupLogFiles"], out var maxBackupFiles) && maxBackupFiles >= 0) Logger.SetMaxBackupLogFiles(maxBackupFiles);
-                else Logger.SetMaxBackupLogFiles(Logger.DefaultMaxBackupLogFiles);
-
-                string rawUseLocalTime = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
-                if (!bool.TryParse(rawUseLocalTime, out bool useLocalTime)) useLocalTime = AppConfig.DefaultUseLocalTimeForRotation;
-                Logger.SetUseLocalTimeForRotation(useLocalTime);
-
-                // Invoke project-specific configuration logic
-                _options.CustomConfigAction?.Invoke(config);
-
-                // 3. Parallelized System Initialization (Off-UI Thread)
+                // 2. Parallelized System Initialization (Off-UI Thread)
+                // Note: Configuration and Logger settings are already loaded synchronously in OnStartup.
                 await Task.Run(async () =>
                 {
+                    if (string.IsNullOrEmpty(ConnectionString) || string.IsNullOrEmpty(AESKeyFilePath) || string.IsNullOrEmpty(AESIVFilePath))
+                    {
+                        throw new InvalidOperationException("Critical configuration values are missing. Ensure that the appsettings.json file is present and correctly configured.");
+                    }
+
                     var stopwatch = Stopwatch.StartNew();
 
                     AppFoldersHelper.EnsureFolders(ConnectionString, AESKeyFilePath, AESIVFilePath);
@@ -299,7 +316,7 @@ namespace Servy.UI.Bootstrapping
                     }
                 });
 
-                // 4. Instantiate and show the primary MainWindow
+                // 3. Instantiate and show the primary MainWindow
                 if (_options.MainWindowFactoryAsync != null)
                 {
                     var mainWindow = await _options.MainWindowFactoryAsync(serviceName);
@@ -328,10 +345,9 @@ namespace Servy.UI.Bootstrapping
         /// <summary>
         /// Orchestrates the deterministic cleanup of application resources during the exit sequence.
         /// </summary>
-        /// <param name="e">The <see cref="ExitEventArgs"/> containing the event data.</param>
+        /// <param name="e">The ExitEventArgs containing the event data.</param>
         /// <remarks>
-        /// This method ensures that critical resources like the database context and secure data 
-        /// providers are released properly, even if individual disposal attempts encounter issues.
+        /// This method ensures that critical resources like the database context and secure data providers are released properly, even if individual disposal attempts encounter issues.
         /// </remarks>
         public void OnExit(ExitEventArgs e)
         {

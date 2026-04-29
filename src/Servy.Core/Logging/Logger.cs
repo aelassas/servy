@@ -341,9 +341,10 @@ namespace Servy.Core.Logging
                         .Replace("\r", "\\r")
                         .Replace("\n", "\\n");
 
-                    // Format: [2026-03-12 22:00:00] [INFO] Message text
+                    // Format: [2026-03-12 22:00:00+01:00] [INFO] Message text OR [2026-03-12 22:00:00Z] [INFO] Message text
                     var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
-                    string logEntry = $"[{now:yyyy-MM-dd HH:mm:ss}] [{levelName}] {sanitizedMessage}";
+                    string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
+                    string logEntry = $"[{now:yyyy-MM-dd HH:mm:ss}{tzMarker}] [{levelName}] {sanitizedMessage}";
 
                     _writer.WriteLine(logEntry);
                 }
