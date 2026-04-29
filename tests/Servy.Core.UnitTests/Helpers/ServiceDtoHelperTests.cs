@@ -48,7 +48,7 @@ namespace Servy.UnitTests.Core.Helpers
             Assert.Equal(AppConfig.DefaultStartTimeout, dto.StartTimeout);
             Assert.Equal(AppConfig.DefaultStopTimeout, dto.StopTimeout);
             Assert.Equal(AppConfig.DefaultEnableRotation, dto.EnableSizeRotation);
-            Assert.Equal(AppConfig.DefaultRotationSize, dto.RotationSize);
+            Assert.Equal(AppConfig.DefaultRotationSizeMB, dto.RotationSize);
             Assert.Equal(AppConfig.DefaultEnableDateRotation, dto.EnableDateRotation);
             Assert.Equal((int)AppConfig.DefaultDateRotationType, dto.DateRotationType);
             Assert.Equal(AppConfig.DefaultMaxRotations, dto.MaxRotations);

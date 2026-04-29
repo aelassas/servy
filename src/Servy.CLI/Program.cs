@@ -123,7 +123,7 @@ namespace Servy.CLI
                 }
                 else
                 {
-                    Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
+                    Logger.SetLogRotationSize(AppConfig.DefaultRotationSizeMB);
                 }
 
                 if (int.TryParse(config["MaxBackupLogFiles"], out var maxBackupFiles) && maxBackupFiles >= 0) Logger.SetMaxBackupLogFiles(maxBackupFiles);

@@ -6,8 +6,6 @@ using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
-using Servy.Infrastructure.Helpers;
-using System.Diagnostics;
 
 /// <summary>
 /// A simple console application to restart a Windows service.
@@ -73,7 +71,7 @@ namespace Servy.Restarter
                     .SetBasePath(AppFoldersHelper.GetAppDirectory())
                     .AddJsonFile("appsettings.restarter.json", optional: true, reloadOnChange: true)
                     .Build();
-                
+
                 var connectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;
                 var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
                 var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
@@ -96,10 +94,8 @@ namespace Servy.Restarter
                 Logger.SetDateRotationType(dateRotationType);
 
                 // Set Rotation Size
-                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
-                {
-                    Logger.SetLogRotationSize(size);
-                }
+                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0) Logger.SetLogRotationSize(size);
+                else Logger.SetLogRotationSize(AppConfig.DefaultRotationSizeMB);
 
                 if (int.TryParse(config["MaxBackupLogFiles"], out var maxBackupFiles) && maxBackupFiles >= 0) Logger.SetMaxBackupLogFiles(maxBackupFiles);
                 else Logger.SetMaxBackupLogFiles(Logger.DefaultMaxBackupLogFiles);

@@ -221,7 +221,7 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(string.Empty, _viewModel.ServiceName);
             Assert.Equal(string.Empty, _viewModel.ProcessPath);
             Assert.False(_viewModel.EnableSizeRotation);
-            Assert.Equal(AppConfig.DefaultRotationSize.ToString(), _viewModel.RotationSize);
+            Assert.Equal(AppConfig.DefaultRotationSizeMB.ToString(), _viewModel.RotationSize);
         }
 
         [Fact]

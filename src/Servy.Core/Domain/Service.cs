@@ -136,7 +136,7 @@ namespace Servy.Core.Domain
         /// <summary>
         /// Gets or sets the rotation size in Megabytes (MB) for log files.
         /// </summary>
-        public int RotationSize { get; set; } = AppConfig.DefaultRotationSize;
+        public int RotationSize { get; set; } = AppConfig.DefaultRotationSizeMB;
 
         /// <summary>
         /// Gets or sets a value indicating whether date-based log rotation is enabled.

@@ -15,11 +15,6 @@ namespace Servy.Core.Logging
     public static class Logger
     {
         /// <summary>
-        /// Default log rotation size in Megabytes. When the log file exceeds this size, it will be rotated.
-        /// </summary>
-        public const int DefaultLogRotationSizeMB = 10;
-
-        /// <summary>
         /// Default maximum number of backup log files to keep. When the number of rotated files exceeds this limit, the oldest files will be deleted.
         /// </summary>
         public const int DefaultMaxBackupLogFiles = 10;
@@ -28,7 +23,7 @@ namespace Servy.Core.Logging
         private static volatile RotatingStreamWriter? _writer;
         private static LogLevel _currentLogLevel = LogLevel.Info;
         private static string? _fileName;
-        private static long _logRotationSizeMB = DefaultLogRotationSizeMB;
+        private static long _logRotationSizeMB = AppConfig.DefaultRotationSizeMB;
         private static DateRotationType _dateRotationType;
         private static bool _useLocalTimeForRotation;
 

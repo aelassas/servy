@@ -117,7 +117,7 @@ namespace Servy.Core.Mappers
                 StdoutPath = dto.StdoutPath,
                 StderrPath = dto.StderrPath,
                 EnableSizeRotation = dto.EnableSizeRotation ?? AppConfig.DefaultEnableRotation,
-                RotationSize = dto.RotationSize ?? AppConfig.DefaultRotationSize,
+                RotationSize = dto.RotationSize ?? AppConfig.DefaultRotationSizeMB,
                 EnableDateRotation = dto.EnableDateRotation ?? AppConfig.DefaultEnableDateRotation,
 
                 // Validate Enum ranges

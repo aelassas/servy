@@ -575,7 +575,7 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(ServiceStartType.Automatic, service.StartupType); // StartupType == null branch
             Assert.Equal(ProcessPriority.Normal, service.Priority);        // Priority == null branch
             Assert.False(service.EnableSizeRotation);                         // ?? false
-            Assert.Equal(AppConfig.DefaultRotationSize, service.RotationSize); // ?? Default
+            Assert.Equal(AppConfig.DefaultRotationSizeMB, service.RotationSize); // ?? Default
             Assert.False(service.EnableDateRotation);                     // ?? false
             Assert.Equal(DateRotationType.Daily, service.DateRotationType); // .HasValue == false branch
             Assert.Equal(AppConfig.DefaultMaxRotations, service.MaxRotations);
