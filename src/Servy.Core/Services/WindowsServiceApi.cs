@@ -60,7 +60,7 @@ namespace Servy.Core.Services
             => NativeMethods.CloseServiceHandle(hSCObject);
 
         /// <inheritdoc />
-        public bool ControlService(SafeServiceHandle hService, int dwControl, ref ServiceStatus lpServiceStatus)
+        public bool ControlService(SafeServiceHandle hService, int dwControl, ref SERVICE_STATUS lpServiceStatus)
             => NativeMethods.ControlService(hService, dwControl, ref lpServiceStatus);
 
         /// <inheritdoc />
@@ -92,11 +92,11 @@ namespace Servy.Core.Services
         // --- ChangeServiceConfig2 Overloads ---
 
         /// <inheritdoc />
-        public bool ChangeServiceConfig2(SafeServiceHandle hService, int dwInfoLevel, ref ServiceDescription lpInfo)
+        public bool ChangeServiceConfig2(SafeServiceHandle hService, int dwInfoLevel, ref SERVICE_DESCRIPTION lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
 
         /// <inheritdoc />
-        public bool ChangeServiceConfig2(SafeServiceHandle hService, int dwInfoLevel, ref ServiceDelayedAutoStartInfo lpInfo)
+        public bool ChangeServiceConfig2(SafeServiceHandle hService, int dwInfoLevel, ref SERVICE_DELAYED_AUTO_START_INFO lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
 
         /// <inheritdoc />
@@ -123,7 +123,7 @@ namespace Servy.Core.Services
         public bool QueryServiceConfig2(
             SafeServiceHandle hService,
             uint dwInfoLevel,
-            ref ServiceDelayedAutoStartInfo lpBuffer,
+            ref SERVICE_DELAYED_AUTO_START_INFO lpBuffer,
             int cbBufSize,
             ref int pcbBytesNeeded)
             => NativeMethods.QueryServiceConfig2(hService, dwInfoLevel, ref lpBuffer, cbBufSize, ref pcbBytesNeeded);

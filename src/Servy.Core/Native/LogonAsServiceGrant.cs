@@ -95,11 +95,11 @@ namespace Servy.Core.Native
 
             try
             {
-                var oa = new LsaObjectAttributes
+                var oa = new LSA_OBJECT_ATTRIBUTES
                 {
-                    Length = Marshal.SizeOf<LsaObjectAttributes>()
+                    Length = Marshal.SizeOf<LSA_OBJECT_ATTRIBUTES>()
                 };
-                int status = LsaOpenPolicy(IntPtr.Zero, ref oa, PolicyAccess.POLICY_LOOKUP_NAMES, out policy);
+                int status = LsaOpenPolicy(IntPtr.Zero, ref oa, POLICY_ACCESS.POLICY_LOOKUP_NAMES, out policy);
                 if (status != 0)
                 {
                     var msg = GetWin32ErrorMessage(status);
@@ -128,11 +128,11 @@ namespace Servy.Core.Native
                     throw new InvalidOperationException($"LsaEnumerateAccountRights failed: {msg} (NTSTATUS 0x{status:X})");
                 }
 
-                int structSize = Marshal.SizeOf<LsaUnicodeString>();
+                int structSize = Marshal.SizeOf<LSA_UNICODE_STRING>();
                 for (int i = 0; i < rightsCount; i++)
                 {
                     IntPtr itemPtr = IntPtr.Add(rightsPtr, i * structSize);
-                    var lus = Marshal.PtrToStructure<LsaUnicodeString>(itemPtr);
+                    var lus = Marshal.PtrToStructure<LSA_UNICODE_STRING>(itemPtr);
 
                     if (lus.Buffer == IntPtr.Zero || lus.Length == 0)
                     {
@@ -177,18 +177,18 @@ namespace Servy.Core.Native
 
             try
             {
-                var oa = new LsaObjectAttributes
+                var oa = new LSA_OBJECT_ATTRIBUTES
                 {
-                    Length = Marshal.SizeOf<LsaObjectAttributes>()
+                    Length = Marshal.SizeOf<LSA_OBJECT_ATTRIBUTES>()
                 };
 
                 // Request only the minimal rights required to add account privileges.
                 // POLICY_LOOKUP_NAMES:   To resolve SIDs/Names.
                 // POLICY_CREATE_ACCOUNT: To create the account entry in LSA if it doesn't exist.
                 // POLICY_ASSIGN_PRIVILEGE: Required specifically by LsaAddAccountRights.
-                uint accessMask = PolicyAccess.POLICY_LOOKUP_NAMES |
-                                  PolicyAccess.POLICY_CREATE_ACCOUNT |
-                                  PolicyAccess.POLICY_ASSIGN_PRIVILEGE;
+                uint accessMask = POLICY_ACCESS.POLICY_LOOKUP_NAMES |
+                                  POLICY_ACCESS.POLICY_CREATE_ACCOUNT |
+                                  POLICY_ACCESS.POLICY_ASSIGN_PRIVILEGE;
 
                 int status = LsaOpenPolicy(IntPtr.Zero, ref oa, accessMask, out policy);
 
@@ -199,7 +199,7 @@ namespace Servy.Core.Native
                 }
 
                 buffer = Marshal.StringToHGlobalUni(SE_SERVICE_LOGON_NAME);
-                var lus = new LsaUnicodeString
+                var lus = new LSA_UNICODE_STRING
                 {
                     Length = (ushort)(SE_SERVICE_LOGON_NAME.Length * 2),
                     MaximumLength = (ushort)((SE_SERVICE_LOGON_NAME.Length * 2) + 2),

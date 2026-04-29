@@ -92,7 +92,7 @@ namespace Servy.Core.Services
         /// <param name="dwControl">The control code to send.</param>
         /// <param name="lpServiceStatus">Receives the latest status information about the service.</param>
         /// <returns><c>true</c> if the operation succeeds; otherwise, <c>false</c>.</returns>
-        bool ControlService(SafeServiceHandle hService, int dwControl, ref ServiceStatus lpServiceStatus);
+        bool ControlService(SafeServiceHandle hService, int dwControl, ref SERVICE_STATUS lpServiceStatus);
 
         /// <summary>
         /// Changes the configuration parameters of a service.
@@ -133,7 +133,7 @@ namespace Servy.Core.Services
         bool ChangeServiceConfig2(
             SafeServiceHandle hService,
             int dwInfoLevel,
-            ref ServiceDescription lpInfo
+            ref SERVICE_DESCRIPTION lpInfo
         );
 
         /// <summary>
@@ -159,7 +159,7 @@ namespace Servy.Core.Services
         bool ChangeServiceConfig2(
             SafeServiceHandle hService,
             int dwInfoLevel,
-            ref ServiceDelayedAutoStartInfo lpInfo
+            ref SERVICE_DELAYED_AUTO_START_INFO lpInfo
         );
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace Servy.Core.Services
         bool QueryServiceConfig2(
             SafeServiceHandle hService,
             uint dwInfoLevel,
-            ref ServiceDelayedAutoStartInfo lpBuffer,
+            ref SERVICE_DELAYED_AUTO_START_INFO lpBuffer,
             int cbBufSize,
             ref int pcbBytesNeeded);
 

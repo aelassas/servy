@@ -197,7 +197,7 @@ namespace Servy.Core.Services
             {
                 pDescription = Marshal.StringToHGlobalUni(description?.Trim());
 
-                var desc = new ServiceDescription
+                var desc = new SERVICE_DESCRIPTION
                 {
                     lpDescription = pDescription
                 };
@@ -225,7 +225,7 @@ namespace Servy.Core.Services
         /// <returns><c>true</c> if the change was successful; otherwise, <c>false</c>.</returns>
         private bool ChangeServiceConfig2(SafeServiceHandle serviceHandle, bool delayedAutostart)
         {
-            var delayedInfo = new ServiceDelayedAutoStartInfo
+            var delayedInfo = new SERVICE_DELAYED_AUTO_START_INFO
             {
                 fDelayedAutostart = delayedAutostart,
             };
@@ -246,7 +246,7 @@ namespace Servy.Core.Services
         /// <returns><c>true</c> if the pre-shutdown setting was successfully applied; otherwise, <c>false</c>.</returns>
         private bool EnablePreShutdown(SafeServiceHandle serviceHandle, uint timeoutMs)
         {
-            var info = new ServicePreShutdownInfo
+            var info = new SERVICE_PRE_SHUTDOWN_INFO
             {
                 dwPreshutdownTimeout = timeoutMs
             };
@@ -590,7 +590,7 @@ namespace Servy.Core.Services
                     }
 
                     // Trigger the stop command
-                    var status = new NativeMethods.ServiceStatus();
+                    var status = new NativeMethods.SERVICE_STATUS();
                     _windowsServiceApi.ControlService(serviceHandle, SERVICE_CONTROL_STOP, ref status);
 
                     // 2. The Wait Loop: Now fully cancellable
@@ -852,14 +852,14 @@ namespace Servy.Core.Services
                                 {
                                     if (!svcHandle.IsInvalid)
                                     {
-                                        var info = new ServiceDelayedAutoStartInfo();
+                                        var info = new SERVICE_DELAYED_AUTO_START_INFO();
                                         int bytesNeeded = 0;
 
                                         bool ok = _windowsServiceApi.QueryServiceConfig2(
                                             svcHandle,
                                             SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
                                             ref info,
-                                            Marshal.SizeOf(typeof(ServiceDelayedAutoStartInfo)),
+                                            Marshal.SizeOf(typeof(SERVICE_DELAYED_AUTO_START_INFO)),
                                             ref bytesNeeded);
 
                                         if (ok && info.fDelayedAutostart)
@@ -1142,7 +1142,7 @@ namespace Servy.Core.Services
             {
                 if (_windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, ptr, bytesNeeded, ref bytesNeeded))
                 {
-                    var descStruct = Marshal.PtrToStructure<ServiceDescription>(ptr);
+                    var descStruct = Marshal.PtrToStructure<SERVICE_DESCRIPTION>(ptr);
                     return Marshal.PtrToStringAuto(descStruct.lpDescription);
                 }
                 return null;
@@ -1160,9 +1160,9 @@ namespace Servy.Core.Services
         /// <returns><c>true</c> if it has delayed start configured; otherwise, <c>false</c>.</returns>
         private bool IsDelayedStart(SafeServiceHandle svcHandle)
         {
-            var info = new ServiceDelayedAutoStartInfo();
+            var info = new SERVICE_DELAYED_AUTO_START_INFO();
             int bytesNeeded = 0;
-            int structSize = Marshal.SizeOf(typeof(ServiceDelayedAutoStartInfo));
+            int structSize = Marshal.SizeOf(typeof(SERVICE_DELAYED_AUTO_START_INFO));
 
             return _windowsServiceApi.QueryServiceConfig2(
                 svcHandle,
