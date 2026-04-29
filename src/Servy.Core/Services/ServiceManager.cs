@@ -37,48 +37,6 @@ namespace Servy.Core.Services
 
         #endregion
 
-        #region SCM Access Rights
-
-        /// <summary>Access right to connect to the service control manager.</summary>
-        public const uint SC_MANAGER_CONNECT = 0x0001;
-
-        /// <summary>Access right to create a service object and add it to the database.</summary>
-        public const uint SC_MANAGER_CREATE_SERVICE = 0x0002;
-
-        #endregion
-
-        #region Service Access Rights
-
-        /// <summary>Access right to change the configuration of a service.</summary>
-        public const uint SERVICE_CHANGE_CONFIG = 0x0002;
-
-        /// <summary>Access right to query the status of a service.</summary>
-        public const uint SERVICE_QUERY_STATUS = 0x0004;
-
-        /// <summary>Access right to start the service.</summary>
-        public const uint SERVICE_START = 0x0010;
-
-        /// <summary>Access right to stop the service.</summary>
-        public const uint SERVICE_STOP = 0x0020;
-
-        /// <summary>Access right to delete the service.</summary>
-        public const uint SERVICE_DELETE = 0x00010000;
-
-        #endregion
-
-        #region Service Configuration & Type Flags
-
-        /// <summary>Specifies a service that runs in its own process.</summary>
-        public const uint SERVICE_WIN32_OWN_PROCESS = 0x00000010;
-
-        /// <summary>Logs the error and continues the startup operation if the service fails to start.</summary>
-        public const uint SERVICE_ERROR_NORMAL = 0x00000001;
-
-        /// <summary>Information level to retrieve or set pre-shutdown information.</summary>
-        public const int SERVICE_CONFIG_PRESHUTDOWN_INFO = 7;
-
-        #endregion
-
         #region Private Fields
 
         private readonly Func<string, IServiceControllerWrapper> _controllerFactory;
