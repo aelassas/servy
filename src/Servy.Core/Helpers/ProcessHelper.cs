@@ -316,7 +316,7 @@ namespace Servy.Core.Helpers
 
             inputPath = inputPath.Trim();
 
-            // 1. Expand variables (Note: only expands variables existing in the SERVICE'S environment)
+            // 1. Expand variables (Note: only expands variables existing in the calling process's environment)
             var expandedPath = Environment.ExpandEnvironmentVariables(inputPath);
 
             // 2. Strict Check: If the path still contains %, expansion likely failed 
