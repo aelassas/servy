@@ -1,7 +1,8 @@
-﻿using Servy.Core.Enums;
+﻿using Servy.Core.Config;
+using Servy.Core.Enums;
 using Servy.Core.Helpers;
-using Servy.Manager.Config;
 using Servy.Manager.Models;
+using AppConfig = Servy.Manager.Config.AppConfig;
 
 namespace Servy.Manager
 {
@@ -92,17 +93,29 @@ namespace Servy.Manager
         }
 
         /// <summary>
-        /// Gets user session display name.
+        /// Resolves the appropriate display name for a service's logon account based on the raw session string provided by the system.
         /// </summary>
-        /// <param name="userSession">User session.</param>
-        /// <returns>ser session display name.</returns>
+        /// <param name="userSession">The raw account name or session string retrieved from the service configuration or WMI query.</param>
+        /// <returns>A localized display string representing the account, defaulting to the localized Local System string if the input matches system-level credentials.</returns>
         public static string GetLogOnAsDisplayName(string userSession)
         {
+            // LOG: Resolving display name for service account identity.
+            // Logic: If the string is null, empty, or matches the internal "LocalSystem" SCM name, we return the UI-friendly constant.
             if (string.IsNullOrEmpty(userSession))
+            {
                 return AppConfig.LocalSystem;
-            if (userSession.Equals("LocalSystem", StringComparison.OrdinalIgnoreCase))
+            }
+
+            if (userSession.Equals(ServiceAccounts.LocalSystem, StringComparison.OrdinalIgnoreCase))
+            {
                 return AppConfig.LocalSystem;
+            }
+
+            // Future-proofing: Additional checks for LocalService or NetworkService can be added here 
+            // if AppConfig is expanded to include specific display names for those accounts.
+
             return userSession;
         }
+
     }
 }
