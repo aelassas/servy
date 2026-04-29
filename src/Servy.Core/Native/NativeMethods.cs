@@ -751,7 +751,7 @@ namespace Servy.Core.Native
 
             // The pattern allows for 'NT AUTHORITY\Account', 'DOMAIN\Account', or '.\Account'
             const string pattern = @"^(?:[\w\s\.\-]+|\.)\\[\w\s\.@!\-]+\$?$";
-            var isGMSA = username.EndsWith("$");
+            var isGmsa = string.IsNullOrEmpty(password) && username.EndsWith("$");
 
             // LOGIC: 
             // 1. Check the static exhaustive list (Case-Insensitive via HashSet comparer).
@@ -817,7 +817,7 @@ namespace Servy.Core.Native
             }
 
             // gMSAs are managed by Active Directory and bypass standard local LogonUser validation.
-            if (isGMSA)
+            if (isGmsa)
             {
                 return;
             }
