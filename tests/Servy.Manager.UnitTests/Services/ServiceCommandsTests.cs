@@ -27,6 +27,8 @@ namespace Servy.Manager.UnitTests.Services
         private readonly Mock<IServiceConfigurationValidator> _serviceConfigurationValidatorMock;
         private readonly Mock<IXmlServiceValidator> _xmlServiceValidatorMock;
         private readonly Mock<IJsonServiceValidator> _jsonServiceValidatorMock;
+        private readonly Mock<IXmlServiceSerializer> _xmlServiceSerializerMock;
+        private readonly Mock<IJsonServiceSerializer> _jsonServiceSerializerMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
         private readonly Mock<IProcessHelper> _processHelper;
 
@@ -45,6 +47,8 @@ namespace Servy.Manager.UnitTests.Services
             _serviceConfigurationValidatorMock = new Mock<IServiceConfigurationValidator>();
             _xmlServiceValidatorMock = new Mock<IXmlServiceValidator>();
             _jsonServiceValidatorMock = new Mock<IJsonServiceValidator>();
+            _xmlServiceSerializerMock = new Mock<IXmlServiceSerializer>();
+            _jsonServiceSerializerMock = new Mock<IJsonServiceSerializer>();
             _appConfigMock = new Mock<IAppConfiguration>();
             _processHelper = new Mock<IProcessHelper>();
 
@@ -80,6 +84,8 @@ namespace Servy.Manager.UnitTests.Services
                 _serviceConfigurationValidatorMock.Object,
                 _xmlServiceValidatorMock.Object,
                 _jsonServiceValidatorMock.Object,
+                _xmlServiceSerializerMock.Object,
+                _jsonServiceSerializerMock.Object,
                 _appConfigMock.Object,
                 _processHelper.Object
             );
@@ -107,6 +113,9 @@ namespace Servy.Manager.UnitTests.Services
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny))
                 .Returns(true);
 
+            _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>()))
+                .Returns(dto);
+
             await sut.ImportJsonConfigAsync();
 
             var delay = Task.Delay(2000);
@@ -114,6 +123,8 @@ namespace Servy.Manager.UnitTests.Services
 
             Assert.True(completedTask == _refreshTcs.Task, "Refresh task timed out! The refresh logic was not executed.");
             _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()), Times.Once);
+            _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Once);
+            _jsonServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Once);
             Assert.True(_refreshCalled);
 
             if (File.Exists(tempFile)) File.Delete(tempFile);
@@ -162,6 +173,9 @@ namespace Servy.Manager.UnitTests.Services
                 .ReturnsAsync(1)
                 .Callback(() => _refreshTcs.TrySetResult(true));
 
+            _xmlServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>()))
+                .Returns(dto);
+
             await sut.ImportXmlConfigAsync();
 
             var delay = Task.Delay(2000);
@@ -169,6 +183,8 @@ namespace Servy.Manager.UnitTests.Services
 
             Assert.True(completedTask == _refreshTcs.Task, "Refresh task timed out! XML import did not trigger refresh.");
             _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()), Times.Once);
+            _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Once);
+            _xmlServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Once);
             Assert.True(_refreshCalled);
 
             if (File.Exists(tempFile)) File.Delete(tempFile);

@@ -244,6 +244,8 @@ namespace Servy.Manager
                         serviceConfigurationValidator,
                         new XmlServiceValidator(processHelper),
                         new JsonServiceValidator(processHelper),
+                        new XmlServiceSerializer(),
+                        new JsonServiceSerializer(),
                         this,
                         processHelper
                     );
