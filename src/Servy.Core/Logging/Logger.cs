@@ -60,7 +60,7 @@ namespace Servy.Core.Logging
         public static void Initialize(
             string? fileName,
             LogLevel initialLevel = LogLevel.Info,
-            int logRotationSizeMB = 10,
+            int logRotationSizeMB = AppConfig.DefaultRotationSizeMB,
             DateRotationType dateRotationType = DateRotationType.None,
             bool useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation,
             int maxBackupLogFiles = DefaultMaxBackupLogFiles
