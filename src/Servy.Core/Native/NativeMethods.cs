@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -678,24 +679,91 @@ namespace Servy.Core.Native
         #region Helper Methods
 
         /// <summary>
-        /// Validates Windows credentials by resolving the identity and attempting a network logon.
-        /// Useful for ensuring a service account has correct credentials before installation.
+        /// A safelist of built-in Windows service accounts and well-known identities that 
+        /// do not have passwords and cannot be validated via standard LogonUser calls.
         /// </summary>
-        /// <param name="username">The username in format DOMAIN\User or .\User.</param>
-        /// <param name="password">The clear-text password.</param>
-        /// <exception cref="ArgumentException">Thrown if the format is invalid.</exception>
-        /// <exception cref="SecurityException">Thrown if the identity cannot be resolved.</exception>
-        /// <exception cref="UnauthorizedAccessException">Thrown if authentication fails.</exception>
+        private static readonly HashSet<string> BuiltInServiceAccounts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            // --- Core Service Identities ---
+            "System",
+            "LocalSystem",
+            "LocalService",
+            "NetworkService",
+
+            // --- NT AUTHORITY Prefixed (Exhaustive Spacing) ---
+            "NT AUTHORITY\\System",
+            "NT AUTHORITY\\LocalSystem",
+            "NT AUTHORITY\\Local System",
+            "NT AUTHORITY\\LocalService",
+            "NT AUTHORITY\\Local Service",
+            "NT AUTHORITY\\NetworkService",
+            "NT AUTHORITY\\Network Service",
+
+            // --- Dot / Local Prefixed ---
+            ".\\System",
+            ".\\LocalSystem",
+            ".\\Local Service",
+            ".\\LocalService",
+            ".\\Network Service",
+            ".\\NetworkService",
+
+            // --- BUILTIN Prefixed ---
+            "BUILTIN\\System",
+            "BUILTIN\\LocalSystem",
+            "BUILTIN\\LocalService",
+            "BUILTIN\\NetworkService",
+
+            // --- Specialized identities (Passwordless) ---
+            "Anonymous Logon",
+            "NT AUTHORITY\\Anonymous Logon",
+            "Authenticated Users",
+            "NT AUTHORITY\\Authenticated Users",
+            "Everyone",
+            "IUSR",
+            "NT AUTHORITY\\IUSR",
+    
+            // --- Session/Context Identities ---
+            "Batch",
+            "NT AUTHORITY\\Batch",
+            "Interactive",
+            "NT AUTHORITY\\Interactive",
+            "Service",
+            "NT AUTHORITY\\Service",
+            "Network",
+            "NT AUTHORITY\\Network"
+        };
+
+        /// <summary>
+        /// Validates Windows credentials by resolving the identity and attempting a network logon.
+        /// Handles domain accounts, local accounts, gMSAs, and built-in service identities.
+        /// </summary>
+        /// <param name="username">The account name (e.g., DOMAIN\User, .\User, or NT AUTHORITY\NetworkService).</param>
+        /// <param name="password">The account password. Must be null or empty for built-in accounts; optional for gMSAs.</param>
+        /// <exception cref="ArgumentException">Invalid username format, or a password was provided for a passwordless built-in account.</exception>
+        /// <exception cref="SecurityException">Identity cannot be resolved or translation failed.</exception>
+        /// <exception cref="UnauthorizedAccessException">Invalid credentials or policy restriction.</exception>
+        /// <exception cref="Win32Exception">Unexpected system error during logon.</exception>
         public static void ValidateCredentials(string username, string password)
         {
             if (string.IsNullOrWhiteSpace(username))
                 throw new ArgumentException("Username cannot be empty.");
 
+            // The pattern allows for 'NT AUTHORITY\Account', 'DOMAIN\Account', or '.\Account'
             const string pattern = @"^(?:[\w\s\.\-]+|\.)\\[\w\s\.@!\-]+\$?$";
             var isGMSA = username.EndsWith("$");
 
-            const string invalidMsg = "Username format is invalid. Expected .\\Username, DOMAIN\\Username, or DOMAIN\\gMSA$.";
-            if (!Regex.IsMatch(username, pattern))
+            // LOGIC: 
+            // 1. Check the static exhaustive list (Case-Insensitive via HashSet comparer).
+            // 2. Catch Virtual Service Accounts (NT SERVICE\...)
+            // 3. Catch IIS AppPool Identities (IIS APPPOOL\...)
+            var isBuiltIn = BuiltInServiceAccounts.Contains(username) ||
+                            username.StartsWith("NT SERVICE\\", StringComparison.OrdinalIgnoreCase) ||
+                            username.StartsWith("IIS APPPOOL\\", StringComparison.OrdinalIgnoreCase);
+
+            // Skip regex validation for known built-in identities to avoid false negatives 
+            // on specialized formats.
+            const string invalidMsg = "Username format is invalid. Expected .\\Username, DOMAIN\\Username, or NT AUTHORITY\\ServiceAccount.";
+            if (!isBuiltIn && !Regex.IsMatch(username, pattern))
             {
                 throw new ArgumentException(invalidMsg);
             }
@@ -715,6 +783,7 @@ namespace Servy.Core.Native
                 }
             }
 
+            // 1. Identity Resolution
             try
             {
                 string translationName = username;
@@ -723,7 +792,7 @@ namespace Servy.Core.Native
                     translationName = Environment.MachineName + username.Substring(1);
                 }
                 var ntAccount = new NTAccount(translationName);
-                ntAccount.Translate(typeof(SecurityIdentifier));
+                _ = ntAccount.Translate(typeof(SecurityIdentifier));
             }
             catch (IdentityNotMappedException)
             {
@@ -734,13 +803,26 @@ namespace Servy.Core.Native
                 throw new SecurityException($"An error occurred while resolving the account '{username}': {ex.Message}");
             }
 
-            if (string.IsNullOrEmpty(password) || isGMSA)
+            // 2. Logon Validation Guard
+            // Built-in service accounts (NetworkService, Virtual Accounts, etc.) are managed by the OS.
+            // They are considered 'valid' if they pass the Translate check above, but they cannot have passwords.
+            if (isBuiltIn)
+            {
+                if (!string.IsNullOrEmpty(password))
+                {
+                    throw new ArgumentException($"A password cannot be provided for the built-in passwordless identity '{username}'.");
+                }
+                return;
+            }
+
+            // gMSAs are managed by Active Directory and bypass standard local LogonUser validation.
+            if (isGMSA)
             {
                 return;
             }
 
+            // 3. Password Validation for standard accounts
             var token = IntPtr.Zero;
-
             try
             {
                 var success = LogonUser(
@@ -758,15 +840,15 @@ namespace Servy.Core.Native
 
                     switch (error)
                     {
-                        case 1326:
+                        case 1326: // ERROR_LOGON_FAILURE
                             throw new UnauthorizedAccessException("Invalid username or password.");
-                        case 1327:
-                            throw new UnauthorizedAccessException("Account restrictions prevent logon.");
-                        case 1385:
+                        case 1327: // ERROR_ACCOUNT_RESTRICTION
+                            throw new UnauthorizedAccessException("Account restrictions prevent logon (e.g., blank password use is restricted).");
+                        case 1385: // ERROR_LOGON_TYPE_NOT_GRANTED
                             throw new UnauthorizedAccessException(
                                 "Authentication succeeded, but 'Network Logon' is denied by security policy. " +
                                 "This is common for hardened service accounts and indicates the credentials " +
-                                "are likely correct, even though a validation session could not be fully opened.");
+                                "are likely correct.");
                         default:
                             throw new Win32Exception(error, $"Logon failed with error code {error}.");
                     }
