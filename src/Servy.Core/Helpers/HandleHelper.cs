@@ -1,7 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Logging;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace Servy.Core.Helpers
@@ -9,7 +8,6 @@ namespace Servy.Core.Helpers
     /// <summary>
     /// Helper class to find processes holding handles to a file using Sysinternals handle.exe.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public static class HandleHelper
     {
         /// <summary>
@@ -33,7 +31,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <remarks>
         /// The pattern extracts the process name and process ID (PID) from lines formatted as:
-        /// <c>notepad.exe       pid: 1234   type: File    123: C:\Path\To\File.dll</c>
+        /// <c>notepad.exe        pid: 1234   type: File     123: C:\Path\To\File.dll</c>
         /// <list type="bullet">
         /// <item>
         /// <description><c>name</c>: Captures the executable name (e.g., "notepad.exe").</description>
@@ -77,22 +75,23 @@ namespace Servy.Core.Helpers
 
             using (var process = new Process { StartInfo = psi })
             {
-                // Use a StringBuilder to capture stderr in the background to avoid deadlocks
+                // Use StringBuilders to capture stdout and stderr in the background to avoid deadlocks
+                var outputBuilder = new System.Text.StringBuilder();
                 var errorBuilder = new System.Text.StringBuilder();
+
+                process.OutputDataReceived += (s, e) => { if (e.Data != null) outputBuilder.AppendLine(e.Data); };
                 process.ErrorDataReceived += (s, e) => { if (e.Data != null) errorBuilder.AppendLine(e.Data); };
 
                 if (!process.Start())
                     throw new InvalidOperationException($"Failed to start process: {handleExePath}");
-                    
-                // Start asynchronous read on stderr
-                process.BeginErrorReadLine();
 
-                // Read stdout synchronously (this is now safe because stderr is being drained asynchronously)
-                string output = process.StandardOutput.ReadToEnd();
+                // Start asynchronous reads
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
 
                 if (!process.WaitForExit(AppConfig.HandleExeTimeoutMs))
                 {
-                    try { process.Kill(); }
+                    try { process.Kill(entireProcessTree: true); }
                     catch (InvalidOperationException) { /* Already exited, expected */ }
                     catch (Exception killEx)
                     {
@@ -100,6 +99,10 @@ namespace Servy.Core.Helpers
                     }
                     throw new TimeoutException($"handle.exe timed out. Stderr: {errorBuilder}");
                 }
+
+                // Final WaitForExit() with no timeout flushes any in-flight async event handlers
+                process.WaitForExit();
+                string output = outputBuilder.ToString();
 
                 // Check for specific handle.exe errors (like "No matching handles found")
                 if (string.IsNullOrWhiteSpace(output) && errorBuilder.Length > 0)

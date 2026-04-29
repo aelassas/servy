@@ -45,6 +45,7 @@ if (Test-Path $CoverageReportDir) {
 # Explicit test projects
 $TestProjects = @(
     Join-Path $ScriptDir "Servy.Core.UnitTests\Servy.Core.UnitTests.csproj"
+    Join-Path $ScriptDir "Servy.Core.IntegrationTests\Servy.Core.IntegrationTests.csproj"
     Join-Path $ScriptDir "Servy.Infrastructure.UnitTests\Servy.Infrastructure.UnitTests.csproj"
     Join-Path $ScriptDir "Servy.Restarter.UnitTests\Servy.Restarter.UnitTests.csproj"
     Join-Path $ScriptDir "Servy.Service.UnitTests\Servy.Service.UnitTests.csproj"
