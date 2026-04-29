@@ -15,13 +15,6 @@ namespace Servy.Service.Helpers
     public interface IServiceHelper
     {
         /// <summary>
-        /// Retrieves and sanitizes the command line arguments for the current process,
-        /// trimming spaces and quotes.
-        /// </summary>
-        /// <returns>An array of sanitized argument strings.</returns>
-        string[] GetSanitizedArgs();
-
-        /// <summary>
         /// Retrieves the full command-line arguments for the current process.
         /// </summary>
         /// <returns>An array of strings containing the command-line arguments.</returns>
