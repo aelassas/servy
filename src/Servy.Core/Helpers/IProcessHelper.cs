@@ -107,23 +107,5 @@
         /// </remarks>
         bool ValidatePath(string path, bool isFile = true);
 
-        /// <summary>
-        /// Encapsulates a string argument in double quotes and escapes internal quotes and backslashes 
-        /// according to the Win32 'CommandLineToArgvW' rules.
-        /// </summary>
-        /// <remarks>
-        /// This is required in .NET Framework 4.8 and earlier when building <see cref="System.Diagnostics.ProcessStartInfo.Arguments"/> 
-        /// to prevent argument injection vulnerabilities and ensure paths with spaces or special characters are parsed correctly.
-        /// 
-        /// Rule summary:
-        /// 1. The argument is wrapped in double quotes.
-        /// 2. Double quotes inside the string are escaped with a backslash (\").
-        /// 3. Backslashes are treated literally unless they immediately precede a double quote.
-        /// 4. If backslashes precede a double quote, they must be doubled (2n) so the last one doesn't escape the quote.
-        /// </remarks>
-        /// <param name="arg">The raw command-line argument to escape.</param>
-        /// <returns>A shell-safe, quoted string ready for use in a process start command.</returns>
-        string EscapeProcessArgument(string arg);
-
     }
 }

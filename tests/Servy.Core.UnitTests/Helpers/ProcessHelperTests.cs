@@ -241,37 +241,5 @@ namespace Servy.Core.UnitTests.Helpers
             }
         }
 
-        [Theory]
-        // 1. Basic cases
-        [InlineData(null, "\"\"")]
-        [InlineData("", "\"\"")]
-        [InlineData("   ", "\"\"")]
-        [InlineData("hello", "\"hello\"")]
-        [InlineData("hello world", "\"hello world\"")]
-
-        // 2. Backslash cases (not followed by quotes)
-        [InlineData(@"C:\Program Files\Servy", "\"C:\\Program Files\\Servy\"")]
-        [InlineData(@"C:\Path\With\Trailing\", "\"C:\\Path\\With\\Trailing\\\\\"")]
-
-        // 3. The Quote-Escaping Gauntlet (The 2n+1 Rule)
-        [InlineData("quote\"", "\"quote\\\"\"")]                  // " -> \"
-        [InlineData(@"foo\""bar", "\"foo\\\\\\\"bar\"")]          // \" -> \\\"
-        [InlineData(@"foo\\""bar", "\"foo\\\\\\\\\\\"bar\"")]     // \\" -> \\\\\"
-
-        // 4. The Trailing Backslash Guard (The 2n Rule)
-        [InlineData(@"C:\temp\", "\"C:\\temp\\\\\"")]            // \ -> \\
-        [InlineData(@"C:\temp\\", "\"C:\\temp\\\\\\\\\"")]        // \\ -> \\\\
-
-        // 5. Complex Realistic Scenarios
-        [InlineData(@"/D ""config=C:\temp\""", "\"/D \\\"config=C:\\temp\\\\\\\"\"")]
-        public void EscapeProcessArgument_ShouldMatchWin32ParsingRules(string input, string expected)
-        {
-            // Act
-            var result = _processHelper.EscapeProcessArgument(input);
-
-            // Assert
-            Assert.Equal(expected, result);
-        }
-
     }
 }

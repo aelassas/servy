@@ -348,7 +348,7 @@ namespace Servy.Core.Helpers
 
             try
             {
-                var processes = HandleHelper.GetProcessesUsingFile(processHelper, handleExePath, filePath);
+                var processes = HandleHelper.GetProcessesUsingFile(handleExePath, filePath);
 
                 foreach (var procInfo in processes)
                 {

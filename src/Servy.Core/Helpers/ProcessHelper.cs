@@ -364,51 +364,5 @@ namespace Servy.Core.Helpers
             }
         }
 
-        /// <inheritdoc/>
-        public string EscapeProcessArgument(string arg)
-        {
-            if (string.IsNullOrWhiteSpace(arg)) return "\"\"";
-
-            // Replace " with \"
-            // But we must also handle backslashes that precede a "
-            // because \" is treated as a literal quote, and \\" is a literal backslash + quote.
-            // The logic: 2n backslashes + " => n backslashes + literal "
-            // 2n+1 backslashes + " => n backslashes + literal " + escape next... 
-            // Actually, a simpler way for standard .NET/Windows:
-            StringBuilder sb = new StringBuilder();
-            sb.Append('"');
-            for (int i = 0; i < arg.Length; i++)
-            {
-                int backslashCount = 0;
-                while (i < arg.Length && arg[i] == '\\')
-                {
-                    backslashCount++;
-                    i++;
-                }
-
-                if (i == arg.Length)
-                {
-                    // Backslashes at the end of the string need to be doubled 
-                    // so they don't escape the closing quote
-                    sb.Append('\\', backslashCount * 2);
-                }
-                else if (arg[i] == '"')
-                {
-                    // Backslashes before a quote need to be doubled, 
-                    // and then the quote itself needs a backslash
-                    sb.Append('\\', backslashCount * 2 + 1);
-                    sb.Append('"');
-                }
-                else
-                {
-                    // Regular character, just add the backslashes and the char
-                    sb.Append('\\', backslashCount);
-                    sb.Append(arg[i]);
-                }
-            }
-            sb.Append('"');
-            return sb.ToString();
-        }
-
     }
 }

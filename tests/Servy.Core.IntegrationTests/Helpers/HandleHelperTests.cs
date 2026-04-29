@@ -116,8 +116,8 @@ namespace Servy.Core.IntegrationTests.Helpers
         public void GetProcessesUsingFile_ShouldThrow_WhenPathsAreNullOrEmpty()
         {
             // Assert
-            Assert.Throws<ArgumentException>(() => HandleHelper.GetProcessesUsingFile(_processHelper, "", "C:\\test.txt"));
-            Assert.Throws<ArgumentException>(() => HandleHelper.GetProcessesUsingFile(_processHelper, "handle.exe", ""));
+            Assert.Throws<ArgumentException>(() => HandleHelper.GetProcessesUsingFile("", "C:\\test.txt"));
+            Assert.Throws<ArgumentException>(() => HandleHelper.GetProcessesUsingFile("handle.exe", ""));
         }
 
         [Fact]
@@ -127,7 +127,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             string testFile = CreateTempFile();
 
             // Act
-            var results = HandleHelper.GetProcessesUsingFile(_processHelper, _handleExePath, testFile);
+            var results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
 
             // Assert
             Assert.Empty(results);
@@ -147,7 +147,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 _openedStreams.Add(fs); // Keep track for disposal
 
                 // Act
-                var results = HandleHelper.GetProcessesUsingFile(_processHelper, _handleExePath, testFile);
+                var results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
 
                 // Assert
                 Assert.NotEmpty(results);
@@ -171,7 +171,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // We expect Win32Exception because Process.Start throws when the file is not found
             // and UseShellExecute is set to false.
             Assert.Throws<System.ComponentModel.Win32Exception>(() =>
-                HandleHelper.GetProcessesUsingFile(_processHelper, invalidExe, testFile));
+                HandleHelper.GetProcessesUsingFile(invalidExe, testFile));
         }
 
         [Fact]
@@ -187,7 +187,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             _openedStreams.Add(fs2);
 
             // Act
-            var results = HandleHelper.GetProcessesUsingFile(_processHelper, _handleExePath, testFile);
+            var results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
 
             // Assert
             // handle.exe returns one line per handle found.
@@ -203,7 +203,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Act
             var stopwatch = Stopwatch.StartNew();
-            var results = HandleHelper.GetProcessesUsingFile(_processHelper, _handleExePath, testFile);
+            var results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
             stopwatch.Stop();
 
             // Assert
