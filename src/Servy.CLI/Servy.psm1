@@ -28,6 +28,9 @@ $script:ServyTimeoutSeconds = 600
 # Define a reasonable cap for CLI output (1MB limit) to prevent OOM
 $script:ServyMaxBufferChars = 1048576
 
+# Shared validation pattern for KEY=VALUE;KEY=VALUE environment-variable strings
+$script:EnvVarValidationPattern = '^([^= ]+=(?:\\=|\\;|\\"|\\\\|[^;])*)(; ?[^= ]+=(?:\\=|\\;|\\"|\\\\|[^;])*)*;?$'
+
 # ----------------------------------------------------------------
 # Module Initialization
 # ----------------------------------------------------------------
@@ -952,7 +955,7 @@ function Install-ServyService {
     [string] $FailureProgramParams,
 
     # Environment and Dependencies
-    [ValidatePattern('^([^= ]+=(?:\\=|\\;|\\"|\\\\|[^;])*)(; ?[^= ]+=(?:\\=|\\;|\\"|\\\\|[^;])*)*;?$')]
+    [ValidateScript({ $_ -match $script:EnvVarValidationPattern })]
     [string] $EnvVars,
 
     [ValidatePattern('^[\w\s;-]+$')]
@@ -980,7 +983,7 @@ function Install-ServyService {
 
     [string] $PreLaunchParams,
 
-    [ValidatePattern('^([^= ]+=(?:\\=|\\;|\\"|\\\\|[^;])*)(; ?[^= ]+=(?:\\=|\\;|\\"|\\\\|[^;])*)*;?$')]
+    [ValidateScript({ $_ -match $script:EnvVarValidationPattern })]
     [string] $PreLaunchEnv,
 
     [ValidateScript({ 
