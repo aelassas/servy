@@ -2,7 +2,9 @@
 using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
+using Servy.Core.Resources;
 using Servy.Core.Services;
+using Servy.Core.Validators;
 using System.Xml.Serialization;
 
 namespace Servy.Core.UnitTests.Services
@@ -15,7 +17,7 @@ namespace Servy.Core.UnitTests.Services
         public XmlServiceValidatorTests()
         {
             _processHelperMock = new Mock<IProcessHelper>();
-            _validator = new XmlServiceValidator(_processHelperMock.Object);
+            _validator = new XmlServiceValidator(_processHelperMock.Object, new ServiceValidationRules(_processHelperMock.Object));
         }
 
         private string Serialize(ServiceDto dto)
@@ -97,10 +99,12 @@ namespace Servy.Core.UnitTests.Services
             };
             var xml = Serialize(dto);
 
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
+
             var result = _validator.TryValidate(xml, out var error);
 
             Assert.False(result);
-            Assert.Equal($"Start Timeout must be at least {AppConfig.MinStartTimeout} second(s).", error);
+            Assert.Equal(string.Format(Strings.Msg_InvalidStartTimeout, AppConfig.MinStartTimeout, AppConfig.MaxStartTimeout), error);
         }
 
         [Fact]
@@ -113,9 +117,12 @@ namespace Servy.Core.UnitTests.Services
             };
             var xml = Serialize(dto);
 
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(false);
+
             var result = _validator.TryValidate(xml, out var error);
+
             Assert.False(result);
-            Assert.Equal("The executable path in the XML is invalid or inaccessible.", error);
+            Assert.Equal(Strings.Msg_InvalidPath, error);
         }
 
         [Fact]
@@ -129,7 +136,7 @@ namespace Servy.Core.UnitTests.Services
             };
             var xml = Serialize(dto);
 
-            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath)).Returns(true);
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
 
             var result = _validator.TryValidate(xml, out var error);
 

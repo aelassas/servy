@@ -168,8 +168,8 @@ namespace Servy.CLI
                 var serviceStatusCommand = new ServiceStatusCommand(serviceManager);
                 var exportCommand = new ExportServiceCommand(serviceRepository);
 
-                var xmlServiceValidator = new XmlServiceValidator(processHelper);
-                var jsonServiceValidator = new JsonServiceValidator(processHelper);
+                var xmlServiceValidator = new XmlServiceValidator(processHelper, serviceValidationRules);
+                var jsonServiceValidator = new JsonServiceValidator(processHelper, serviceValidationRules);
                 var importCommand = new ImportServiceCommand(
                     serviceRepository,
                     xmlSerializer,

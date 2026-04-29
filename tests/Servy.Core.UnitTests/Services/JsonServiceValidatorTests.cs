@@ -3,7 +3,9 @@ using Newtonsoft.Json;
 using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
+using Servy.Core.Resources;
 using Servy.Core.Services;
+using Servy.Core.Validators;
 
 namespace Servy.Core.UnitTests.Services
 {
@@ -15,7 +17,7 @@ namespace Servy.Core.UnitTests.Services
         public JsonServiceValidatorTests()
         {
             _processHelperMock = new Mock<IProcessHelper>();
-            _validator = new JsonServiceValidator(_processHelperMock.Object);
+            _validator = new JsonServiceValidator(_processHelperMock.Object, new ServiceValidationRules(_processHelperMock.Object));
         }
 
         [Fact]
@@ -60,10 +62,12 @@ namespace Servy.Core.UnitTests.Services
             };
             var json = JsonConvert.SerializeObject(dto);
 
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
+
             var result = _validator.TryValidate(json, out var error);
 
             Assert.False(result);
-            Assert.Equal("Description exceeds safety limits.", error);
+            Assert.Equal(string.Format(Strings.Msg_DescriptionLengthReached, AppConfig.MaxDescriptionLength), error);
         }
 
         [Theory]
@@ -78,10 +82,12 @@ namespace Servy.Core.UnitTests.Services
             };
             var json = JsonConvert.SerializeObject(dto);
 
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
+
             var result = _validator.TryValidate(json, out var error);
 
             Assert.False(result);
-            Assert.Equal($"Stop Timeout must be at least {AppConfig.MinStopTimeout} second(s).", error);
+            Assert.Equal(string.Format(Strings.Msg_InvalidStopTimeout, AppConfig.MinStopTimeout, AppConfig.MaxStopTimeout), error);
         }
 
         [Fact]
@@ -95,10 +101,12 @@ namespace Servy.Core.UnitTests.Services
             };
             var json = JsonConvert.SerializeObject(dto);
 
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(false);
+
             var result = _validator.TryValidate(json, out var error);
 
             Assert.False(result);
-            Assert.Equal("The provided executable path is invalid or inaccessible.", error);
+            Assert.Equal(Strings.Msg_InvalidPath, error);
         }
 
         [Fact]
