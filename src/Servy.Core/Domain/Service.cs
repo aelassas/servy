@@ -188,7 +188,7 @@ namespace Servy.Core.Domain
         /// <summary>
         /// Gets or sets the recovery action to take when the service fails.
         /// </summary>
-        public RecoveryAction RecoveryAction { get; set; }
+        public RecoveryAction RecoveryAction { get; set; } = AppConfig.DefaultRecoveryAction;
 
         /// <summary>
         /// Gets or sets the maximum number of automatic restart attempts.
