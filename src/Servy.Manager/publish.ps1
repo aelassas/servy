@@ -91,11 +91,9 @@ Write-Host "Build completed."
 if ($BuildConfiguration -eq "Release") {
     $exePath = Join-Path $publishFolder "Servy.Manager.exe" | Resolve-Path
     if (Test-Path $exePath) {
-        if ($null -ne $signPath) {
-            Write-Host "=== Signing Servy.Manager.exe ===" -ForegroundColor Cyan
-            & $signPath $exePath
-            Check-LastExitCode "Code signing failed"
-        }
+        Write-Host "=== Signing Servy.Manager.exe ===" -ForegroundColor Cyan
+        & $signPath $exePath
+        Check-LastExitCode "Code signing failed"
     }
     else {
         Write-Error "Published executable not found at: $exePath. Ensure TFM and Runtime variables match the project output."

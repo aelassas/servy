@@ -81,11 +81,9 @@ Check-LastExitCode "MSBuild failed"
 if ($BuildConfiguration -eq "Release") {
     $exePath = Join-Path $buildOutput "Servy.Restarter.exe" | Resolve-Path
     if (Test-Path $exePath) {
-        if ($null -ne $signPath) {
-            Write-Host "=== Signing Servy.Restarter.exe ===" -ForegroundColor Cyan
-            & $signPath $exePath
-            Check-LastExitCode "Code signing failed"
-        }
+        Write-Host "=== Signing Servy.Restarter.exe ===" -ForegroundColor Cyan
+        & $signPath $exePath
+        Check-LastExitCode "Code signing failed"
     }
     else {
         Write-Error "Published executable not found at: $exePath. Ensure TFM and Runtime variables match the project output."
