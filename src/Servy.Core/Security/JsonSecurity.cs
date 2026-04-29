@@ -2,17 +2,20 @@
 
 namespace Servy.Core.Security
 {
+    /// <summary>
+    /// Provides centralized security configurations and settings for JSON serialization tasks.
+    /// </summary>
     public static class JsonSecurity
     {
         /// <summary>
-        /// Secure settings for deserializing untrusted user input.
-        /// Explicitly disables TypeNameHandling to prevent RCE attacks.
+        /// A canonical settings object used for processing untrusted data, configured to prevent deep recursion, ignore metadata properties, and omit null values for cleaner output.
         /// </summary>
         public static readonly JsonSerializerSettings UntrustedDataSettings = new JsonSerializerSettings
         {
             TypeNameHandling = TypeNameHandling.None,
-            MaxDepth = 32, // Added protection against stack overflow from deep nesting
-            MetadataPropertyHandling = MetadataPropertyHandling.Ignore
+            MaxDepth = 32,
+            MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
+            NullValueHandling = NullValueHandling.Ignore
         };
     }
 }
