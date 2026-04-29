@@ -191,7 +191,7 @@ jobs:
           Write-Host "Using vstest.console.exe at: $vsTest"
 
           # Find all test assemblies
-          $testDlls = Get-ChildItem -Path "tests/*/bin/*/$env:BUILD_CONFIG/*.UnitTests.dll" -File
+          $testDlls = Get-ChildItem -Path "tests/*/bin/*/$env:BUILD_CONFIG/*.{Unit,Integration}Tests.dll" -File
 
           if (-not $testDlls) {
               throw "No test assemblies with *.UnitTests.dll found!"

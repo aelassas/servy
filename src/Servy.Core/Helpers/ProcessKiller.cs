@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -13,42 +12,50 @@ using static Servy.Core.Native.NativeMethods;
 namespace Servy.Core.Helpers
 {
     /// <summary>
-    /// Provides high-performance, recursive process termination logic.
-    /// Capable of walking both up (parents) and down (descendants) the process tree.
+    /// Provides high-performance, recursive process termination logic. Capable of walking both up the parent chain and down the descendant process tree.
     /// </summary>
     /// <remarks>
-    /// This implementation uses a pre-computed native snapshot map to achieve O(N) 
-    /// complexity, avoiding the O(N*D) syscall amplification found in naive recursive implementations.
+    /// This implementation uses pre-computed native snapshot maps to achieve linear complexity. This avoids the severe system call amplification and access denial issues found in naive recursive implementations.
     /// </remarks>
-    [ExcludeFromCodeCoverage]
     public class ProcessKiller : IProcessKiller
     {
         #region Safety Guardrails
 
         /// <summary>
-        /// A safelist of critical Windows processes that should never be terminated,
-        /// even if they are holding file locks or are part of a target process tree.
+        /// A safelist of critical Windows processes that should never be terminated, even if they are holding file locks or are part of a target process tree.
         /// </summary>
         private static readonly HashSet<string> CriticalSystemProcesses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            // Original core system
             "system", "idle", "csrss", "lsass", "wininit", "services",
             "winlogon", "smss", "svchost", "explorer", "runtimebroker",
-
-            // New additions for host stability
             "dwm", "fontdrvhost", "audiodg", "MsMpEng", "MsSense", "LsaIso",
             "WUDFHost", "wmiprvse", "conhost", "taskhostw", "sihost",
             "ctfmon", "dllhost", "searchindexer", "searchhost"
         };
 
         /// <summary>
-        /// Evaluates whether a process is protected based on its PID, its name, or its
-        /// status as an ancestor of the current execution thread.
+        /// A lightweight container for process metadata captured from a native snapshot to prevent redundant operating system queries.
+        /// </summary>
+        private struct ProcessInfoNode
+        {
+            /// <summary>
+            /// The numerical identifier of the parent process.
+            /// </summary>
+            public int ParentId;
+
+            /// <summary>
+            /// The name of the executable file.
+            /// </summary>
+            public string Name;
+        }
+
+        /// <summary>
+        /// Evaluates whether a process is protected based on its PID, its name, or its status as an ancestor of the current execution thread.
         /// </summary>
         /// <param name="pid">The process ID to evaluate.</param>
-        /// <param name="processName">The name of the process (e.g., "cmd").</param>
+        /// <param name="processName">The name of the process.</param>
         /// <param name="protectedPids">A set of PIDs belonging to the current process or its parents.</param>
-        /// <returns><c>true</c> if the process is protected; otherwise, <c>false</c>.</returns>
+        /// <returns>A boolean indicating true if the process is protected, otherwise false.</returns>
         private bool IsProtected(int pid, string processName, HashSet<int> protectedPids)
         {
             // Protection for system-level PIDs and the Servy process chain
@@ -70,10 +77,6 @@ namespace Servy.Core.Helpers
         #region Public Interface: Child Termination
 
         /// <inheritdoc/>
-        /// <remarks>
-        /// This entry point builds a global native snapshot to ensure that even if intermediate
-        /// "bridge" processes have exited, their orphaned descendants are still reachable.
-        /// </remarks>
         public void KillChildren(int parentPid)
         {
             int selfPid;
@@ -87,8 +90,7 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Performs a single-pass iteration of the OS process table using Toolhelp32 
-        /// to build an in-memory parent-to-children relationship map.
+        /// Performs a single-pass iteration of the OS process table using Toolhelp32 to build an in-memory parent-to-children relationship map.
         /// </summary>
         /// <returns>A dictionary where keys are Parent PIDs and values are lists of Child PIDs.</returns>
         private Dictionary<int, List<int>> BuildParentChildMapNative()
@@ -122,6 +124,36 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
+        /// Performs a single-pass iteration of the OS process table to build a complete relationship and name map for upward traversal.
+        /// </summary>
+        /// <returns>A dictionary mapping process identifiers to their corresponding snapshot metadata nodes.</returns>
+        private Dictionary<int, ProcessInfoNode> BuildProcessSnapshotNative()
+        {
+            var snapshotMap = new Dictionary<int, ProcessInfoNode>();
+            IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+            if (snapshot == IntPtr.Zero || snapshot == new IntPtr(-1)) return snapshotMap;
+
+            try
+            {
+                PROCESSENTRY32 pe32 = new PROCESSENTRY32 { dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32)) };
+                if (Process32First(snapshot, ref pe32))
+                {
+                    do
+                    {
+                        snapshotMap[(int)pe32.th32ProcessID] = new ProcessInfoNode
+                        {
+                            ParentId = (int)pe32.th32ParentProcessID,
+                            Name = pe32.szExeFile
+                        };
+                    } while (Process32Next(snapshot, ref pe32));
+                }
+            }
+            finally { CloseHandle(snapshot); }
+            return snapshotMap;
+        }
+
+        /// <summary>
         /// The recursive engine that walks down the pre-computed PID map.
         /// </summary>
         /// <param name="parentPid">The PID of the process whose children are being targeted.</param>
@@ -148,7 +180,7 @@ namespace Servy.Core.Helpers
                         if (parentStartTime != DateTime.MinValue && child.StartTime < parentStartTime.AddSeconds(-2))
                             continue;
 
-                        // Depth-First Recursion: Kill the "leaves" of the tree first
+                        // Depth-First Recursion: Kill the leaves of the tree first
                         WalkAndKillChildren(childPid, child.StartTime, selfPid, byParent);
 
                         if (!child.HasExited)
@@ -174,7 +206,7 @@ namespace Servy.Core.Helpers
             {
                 if (string.IsNullOrWhiteSpace(processName)) return false;
 
-                // Normalize name (remove .exe extension if present)
+                // Normalize name
                 if (processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
                     processName = processName.Substring(0, processName.Length - 4);
 
@@ -186,10 +218,10 @@ namespace Servy.Core.Helpers
                 }
 
                 int selfPid = Process.GetCurrentProcess().Id;
-                var protectedPids = GetAncestorPids();
+                var completeSnapshot = BuildProcessSnapshotNative();
+                var protectedPids = GetAncestorPids(completeSnapshot);
                 var byParent = BuildParentChildMapNative();
 
-                // Snapshot only to identify root processes matching the target name
                 var allProcesses = Process.GetProcesses();
                 try
                 {
@@ -200,17 +232,19 @@ namespace Servy.Core.Helpers
 
                     if (targetProcesses.Count == 0) return true;
 
-                    foreach (var proc in targetProcesses)
-                    {
-                        KillProcessTree(proc, selfPid, protectedPids, byParent);
-                    }
-
+                    // ROBUSTNESS: Perform the parent kill walk BEFORE the tree kill walk.
+                    // This ensures that we query information while the target process handles are still valid.
                     if (killParents)
                     {
                         foreach (var proc in targetProcesses)
                         {
-                            KillParentProcesses(proc, protectedPids);
+                            KillParentProcesses(proc.Id, proc.StartTime, protectedPids, completeSnapshot);
                         }
+                    }
+
+                    foreach (var proc in targetProcesses)
+                    {
+                        KillProcessTree(proc, selfPid, protectedPids, byParent);
                     }
 
                     return true;
@@ -237,9 +271,10 @@ namespace Servy.Core.Helpers
         {
             if (pid <= 0) return false;
 
-            var protectedPids = GetAncestorPids();
+            var completeSnapshot = BuildProcessSnapshotNative();
+            var protectedPids = GetAncestorPids(completeSnapshot);
 
-            // SECURITY: Resolve process handle and apply full safety check (PID chain + Name)
+            // SECURITY: Resolve process handle and apply full safety check
             Process target;
             try { target = Process.GetProcessById(pid); }
             catch (ArgumentException) { return true; } // Already exited
@@ -255,8 +290,10 @@ namespace Servy.Core.Helpers
                 int selfPid = Process.GetCurrentProcess().Id;
                 var byParent = BuildParentChildMapNative();
 
+                // ROBUSTNESS: Perform the parent kill walk BEFORE the tree kill walk.
+                if (killParents) KillParentProcesses(target.Id, target.StartTime, protectedPids, completeSnapshot);
                 KillProcessTree(target, selfPid, protectedPids, byParent);
-                if (killParents) KillParentProcesses(target, protectedPids);
+
                 return true;
             }
             finally { target.Dispose(); }
@@ -265,18 +302,19 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Internal helper to initiate the downward kill walk followed by killing the root process itself.
         /// </summary>
+        /// <param name="process">The target process acting as the root of the tree to terminate.</param>
+        /// <param name="selfPid">The numerical identifier of the current executing process to avoid suicide operations.</param>
+        /// <param name="protectedPids">A set of numerical identifiers corresponding to protected ancestor paths.</param>
+        /// <param name="byParent">A pre-computed native map establishing hierarchical relationships across the system.</param>
         private void KillProcessTree(Process process, int selfPid, HashSet<int> protectedPids, Dictionary<int, List<int>> byParent)
         {
             try
             {
-                // SECURITY: Use IsProtected instead of a simple PID check to ensure 
-                // system-critical names are never targeted as the root of a tree.
+                // SECURITY: Use IsProtected instead of a simple PID check to ensure system-critical names are never targeted.
                 if (IsProtected(process.Id, process.ProcessName, protectedPids)) return;
 
-                // Step 1: Kill descendants first
                 WalkAndKillChildren(process.Id, process.StartTime, selfPid, byParent);
 
-                // Step 2: Kill the root of the tree
                 if (!process.HasExited)
                 {
                     process.Kill();
@@ -314,12 +352,9 @@ namespace Servy.Core.Helpers
 
                 foreach (var procInfo in processes)
                 {
-                    // 1. Validate procInfo
                     if (procInfo.ProcessId <= 0) continue;
 
-                    // 2. Secondary Safelist Guardrail
-                    // Even if a system process locks a file, killing it is usually more 
-                    // destructive than failing the file operation.
+                    // Secondary Safelist Guardrail
                     if (!string.IsNullOrEmpty(procInfo.ProcessName) &&
                         CriticalSystemProcesses.Contains(procInfo.ProcessName))
                     {
@@ -328,7 +363,7 @@ namespace Servy.Core.Helpers
                         continue;
                     }
 
-                    // 3. Surgical Kill by PID
+                    // Surgical Kill by PID
                     if (!KillProcessTreeAndParents(procInfo.ProcessId))
                     {
                         Logger.Error($"Failed to kill process {procInfo.ProcessName} (PID {procInfo.ProcessId}).");
@@ -354,124 +389,82 @@ namespace Servy.Core.Helpers
         #region Native Helper Methods
 
         /// <summary>
-        /// Retrieves the parent process ID of a given <see cref="Process"/> using 
-        /// the native <c>NtQueryInformationProcess</c> API.
+        /// Recursively walks up the process tree using the pre-computed snapshot. Terminates parents only after confirming they are not protected.
         /// </summary>
-        private int GetParentProcessId(Process process)
+        /// <param name="childPid">The numerical identifier of the child process whose parents are being targeted.</param>
+        /// <param name="childStartTime">The creation time of the child process for identity verification.</param>
+        /// <param name="protectedPids">A set of protected numerical identifiers corresponding to the executing platform infrastructure.</param>
+        /// <param name="snapshot">A pre-computed native map establishing hierarchical relationships and names across the system.</param>
+        private void KillParentProcesses(int childPid, DateTime childStartTime, HashSet<int> protectedPids, Dictionary<int, ProcessInfoNode> snapshot)
         {
-            try
+            if (!snapshot.TryGetValue(childPid, out var node)) return;
+
+            int parentId = node.ParentId;
+
+            // Stop at System/Idle or if the parent is part of the current execution chain
+            if (parentId <= 4 || protectedPids.Contains(parentId)) return;
+
+            if (!snapshot.TryGetValue(parentId, out var parentNode)) return;
+
+            // SECURITY: Use the name from the snapshot to check protection, avoiding access denied exceptions.
+            if (IsProtected(parentId, parentNode.Name, protectedPids))
             {
-                ProcessBasicInformation pbi = new ProcessBasicInformation();
-                uint retLen;
-                int status = NtQueryInformationProcess(process.Handle, 0, ref pbi, (uint)Marshal.SizeOf(pbi), out retLen);
-                return status == 0 ? pbi.InheritedFromUniqueProcessId.ToInt32() : -1;
+                Logger.Debug($"Aborting parent kill walk: {parentNode.Name} (PID {parentId}) is protected.");
+                return;
             }
-            catch { return -1; }
-        }
 
-        /// <summary>
-        /// Recursively walks UP the process tree, terminating parents until a protected 
-        /// process (like a system service or the current application) is encountered.
-        /// </summary>
-        private void KillParentProcesses(Process process, HashSet<int> protectedPids)
-        {
+            // Move up further first via post-order traversal
+            KillParentProcesses(parentId, DateTime.MinValue, protectedPids, snapshot);
+
             try
             {
-                int parentId = GetParentProcessId(process);
-
-                // Stop at System/Idle or if the parent is part of the current execution chain
-                if (parentId <= 4 || protectedPids.Contains(parentId)) return;
-
-                // Fetch parent dynamically instead of relying on a stale snapshot
-                Process parent;
-                try
+                using (var parentProcess = Process.GetProcessById(parentId))
                 {
-                    parent = Process.GetProcessById(parentId);
-                }
-                catch (ArgumentException)
-                {
-                    return; // Parent no longer exists
-                }
-
-                try
-                {
-                    // Check parent name against safelist
-                    if (IsProtected(parent.Id, parent.ProcessName, protectedPids))
-                    {
-                        Logger.Debug($"Aborting parent kill walk: {parent.ProcessName} (PID {parent.Id}) is protected.");
-                        return;
-                    }
-
-                    // Verify identity to prevent recycled PID accidents
+                    // Identity check to prevent recycled PID accidents
                     try
                     {
-                        if (parent.StartTime > process.StartTime.AddSeconds(2)) return;
+                        if (childStartTime != DateTime.MinValue && parentProcess.StartTime > childStartTime.AddSeconds(2))
+                            return;
                     }
-                    catch (Win32Exception) { return; }
+                    catch (Win32Exception) { /* Handle access denied on StartTime, proceed with caution */ }
 
-                    // Move up first
-                    KillParentProcesses(parent, protectedPids);
-
-                    if (!parent.HasExited)
+                    if (!parentProcess.HasExited)
                     {
-                        parent.Kill();
-                        parent.WaitForExit(AppConfig.KillParentWaitMs);
+                        parentProcess.Kill();
+                        parentProcess.WaitForExit(Math.Max(AppConfig.KillParentWaitMs, 1000));
                     }
                 }
-                finally
-                {
-                    parent.Dispose();
-                }
             }
-            catch
-            {
-                // Catch all to ensure one failing parent doesn't stop the chain
-            }
+            catch (ArgumentException) { /* Already dead */ }
+            catch (Exception ex) { Logger.Debug($"Failed to kill parent {parentId}: {ex.Message}"); }
         }
 
         /// <summary>
-        /// Builds a set containing the current process PID and all its parent PIDs.
-        /// Used to prevent the auto-killer from committing suicide or killing its own host.
+        /// Builds a set containing the current process PID and all its parent PIDs using a lightweight snapshot traversal. Used to prevent the auto-killer from committing suicide or killing its own host.
         /// </summary>
-        private HashSet<int> GetAncestorPids()
+        /// <param name="snapshot">A pre-computed native map establishing hierarchical relationships across the system.</param>
+        /// <returns>A hash set representing the structural lineage mapping backward toward the root operating system session.</returns>
+        private HashSet<int> GetAncestorPids(Dictionary<int, ProcessInfoNode> snapshot)
         {
             var ancestors = new HashSet<int>();
             try
             {
                 int currentPid;
-                int parentId;
-
-                // 1. Get current PID and dispose immediately
                 using (var current = Process.GetCurrentProcess())
                 {
                     currentPid = current.Id;
-                    ancestors.Add(currentPid);
-                    parentId = GetParentProcessId(current);
                 }
 
-                // 2. Walk up the tree
-                // Stop at System (PID 4) or if we hit a loop/error
-                while (parentId > 4)
-                {
-                    if (!ancestors.Add(parentId)) break; // Prevent infinite loops
+                ancestors.Add(currentPid);
+                int currentSearchPid = currentPid;
 
-                    try
-                    {
-                        using (var parent = Process.GetProcessById(parentId))
-                        {
-                            parentId = GetParentProcessId(parent);
-                        }
-                    }
-                    catch (ArgumentException)
-                    {
-                        // Parent process no longer exists
-                        break;
-                    }
-                    catch (Win32Exception)
-                    {
-                        // Access denied to the parent process
-                        break;
-                    }
+                // Walk up the tree using the snapshot to avoid handle access restrictions
+                while (snapshot.TryGetValue(currentSearchPid, out var node))
+                {
+                    int parentId = node.ParentId;
+                    if (parentId <= 4) break;
+                    if (!ancestors.Add(parentId)) break; // Prevent infinite loops
+                    currentSearchPid = parentId;
                 }
             }
             catch (Exception ex)

@@ -63,6 +63,7 @@ jobs:
         run: |
           $testProjects = @(
               @{ Name = "Servy.Core.UnitTests"; Dir = "Core"; Filter = $null }
+              @{ Name = "Servy.Core.IntegrationTests"; Dir = "Core"; Filter = $null }
               @{ Name = "Servy.Infrastructure.UnitTests"; Dir = "Infrastructure"; Filter = $null }
               @{ Name = "Servy.Restarter.UnitTests"; Dir = "Restarter"; Filter = $null }
               @{ Name = "Servy.Service.UnitTests"; Dir = "Service"; Filter = "Category!=ReflectionValidation" }
