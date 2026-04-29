@@ -1,9 +1,11 @@
 ﻿using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Models;
+using Servy.CLI.Resources;
 using Servy.CLI.Validators;
 using Servy.Core.Common;
 using Servy.Core.Config;
+using Servy.Core.Data;
 using Servy.Core.Services;
 using System;
 using System.IO;
@@ -54,7 +56,7 @@ namespace Servy.CLI.UnitTests.Commands
 
                 // Assert
                 Assert.True(result.Success);
-                Assert.Equal("Service 'TestService' installed successfully.", result.Message);
+                Assert.Equal(string.Format(Strings.Msg_InstallSuccess, options.ServiceName), result.Message);
             }
             finally
             {
@@ -175,7 +177,7 @@ namespace Servy.CLI.UnitTests.Commands
 
                 // Assert
                 Assert.False(result.Success);
-                Assert.Contains("Failed to install service 'TestService'", result.Message);
+                Assert.Contains($"Failed to install service '{options.ServiceName}'", result.Message);
             }
             finally
             {
