@@ -176,14 +176,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
         private static string[] InvokeSplit(string input, char[] delimiters)
         {
-            var method = typeof(EnvironmentVariablesValidator)
-                .GetMethod(
-                    "SplitByUnescapedDelimiters",
-                    BindingFlags.NonPublic | BindingFlags.Static);
-
-            Assert.NotNull(method);
-
-            return (string[])method.Invoke(null, new object[] { input, delimiters });
+            return EscapedTokenizer.SplitByUnescapedDelimiters(input, delimiters);
         }
 
         [Fact]

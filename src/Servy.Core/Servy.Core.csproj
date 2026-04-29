@@ -97,6 +97,7 @@
   <ItemGroup>
     <Compile Include="Common\OperationResult.cs" />
     <Compile Include="Config\ServiceAccounts.cs" />
+    <Compile Include="EnvironmentVariables\EscapedTokenizer.cs" />
     <Compile Include="IO\Utf8StringWriter.cs" />
     <Compile Include="Config\AppConfig.cs" />
     <Compile Include="Data\IAppDbContext.cs" />
