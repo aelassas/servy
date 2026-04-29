@@ -46,6 +46,8 @@ namespace Servy.Manager.Services
         private readonly IServiceConfigurationValidator _serviceConfigurationValidator;
         private readonly IXmlServiceValidator _xmlServiceValidator;
         private readonly IJsonServiceValidator _jsonServiceValidator;
+        private readonly IXmlServiceSerializer _xmlServiceSerializer;
+        private readonly IJsonServiceSerializer _jsonServiceSerializer;
         private readonly IAppConfiguration _appConfig;
         private readonly IProcessHelper _processHelper;
 
@@ -65,6 +67,8 @@ namespace Servy.Manager.Services
         /// <param name="serviceConfigurationValidator">The service configuration validator.</param>
         /// <param name="xmlServiceValidator">XML service validator.</param>
         /// <param name="jsonServiceValidator">JSON service validator.</param>
+        /// <param name="xmlServiceSerializer">XML service serializer.</param>
+        /// <param name="jsonServiceSerializer">JSON service serializer.</param>
         /// <param name="appConfig">The application configuration interface.</param>
         /// <param name="processHelper">The process helper used to format process commands.</param>
         public ServiceCommands(
@@ -77,6 +81,8 @@ namespace Servy.Manager.Services
             IServiceConfigurationValidator serviceConfigurationValidator,
             IXmlServiceValidator xmlServiceValidator,
             IJsonServiceValidator jsonServiceValidator,
+            IXmlServiceSerializer xmlServiceSerializer,
+            IJsonServiceSerializer jsonServiceSerializer,
             IAppConfiguration appConfig,
             IProcessHelper processHelper
         )
@@ -90,6 +96,8 @@ namespace Servy.Manager.Services
             _serviceConfigurationValidator = serviceConfigurationValidator ?? throw new ArgumentNullException(nameof(serviceConfigurationValidator));
             _xmlServiceValidator = xmlServiceValidator ?? throw new ArgumentNullException(nameof(xmlServiceValidator));
             _jsonServiceValidator = jsonServiceValidator ?? throw new ArgumentNullException(nameof(jsonServiceValidator));
+            _xmlServiceSerializer = xmlServiceSerializer ?? throw new ArgumentNullException(nameof(xmlServiceSerializer));
+            _jsonServiceSerializer = jsonServiceSerializer ?? throw new ArgumentNullException(nameof(jsonServiceSerializer));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
         }
@@ -385,7 +393,7 @@ namespace Servy.Manager.Services
             ImportConfigAsync(
                 _fileDialogService.OpenXml,
                 (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
-                (content) => new XmlServiceSerializer().Deserialize(content),
+                (content) => _xmlServiceSerializer.Deserialize(content),
                 "XML",
                 Strings.Msg_FailedToLoadXml,
                 Strings.ImportXml_Success,
@@ -396,7 +404,7 @@ namespace Servy.Manager.Services
             ImportConfigAsync(
                 _fileDialogService.OpenJson,
                 (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
-                (content) => new JsonServiceSerializer().Deserialize(content),
+                (content) => _jsonServiceSerializer.Deserialize(content),
                 "JSON",
                 Strings.Msg_FailedToLoadJson,
                 Strings.ImportJson_Success,
