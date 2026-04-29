@@ -64,7 +64,9 @@ namespace Servy.Service.CommandLine
                 EnableHealthMonitoring = serviceDto.EnableHealthMonitoring ?? false,
                 HeartbeatInterval = serviceDto.HeartbeatInterval ?? AppConfig.DefaultHeartbeatInterval,
                 MaxFailedChecks = serviceDto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks,
-                RecoveryAction = (serviceDto.EnableHealthMonitoring ?? false) ? (RecoveryAction)(serviceDto.RecoveryAction ?? (int)RecoveryAction.None) : RecoveryAction.None,
+                RecoveryAction = (serviceDto.EnableHealthMonitoring ?? false)
+                    ? (RecoveryAction)(serviceDto.RecoveryAction ?? (int)AppConfig.DefaultRecoveryAction)
+                    : RecoveryAction.None,
                 MaxRestartAttempts = serviceDto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
                 EnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.EnvironmentVariables ?? string.Empty),
 
