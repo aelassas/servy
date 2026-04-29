@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Servy.Core.EnvironmentVariables
 {
@@ -8,12 +9,11 @@ namespace Servy.Core.EnvironmentVariables
     public static class EnvironmentVariableParser
     {
         /// <summary>
-        /// Parses a normalized environment variables string into a list of <see cref="EnvironmentVariable"/> objects.
-        /// Supports escaping of '=' and ';' characters with a backslash, and supports both semicolon and newline delimiters.
+        /// Parses a normalized environment variables string into a list of environment variable objects. Supports escaping of equals signs and semicolons with a backslash, and supports both semicolon and newline delimiters.
         /// </summary>
-        /// <param name="input">Normalized environment variables string (semicolon or newline-separated, with escapes).</param>
-        /// <returns>List of parsed environment variables as <see cref="EnvironmentVariable"/> instances.</returns>
-        /// <exception cref="FormatException">Thrown if any variable is missing an unescaped '=' or has an empty key.</exception>
+        /// <param name="input">The normalized environment variables string containing semicolon or newline separators with optional escapes.</param>
+        /// <returns>A list of parsed environment variables as instantiated objects.</returns>
+        /// <exception cref="FormatException">Thrown if any variable is missing an unescaped equals sign or has an empty key.</exception>
         public static List<EnvironmentVariable> Parse(string? input)
         {
             if (string.IsNullOrEmpty(input))
@@ -23,7 +23,7 @@ namespace Servy.Core.EnvironmentVariables
 
             // Sync delimiters with the Validator to support multi-line input
             char[] delimiters = new char[] { ';', '\r', '\n' };
-            var parts = SplitByUnescapedDelimiters(input, delimiters);
+            var parts = EscapedTokenizer.SplitByUnescapedDelimiters(input, delimiters);
 
             foreach (var part in parts)
             {
@@ -31,7 +31,7 @@ namespace Servy.Core.EnvironmentVariables
                     continue;
 
                 // Find first unescaped '='
-                var eqIdx = IndexOfUnescapedChar(part, '=');
+                var eqIdx = EscapedTokenizer.IndexOfUnescapedChar(part, '=');
 
                 if (eqIdx < 0)
                     throw new FormatException($"Invalid environment variable (no unescaped '='): {part}");
@@ -41,8 +41,8 @@ namespace Servy.Core.EnvironmentVariables
                 var rawValue = part.Substring(eqIdx + 1);
 
                 // Unescape both key and value
-                var key = Unescape(rawKey).Trim();
-                var unescaped = Unescape(rawValue).Trim();
+                var key = EscapedTokenizer.Unescape(rawKey).Trim();
+                var unescaped = EscapedTokenizer.Unescape(rawValue).Trim();
 
                 // Remove surrounding quotes only if both start and end with a quote
                 if (unescaped.Length >= 2 && unescaped[0] == '"' && unescaped[unescaped.Length - 1] == '"')
@@ -59,125 +59,6 @@ namespace Servy.Core.EnvironmentVariables
             }
 
             return result;
-        }
-
-        /// <summary>
-        /// Splits a string by any of the provided delimiter characters, but only when the delimiter 
-        /// is not escaped by a backslash. The backslash is preserved so later Unescape can handle sequences correctly.
-        /// </summary>
-        /// <param name="input">Input string to split.</param>
-        /// <param name="delimiters">Array of delimiter characters to split on.</param>
-        /// <returns>Array of split segments.</returns>
-        private static string[] SplitByUnescapedDelimiters(string input, char[] delimiters)
-        {
-            var segments = new List<string>();
-            var sb = new StringBuilder();
-
-            for (int i = 0; i < input.Length; i++)
-            {
-                char c = input[i];
-                if (delimiters.Contains(c))
-                {
-                    // Count backslashes before this delimiter
-                    int backslashCount = 0;
-                    int j = i - 1;
-                    while (j >= 0 && input[j] == '\\')
-                    {
-                        backslashCount++;
-                        j--;
-                    }
-
-                    if (backslashCount % 2 == 0)
-                    {
-                        // unescaped delimiter -> split here
-                        segments.Add(sb.ToString());
-                        sb.Clear();
-                        continue;
-                    }
-                }
-
-                sb.Append(c);
-            }
-
-            segments.Add(sb.ToString());
-            return segments.ToArray();
-        }
-
-        /// <summary>
-        /// Finds the index of the first unescaped occurrence of a character in a string.
-        /// </summary>
-        /// <param name="str">Input string to search.</param>
-        /// <param name="ch">Character to find.</param>
-        /// <returns>The zero-based index of the first unescaped character, or -1 if not found.</returns>
-        private static int IndexOfUnescapedChar(string str, char ch)
-        {
-            for (int i = 0; i < str.Length; i++)
-            {
-                if (str[i] == ch)
-                {
-                    // Count how many backslashes are immediately before this char
-                    int backslashCount = 0;
-                    int j = i - 1;
-                    while (j >= 0 && str[j] == '\\')
-                    {
-                        backslashCount++;
-                        j--;
-                    }
-
-                    // If even number of backslashes before char -> char is unescaped
-                    // If odd number of backslashes before char -> char is escaped
-                    if (backslashCount % 2 == 0)
-                    {
-                        return i; // unescaped char found
-                    }
-                    // else char is escaped, skip it
-                }
-            }
-            return -1;
-        }
-
-        /// <summary>
-        /// Unescapes backslash-escaped characters: \=, \;, \" and \\ become =, ;, " and \ respectively.
-        /// </summary>
-        /// <param name="input">Input string to unescape.</param>
-        /// <returns>Unescaped string.</returns>
-        private static string Unescape(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-                return string.Empty;
-
-            var sb = new StringBuilder();
-            var escape = false;
-
-            foreach (var c in input)
-            {
-                if (escape)
-                {
-                    // Unescape =, ;, \, and " 
-                    if (c == '=' || c == ';' || c == '\\' || c == '"')
-                        sb.Append(c);
-                    else
-                    {
-                        sb.Append('\\'); // Keep the backslash literal
-                        sb.Append(c);
-                    }
-                    escape = false;
-                }
-                else if (c == '\\')
-                {
-                    escape = true;
-                }
-                else
-                {
-                    sb.Append(c);
-                }
-            }
-
-            // If string ends with a backslash, keep it literally
-            if (escape)
-                sb.Append('\\');
-
-            return sb.ToString();
         }
     }
 }
