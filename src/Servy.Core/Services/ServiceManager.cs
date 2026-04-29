@@ -107,11 +107,11 @@ namespace Servy.Core.Services
             IServiceRepository? serviceRepository
             )
         {
-            _controllerFactory = controllerFactory;
-            _serviceControllerProvider = serviceControllerProvider;
-            _windowsServiceApi = windowsServiceApi;
-            _win32ErrorProvider = win32ErrorProvider;
-            _serviceRepository = serviceRepository;
+            _controllerFactory = controllerFactory ?? throw new ArgumentNullException(nameof(controllerFactory));
+            _serviceControllerProvider = serviceControllerProvider ?? throw new ArgumentNullException(nameof(serviceControllerProvider));
+            _windowsServiceApi = windowsServiceApi ?? throw new ArgumentNullException(nameof(windowsServiceApi));
+            _win32ErrorProvider = win32ErrorProvider ?? throw new ArgumentNullException(nameof(win32ErrorProvider));
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
         }
 
         #endregion
