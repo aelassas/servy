@@ -309,7 +309,7 @@ namespace Servy.Core.Services
                     string? lpPassword = string.IsNullOrEmpty(options.Password) ? null : options.Password;
 
                     bool isLocalSystem = lpServiceStartName.Equals(LocalSystemAccount, StringComparison.OrdinalIgnoreCase);
-                    bool isGmsa = lpServiceStartName.EndsWith('$');
+                    var isGmsa = string.IsNullOrEmpty(lpPassword) && lpServiceStartName.EndsWith('$');
 
                     if (!isLocalSystem && !isGmsa)
                     {
