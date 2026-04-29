@@ -284,7 +284,7 @@ namespace Servy.Manager.ViewModels
                 IsBusy = true;
                 SearchButtonText = Strings.Button_Searching;
 
-                if (Application.Current?.Dispatcher != null && !Helper.IsRunningInUnitTest())
+                if (Application.Current?.Dispatcher != null && !Helper.IsRunningUnderXunit())
                 {
                     await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
                 }
