@@ -130,7 +130,7 @@ namespace Servy.Core.Mappers
                 MaxFailedChecks = dto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks,
 
                 // Validate Enum ranges
-                RecoveryAction = ConfigParser.ParseEnum(dto.RecoveryAction, RecoveryAction.RestartService),
+                RecoveryAction = ConfigParser.ParseEnum(dto.RecoveryAction, AppConfig.DefaultRecoveryAction),
 
                 MaxRestartAttempts = dto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
                 FailureProgramPath = dto.FailureProgramPath,
