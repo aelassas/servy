@@ -69,16 +69,14 @@ namespace Servy.UI.Bootstrapping
 
         private readonly BootstrapperOptions _options;
         private readonly IProcessKiller _processKiller;
+        private IConfiguration? _configuration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppBootstrapper"/> class.
         /// </summary>
         /// <param name="options">Configuration options for the bootstrap process.</param>
         /// <param name="processKiller">Service responsible for terminating child processes.</param>
-        public AppBootstrapper(
-            BootstrapperOptions options,
-            IProcessKiller processKiller
-            )
+        public AppBootstrapper(BootstrapperOptions options, IProcessKiller processKiller)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
@@ -97,10 +95,14 @@ namespace Servy.UI.Bootstrapping
                 throw new InvalidOperationException("Bootstrapper options must be provided.");
             }
 
-            // 1. Initialize Logger
-            Logger.Initialize(_options.LogFileName);
+            // 1. Initialize Configuration and Logger settings immediately
+            LoadConfiguration();
 
-            // 2. Global AppDomain exceptions (Fatal)
+            // 2. Initialize Logger with the correct settings before any logging occurs
+            Logger.Initialize(_options.LogFileName);
+            ApplyLoggerSettings();
+
+            // 3. Global AppDomain exceptions (Fatal)
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {
                 Exception? ex = args.ExceptionObject as Exception;
@@ -112,7 +114,7 @@ namespace Servy.UI.Bootstrapping
                     MessageBoxImage.Error);
             };
 
-            // 3. UI Thread exceptions (Dispatcher)
+            // 4. UI Thread exceptions (Dispatcher)
             app.DispatcherUnhandledException += (sender, args) =>
             {
                 Logger.Error("UI Dispatcher Exception", args.Exception);
@@ -135,7 +137,7 @@ namespace Servy.UI.Bootstrapping
                 }
             };
 
-            // 4. Security Check: Admin Rights
+            // 5. Security Check: Admin Rights
             if (!SecurityHelper.IsAdministrator())
             {
                 MessageBox.Show(_options.SecurityWarningMessage, _options.SecurityWarningTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -143,7 +145,7 @@ namespace Servy.UI.Bootstrapping
                 return;
             }
 
-            // 5. Security Check: SQLite Environment
+            // 6. Security Check: SQLite Environment
             if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
             {
                 string message = string.Format(_options.SqliteVersionWarningMessageFormat!, detectedVersion, AppConfig.MinRequiredSqliteVersion);
@@ -152,7 +154,7 @@ namespace Servy.UI.Bootstrapping
                 return;
             }
 
-            // 6. Rendering Detection
+            // 7. Rendering Detection
             var renderingTier = RenderCapability.Tier >> 16;
             var isRemote = SystemParameters.IsRemoteSession;
             ForceSoftwareRendering = e.Args.Any(arg => arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase));
@@ -167,8 +169,53 @@ namespace Servy.UI.Bootstrapping
         }
 
         /// <summary>
+        /// Loads the application configuration from the JSON file synchronously to ensure settings are available for immediate use.
+        /// </summary>
+        private void LoadConfiguration()
+        {
+            var builder = new ConfigurationBuilder();
+#if DEBUG
+            builder.AddJsonFile(_options.AppSettingsFileName!, optional: true, reloadOnChange: true);
+#else
+            builder.SetBasePath(AppFoldersHelper.GetAppDirectory())
+                   .AddJsonFile(_options.AppSettingsFileName!, optional: true, reloadOnChange: true);
+#endif
+            _configuration = builder.Build();
+
+            ConnectionString = _configuration["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
+            AESKeyFilePath = _configuration["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
+            AESIVFilePath = _configuration["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+        }
+
+        /// <summary>
+        /// Applies the loaded logger settings to the static <see cref="Logger"/> instance.
+        /// </summary>
+        private void ApplyLoggerSettings()
+        {
+            if (_configuration == null) return;
+
+            if (!Enum.TryParse<LogLevel>(_configuration["LogLevel"], true, out var logLevel)) logLevel = LogLevel.Info;
+            Logger.SetLogLevel(logLevel);
+
+            if (!Enum.TryParse<DateRotationType>(_configuration["LogRollingInterval"], true, out var dateRotationType)) dateRotationType = DateRotationType.None;
+            Logger.SetDateRotationType(dateRotationType);
+
+            if (int.TryParse(_configuration["LogRotationSizeMB"], out var size) && size > 0) Logger.SetLogRotationSize(size);
+            else Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
+
+            if (int.TryParse(_configuration["MaxBackupLogFiles"], out var maxBackupFiles) && maxBackupFiles >= 0) Logger.SetMaxBackupLogFiles(maxBackupFiles);
+            else Logger.SetMaxBackupLogFiles(Logger.DefaultMaxBackupLogFiles);
+
+            string rawUseLocalTime = _configuration["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
+            if (!bool.TryParse(rawUseLocalTime, out bool useLocalTime)) useLocalTime = AppConfig.DefaultUseLocalTimeForRotation;
+            Logger.SetUseLocalTimeForRotation(useLocalTime);
+
+            _options.CustomConfigAction?.Invoke(_configuration);
+        }
+
+        /// <summary>
         /// Asynchronously handles heavy initialization tasks such as database migrations, 
-        /// configuration loading, resource extraction, and window orchestration.
+        /// resource extraction, and window orchestration.
         /// </summary>
         /// <param name="app">The active WPF application instance.</param>
         /// <param name="e">The startup event arguments.</param>
@@ -202,41 +249,15 @@ namespace Servy.UI.Bootstrapping
 
                 Helper.EnsureEventSourceExists();
 
-                // 2. Configuration Loading
-                var builder = new ConfigurationBuilder();
-#if DEBUG
-                builder.AddJsonFile(_options.AppSettingsFileName!, optional: true, reloadOnChange: true);
-#else
-                builder.SetBasePath(AppFoldersHelper.GetAppDirectory())
-                       .AddJsonFile(_options.AppSettingsFileName!, optional: true, reloadOnChange: true);
-#endif
-                var config = builder.Build();
-
-                ConnectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
-                AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
-                AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
-
-                if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel)) logLevel = LogLevel.Info;
-                Logger.SetLogLevel(logLevel);
-
-                if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType)) dateRotationType = DateRotationType.None;
-                Logger.SetDateRotationType(dateRotationType);
-
-                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0) Logger.SetLogRotationSize(size);
-                else Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
-
-                if (int.TryParse(config["MaxBackupLogFiles"], out var maxBackupFiles) && maxBackupFiles >= 0) Logger.SetMaxBackupLogFiles(maxBackupFiles);
-                else Logger.SetMaxBackupLogFiles(Logger.DefaultMaxBackupLogFiles);
-
-                string rawUseLocalTime = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
-                if (!bool.TryParse(rawUseLocalTime, out bool useLocalTime)) useLocalTime = AppConfig.DefaultUseLocalTimeForRotation;
-                Logger.SetUseLocalTimeForRotation(useLocalTime);
-
-                _options.CustomConfigAction?.Invoke(config);
-
-                // 3. Background Initialization (I/O & DB)
+                // 2. Background Initialization (I/O & DB)
+                // Note: Configuration and Logger settings are already loaded synchronously in OnStartup.
                 await Task.Run(async () =>
                 {
+                    if (string.IsNullOrEmpty(ConnectionString) || string.IsNullOrEmpty(AESKeyFilePath) || string.IsNullOrEmpty(AESIVFilePath))
+                    {
+                        throw new InvalidOperationException("Critical configuration values are missing. Ensure that the appsettings.json file is present and correctly configured.");
+                    }
+
                     var stopwatch = Stopwatch.StartNew();
 
                     AppFoldersHelper.EnsureFolders(ConnectionString, AESKeyFilePath, AESIVFilePath);
@@ -271,7 +292,7 @@ namespace Servy.UI.Bootstrapping
                     }
                 });
 
-                // 4. Main Window Factory
+                // 3. Main Window Factory
                 if (_options.MainWindowFactoryAsync != null)
                 {
                     var mainWindow = await _options.MainWindowFactoryAsync(serviceName);
@@ -300,10 +321,6 @@ namespace Servy.UI.Bootstrapping
         /// Orchestrates the deterministic cleanup of application resources during the exit sequence.
         /// </summary>
         /// <param name="e">The <see cref="ExitEventArgs"/> containing the event data.</param>
-        /// <remarks>
-        /// This method ensures that critical resources like the database context and secure data 
-        /// providers are released properly, even if individual disposal attempts encounter issues.
-        /// </remarks>
         public void OnExit(ExitEventArgs e)
         {
             TryDispose(() => DbContext?.Dispose(), nameof(DbContext));
@@ -323,8 +340,6 @@ namespace Servy.UI.Bootstrapping
             }
             catch (Exception ex)
             {
-                // We use Warn here because failure to dispose at exit is rarely 
-                // fatal but should be noted for debugging resource leaks.
                 Logger.Warn($"{name} disposal failed", ex);
             }
         }

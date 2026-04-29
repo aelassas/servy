@@ -75,6 +75,6 @@ namespace Servy.UI.Bootstrapping
         /// This is called during the initialization sequence after the shared configuration 
         /// (connection strings, log levels) has been processed.
         /// </remarks>
-        public Action<IConfigurationRoot>? CustomConfigAction { get; set; }
+        public Action<IConfiguration>? CustomConfigAction { get; set; }
     }
 }
