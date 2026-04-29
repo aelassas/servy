@@ -75,6 +75,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.CLI.UnitTests", "test
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup", "setup", "{11479D8F-D8B6-4AD7-BC82-A423FCC30779}"
 	ProjectSection(SolutionItems) = preProject
+		setup\publish-common.ps1 = setup\publish-common.ps1
 		setup\publish-fd.ps1 = setup\publish-fd.ps1
 		setup\publish-res.ps1 = setup\publish-res.ps1
 		setup\publish-sc.ps1 = setup\publish-sc.ps1

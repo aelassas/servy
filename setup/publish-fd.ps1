@@ -23,7 +23,6 @@
       - Inno Setup (ISCC.exe)
       - 7-Zip (7z.exe)
 #>
-
 [CmdletBinding()]
 param(
     [string]$Tfm = "net10.0-windows",
@@ -31,9 +30,7 @@ param(
     [string]$Version = "1.0",
     [switch]$Pause
 )
-
 $ErrorActionPreference = "Stop"
-
 $BuildConfiguration = "Release"
 $Runtime = "win-x64"
 
@@ -43,7 +40,6 @@ $Runtime = "win-x64"
 # Directories
 $scriptDir = $PSScriptRoot
 $rootDir   = (Resolve-Path (Join-Path $scriptDir "..")).Path
-
 $servyDir   = Join-Path $rootDir "src\Servy"
 $cliDir     = Join-Path $rootDir "src\Servy.CLI"
 $managerDir = Join-Path $rootDir "src\Servy.Manager"
@@ -55,11 +51,13 @@ $outputZip     = "$packageFolder.7z"
 $installerPath = Join-Path $rootDir "setup\servy-$Version-x64-installer-fd.exe"
 
 # ---------------------------------------------------------
-# Tool Discovery
+# Tool Discovery & Initialization
 # ---------------------------------------------------------
 try {
     # Import the resolution helper
     . (Join-Path $scriptDir "tools-config.ps1")
+    # Import the newly extracted common functions
+    . (Join-Path $scriptDir "publish-common.ps1")
 
     Write-Host "Resolving build tools..." -ForegroundColor Cyan
 
@@ -77,25 +75,6 @@ try {
 catch {
     Write-Error "Configuration Failed: $($_.Exception.Message)"
     exit 1
-}
-
-# ========================
-# Functions
-# ========================
-function Check-LastExitCode {
-    param([string]$ErrorMessage)
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
-        exit $LASTEXITCODE
-    }
-}
-
-function Remove-ItemSafely {
-    param ([string]$Path)
-    if (Test-Path $Path) {
-        Write-Host "Cleaning: $Path" -ForegroundColor Gray
-        Remove-Item -Recurse -Force $Path
-    }
 }
 
 # ========================
@@ -132,43 +111,8 @@ foreach ($project in $projects) {
 # ========================
 # Step 2: Build Installer
 # ========================
-Write-Host "--- Building Installer ---" -ForegroundColor Cyan
 Remove-ItemSafely -Path $installerPath
-
-$maxRetry = 3
-$currentAttempt = 0
-$success = $false
-
-while (-not $success -and $currentAttempt -lt $maxRetry) {
-    try {
-        $currentAttempt++
-        if ($currentAttempt -gt 1) { 
-            Write-Host "Inno Setup retry attempt $currentAttempt..." -ForegroundColor Yellow 
-        }
-
-        & $innoCompiler $issFile /DMyAppVersion=$Version
-
-        # MUST check exit code manually to trigger the 'catch' block
-        if ($LASTEXITCODE -eq 0) { 
-            $success = $true 
-            Write-Host "Installer built successfully." -ForegroundColor Green
-        } else {
-            throw "ISCC.exe failed with exit code $LASTEXITCODE"
-        }
-    }
-    catch {
-        if ($currentAttempt -lt $maxRetry) {
-            # Now this will actually execute and wait for the AV lock to release
-            Write-Warning "Inno Setup failed (likely AV lock). Waiting 2s before retry..."
-            Start-Sleep -Seconds 2
-        } else {
-            # This bubbles up to your global catch block at the bottom of publish.ps1
-            throw "Inno Setup failed after $maxRetry attempts. $_"
-        }
-    }
-}
-# Execution only reaches here if $success is $true.
-# No need for Check-LastExitCode here anymore.
+Build-Installer -InnoCompiler $innoCompiler -IssFile $issFile -Version $Version
 
 # Optional: Add signing check here if we use it for FD builds as well
 # if (Test-Path $installerPath) { ... }
@@ -209,35 +153,12 @@ try {
         Rename-Item -Path $cliExe -NewName "servy-cli.exe" -Force
     }
 
-    $taskSchdSource = Join-Path $scriptDir "taskschd"
-    if (Test-Path $taskSchdSource) {
-        $taskSchdDest = Join-Path $packageFolder "taskschd"
-        [void](New-Item -Path $taskSchdDest -ItemType Directory -Force)
-        Copy-Item -Path (Join-Path $taskSchdSource "*") -Destination $taskSchdDest -Recurse -Force -Exclude "smtp-cred.xml", "*.dat", "*.log"
-    }
-
-    $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1")
-    foreach ($art in $cliArtifacts) {
-        $sourcePath = Join-Path $cliDir $art
-        if (Test-Path $sourcePath) {
-            Copy-Item -Path $sourcePath -Destination $packageFolder -Force
-        } else {
-            throw "Required CLI artifact missing: $sourcePath"
-        }
-    }
-
+    Copy-CommonArtifacts -ScriptDir $scriptDir -CliDir $cliDir -DestFolder $packageFolder
+    
     # ========================
     # Step 4: Create ZIP
     # ========================
-    # Compress contents of the folder, not the folder itself
-    $zipArgs = @("a", "-t7z", "-m0=lzma2", "-mx=9", "-ms=on", $outputZip, $packageFolder)
-    $process = Start-Process -FilePath $sevenZipExe -ArgumentList $zipArgs -Wait -NoNewWindow -PassThru
-
-    if ($process.ExitCode -ne 0) {
-        throw "7-Zip failed with exit code $($process.ExitCode)"
-    }
-
-    Write-Host "Success: $outputZip" -ForegroundColor Green
+    New-PortablePackage -SevenZipExe $sevenZipExe -OutputZip $outputZip -PackageFolder $packageFolder
 }
 catch {
     Write-Error "Build failed at Step 3/4: $_"
