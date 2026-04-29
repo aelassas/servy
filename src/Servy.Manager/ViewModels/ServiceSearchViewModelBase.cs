@@ -133,7 +133,7 @@ namespace Servy.Manager.ViewModels
                 IsBusy = true;
                 SearchButtonText = Strings.Button_Searching;
 
-                if (!Helper.IsRunningInUnitTest())
+                if (!Helper.IsRunningUnderXunit())
                 {
                     await Dispatcher.CurrentDispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
                 }
