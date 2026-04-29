@@ -1000,12 +1000,8 @@ namespace Servy.Service
         /// </remarks>
         private void HandleLogWriters(StartOptions options)
         {
-            /// <summary>
-            /// Helper method to create a rotating writer if the path is valid.
-            /// Logs an error if the path is invalid or null/whitespace.
-            /// </summary>
-            /// <param name="path">The file path for the log writer.</param>
-            /// <returns>A <see cref="IStreamWriter"/> instance or null if the path is invalid.</returns>
+            // Helper method to create a rotating writer if the path is valid.
+            // Logs an error if the path is invalid or null/whitespace.
             IStreamWriter CreateWriter(string path)
             {
                 if (string.IsNullOrWhiteSpace(path))
