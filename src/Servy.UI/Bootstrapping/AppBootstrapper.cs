@@ -194,7 +194,7 @@ namespace Servy.UI.Bootstrapping
             Logger.SetDateRotationType(dateRotationType);
 
             if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0) Logger.SetLogRotationSize(size);
-            else Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
+            else Logger.SetLogRotationSize(AppConfig.DefaultRotationSizeMB);
 
             if (int.TryParse(config["MaxBackupLogFiles"], out var maxBackupFiles) && maxBackupFiles >= 0) Logger.SetMaxBackupLogFiles(maxBackupFiles);
             else Logger.SetMaxBackupLogFiles(Logger.DefaultMaxBackupLogFiles);

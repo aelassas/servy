@@ -163,7 +163,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.NotNull(result);
             // Verify that while properties were missing in XML, the result is fully hydrated with defaults
             Assert.Equal(AppConfig.DefaultStopTimeout, result.StopTimeout);
-            Assert.Equal(AppConfig.DefaultRotationSize, result.RotationSize);
+            Assert.Equal(AppConfig.DefaultRotationSizeMB, result.RotationSize);
             Assert.Equal((int)AppConfig.DefaultStartupType, result.StartupType);
         }
     }

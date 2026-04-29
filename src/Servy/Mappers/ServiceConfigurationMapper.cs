@@ -32,7 +32,7 @@ namespace Servy.Mappers
                 StderrPath = config.StderrPath,
                 EnableSizeRotation = config.EnableSizeRotation,
                 EnableDateRotation = config.EnableDateRotation,
-                RotationSize = ConfigParser.ParseInt(config.RotationSize, Core.Config.AppConfig.DefaultRotationSize),
+                RotationSize = ConfigParser.ParseInt(config.RotationSize, Core.Config.AppConfig.DefaultRotationSizeMB),
                 UseLocalTimeForRotation = config.UseLocalTimeForRotation,
                 EnableHealthMonitoring = config.EnableHealthMonitoring,
                 HeartbeatInterval = ConfigParser.ParseInt(config.HeartbeatInterval, Core.Config.AppConfig.DefaultHeartbeatInterval),

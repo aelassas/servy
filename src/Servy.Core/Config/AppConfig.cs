@@ -318,7 +318,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Default log rotation size in Megabytes (MB). Default is 10 MB.
         /// </summary>
-        public const int DefaultRotationSize = 10;
+        public const int DefaultRotationSizeMB = 10;
 
         /// <summary>
         /// Default maximum number of rotated log files to keep by default. 

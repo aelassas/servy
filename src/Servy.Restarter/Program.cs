@@ -5,7 +5,6 @@ using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
-using Servy.Infrastructure.Helpers;
 using System;
 using System.Configuration;
 
@@ -93,10 +92,8 @@ namespace Servy.Restarter
                 Logger.SetDateRotationType(dateRotationType);
 
                 // Set Rotation Size
-                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
-                {
-                    Logger.SetLogRotationSize(size);
-                }
+                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0) Logger.SetLogRotationSize(size);
+                else Logger.SetLogRotationSize(AppConfig.DefaultRotationSizeMB);
 
                 if (int.TryParse(config["MaxBackupLogFiles"], out var maxBackupFiles) && maxBackupFiles >= 0) Logger.SetMaxBackupLogFiles(maxBackupFiles);
                 else Logger.SetMaxBackupLogFiles(Logger.DefaultMaxBackupLogFiles);

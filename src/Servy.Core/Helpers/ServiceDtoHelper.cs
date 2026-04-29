@@ -35,7 +35,7 @@ namespace Servy.Core.Helpers
 
             // Log Rotation
             dto.EnableSizeRotation = dto.EnableSizeRotation ?? AppConfig.DefaultEnableRotation;
-            dto.RotationSize = dto.RotationSize ?? AppConfig.DefaultRotationSize;
+            dto.RotationSize = dto.RotationSize ?? AppConfig.DefaultRotationSizeMB;
             dto.EnableDateRotation = dto.EnableDateRotation ?? AppConfig.DefaultEnableDateRotation;
             dto.DateRotationType = dto.DateRotationType ?? (int)AppConfig.DefaultDateRotationType;
             dto.MaxRotations = dto.MaxRotations ?? AppConfig.DefaultMaxRotations;

@@ -57,7 +57,7 @@ namespace Servy.Service.CommandLine
                 // Logging
                 StdOutPath = serviceDto.StdoutPath,
                 StdErrPath = serviceDto.StderrPath,
-                RotationSizeInBytes = (serviceDto.RotationSize ?? AppConfig.DefaultRotationSize) * 1024L * 1024L, // Convert from MB to Bytes
+                RotationSizeInBytes = (serviceDto.RotationSize ?? AppConfig.DefaultRotationSizeMB) * 1024L * 1024L, // Convert from MB to Bytes
                 UseLocalTimeForRotation = serviceDto.UseLocalTimeForRotation ?? AppConfig.DefaultUseLocalTimeForRotation,
 
                 // Health Monitoring

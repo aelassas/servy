@@ -855,7 +855,7 @@ namespace Servy.ViewModels
             StartTimeout = DefaultStartTimeout.ToString();
             StopTimeout = DefaultStopTimeout.ToString();
             EnableSizeRotation = false;
-            RotationSize = DefaultRotationSize.ToString();
+            RotationSize = DefaultRotationSizeMB.ToString();
             EnableDateRotation = false;
             SelectedDateRotationType = DateRotationType.Daily;
             MaxRotations = DefaultMaxRotations.ToString();
@@ -1236,7 +1236,7 @@ namespace Servy.ViewModels
             SelectedProcessPriority = ProcessPriority.Normal;
             EnableConsoleUI = false;
             EnableSizeRotation = false;
-            RotationSize = DefaultRotationSize.ToString();
+            RotationSize = DefaultRotationSizeMB.ToString();
             MaxRotations = DefaultMaxRotations.ToString();
             EnableDateRotation = false;
             SelectedDateRotationType = DateRotationType.Daily;
@@ -1399,7 +1399,7 @@ namespace Servy.ViewModels
             StdoutPath = dto.StdoutPath;
             StderrPath = dto.StderrPath;
             EnableSizeRotation = dto.EnableSizeRotation ?? false;
-            RotationSize = dto.RotationSize == null ? DefaultRotationSize.ToString() : dto.RotationSize.ToString();
+            RotationSize = dto.RotationSize == null ? DefaultRotationSizeMB.ToString() : dto.RotationSize.ToString();
             EnableDateRotation = dto.EnableDateRotation ?? false;
             SelectedDateRotationType = dto.DateRotationType == null ? DateRotationType.Daily : (DateRotationType)dto.DateRotationType;
             MaxRotations = dto.MaxRotations == null ? DefaultMaxRotations.ToString() : dto.MaxRotations.ToString();
@@ -1478,7 +1478,7 @@ namespace Servy.ViewModels
                 StdoutPath = StdoutPath,
                 StderrPath = StderrPath,
                 EnableSizeRotation = EnableSizeRotation,
-                RotationSize = int.TryParse(RotationSize, out var rs) ? rs : DefaultRotationSize,
+                RotationSize = int.TryParse(RotationSize, out var rs) ? rs : DefaultRotationSizeMB,
                 EnableDateRotation = EnableDateRotation,
                 DateRotationType = (int)SelectedDateRotationType,
                 MaxRotations = int.TryParse(MaxRotations, out var mrs) ? mrs : DefaultMaxRotations,
