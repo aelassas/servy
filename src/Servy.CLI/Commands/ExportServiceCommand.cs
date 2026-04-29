@@ -163,11 +163,15 @@ namespace Servy.CLI.Commands
 
             // 5. Reserved Device Name Block (DOS/Data Loss Guard)
             // Prevents writing to CON, NUL, COM0, COM1, etc., which can hang the process or discard data.
-            string fileName = Path.GetFileNameWithoutExtension(finalResolvedPath);
+            // SECURITY: We check only the first segment of the filename. Windows treats any file
+            // starting with a reserved name followed by an extension (e.g., NUL.config.json) as the device itself.
+            string fileName = Path.GetFileName(finalResolvedPath);
+            int firstDotIndex = fileName.IndexOf('.');
+            string firstSegment = firstDotIndex >= 0 ? fileName.Substring(0, firstDotIndex) : fileName;
 
-            if (ReservedDeviceNames.Contains(fileName))
+            if (ReservedDeviceNames.Contains(firstSegment))
             {
-                throw new ArgumentException($"Security Alert: '{fileName}' is a reserved Windows device name and cannot be used.");
+                throw new ArgumentException($"Security Alert: '{firstSegment}' is a reserved Windows device name and cannot be used.");
             }
 
             // 6. System Protection: Block writing to critical Windows directories
@@ -201,5 +205,6 @@ namespace Servy.CLI.Commands
             // 8. Final Atomic Write
             File.WriteAllText(fullPath, content);
         }
+
     }
 }
