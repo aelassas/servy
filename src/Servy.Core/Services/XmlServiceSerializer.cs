@@ -1,6 +1,8 @@
 ﻿using Servy.Core.DTOs;
 using Servy.Core.Helpers;
+using Servy.Core.IO;
 using Servy.Core.Logging;
+using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -53,5 +55,38 @@ namespace Servy.Core.Services
                 return null;
             }
         }
+
+        /// <inheritdoc/>
+        public string? Serialize(ServiceDto? dto)
+        {
+            if (dto == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var serializer = new XmlSerializer(typeof(ServiceDto));
+                var settings = new XmlWriterSettings
+                {
+                    Indent = true,
+                    Encoding = Encoding.UTF8
+                };
+
+                // Use the custom Utf8StringWriter to ensure the XML preamble declares 'utf-8' correctly.
+                using (var stringWriter = new Utf8StringWriter())
+                using (var xmlWriter = XmlWriter.Create(stringWriter, settings))
+                {
+                    serializer.Serialize(xmlWriter, dto);
+                    return stringWriter.ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"XML Serialization failed for service: {dto.Name}", ex);
+                return null;
+            }
+        }
+
     }
 }

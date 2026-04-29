@@ -290,13 +290,7 @@ namespace Servy.Infrastructure.Data
             var service = await GetByNameAsync(name, decrypt: true, cancellationToken: cancellationToken);
             if (service == null) return string.Empty;
 
-            // Use Utf8StringWriter so the XML preamble declares 'utf-8' 
-            // instead of 'utf-16', matching the bytes written to disk.
-            using (var stringWriter = new Utf8StringWriter())
-            {
-                ServiceDtoSerializer.Serialize(stringWriter, service);
-                return stringWriter.ToString();
-            }
+            return _xmlServiceSerializer.Serialize(service) ?? string.Empty;
         }
 
         /// <inheritdoc />
