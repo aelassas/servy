@@ -126,11 +126,9 @@ if ($BuildConfiguration -eq "Release") {
     $exePath = Join-Path $publishFolder "Servy.CLI.exe"
 
     if (Test-Path $exePath) {
-        if ($null -ne $signPath) {
-            Write-Host "=== Signing Servy.CLI.exe ===" -ForegroundColor Cyan
-            & $signPath $exePath
-            Check-LastExitCode "Code signing failed"
-        }
+        Write-Host "=== Signing Servy.CLI.exe ===" -ForegroundColor Cyan
+        & $signPath $exePath
+        Check-LastExitCode "Code signing failed"
     }
     else {
         # Critical failure: If the file isn't there, the build is invalid.

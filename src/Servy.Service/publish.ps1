@@ -101,11 +101,9 @@ if ($BuildConfiguration -eq "Release" -and (Test-Path $signPath)) {
     $exePath = Join-Path $scriptDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish\$appName.exe"
     
     if (Test-Path $exePath) {
-        if ($null -ne $signPath) {
-            Write-Host "=== Signing Servy.Service.exe ===" -ForegroundColor Cyan
-            & $signPath $exePath
-            Check-LastExitCode "Code signing failed"
-        }
+        Write-Host "=== Signing Servy.Service.exe ===" -ForegroundColor Cyan
+        & $signPath $exePath
+        Check-LastExitCode "Code signing failed"
     }
     else {
         # Critical failure: If the file isn't there, the build is invalid.
