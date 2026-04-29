@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
+using Servy.CLI.Resources;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Services;
@@ -62,7 +63,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.Equal(0, result.ExitCode);
-            Assert.Contains("XML configuration imported successfully", result.Message);
+            Assert.Equal(string.Format(Strings.Msg_ImportSuccessNoInstall, "XML"), result.Message);
 
             _serviceRepoMock.Verify(r => r.ImportXmlAsync(xmlContent, It.IsAny<CancellationToken>()), Times.Once);
 
@@ -86,7 +87,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.Equal(1, result.ExitCode);
-            Assert.Contains("XML file is not valid", result.Message);
+            Assert.Equal(string.Format(Strings.Msg_ImportFormatInvalid, "XML", "error"), result.Message);
 
             File.Delete(path);
         }
@@ -115,7 +116,7 @@ namespace Servy.CLI.UnitTests.Commands
             try
             {
                 Assert.Equal(0, result.ExitCode);
-                Assert.Contains("JSON configuration imported successfully", result.Message);
+                Assert.Equal(string.Format(Strings.Msg_ImportSuccessNoInstall, "JSON"), result.Message);
 
                 _serviceRepoMock.Verify(r => r.ImportJsonAsync(jsonContent, It.IsAny<CancellationToken>()), Times.Once);
             }
@@ -143,7 +144,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.NotEqual(0, result.ExitCode);
-            Assert.Contains("JSON file is not valid: Executable path is required", result.Message);
+            Assert.Equal(string.Format(Strings.Msg_ImportFormatInvalid, "JSON", "Executable path is required"), result.Message);
 
             File.Delete(path);
         }
