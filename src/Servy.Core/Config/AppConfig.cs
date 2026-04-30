@@ -1,4 +1,6 @@
 using Servy.Core.Enums;
+using System.Reflection;
+using System.Runtime.Versioning;
 
 namespace Servy.Core.Config
 {
@@ -52,6 +54,13 @@ namespace Servy.Core.Config
         #region File Paths & Directories
 
         /// <summary>
+        /// Target framework.
+        /// </summary>
+        private static readonly string TargetFramework =
+            typeof(AppConfig).Assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()?.FirstOrDefault(a => a.Key == "BuiltWithFramework")?.Value ?? "net10.0-windows";
+
+        /// <summary>
         /// The default file name of the Sysinternals Handle executable used to detect
         /// processes holding handles to files. Typically <c>handle64.exe</c> on 64-bit systems.
         /// </summary>
@@ -81,12 +90,12 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Desktop App Release Folder.
         /// </summary>
-        public static readonly string ServyDesktopAppReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy\bin\Release\net10.0-windows\win-x64\");
+        public static readonly string ServyDesktopAppReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @$"..\..\..\..\..\Servy\bin\Release\{TargetFramework}\win-x64\");
 
         /// <summary>
         /// Servy Service Debug Folder (Manager).
         /// </summary>
-        public static readonly string ServyServiceManagerDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy.Manager\bin\Debug\net10.0-windows\win-x64\");
+        public static readonly string ServyServiceManagerDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @$"..\..\..\..\..\Servy.Manager\bin\Debug\{TargetFramework}\win-x64\");
 
         /// <summary>
         /// Servy Desktop App Publish Path.
@@ -101,7 +110,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Manager Release Folder.
         /// </summary>
-        public static readonly string ServyManagerReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy.Manager\bin\Release\net10.0-windows\win-x64\");
+        public static readonly string ServyManagerReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @$"..\..\..\..\..\Servy.Manager\bin\Release\{TargetFramework}\win-x64\");
 
         /// <summary>
         /// Servy Manager App Publish Path.
