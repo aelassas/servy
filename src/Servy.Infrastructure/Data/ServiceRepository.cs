@@ -1,11 +1,9 @@
 ﻿using Dapper;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
-using Servy.Core.IO;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
-using System.Xml.Serialization;
 
 namespace Servy.Infrastructure.Data
 {
@@ -15,8 +13,6 @@ namespace Servy.Infrastructure.Data
     /// </summary>
     public class ServiceRepository : IServiceRepository
     {
-        private static readonly XmlSerializer ServiceDtoSerializer = new XmlSerializer(typeof(ServiceDto));
-
         private readonly IDapperExecutor _dapper;
         private readonly ISecureData _secureData;
         private readonly IXmlServiceSerializer _xmlServiceSerializer;
@@ -224,7 +220,7 @@ namespace Servy.Infrastructure.Data
                 WHERE LOWER(Name) = LOWER(@Name)
                 LIMIT 1;";
 
-            return await _dapper.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(sql, new { Name = serviceName }, cancellationToken);
+            return await _dapper.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(sql, new { Name = serviceName.Trim() }, cancellationToken);
         }
 
         /// <inheritdoc />
