@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.Core.Logging;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Security.AccessControl;
@@ -59,13 +60,16 @@ namespace Servy.Core.Security
 
                 dirInfo.SetAccessControl(security);
             }
-            catch (UnauthorizedAccessException) when (!IsAdministrator() && !breakInheritance)
+            catch (UnauthorizedAccessException ex) when (!IsAdministrator() && !breakInheritance)
             {
                 // GRACEFUL FALLBACK: 
                 // If we are a non-admin service account managing a child folder, the Root Vault 
                 // (parent folder) was already secured by the Administrator during installation.
                 // Because breakInheritance is false, the OS is already enforcing security via 
                 // inheritance, making it safe to proceed without crashing the service.
+                Logger.Warn(
+                    $"Could not write hardened ACL on '{path}' as non-admin. " +
+                    $"Falling back to inherited permissions from parent. Verify parent vault is secured. ({ex.Message})");
             }
         }
 
