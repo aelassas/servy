@@ -19,6 +19,11 @@ namespace Servy.Core.Logging
         /// </summary>
         public const int DefaultMaxBackupLogFiles = 10;
 
+        /// <summary>
+        /// Logs folder path.
+        /// </summary>
+        public static readonly string LogsPath = Path.Combine(AppConfig.ProgramDataPath, "logs");
+
         private static readonly object _lock = new object();
         private static volatile RotatingStreamWriter? _writer;
         private static LogLevel _currentLogLevel = LogLevel.Info;
@@ -88,10 +93,9 @@ namespace Servy.Core.Logging
 
             try
             {
-                var logDir = Path.Combine(AppConfig.ProgramDataPath, "logs");
-                SecurityHelper.CreateSecureDirectory(logDir, breakInheritance: false);
+                SecurityHelper.CreateSecureDirectory(LogsPath, breakInheritance: false);
 
-                string logPath = Path.Combine(logDir, _fileName);
+                string logPath = Path.Combine(LogsPath, _fileName);
 
                 // ATOMIC TEARDOWN:
                 // Capture the reference, nullify the static field, then dispose.
@@ -117,12 +121,11 @@ namespace Servy.Core.Logging
             {
                 try
                 {
-                    var logDir = Path.Combine(AppConfig.ProgramDataPath, "logs");
-                    SecurityHelper.CreateSecureDirectory(logDir, breakInheritance: false);
+                    SecurityHelper.CreateSecureDirectory(LogsPath, breakInheritance: false);
 
                     var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
 
-                    File.AppendAllText(Path.Combine(logDir, "LoggerInitializationErrors.log"),
+                    File.AppendAllText(Path.Combine(LogsPath, "LoggerInitializationErrors.log"),
                         $"[{now:yyyy-MM-dd HH:mm:ss}] Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");
                 }
                 catch
@@ -346,9 +349,8 @@ namespace Servy.Core.Logging
             {
                 try
                 {
-                    var logDir = Path.Combine(AppConfig.ProgramDataPath, "logs");
                     var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
-                    File.AppendAllText(Path.Combine(logDir, "LoggerWriteErrors.log"),
+                    File.AppendAllText(Path.Combine(LogsPath, "LoggerWriteErrors.log"),
                         $"[{now:yyyy-MM-dd HH:mm:ss}] Failed to write log entry: {ex.Message}{Environment.NewLine}");
                 }
                 catch { /* truly fail-silent only as last resort */ }
