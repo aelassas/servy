@@ -30,13 +30,9 @@
 #>
 
 # -------------------------------
-# 1. Determine Script Root (PS 2.0+ Compatible)
+# 1. Determine Script Root
 # -------------------------------
-if ($PSVersionTable.PSVersion.Major -ge 3) {
-  $scriptDir = $PSScriptRoot
-} else {
-  $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-}
+$scriptDir = $PSScriptRoot
 
 $timestampFile = Join-Path $scriptDir "last-processed-toast.dat"
 $fallbackLogFile = "ServyNotification.log"
