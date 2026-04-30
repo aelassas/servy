@@ -35,11 +35,6 @@ namespace Servy.Core.Services
         private const int ScmPollIntervalMs = 500;
         private const int MaxParallelScmQueries = 8;
 
-        /// <summary>
-        /// The standard localized string identifier for the LocalSystem account.
-        /// </summary>
-        public const string LocalSystemAccount = "LocalSystem";
-
         #endregion
 
         #region Private Fields
@@ -268,10 +263,10 @@ namespace Servy.Core.Services
                 try
                 {
                     string lpDependencies = ServiceDependenciesParser.Parse(options.ServiceDependencies);
-                    string lpServiceStartName = string.IsNullOrWhiteSpace(options.Username) ? LocalSystemAccount : options.Username;
+                    string lpServiceStartName = string.IsNullOrWhiteSpace(options.Username) ? ServiceAccounts.LocalSystem : options.Username;
                     string lpPassword = string.IsNullOrEmpty(options.Password) ? null : options.Password;
 
-                    bool isLocalSystem = lpServiceStartName.Equals(LocalSystemAccount, StringComparison.OrdinalIgnoreCase);
+                    bool isLocalSystem = lpServiceStartName.Equals(ServiceAccounts.LocalSystem, StringComparison.OrdinalIgnoreCase);
                     var isGmsa = string.IsNullOrEmpty(lpPassword) && lpServiceStartName.EndsWith("$");
 
                     if (!isLocalSystem && !isGmsa)

@@ -32,6 +32,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\dotnet-reflection.yml = .github\workflows\dotnet-reflection.yml
 		.github\workflows\publish.yml = .github\workflows\publish.yml
 		.github\workflows\sbom.yml = .github\workflows\sbom.yml
+		.github\workflows\sonar.yml = .github\workflows\sonar.yml
 		.github\workflows\test.yml = .github\workflows\test.yml
 	EndProjectSection
 EndProject

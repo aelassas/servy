@@ -1,0 +1,76 @@
+# --------------------------------------------------------------------------
+# SonarCloud Analysis Workflow for Servy (.NET Framework 4.8 build)
+# Description: Performs static code analysis and security scanning.
+# Author: Akram El Assas
+# --------------------------------------------------------------------------
+
+name: sonar
+on:
+  push:
+    branches:
+      - net48
+  # pull_request:
+  #   types: [opened, synchronize, reopened]
+  workflow_dispatch: 
+
+jobs:
+  build:
+    name: Build and analyze
+    runs-on: windows-latest
+    
+    steps:
+      # 1. Checkout code first so your custom local action is available
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+          
+      # 2. Setup Java
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'zulu'
+
+      # 3. CRITICAL: Setup .NET using your custom action to satisfy global.json
+      - name: Setup .NET
+        uses: ./.github/actions/setup-dotnet
+
+      # 4. Cache Packages
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
+        with:
+          path: ~\sonar\cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      # 5. Cache Scanner
+      - name: Cache SonarCloud scanner
+        id: cache-sonar-scanner
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}\scanner
+          key: ${{ runner.os }}-sonar-scanner
+          restore-keys: ${{ runner.os }}-sonar-scanner
+
+      # 6. Install Scanner
+      - name: Install SonarCloud scanner
+        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          if (!(Test-Path ${{ runner.temp }}\scanner)) { New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory }
+          dotnet tool install dotnet-sonarscanner --tool-path ${{ runner.temp }}\scanner
+
+      # 7. Build and Analyze
+      - name: Build and analyze
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        shell: pwsh
+        run: |
+          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"aelassas_servy" /o:"aelassas" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+          
+          # Using Release configuration for more accurate analysis
+          dotnet build --configuration Release
+          
+          ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
