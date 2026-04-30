@@ -95,7 +95,7 @@ namespace Servy.Core.Logging
 
             try
             {
-                SecurityHelper.CreateSecureDirectory(LogsPath, breakInheritance: false);
+                EnsureLogsDir();
 
                 string logPath = Path.Combine(LogsPath, _fileName);
 
@@ -123,7 +123,7 @@ namespace Servy.Core.Logging
             {
                 try
                 {
-                    SecurityHelper.CreateSecureDirectory(LogsPath, breakInheritance: false);
+                    EnsureLogsDir();
 
                     var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
 
@@ -351,6 +351,8 @@ namespace Servy.Core.Logging
             {
                 try
                 {
+                    EnsureLogsDir();
+
                     var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
                     File.AppendAllText(Path.Combine(LogsPath, "LoggerWriteErrors.log"),
                         $"[{now:yyyy-MM-dd HH:mm:ss}] Failed to write log entry: {ex.Message}{Environment.NewLine}");
@@ -383,5 +385,19 @@ namespace Servy.Core.Logging
                 }
             }
         }
+
+        #region Private Helpers
+
+        /// <summary>
+        /// Validates that the logging directory exists and applies the required security descriptors to protect log integrity.
+        /// </summary>
+        private static void EnsureLogsDir()
+        {
+            // LOGIC: Uses SecurityHelper to create the directory with specific permissions
+            SecurityHelper.CreateSecureDirectory(LogsPath, breakInheritance: false);
+        }
+
+        #endregion
+
     }
 }
