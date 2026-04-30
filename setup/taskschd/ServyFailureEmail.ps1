@@ -68,6 +68,23 @@ function Write-FallbackError {
   }
 }
 
+function ConvertTo-HtmlSafe {
+    <#
+    .SYNOPSIS
+        Converts plain text to HTML-safe format by encoding metacharacters.
+    .DESCRIPTION
+        This helper provides a manual replacement chain for metacharacters to ensure 
+        compatibility with .NET 3.5 and PowerShell 2.0 environments.
+    #>
+    param([string]$Text)
+    if ([string]::IsNullOrEmpty($Text)) { return "" }
+    return ($Text -replace '&', '&amp;' `
+                  -replace '<', '&lt;' `
+                  -replace '>', '&gt;' `
+                  -replace '"', '&quot;' `
+                  -replace "'", '&#39;')
+}
+
 # -------------------------------
 # 3. Load Configuration
 # -------------------------------
@@ -264,20 +281,21 @@ foreach ($evt in $eventsToProcess) {
     $logText = $message
   }
 
+  # Fix: Scrub the subject line for sensitive information
   $subject = "Servy - $serviceName Failure"
-  # Manual HTML encode for .NET 3.5 / PS 2.0 compatibility
-  $safeLogText = $logText -replace '&', '&amp;' `
-                          -replace '<', '&lt;' `
-                          -replace '>', '&gt;' `
-                          -replace '"', '&quot;' `
-                          -replace "'", '&#39;'
-  $body = "A failure has been detected in service '$serviceName'." +
+  $subject = Protect-SensitiveString -Text $subject
+
+  # Fix: Encode BOTH the service name and log text for HTML safety
+  $safeServiceName = ConvertTo-HtmlSafe $serviceName
+  $safeLogText     = ConvertTo-HtmlSafe $logText
+
+  $body = "A failure has been detected in service '$safeServiceName'." +
   [Environment]::NewLine + "Details: $safeLogText"
   
-  # Basic HTML formatting
+  # Basic HTML formatting (newlines to breaks)
   $htmlBody = $body -replace "`r?`n", "<br>"
     
-  # Attempt to send the email, but do NOT let failures halt the watermark
+  # Attempt to send the email
   if (Send-NotificationEmail -Subject $subject -Body $htmlBody -scriptDir $scriptDir) {
     Write-Host "Email Notification sent for '$serviceName'."
   } else {
