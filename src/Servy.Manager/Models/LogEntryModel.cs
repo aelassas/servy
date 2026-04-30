@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
+using Servy.Core.Enums;
 
 namespace Servy.Manager.Models
 {
@@ -7,8 +9,11 @@ namespace Servy.Manager.Models
     /// </summary>
     public class LogEntryModel : INotifyPropertyChanged
     {
+        // Centralized prefix for UI resource icons to ensure DRY compliance
+        private const string IconBase = "pack://application:,,,/Servy.Manager;component/Resources/Icons/";
+
         private DateTime _time;
-        private string? _level;
+        private EventLogLevel _level;
         private int _eventId;
         private string? _message;
 
@@ -29,10 +34,9 @@ namespace Servy.Manager.Models
         }
 
         /// <summary>
-        /// Gets or sets the severity level of the log entry 
-        /// (e.g. Information, Warning, Error).
+        /// Gets or sets the severity level of the log entry using the strongly-typed EventLogLevel enumeration.[cite: 1]
         /// </summary>
-        public string? Level
+        public EventLogLevel Level
         {
             get => _level;
             set
@@ -41,13 +45,14 @@ namespace Servy.Manager.Models
                 {
                     _level = value;
                     OnPropertyChanged(nameof(Level));
-                    OnPropertyChanged(nameof(LevelIcon)); // LevelIcon depends on Level
+                    // LOGIC: LevelIcon is a dependent property; notify the UI to refresh it when Level changes[cite: 1]
+                    OnPropertyChanged(nameof(LevelIcon));
                 }
             }
         }
 
         /// <summary>
-        /// Gets or sets the Windows Event Log identifier for the entry.
+        /// Gets or sets the Windows Event Log identifier for the entry.[cite: 1]
         /// </summary>
         public int EventId
         {
@@ -63,7 +68,7 @@ namespace Servy.Manager.Models
         }
 
         /// <summary>
-        /// Gets or sets the message text of the log entry.
+        /// Gets or sets the message text of the log entry.[cite: 1]
         /// </summary>
         public string? Message
         {
@@ -79,20 +84,27 @@ namespace Servy.Manager.Models
         }
 
         /// <summary>
-        /// Gets the icon resource path that corresponds to the <see cref="Level"/>.
-        /// Defaults to the information icon if the level is unrecognized.
+        /// Gets the absolute pack URI for the icon resource that matches the current Level. 
+        /// Defaults to the Information icon for unrecognized levels.[cite: 1]
         /// </summary>
         public string LevelIcon
         {
             get
             {
-                if (Level == "Information")
-                    return "pack://application:,,,/Servy.Manager;component/Resources/Icons/Info.png";
-                if (Level == "Warning")
-                    return "pack://application:,,,/Servy.Manager;component/Resources/Icons/Warning.png";
-                if (Level == "Error")
-                    return "pack://application:,,,/Servy.Manager;component/Resources/Icons/Error.png";
-                return "pack://application:,,,/Servy.Manager;component/Resources/Icons/Info.png";
+                // LOG: Resolving icon path for current log level using .NET 4.8 switch syntax
+                switch (Level)
+                {
+                    case EventLogLevel.Warning:
+                        return IconBase + "Warning.png";
+
+                    case EventLogLevel.Error:
+                        return IconBase + "Error.png";
+
+                    case EventLogLevel.Information:
+                    default:
+                        // LOGIC: Fallback to Information icon for default cases[cite: 1]
+                        return IconBase + "Info.png";
+                }
             }
         }
 
@@ -100,9 +112,9 @@ namespace Servy.Manager.Models
         public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
-        /// Raises the <see cref="PropertyChanged"/> event for the specified property.
+        /// Raises the PropertyChanged event for the specified property name.[cite: 1]
         /// </summary>
-        /// <param name="propertyName">The name of the property that changed.</param>
+        /// <param name="propertyName">The name of the property that has changed.</param>
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
