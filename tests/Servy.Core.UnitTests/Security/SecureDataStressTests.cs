@@ -1,4 +1,5 @@
 ﻿using Moq;
+using Servy.Core.Config;
 using Servy.Core.Security;
 using System;
 using System.Diagnostics;
@@ -76,6 +77,12 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void StressTest_V1_BackwardCompatibility_LargePayload()
         {
+            if (!AppConfig.AllowLegacyV1Decryption)
+            {
+                // Skip this test if legacy decryption is disabled
+                return;
+            }
+
             // Arrange
             int sizeInMb = 5;
             string largePlainText = GenerateLargeString(sizeInMb);
