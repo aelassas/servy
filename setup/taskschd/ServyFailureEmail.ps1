@@ -114,7 +114,8 @@ function Send-NotificationEmail {
     .DESCRIPTION
         This function handles the low-level SMTP transport. It expects a pre-sanitised Body 
         that has already been passed through the sensitive string masker and HTML encoder. 
-        It no longer performs internal masking to avoid regex failures against HTML entities.
+        It supports configurable SSL/TLS negotiation and explicit network timeouts to prevent 
+        scheduled task stalling.
 
     .PARAMETER Subject
         The masked subject line for the email.
@@ -158,6 +159,10 @@ function Send-NotificationEmail {
   # Uses case-insensitive regex '(?i)' to match "false", "FALSE", "False", or "0".
   $rawUseSsl = $configRoot.UseSsl
   $useSsl = if ($null -ne $rawUseSsl -and ([string]$rawUseSsl).Trim() -match '^(?i)(false|0)$') { $false } else { $true }
+
+  # 4. Safe Timeout Resolution (Defaults to 30000ms / 30s)
+  $rawTimeout = $configRoot.TimeoutMs
+  $timeout = if ($null -ne $rawTimeout -and $rawTimeout -match '^\d+$') { [int]$rawTimeout } else { 30000 }
 
   $credPath = Join-Path $scriptDir "smtp-cred.xml"
   $emailRegex = '^[^@]+@[^@]+\.[^@]+$'
@@ -204,6 +209,7 @@ function Send-NotificationEmail {
 
     $smtp = New-Object System.Net.Mail.SmtpClient($smtpServer, $smtpPort)
     $smtp.EnableSsl = $useSsl
+    $smtp.Timeout = $timeout
     $smtp.Credentials = $cred.GetNetworkCredential()
 
     $mailMessage = New-Object System.Net.Mail.MailMessage

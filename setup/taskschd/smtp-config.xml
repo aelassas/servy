@@ -3,6 +3,7 @@
   <Server>smtp.example.com</Server>
   <Port>587</Port>
   <UseSsl>true</UseSsl>
+  <TimeoutMs>30000</TimeoutMs>
   <From>servy.notifications@example.com</From>
   <To>admin@example.com</To>
 </SmtpConfig>
