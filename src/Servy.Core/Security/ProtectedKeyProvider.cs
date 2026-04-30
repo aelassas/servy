@@ -243,14 +243,14 @@ namespace Servy.Core.Security
 
                         if (failCount >= MigrationFailureEscalationThreshold)
                         {
-                            string escalatedMsg = $"[EventID: 3003] PERSISTENT SECURITY DEGRADATION: {baseMsg}. Failed {failCount} consecutive times. The file cannot be upgraded to modern encryption. System remains in v7.8 compatibility mode.";
+                            string escalatedMsg = $"[EventID: {EventIds.PersistentMigrationFailure}] PERSISTENT SECURITY DEGRADATION: {baseMsg}. Failed {failCount} consecutive times. The file cannot be upgraded to modern encryption. System remains in v7.8 compatibility mode.";
 
                             try
                             {
                                 using (var eventLog = new EventLog(AppConfig.EventLogName))
                                 {
                                     eventLog.Source = AppConfig.EventSource;
-                                    eventLog.WriteEntry($"[{AppConfig.EventSource}] {escalatedMsg}\n\nError: {ex.Message}", EventLogEntryType.Error, 3003);
+                                    eventLog.WriteEntry($"[{AppConfig.EventSource}] {escalatedMsg}\n\nError: {ex.Message}", EventLogEntryType.Error, EventIds.PersistentMigrationFailure);
                                 }
                             }
                             catch { /* Silently ignore if direct event log creation fails */ }
@@ -268,7 +268,7 @@ namespace Servy.Core.Security
                                 {
                                     eventLog.Source = AppConfig.EventSource;
                                     // Option (a): Mirror the escalated pattern with a Warning type and ID 3002
-                                    eventLog.WriteEntry($"[{AppConfig.EventSource}] {warningMsg}", EventLogEntryType.Warning, 3002);
+                                    eventLog.WriteEntry($"[{AppConfig.EventSource}] {warningMsg}", EventLogEntryType.Warning, EventIds.TransientMigrationWarning);
                                 }
                             }
                             catch
@@ -277,7 +277,7 @@ namespace Servy.Core.Security
                                 // the file logger is our only hope.
                             }
 
-                            Logger.Warn($"[EventID: 3002] {warningMsg}");
+                            Logger.Warn($"[EventID: {EventIds.TransientMigrationWarning}] {warningMsg}");
                         }
 
                         // We still return the data so the service remains operational.
@@ -304,7 +304,7 @@ namespace Servy.Core.Security
                     using (var eventLog = new EventLog(AppConfig.EventLogName))
                     {
                         eventLog.Source = AppConfig.EventSource;
-                        eventLog.WriteEntry($"[{AppConfig.EventSource}] {errorMsg}\n\n{workaround}\n\nException: {ex.Message}", EventLogEntryType.Error, 3001);
+                        eventLog.WriteEntry($"[{AppConfig.EventSource}] {errorMsg}\n\n{workaround}\n\nException: {ex.Message}", EventLogEntryType.Error, EventIds.KeyUnprotectFailed);
                     }
                 }
                 catch
