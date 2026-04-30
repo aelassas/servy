@@ -39,7 +39,12 @@ function Get-ServyLastErrors {
 
   if ($null -ne $LastProcessed -and -not ($LastProcessed -is [datetime])) {
       try {
-          $LastProcessed = [DateTime]::Parse($LastProcessed)
+          $LastProcessed = [DateTime]::ParseExact(
+              $LastProcessed,
+              'o',
+              [System.Globalization.CultureInfo]::InvariantCulture,
+              [System.Globalization.DateTimeStyles]::RoundtripKind
+          )
       }
       catch {
           throw "Invalid datetime value for LastProcessed"
