@@ -184,29 +184,45 @@ namespace Servy.Core.Security
             // Slice the payload (either stripping the marker or using the whole string)
             ReadOnlySpan<char> payload = hasMarker ? textSpan.Slice(markerSpan.Length) : textSpan;
 
-            try
+            // --- STRATEGY: Explicit markers must succeed or fail loud ---
+            if (hasMarker)
             {
-                // Version 2 Routing: Authenticated Encryption
-                if (payload.StartsWith("v2:", StringComparison.Ordinal))
-                    return DecryptV2(payload.Slice(3).ToString());
-
-                // Version 1 Routing: Legacy Encryption
-                if (payload.StartsWith("v1:", StringComparison.Ordinal))
+                try
                 {
-                    if (!AppConfig.AllowLegacyV1Decryption)
+                    // Version 2 Routing: Authenticated Encryption
+                    if (payload.StartsWith("v2:", StringComparison.Ordinal))
+                        return DecryptV2(payload.Slice(3).ToString());
+
+                    // Version 1 Routing: Legacy Encryption
+                    if (payload.StartsWith("v1:", StringComparison.Ordinal))
                     {
-                        Logger.Warn("Security block: Attempted to decrypt a v1 payload, but legacy unauthenticated decryption is disabled. Returning original input to prevent downgrade attack.");
-                        return cipherText;
+                        if (!AppConfig.AllowLegacyV1Decryption)
+                        {
+                            Logger.Warn("Security block: Attempted to decrypt a v1 payload, but legacy unauthenticated decryption is disabled. Returning original input to prevent downgrade attack.");
+                            throw new SecureDataIntegrityException("Legacy v1 decryption is disabled via configuration.");
+                        }
+
+                        Logger.Warn("Security audit: Legacy v1 decryption invoked. Please re-save this configuration to upgrade to v2 authenticated encryption.");
+                        return DecryptV1(payload.Slice(3).ToString());
                     }
 
-                    Logger.Warn("Security audit: Legacy v1 decryption invoked. Please re-save this configuration to upgrade to v2 authenticated encryption.");
-                    return DecryptV1(payload.Slice(3).ToString());
+                    throw new SecureDataIntegrityException($"Unsupported encryption version marker: '{cipherText}'");
                 }
+                catch (Exception ex) when (ex is FormatException || ex is CryptographicException)
+                {
+                    // We log the failure and re-throw. Upstream callers (UI/CLI) must handle this failure 
+                    // to prevent the use of tampered or corrupted credentials.
+                    Logger.Error($"Integrity failure for marked payload: {ex.Message}", ex);
+                    throw;
+                }
+            }
 
-                // FALLBACK LOGIC: Handle legacy data that lacks markers or version tags.
-                // Convert the span to a string once for use in legacy methods.
-                string rawPayload = payload.ToString();
+            // --- FALLBACK LOGIC: Handle legacy data that lacks markers or version tags. ---
+            // Convert the span to a string once for use in legacy methods.
+            string rawPayload = payload.ToString();
 
+            try
+            {
                 // Version 1 Legacy Detection
                 if (IsStrictBase64(rawPayload))
                 {
@@ -219,18 +235,17 @@ namespace Servy.Core.Security
                     Logger.Warn("Security audit: Raw legacy decryption invoked. Please re-save this configuration to upgrade to v2 authenticated encryption.");
                     return DecryptV1(rawPayload);
                 }
-
-                // Explicitly log when data is processed as plaintext.
-                Logger.Warn("Decryption bypassed: Input does not match any known encryption format. Returning as plaintext.");
-                return rawPayload;
             }
             catch (Exception ex) when (ex is FormatException || ex is CryptographicException)
             {
-                // Elevated from Debug to Warn. 
-                // If a string HAS an encryption marker but fails to decrypt, it's a security event or data corruption.
-                Logger.Warn($"Decryption failed for marked payload ({ex.GetType().Name}): {ex.Message} Returning original input.");
-                return cipherText;
+                // For unmarked strings, we preserve the defensive fallback to avoid breaking 
+                // fields that were never meant to be encrypted.
+                Logger.Warn($"Legacy fallback decryption failed for unmarked data: {ex.Message}. Returning as plaintext.");
             }
+
+            // Explicitly log when data is processed as plaintext.
+            Logger.Warn("Decryption bypassed: Input does not match any known encryption format. Returning as plaintext.");
+            return rawPayload;
         }
 
         /// <summary>
@@ -299,7 +314,7 @@ namespace Servy.Core.Security
             {
                 // Minimum size check: must contain at least an IV (16) and an HMAC (32)
                 if (combined.Length < (IvSize + HmacSize))
-                    throw new CryptographicException("V2 payload length is insufficient.");
+                    throw new SecureDataIntegrityException("V2 payload length is insufficient.");
 
                 // Create Spans: These are lightweight "views" into the 'combined' array (0 copies)
                 ReadOnlySpan<byte> combinedSpan = combined;
@@ -317,7 +332,7 @@ namespace Servy.Core.Security
 
                 // Security Critical: Constant-time comparison prevents side-channel timing attacks.
                 if (!CryptographicOperations.FixedTimeEquals(computedHash, expectedHmac))
-                    throw new CryptographicException("HMAC integrity check failed.");
+                    throw new SecureDataIntegrityException("HMAC integrity check failed.");
 
                 // 3. DECRYPTION: Direct AES execution
                 using (var aes = Aes.Create())
@@ -335,6 +350,11 @@ namespace Servy.Core.Security
                         // Materialize the final string directly from the buffer.
                         return Encoding.UTF8.GetString(outputBuffer, 0, bytesWritten);
                     }
+                    catch (CryptographicException ex)
+                    {
+                        // If the HMAC passed but AES fails (e.g., bad padding), it's still an integrity issue
+                        throw new SecureDataIntegrityException($"AES decryption failed: {ex.Message}");
+                    }
                     finally
                     {
                         // Wipe the plaintext buffer from memory immediately.
@@ -342,6 +362,7 @@ namespace Servy.Core.Security
                     }
                 }
             }
+
             finally
             {
                 // Security hygiene: Wipe the combined buffer (containing IV and Ciphertext) from the heap.

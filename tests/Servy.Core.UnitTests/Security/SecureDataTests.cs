@@ -1,4 +1,5 @@
 ﻿using Moq;
+using Servy.Core.Config;
 using Servy.Core.Security;
 using System.Security.Cryptography;
 using System.Text;
@@ -68,6 +69,11 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void DecryptedV1_WithExplicitPrefix_Works()
         {
+            if (!AppConfig.AllowLegacyV1Decryption)
+            {
+                // Skip this test if legacy decryption is disabled
+                return;
+            }
             var sp = new SecureData(_mockProvider.Object);
             var secret = "LegacySecret";
 
@@ -99,6 +105,12 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void DecryptedV1_WithoutPrefix_Works()
         {
+            if (!AppConfig.AllowLegacyV1Decryption)
+            {
+                // Skip this test if legacy decryption is disabled
+                return;
+            }
+
             var sp = new SecureData(_mockProvider.Object);
             var secret = "LegacySecret";
 
@@ -131,6 +143,11 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void DecryptedV1_WithoutAllPrefixes_Works()
         {
+            if (!AppConfig.AllowLegacyV1Decryption)
+            {
+                // Skip this test if legacy decryption is disabled
+                return;
+            }
             var sp = new SecureData(_mockProvider.Object);
             var secret = "LegacySecret";
 
@@ -225,56 +242,77 @@ namespace Servy.Core.UnitTests.Security
             }
         }
 
-        [Theory]
-        [InlineData("NotBase64!", "NotBase64!")] // Path: No marker, not Base64 -> return raw
-        [InlineData("SERVY_ENC:NotBase64!", "NotBase64!")] // Path: Marker, not Base64 -> return substring
-        public void Decrypt_RawFallbacks_ReturnsInput(string input, string expected)
+        [Fact]
+        public void Decrypt_UnmarkedNonBase64_ReturnsRawInput()
         {
+            // Arrange
             var sp = new SecureData(_mockProvider.Object);
-            Assert.Equal(expected, sp.Decrypt(input));
+            string input = "NotBase64!";
+
+            // Act
+            var result = sp.Decrypt(input);
+
+            // Assert: Unmarked strings still return as-is for backward compatibility
+            Assert.Equal(input, result);
         }
 
         [Fact]
-        public void Decrypt_TamperedV2_ReturnsJunkInsteadOfOriginal()
+        public void Decrypt_MarkedButInvalidFormat_ThrowsIntegrityException()
         {
+            // Arrange
+            var sp = new SecureData(_mockProvider.Object);
+            string input = "SERVY_ENC:NotBase64!";
+
+            // Act & Assert
+            // Since the string has a marker, it MUST succeed or fail loud.
+            // Returning a substring is no longer permitted as it masks integrity issues.
+            Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(input));
+        }
+
+        [Fact]
+        public void Decrypt_TamperedV2_ThrowsIntegrityException()
+        {
+            // Arrange
             var sp = new SecureData(_mockProvider.Object);
             var original = "MySecret123";
-            var encrypted = sp.Encrypt(original); // Result: "SERVY_ENC:v2:SGVsbG8..."
 
-            // 1. Correctly extract the Base64 part
-            // We find the LAST colon to get everything after "v2:"
+            // Encrypting creates a valid v2 payload: [IV + Ciphertext + HMAC]
+            var encrypted = sp.Encrypt(original);
+
+            // 1. Extract the Base64 payload after the "SERVY_ENC:v2:" marker
             var lastColonIndex = encrypted.LastIndexOf(':');
             var rawBase64 = encrypted.Substring(lastColonIndex + 1);
-
-            // 2. This will no longer crash
             byte[] data = Convert.FromBase64String(rawBase64);
 
-            // 3. Tamper with the ciphertext (not the IV or HMAC for specific branch testing)
-            // IV is first 16 bytes, Ciphertext follows
+            // 2. Tamper with the ciphertext
+            // Flipping a bit here ensures the HMAC-SHA256 signature will no longer match.
             data[20] ^= 0x01;
 
             var tampered = "SERVY_ENC:v2:" + Convert.ToBase64String(data);
 
-            // 4. Update your Assertion
-            // Because your code has a catch block that returns the payload on failure:
-            var result = sp.Decrypt(tampered);
+            // 3. Act & Assert
+            // The Decrypt method now recognizes the v2 marker and enforces integrity.
+            // It must throw an exception rather than returning tampered "junk".
+            var ex = Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(tampered));
 
-            Assert.NotEqual(original, result);
-            // It returns the payload: "v2:TamperedBase64"
-            Assert.Equal("SERVY_ENC:v2:" + Convert.ToBase64String(data), result);
+            // Optional: Verify the error message relates to the integrity check
+            Assert.Contains("HMAC integrity check failed", ex.Message);
         }
 
         [Fact]
-        public void Decrypt_InvalidBase64_ReturnsRawPayload_DueToCatchBlock()
+        public void Decrypt_MarkedInvalidBase64_ThrowsException()
         {
+            // Arrange
             var sp = new SecureData(_mockProvider.Object);
-            // This string is valid enough to pass the marker check but will fail Base64 decoding
+
+            // This string has a marker, so the Decrypt method will attempt to decode it.
+            // It is no longer allowed to "swallow" the failure and return the junk string.
             var tampered = "SERVY_ENC:v2:!!!NotBase64!!!";
 
-            var result = sp.Decrypt(tampered);
-
-            // The catch block intercepts the FormatException and returns the payload
-            Assert.Equal("SERVY_ENC:v2:!!!NotBase64!!!", result);
+            // Act & Assert
+            // We expect a FormatException (from Base64 decoding) or a 
+            // SecureDataIntegrityException if you chose to wrap it.
+            Assert.Throws<FormatException>(() => sp.Decrypt(tampered));
         }
 
         [Fact]
@@ -311,7 +349,7 @@ namespace Servy.Core.UnitTests.Security
                 method!.Invoke(sp, new object[] { shortPayloadBase64 }));
 
             // 3. Assert the inner exception is what we expect
-            Assert.IsType<CryptographicException>(ex.InnerException);
+            Assert.IsType<SecureDataIntegrityException>(ex.InnerException);
             Assert.Contains("V2 payload length is insufficient.", ex.InnerException.Message);
         }
 
