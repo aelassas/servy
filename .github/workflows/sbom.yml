@@ -48,7 +48,8 @@ jobs:
       # The shell will now treat this as a literal string.
       INPUT_VERSION: ${{ github.event.inputs.version }}
       CYCLONEDX_VERSION: "6.2.0"
-      CYCLONEDX_CLI_VERSION: "v0.30.0"
+      CYCLONEDX_CLI_VERSION: "v0.31.0"
+      CYCLONEDX_CLI_HASH: "da18bdb0d5b10a5f45ddfb59b7b08b11ddc050bb5c6407608d831929a1799d3f"
 
     steps:
       # -----------------------------------------------------
@@ -91,10 +92,20 @@ jobs:
           # Force a hard stop if the download fails (e.g., GitHub is down or version is wrong)
           $uri = "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe"
           Write-Host "Downloading CycloneDX CLI from $uri"
-          Invoke-WebRequest -Uri $uri `
-                            -OutFile "$env:USERPROFILE\cyclonedx.exe" `
-                            -ErrorAction Stop
+          $outPath = "$env:USERPROFILE\cyclonedx.exe"
+          Invoke-WebRequest -Uri $uri -OutFile $outPath -ErrorAction Stop
           
+          # --- SECURITY CHECK: SHA256 PINNING ---
+          Write-Host "Verifying SHA256 checksum of CycloneDX CLI..."
+          $actualHash = (Get-FileHash $outPath -Algorithm SHA256).Hash
+          
+          # -ne in PowerShell is inherently case-insensitive
+          if ($actualHash -ne $env:CYCLONEDX_CLI_HASH) {
+              throw "Security Breach: CycloneDX CLI hash mismatch! Expected: $($env:CYCLONEDX_CLI_HASH), Got: $actualHash"
+          }
+          Write-Host "Checksum verified successfully."
+          # --------------------------------------
+
           Add-Content -Path $env:GITHUB_PATH -Value $env:USERPROFILE
 
           # Continue with the .NET tool installation
