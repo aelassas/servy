@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <SmtpConfig>
-    <Server>smtp.example.com</Server>
-    <Port>587</Port>
-    <From>servy.notifications@example.com</From>
-    <To>admin@example.com</To>
+  <Server>smtp.example.com</Server>
+  <Port>587</Port>
+  <UseSsl>true</UseSsl>
+  <From>servy.notifications@example.com</From>
+  <To>admin@example.com</To>
 </SmtpConfig>

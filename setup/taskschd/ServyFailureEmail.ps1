@@ -153,6 +153,12 @@ function Send-NotificationEmail {
   $rawPort = $configRoot.Port
   $smtpPort = if ($null -ne $rawPort -and $rawPort -match '^\d+$') { [int]$rawPort } else { 0 }
   
+  # 3. Safe SSL Preference Resolution (Case-insensitive, defaults to true)
+  # LOGIC: Casts to string and trims whitespace to prevent parsing errors. 
+  # Uses case-insensitive regex '(?i)' to match "false", "FALSE", "False", or "0".
+  $rawUseSsl = $configRoot.UseSsl
+  $useSsl = if ($null -ne $rawUseSsl -and ([string]$rawUseSsl).Trim() -match '^(?i)(false|0)$') { $false } else { $true }
+
   $credPath = Join-Path $scriptDir "smtp-cred.xml"
   $emailRegex = '^[^@]+@[^@]+\.[^@]+$'
 
@@ -197,7 +203,7 @@ function Send-NotificationEmail {
     $cred = Import-Clixml $credPath
 
     $smtp = New-Object System.Net.Mail.SmtpClient($smtpServer, $smtpPort)
-    $smtp.EnableSsl = $true
+    $smtp.EnableSsl = $useSsl
     $smtp.Credentials = $cred.GetNetworkCredential()
 
     $mailMessage = New-Object System.Net.Mail.MailMessage
