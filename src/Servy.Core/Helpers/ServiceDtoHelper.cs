@@ -24,9 +24,16 @@ namespace Servy.Core.Helpers
             // Identity & Behavior
             dto.StartupType = dto.StartupType ?? (int)AppConfig.DefaultStartupType;
             dto.Priority = dto.Priority ?? (int)AppConfig.DefaultPriority;
+
+            // POLICY: Global Identity Reset on Import
+            // To maintain architectural simplicity across all interfaces (UI, CLI, PS), 
+            // we do not support importing custom identities. All imported services 
+            // are forced to LocalSystem to ensure a valid, password-less baseline.
+            // If you want to set a custom account you must set it manually after import.
             dto.RunAsLocalSystem = AppConfig.DefaultRunAsLocalSystem;
             dto.UserAccount = null;
             dto.Password = null;
+            
             dto.EnableDebugLogs = dto.EnableDebugLogs ?? AppConfig.DefaultEnableDebugLogs;
 
             // Timeouts
