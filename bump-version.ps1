@@ -115,14 +115,49 @@ Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyCont
     $encoding = Get-FileEncoding $csproj
     $content = [System.IO.File]::ReadAllText($csproj, $encoding)
 
-    # Chain replacements to avoid multiple IO hits
-    $content = [regex]::Replace($content, '(<Version>)[^<]*(</Version>)', { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" })
-    $content = [regex]::Replace($content, '(<FileVersion>)[^<]*(</FileVersion>)', { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" })
-    $content = [regex]::Replace($content, '(<AssemblyVersion>)[^<]*(</AssemblyVersion>)', { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" })
+    # LOGIC: Track total matches across all tags to ensure the script is not silent on no-match.
+    # This prevents the "worst failure mode" where projects appear updated but remain on old versions.
+    $totalReplacements = 0
+    $versionTags = @('Version', 'FileVersion', 'AssemblyVersion')
 
-    # Write back using the detected encoding
-    [System.IO.File]::WriteAllText($csproj, $content, $encoding)
-    Write-Host "Updated project ($($encoding.BodyName)): $csproj" -ForegroundColor Gray
+    foreach ($tag in $versionTags) {
+        $replacementValue = ""
+        
+        switch ($tag) {
+            "Version" { 
+                $replacementValue = $fullVersion 
+                break 
+            }
+            "FileVersion" { 
+                $replacementValue = $fileVersion 
+                break 
+            }
+            "AssemblyVersion" { 
+                $replacementValue = $fileVersion 
+                break 
+            }
+        }
+
+        $tagPattern = "(<$tag>)[^<]*(</$tag>)"
+        $tagMatches = [regex]::Matches($content, $tagPattern)
+        
+        if ($tagMatches.Count -gt 0) {
+            $totalReplacements += $tagMatches.Count
+            $content = [regex]::Replace($content, $tagPattern, { 
+                param($m) "$($m.Groups[1].Value)$replacementValue$($m.Groups[2].Value)" 
+            })
+        }
+    }
+
+    if ($totalReplacements -gt 0) {
+        # Write back using the detected encoding only if at least one tag was successfully replaced
+        [System.IO.File]::WriteAllText($csproj, $content, $encoding)
+        Write-Host "Successfully updated project ($($encoding.BodyName)): $csproj ($totalReplacements replacements)" -ForegroundColor Green
+    } else {
+        # LOG: Warn instead of Error, as non-shipping helper projects may legitimately lack version tags.
+        # This mirrors the visibility of Update-FileContent without strictly terminating the script.
+        Write-Warning "Skipped project: No versioning identifiers found in $csproj. Verify if this project requires version metadata."
+    }
 }
 
 # -----------------------------
