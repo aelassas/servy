@@ -17,6 +17,12 @@ namespace Servy.Core.Config
         public static readonly string Version = "8.4";
 
         /// <summary>
+        /// Gets the name of the Windows Event Log channel used for logging and querying.
+        /// Default is "Application".
+        /// </summary>
+        public static readonly string EventLogName = "Application";
+
+        /// <summary>
         /// The name of the Windows service and the associated Event Log source.
         /// Used for service registration and writing logs to the Windows Event Viewer.
         /// </summary>
@@ -345,6 +351,12 @@ namespace Servy.Core.Config
         #endregion
 
         #region Limits, Thresholds & Constraints
+
+        /// <summary>
+        /// Gets the maximum number of event records returned by an event log query.
+        /// This prevents excessive memory consumption when querying large logs.
+        /// </summary>
+        public const int EventLogMaxResults = 10_000;
 
         /// <summary>
         /// The default timeout in milliseconds for regular expression matching operations.

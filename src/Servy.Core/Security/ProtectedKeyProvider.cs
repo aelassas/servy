@@ -251,7 +251,7 @@ namespace Servy.Core.Security
 
                             try
                             {
-                                using (var eventLog = new EventLog("Application"))
+                                using (var eventLog = new EventLog(AppConfig.EventLogName))
                                 {
                                     eventLog.Source = AppConfig.EventSource;
                                     eventLog.WriteEntry($"[{AppConfig.EventSource}] {escalatedMsg}\n\nError: {ex.Message}", EventLogEntryType.Error, 3003);
@@ -268,7 +268,7 @@ namespace Servy.Core.Security
 
                             try
                             {
-                                using (var eventLog = new EventLog("Application"))
+                                using (var eventLog = new EventLog(AppConfig.EventLogName))
                                 {
                                     eventLog.Source = AppConfig.EventSource;
                                     // Option (a): Mirror the escalated pattern with a Warning type and ID 3002
@@ -305,7 +305,7 @@ namespace Servy.Core.Security
                 // FIX 1 (#712): Direct Event Log Surface
                 try
                 {
-                    using (var eventLog = new EventLog("Application"))
+                    using (var eventLog = new EventLog(AppConfig.EventLogName))
                     {
                         eventLog.Source = AppConfig.EventSource;
                         eventLog.WriteEntry($"[{AppConfig.EventSource}] {errorMsg}\n\n{workaround}\n\nException: {ex.Message}", EventLogEntryType.Error, 3001);
