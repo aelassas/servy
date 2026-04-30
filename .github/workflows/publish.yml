@@ -28,7 +28,14 @@ jobs:
       FRAMEWORK: net48
       ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
       CYCLONEDX_VERSION: "6.2.0"
-      CYCLONEDX_CLI_VERSION: "v0.30.0"
+      
+      # Binary Version & Checksum Pins
+      CYCLONEDX_CLI_VERSION: "v0.31.0"
+      CYCLONEDX_CLI_HASH: "da18bdb0d5b10a5f45ddfb59b7b08b11ddc050bb5c6407608d831929a1799d3f"
+      INNO_SETUP_VERSION: "6.6.1"
+      INNO_SETUP_HASH: "d243ce440c02705530699554fb9612b9b2bd7a2a90629cdb7f41e66f5faeb91f"
+      SEVEN_ZIP_VERSION: "26.01"
+      SEVEN_ZIP_HASH: "d64a0468f5b5b0b0fc5b2188450bcd655b70809d97b1c4535f2884635094377d"
 
     steps:
       # -----------------------------------------------------
@@ -95,21 +102,51 @@ jobs:
           
           # Force a hard stop if the download fails (e.g., GitHub is down or version is wrong)
           $uri = "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe"
+          $outPath = "$env:USERPROFILE\cyclonedx.exe"
+          
           Write-Host "Downloading CycloneDX CLI from $uri"
-          Invoke-WebRequest -Uri $uri `
-                            -OutFile "$env:USERPROFILE\cyclonedx.exe" `
-                            -ErrorAction Stop
+          Invoke-WebRequest -Uri $uri -OutFile $outPath -ErrorAction Stop
+          
+          # --- SECURITY CHECK: SHA256 PINNING ---
+          Write-Host "Verifying SHA256 checksum of CycloneDX CLI..."
+          $actualHash = (Get-FileHash $outPath -Algorithm SHA256).Hash
+          
+          # -ne in PowerShell is inherently case-insensitive
+          if ($actualHash -ne $env:CYCLONEDX_CLI_HASH) {
+              throw "Security Breach: CycloneDX CLI hash mismatch! Expected: $($env:CYCLONEDX_CLI_HASH), Got: $actualHash"
+          }
+          Write-Host "Checksum verified successfully."
+          # --------------------------------------
           
           Add-Content -Path $env:GITHUB_PATH -Value $env:USERPROFILE
 
       - name: Install Inno Setup from GitHub
         shell: pwsh
         run: |
-          $url = "https://github.com/jrsoftware/issrc/releases/download/is-6_6_1/innosetup-6.6.1.exe"
+          # 1. Define version and paths
+          $version = $env:INNO_SETUP_VERSION
+          $expectedHash = $env:INNO_SETUP_HASH
+          
+          # Convert "6.6.1" to "6_6_1" for the URL directory
+          $urlVersion = $version.Replace(".", "_") 
+          $url = "https://github.com/jrsoftware/issrc/releases/download/is-$urlVersion/innosetup-$version.exe"
           $installer = "innosetup.exe"
+          
+          Write-Host "Downloading Inno Setup v$version..."
           Invoke-WebRequest -Uri $url -OutFile $installer -ErrorAction Stop
           
-          # --- SECURITY CHECK ---
+          # --- SECURITY CHECK 1: SHA256 PINNING ---
+          Write-Host "Verifying SHA256 checksum of Inno Setup..."
+          $actualHash = (Get-FileHash $installer -Algorithm SHA256).Hash
+          
+          # -ne in PowerShell is inherently case-insensitive
+          if ($actualHash -ne $expectedHash) {
+              throw "Security Breach: Inno Setup hash mismatch! Expected: $expectedHash, Got: $actualHash"
+          }
+          Write-Host "Checksum verified successfully."
+          # ----------------------------------------
+          
+          # --- SECURITY CHECK 2: AUTHENTICODE ---
           Write-Host "Verifying Authenticode signature of Inno Setup..."
           $sig = Get-AuthenticodeSignature $installer
           
@@ -117,8 +154,9 @@ jobs:
               throw "Inno Setup signature check failed: $($sig.Status). The file may be compromised." 
           }
           Write-Host "Signature verified successfully."
-          # ----------------------
+          # --------------------------------------
 
+          Write-Host "Installing Inno Setup silently..."
           Start-Process ".\$installer" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
           if (-not (Test-Path $env:ISCC)) { throw "ISCC.exe not found at $env:ISCC" }
 
@@ -126,15 +164,27 @@ jobs:
         shell: pwsh
         run: |
           # 1. Define version and paths
-          $version = "2600" # For version 26.00
-          $url = "https://github.com/ip7z/7zip/releases/download/26.00/7z$($version)-x64.exe"
+          $version = $env:SEVEN_ZIP_VERSION
+          $fileVersion = $version.Replace(".", "") # Converts "26.01" to "2601"
+          $url = "https://github.com/ip7z/7zip/releases/download/$version/7z$fileVersion-x64.exe"
           $installer = "7z_setup.exe"
           $installDir = "C:\7-Zip"
           $exePath = "$installDir\7z.exe"
 
           # 2. Download from GitHub Releases
-          Write-Host "Downloading 7-Zip v26.00..."
+          Write-Host "Downloading 7-Zip v$version..."
           Invoke-WebRequest -Uri $url -OutFile $installer -ErrorAction Stop
+
+          # --- SECURITY CHECK: SHA256 PINNING ---
+          Write-Host "Verifying SHA256 checksum of 7-Zip..."
+          $actualHash = (Get-FileHash $installer -Algorithm SHA256).Hash
+                
+          # -ne in PowerShell is inherently case-insensitive
+          if ($actualHash -ne $env:SEVEN_ZIP_HASH) {
+              throw "Security Breach: 7-Zip hash mismatch! Expected: $($env:SEVEN_ZIP_HASH), Got: $actualHash"
+          }
+          Write-Host "Checksum verified successfully."
+          # --------------------------------------
 
           # 3. Install silently to a fixed directory
           Write-Host "Installing to $installDir..."
