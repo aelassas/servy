@@ -102,7 +102,7 @@ namespace Servy.Manager.UnitTests.Services
             _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
             _serviceConfigurationValidatorMock.Setup(v => v.Validate(It.IsAny<ServiceDto>())).ReturnsAsync(true);
 
-            _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()))
+            _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1)
                 .Callback(() => _refreshTcs.TrySetResult(true));
 
@@ -118,7 +118,7 @@ namespace Servy.Manager.UnitTests.Services
             var completedTask = await Task.WhenAny(_refreshTcs.Task, delay);
 
             Assert.True(completedTask == _refreshTcs.Task, "Refresh task timed out! The refresh logic was not executed.");
-            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()), Times.Once);
+            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
             _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny), Times.Once);
             _jsonServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string?>()), Times.Once);
             Assert.True(_refreshCalled);
@@ -141,7 +141,7 @@ namespace Servy.Manager.UnitTests.Services
             await sut.ImportJsonConfigAsync();
 
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()));
-            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()), Times.Never);
+            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
 
             File.Delete(tempFile);
         }
@@ -165,7 +165,7 @@ namespace Servy.Manager.UnitTests.Services
             _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
             _serviceConfigurationValidatorMock.Setup(v => v.Validate(It.IsAny<ServiceDto>())).ReturnsAsync(true);
 
-            _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()))
+            _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1)
                 .Callback(() => _refreshTcs.TrySetResult(true));
 
@@ -178,7 +178,7 @@ namespace Servy.Manager.UnitTests.Services
             var completedTask = await Task.WhenAny(_refreshTcs.Task, delay);
 
             Assert.True(completedTask == _refreshTcs.Task, "Refresh task timed out! XML import did not trigger refresh.");
-            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()), Times.Once);
+            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
             _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny), Times.Once);
             _xmlServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string?>()), Times.Once);
             Assert.True(_refreshCalled);
@@ -201,7 +201,7 @@ namespace Servy.Manager.UnitTests.Services
             await sut.ImportXmlConfigAsync();
 
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
-            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()), Times.Never);
+            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             Assert.False(_refreshCalled);
 
             if (File.Exists(tempFile)) File.Delete(tempFile);

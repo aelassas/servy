@@ -54,8 +54,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             return Task.FromResult(1);
         }
 
-        public override Task<int> UpdateAsync(ServiceDto service, CancellationToken token = default) => Task.FromResult(1);
-        public override Task<int> UpsertAsync(ServiceDto service, CancellationToken token = default) => Task.FromResult(1);
+        public override Task<int> UpdateAsync(ServiceDto service, bool updateRuntimeState, CancellationToken token = default) => Task.FromResult(1);
+        public override Task<int> UpsertAsync(ServiceDto service, bool updateRuntimeState, CancellationToken token = default) => Task.FromResult(1);
         public override Task<int> DeleteAsync(int id, CancellationToken token = default) => Task.FromResult(1);
         public override Task<int> DeleteAsync(string? name, CancellationToken token = default) => Task.FromResult(1);
 

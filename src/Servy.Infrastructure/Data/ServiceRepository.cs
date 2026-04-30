@@ -58,9 +58,14 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<int> UpdateAsync(ServiceDto service, CancellationToken cancellationToken = default)
+        public virtual async Task<int> UpdateAsync(ServiceDto service, bool updateRuntimeState, CancellationToken cancellationToken = default)
         {
             var encryptedService = CreateEncryptedClone(service);
+
+            if (!updateRuntimeState)
+            {
+                await PatchRuntimeStateAsync(encryptedService, cancellationToken);
+            }
 
             var sql = $@"
                 UPDATE Services SET
@@ -71,9 +76,14 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual int Update(ServiceDto service)
+        public virtual int Update(ServiceDto service, bool updateRuntimeState)
         {
             var encryptedService = CreateEncryptedClone(service);
+
+            if (!updateRuntimeState)
+            {
+                PatchRuntimeState(encryptedService);
+            }
 
             var sql = $@"
                 UPDATE Services SET
@@ -84,9 +94,14 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<int> UpsertAsync(ServiceDto service, CancellationToken cancellationToken = default)
+        public virtual async Task<int> UpsertAsync(ServiceDto service, bool updateRuntimeState, CancellationToken cancellationToken = default)
         {
             var encryptedService = CreateEncryptedClone(service);
+
+            if (!updateRuntimeState)
+            {
+                await PatchRuntimeStateAsync(encryptedService, cancellationToken);
+            }
 
             var sql = $@"
                 INSERT INTO Services ({SqlConstants.InsertColumns}) 
@@ -299,10 +314,8 @@ namespace Servy.Infrastructure.Data
                 var service = _xmlServiceSerializer.Deserialize(xml);
                 if (service == null) return false;
 
-                // Preserve runtime state (PID, Stdout/Stderr paths) if the service exists and is running.
-                await PatchRuntimeStateAsync(service, cancellationToken);
-
-                await UpsertAsync(service, cancellationToken);
+                // Preserve runtime state (PID, ActiveStdoutPath/ActiveStderrPath paths) if the service exists and is running.
+                await UpsertAsync(service, updateRuntimeState: false, cancellationToken);
                 return true;
             }
             catch (Exception ex)
@@ -332,10 +345,7 @@ namespace Servy.Infrastructure.Data
                 var service = _jsonServiceSerializer.Deserialize(json);
                 if (service == null) return false;
 
-                // Prevent NULL clobbering of Pid and Active paths during UPSERT.
-                await PatchRuntimeStateAsync(service, cancellationToken);
-
-                await UpsertAsync(service, cancellationToken);
+                await UpsertAsync(service, updateRuntimeState: false, cancellationToken);
                 return true;
             }
             catch (Exception ex)
@@ -362,6 +372,29 @@ namespace Servy.Infrastructure.Data
 
             // Fetch current state without decryption (performance optimization)
             var existing = await GetByNameAsync(incoming.Name, decrypt: false, cancellationToken: cancellationToken);
+
+            if (existing != null)
+            {
+                // These fields are not serialized in export files (ShouldSerialize*() => false).
+                // If we don't copy them here, UpsertAsync will overwrite the DB with NULL.
+                incoming.Pid = existing.Pid;
+                incoming.ActiveStdoutPath = existing.ActiveStdoutPath;
+                incoming.ActiveStderrPath = existing.ActiveStderrPath;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the existing runtime state from the database and applies it to the incoming DTO.
+        /// This ensures that importing a configuration over a running service does not clobber
+        /// its PID or active log paths, which would break Manager tracking.
+        /// </summary>
+        /// <param name="incoming">The DTO deserialized from an import file.</param>
+        private void PatchRuntimeState(ServiceDto incoming)
+        {
+            if (string.IsNullOrWhiteSpace(incoming.Name)) return;
+
+            // Fetch current state without decryption (performance optimization)
+            var existing = GetByName(incoming.Name, decrypt: false);
 
             if (existing != null)
             {
