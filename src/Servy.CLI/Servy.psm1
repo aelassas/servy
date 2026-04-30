@@ -29,7 +29,8 @@ $script:ServyTimeoutSeconds = 600
 $script:ServyMaxBufferChars = 1048576
 
 # Shared validation pattern for KEY=VALUE;KEY=VALUE environment-variable strings
-$script:EnvVarValidationPattern = '^([^= ]+=(?:\\=|\\;|\\"|\\\\|[^;])*)(; ?[^= ]+=(?:\\=|\\;|\\"|\\\\|[^;])*)*;?$'
+# Uses Atomic Groups (?>...) to prevent Catastrophic Backtracking (ReDoS) on overlapping escape branches.
+$script:EnvVarValidationPattern = '^([^= ]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*))(; ?[^= ]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*))*;?$'
 
 # ----------------------------------------------------------------
 # Module Initialization
@@ -955,6 +956,9 @@ function Install-ServyService {
     [string] $FailureProgramParams,
 
     # Environment and Dependencies
+    # Individual cap set to 28,000 to leave room for other CLI arguments within 
+    # the global Windows 32,767 character limit.
+    [ValidateLength(0, 28000)]
     [ValidateScript({ $_ -match $script:EnvVarValidationPattern })]
     [string] $EnvVars,
 
@@ -983,6 +987,7 @@ function Install-ServyService {
 
     [string] $PreLaunchParams,
 
+    [ValidateLength(0, 28000)]
     [ValidateScript({ $_ -match $script:EnvVarValidationPattern })]
     [string] $PreLaunchEnv,
 
