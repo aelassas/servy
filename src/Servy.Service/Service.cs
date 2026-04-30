@@ -1460,7 +1460,7 @@ namespace Servy.Service
                         serviceDto.ActiveStderrPath = _options?.StdErrPath;
                     }
 
-                    _serviceRepository.Update(serviceDto);
+                    _serviceRepository.Update(serviceDto, updateRuntimeState: true);
                 }
             }
             catch (Exception ex)

@@ -22,24 +22,27 @@ namespace Servy.Core.Data
         /// Updates an existing <see cref="ServiceDto"/> record.
         /// </summary>
         /// <param name="service">The DTO containing updated values.</param>
+        /// <param name="updateRuntimeState">Required flag to update runtime state (PID, ActiveStdoutPath, ActiveStderrPath).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The number of affected records.</returns>
-        Task<int> UpdateAsync(ServiceDto service, CancellationToken cancellationToken = default);
+        Task<int> UpdateAsync(ServiceDto service, bool updateRuntimeState, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Updates an existing <see cref="ServiceDto"/> record.
         /// </summary>
         /// <param name="service">The DTO containing updated values.</param>
+        /// <param name="updateRuntimeState">Required flag to update runtime state (PID, ActiveStdoutPath, ActiveStderrPath).</param>
         /// <returns>The number of affected records.</returns>
-        int Update(ServiceDto service);
+        int Update(ServiceDto service, bool updateRuntimeState);
 
         /// <summary>
         /// Adds or updates a <see cref="ServiceDto"/> record depending on whether it exists.
         /// </summary>
         /// <param name="service">The DTO to upsert.</param>
+        /// <param name="updateRuntimeState">Required flag to update runtime state (PID, ActiveStdoutPath, ActiveStderrPath).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The number of affected records.</returns>
-        Task<int> UpsertAsync(ServiceDto service, CancellationToken cancellationToken = default);
+        Task<int> UpsertAsync(ServiceDto service, bool updateRuntimeState, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously inserts or updates a collection of services in the database.
@@ -92,22 +95,6 @@ namespace Servy.Core.Data
         Task<ServiceDto> GetByIdAsync(int id, bool decrypt = true, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Asynchronously retrieves a lightweight projection of a service's running state.
-        /// </summary>
-        /// <param name="serviceName">The unique name of the service to query.</param>
-        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-        /// <returns>
-        /// A <see cref="ServiceConsoleStateDto"/> containing the PID and active log paths; 
-        /// or <see langword="null"/> if the service is not found.
-        /// </returns>
-        /// <remarks>
-        /// This method is optimized for high-frequency UI polling (e.g., in the Console tab).
-        /// It fetches only the columns necessary to determine if a service has restarted 
-        /// or changed its active log targets, minimizing database I/O and memory allocations.
-        /// </remarks>
-        Task<ServiceConsoleStateDto> GetServiceConsoleStateAsync(string serviceName, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Retrieves a <see cref="ServiceDto"/> by its unique name.
         /// </summary>
         /// <param name="name">The name of the service.</param>
@@ -129,6 +116,22 @@ namespace Servy.Core.Data
         /// Used by high-frequency UI timers to check running state without allocating full DTOs.
         /// </summary>
         Task<int?> GetServicePidAsync(string serviceName, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Asynchronously retrieves a lightweight projection of a service's running state.
+        /// </summary>
+        /// <param name="serviceName">The unique name of the service to query.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>
+        /// A <see cref="ServiceConsoleStateDto"/> containing the PID and active log paths; 
+        /// or <see langword="null"/> if the service is not found.
+        /// </returns>
+        /// <remarks>
+        /// This method is optimized for high-frequency UI polling (e.g., in the Console tab).
+        /// It fetches only the columns necessary to determine if a service has restarted 
+        /// or changed its active log targets, minimizing database I/O and memory allocations.
+        /// </remarks>
+        Task<ServiceConsoleStateDto> GetServiceConsoleStateAsync(string serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Retrieves all <see cref="ServiceDto"/> records in the repository.

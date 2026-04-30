@@ -164,7 +164,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
 
             // 3. Act
-            var rowsAffected = await repo.UpdateAsync(dto);
+            var rowsAffected = await repo.UpdateAsync(dto, updateRuntimeState: false);
 
             // 4. Assert - Functional Results
             Assert.Equal(1, rowsAffected);
@@ -229,7 +229,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
 
             // 3. Act
-            var rowsAffected = repo.Update(dto);
+            var rowsAffected = repo.Update(dto, updateRuntimeState: false);
 
             // 4. Assert - Functional Results
             Assert.Equal(1, rowsAffected);
@@ -275,7 +275,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
 
             // Act
-            var resultId = await repo.UpsertAsync(dto);
+            var resultId = await repo.UpsertAsync(dto, updateRuntimeState: false);
 
             // Assert
             Assert.Equal(expectedId, resultId);
@@ -291,7 +291,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecureData.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
 
             var repo = CreateRepository();
-            var rows = await repo.UpsertAsync(dto);
+            var rows = await repo.UpsertAsync(dto, updateRuntimeState: false);
 
             Assert.Equal(7, rows);
         }
@@ -316,7 +316,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
 
             // Act
-            var result = await repo.UpsertAsync(dto);
+            var result = await repo.UpsertAsync(dto, updateRuntimeState: false);
 
             // Assert
             Assert.Equal(generatedId, result);
