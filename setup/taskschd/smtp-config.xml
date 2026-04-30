@@ -2,6 +2,7 @@
 <SmtpConfig>
     <Server>smtp.example.com</Server>
     <Port>587</Port>
+    <UseSsl>true</UseSsl>
     <From>servy.notifications@example.com</From>
     <To>admin@example.com</To>
 </SmtpConfig>
