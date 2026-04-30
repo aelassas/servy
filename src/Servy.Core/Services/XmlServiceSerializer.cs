@@ -48,10 +48,14 @@ namespace Servy.Core.Services
             }
             catch (Exception ex) when (ex is InvalidOperationException || ex is XmlException)
             {
-                // 5. Contextual Logging
-                // Just like the JSON version, providing a snippet helps identify the failing file.
-                string snippet = xml.Length > 100 ? xml.Substring(0, 100) + "..." : xml;
-                Logger.Error($"XML Deserialization failed for input starting with: {snippet}", ex);
+                // LOGIC: XmlException contains line info, but InvalidOperationException (thrown by XmlSerializer)
+                // often wraps the actual XmlException as an InnerException.
+                var xmlEx = (ex as XmlException) ?? (ex.InnerException as XmlException);
+                int lineNumber = xmlEx?.LineNumber ?? 0;
+                int linePosition = xmlEx?.LinePosition ?? 0;
+                var lineInfoMessage = (lineNumber > 0 && linePosition > 0) ? $" at line {lineNumber}, position {linePosition}" : string.Empty;
+
+                Logger.Error($"XML Deserialization failed{lineInfoMessage}.", ex);
 
                 // Fulfills the contract by returning null instead of crashing the UI
                 return null;
