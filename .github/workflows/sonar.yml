@@ -4,7 +4,7 @@
 # Author: Akram El Assas
 # --------------------------------------------------------------------------
 
-name: SonarQube
+name: sonar
 on:
   push:
     branches:
