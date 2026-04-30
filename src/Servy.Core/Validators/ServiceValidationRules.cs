@@ -44,9 +44,11 @@ namespace Servy.Core.Validators
                 return result;
             }
 
-            if (dto.Name.IndexOfAny(new[] { '\\', '/' }) >= 0)
+            var (isValidName, errorMsg) = Helper.IsServiceNameValid(dto.Name);
+
+            if (!isValidName)
             {
-                result.Errors.Add(Strings.Msg_InvalidServiceName);
+                result.Errors.Add(errorMsg);
                 return result;
             }
 

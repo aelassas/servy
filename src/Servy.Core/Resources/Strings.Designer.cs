@@ -322,7 +322,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service name contains invalid characters. Avoid using &apos;\&apos; or &apos;/&apos;..
+        ///   Recherche une chaîne localisée semblable à Service name contains invalid characters. Avoid using &apos;\&apos;, &apos;/&apos;, &apos;:&apos;, &apos;*&apos;, &apos;?&apos;, &apos;&quot;&apos;, &apos;&lt;&apos;, &apos;&gt;&apos;, &apos;|&apos;..
         /// </summary>
         public static string Msg_InvalidServiceName {
             get {
@@ -408,6 +408,15 @@ namespace Servy.Core.Resources {
         public static string Msg_ServiceInstalled {
             get {
                 return ResourceManager.GetString("Msg_ServiceInstalled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service name cannot have leading or trailing whitespace..
+        /// </summary>
+        public static string Msg_ServiceNameContainsTrailingWhitespace {
+            get {
+                return ResourceManager.GetString("Msg_ServiceNameContainsTrailingWhitespace", resourceCulture);
             }
         }
         

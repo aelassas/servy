@@ -511,9 +511,11 @@ namespace Servy.Services
         /// <returns>Returns true if valid; otherwise, false.</returns>
         private async Task<bool> IsServiceNameValid(string? serviceName)
         {
-            if (string.IsNullOrWhiteSpace(serviceName))
+            var (isValid, errorMsg) = Core.Helpers.Helper.IsServiceNameValid(serviceName);
+
+            if (!isValid)
             {
-                await _messageBoxService.ShowWarningAsync(Strings.Msg_ServiceNameError, Caption);
+                await _messageBoxService.ShowWarningAsync(errorMsg, Caption);
                 return false;
             }
 
