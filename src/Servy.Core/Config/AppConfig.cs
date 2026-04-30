@@ -669,6 +669,17 @@ namespace Servy.Core.Config
 
         #endregion
 
+        #region Security & Encryption
+
+        /// <summary>
+        /// Controls whether the system will process legacy v1 (unauthenticated) ciphertexts.
+        /// This should be enabled only during active migration from older Servy versions.
+        /// Default is false to prevent ciphertext downgrade attacks.
+        /// </summary>
+        public static readonly bool AllowLegacyV1Decryption = false;
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>

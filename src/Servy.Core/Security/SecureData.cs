@@ -1,4 +1,5 @@
-﻿using Servy.Core.Logging;
+﻿using Servy.Core.Config;
+using Servy.Core.Logging;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -152,10 +153,13 @@ namespace Servy.Core.Security
         /// This method implements a high-performance routing logic using <see cref="ReadOnlySpan{T}"/>:
         /// <list type="bullet">
         /// <item><term>v2:</term><description>Authenticated AES-256-CBC (Encrypt-then-MAC).</description></item>
-        /// <item><term>v1:</term><description>Legacy AES-256-CBC with static IV (No authentication).</description></item>
-        /// <item><term>Fallback:</term><description>Validates if the input is raw Base64; if so, attempts v1 decryption. Otherwise, returns input as-is.</description></item>
+        /// <item><term>v1 (Gated):</term><description>Legacy AES-256-CBC with static IV (No authentication).</description></item>
+        /// <item><term>Fallback (Gated):</term><description>Validates if the input is raw Base64; if so, attempts v1 decryption.</description></item>
         /// </list>
-        /// Defensive posture: All cryptographic or formatting failures are caught, returning the original payload to prevent service disruption.
+        /// <b>Security Note on Downgrade Vectors:</b> Processing v1 or raw legacy ciphertexts introduces an attacker-controllable 
+        /// downgrade vector because these formats lack an HMAC integrity check. An attacker with write access to the configuration 
+        /// could replace a v2 payload with a tampered v1 payload. To mitigate this, v1 decryption is disabled by default 
+        /// and must be explicitly enabled via <c>AppConfig.AllowLegacyV1Decryption</c> during migration periods.
         /// </remarks>
         /// <param name="cipherText">The versioned ciphertext (with marker) or a raw legacy string.</param>
         /// <returns>The decrypted plain text if successful; otherwise, the original <paramref name="cipherText"/>.</returns>
@@ -188,7 +192,16 @@ namespace Servy.Core.Security
 
                 // Version 1 Routing: Legacy Encryption
                 if (payload.StartsWith("v1:", StringComparison.Ordinal))
+                {
+                    if (!AppConfig.AllowLegacyV1Decryption)
+                    {
+                        Logger.Warn("Security block: Attempted to decrypt a v1 payload, but legacy unauthenticated decryption is disabled. Returning original input to prevent downgrade attack.");
+                        return cipherText;
+                    }
+
+                    Logger.Warn("Security audit: Legacy v1 decryption invoked. Please re-save this configuration to upgrade to v2 authenticated encryption.");
                     return DecryptV1(payload.Slice(3).ToString());
+                }
 
                 // FALLBACK LOGIC: Handle legacy data that lacks markers or version tags.
                 // Convert the span to a string once for use in legacy methods.
@@ -197,6 +210,13 @@ namespace Servy.Core.Security
                 // Version 1 Legacy Detection
                 if (IsStrictBase64(rawPayload))
                 {
+                    if (!AppConfig.AllowLegacyV1Decryption)
+                    {
+                        Logger.Warn("Security block: Attempted to decrypt a raw legacy payload, but legacy unauthenticated decryption is disabled. Returning original input to prevent downgrade attack.");
+                        return rawPayload;
+                    }
+
+                    Logger.Warn("Security audit: Raw legacy decryption invoked. Please re-save this configuration to upgrade to v2 authenticated encryption.");
                     return DecryptV1(rawPayload);
                 }
 
