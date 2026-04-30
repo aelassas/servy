@@ -124,8 +124,10 @@ function Show-Notification {
 
     # Initialize Notification
     $toast = New-Object Windows.UI.Notifications.ToastNotification($serializedXml)
-    $toast.Tag = "Servy"
-    $toast.Group = "Servy"
+    $tag = "Servy-$($evt.TimeCreated.ToString('yyyyMMddHHmmssfff'))-$($ServiceName -replace '\s','')"
+    $tag = $tag.Substring(0, [Math]::Min($tag.Length, 64)) # Max 64 chars
+    $toast.Tag = $tag
+    $toast.Group = "Servy" # cluster all Servy toasts together
     $toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(5)
 
     # Event Handlers (Async Error Capture)
