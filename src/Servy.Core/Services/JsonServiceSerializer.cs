@@ -32,9 +32,14 @@ namespace Servy.Core.Services
             }
             catch (JsonException ex)
             {
-                string snippet = json.Length > 100 ? json.Substring(0, 100) + "..." : json;
+                // LOGIC: In Newtonsoft.Json, the base JsonException does not contain line info.
+                // We cast to IJsonLineInfo to safely access coordinates if the exception provides them.
+                var lineInfo = ex as IJsonLineInfo;
+                int lineNumber = (lineInfo != null && lineInfo.HasLineInfo()) ? lineInfo.LineNumber : 0;
+                int linePosition = (lineInfo != null && lineInfo.HasLineInfo()) ? lineInfo.LinePosition : 0;
+                var lineInfoMessage = (lineNumber > 0 && linePosition > 0) ? $" at line {lineNumber}, position {linePosition}" : string.Empty;
 
-                Logger.Error($"JSON Deserialization failed for input starting with: {snippet}", ex);
+                Logger.Error($"JSON Deserialization failed{lineInfoMessage}.", ex);
 
                 // Returning null fulfills the contract: "returns null if deserialization fails"
                 return null;
