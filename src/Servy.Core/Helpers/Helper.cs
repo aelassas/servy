@@ -1,10 +1,10 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Logging;
 using Servy.Core.Native;
+using Servy.Core.Resources;
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -20,6 +20,17 @@ namespace Servy.Core.Helpers
     /// </summary>
     public static class Helper
     {
+        /// <summary>
+        /// A predefined array of characters that are forbidden in Windows Service names.
+        /// </summary>
+        /// <remarks>
+        /// This set extends the basic Service Control Manager (SCM) restrictions to include characters 
+        /// that are invalid in Windows Registry key names and the Windows file system. Because a service name 
+        /// acts as a registry key under <c>HKLM\SYSTEM\CurrentControlSet\Services</c> and is often used 
+        /// to generate log files or directories, prohibiting these characters prevents downstream systemic errors.
+        /// </remarks>
+        private static readonly char[] InvalidServiceChars = new[] { '\\', '/', ':', '*', '?', '"', '<', '>', '|' };
+
         /// <summary>
         /// Checks if the provided path is valid.
         /// </summary>
@@ -438,6 +449,38 @@ namespace Servy.Core.Helpers
             {
                 Directory.CreateDirectory(directory);
             }
+        }
+
+        /// <summary>
+        /// Validates whether a proposed string can be safely used as a Windows Service name.
+        /// </summary>
+        /// <param name="serviceName">The unique identifier proposed for the service.</param>
+        /// <returns>
+        /// A tuple where the first item is a <c>bool</c> indicating if the name is valid, 
+        /// and the second item is a localized <c>string</c> containing the error message if validation fails.
+        /// </returns>
+        public static (bool, string) IsServiceNameValid(string serviceName)
+        {
+            // 1. Null or Empty Check
+            // A service name is a fundamental system identifier and cannot be blank.
+            if (string.IsNullOrWhiteSpace(serviceName))
+                return (false, Strings.Msg_ValidationError);
+
+            // 2. Invisible Padding Check
+            // Leading or trailing spaces are technically permitted by some lower-level Windows APIs, 
+            // but they cause massive confusion in CLI tools, PowerShell scripts, and visual management consoles.
+            if (serviceName != serviceName.Trim())
+                return (false, Strings.Msg_ServiceNameContainsTrailingWhitespace);
+
+            // 3. Structural Integrity Check
+            // We reject the input if it contains:
+            //  a) Forbidden file system/registry characters (InvalidServiceChars).
+            //  b) Control characters (e.g., \n, \t, \r) which can break console output or CLI parsers.
+            if (serviceName.IndexOfAny(InvalidServiceChars) >= 0 || serviceName.Any(char.IsControl))
+                return (false, Strings.Msg_InvalidServiceName);
+
+            // If all checks pass, the name is structurally sound for the Windows SCM.
+            return (true, string.Empty);
         }
 
     }

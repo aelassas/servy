@@ -179,7 +179,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: 'codecov-tracking',
-              state: 'closed'
+              state: 'open'
             });
             
             for (const issue of issues.data) {
@@ -214,7 +214,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: 'coveralls-tracking',
-              state: 'closed'
+              state: 'open'
             });
             
             for (const issue of issues.data) {

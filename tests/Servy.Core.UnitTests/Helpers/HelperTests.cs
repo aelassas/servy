@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Helpers;
+using Servy.Core.Resources;
 using System;
 using System.IO;
 using System.Reflection;
@@ -203,6 +204,97 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(expected, result);
         }
 
-    }
+        /// <summary>
+        /// Covers Branch 1: string.IsNullOrWhiteSpace(serviceName)
+        /// </summary>
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void IsServiceNameValid_NullOrWhitespace_ReturnsValidationError(string input)
+        {
+            // Act
+            var (isValid, error) = Helper.IsServiceNameValid(input);
 
+            // Assert
+            Assert.False(isValid);
+            Assert.Equal(Strings.Msg_ValidationError, error);
+        }
+
+        /// <summary>
+        /// Covers Branch 2: serviceName != serviceName.Trim()
+        /// </summary>
+        [Theory]
+        [InlineData(" MyService")] // Leading space
+        [InlineData("MyService ")] // Trailing space
+        [InlineData(" MyService ")] // Both
+        public void IsServiceNameValid_UntrimmedWhitespace_ReturnsTrimError(string input)
+        {
+            // Act
+            var (isValid, error) = Helper.IsServiceNameValid(input);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.Equal(Strings.Msg_ServiceNameContainsTrailingWhitespace, error);
+        }
+
+        /// <summary>
+        /// Covers Branch 3a: serviceName.IndexOfAny(InvalidServiceChars) >= 0
+        /// </summary>
+        [Theory]
+        [InlineData(@"My\Service")]
+        [InlineData("My/Service")]
+        [InlineData("My:Service")]
+        [InlineData("My*Service")]
+        [InlineData("My?Service")]
+        [InlineData("My\"Service")]
+        [InlineData("My<Service")]
+        [InlineData("My>Service")]
+        [InlineData("My|Service")]
+        public void IsServiceNameValid_ForbiddenCharacters_ReturnsInvalidCharError(string input)
+        {
+            // Act
+            var (isValid, error) = Helper.IsServiceNameValid(input);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.Equal(Strings.Msg_InvalidServiceName, error);
+        }
+
+        /// <summary>
+        /// Covers Branch 3b: serviceName.Any(c => char.IsControl(c))
+        /// </summary>
+        [Theory]
+        [InlineData("My\nService")] // Newline
+        [InlineData("My\tService")] // Tab
+        [InlineData("MyService\u0000")] // Null character
+        public void IsServiceNameValid_ControlCharacters_ReturnsInvalidCharError(string input)
+        {
+            // Act
+            var (isValid, error) = Helper.IsServiceNameValid(input);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.Equal(Strings.Msg_InvalidServiceName, error);
+        }
+
+        /// <summary>
+        /// Covers the Success Path: No branches taken
+        /// </summary>
+        [Theory]
+        [InlineData("MyService")]
+        [InlineData("Servy-Agent")]
+        [InlineData("Wexflow_Service")]
+        [InlineData("Service.123")]
+        public void IsServiceNameValid_ValidInput_ReturnsSuccess(string input)
+        {
+            // Act
+            var (isValid, error) = Helper.IsServiceNameValid(input);
+
+            // Assert
+            Assert.True(isValid);
+            Assert.Equal(string.Empty, error);
+        }
+
+    }
 }

@@ -225,7 +225,7 @@ namespace Servy.Manager.Services
             }
             catch (Exception ex)
             {
-                string serviceName = service?.Name ?? "<unknown>";
+                string serviceName = service.Name ?? "<unknown>";
                 Logger.Error($"Failed to configure {serviceName}.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
             }
@@ -360,8 +360,8 @@ namespace Servy.Manager.Services
                     }
                     else
                     {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                         Logger.Error($"Failed to remove service {service.Name} from repository.");
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                     }
 
                     return success;
@@ -418,7 +418,7 @@ namespace Servy.Manager.Services
         ///<inheritdoc/>
         public async Task CopyPid(Service service)
         {
-            if (service?.Pid == null) return;
+            if (service.Pid == null) return;
 
             try
             {
@@ -443,8 +443,8 @@ namespace Servy.Manager.Services
                     }
                 });
 
-                await _messageBoxService.ShowInfoAsync(Strings.Msg_PidCopied, AppConfig.Caption);
                 Logger.Info($"PID {pidValue} of service {serviceName} copied to clipboard.");
+                await _messageBoxService.ShowInfoAsync(Strings.Msg_PidCopied, AppConfig.Caption);
             }
             catch (Exception ex)
             {
@@ -650,12 +650,12 @@ namespace Servy.Manager.Services
 
                 exportAction(dto, path);
 
-                await _messageBoxService.ShowInfoAsync(successMessage, AppConfig.Caption);
                 Logger.Info($"Service configuration exported to {formatName} at: {path}");
+                await _messageBoxService.ShowInfoAsync(successMessage, AppConfig.Caption);
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to export {formatName} of {service?.Name}.", ex);
+                Logger.Error($"Failed to export {formatName} of {service.Name}.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
             }
         }
@@ -719,14 +719,14 @@ namespace Servy.Manager.Services
                 var res = await _serviceRepository.UpsertAsync(dto);
                 if (res > 0)
                 {
+                    Logger.Info($"Service configuration imported from {formatName} at: {path}");
                     await _messageBoxService.ShowInfoAsync(successMessage, AppConfig.Caption);
                     await RefreshServices();
-                    Logger.Info($"Service configuration imported from {formatName} at: {path}");
                 }
                 else
                 {
-                    await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
                     Logger.Error($"Failed to import {formatName} config from {path}");
+                    await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
                 }
             }
             catch (Exception ex)
