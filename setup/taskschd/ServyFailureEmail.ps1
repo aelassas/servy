@@ -107,6 +107,24 @@ try {
 # 4. Email Notification Function
 # -------------------------------
 function Send-NotificationEmail {
+  <#
+    .SYNOPSIS
+        Dispatches a sanitised HTML notification email via SMTP.
+
+    .DESCRIPTION
+        This function handles the low-level SMTP transport. It expects a pre-sanitised Body 
+        that has already been passed through the sensitive string masker and HTML encoder. 
+        It no longer performs internal masking to avoid regex failures against HTML entities.
+
+    .PARAMETER Subject
+        The masked subject line for the email.
+
+    .PARAMETER Body
+        The pre-masked and HTML-encoded body content.
+
+    .PARAMETER scriptDir
+        The directory context for configuration and credential files.
+  #>
   [CmdletBinding()]
   param (
     [string]$Subject,
@@ -114,8 +132,9 @@ function Send-NotificationEmail {
     [string]$scriptDir
   )
 
-  # Mask sensitive data in the body before sending
-  $Body = Protect-SensitiveString -Text $Body
+  # LOGIC: Masking is now performed by the caller before HTML encoding. 
+  # This ensures the regex tail (?:"[^"]*"|'[^']*'|\S+) matches full quoted strings 
+  # before quotes are converted to &quot; or &#39;.
 
   # --- HARDENED CONFIGURATION ACCESS ---
   
@@ -141,7 +160,7 @@ function Send-NotificationEmail {
   
   # Check for missing essential fields
   if ([string]::IsNullOrEmpty($smtpServer) -or [string]::IsNullOrEmpty($from) -or [string]::IsNullOrEmpty($to)) {
-    Write-FallbackError -Message "ServyFailureEmail: Incomplete configuration in smtp-config.xml (Server, From, or To is missing)." -scriptDir $scriptDir
+    Write-FallbackError -Message "ServyFailureEmail: Incomplete configuration." -scriptDir $scriptDir
     return $false
   }
 
@@ -272,6 +291,7 @@ if ($null -eq $lastProcessed) {
 # -------------------------------
 
 foreach ($evt in $eventsToProcess) {
+  # 1. Parse raw message context
   $message = $evt.Message
   if ($message -match "^\[(.+?)\]\s*(.+)$") {
     $serviceName = $matches[1]
@@ -281,16 +301,27 @@ foreach ($evt in $eventsToProcess) {
     $logText = $message
   }
 
-  # Fix: Scrub the subject line for sensitive information
+  # 2. MASKING (Stage 1: Plain Text)
+  # LOGIC: We mask the raw strings before any HTML encoding occurs.
+  # This ensures the regex successfully captures PASSWORD="my secret token" 
+  # before it becomes PASSWORD=&quot;my secret token&quot;
+  $maskedLogText = Protect-SensitiveString -Text $logText
+  $maskedServiceName = Protect-SensitiveString -Text $serviceName
+
+  # 3. ENCODING (Stage 2: Markup Preparation)
+  # Logic: Now that secrets are replaced with asterisks, we can safely convert 
+  # any remaining metacharacters to HTML entities.
+  $safeLogText = ConvertTo-HtmlSafe -Text $maskedLogText
+  $safeServiceName = ConvertTo-HtmlSafe -Text $maskedServiceName
+
+  # 4. COMPOSITION
+  # Scrub the subject using the raw service name (masker handles this internally)
   $subject = "Servy - $serviceName Failure"
   $subject = Protect-SensitiveString -Text $subject
 
-  # Fix: Encode BOTH the service name and log text for HTML safety
-  $safeServiceName = ConvertTo-HtmlSafe $serviceName
-  $safeLogText     = ConvertTo-HtmlSafe $logText
-
+  # Build the HTML body using the safe, pre-masked segments
   $body = "A failure has been detected in service '$safeServiceName'." +
-  [Environment]::NewLine + "Details: $safeLogText"
+          [Environment]::NewLine + "Details: $safeLogText"
   
   # Basic HTML formatting (newlines to breaks)
   $htmlBody = $body -replace "`r?`n", "<br>"
