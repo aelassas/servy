@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Servy.Core.Config;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Servy.Core.Logging
@@ -218,12 +219,12 @@ namespace Servy.Core.Logging
             {
                 if (!EventLog.SourceExists(_source))
                 {
-                    EventLog.CreateEventSource(_source, "Application");
+                    EventLog.CreateEventSource(_source, AppConfig.EventLogName);
                 }
 
                 _eventLog = new EventLog
                 {
-                    Log = "Application",
+                    Log = AppConfig.EventLogName,
                     Source = _source,
                 };
             }

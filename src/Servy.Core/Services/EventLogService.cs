@@ -13,9 +13,6 @@ namespace Servy.Core.Services
     /// </summary>
     public class EventLogService : IEventLogService
     {
-        private static readonly string LogName = "Application";
-        private const int MaxResults = 10_000;
-
         // Strict allowlist: Alphanumeric, spaces, dots, underscores, and hyphens.
         // This covers virtually all valid Windows Service and Event Source names.
         private static readonly Regex SourceNameValidator = new Regex(@"^[a-zA-Z0-9\.\- _]+$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
@@ -104,10 +101,10 @@ namespace Servy.Core.Services
                 IEnumerable<ServyEventLogEntry> records;
                 try
                 {
-                    var eventQuery = new EventLogQuery(LogName, PathType.LogName, query);
+                    var eventQuery = new EventLogQuery(AppConfig.EventLogName, PathType.LogName, query);
 
                     // This is where the service handle is requested and the query is validated
-                    records = _reader.ReadEvents(eventQuery, MaxResults);
+                    records = _reader.ReadEvents(eventQuery, AppConfig.EventLogMaxResults);
                 }
                 catch (EventLogException ex)
                 {
@@ -151,7 +148,7 @@ namespace Servy.Core.Services
 
                     results.Add(evt);
 
-                    if (results.Count >= MaxResults)
+                    if (results.Count >= AppConfig.EventLogMaxResults)
                         break;
                 }
 

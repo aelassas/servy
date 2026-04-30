@@ -304,7 +304,7 @@ namespace Servy.Core.Helpers
         public static void EnsureEventSourceExists()
         {
             string sourceName = AppConfig.EventSource;
-            string logName = "Application";
+            string logName = AppConfig.EventLogName;
 
             try
             {
