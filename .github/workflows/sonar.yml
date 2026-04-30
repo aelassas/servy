@@ -11,7 +11,7 @@ on:
       - main
   # pull_request:
   #   types: [opened, synchronize, reopened]
-  workflow_dispatch: # Allows manual triggering from the Actions tab
+  workflow_dispatch: 
 
 jobs:
   build:
@@ -25,10 +25,16 @@ jobs:
           java-version: 17
           distribution: 'zulu'
 
+      # Explicitly setting up the .NET SDK fixes the "application 'tool' does not exist" error
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x' 
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Full history required for SonarCloud analysis
+          fetch-depth: 0 
 
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
@@ -49,20 +55,18 @@ jobs:
         if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          New-Item -Path .\.sonar\scanner -ItemType Directory
-          dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+          if (!(Test-Path .\.sonar\scanner)) { New-Item -Path .\.sonar\scanner -ItemType Directory }
+          dotnet tool install dotnet-sonarscanner --tool-path .\.sonar\scanner
 
       - name: Build and analyze
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed for PR decoration and API access
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: pwsh
         run: |
-          # Initialize the scanner with the project key and organization
           .\.sonar\scanner\dotnet-sonarscanner begin /k:"aelassas_servy" /o:"aelassas" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
           
-          # Execute the build
-          dotnet build
+          # Clean build to ensure all files are indexed correctly
+          dotnet build --configuration Release
           
-          # Finalize analysis and upload results
           .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
