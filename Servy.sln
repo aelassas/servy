@@ -107,6 +107,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "taskschd", "taskschd", "{9253D26F-5A46-4EE3-B0B7-0097AB90384E}"
 	ProjectSection(SolutionItems) = preProject
 		setup\taskschd\Get-ServyLastErrors.ps1 = setup\taskschd\Get-ServyLastErrors.ps1
+		setup\taskschd\Servy-Watermark.psm1 = setup\taskschd\Servy-Watermark.psm1
 		setup\taskschd\ServyFailureEmail.ps1 = setup\taskschd\ServyFailureEmail.ps1
 		setup\taskschd\ServyFailureEmail.vbs = setup\taskschd\ServyFailureEmail.vbs
 		setup\taskschd\ServyFailureEmail.xml = setup\taskschd\ServyFailureEmail.xml
