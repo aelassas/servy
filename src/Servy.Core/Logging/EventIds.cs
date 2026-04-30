@@ -31,5 +31,28 @@
 
         #endregion
 
+        #region Specific Security & Migration Events
+
+        /// <summary>Triggered when a protected key cannot be decrypted by the current provider.</summary>
+        public const int KeyUnprotectFailed = 3001;
+
+        /// <summary>Indicates a transient issue during an automated configuration migration.</summary>
+        public const int TransientMigrationWarning = 3002;
+
+        /// <summary>Logged when a configuration migration fails catastrophically and requires manual intervention.</summary>
+        public const int PersistentMigrationFailure = 3003;
+
+        #endregion
+
+        #region Auxiliary & Scheduled Task Events
+
+        /// <summary>Generic failure within a scheduled task automation script.</summary>
+        public const int ScheduledTaskScriptError = 3103;
+
+        /// <summary>Fatal failure due to a missing script dependency or module import error.</summary>
+        public const int ScheduledTaskScriptDependencyError = 3104;
+
+        #endregion
+
     }
 }
