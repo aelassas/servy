@@ -1,6 +1,6 @@
 # --------------------------------------------------------------------------
 # SonarCloud Analysis Workflow for Servy (.NET Framework 4.8 build)
-# Description: Performs static code analysis and security scanning.
+# Description: Performs static code analysis and security scanning using MSBuild.
 # Author: Akram El Assas
 # --------------------------------------------------------------------------
 
@@ -11,7 +11,7 @@ on:
       - net48
   # pull_request:
   #   types: [opened, synchronize, reopened]
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
   build:
@@ -19,24 +19,31 @@ jobs:
     runs-on: windows-latest
     
     steps:
-      # 1. Checkout code first so your custom local action is available
+      # 1. Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 
           
-      # 2. Setup Java
+      # 2. Setup Java (Required by SonarCloud)
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: 17
           distribution: 'zulu'
 
-      # 3. CRITICAL: Setup .NET using your custom action to satisfy global.json
+      # 3. Setup .NET (Satisfies global.json and provides environment for scanner)
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
 
-      # 4. Cache Packages
+      # 4. Add MSBuild and NuGet to the PATH
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.2.0
+
+      # 5. Cache Packages
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
         with:
@@ -44,7 +51,7 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      # 5. Cache Scanner
+      # 6. Cache Scanner
       - name: Cache SonarCloud scanner
         id: cache-sonar-scanner
         uses: actions/cache@v4
@@ -53,7 +60,7 @@ jobs:
           key: ${{ runner.os }}-sonar-scanner
           restore-keys: ${{ runner.os }}-sonar-scanner
 
-      # 6. Install Scanner
+      # 7. Install Scanner (The dotnet-tool wrapper still works great for MSBuild analysis)
       - name: Install SonarCloud scanner
         if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         shell: pwsh
@@ -61,7 +68,11 @@ jobs:
           if (!(Test-Path ${{ runner.temp }}\scanner)) { New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory }
           dotnet tool install dotnet-sonarscanner --tool-path ${{ runner.temp }}\scanner
 
-      # 7. Build and Analyze
+      # 8. Restore NuGet Packages (Mandatory for MSBuild)
+      - name: Restore NuGet packages
+        run: nuget restore
+
+      # 9. Build and Analyze
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -70,7 +81,7 @@ jobs:
         run: |
           ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"aelassas_servy" /o:"aelassas" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
           
-          # Using Release configuration for more accurate analysis
-          dotnet build --configuration Release
+          # Using MSBuild for .NET 4.8
+          msbuild /p:Configuration=Release
           
           ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"

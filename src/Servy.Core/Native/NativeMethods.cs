@@ -1,4 +1,5 @@
-﻿using Servy.Core.Config;
+﻿using Microsoft.Win32.SafeHandles;
+using Servy.Core.Config;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -627,7 +628,7 @@ namespace Servy.Core.Native
         private static extern bool MoveFileEx(string lpExistingFileName, string lpNewFileName, uint dwFlags);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool GetFileInformationByHandle(IntPtr hFile, out BY_HANDLE_FILE_INFORMATION lpFileInformation);
+        private static extern bool GetFileInformationByHandle(SafeFileHandle hFile, out BY_HANDLE_FILE_INFORMATION lpFileInformation);
 
         #endregion
 
@@ -914,7 +915,7 @@ namespace Servy.Core.Native
             var identity = new FILE_IDENTITY();
             try
             {
-                if (GetFileInformationByHandle(fs.SafeFileHandle.DangerousGetHandle(), out var info))
+                if (GetFileInformationByHandle(fs.SafeFileHandle, out var info))
                 {
                     identity.VolumeSerialNumber = info.VolumeSerialNumber;
                     identity.FileIndex = ((ulong)info.FileIndexHigh << 32) | info.FileIndexLow;
