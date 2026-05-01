@@ -52,7 +52,6 @@ function Check-LastExitCode {
     param([string]$ErrorMessage)
     if ($LASTEXITCODE -ne 0) {
         Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
-        exit $LASTEXITCODE
     }
 }
 
@@ -67,7 +66,7 @@ $sourceDir = Join-Path $scriptDir "..\src\$ProjectName"
 # Prevent Resolve-Path errors on clean environments
 if (-not (Test-Path $sourceDir)) {
     Write-Error "CRITICAL: Project directory not found at $sourceDir"
-    exit 1
+    return
 }
 
 # Ensure the target resources folder exists, but resolve its full path first
@@ -82,7 +81,7 @@ if (-not (Test-Path $TargetResourcesFolder)) {
 $publishScript = Join-Path $sourceDir "publish.ps1"
 if (-not (Test-Path $publishScript)) {
     Write-Error "Required script not found: $publishScript"
-    exit 1
+    return
 }
 
 Write-Host "=== [$ProjectName] Running publish.ps1 ==="

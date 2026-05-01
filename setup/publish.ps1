@@ -65,14 +65,13 @@ try {
 
         if (-not (Test-Path $fullPath)) {
             Write-Error "Script not found: $fullPath"
-            exit 1
+            return
         }
 
         Write-Host "`n=== Running: $fullPath ==="
         & $fullPath @Params
         if ($LASTEXITCODE -ne 0) {
             Write-Error "Script failed: $fullPath"
-            exit $LASTEXITCODE
         }
     }
 
