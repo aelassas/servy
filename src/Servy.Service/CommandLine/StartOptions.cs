@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Config;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Gets or sets the full path to the executable to run.
         /// </summary>
+        [ServicePath("Executable path", isFile: true, required: true)]
         public string ExecutablePath { get; set; }
 
         /// <summary>
@@ -24,6 +26,7 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Gets or sets the working directory for the process.
         /// </summary>
+        [ServicePath("Startup directory", isFile: false)]
         public string WorkingDirectory { get; set; }
 
         /// <summary>
@@ -96,6 +99,24 @@ namespace Servy.Service.CommandLine
         /// </summary>
         public int MaxRestartAttempts { get; set; } = AppConfig.DefaultMaxRestartAttempts;
 
+
+        /// <summary>
+        /// Gets or sets the full path to the failure program to run.
+        /// </summary>
+        [ServicePath("Failure program executable path", isFile: true)]
+        public string FailureProgramPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the working directory for the failure program.
+        /// </summary>
+        [ServicePath("Failure program startup directory", isFile: false)]
+        public string FailureProgramWorkingDirectory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the command-line arguments to pass to the failure program.
+        /// </summary>
+        public string FailureProgramArgs { get; set; }
+
         /// <summary>
         /// Gets or sets the environment variables of the child process.
         /// </summary>
@@ -104,11 +125,13 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Gets or sets the full path to the pre-launch executable to run.
         /// </summary>
+        [ServicePath("Pre-launch executable path", isFile: true)]
         public string PreLaunchExecutablePath { get; set; }
 
         /// <summary>
         /// Gets or sets the working directory for the pre-launch process.
         /// </summary>
+        [ServicePath("Pre-launch startup directory", isFile: false)]
         public string PreLaunchWorkingDirectory { get; set; }
 
         /// <summary>
@@ -150,28 +173,15 @@ namespace Servy.Service.CommandLine
         public bool PreLaunchIgnoreFailure { get; set; } = false;
 
         /// <summary>
-        /// Gets or sets the full path to the failure program to run.
-        /// </summary>
-        public string FailureProgramPath { get; set; }
-
-        /// <summary>
-        /// Gets or sets the working directory for the failure program.
-        /// </summary>
-        public string FailureProgramWorkingDirectory { get; set; }
-
-        /// <summary>
-        /// Gets or sets the command-line arguments to pass to the failure program.
-        /// </summary>
-        public string FailureProgramArgs { get; set; }
-
-        /// <summary>
         /// Gets or sets the full path to the post-launch executable to run.
         /// </summary>
+        [ServicePath("Post-launch executable path", isFile: true)]
         public string PostLaunchExecutablePath { get; set; }
 
         /// <summary>
         /// Gets or sets the working directory for the post-launch process.
         /// </summary>
+        [ServicePath("Post-launch startup directory", isFile: false)]
         public string PostLaunchWorkingDirectory { get; set; }
 
         /// <summary>
@@ -220,11 +230,13 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Optional path to an executable that runs before the service stops.
         /// </summary>
+        [ServicePath("Pre-stop executable path", isFile: true)]
         public string PreStopExecutablePath { get; set; }
 
         /// <summary>
         /// Optional startup directory for the pre-stop executable.
         /// </summary>
+        [ServicePath("Pre-stop startup directory", isFile: false)]
         public string PreStopWorkingDirectory { get; set; }
 
         /// <summary>
@@ -245,11 +257,13 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Optional path to an executable that runs after the service stops.
         /// </summary>
+        [ServicePath("Post-stop executable path", isFile: true)]
         public string PostStopExecutablePath { get; set; }
 
         /// <summary>
         /// Optional startup directory for the post-stop executable.
         /// </summary>
+        [ServicePath("Post-stop startup directory", isFile: false)]
         public string PostStopWorkingDirectory { get; set; }
 
         /// <summary>

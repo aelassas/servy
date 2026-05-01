@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Data;
+using Servy.Core.DTOs;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -483,6 +484,7 @@ namespace Servy.Service.Helpers
 
         /// <summary>
         /// Validates the critical configuration paths and service identity within the startup options.
+        /// Uses reflection to automatically validate any property decorated with ServicePathAttribute.
         /// </summary>
         /// <remarks>
         /// This method performs a series of integrity checks on:
@@ -500,88 +502,44 @@ namespace Servy.Service.Helpers
         /// </returns>
         private bool ValidateStartupOptions(IServyLogger logger, IProcessHelper processHelper, StartOptions options)
         {
-            if (string.IsNullOrWhiteSpace(options.ExecutablePath))
-            {
-                logger?.Error("Executable path not provided.");
-                return false;
-            }
-
+            // 1. Explicit check for ServiceName (not a path field)
             if (string.IsNullOrWhiteSpace(options.ServiceName))
             {
                 logger?.Error("Service name empty");
                 return false;
             }
 
-            if (!processHelper.ValidatePath(options.ExecutablePath))
-            {
-                logger?.Error($"Process path {options.ExecutablePath} is invalid.");
-                return false;
-            }
+            // 2. Reflective check for all path-based fields
+            var pathFields = typeof(StartOptions).GetProperties()
+                .Select(p => new
+                {
+                    Property = p,
+                    Attr = p.GetCustomAttribute<ServicePathAttribute>()
+                })
+                .Where(x => x.Attr != null);
 
-            if (!string.IsNullOrWhiteSpace(options.FailureProgramPath) && !processHelper.ValidatePath(options.FailureProgramPath))
+            foreach (var field in pathFields)
             {
-                logger?.Error($"Failure program path {options.FailureProgramPath} is invalid.");
-                return false;
-            }
+                var property = field.Property;
+                var attr = field.Attr;
 
-            if (!string.IsNullOrWhiteSpace(options.PreLaunchExecutablePath) && !processHelper.ValidatePath(options.PreLaunchExecutablePath))
-            {
-                logger?.Error($"Pre-launch process path {options.PreLaunchExecutablePath} is invalid.");
-                return false;
-            }
+                // Get the current path value from options
+                var pathValue = property.GetValue(options) as string;
+                bool isPathEmpty = string.IsNullOrWhiteSpace(pathValue);
 
-            if (!string.IsNullOrWhiteSpace(options.PostLaunchExecutablePath) && !processHelper.ValidatePath(options.PostLaunchExecutablePath))
-            {
-                logger?.Error($"Post-launch process path {options.PostLaunchExecutablePath} is invalid.");
-                return false;
-            }
+                // Required check: Logic specifically matches the original error "not provided"
+                if (attr.Required && isPathEmpty)
+                {
+                    logger?.Error($"{attr.Label} not provided.");
+                    return false;
+                }
 
-            if (!string.IsNullOrWhiteSpace(options.WorkingDirectory) && !processHelper.ValidatePath(options.WorkingDirectory, false))
-            {
-                logger?.Error($"Process working directory {options.WorkingDirectory} is invalid.");
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.FailureProgramWorkingDirectory) && !processHelper.ValidatePath(options.FailureProgramWorkingDirectory, false))
-            {
-                logger?.Error($"Failure program working directory {options.FailureProgramWorkingDirectory} is invalid.");
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory) && !processHelper.ValidatePath(options.PreLaunchWorkingDirectory, false))
-            {
-                logger?.Error($"Pre-launch process working directory {options.PreLaunchWorkingDirectory} is invalid.");
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.PostLaunchWorkingDirectory) && !processHelper.ValidatePath(options.PostLaunchWorkingDirectory, false))
-            {
-                logger?.Error($"Post-launch process working directory {options.PostLaunchWorkingDirectory} is invalid.");
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.PreStopExecutablePath) && !processHelper.ValidatePath(options.PreStopExecutablePath))
-            {
-                logger?.Error($"Pre-stop process path {options.PreStopExecutablePath} is invalid.");
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.PostStopExecutablePath) && !processHelper.ValidatePath(options.PostStopExecutablePath))
-            {
-                logger?.Error($"Post-stop process path {options.PostStopExecutablePath} is invalid.");
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.PreStopWorkingDirectory) && !processHelper.ValidatePath(options.PreStopWorkingDirectory, false))
-            {
-                logger?.Error($"Pre-stop process working directory {options.PreStopWorkingDirectory} is invalid.");
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.PostStopWorkingDirectory) && !processHelper.ValidatePath(options.PostStopWorkingDirectory, false))
-            {
-                logger?.Error($"Post-stop process working directory {options.PostStopWorkingDirectory} is invalid.");
-                return false;
+                // Validity check: Logic matches original error "{label} {path} is invalid."
+                if (!isPathEmpty && !processHelper.ValidatePath(pathValue, attr.IsFile))
+                {
+                    logger?.Error($"{attr.Label} {pathValue} is invalid.");
+                    return false;
+                }
             }
 
             return true;
