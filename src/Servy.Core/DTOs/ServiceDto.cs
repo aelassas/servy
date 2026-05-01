@@ -46,11 +46,13 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Path to the executable of the service.
         /// </summary>
+        [ServicePath("executable path", isFile: true, required: true)]
         public string ExecutablePath { get; set; } = string.Empty;
 
         /// <summary>
         /// Optional startup directory for the service executable.
         /// </summary>
+        [ServicePath("startup directory", isFile: false)]
         public string? StartupDirectory { get; set; }
 
         /// <summary>
@@ -150,11 +152,13 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Gets or sets the path to the process to run on failure.
         /// </summary>
+        [ServicePath("failure program executable path", isFile: true)]
         public string? FailureProgramPath { get; set; }
 
         /// <summary>
         /// Gets or sets the working directory for the failure program.
         /// </summary>
+        [ServicePath("failure program startup directory", isFile: false)]
         public string? FailureProgramStartupDirectory { get; set; }
 
         /// <summary>
@@ -196,11 +200,13 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Optional path to an executable that runs before the service starts.
         /// </summary>
+        [ServicePath("pre-launch executable path", isFile: true)]
         public string? PreLaunchExecutablePath { get; set; }
 
         /// <summary>
         /// Optional startup directory for the pre-launch executable.
         /// </summary>
+        [ServicePath("pre-launch startup directory", isFile: false)]
         public string? PreLaunchStartupDirectory { get; set; }
 
         /// <summary>
@@ -249,11 +255,13 @@ namespace Servy.Core.DTOs
         /// Post-launch hooks always run asynchronously and do not support supervisor features 
         /// (stdout capture, timeouts, or retries).
         /// </remarks>
+        [ServicePath("post-launch executable path", isFile: true)]
         public string? PostLaunchExecutablePath { get; set; }
 
         /// <summary>
         /// Optional startup directory for the post-launch executable.
         /// </summary>
+        [ServicePath("post-launch startup directory", isFile: false)]
         public string? PostLaunchStartupDirectory { get; set; }
 
         /// <summary>
@@ -304,11 +312,13 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Optional path to an executable that runs before the service stops.
         /// </summary>
+        [ServicePath("pre-stop executable path", isFile: true)]
         public string? PreStopExecutablePath { get; set; }
 
         /// <summary>
         /// Optional startup directory for the pre-stop executable.
         /// </summary>
+        [ServicePath("pre-stop startup directory", isFile: false)]
         public string? PreStopStartupDirectory { get; set; }
 
         /// <summary>
@@ -329,11 +339,13 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Optional path to an executable that runs after the service stops.
         /// </summary>
+        [ServicePath("post-stop executable path", isFile: true)]
         public string? PostStopExecutablePath { get; set; }
 
         /// <summary>
         /// Optional startup directory for the post-stop executable.
         /// </summary>
+        [ServicePath("post-stop startup directory", isFile: false)]
         public string? PostStopStartupDirectory { get; set; }
 
         /// <summary>
