@@ -131,6 +131,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-dotnet", "setup-dotne
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Core.IntegrationTests", "tests\Servy.Core.IntegrationTests\Servy.Core.IntegrationTests.csproj", "{C3832E91-A2D7-412B-9861-895E8848B16F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scoop", "scoop", "{A46EACF8-629B-462D-B859-243C56ECB376}"
+	ProjectSection(SolutionItems) = preProject
+		setup\scoop\README.md = setup\scoop\README.md
+		setup\scoop\servy.json = setup\scoop\servy.json
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -234,6 +240,7 @@ Global
 		{FED01F22-71C4-4504-9BC6-217F6DE9F152} = {8E91D1D2-8183-4A34-922F-5F702720EBD6}
 		{0C2EFAF7-B686-4373-A26C-34C93E963BFB} = {FED01F22-71C4-4504-9BC6-217F6DE9F152}
 		{C3832E91-A2D7-412B-9861-895E8848B16F} = {50795869-2933-430F-98BD-956C414ABBE4}
+		{A46EACF8-629B-462D-B859-243C56ECB376} = {11479D8F-D8B6-4AD7-BC82-A423FCC30779}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {93B02B52-77CF-4BAA-AD7E-08960E6D6482}

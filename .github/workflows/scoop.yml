@@ -4,11 +4,11 @@
 # Automates the update of Servy’s Scoop manifest.
 # When a new release is published (or triggered
 # manually), this workflow:
-#   • Downloads the latest installer
-#   • Computes its SHA256 hash
-#   • Updates the manifest in `aelassas/scoop-bucket`
-#   • Optionally creates a PR to update the manifest
-#     in `ScoopInstaller/Extras`
+#    • Downloads the latest installer
+#    • Computes its SHA256 hash
+#    • Updates the manifest in `aelassas/scoop-bucket`
+#    • Optionally creates a PR to update the manifest
+#      in `ScoopInstaller/Extras`
 # ===========================================
 
 name: scoop
@@ -89,6 +89,44 @@ jobs:
           "HASH=$LOWER" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Remove-Item $InstallerPath
 
+      - name: Update servy.json in current repository
+        shell: pwsh
+        run: |
+          $manifestPath = "setup/scoop/servy.json"
+          if (-Not (Test-Path $manifestPath)) {
+              Write-Error "Manifest not found at $manifestPath"
+              exit 1
+          }
+
+          # Load and update JSON
+          $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
+          $jsonObj.version = $env:VERSION
+          $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-x64-installer.exe"
+          $jsonObj.architecture.'64bit'.hash = $env:HASH
+
+          # Format JSON with 2-space indentation
+          $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
+          $lines = [regex]::Split($jsonString, "\r?\n")
+          $lines = $lines | ForEach-Object {
+              [regex]::Replace($_, '^( +)', { param($m) " " * ($m.Value.Length * 2) })
+          }
+          $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
+
+          # Write back to file
+          [System.IO.File]::WriteAllText($manifestPath, $jsonString, [System.Text.Encoding]::UTF8)
+
+          # Commit and push back to aelassas/servy
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ((git status --porcelain) -ne '') {
+            git add $manifestPath
+            git commit -m "chore: update setup/scoop/servy.json to version $env:VERSION"
+            git pull
+            git push origin HEAD
+          } else {
+            Write-Host "No changes to local manifest."
+          }
+
       - name: Update servy.json in scoop-bucket and push
         shell: pwsh
         env:
@@ -141,6 +179,7 @@ jobs:
           if ((git status --porcelain) -ne '') {
             git add $manifestPath
             git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
+            git pull
             git push origin HEAD
           } else {
             Write-Host "No changes to commit"
