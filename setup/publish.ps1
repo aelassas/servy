@@ -56,7 +56,7 @@ try {
     }
     catch {
         Write-Error "Configuration Failed: $($_.Exception.Message)"
-        exit 1
+        return
     }
 
     # === Functions ===
@@ -201,8 +201,6 @@ try {
     Write-Host "`nFATAL ERROR: $_" -ForegroundColor Red
     Write-Host "Error details: $($_.ScriptStackTrace)" -ForegroundColor Gray
 } finally {
-    if ($scriptHadError) { exit 1 }
-    
     Write-Host "`nPress any key to exit..."
     if ($Host.Name -eq 'ConsoleHost') {
         [void][System.Console]::ReadKey($true)

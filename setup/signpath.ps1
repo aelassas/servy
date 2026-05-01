@@ -47,8 +47,20 @@ if (-not $availableModule) {
 
 # 1. Clean up the current session to prevent version "pollution"
 # We remove ALL loaded SignPath modules so we start with a clean slate.
-while (Get-Module -Name SignPath) {
-    Remove-Module -Name SignPath -ErrorAction SilentlyContinue
+# Added attempt limit and error tracking to prevent infinite CI hangs.
+$attempts = 0
+$maxAttempts = 5
+while ((Get-Module -Name SignPath) -and $attempts -lt $maxAttempts) {
+    Remove-Module -Name SignPath -Force -ErrorVariable rmError -ErrorAction SilentlyContinue
+    if ($rmError) {
+        Write-Warning "Failed to remove loaded SignPath module on attempt $($attempts+1): $($rmError | Out-String)"
+    }
+    $attempts++
+}
+
+if (Get-Module -Name SignPath) {
+    Write-Error "Could not unload pre-existing SignPath module after $attempts attempts. Aborting to avoid version pollution."
+    return
 }
 
 # 2. Explicitly import the pinned version
@@ -62,7 +74,7 @@ if ($null -eq $loadedModule) {
     # If we get here, the import failed or another version is blocking it
     $currentVersions = (Get-Module -Name SignPath).Version -join ', '
     Write-Error "Failed to load the correct SignPath module version. Expected: $RequiredSignPathVersion, Found Loaded: [$currentVersions]"
-    exit 1
+    return
 }
 
 Write-Host "SignPath module v$($loadedModule.Version) loaded and verified for build provenance." -ForegroundColor Green
@@ -82,7 +94,7 @@ $configPath = $configCandidates | Where-Object { Test-Path $_ } | Select-Object 
 
 if (-not $configPath) {
     Write-Host ".signpath not found. Skipping signing."
-    exit 0
+    return
 }
 
 Write-Host "Loading config from $configPath"
@@ -105,7 +117,7 @@ Get-Content $configPath | ForEach-Object {
 $signFlag = $config["SIGN"]
 if ($signFlag -ine "true") {
     Write-Host "SIGN is not true in $configPath. Skipping signing."
-    exit 0
+    return
 }
 
 Write-Host "SIGN=true detected. Proceeding with code signing."
@@ -120,7 +132,6 @@ $artifactConfigurationSlug = $config["ARTIFACT_CONFIGURATION_SLUG"]  # optional
 
 # API Token Resolution: Environment Variable > Config File
 $apiToken = $env:SIGNPATH_API_TOKEN
-
 if ([string]::IsNullOrWhiteSpace($apiToken)) {
     $apiToken = $config["API_TOKEN"]
     
@@ -133,12 +144,12 @@ if ([string]::IsNullOrWhiteSpace($apiToken)) {
 
 if (!$apiToken -or !$organizationId -or !$projectSlug -or !$signingPolicySlug) {
     Write-Error "Missing required SignPath configuration values (API Token, Organization ID, Project Slug, or Signing Policy Slug)."
-    exit 1
+    return
 }
 
 if (-not (Test-Path $Path)) {
     Write-Error "File not found: $Path"
-    exit 1
+    return
 }
 
 $fileName = Split-Path $Path -Leaf
@@ -199,7 +210,7 @@ try {
 }
 catch {
     Write-Error "Failed to submit signing request: $_"
-    exit 1
+    return
 }
 
 # ----------------------------------------------------------
@@ -208,14 +219,14 @@ catch {
 try {
     if (-not (Test-Path $signedPath)) {
         Write-Error "SignPath did not produce the expected output file: $signedPath"
-        exit 1
+        return
     }
     Move-Item -Force -Path $signedPath -Destination $Path
     Write-Host "Signing complete: $Path"
 }
 catch {
     Write-Error "Failed to replace the original file: $_"
-    exit 1
+    return
 }
 
-exit 0
+return
