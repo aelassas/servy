@@ -49,7 +49,7 @@ namespace Servy.Manager
                 Description = service.Description ?? string.Empty,
                 StartupType = null,
                 Status = ServiceStatus.None,
-                LogOnAs = service.RunAsLocalSystem ? AppConfig.LocalSystem : !string.IsNullOrEmpty(service.UserAccount) ? GetLogOnAsDisplayName(service.UserAccount) ?? string.Empty : string.Empty,
+                LogOnAs = service.RunAsLocalSystem ? AppConfig.LocalSystem :GetLogOnAsDisplayName(service.UserAccount),
                 IsInstalled = false,
                 IsDesktopAppAvailable = isDesktopAppAvailable,
                 Pid = service.Pid,
@@ -97,7 +97,7 @@ namespace Servy.Manager
         /// </summary>
         /// <param name="userSession">The raw account name or session string retrieved from the service configuration or WMI query.</param>
         /// <returns>A localized display string representing the account, defaulting to the localized Local System string if the input matches system-level credentials.</returns>
-        public static string GetLogOnAsDisplayName(string userSession)
+        public static string GetLogOnAsDisplayName(string? userSession)
         {
             // LOG: Resolving display name for service account identity.
             // Logic: If the string is null, empty, or matches the internal "LocalSystem" SCM name, we return the UI-friendly constant.
