@@ -58,6 +58,7 @@ namespace Servy.Manager
         private FileSystemWatcher? _availabilityWatcher;
         private FileSystemEventHandler? _availabilityChangedHandler;
         private RenamedEventHandler? _availabilityRenamedHandler;
+        private readonly CancellationTokenSource _appLifetimeCts = new CancellationTokenSource();
 
         #endregion
 
@@ -323,10 +324,43 @@ namespace Servy.Manager
         #region Private Methods
 
         /// <summary>
-        /// Starts a real-time background watcher to monitor whether the Desktop configuration
-        /// app becomes available or unavailable after Manager has started.
+        /// Starts a real-time, resilient background monitor to track the availability of the 
+        /// desktop configuration application.
         /// </summary>
-        private void StartAvailabilityMonitor()
+        /// <remarks>
+        /// <para>
+        /// This implementation follows a multi-phase state machine approach to ensure high 
+        /// reliability and zero side-effects:
+        /// </para>
+        /// <list type="bullet">
+        /// <item>
+        /// <description>
+        /// <b>Phase 1 (Polling):</b> Employs a non-blocking loop to wait for the target directory's 
+        /// creation. If the directory already exists, this phase is skipped.
+        /// </description>
+        /// </item>
+        /// <item>
+        /// <description>
+        /// <b>Phase 2 (Attachment):</b> Initializes the <see cref="FileSystemWatcher"/> once 
+        /// the path is valid, providing instant event-driven updates for file lifecycle changes.
+        /// </description>
+        /// </item>
+        /// <item>
+        /// <description>
+        /// <b>Phase 3 (Heartbeat):</b> Since <see cref="FileSystemWatcher"/> becomes orphaned 
+        /// and silent if its root directory is renamed or deleted, a background heartbeat 
+        /// periodically verifies directory existence.
+        /// </description>
+        /// </item>
+        /// <item>
+        /// <description>
+        /// <b>Phase 4 (Recovery):</b> If the directory is lost, the watcher is deterministically 
+        /// cleaned up, the UI state is updated, and the monitor seamlessly reverts to Phase 1.
+        /// </description>
+        /// </item>
+        /// </list>
+        /// </remarks>
+        private async void StartAvailabilityMonitor()
         {
             if (string.IsNullOrEmpty(DesktopAppPublishPath)) return;
 
@@ -337,25 +371,61 @@ namespace Servy.Manager
 
             try
             {
-                // Ensure the directory exists before watching it, otherwise FileSystemWatcher throws an exception
-                if (!Directory.Exists(directory))
+                // Outer loop keeps the monitor alive for the lifetime of the application
+                while (!_appLifetimeCts.Token.IsCancellationRequested)
                 {
-                    Directory.CreateDirectory(directory);
+                    // PHASE 1: Waiting for Installation
+                    // Deferred Attachment: Wait for the directory to exist naturally on disk.
+                    while (!Directory.Exists(directory))
+                    {
+                        await Task.Delay(AppConfig.AppAvailabilityPollIntervalMs, _appLifetimeCts.Token);
+                    }
+
+                    // PHASE 2: Attachment
+                    // Initialize the watcher now that the path is valid.
+                    _availabilityWatcher = new FileSystemWatcher(directory, fileName)
+                    {
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.CreationTime | NotifyFilters.LastWrite,
+                        EnableRaisingEvents = true
+                    };
+
+                    _availabilityChangedHandler = (s, e) => UpdateAvailabilityState();
+                    _availabilityRenamedHandler = (s, e) => UpdateAvailabilityState();
+
+                    _availabilityWatcher.Created += _availabilityChangedHandler;
+                    _availabilityWatcher.Deleted += _availabilityChangedHandler;
+                    _availabilityWatcher.Changed += _availabilityChangedHandler;
+                    _availabilityWatcher.Renamed += _availabilityRenamedHandler;
+
+                    // Log unexpected buffer overflows, but we no longer rely on this for directory renames
+                    _availabilityWatcher.Error += (s, e) =>
+                        Logger.Warn($"FileSystemWatcher for {fileName} entered an error state.");
+
+                    // Perform an initial check immediately upon attachment
+                    UpdateAvailabilityState();
+
+                    // PHASE 3: The Heartbeat
+                    // FileSystemWatcher is completely blind if its own root directory is renamed or deleted.
+                    // We use a low-cost heartbeat to verify the directory still exists.
+                    while (Directory.Exists(directory))
+                    {
+                        await Task.Delay(AppConfig.AppAvailabilityPollIntervalMs, _appLifetimeCts.Token);
+                    }
+
+                    // PHASE 4: Recovery
+                    // If the code reaches this point, the parent directory was renamed or deleted.
+                    // We clean up the stale watcher, force a UI update to 'False', and let the 
+                    // outer loop drop us seamlessly back into Phase 1 to wait for it to return.
+                    Current.Dispatcher.Invoke(() =>
+                    {
+                        CleanupAvailabilityWatcher();
+                        UpdateAvailabilityState();
+                    });
                 }
-
-                _availabilityWatcher = new FileSystemWatcher(directory, fileName)
-                {
-                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.CreationTime | NotifyFilters.LastWrite,
-                    EnableRaisingEvents = true
-                };
-
-                // Watch for all file lifecycle events to ensure we catch installations, uninstalls, and updates
-                _availabilityChangedHandler = (s, e) => UpdateAvailabilityState();
-                _availabilityRenamedHandler = (s, e) => UpdateAvailabilityState();
-                _availabilityWatcher.Created += _availabilityChangedHandler;
-                _availabilityWatcher.Deleted += _availabilityChangedHandler;
-                _availabilityWatcher.Changed += _availabilityChangedHandler;
-                _availabilityWatcher.Renamed += _availabilityRenamedHandler;
+            }
+            catch (TaskCanceledException)
+            {
+                // Expected during app shutdown, exit gracefully
             }
             catch (Exception ex)
             {
@@ -376,6 +446,32 @@ namespace Servy.Manager
                     IsDesktopAppAvailable = File.Exists(DesktopAppPublishPath);
                 }
             });
+        }
+
+        /// <summary>
+        /// Safely detaches handlers and disposes of the current availability watcher.
+        /// </summary>
+        private void CleanupAvailabilityWatcher()
+        {
+            if (_availabilityWatcher != null)
+            {
+                _availabilityWatcher.EnableRaisingEvents = false;
+
+                if (_availabilityChangedHandler != null)
+                {
+                    _availabilityWatcher.Created -= _availabilityChangedHandler;
+                    _availabilityWatcher.Deleted -= _availabilityChangedHandler;
+                    _availabilityWatcher.Changed -= _availabilityChangedHandler;
+                }
+
+                if (_availabilityRenamedHandler != null)
+                {
+                    _availabilityWatcher.Renamed -= _availabilityRenamedHandler;
+                }
+
+                _availabilityWatcher.Dispose();
+                _availabilityWatcher = null;
+            }
         }
 
         #endregion
@@ -455,20 +551,9 @@ namespace Servy.Manager
         {
             try
             {
-                if (_availabilityWatcher != null)
-                {
-                    _availabilityWatcher.EnableRaisingEvents = false;
-                    if (_availabilityChangedHandler != null)
-                    {
-                        _availabilityWatcher.Created -= _availabilityChangedHandler;
-                        _availabilityWatcher.Deleted -= _availabilityChangedHandler;
-                        _availabilityWatcher.Changed -= _availabilityChangedHandler;
-                    }
-                    if (_availabilityRenamedHandler != null)
-                    {
-                        _availabilityWatcher.Renamed -= _availabilityRenamedHandler;
-                    }
-                }
+                CleanupAvailabilityWatcher();
+                _appLifetimeCts?.Cancel();
+                _appLifetimeCts?.Dispose();
                 _availabilityWatcher?.Dispose();
                 _bootstrapper.OnExit(e);
             }

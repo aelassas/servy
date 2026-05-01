@@ -421,6 +421,16 @@ namespace Servy.Core.Config
         /// </summary>
         public const int DefaultLogsWindowDays = 3;
 
+        /// <summary>
+        /// The interval in milliseconds used to poll for the existence of a target application's 
+        /// directory (e.g., when waiting for a sidecar app to be installed or become available).
+        /// </summary>
+        /// <remarks>
+        /// A value of 3000ms (3 seconds) provides a balance between UI responsiveness and 
+        /// minimizing background I/O overhead.
+        /// </remarks>
+        public const int AppAvailabilityPollIntervalMs = 3000;
+
         #endregion
 
         #region Limits, Thresholds & Constraints
