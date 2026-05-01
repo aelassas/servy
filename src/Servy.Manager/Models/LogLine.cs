@@ -42,6 +42,12 @@ namespace Servy.Manager.Models
         public DateTime Timestamp { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the timestamp was synthetically generated 
+        /// during history loading rather than parsed from the log stream.
+        /// </summary>
+        public bool IsSyntheticTime { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="LogLine"/> class.
         /// </summary>
         /// <param name="text">The string content read from the file.</param>
@@ -54,6 +60,7 @@ namespace Servy.Manager.Models
             Type = type;
             // Use provided timestamp (for history) or current time (for live)
             Timestamp = timestamp ?? DateTime.Now;
+            IsSyntheticTime = false;
         }
     }
 }

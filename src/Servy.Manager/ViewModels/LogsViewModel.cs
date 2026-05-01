@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Services;
+using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.UI.Commands;
@@ -28,6 +29,7 @@ namespace Servy.Manager.ViewModels
     {
         #region Private Fields
 
+        private readonly IAppConfiguration _appConfig;
         private readonly IEventLogService _eventLogService;
         private readonly ICursorService _cursorService;
         private bool _isBusy;
@@ -291,14 +293,16 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Initializes a new instance of the <see cref="LogsViewModel"/> class.
         /// </summary>
+        /// <param name="appConfig">Application configuration settings.</param>
         /// <param name="eventLogService">Service used to fetch event logs.</param>
         /// <param name="cursorService">Service used to control the cursor state.</param>
-        public LogsViewModel(IEventLogService eventLogService, ICursorService cursorService)
+        public LogsViewModel(IAppConfiguration appConfig, IEventLogService eventLogService, ICursorService cursorService)
         {
+            _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _eventLogService = eventLogService;
             _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
 
-            FromDate = DateTime.Now.AddDays(-3); // Default to last 3 days
+            FromDate = DateTime.Now.AddDays(-_appConfig.LogsWindowDays);
             ToDate = DateTime.Now; // Default to now
 
             LogsView = new ListCollectionView(_logs);

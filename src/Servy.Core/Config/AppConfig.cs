@@ -404,6 +404,11 @@ namespace Servy.Core.Config
         /// </summary>
         public const int UpdateCheckTimeoutSeconds = 10;
 
+        /// <summary>
+        /// The default log search window duration (3 days) used when no specific configuration value is found.
+        /// </summary>
+        public const int DefaultLogsWindowDays = 3;
+
         #endregion
 
         #region Limits, Thresholds & Constraints

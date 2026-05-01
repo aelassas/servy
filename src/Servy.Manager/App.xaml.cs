@@ -167,6 +167,12 @@ namespace Servy.Manager
         /// </summary>
         public LogLevel LogLevel { get; private set; }
 
+        /// <summary>
+        /// Gets the window period in days for the logs tab search, loaded from configuration. 
+        /// This determines the default date range applied when retrieving service log entries.
+        /// </summary>
+        public int LogsWindowDays { get; private set; }
+
         #endregion
 
         #region Constructors
@@ -228,7 +234,7 @@ namespace Servy.Manager
                     var cursorService = new CursorService();
 
                     // 2. Initialize Standalone ViewModels
-                    var logsVm = new LogsViewModel(eventLogService, cursorService);
+                    var logsVm = new LogsViewModel(this, eventLogService, cursorService);
 
                     // Break the circular dependency using local proxy functions
                     MainViewModel viewModel = null;
@@ -300,6 +306,8 @@ namespace Servy.Manager
                     {
                         Logger.Warn($"Desktop app executable not found: {DesktopAppPublishPath}");
                     }
+
+                    LogsWindowDays = int.TryParse(config["LogsWindowDays"], out var lwd) ? lwd : AppConfig.DefaultLogsWindowDays;
 
                     StartAvailabilityMonitor();
                 }
