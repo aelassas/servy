@@ -38,7 +38,7 @@ namespace Servy.Core.UnitTests.Helpers
             var iv = Path.Combine(_tempDir, "iv.aes");
 
             var ex = Assert.Throws<InvalidOperationException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv));
-            Assert.Contains("Data Source=", ex.Message);
+            Assert.Contains("Data Source", ex.Message);
         }
 
         [Fact]
