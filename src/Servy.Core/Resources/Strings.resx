@@ -182,5 +182,33 @@
   <data name="Msg_StartupError_Format" xml:space="preserve">
     <value>Startup error: {0}</value>
   </data>
+  <data name="Msg_ImportFileNotFound" xml:space="preserve">
+    <value>[Import] File not found: {0}</value>
+  </data>
+
+  <data name="FileFilter_Executable" xml:space="preserve">
+    <value>Executable files (*.exe)|*.exe|All files (*.*)|*.*</value>
+  </data>
+  <data name="FileFilter_Xml" xml:space="preserve">
+    <value>XML files (*.xml)|*.xml|All files (*.*)|*.*</value>
+  </data>
+  <data name="FileFilter_Json" xml:space="preserve">
+    <value>JSON files (*.json)|*.json|All files (*.*)|*.*</value>
+  </data>
+    <data name="FileFilter_AllFiles" xml:space="preserve">
+    <value>All files (*.*)|*.*</value>
+  </data>
+  <data name="Title_SelectExecutable" xml:space="preserve">
+    <value>Select process executable</value>
+  </data>
+  <data name="Title_SelectXml" xml:space="preserve">
+    <value>Select XML file</value>
+  </data>
+  <data name="Title_SelectJson" xml:space="preserve">
+    <value>Select JSON file</value>
+  </data>
+  <data name="Title_SelectStartupDirectory" xml:space="preserve">
+    <value>Select startup directory</value>
+  </data>
 
 </root>

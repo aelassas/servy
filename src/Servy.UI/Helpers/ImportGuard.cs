@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Logging;
+using Servy.Core.Resources;
 using Servy.UI.Services;
 using System;
 using System.IO;
@@ -44,7 +45,7 @@ namespace Servy.UI.Helpers
             // 1. Existence Check
             if (!fileInfo.Exists)
             {
-                var errorMsg = $"[Import] File not found: {fullPath}";
+                var errorMsg = string.Format(Strings.Msg_ImportFileNotFound, fullPath);
                 Logger.Error(errorMsg);
                 await messageBoxService.ShowErrorAsync(errorMsg, caption);
                 return false;
