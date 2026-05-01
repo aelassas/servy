@@ -166,4 +166,21 @@
   <data name="Msg_PasswordsDontMatch" xml:space="preserve">
     <value>Passwords don't match.</value>
   </data>
+
+  <data name="Msg_FatalError_Title" xml:space="preserve">
+    <value>Servy - Fatal Error</value>
+  </data>
+  <data name="Msg_FatalError_Body" xml:space="preserve">
+    <value>A fatal error occurred and the application must close. Detailed diagnostics have been saved to the log file.</value>
+  </data>
+  <data name="Msg_UnexpectedError_Title" xml:space="preserve">
+    <value>Servy - Unexpected Error</value>
+  </data>
+  <data name="Msg_UnexpectedError_Body" xml:space="preserve">
+    <value>An unexpected error occurred in the interface, but the application will attempt to continue. Details have been logged.</value>
+  </data>
+  <data name="Msg_StartupError_Format" xml:space="preserve">
+    <value>Startup error: {0}</value>
+  </data>
+  
 </root>

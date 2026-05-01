@@ -3,6 +3,7 @@ using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Resources;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
@@ -108,10 +109,10 @@ namespace Servy.UI.Bootstrapping
                 Exception ex = args.ExceptionObject as Exception;
                 Logger.Error("FATAL: AppDomain Unhandled Exception. Process is terminating.", ex);
                 MessageBox.Show(
-                    "A fatal error occurred and the application must close. Detailed diagnostics have been saved to the log file.",
-                    "Servy - Fatal Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                     Strings.Msg_FatalError_Body,
+                     Strings.Msg_FatalError_Title,
+                     MessageBoxButton.OK,
+                     MessageBoxImage.Error);
             };
 
             // 4. UI Thread exceptions (Dispatcher errors)
@@ -123,8 +124,8 @@ namespace Servy.UI.Bootstrapping
                 if (!isOutOfMemory)
                 {
                     MessageBox.Show(
-                        "An unexpected error occurred in the interface, but the application will attempt to continue. Details have been logged.",
-                        "Servy - Unexpected Error",
+                        Strings.Msg_UnexpectedError_Body,
+                        Strings.Msg_UnexpectedError_Title,
                         MessageBoxButton.OK,
                         MessageBoxImage.Warning);
                     args.Handled = true;
@@ -329,7 +330,7 @@ namespace Servy.UI.Bootstrapping
             catch (Exception ex)
             {
                 Logger.Error("Startup error", ex);
-                MessageBox.Show("Startup error: " + ex.Message);
+                MessageBox.Show(string.Format(Strings.Msg_StartupError_Format, ex.Message));
                 app.Shutdown();
             }
             finally
