@@ -92,21 +92,6 @@ namespace Servy.Service.Helpers
 
         #endregion
 
-        #region Constants
-
-        /// <summary>
-        /// The maximum time, in milliseconds, the restarter executable will wait for the 
-        /// main service process to terminate.
-        /// </summary>
-        /// <remarks>
-        /// Defaults to 240,000ms (4 minutes). This provides a significant buffer for 
-        /// the service to perform a graceful shutdown, flush logs, and release 
-        /// file handles before the restarter attempts to perform maintenance or a restart.
-        /// </remarks>
-        public const int RestarterExeMaxWaitMs = 240_000;
-
-        #endregion
-
         #region Private Fields
 
         private readonly ICommandLineProvider _commandLineProvider;
@@ -348,9 +333,9 @@ namespace Servy.Service.Helpers
                     }
 
                     // 1. Wait for the restarter to complete the Stop/Start cycle
-                    if (!process.WaitForExit(RestarterExeMaxWaitMs))
+                    if (!process.WaitForExit(AppConfig.RestarterExeMaxWaitMs))
                     {
-                        logger?.Error($"Servy.Restarter.exe timed out after {RestarterExeMaxWaitMs / 60_000} minutes minutes. Forcing termination to prevent orphan conflicts.");
+                        logger?.Error($"Servy.Restarter.exe timed out after {AppConfig.RestarterExeMaxWaitMs / 60_000} minutes minutes. Forcing termination to prevent orphan conflicts.");
 
                         try
                         {
