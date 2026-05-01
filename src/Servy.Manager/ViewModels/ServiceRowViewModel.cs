@@ -116,40 +116,21 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Handles property changes in the underlying <see cref="Service"/> and forwards them to the UI.
         /// </summary>
+        /// <remarks>
+        /// This refactor removes redundant switch cases because the ViewModel property names 
+        /// match the Service model names exactly.
+        /// </remarks>
         private void Service_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            // Forward all property changes from Service to ViewModel
-            switch (e.PropertyName)
-            {
-                case nameof(Service.Description):
-                    OnPropertyChanged(nameof(Description));
-                    break;
-                case nameof(Service.Status):
-                    OnPropertyChanged(nameof(Status));
-                    break;
-                case nameof(Service.StartupType):
-                    OnPropertyChanged(nameof(StartupType));
-                    break;
-                case nameof(Service.LogOnAs):
-                    OnPropertyChanged(nameof(LogOnAs));
-                    break;
-                case nameof(Service.IsInstalled):
-                    OnPropertyChanged(nameof(IsInstalled));
-                    break;
-                case nameof(Service.IsDesktopAppAvailable):
-                    OnPropertyChanged(nameof(IsDesktopAppAvailable));
-                    break;
-                case nameof(Service.Name):
-                    OnPropertyChanged(nameof(Name));
-                    break;
-                default:
-                    OnPropertyChanged(e.PropertyName);
-                    break;
-            }
+            if (string.IsNullOrEmpty(e?.PropertyName)) return;
+
+            // Forward the property change directly to the ViewModel.
+            // The default pass-through handles all 1:1 mapped properties (e.g., Description, Status, Pid).
+            OnPropertyChanged(e.PropertyName);
 
             // RE-EVALUATE COMMANDS: 
-            // If status or installation state changes, tell the commands to re-check CanExecute.
-            // This ensures buttons in the UI reflect the current OS state immediately.
+            // If status or installation state changes, trigger a CanExecute re-check.
+            // This ensures UI buttons (Start, Stop, etc.) update their enabled state immediately.
             if (e.PropertyName == nameof(Service.Status) || e.PropertyName == nameof(Service.IsInstalled))
             {
                 (StartCommand as AsyncCommand)?.RaiseCanExecuteChanged();
