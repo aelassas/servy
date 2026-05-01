@@ -31,7 +31,7 @@ namespace Servy.UI.Services
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Servy");
 
             // Centralized timeout for the static client
-            _httpClient.Timeout = TimeSpan.FromSeconds(20);
+            _httpClient.Timeout = TimeSpan.FromSeconds(AppConfig.UpdateCheckHttpTimeoutSeconds);
         }
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace Servy.UI.Services
             try
             {
                 // 10 seconds is the ideal 'patience window' for a manual UI trigger
-                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10)))
+                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(AppConfig.UpdateCheckTimeoutSeconds)))
                 {
                     var url = "https://api.github.com/repos/aelassas/servy/releases/latest";
 
