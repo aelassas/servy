@@ -219,9 +219,8 @@ namespace Servy.UI.Bootstrapping
         /// </summary>
         /// <param name="app">The active WPF application instance.</param>
         /// <param name="e">The startup event arguments.</param>
-        /// <param name="processHelper">An instance of <see cref="IProcessHelper"/> used to query running processes.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous initialization process.</returns>
-        public async Task InitializeAppAsync(Application app, StartupEventArgs e, IProcessHelper processHelper)
+        public async Task InitializeAppAsync(Application app, StartupEventArgs e)
         {
             string? serviceName = null;
             var showSplash = true;

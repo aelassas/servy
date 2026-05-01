@@ -390,7 +390,7 @@ namespace Servy.Manager
 
             // Use a dedicated async method instead of a chained ContinueWith 
             // to ensure the startup lifecycle and any faults are correctly observed.
-            _ = InitializeAppWithFaultHandlingAsync(e, Services.GetRequiredService<IProcessHelper>());
+            _ = InitializeAppWithFaultHandlingAsync(e);
         }
 
         /// <summary>
@@ -398,13 +398,12 @@ namespace Servy.Manager
         /// that occur before the UI is ready.
         /// </summary>
         /// <param name="e">The startup event arguments.</param>
-        /// <param name="processHelper">An instance of <see cref="IProcessHelper"/> used to query running processes.</param>
         /// <returns>A <see cref="Task"/> representing the initialization process.</returns>
-        private async Task InitializeAppWithFaultHandlingAsync(StartupEventArgs e, IProcessHelper processHelper)
+        private async Task InitializeAppWithFaultHandlingAsync(StartupEventArgs e)
         {
             try
             {
-                await _bootstrapper.InitializeAppAsync(this, e, processHelper);
+                await _bootstrapper.InitializeAppAsync(this, e);
             }
             catch (Exception ex)
             {
