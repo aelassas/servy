@@ -16,12 +16,15 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
         private readonly Mock<ICursorService> _cursorServiceMock; // New Dependency
+        private readonly Mock<IUiDispatcher> _uiDispatcherMock;
 
         public ConsoleViewModelTests()
         {
             _serviceRepoMock = new Mock<IServiceRepository>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
             _cursorServiceMock = new Mock<ICursorService>();
+            _uiDispatcherMock = new Mock<IUiDispatcher>();
+            _uiDispatcherMock.Setup(d => d.YieldAsync()).Returns(Task.CompletedTask);
 
             // Setup default configuration values
             _appConfigMock = new Mock<IAppConfiguration>();
@@ -35,7 +38,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _serviceRepoMock.Object,
                 _serviceCommandsMock.Object,
                 _appConfigMock.Object,
-                _cursorServiceMock.Object); // Inject mock cursor service
+                _cursorServiceMock.Object,
+                _uiDispatcherMock.Object); // Inject mock cursor service
         }
 
         [Fact]

@@ -51,7 +51,8 @@ namespace Servy.Manager.ViewModels
         /// Initializes a new instance of the <see cref="MonitoringViewModelBase"/> class.
         /// </summary>
         /// <param name="cursorService">Service to manage cursor state.</param>
-        protected MonitoringViewModelBase(ICursorService cursorService) : base(cursorService)
+        /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
+        protected MonitoringViewModelBase(ICursorService cursorService, IUiDispatcher uiDispatcher) : base(cursorService, uiDispatcher)
         {
         }
 

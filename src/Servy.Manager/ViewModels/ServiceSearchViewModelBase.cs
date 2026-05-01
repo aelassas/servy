@@ -1,5 +1,4 @@
-﻿using Servy.Core.Helpers;
-using Servy.Core.Logging;
+﻿using Servy.Core.Logging;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
@@ -7,7 +6,6 @@ using Servy.UI.Commands;
 using Servy.UI.Services;
 using Servy.UI.ViewModels;
 using System.Collections.ObjectModel;
-using System.Windows.Threading;
 
 namespace Servy.Manager.ViewModels
 {
@@ -21,21 +19,41 @@ namespace Servy.Manager.ViewModels
     /// </remarks>
     public abstract class ServiceSearchViewModelBase : ViewModelBase, IDisposable
     {
+        #region Private fields
+        
+        private bool _disposedValue;
+        private string? _searchText;
+        private string? _searchButtonText = Strings.Button_Search;
+        private bool _isBusy;
+
+        #endregion
+
+        #region Protected fields
+
         /// <summary>
         /// Manages the cancellation lifecycle for the current service search operation.
         /// </summary>
         protected CancellationTokenSource? _serviceSearchCts;
 
+        /// <summary>
+        /// UI dispatcher for yielding control back to the UI thread during long-running operations.
+        /// </summary>
+        protected readonly IUiDispatcher _uiDispatcher;
+
+        /// <summary>
+        /// Cursor service for managing wait cursor state during long-running operations.
+        /// </summary>
         protected readonly ICursorService _cursorService;
 
-        private bool _disposedValue;
+        #endregion
+
+        #region Properties
 
         /// <summary>
         /// Gets the collection of services retrieved during the last search.
         /// </summary>
         public ObservableCollection<ServiceItemBase> Services { get; } = new ObservableCollection<ServiceItemBase>();
 
-        private string? _searchText;
         /// <summary>
         /// Gets or sets the text filter used for searching services.
         /// </summary>
@@ -45,7 +63,6 @@ namespace Servy.Manager.ViewModels
             set => Set(ref _searchText, value);
         }
 
-        private string? _searchButtonText = Strings.Button_Search;
         /// <summary>
         /// Gets or sets the text displayed on the search button, dynamically toggling 
         /// between 'Search' and 'Searching...' states.
@@ -56,7 +73,6 @@ namespace Servy.Manager.ViewModels
             set => Set(ref _searchButtonText, value);
         }
 
-        private bool _isBusy;
         /// <summary>
         /// Gets or sets a value indicating whether a search operation is currently in progress.
         /// Used to bind progress indicators in the UI.
@@ -66,6 +82,10 @@ namespace Servy.Manager.ViewModels
             get => _isBusy;
             set => Set(ref _isBusy, value);
         }
+
+        #endregion
+
+        #region Commands
 
         /// <summary>
         /// Gets or sets the command engine for executing service-level operations.
@@ -77,15 +97,23 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public IAsyncCommand SearchCommand { get; protected set; }
 
+        #endregion
+
+        #region Constructors
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceSearchViewModelBase"/> class.
         /// </summary>
         /// <param name="cursorService">Service to manage cursor state.</param>
-        protected ServiceSearchViewModelBase(ICursorService cursorService)
+        /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
+        protected ServiceSearchViewModelBase(ICursorService cursorService, IUiDispatcher uiDispatcher)
         {
             _cursorService = cursorService;
+            _uiDispatcher = uiDispatcher;
             SearchCommand = new AsyncCommand(SearchServicesAsync);
         }
+
+        #endregion
 
         /// <summary>
         /// When implemented in a derived class, creates a view-specific service model 
@@ -133,10 +161,7 @@ namespace Servy.Manager.ViewModels
                 IsBusy = true;
                 SearchButtonText = Strings.Button_Searching;
 
-                if (!Helper.IsRunningUnderXunit())
-                {
-                    await Dispatcher.CurrentDispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
-                }
+                await _uiDispatcher.YieldAsync();
 
                 var results = await ServiceCommands.SearchServicesAsync(SearchText, false, token);
 

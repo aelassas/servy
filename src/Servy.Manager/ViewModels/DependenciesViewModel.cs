@@ -126,12 +126,14 @@ namespace Servy.Manager.ViewModels
         /// <param name="serviceCommands">Commands for service operations.</param>
         /// <param name="appConfig">Application configuration settings.</param>
         /// <param name="cursorService">Service used to control the cursor state.</param>
+        /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
         public DependenciesViewModel(
             IServiceRepository? serviceRepository,
             IServiceManager serviceManager,
             IServiceCommands serviceCommands,
             IAppConfiguration appConfig,
-            ICursorService cursorService) : base(cursorService)
+            ICursorService cursorService,
+            IUiDispatcher uiDispatcher) : base(cursorService, uiDispatcher)
         {
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _serviceManager = serviceManager;

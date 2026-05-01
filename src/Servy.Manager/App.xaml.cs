@@ -183,6 +183,7 @@ namespace Servy.Manager
             var services = new ServiceCollection();
 
             // Register dependencies
+            services.AddSingleton<IUiDispatcher, WpfUiDispatcher>();
             services.AddSingleton<IProcessHelper, ProcessHelper>();
             services.AddSingleton<IProcessKiller, ProcessKiller>();
             services.AddSingleton<CpuUsageConverter>();
@@ -250,15 +251,16 @@ namespace Servy.Manager
                     );
 
                     // 3. Initialize Main ViewModel
+                    var uiDispatcher = Services.GetRequiredService<IUiDispatcher>();
                     viewModel = new MainViewModel(
                         serviceManager,
                         ServiceRepository,
                         serviceCommands,
                         helpService,
                         messageBoxService,
-                        new PerformanceViewModel(ServiceRepository, serviceCommands, this, cursorService, processHelper),
-                        new ConsoleViewModel(ServiceRepository, serviceCommands, this, cursorService),
-                        new DependenciesViewModel(ServiceRepository, serviceManager, serviceCommands, this, cursorService),
+                        new PerformanceViewModel(ServiceRepository, serviceCommands, this, cursorService, processHelper, uiDispatcher),
+                        new ConsoleViewModel(ServiceRepository, serviceCommands, this, cursorService, uiDispatcher),
+                        new DependenciesViewModel(ServiceRepository, serviceManager, serviceCommands, this, cursorService, uiDispatcher),
                         this,
                         cursorService,
                         processHelper
