@@ -36,9 +36,9 @@ function Protect-SensitiveString {
         # --- Core Credentials ---
         "PASSWORD", "PWD", "PASSPHRASE", "PIN", "USERPWD",
 
-        # --- Web & Mobile Auth (JWT/OAuth) ---
+        # --- Web & Mobile Auth (JWT/OAuth/Personal Tokens) ---
         "TOKEN", "AUTH", "CREDENTIAL", "BEARER", "JWT",
-        "SESSION", "COOKIE", "CLIENT_SECRET",
+        "SESSION", "COOKIE", "CLIENT_SECRET", "PAT",
 
         # --- Cloud & Infrastructure (AWS/Azure/GCP) ---
         "SECRET", "SAS", "ACCOUNTKEY", "ACCESSKEY", "SKEY",
@@ -46,14 +46,15 @@ function Protect-SensitiveString {
 
         # --- Databases & Storage ---
         "CONNECTIONSTRING", "CONNSTR", "DSN", "DATABASE_URL",
-        "PROVIDER_CONNECTION_STRING",
+        "PROVIDER_CONNECTION_STRING", "DATABASE_PASSWORD",
 
-        # --- Cryptography & Identity ---
-        "KEY", "PRIVATE", "CERTIFICATE", "CERT", "THUMBPRINT",
-        "PFX", "PEM", "SALT", "PEPPER",
+        # --- Cryptography & Identity (Specific KEY variants) ---
+        "PRIVATE_KEY", "SSH_KEY", "SECRET_KEY", "API_KEY",
+        "CERTIFICATE", "CERT", "THUMBPRINT", "PFX", "PEM", "SALT", "PEPPER",
 
-        # --- API Service Identifiers ---
-        "API", "APP_SECRET", "BROWSER_KEY", "WEBHOOK_URL"
+        # --- API & Integration Tokens ---
+        "API", "APP_SECRET", "BROWSER_KEY", "WEBHOOK_URL",
+        "KUBE_CONFIG", "TELEGRAM_TOKEN", "DISCORD_TOKEN"
     )
 
     $keyPattern = $sensitiveKeys -join '|'
