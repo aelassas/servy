@@ -263,10 +263,7 @@ namespace Servy.Manager.Services
 
                     string wrapperExeDir = null;
 #if DEBUG
-                    if (wrapperExeDir == null)
-                    {
-                        wrapperExeDir = Path.GetFullPath(Core.Config.AppConfig.ServyServiceManagerDebugFolder);
-                    }
+                    wrapperExeDir = Path.GetFullPath(Core.Config.AppConfig.ServyServiceManagerDebugFolder);
                     if (!Directory.Exists(wrapperExeDir))
                     {
                         await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidWrapperExePath, AppConfig.Caption);
