@@ -27,7 +27,7 @@ namespace Servy.Service.Helpers
 
             // --- Web & Mobile Auth (JWT/OAuth) ---
             "TOKEN", "AUTH", "CREDENTIAL", "BEARER", "JWT",
-            "SESSION", "COOKIE", "CLIENT_SECRET",
+            "SESSION", "COOKIE", "CLIENT_SECRET", "PAT",
 
             // --- Cloud & Infrastructure (AWS/Azure/GCP) ---
             "SECRET", "SAS", "ACCOUNTKEY", "ACCESSKEY", "SKEY",
@@ -35,17 +35,21 @@ namespace Servy.Service.Helpers
 
             // --- Databases & Storage ---
             "CONNECTIONSTRING", "CONNSTR", "DSN", "DATABASE_URL",
-            "PROVIDER_CONNECTION_STRING",
+            "PROVIDER_CONNECTION_STRING", "DATABASE_PASSWORD",
 
             // --- Cryptography & Identity ---
-            "KEY", "PRIVATE", "CERTIFICATE", "CERT", "THUMBPRINT",
-            "PFX", "PEM", "SALT", "PEPPER",
+            // Explicitly replaced broad "KEY" with target variants
+            "PRIVATE_KEY", "SSH_KEY", "SECRET_KEY", "API_KEY",
+            "CERTIFICATE", "CERT", "THUMBPRINT", "PFX", "PEM", "SALT", "PEPPER",
 
             // --- API Service Identifiers ---
             "API",          // Catches API_KEY, API_SECRET, etc.
             "APP_SECRET",
             "BROWSER_KEY",
-            "WEBHOOK_URL"   // These often contain embedded tokens
+            "WEBHOOK_URL",   // These often contain embedded tokens
+            "KUBE_CONFIG",
+            "TELEGRAM_TOKEN",
+            "DISCORD_TOKEN"
         };
 
         /// <summary>
