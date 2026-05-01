@@ -6,7 +6,7 @@
     This script orchestrates the build process for Servy by invoking the internal
     publish scripts:
         - publish-sc.ps1   (self-contained bundle)
-        - publish-fd.ps1   (framework-dependent bundle, currently optional)
+        - publish-fd.ps1   (framework-dependent bundle, optional via switch)
 
     It ensures the build environment is prepared and passes versioning and
     framework parameters to child scripts.
@@ -22,8 +22,12 @@
 .PARAMETER Version
     The Servy version being packaged.
 
+.PARAMETER IncludeFrameworkDependent
+    Opt-in switch to also build the framework-dependent (FD) installer. By default, 
+    only the self-contained (SC) installer is built.
+
 .EXAMPLE
-    PS> .\publish.ps1 -Tfm "net10.0" -Version "3.8"
+    PS> .\publish.ps1 -Tfm "net10.0-windows" -Version "8.4" -IncludeFrameworkDependent
 
 .NOTES
     This script can be run from any working directory. It calculates elapsed time
@@ -36,7 +40,8 @@
 param(
     [string]$Tfm      = "net10.0-windows", 
     [ValidatePattern("^\d+\.\d+$")]
-    [string]$Version = "8.4"
+    [string]$Version = "8.4",
+    [switch]$IncludeFrameworkDependent
 )
 
 $ErrorActionPreference = "Stop"
@@ -77,13 +82,13 @@ try {
         Tfm      = $Tfm
     }
 
-    <#
-    # Build framework-dependent installer
-    Invoke-Script -ScriptPath "publish-fd.ps1" -Params @{
-        Version = $Version
-        Tfm      = $Tfm
+    # Build framework-dependent installer (Opt-in)
+    if ($IncludeFrameworkDependent) {
+        Invoke-Script -ScriptPath "publish-fd.ps1" -Params @{
+            Version = $Version
+            Tfm      = $Tfm
+        }
     }
-    #>
 
     # Calculate and display elapsed time
     $elapsed = (Get-Date) - $startTime
