@@ -52,7 +52,7 @@ namespace Servy.Manager
                 Description = service.Description ?? string.Empty,
                 StartupType = null,
                 Status = ServiceStatus.None,
-                LogOnAs = service.RunAsLocalSystem ? AppConfig.LocalSystem : GetLogOnAsDisplayName(service.UserAccount) ?? string.Empty,
+                LogOnAs = service.RunAsLocalSystem ? AppConfig.LocalSystem : GetLogOnAsDisplayName(service.UserAccount),
                 IsInstalled = false,
                 IsDesktopAppAvailable = isDesktopAppAvailable,
                 Pid = service.Pid,
