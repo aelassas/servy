@@ -11,7 +11,8 @@ namespace Servy.Core.ServiceDependencies
         /// <summary>
         /// Validates the input string containing service dependencies.
         /// Service names must be separated by semicolons or new lines.
-        /// Each service name must contain only letters, digits, hyphens, or underscores.
+        /// Each service name must contain only letters, digits, hyphens,
+        /// underscores, or periods.
         /// </summary>
         /// <param name="input">Raw input string with service dependencies.</param>
         /// <param name="errors">List of validation error messages.</param>
