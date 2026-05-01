@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Security;
 using System;
+using System.Data.Common;
 using System.Diagnostics;
 using System.IO;
 
@@ -78,6 +79,7 @@ namespace Servy.Core.Helpers
         /// <exception cref="InvalidOperationException">Thrown if the connection string format is invalid or directory names cannot be parsed.</exception>
         public static void EnsureFolders(string connectionString, string aesKeyFilePath, string aesIVFilePath)
         {
+            // Validate inputs per original implementation
             if (string.IsNullOrWhiteSpace(connectionString))
                 throw new ArgumentNullException(nameof(connectionString));
             if (string.IsNullOrWhiteSpace(aesKeyFilePath))
@@ -85,37 +87,38 @@ namespace Servy.Core.Helpers
             if (string.IsNullOrWhiteSpace(aesIVFilePath))
                 throw new ArgumentNullException(nameof(aesIVFilePath));
 
-            // Extract paths
-            var dataSourcePrefix = "Data Source=";
-            var startIndex = connectionString.IndexOf(dataSourcePrefix, StringComparison.OrdinalIgnoreCase);
-            if (startIndex < 0)
-                throw new InvalidOperationException("Connection string does not contain 'Data Source='.");
+            // 1. Utilize the BCL's robust connection string builder
+            var builder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
-            startIndex += dataSourcePrefix.Length;
-            var endIndex = connectionString.IndexOf(';', startIndex);
-            var dbFilePath = endIndex < 0
-                ? connectionString.Substring(startIndex).Trim()
-                : connectionString.Substring(startIndex, endIndex - startIndex).Trim();
+            // 2. Safely check for both common key variants
+            if (!builder.TryGetValue("Data Source", out var raw) && !builder.TryGetValue("DataSource", out raw))
+            {
+                throw new InvalidOperationException("Connection string does not contain a valid 'Data Source' or 'DataSource' key.");
+            }
 
+            var dbFilePath = (raw as string)?.Trim();
+            if (string.IsNullOrWhiteSpace(dbFilePath))
+            {
+                throw new InvalidOperationException("The database path provided in the connection string is empty.");
+            }
+
+            // 3. Extract directory paths for all components
             var dbFolder = Path.GetDirectoryName(dbFilePath);
-
             if (string.IsNullOrWhiteSpace(dbFolder))
                 throw new InvalidOperationException("Cannot determine database folder path.");
 
             var aesKeyFolder = Path.GetDirectoryName(aesKeyFilePath);
-
             if (string.IsNullOrWhiteSpace(aesKeyFolder))
                 throw new InvalidOperationException("Cannot determine AES key folder path.");
 
             var aesIVFolder = Path.GetDirectoryName(aesIVFilePath);
-
             if (string.IsNullOrWhiteSpace(aesIVFolder))
                 throw new InvalidOperationException("Cannot determine AES IV folder path.");
 
-            // 1. Establish the Root Vault FIRST so its ACLs exist for children to inherit
+            // 4. Secure the Root Vault (ProgramData) so its ACLs exist for children to inherit
             SecurityHelper.CreateSecureDirectory(AppConfig.ProgramDataPath, breakInheritance: true);
 
-            // 2. Process operational folders
+            // 5. Secure operational folders while respecting inheritance
             string[] subFolders = { dbFolder, aesKeyFolder, aesIVFolder };
             var normalizedRoot = AppConfig.ProgramDataPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
 
@@ -132,5 +135,6 @@ namespace Servy.Core.Helpers
                 SecurityHelper.CreateSecureDirectory(folder, breakInheritance: !isChildOfRoot);
             }
         }
+
     }
 }
