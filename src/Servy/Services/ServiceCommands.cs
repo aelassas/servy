@@ -553,7 +553,7 @@ namespace Servy.Services
 
                 var dto = _modelToServiceDto();
 
-                if (!await _serviceConfigurationValidator.Validate(dto: dto, wrapperExePath: null, checkServiceStatus: false, confirmPassword: confirmPassword))
+                if (!await _serviceConfigurationValidator.Validate(dto: dto, wrapperExePath: null, confirmPassword: confirmPassword))
                     return;
 
                 exportAction(dto, path);
