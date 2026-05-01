@@ -284,8 +284,8 @@ namespace Servy.Manager.ViewModels
                 }
 
                 if (currentSelection.Pid != stateSnapshot.Pid
-                    || _stdoutPath != stateSnapshot.ActiveStdoutPath
-                    || _stderrPath != stateSnapshot.ActiveStderrPath)
+                    || !string.Equals(_stdoutPath, stateSnapshot.ActiveStdoutPath, StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(_stderrPath, stateSnapshot.ActiveStderrPath, StringComparison.OrdinalIgnoreCase))
                 {
                     currentSelection.Pid = stateSnapshot.Pid;
                     _stdoutPath = stateSnapshot.ActiveStdoutPath;
