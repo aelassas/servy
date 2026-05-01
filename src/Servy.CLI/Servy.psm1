@@ -183,8 +183,8 @@ function Format-SecureLogMessage {
   # Construct the regex pattern dynamically
   # Breakdown:
   # (?i)                  : Case-insensitive evaluation
-  # (--(?:...)[=\s]+)     : Group $1 -> Matches the flag (e.g., --password) plus trailing spaces or equals signs
-  # ("[\]*"|'[^']*'|\S+)  : Group $2 -> Matches the value (handles double quotes, single quotes, or unquoted contiguous strings)
+  # (--(?:...)[=\s]+)        : Group $1 -> Matches the flag (e.g., --service-name= or --priority )
+  # (\"[^\"]*\"|'[^']*'|\S+) : Group $2 -> Matches the value (handles double quotes, single quotes, or unquoted contiguous strings)
   $fieldsRegex = $sensitiveFields -join '|'
   $pattern = '(?i)(--(?:' + $fieldsRegex + ')[=\s]+)("[^"]*"|''[^'']*''|\S+)'
 

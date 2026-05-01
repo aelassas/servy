@@ -9,76 +9,19 @@
     2. Cleans and publishes Servy.csproj without debug symbols.
     3. Produces a framework-dependent build suitable for distribution.
 #>
-
 [CmdletBinding()]
 param(
     [string]$Tfm                = "net10.0-windows",
     [string]$BuildConfiguration = "Release"
 )
 
-$ErrorActionPreference = "Stop"
-
-function Check-LastExitCode {
-    param([string]$ErrorMessage)
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
-        exit $LASTEXITCODE
-    }
-}
-
-# ---------------------------------------------------------------------------------
-# Step 0: Setup variables
-# ---------------------------------------------------------------------------------
 $scriptDir = $PSScriptRoot
-$projectPath = Join-Path $scriptDir "Servy.csproj"
+. (Join-Path $scriptDir "..\..\setup\build-common.ps1")
 
-# ---------------------------------------------------------------------------------
-# Step 1: Run resource publishing step
-# ---------------------------------------------------------------------------------
-$resSuffix = if ($BuildConfiguration -eq "Debug") { "debug" } else { "release" }
-$publishResScriptName = "publish-res-$resSuffix.ps1"
-$publishResScript = Join-Path $scriptDir $publishResScriptName
-
-if (-not (Test-Path $publishResScript)) {
-    Write-Error "Required resource script not found: $publishResScript"
-}
-
-Write-Host "=== Running $publishResScriptName ===" -ForegroundColor Cyan
-& $publishResScript -Tfm $Tfm
-Check-LastExitCode "$publishResScriptName failed"
-
-# ---------------------------------------------------------------------------------
-# Step 2: Clean and Publish (Pattern A: Default output location)
-# ---------------------------------------------------------------------------------
-Write-Host "=== Publishing Servy.csproj ===" -ForegroundColor Cyan
-Write-Host "Target Framework : $Tfm"
-Write-Host "Configuration    : $BuildConfiguration"
-
-# Pattern A: Perform restore and clean via dotnet toolchain
-& dotnet restore $projectPath -r win-x64
-Check-LastExitCode "dotnet restore failed"
-
-& dotnet clean $projectPath -c $BuildConfiguration
-Check-LastExitCode "Project clean failed"
-
-& dotnet publish $projectPath `
-    -c $BuildConfiguration `
-    -r win-x64 `
-    --self-contained false `
-    --no-restore `
-    --nologo `
-    --verbosity minimal `
-    /p:PublishSingleFile=false `
-    /p:IncludeAllContentForSelfExtract=true `
-    /p:PublishTrimmed=false `
-    /p:DebugType=None `
-    /p:DebugSymbols=false `
-    /p:CopyOutputSymbolsToPublishDirectory=false `
-    /p:CopyCommandLineArguments=false `
-    /p:ErrorOnDuplicatePublishOutputFiles=true `
-    /p:UseAppHost=true `
-    /p:Clean=true `
-    /p:DeleteExistingFiles=true
-Check-LastExitCode "dotnet publish failed"
-
-Write-Host "=== Servy.csproj published successfully ===" -ForegroundColor Green
+Invoke-StandardPublish `
+    -ProjectDir $scriptDir `
+    -ProjectName "Servy" `
+    -Tfm $Tfm `
+    -Runtime "win-x64" `
+    -BuildConfiguration $BuildConfiguration `
+    -FrameworkDependent

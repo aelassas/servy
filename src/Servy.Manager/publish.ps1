@@ -34,98 +34,18 @@
 .NOTES
     Author: Akram El Assas
 #>
-
 param(
-    # Target framework (default: net10.0-windows)
     [string]$Tfm                = "net10.0-windows",
     [string]$BuildConfiguration = "Release",
     [string]$Runtime            = "win-x64"
 )
 
-$ErrorActionPreference = "Stop"
-
-function Check-LastExitCode {
-    param([string]$ErrorMessage)
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
-        exit $LASTEXITCODE
-    }
-}
-
-# ---------------------------------------------------------------------------------
-# Script directory (so we can run from anywhere)
-# ---------------------------------------------------------------------------------
 $scriptDir = $PSScriptRoot
+. (Join-Path $scriptDir "..\..\setup\build-common.ps1")
 
-# ---------------------------------------------------------------------------------
-# SignPath script path
-# ---------------------------------------------------------------------------------
-$signPath = Join-Path $scriptDir "..\..\setup\signpath.ps1"
-if (-not (Test-Path $signPath)) {
-    Write-Warning "SignPath script not found at: $signPath. Signing will be skipped."
-}
-
-# ---------------------------------------------------------------------------------
-# Step 0: Publish resources
-# ---------------------------------------------------------------------------------
-$publishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
-$publishResScript = Join-Path $scriptDir $publishResScriptName
-
-if (-not (Test-Path $publishResScript)) {
-    Write-Error "Required script not found: $publishResScript"
-    exit 1
-}
-
-Write-Host "=== Running $publishResScriptName ==="
-& $publishResScript -Tfm $Tfm
-Check-LastExitCode "$publishResScriptName failed"
-Write-Host "=== Completed $publishResScriptName ===`n"
-
-# ---------------------------------------------------------------------------------
-# Step 1: Build and publish Servy.Manager.csproj (Self-contained, win-x64)
-# ---------------------------------------------------------------------------------
-$projectPath = Join-Path $scriptDir "Servy.Manager.csproj"
-
-if (-not (Test-Path $projectPath)) {
-    Write-Error "Project file not found: $projectPath"
-    exit 1
-}
-
-Write-Host "=== Publishing Servy.Manager.csproj ==="
-Write-Host "Target Framework: $Tfm"
-Write-Host "Configuration: $BuildConfiguration"
-Write-Host "Runtime: $Runtime"
-
-& dotnet restore $projectPath -r $Runtime
-Check-LastExitCode "dotnet restore failed"
-
-& dotnet clean $projectPath -c $BuildConfiguration
-Check-LastExitCode "Project clean failed"
-
-& dotnet publish $projectPath `
-    -c $BuildConfiguration `
-    -r $Runtime `
-    --force `
-    /p:DeleteExistingFiles=true
-
-Check-LastExitCode "dotnet publish failed"
-
-# ---------------------------------------------------------------------------------
-# Step 2: Sign the published executable if signing is enabled
-# ---------------------------------------------------------------------------------
-if ($BuildConfiguration -eq "Release") {
-    $publishFolder = Join-Path $scriptDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
-    $exePath       = Join-Path $publishFolder "Servy.Manager.exe"
-
-    if (Test-Path $exePath) {
-        Write-Host "=== Signing Servy.Manager.exe ===" -ForegroundColor Cyan
-        & $signPath $exePath
-        Check-LastExitCode "Code signing failed"
-    }
-    else {
-        Write-Error "Published executable not found at: $exePath. Ensure TFM and Runtime variables match the project output."
-        exit 1
-    }
-}
-
-Write-Host "=== Servy.Manager.csproj published successfully ==="
+Invoke-StandardPublish `
+    -ProjectDir $scriptDir `
+    -ProjectName "Servy.Manager" `
+    -Tfm $Tfm `
+    -Runtime $Runtime `
+    -BuildConfiguration $BuildConfiguration
