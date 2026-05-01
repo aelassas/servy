@@ -182,7 +182,7 @@ function Format-SecureLogMessage {
 
   # Construct the regex pattern dynamically
   # Breakdown:
-  # (?i)                  : Case-insensitive evaluation
+  # (?i)                     : Case-insensitive evaluation
   # (--(?:...)[=\s]+)        : Group $1 -> Matches the flag (e.g., --service-name= or --priority )
   # (\"[^\"]*\"|'[^']*'|\S+) : Group $2 -> Matches the value (handles double quotes, single quotes, or unquoted contiguous strings)
   $fieldsRegex = $sensitiveFields -join '|'
@@ -546,6 +546,47 @@ function Invoke-ServyServiceCommand {
 # ----------------------------------------------------------------
 # Public Functions
 # ----------------------------------------------------------------
+
+function Set-ServyConfig {
+  <#
+    .SYNOPSIS
+        Configures module-level execution settings for the Servy CLI.
+
+    .DESCRIPTION
+        Updates internal module variables such as the execution timeout and 
+        the output buffer limit. This is useful for tuning the module for 
+        resource-constrained environments or exceptionally long-running operations.
+
+    .PARAMETER TimeoutSeconds
+        Maximum time (in seconds) to wait for a CLI command to complete.
+        Default: 600 (10 minutes).
+
+    .PARAMETER MaxBufferChars
+        Reasonable cap for CLI output character buffering to prevent memory exhaustion.
+        Default: 1048576 (1MB).
+
+    .EXAMPLE
+        Set-ServyConfig -TimeoutSeconds 1200 -MaxBufferChars 2097152
+  #>
+  [CmdletBinding()]
+  param(
+    # Default: 600 seconds
+    [int] $TimeoutSeconds = 600,
+
+    # Default: 1048576 characters (1MB)
+    [int] $MaxBufferChars = 1048576
+  )
+
+  # Update the script-scoped variables only if the parameters were explicitly provided.
+  # This pattern allows a user to update one setting without accidentally resetting the other.
+  if ($PSBoundParameters.ContainsKey('TimeoutSeconds')) { 
+      $script:ServyTimeoutSeconds = $TimeoutSeconds 
+  }
+
+  if ($PSBoundParameters.ContainsKey('MaxBufferChars')) { 
+      $script:ServyMaxBufferChars = $MaxBufferChars 
+  }
+}
 
 function Get-ServyVersion {
   <#
@@ -1462,6 +1503,7 @@ function Import-ServyServiceConfig {
 
 # 1. Define all public functions
 $publicFunctions = @(
+  'Set-ServyConfig',
   'Get-ServyVersion',
   'Get-ServyHelp',
   'Install-ServyService',
