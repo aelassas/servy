@@ -375,6 +375,20 @@ namespace Servy.Core.Config
         /// </remarks>
         public const bool DefaultUseLocalTimeForRotation = false;
 
+        /// <summary>
+        /// The hard timeout for the HttpClient used in update checks. 
+        /// This acts as a global safety net for the request.
+        /// </summary>
+        public const int UpdateCheckHttpTimeoutSeconds = 20;
+
+        /// <summary>
+        /// The cooperative cancellation timeout for update checks.
+        /// NOTE: This value must be ≤ UpdateCheckHttpTimeoutSeconds.
+        /// If this is greater than the HTTP timeout, the user will see a generic 
+        /// connection error instead of the friendly 'Update check timed out' message.
+        /// </summary>
+        public const int UpdateCheckTimeoutSeconds = 10;
+
         #endregion
 
         #region Limits, Thresholds & Constraints
