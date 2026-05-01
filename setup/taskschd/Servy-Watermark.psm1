@@ -141,10 +141,23 @@ function Get-EventsToProcess {
     )
 
     # LOGIC FIX: Calling the cmdlet directly since it is now dot-sourced in the module scope
-    $errors = Get-ServyLastErrors -LastProcessed $LastProcessed
+    $rawErrors = Get-ServyLastErrors -LastProcessed $LastProcessed
 
     # CHECK: If no errors, exit quietly
-    if ($null -eq $errors -or $errors.Count -eq 0) {
+    if ($null -eq $rawErrors -or $rawErrors.Count -eq 0) {
+        return $null
+    }
+
+    # PRE-FILTER: Prevent feedback loops *before* selecting the most recent event.
+    # This ensures a notification failure doesn't mask a genuine service crash during a first run.
+    $errors = @($rawErrors | Where-Object {
+        $_.Message -notmatch "^ServyFailureEmail:" -and 
+        $_.Message -notmatch "^ServyToast:" -and 
+        $_.Message -notmatch "^Servy Notification Error:"
+    })
+
+    # CHECK AGAIN: Exit if the array is empty after filtering out feedback loops
+    if ($errors.Count -eq 0) {
         return $null
     }
 
@@ -167,23 +180,16 @@ function ConvertFrom-ServyEventMessage {
     #>
     param([string]$Message)
 
-    # LOGIC FIX: Identify logs written by the notification scripts to prevent feedback loops
-    $isFeedbackLoop = ($Message -match "^ServyFailureEmail:") -or 
-                      ($Message -match "^ServyToast:") -or 
-                      ($Message -match "^Servy Notification Error:")
-
     # 1. Parse raw message context
     if ($Message -match "^\[(.+?)\]\s*(.+)$") {
         return @{
             ServiceName = $matches[1]
             LogText = $matches[2]
-            IsFeedbackLoop = $false
         }
     } else {
         return @{
             ServiceName = "Unknown Service"
             LogText = $Message
-            IsFeedbackLoop = $isFeedbackLoop
         }
     }
 }

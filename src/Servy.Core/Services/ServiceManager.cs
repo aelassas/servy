@@ -356,7 +356,7 @@ namespace Servy.Core.Services
                     };
 
                     cancellationToken.ThrowIfCancellationRequested();
-                    var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName);
+                    var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: true, cancellationToken);
                     dto.Pid = serviceDto?.Pid;
 
                     var totalWaitTime = (options.StopTimeout ?? AppConfig.DefaultServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
@@ -458,7 +458,7 @@ namespace Servy.Core.Services
                             }
 
                             cancellationToken.ThrowIfCancellationRequested();
-                            await _serviceRepository.UpsertAsync(dto, updateRuntimeState: false);
+                            await _serviceRepository.UpsertAsync(dto, updateRuntimeState: false, cancellationToken);
                             Logger.Info($"Service '{options.ServiceName}' already exists. Updated its configuration.");
                             return OperationResult.Success();
                         }
@@ -470,7 +470,7 @@ namespace Servy.Core.Services
 
                     cancellationToken.ThrowIfCancellationRequested();
                     SetServiceDescription(serviceHandle, options.Description);
-                    await _serviceRepository.UpsertAsync(dto, updateRuntimeState: true); // New service: update runtime state in db (PID, ActiveStdoutPath, ActiveStderrPath)
+                    await _serviceRepository.UpsertAsync(dto, updateRuntimeState: true, cancellationToken); // New service: update runtime state in db (PID, ActiveStdoutPath, ActiveStderrPath)
                     Logger.Info($"Service '{options.ServiceName}' installed successfully.");
 
                     return OperationResult.Success();
@@ -612,7 +612,7 @@ namespace Servy.Core.Services
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var service = await _serviceRepository.GetByNameAsync(serviceName);
+                var service = await _serviceRepository.GetByNameAsync(serviceName, decrypt: false, cancellationToken);
                 if (service == null) return OperationResult.Failure($"Service '{serviceName}' was not found in the repository.");
 
                 using (var sc = _controllerFactory(serviceName))
@@ -678,7 +678,7 @@ namespace Servy.Core.Services
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var service = await _serviceRepository.GetByNameAsync(serviceName);
+                var service = await _serviceRepository.GetByNameAsync(serviceName, decrypt: false, cancellationToken);
 
                 if (service == null) return OperationResult.Failure($"Service '{serviceName}' was not found in the repository.");
 

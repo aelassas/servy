@@ -263,27 +263,20 @@ if ($null -eq $eventsToProcess) {
 foreach ($evt in $eventsToProcess) {
   $parsed = ConvertFrom-ServyEventMessage -Message $evt.Message
 
-  # LOGIC FIX: Prevent email loop
-  if ($parsed.IsFeedbackLoop) {
-      Write-Host "Skipping self-generated email error to prevent feedback loop." -ForegroundColor DarkGray
-      Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir
-      continue
-  }
-
-  # 2. MASKING (Stage 1: Plain Text)
+  # 1. MASKING (Stage 1: Plain Text)
   # LOGIC: We mask the raw strings before any HTML encoding occurs.
   # This ensures the regex successfully captures PASSWORD="my secret token" 
   # before it becomes PASSWORD=&quot;my secret token&quot;
   $maskedLogText = Protect-SensitiveString -Text $parsed.LogText
   $maskedServiceName = Protect-SensitiveString -Text $parsed.ServiceName
 
-  # 3. ENCODING (Stage 2: Markup Preparation)
+  # 2. ENCODING (Stage 2: Markup Preparation)
   # Logic: Now that secrets are replaced with asterisks, we can safely convert 
   # any remaining metacharacters to HTML entities.
   $safeLogText = ConvertTo-HtmlSafe -Text $maskedLogText
   $safeServiceName = ConvertTo-HtmlSafe -Text $maskedServiceName
 
-  # 4. COMPOSITION
+  # 3. COMPOSITION
   # Scrub the subject using the raw service name (masker handles this internally)
   $subject = "Servy - $($parsed.ServiceName) Failure"
   $subject = Protect-SensitiveString -Text $subject
