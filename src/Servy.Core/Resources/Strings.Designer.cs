@@ -61,6 +61,42 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à All files (*.*)|*.*.
+        /// </summary>
+        public static string FileFilter_AllFiles {
+            get {
+                return ResourceManager.GetString("FileFilter_AllFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Executable files (*.exe)|*.exe|All files (*.*)|*.*.
+        /// </summary>
+        public static string FileFilter_Executable {
+            get {
+                return ResourceManager.GetString("FileFilter_Executable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à JSON files (*.json)|*.json|All files (*.*)|*.*.
+        /// </summary>
+        public static string FileFilter_Json {
+            get {
+                return ResourceManager.GetString("FileFilter_Json", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à XML files (*.xml)|*.xml|All files (*.*)|*.*.
+        /// </summary>
+        public static string FileFilter_Xml {
+            get {
+                return ResourceManager.GetString("FileFilter_Xml", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Administrator privileges are required..
         /// </summary>
         public static string Msg_AdminRightsRequired {
@@ -111,6 +147,15 @@ namespace Servy.Core.Resources {
         public static string Msg_FatalError_Title {
             get {
                 return ResourceManager.GetString("Msg_FatalError_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à [Import] File not found: {0}.
+        /// </summary>
+        public static string Msg_ImportFileNotFound {
+            get {
+                return ResourceManager.GetString("Msg_ImportFileNotFound", resourceCulture);
             }
         }
         
@@ -534,6 +579,42 @@ namespace Servy.Core.Resources {
         public static string Msg_ValidationPassed {
             get {
                 return ResourceManager.GetString("Msg_ValidationPassed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Select process executable.
+        /// </summary>
+        public static string Title_SelectExecutable {
+            get {
+                return ResourceManager.GetString("Title_SelectExecutable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Select JSON file.
+        /// </summary>
+        public static string Title_SelectJson {
+            get {
+                return ResourceManager.GetString("Title_SelectJson", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Select startup directory.
+        /// </summary>
+        public static string Title_SelectStartupDirectory {
+            get {
+                return ResourceManager.GetString("Title_SelectStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Select XML file.
+        /// </summary>
+        public static string Title_SelectXml {
+            get {
+                return ResourceManager.GetString("Title_SelectXml", resourceCulture);
             }
         }
     }

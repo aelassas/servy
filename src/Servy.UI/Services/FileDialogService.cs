@@ -1,4 +1,6 @@
-﻿namespace Servy.UI.Services
+﻿using Servy.Core.Resources;
+
+namespace Servy.UI.Services
 {
     /// <summary>
     /// Concrete implementation of <see cref="IFileDialogService"/> that uses standard Windows dialogs.
@@ -43,22 +45,22 @@
 
         /// <inheritdoc />
         public string OpenExecutable() =>
-            ShowOpenDialog("Executable files (*.exe)|*.exe|All files (*.*)|*.*", "Select process executable");
+            ShowOpenDialog(Strings.FileFilter_Executable, Strings.Title_SelectExecutable);
 
         /// <inheritdoc />
         public string OpenXml() =>
-            ShowOpenDialog("XML files (*.xml)|*.xml|All files (*.*)|*.*", "Select XML file");
+            ShowOpenDialog(Strings.FileFilter_Xml, Strings.Title_SelectXml);
 
         /// <inheritdoc />
         public string OpenJson() =>
-            ShowOpenDialog("JSON files (*.json)|*.json|All files (*.*)|*.*", "Select JSON file");
+            ShowOpenDialog(Strings.FileFilter_Json, Strings.Title_SelectJson);
 
         /// <inheritdoc />
         public string OpenFolder()
         {
             using (var dlg = new System.Windows.Forms.FolderBrowserDialog
             {
-                Description = "Select startup directory",
+                Description = Strings.Title_SelectStartupDirectory,
                 ShowNewFolderButton = true
             })
             {
@@ -68,14 +70,14 @@
 
         /// <inheritdoc />
         public string SaveFile(string title) =>
-            ShowSaveDialog("All files (*.*)|*.*", title);
+            ShowSaveDialog(Strings.FileFilter_AllFiles, title);
 
         /// <inheritdoc />
         public string SaveXml(string title) =>
-            ShowSaveDialog("XML files (*.xml)|*.xml|All files (*.*)|*.*", title);
+            ShowSaveDialog(Strings.FileFilter_Xml, title);
 
         /// <inheritdoc />
         public string SaveJson(string title) =>
-            ShowSaveDialog("JSON files (*.json)|*.json|All files (*.*)|*.*", title);
+            ShowSaveDialog(Strings.FileFilter_Json, title);
     }
 }
