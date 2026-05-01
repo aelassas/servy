@@ -14,6 +14,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Servy.CLI.Commands
@@ -245,36 +246,49 @@ namespace Servy.CLI.Commands
         }
 
         /// <summary>
-        /// Validates all executable and directory paths defined in the service configuration.
+        /// Validates all system paths defined in the service DTO using reflection-based attribute discovery.
         /// </summary>
-        /// <param name="service">The service data transfer object.</param>
-        /// <returns>A <see cref="CommandResult"/> indicating if all paths are valid.</returns>
+        /// <param name="service">The service configuration DTO to validate.</param>
+        /// <returns>A <see cref="CommandResult"/> indicating success or the specific validation failure.</returns>
         private CommandResult ValidateServicePaths(ServiceDto service)
         {
-            // Required path
-            if (!_processHelper.ValidatePath(service.ExecutablePath, isFile: true))
-                return CommandResult.Fail(string.Format(Strings.Msg_InvalidExecutablePath, service.ExecutablePath));
+            // Use an anonymous type and standard null checks for C# 7.3 compatibility
+            var pathFields = typeof(ServiceDto).GetProperties()
+                .Select(p => new
+                {
+                    Property = p,
+                    Attr = p.GetCustomAttribute<ServicePathAttribute>()
+                })
+                .Where(x => x.Attr != null);
 
-            // Optional paths
-            var check = new[]
+            foreach (var field in pathFields)
             {
-                (service.StartupDirectory, false, "startup directory"),
-                (service.FailureProgramPath, true, "failure program executable path"),
-                (service.FailureProgramStartupDirectory, false, "failure program startup directory"),
-                (service.PreLaunchExecutablePath, true, "pre-launch executable path"),
-                (service.PreLaunchStartupDirectory, false, "pre-launch startup directory"),
-                (service.PostLaunchExecutablePath, true, "post-launch executable path"),
-                (service.PostLaunchStartupDirectory, false, "post-launch startup directory"),
-                (service.PreStopExecutablePath, true, "pre-stop executable path"),
-                (service.PreStopStartupDirectory, false, "pre-stop startup directory"),
-                (service.PostStopExecutablePath, true, "post-stop executable path"),
-                (service.PostStopStartupDirectory, false, "post-stop startup directory")
-            };
+                var property = field.Property;
+                var attr = field.Attr;
 
-            foreach (var (path, isFile, label) in check)
-            {
-                if (!string.IsNullOrWhiteSpace(path) && !_processHelper.ValidatePath(path, isFile))
-                    return CommandResult.Fail(string.Format(Strings.Msg_InvalidPathInConfig, label));
+                // Extract the value from the DTO property
+                var pathValue = property.GetValue(service) as string;
+                bool isPathEmpty = string.IsNullOrWhiteSpace(pathValue);
+
+                // 1. Mandatory Presence Check
+                // attr.Required is safe here as it was filtered by the .Where() clause
+                if (attr.Required && isPathEmpty)
+                {
+                    // Specifically handle ExecutablePath using its dedicated error message
+                    if (property.Name == nameof(ServiceDto.ExecutablePath))
+                        return CommandResult.Fail(string.Format(Strings.Msg_InvalidExecutablePath, string.Empty));
+
+                    return CommandResult.Fail(string.Format(Strings.Msg_InvalidPathInConfig, attr.Label));
+                }
+
+                // 2. Path Validity Check
+                if (!isPathEmpty && !_processHelper.ValidatePath(pathValue, attr.IsFile))
+                {
+                    if (property.Name == nameof(ServiceDto.ExecutablePath))
+                        return CommandResult.Fail(string.Format(Strings.Msg_InvalidExecutablePath, pathValue));
+
+                    return CommandResult.Fail(string.Format(Strings.Msg_InvalidPathInConfig, attr.Label));
+                }
             }
 
             return CommandResult.Ok();
