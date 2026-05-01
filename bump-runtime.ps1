@@ -20,17 +20,17 @@ The .NET runtime version (e.g. "10.0").
 Shows what would change without writing to disk.
 
 .EXAMPLE
-./update-runtime.ps1 -Version 10.0
+./bump-runtime.ps1 -Version 10.0
 
 .EXAMPLE
-./update-runtime.ps1 10.0
+./bump-runtime.ps1 10.0
 
 .EXAMPLE
-./update-runtime.ps1 -Version 10.0 -DryRun
+./bump-runtime.ps1 -Version 10.0 -DryRun
 Shows all changes without modifying files.
 
 .EXAMPLE
-./update-runtime.ps1 10.0 -DryRun
+./bump-runtime.ps1 10.0 -DryRun
 
 .NOTES
 This script modifies files in-place unless -DryRun is used.
