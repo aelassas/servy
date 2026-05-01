@@ -138,7 +138,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             // Verify the error was logged to the logger instance
             mockLog.Verify(l => l.Error(
-                It.Is<string>(s => s.Contains($"Process path {options.ExecutablePath} is invalid.")),
+                It.Is<string>(s => s.Contains($"Executable path {options.ExecutablePath} is invalid.")),
                 It.IsAny<Exception>()),
                 Times.Once);
         }
@@ -176,7 +176,7 @@ namespace Servy.Service.UnitTests.Helpers
 
                 // Verify the validation error was logged to the logger instance
                 mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains($"Failure program path {options.FailureProgramPath} is invalid.")),
+                    It.Is<string>(s => s.Contains($"Failure program executable path {options.FailureProgramPath} is invalid.")),
                     It.IsAny<Exception>()),
                     Times.Once);
             }
@@ -222,7 +222,7 @@ namespace Servy.Service.UnitTests.Helpers
 
                 // Verify the specific pre-launch validation error was logged
                 mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains($"Pre-launch process path {options.PreLaunchExecutablePath} is invalid.")),
+                    It.Is<string>(s => s.Contains($"Pre-launch executable path {options.PreLaunchExecutablePath} is invalid.")),
                     It.IsAny<Exception>()),
                     Times.Once);
             }
@@ -268,7 +268,7 @@ namespace Servy.Service.UnitTests.Helpers
 
                 // Verify the specific post-launch validation error was logged
                 mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains($"Post-launch process path {options.PostLaunchExecutablePath} is invalid.")),
+                    It.Is<string>(s => s.Contains($"Post-launch executable path {options.PostLaunchExecutablePath} is invalid.")),
                     It.IsAny<Exception>()),
                     Times.Once);
             }
@@ -399,9 +399,9 @@ namespace Servy.Service.UnitTests.Helpers
                 // Assert
                 Assert.False(result);
 
-                // Verify the specific working directory error was logged
+                // Verify the specific startup directory error was logged
                 mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains($"Process working directory {options.WorkingDirectory} is invalid.")),
+                    It.Is<string>(s => s.Contains($"Startup directory {options.WorkingDirectory} is invalid.")),
                     It.IsAny<Exception>()),
                     Times.Once);
             }
@@ -445,9 +445,9 @@ namespace Servy.Service.UnitTests.Helpers
                 // Assert
                 Assert.False(result);
 
-                // Verify the specific error for the failure program working directory was logged
+                // Verify the specific error for the failure program startup directory was logged
                 mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains("Failure program working directory")),
+                    It.Is<string>(s => s.Contains("Failure program startup directory")),
                     It.IsAny<Exception>()),
                     Times.Once);
             }
@@ -491,9 +491,9 @@ namespace Servy.Service.UnitTests.Helpers
                 // Assert
                 Assert.False(result);
 
-                // Verify the specific pre-launch working directory error was logged
+                // Verify the specific pre-launch startup directory error was logged
                 mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains("Pre-launch process working directory")),
+                    It.Is<string>(s => s.Contains("Pre-launch startup directory")),
                     It.IsAny<Exception>()),
                     Times.Once);
             }
@@ -537,9 +537,9 @@ namespace Servy.Service.UnitTests.Helpers
                 // Assert
                 Assert.False(result);
 
-                // Verify the specific post-launch working directory error was logged
+                // Verify the specific post-launch startup directory error was logged
                 mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains("Post-launch process working directory")),
+                    It.Is<string>(s => s.Contains("Post-launch startup directory")),
                     It.IsAny<Exception>()),
                     Times.Once);
             }
