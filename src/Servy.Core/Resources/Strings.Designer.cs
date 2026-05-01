@@ -97,6 +97,24 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à A fatal error occurred and the application must close. Detailed diagnostics have been saved to the log file..
+        /// </summary>
+        public static string Msg_FatalError_Body {
+            get {
+                return ResourceManager.GetString("Msg_FatalError_Body", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Servy - Fatal Error.
+        /// </summary>
+        public static string Msg_FatalError_Title {
+            get {
+                return ResourceManager.GetString("Msg_FatalError_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The specified date rotation type is invalid. Options: Daily, Weekly, Monthly..
         /// </summary>
         public static string Msg_InvalidDateRotationType {
@@ -466,11 +484,38 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Startup error: {0}.
+        /// </summary>
+        public static string Msg_StartupError_Format {
+            get {
+                return ResourceManager.GetString("Msg_StartupError_Format", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à An unexpected error occurred..
         /// </summary>
         public static string Msg_UnexpectedError {
             get {
                 return ResourceManager.GetString("Msg_UnexpectedError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à An unexpected error occurred in the interface, but the application will attempt to continue. Details have been logged..
+        /// </summary>
+        public static string Msg_UnexpectedError_Body {
+            get {
+                return ResourceManager.GetString("Msg_UnexpectedError_Body", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Servy - Unexpected Error.
+        /// </summary>
+        public static string Msg_UnexpectedError_Title {
+            get {
+                return ResourceManager.GetString("Msg_UnexpectedError_Title", resourceCulture);
             }
         }
         
