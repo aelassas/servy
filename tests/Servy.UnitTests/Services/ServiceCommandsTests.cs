@@ -150,7 +150,7 @@ namespace Servy.UnitTests.Services
             catch { /* Ignore creation errors if running in restricted environments */ }
 
             _serviceConfigurationValidator
-                .Setup(v => v.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>()))
+                .Setup(v => v.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(true);
 
             // Act
@@ -286,7 +286,7 @@ namespace Servy.UnitTests.Services
             var path = "export.xml";
             _dialogServiceMock.Setup(d => d.SaveXml(It.IsAny<string>())).Returns(path);
 
-            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>())).ReturnsAsync(true);
+            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
 
             var task = sut.ExportXmlConfig(string.Empty) as Task;
             if (task != null) await task;
@@ -303,7 +303,7 @@ namespace Servy.UnitTests.Services
             var path = "export.json";
             _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(path);
 
-            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>())).ReturnsAsync(true);
+            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
 
             var task = sut.ExportJsonConfig(string.Empty) as Task;
             if (task != null) await task;
@@ -321,7 +321,7 @@ namespace Servy.UnitTests.Services
             var path = Path.GetTempFileName() + ".xml";
 
             _serviceConfigurationValidator.Setup(d => d.Validate(
-                It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>())).ReturnsAsync(true);
+                It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
 
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(path);
 
@@ -366,7 +366,7 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.OpenJson()).Returns(path);
 
             _serviceConfigurationValidator.Setup(v => v.Validate(
-                It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>())).ReturnsAsync(true);
+                It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
 
             bool bindCalled = false;
             var sut = CreateSut(d =>

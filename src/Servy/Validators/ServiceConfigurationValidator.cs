@@ -31,7 +31,6 @@ namespace Servy.Validators
         /// </summary>
         /// <param name="dto">The service configuration data to validate.</param>
         /// <param name="wrapperExePath">The optional path to the service wrapper executable.</param>
-        /// <param name="checkServiceStatus">If set to <see langword="true"/>, performs additional checks against the current status of the service.</param>
         /// <param name="confirmPassword">The password confirmation string to compare against the configuration's password.</param>
         /// <returns>
         /// A task that represents the asynchronous validation operation. 
@@ -41,7 +40,7 @@ namespace Servy.Validators
         /// This method prioritizes warnings over errors, displaying only the first identified issue 
         /// to the user to maintain a clean "fail-fast" UI experience.
         /// </remarks>
-        public async Task<bool> Validate(ServiceDto? dto, string? wrapperExePath = null, bool checkServiceStatus = true, string? confirmPassword = "")
+        public async Task<bool> Validate(ServiceDto? dto, string? wrapperExePath = null, string? confirmPassword = "")
         {
             if (dto == null) return false;
 
