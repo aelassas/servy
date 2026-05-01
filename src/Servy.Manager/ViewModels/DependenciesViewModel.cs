@@ -100,17 +100,17 @@ namespace Servy.Manager.ViewModels
         public IAsyncCommand CopyPidCommand { get; set; }
 
         /// <summary>
-        /// Command to refresh depdency treer.
+        /// Command to refresh depdency tree.
         /// </summary>
         public IAsyncCommand RefreshCommand { get; }
 
         /// <summary>
-        /// Command to expand all depdency treer.
+        /// Command to expand all depdency tree.
         /// </summary>
         public ICommand ExpandAllCommand { get; }
 
         /// <summary>
-        /// Command to collapse all depdency treer.
+        /// Command to collapse all depdency tree nodes.
         /// </summary>
         public ICommand CollapseAllCommand { get; }
 
