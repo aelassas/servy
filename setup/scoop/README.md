@@ -1,4 +1,4 @@
-This scoop manifest servs as a template for creating a scoop manifest for a project. It is not intended to be used directly, but rather as a starting point for creating a manifest.
+This scoop manifest serves as a template for creating a scoop manifest for a project. It is not intended to be used directly, but rather as a starting point for creating a manifest.
 
 ## Local test
 ```

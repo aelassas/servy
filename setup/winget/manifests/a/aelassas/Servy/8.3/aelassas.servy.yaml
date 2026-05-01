@@ -1,0 +1,11 @@
+# Created with WinGet Releaser using komac v2.16.0
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.version.1.12.0.schema.json
+
+# This manifest serves as a template for the version manifest of the Servy application.
+# It is not intended to be used directly, but rather to provide a structured format for defining
+
+PackageIdentifier: aelassas.Servy
+PackageVersion: '8.3'
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.12.0

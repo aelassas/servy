@@ -1,3 +1,5 @@
+These manifests serve as a template for the installer manifest of the Servy application. They are not intended to be used directly.
+
 # Generate new manifests
 ```
 wingetcreate update aelassas.Servy --version 1.1 --url https://github.com/aelassas/servy/releases/download/v1.1/servy-1.1-net8.0-x64-installer.exe
