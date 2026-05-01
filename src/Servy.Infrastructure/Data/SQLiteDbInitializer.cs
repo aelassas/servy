@@ -62,8 +62,16 @@ namespace Servy.Infrastructure.Data
                 currentVersion = 3;
             }
 
+            // Version 4 Migration to drop strict NOT NULL constraints, aligning the schema with ServiceDto
+            if (currentVersion < 4)
+            {
+                ApplyVersion4(connection);
+                UpdateSchemaVersion(connection, 4);
+                currentVersion = 4;
+            }
+
             // --- FUTURE MIGRATIONS GO HERE ---
-            // if (currentVersion < 4) { ... }
+            // if (currentVersion < 5) { ... }
         }
 
         /// <summary>
@@ -275,6 +283,68 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
+        /// Applies the Version 4 schema migration, removing strict NOT NULL constraints from 13 configuration 
+        /// columns to perfectly align the SQLite schema with the nullable definitions in ServiceDto.
+        /// Uses the SQLite table-rebuild idiom.
+        /// </summary>
+        private static void ApplyVersion4(DbConnection connection)
+        {
+            // Disable foreign keys temporarily during table rebuild
+            connection.Execute("PRAGMA foreign_keys=OFF;");
+
+            using (var transaction = connection.BeginTransaction())
+            {
+                try
+                {
+                    Logger.Info("Migrating database to Version 4: Rebuilding 'Services' table to drop strict NOT NULL constraints.");
+
+                    var expectedColumns = GetExpectedColumns().ToList();
+                    var columnDefinitions = new List<string>
+                    {
+                        "Id INTEGER PRIMARY KEY AUTOINCREMENT"
+                    };
+
+                    // Dynamically construct the v4 table schema matching the exact DTO definition
+                    foreach (var col in expectedColumns)
+                    {
+                        columnDefinitions.Add($"{col} {GetSqlType(col)}");
+                    }
+
+                    var createTableSql = $"CREATE TABLE Services_v4 (\n    {string.Join(",\n    ", columnDefinitions)}\n);";
+                    connection.Execute(createTableSql, transaction: transaction);
+
+                    // Explicitly specify column names to prevent ordinal mismatch issues 
+                    // between the old appended columns (like EnableConsoleUI) and the new cleanly ordered schema.
+                    var allColumns = new List<string> { "Id" };
+                    allColumns.AddRange(expectedColumns);
+                    string columnList = string.Join(", ", allColumns);
+
+                    string copyDataSql = $"INSERT INTO Services_v4 ({columnList}) SELECT {columnList} FROM Services;";
+                    connection.Execute(copyDataSql, transaction: transaction);
+
+                    // Swap the tables
+                    connection.Execute("DROP TABLE Services;", transaction: transaction);
+                    connection.Execute("ALTER TABLE Services_v4 RENAME TO Services;", transaction: transaction);
+
+                    // Re-create the functional unique index because SQLite drops indexes when the parent table is dropped
+                    connection.Execute("CREATE UNIQUE INDEX idx_services_name_lower ON Services(LOWER(Name));", transaction: transaction);
+
+                    transaction.Commit();
+                    Logger.Info("Database successfully migrated to Version 4.");
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    Logger.Error("CRITICAL: Version 4 database migration failed. Transaction rolled back.", ex);
+                    throw;
+                }
+            }
+
+            // Re-enable foreign keys
+            connection.Execute("PRAGMA foreign_keys=ON;");
+        }
+
+        /// <summary>
         /// Infers the SQLite data type and constraints for a given column name.
         /// </summary>
         /// <param name="columnName">The name of the column.</param>
@@ -289,10 +359,7 @@ namespace Servy.Infrastructure.Data
 
             var originalNotNullInts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                "StartupType", "Priority", "EnableSizeRotation", "RotationSize", // RENAMED IN LIST
-                "EnableHealthMonitoring", "HeartbeatInterval", "MaxFailedChecks",
-                "RecoveryAction", "MaxRestartAttempts", "RunAsLocalSystem",
-                "PreLaunchTimeoutSeconds", "PreLaunchRetryAttempts", "PreLaunchIgnoreFailure"
+                // Emptied for V4: All previously NOT NULL ints are now nullable to match ServiceDto
             };
 
             var nullableInts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -300,7 +367,13 @@ namespace Servy.Infrastructure.Data
                 "Pid", "EnableDebugLogs", "MaxRotations", "EnableDateRotation",
                 "DateRotationType", "StartTimeout", "StopTimeout", "PreviousStopTimeout",
                 "PreStopTimeoutSeconds", "PreStopLogAsError", "UseLocalTimeForRotation",
-                "EnableConsoleUI"
+                "EnableConsoleUI",
+        
+                // Migrated from originalNotNullInts to align schema with DTO definition:
+                "StartupType", "Priority", "EnableSizeRotation", "RotationSize",
+                "EnableHealthMonitoring", "HeartbeatInterval", "MaxFailedChecks",
+                "RecoveryAction", "MaxRestartAttempts", "RunAsLocalSystem",
+                "PreLaunchTimeoutSeconds", "PreLaunchRetryAttempts", "PreLaunchIgnoreFailure"
             };
 
             if (originalNotNullInts.Contains(columnName))
@@ -315,5 +388,6 @@ namespace Servy.Infrastructure.Data
 
             return "TEXT";
         }
+
     }
 }
