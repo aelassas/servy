@@ -656,7 +656,10 @@ namespace Servy.Manager.Views
         protected override void OnClosing(CancelEventArgs e)
         {
             base.OnClosing(e);
-            Application.Current.Shutdown();
+            if (!e.Cancel)
+            {
+                Application.Current.Shutdown();
+            }
         }
 
     }
