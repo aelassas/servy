@@ -17,10 +17,13 @@
 # -------------------------------
 # Dot-source the event fetching script into the module's private scope
 $getErrorsScript = Join-Path $PSScriptRoot "Get-ServyLastErrors.ps1"
-if (Test-Path $getErrorsScript) {
+$writeLogScript = Join-Path $PSScriptRoot "Write-ServyLog.ps1"
+
+if ((Test-Path $getErrorsScript) -and (Test-Path $writeLogScript)) {
     . $getErrorsScript
+    . $writeLogScript
 } else {
-    Write-Warning "Servy-Watermark Module: Missing required dependency at '$getErrorsScript'"
+    Write-Warning "Servy-Watermark Module: Missing required dependencies in '$PSScriptRoot'"
 }
 
 # Event ID Taxonomy (Refer to src/Servy.Core/Logging/EventIds.cs for updates)
@@ -50,7 +53,7 @@ function Write-FallbackError {
           -EntryType Error -Message $Message -ErrorAction Stop
     } catch {
         $logFile = Join-Path $scriptDir $FallbackFileName
-        "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $Message" | Out-File -FilePath $logFile -Append
+        Write-ServyLog -FilePath $logFile -Message $Message
     }
 }
 
@@ -60,7 +63,6 @@ function Read-Watermark {
         Reads the last successfully processed event timestamp from disk.
     #>
     param([string]$TimestampFile)
-    
     $lastProcessed = $null
     if (Test-Path $TimestampFile) {
         try {
