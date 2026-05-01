@@ -93,22 +93,6 @@ namespace Servy.Service
         /// </summary>
         private const string ServyRestarterExeFileName = "Servy.Restarter.Net48";
 
-        /// <summary>
-        /// Minimum StartTimeout (in seconds) before requesting additional SCM time.
-        /// Below this threshold the default SCM timeout is sufficient.
-        /// </summary>
-        private const int ScmStartupRequestThresholdSeconds = 20;
-
-        /// <summary>
-        /// The wait hint in milliseconds sent to the Service Control Manager (SCM) during a Pre-Shutdown event.
-        /// </summary>
-        /// <remarks>
-        /// This value informs Windows how long the service expects to take to finish its cleanup. 
-        /// Servy defaults to 30,000ms (30 seconds) to allow for graceful shutdown of child processes 
-        /// and flushing of pending log buffers.
-        /// </remarks>
-        private const int PreShutdownWaitHintMs = 30_000;
-
         #endregion
 
         #region Private Fields
@@ -482,7 +466,7 @@ namespace Servy.Service
                 _maxRestartAttempts = options.MaxRestartAttempts;
 
                 // Request timeout for startup to accommodate slow process
-                if (_options.StartTimeout > ScmStartupRequestThresholdSeconds) // Use a lower threshold to be safe
+                if (_options.StartTimeout > AppConfig.ScmStartupRequestThresholdSeconds) // Use a lower threshold to be safe
                 {
                     _serviceHelper.RequestAdditionalTime(this, ClampTimeout(_options.StartTimeout + 10), _logger);
                 }
@@ -1887,7 +1871,7 @@ namespace Servy.Service
 
                 // 1. Immediately tell SCM we are transitioning to a stop state and need a 30s window.
                 // This moves the service into the STOP_PENDING state in the eyes of the OS.
-                UpdateServiceStatus(SERVICE_STOP_PENDING, PreShutdownWaitHintMs);
+                UpdateServiceStatus(SERVICE_STOP_PENDING, AppConfig.PreShutdownWaitHintMs);
 
                 Task<bool> stopTask = Task.Run(() => ExecuteTeardown(TeardownReason.PreShutdown));
 
@@ -1899,7 +1883,7 @@ namespace Servy.Service
                 while (!stopTask.Wait(interval))
                 {
                     _checkPoint++;
-                    UpdateServiceStatus(SERVICE_STOP_PENDING, PreShutdownWaitHintMs);
+                    UpdateServiceStatus(SERVICE_STOP_PENDING, AppConfig.PreShutdownWaitHintMs);
                 }
 
                 // 3. Handle task completion results safely

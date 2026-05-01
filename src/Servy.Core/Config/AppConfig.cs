@@ -294,6 +294,22 @@ namespace Servy.Core.Config
         public const int RestarterExeMaxWaitMs = 240_000;
 
         /// <summary>
+        /// Minimum StartTimeout (in seconds) before requesting additional SCM time.
+        /// Below this threshold the default SCM timeout is sufficient.
+        /// </summary>
+        public const int ScmStartupRequestThresholdSeconds = 20;
+
+        /// <summary>
+        /// The wait hint in milliseconds sent to the Service Control Manager (SCM) during a Pre-Shutdown event.
+        /// </summary>
+        /// <remarks>
+        /// This value informs Windows how long the service expects to take to finish its cleanup. 
+        /// Servy defaults to 30,000ms (30 seconds) to allow for graceful shutdown of child processes 
+        /// and flushing of pending log buffers.
+        /// </remarks>
+        public const int PreShutdownWaitHintMs = 30_000;
+
+        /// <summary>
         /// Default timeout in seconds before considering a pre-launch task as failed. Default is 30 seconds.
         /// </summary>
         public const int DefaultPreLaunchTimeoutSeconds = 30;
