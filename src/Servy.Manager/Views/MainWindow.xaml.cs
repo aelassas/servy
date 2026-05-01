@@ -264,14 +264,11 @@ namespace Servy.Manager.Views
             catch (Exception ex)
             {
                 // Prioritize the UI notification service, falling back to static logging if initialization failed
+                Logger.Error("Tab selection failed.", ex);
                 if (_messageBoxService != null)
                 {
                     await _messageBoxService.ShowErrorAsync(
                         Strings.Msg_MainTabControl_SelectionChangedError, AppConfig.Caption);
-                }
-                else
-                {
-                    Logger.Error("Tab selection failed and message box service unavailable", ex);
                 }
             }
         }
