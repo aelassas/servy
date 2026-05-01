@@ -208,6 +208,21 @@ namespace Servy.Core.Config
         public static readonly int ScmTimeoutBufferSeconds = 15;
 
         /// <summary>
+        /// The default maximum time (in seconds) to wait for a service to reach the 'Running' state.
+        /// </summary>
+        public const int DefaultServiceStartTimeoutSeconds = 30;
+
+        /// <summary>
+        /// The interval (in milliseconds) at which the Service Manager polls the SCM for status updates.
+        /// </summary>
+        public const int ScmPollIntervalMs = 500;
+
+        /// <summary>
+        /// The maximum number of concurrent threads used when querying the SCM for bulk service details.
+        /// </summary>
+        public const int MaxParallelScmQueries = 8;
+
+        /// <summary>
         /// Default timeout in seconds to wait for a Windows Service to stop. Default is 60 seconds.
         /// </summary>
         public const int DefaultServiceStopTimeoutSeconds = 60;

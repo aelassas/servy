@@ -29,14 +29,6 @@ namespace Servy.Core.Services
     /// </summary>
     public class ServiceManager : IServiceManager
     {
-        #region Constants
-
-        private const int ServiceStartTimeoutSeconds = 30;
-        private const int ScmPollIntervalMs = 500;
-        private const int MaxParallelScmQueries = 8;
-
-        #endregion
-
         #region Private Fields
 
         private readonly Func<string, IServiceControllerWrapper> _controllerFactory;
@@ -560,7 +552,7 @@ namespace Servy.Core.Services
                         while (sc.Status != ServiceControllerStatus.Stopped && sw.Elapsed.TotalSeconds < AppConfig.DefaultServiceStopTimeoutSeconds)
                         {
                             // Passing the token to Task.Delay makes the loop immediately responsive to cancellation
-                            await Task.Delay(ScmPollIntervalMs, cancellationToken);
+                            await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
                             sc.Refresh();
                         }
                     }
@@ -620,8 +612,8 @@ namespace Servy.Core.Services
                     if (sc.Status == ServiceControllerStatus.Running)
                         return OperationResult.Success();
 
-                    timeout = (service.StartTimeout ?? ServiceStartTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                    timeout = Math.Max(timeout, ServiceStartTimeoutSeconds);
+                    timeout = (service.StartTimeout ?? AppConfig.DefaultServiceStartTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
+                    timeout = Math.Max(timeout, AppConfig.DefaultServiceStartTimeoutSeconds);
                     if (!string.IsNullOrEmpty(service.PreLaunchExecutablePath))
                     {
                         timeout += service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds;
@@ -642,7 +634,7 @@ namespace Servy.Core.Services
                         }
 
                         cancellationToken.ThrowIfCancellationRequested();
-                        await Task.Delay(250, cancellationToken);
+                        await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
                         sc.Refresh();
                     }
 
@@ -704,7 +696,7 @@ namespace Servy.Core.Services
                         }
 
                         cancellationToken.ThrowIfCancellationRequested();
-                        await Task.Delay(250, cancellationToken);
+                        await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
                         sc.Refresh();
                     }
 
@@ -869,7 +861,7 @@ namespace Servy.Core.Services
                 Parallel.ForEach(services, new ParallelOptions
                 {
                     CancellationToken = cancellationToken,
-                    MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, MaxParallelScmQueries),
+                    MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, AppConfig.MaxParallelScmQueries),
                 },
                 service =>
                 {
