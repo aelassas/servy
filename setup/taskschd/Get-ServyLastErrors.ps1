@@ -82,8 +82,13 @@ function Get-ServyLastErrors {
     catch {
       # Fallback B: Try the local file log
       $logPath = Join-Path $scriptHome "Get-ServyLastErrors.log"
-      $timestampedMsg = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $errorMsg"
-      $timestampedMsg | Out-File -FilePath $logPath -Append
+      $loggerScript = Join-Path $scriptHome "Write-ServyLog.ps1"
+      
+      if (Test-Path $loggerScript) {
+          . $loggerScript
+          Write-ServyLog -FilePath $logPath -Message $errorMsg
+      }else{
+          Write-Warning "Get-ServyLastErrors: Missing required dependencies in '$PSScriptRoot'"
     }
 
     # Throw instead of exit to preserve caller's process/cleanup
