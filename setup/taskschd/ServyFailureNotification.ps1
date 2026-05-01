@@ -160,13 +160,6 @@ if ($null -eq $eventsToProcess) {
 # -------------------------------
 foreach ($evt in $eventsToProcess) {
     $parsed = ConvertFrom-ServyEventMessage -Message $evt.Message
-    
-    # LOGIC FIX: Prevent toast loop
-    if ($parsed.IsFeedbackLoop) {
-        Write-Host "Skipping self-generated toast error to prevent feedback loop." -ForegroundColor DarkGray
-        Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir
-        continue
-    }
 
     # Show the notification
     Show-Notification -ServiceName $parsed.ServiceName -LogText $parsed.LogText -scriptDir $scriptDir -FallbackLogFile $fallbackLogFile
