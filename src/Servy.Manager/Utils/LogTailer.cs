@@ -82,25 +82,25 @@ namespace Servy.Manager.Utils
         /// <param name="startCreated">The creation timestamp of the file when history was loaded, used to detect rotation.</param>
         /// <param name="token">A token used to stop the tailing loop when switching services or closing the app.</param>
         /// <returns>A Task representing the long-running polling operation.</returns>
-        public async Task RunFromPosition(string path, LogType type, long startPos, DateTime startCreated, CancellationToken externalToken)
+        public async Task RunFromPosition(string path, LogType type, long startPos, DateTime startCreated, CancellationToken token)
         {
             if (string.IsNullOrEmpty(path)) return;
 
-            using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(externalToken, _disposeCts.Token))
+            using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _disposeCts.Token))
             {
-                var token = linkedCts.Token;
+                var linkedToken = linkedCts.Token;
 
                 long lastPosition = startPos;
                 DateTime lastCreationTime = startCreated;
                 FILE_IDENTITY? knownIdentity = null;
 
-                while (!token.IsCancellationRequested)
+                while (!linkedToken.IsCancellationRequested)
                 {
                     try
                     {
                         if (!File.Exists(path))
                         {
-                            await Task.Delay(AppConfig.LogTailerFileNotFoundRetryDelayMs, token);
+                            await Task.Delay(AppConfig.LogTailerFileNotFoundRetryDelayMs, linkedToken);
                             continue;
                         }
 
@@ -114,12 +114,12 @@ namespace Servy.Manager.Utils
                         }
                         catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
                         {
-                            await Task.Delay(FileRetryDelayMs, token);
+                            await Task.Delay(FileRetryDelayMs, linkedToken);
                             continue;
                         }
                         catch (IOException)
                         {
-                            await Task.Delay(AppConfig.LogTailerIoErrorRetryDelayMs, token);
+                            await Task.Delay(AppConfig.LogTailerIoErrorRetryDelayMs, linkedToken);
                             continue;
                         }
 
@@ -166,7 +166,7 @@ namespace Servy.Manager.Utils
                             {
                                 try
                                 {
-                                    while (!token.IsCancellationRequested)
+                                    while (!linkedToken.IsCancellationRequested)
                                     {
 #if DEBUG || UNIT_TEST
                                         LoopStartedSignal.TrySetResult(true);
@@ -235,7 +235,7 @@ namespace Servy.Manager.Utils
                                             break; // Break the inner loop to drop the stale handle and reopen
                                         }
 
-                                        await Task.Delay(AppConfig.LogTailerEofPollIntervalMs, token);
+                                        await Task.Delay(AppConfig.LogTailerEofPollIntervalMs, linkedToken);
                                     }
                                 }
                                 finally
@@ -252,7 +252,7 @@ namespace Servy.Manager.Utils
                     catch (Exception ex)
                     {
                         Logger.Error($"Unexpected error in log tailer for {path}.", ex);
-                        await Task.Delay(1000, token);
+                        await Task.Delay(1000, linkedToken);
                     }
                 }
             }
