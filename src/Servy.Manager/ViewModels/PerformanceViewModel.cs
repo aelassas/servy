@@ -166,13 +166,15 @@ namespace Servy.Manager.ViewModels
         /// <param name="appConfig">Application configuration settings.</param>
         /// <param name="cursorService">Service used to control the cursor state.</param>
         /// <param name="processHelper">The process helper used to format process commands.</param>
+        /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
         public PerformanceViewModel(
             IServiceRepository serviceRepository,
             IServiceCommands serviceCommands,
             IAppConfiguration appConfig,
             ICursorService cursorService,
-            IProcessHelper processHelper
-            ) : base(cursorService)
+            IProcessHelper processHelper,
+            IUiDispatcher uiDispatcher
+            ) : base(cursorService, uiDispatcher)
         {
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;

@@ -210,14 +210,16 @@ namespace Servy.Manager.ViewModels
         /// <param name="serviceCommands">Commands for service operations.</param>
         /// <param name="appConfig">Application configuration settings.</param>
         /// <param name="cursorService">Service used to control the cursor state.</param>
+        /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
         public ConsoleViewModel(
             IServiceRepository serviceRepository,
             IServiceCommands serviceCommands,
             IAppConfiguration appConfig,
-            ICursorService cursorService
-            ) : base(cursorService)
+            ICursorService cursorService,
+            IUiDispatcher uiDispatcher
+            ) : base(cursorService, uiDispatcher)
         {
-            _serviceRepository = serviceRepository;
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             ServiceCommands = serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
@@ -247,7 +249,7 @@ namespace Servy.Manager.ViewModels
         /// <inheritdoc/>
         protected override ServiceItemBase CreateServiceItem(Service service)
         {
-            return new ConsoleService { Name = service.Name, Pid = null, StdoutPath = null, StderrPath = null };
+            return new ConsoleService { Name = service?.Name, Pid = null, StdoutPath = null, StderrPath = null };
         }
 
         /// <inheritdoc/>
@@ -270,28 +272,35 @@ namespace Servy.Manager.ViewModels
                 }
                 _hadSelectedService = true;
 
-                var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection.Name, token);
+                var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection?.Name, token);
                 var stateSnapshot = serviceDto?.Clone() as ServiceConsoleStateDto;
 
                 if (stateSnapshot?.Pid == null)
                 {
                     ResetConsole(true);
-                    SelectedService.Pid = null;
-                    SelectedService.StdoutPath = null;
-                    SelectedService.StderrPath = null;
+                    if (SelectedService != null)
+                    {
+                        SelectedService.Pid = null;
+                        SelectedService.StdoutPath = null;
+                        SelectedService.StderrPath = null;
+                    }
                     CopyPidCommand?.RaiseCanExecuteChanged();
                     return;
                 }
 
-                if (currentSelection.Pid != stateSnapshot.Pid
+                if (currentSelection?.Pid != stateSnapshot.Pid
                     || !string.Equals(_stdoutPath, stateSnapshot.ActiveStdoutPath, StringComparison.OrdinalIgnoreCase)
                     || !string.Equals(_stderrPath, stateSnapshot.ActiveStderrPath, StringComparison.OrdinalIgnoreCase))
                 {
-                    currentSelection.Pid = stateSnapshot.Pid;
+                    if (currentSelection != null)
+                        currentSelection.Pid = stateSnapshot.Pid;
                     _stdoutPath = stateSnapshot.ActiveStdoutPath;
                     _stderrPath = stateSnapshot.ActiveStderrPath;
-                    SelectedService.StdoutPath = stateSnapshot.ActiveStdoutPath;
-                    SelectedService.StderrPath = stateSnapshot.ActiveStderrPath;
+                    if (SelectedService != null)
+                    {
+                        SelectedService.StdoutPath = stateSnapshot.ActiveStdoutPath;
+                        SelectedService.StderrPath = stateSnapshot.ActiveStderrPath;
+                    }
 
                     _ = SwitchServiceAsync(stateSnapshot.ActiveStdoutPath, stateSnapshot.ActiveStderrPath);
                     CopyPidCommand?.RaiseCanExecuteChanged();
@@ -576,7 +585,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="service">Service model.</param>
         private void SetPidText(ServiceItemBase service)
         {
-            var pidTxt = service.Pid?.ToString() ?? UiConstants.NotAvailable;
+            var pidTxt = service?.Pid?.ToString() ?? UiConstants.NotAvailable;
             if (Pid != pidTxt) Pid = pidTxt;
         }
 
@@ -586,6 +595,12 @@ namespace Servy.Manager.ViewModels
         /// <param name="parameter">Unused command parameter.</param>
         private async Task CopyPidAsync(object parameter)
         {
+            if (ServiceCommands == null)
+            {
+                Logger.Warn("ServiceCommands is null. Cannot copy PID.");
+                return;
+            }
+
             if (SelectedService?.Pid != null)
             {
                 var service = ServiceMapper.ToModel(SelectedService);

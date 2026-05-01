@@ -24,12 +24,16 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<ICursorService> _cursorServiceMock;
         private readonly Mock<IProcessHelper> _processHelperMock;
 
+        private readonly Mock<IUiDispatcher> _uiDispatcherMock;
+
         public PerformanceViewModelTests()
         {
             _serviceRepoMock = new Mock<IServiceRepository>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
             _cursorServiceMock = new Mock<ICursorService>();
             _processHelperMock = new Mock<IProcessHelper>();
+            _uiDispatcherMock = new Mock<IUiDispatcher>();
+            _uiDispatcherMock.Setup(d => d.YieldAsync()).Returns(Task.CompletedTask);
 
             // Setup AppConfig Mock
             _appConfigMock = new Mock<IAppConfiguration>();
@@ -45,7 +49,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _serviceCommandsMock.Object,
                 _appConfigMock.Object,
                 _cursorServiceMock.Object,
-                _processHelperMock.Object);
+                _processHelperMock.Object,
+                _uiDispatcherMock.Object);
         }
 
         [Fact]
