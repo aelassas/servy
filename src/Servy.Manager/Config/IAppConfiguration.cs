@@ -46,5 +46,12 @@ namespace Servy.Manager.Config
         /// Gets a value indicating whether WPF software rendering is forced for the current session.
         /// </summary>
         bool ForceSoftwareRendering { get; }
+
+        /// <summary>
+        /// Gets the window period in days for the logs tab search, loaded from configuration. 
+        /// This determines the default date range applied when retrieving service log entries.
+        /// </summary>
+        int LogsWindowDays { get; }
+
     }
 }

@@ -268,6 +268,11 @@ namespace Servy.Manager.Utils
         /// <summary>
         /// Reads the tail end of a file to provide historical context when the console is first opened.
         /// </summary>
+        /// <remarks>
+        /// Historical lines are assigned synthetic timestamps based on the file's last write time 
+        /// with a 1-millisecond backward offset per line. These lines are explicitly marked with 
+        /// <see cref="LogLine.IsSyntheticTime"/> to indicate the time is an estimate.
+        /// </remarks>
         /// <param name="path">The file path.</param>
         /// <param name="type">The log type for the resulting <see cref="LogLine"/> objects.</param>
         /// <param name="maxLines">Maximum number of historical lines to retrieve.</param>
@@ -340,7 +345,13 @@ namespace Servy.Manager.Utils
                             long offset = (tempLines.Count - 1 - i) * TimeSpan.TicksPerMillisecond;
                             DateTime syntheticTime = lastWrite.AddTicks(-offset);
 
-                            lines.Add(new LogLine(tempLines[i], type, syntheticTime));
+                            // Create the line and explicitly mark the time as synthetic
+                            LogLine logLine = new LogLine(tempLines[i], type, syntheticTime)
+                            {
+                                IsSyntheticTime = true
+                            };
+
+                            lines.Add(logLine);
                         }
                     }
                 }

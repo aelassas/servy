@@ -2,6 +2,7 @@
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Services;
+using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.ViewModels;
 using Servy.UI.Services;
@@ -10,11 +11,13 @@ namespace Servy.Manager.UnitTests.ViewModels
 {
     public class LogsViewModelTests
     {
+        private readonly Mock<IAppConfiguration> _appConfigurationMock;
         private readonly Mock<IEventLogService> _eventLogServiceMock;
         private readonly Mock<ICursorService> _cursorServiceMock; // New Dependency
 
         public LogsViewModelTests()
         {
+            _appConfigurationMock = new Mock<IAppConfiguration>();
             _eventLogServiceMock = new Mock<IEventLogService>();
             _cursorServiceMock = new Mock<ICursorService>();
         }
@@ -22,6 +25,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         private LogsViewModel CreateViewModel()
         {
             return new LogsViewModel(
+                _appConfigurationMock.Object,
                 _eventLogServiceMock.Object,
                 _cursorServiceMock.Object); // Injecting the mock cursor service
         }
