@@ -184,7 +184,12 @@ namespace Servy.CLI.Commands
 
             Helper.WriteFileAtomic(fullPath, stream =>
             {
-                using (var sw = new StreamWriter(stream, new UTF8Encoding(false))) { sw.Write(content); }
+                // Use the overload: (Stream, Encoding, BufferSize, LeaveOpen)
+                // 1024 is the default buffer size; true keeps the FileStream alive for WriteFileAtomic.
+                using (var sw = new StreamWriter(stream, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
+                {
+                    sw.Write(content);
+                }
             });
         }
 

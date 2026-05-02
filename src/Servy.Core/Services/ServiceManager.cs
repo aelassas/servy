@@ -845,10 +845,6 @@ namespace Servy.Core.Services
             var results = new ConcurrentBag<ServiceInfo>();
             var services = _serviceControllerProvider.GetServices();
 
-            // Even in a sync-first approach, we track any underlying async tasks 
-            // spawned by the provider or previous refresh attempts to protect the handle.
-            var trackedTasks = new ConcurrentBag<Task>();
-
             SafeScmHandle scmHandle = null;
             try
             {
@@ -874,11 +870,11 @@ namespace Servy.Core.Services
                             Name = service.ServiceName,
                             Status = MapStatus(service.Status),
                             StartupType = MapStartupType(service),
-                            LogOnAs = "LocalSystem",
+                            LogOnAs = ServiceAccounts.LocalSystem,
                             Description = string.Empty,
                         };
 
-                        // Synchronous Execution:
+                        // Per-service timeout enforcement
                         // We use a local CancellationTokenSource to enforce the per-call timeout
                         using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
                         {
@@ -887,7 +883,7 @@ namespace Servy.Core.Services
                                 // 1. Set the timeout inside the guarded block
                                 cts.CancelAfter(AppConfig.PopulateNativeDetailsTimeoutMs);
 
-                                // 2. The logic now runs directly on the Parallel worker thread.
+                                // 2. Native details are gathered synchronously on the parallel worker
                                 // PopulateNativeDetails MUST be updated to accept and check this token.
                                 PopulateNativeDetails(scmHandle, info, cts.Token);
                             }
@@ -915,13 +911,8 @@ namespace Servy.Core.Services
             }
             finally
             {
-                // Safety Gate: Ensure any background tasks (from previous or forked logic) 
-                // are observed before we drop the SCM handle.
-                if (trackedTasks.Count > 0)
-                {
-                    try { Task.WaitAll(trackedTasks.ToArray(), 5000); } catch { /* Ignore */ }
-                }
-
+                // Handle is disposed directly. The dead task-tracking logic is removed 
+                // to reflect the synchronous nature of the native SCM queries.
                 scmHandle?.Dispose();
             }
         }
