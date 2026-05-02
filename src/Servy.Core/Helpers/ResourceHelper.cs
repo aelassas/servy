@@ -158,9 +158,26 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Retrieves the last write time of the assembly that contains the embedded resource.
+        /// Retrieves the last write time of the host process executable.
         /// </summary>
-        public DateTime GetEmbeddedResourceLastWriteTimeUTC()
+        /// <returns>
+        /// The <see cref="DateTime"/> (UTC) when the host process (.exe) was last modified, 
+        /// or <see cref="DateTime.UtcNow"/> if the file cannot be accessed.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// This method uses the main module of the current process as a proxy for the 
+        /// "deployment timestamp." This is an acceptable proxy in the current single-exe 
+        /// distribution model of Servy, as it represents the last time the application 
+        /// artifacts were updated on the host machine.
+        /// </para>
+        /// <para>
+        /// Note: If resources are moved to a separate library assembly in the future, 
+        /// this method should be updated to query that specific assembly's file path 
+        /// to ensure accurate re-extraction logic.
+        /// </para>
+        /// </remarks>
+        public DateTime GetHostProcessLastWriteTimeUTC()
         {
             try
             {
@@ -243,7 +260,7 @@ namespace Servy.Core.Helpers
             if (File.Exists(targetPath))
             {
                 DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
-                DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTimeUTC();
+                DateTime embeddedResourceTime = GetHostProcessLastWriteTimeUTC();
 
                 Logger.Debug($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
                 Logger.Debug($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");

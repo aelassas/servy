@@ -62,9 +62,7 @@ namespace Servy.Services
         /// <param name="jsonServiceValidator">JSON service validator.</param>
         /// <param name="appConfig">Application configuration.</param>
         /// <param name="cursorService">Cursor service for managing cursor state during operations.</param>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="serviceManager"/>, <paramref name="messageBoxService"/>, or <paramref name="serviceRepository"/> is <c>null</c>.
-        /// </exception>
+        /// <exception cref="ArgumentNullException">Thrown when any required dependency is <c>null</c>.</exception>
         public ServiceCommands(
             Func<ServiceDto?> modelToServiceDto,
             Action<ServiceDto> bindServiceDtoToModel,
