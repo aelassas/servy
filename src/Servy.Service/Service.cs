@@ -576,14 +576,14 @@ namespace Servy.Service
                         catch (Exception ex)
                         {
                             // 4. Prevent unobserved task exceptions from crashing the finalizer thread
-                            _logger?.Error($"Unexpected error during PRESHUTDOWN registration: {ex.Message}", ex);
+                            _logger?.Error("Unexpected error during PRESHUTDOWN registration.", ex);
                         }
                     }), token); // Pass token to Task.Run to prevent execution if already cancelled
                 }
             }
             catch (Exception ex)
             {
-                _logger?.Error($"Exception in OnStart: {ex.Message}", ex);
+                _logger?.Error("Exception in OnStart.", ex);
                 Stop();
             }
         }
@@ -979,7 +979,7 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    LogIssue($"Pre-launch process attempt {attempt} failed: {ex.Message}", ex);
+                    LogIssue("Pre-launch process attempt {attempt} failed.", ex);
                 }
             }
 
@@ -1229,7 +1229,7 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Error($"Unexpected error in post-launch action: {ex.Message}", ex);
+                    _logger?.Error("Unexpected error in post-launch action.", ex);
                 }
             }, cts.Token);
         }
@@ -1354,7 +1354,7 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                _logger?.Error($"Failed to run post-launch program: {ex.Message}", ex);
+                _logger?.Error("Failed to run post-launch program.", ex);
             }
         }
 
@@ -1418,7 +1418,7 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                _logger?.Error($"Failed to run failure program: {ex.Message}", ex);
+                _logger?.Error("Failed to run failure program.", ex);
             }
         }
 
@@ -1608,7 +1608,7 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                _logger?.Error($"OnProcessExited failed: {ex.Message}", ex);
+                _logger?.Error("OnProcessExited failed.", ex);
             }
 
             // Helper local function to handle the asynchronous wait and safety checks
@@ -1922,7 +1922,7 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                Logger.Error($"Critical error in health check loop: {ex.Message}", ex);
+                Logger.Error("Critical error in health check loop.", ex);
             }
         }
 
@@ -2154,7 +2154,7 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Error($"Teardown error during {reason}: {ex.Message}", ex);
+                    _logger?.Error("Teardown error during {reason}.", ex);
 
                     // Reset the tearing down flag so the service can attempt recovery 
                     // if the child process exits or the SCM attempts another stop.
@@ -2387,7 +2387,7 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                LogIssue($"Pre-stop process failed: {ex.Message}", ex);
+                LogIssue("Pre-stop process failed.", ex);
             }
 
             // 4. Final Policy Handling
@@ -2613,7 +2613,7 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                _logger?.Error($"Failed to run post-stop program: {ex.Message}", ex);
+                _logger?.Error("Failed to run post-stop program.", ex);
             }
         }
 

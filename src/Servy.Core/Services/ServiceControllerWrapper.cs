@@ -174,7 +174,7 @@ namespace Servy.Core.Services
             }
             catch (System.ComponentModel.Win32Exception ex)
             {
-                Logger.Warn($"Win32 error resolving dependency '{serviceName}': {ex.Message}", ex);
+                Logger.Warn($"Win32 error resolving dependency '{serviceName}'.", ex);
                 return new ServiceDependencyNode(serviceName, $"{serviceName} (Access Denied)", false, false);
             }
         }

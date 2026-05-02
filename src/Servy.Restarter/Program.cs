@@ -146,7 +146,7 @@ namespace Servy.Restarter
             catch (Exception ex)
             {
                 // Use the scoped logger if available, otherwise fallback to root
-                (scopedLogger ?? rootLogger).Error($"Servy.Restarter.exe failed to restart the service: {ex.Message}", ex);
+                (scopedLogger ?? rootLogger).Error("Servy.Restarter.exe failed to restart the service.", ex);
                 Environment.ExitCode = 1;
             }
             finally

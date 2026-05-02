@@ -116,7 +116,7 @@ namespace Servy.Core.Helpers
                     Logger.Error($"Failed to start {serviceName}.", ex);
 
                     // Wrap in a descriptive exception so the caller knows which one failed
-                    exceptions.Add(new InvalidOperationException($"Service '{serviceName}' failed: {ex.Message}", ex));
+                    exceptions.Add(new InvalidOperationException($"Service '{serviceName}' failed.", ex));
 
                     // The loop continues to the next service
                 }
@@ -188,7 +188,7 @@ namespace Servy.Core.Helpers
                     // Capture general exceptions (Access Denied, Service Not Found, etc.)
                     Logger.Error($"An error occurred while stopping service '{serviceName}'.", ex);
                     exceptions.Add(new InvalidOperationException(
-                        $"An error occurred while stopping service '{serviceName}': {ex.Message}", ex));
+                        $"An error occurred while stopping service '{serviceName}'.", ex));
                 }
             }
 
@@ -313,7 +313,7 @@ namespace Servy.Core.Helpers
                 // Fail-safe: log locally or return empty list. 
                 // Do not let a query failure block deployment.
                 throw new InvalidOperationException(
-                    $"Failed to query services for {wrapperExe} via SCM/Registry: {ex.Message}", ex);
+                    $"Failed to query services for {wrapperExe} via SCM/Registry.", ex);
             }
 
             return result;
