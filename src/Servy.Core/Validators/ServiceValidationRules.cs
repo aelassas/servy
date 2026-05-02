@@ -57,15 +57,15 @@ namespace Servy.Core.Validators
 
             // Length Bounds
             if (dto.Name.Length > AppConfig.MaxServiceNameLength)
-                result.Warnings.Add(string.Format(Strings.Msg_ServiceNameLengthReached, AppConfig.MaxServiceNameLength));
+                result.Errors.Add(string.Format(Strings.Msg_ServiceNameLengthReached, AppConfig.MaxServiceNameLength));
             if (dto.DisplayName?.Length > AppConfig.MaxDisplayNameLength)
-                result.Warnings.Add(string.Format(Strings.Msg_DisplayNameLengthReached, AppConfig.MaxDisplayNameLength));
+                result.Errors.Add(string.Format(Strings.Msg_DisplayNameLengthReached, AppConfig.MaxDisplayNameLength));
             if (dto.Description?.Length > AppConfig.MaxDescriptionLength)
                 result.Warnings.Add(string.Format(Strings.Msg_DescriptionLengthReached, AppConfig.MaxDescriptionLength));
 
             var paramFields = new[] { dto.Parameters, dto.PreLaunchParameters, dto.PostLaunchParameters, dto.PreStopParameters, dto.PostStopParameters, dto.FailureProgramParameters };
             if (paramFields.Any(p => p?.Length > AppConfig.MaxArgumentLength))
-                result.Warnings.Add(string.Format(Strings.Msg_ArgumentsLengthReached, AppConfig.MaxArgumentLength));
+                result.Errors.Add(string.Format(Strings.Msg_ArgumentsLengthReached, AppConfig.MaxArgumentLength));
 
             // Paths
             if (!_processHelper.ValidatePath(dto.ExecutablePath))
