@@ -43,7 +43,7 @@ namespace Servy.Core.Services
             // Prevent Memory Exhaustion / DoS
             if (xml.Length > AppConfig.MaxImportPayloadSizeChars)
             {
-                errorMessage = $"XML payload exceeds the maximum allowed size of {AppConfig.MaxImportPayloadSizeChars} characters.";
+                errorMessage = $"XML payload exceeds the maximum allowed size of {AppConfig.MaxConfigFileSizeMB} MB.";
                 Logger.Warn("XML Import Blocked: Payload size limit exceeded.");
                 return false;
             }

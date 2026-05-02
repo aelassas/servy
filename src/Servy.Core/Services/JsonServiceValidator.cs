@@ -43,7 +43,7 @@ namespace Servy.Core.Services
             // Prevent Memory Exhaustion / DoS
             if (json.Length > AppConfig.MaxImportPayloadSizeChars)
             {
-                errorMessage = $"JSON payload exceeds the maximum allowed size of {AppConfig.MaxImportPayloadSizeChars} characters.";
+                errorMessage = $"JSON payload exceeds the maximum allowed size of {AppConfig.MaxConfigFileSizeMB} MB.";
                 Logger.Warn("JSON Import Blocked: Payload size limit exceeded.");
                 return false;
             }

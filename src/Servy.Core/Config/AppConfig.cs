@@ -568,11 +568,17 @@ namespace Servy.Core.Config
         /// The maximum allowed character count for imported configuration payloads (JSON or XML).
         /// </summary>
         /// <remarks>
+        /// <para>
         /// This limit is a security measure to prevent Denial of Service (DoS) attacks via 
-        /// memory exhaustion. 1,024,000 characters represent approximately 2MB of memory 
+        /// memory exhaustion. 10,000,000 characters represent approximately 20MB of memory 
         /// usage for the raw string in UTF-16.
+        /// </para>
+        /// <para>
+        /// This value is deliberately aligned with <see cref="MaxConfigFileSizeMB"/> to ensure 
+        /// consistency between initial file-size checks and internal buffer validation.
+        /// </para>
         /// </remarks>
-        public const int MaxImportPayloadSizeChars = 1_024_000;
+        public const int MaxImportPayloadSizeChars = MaxConfigFileSizeMB * 1_000_000;
 
         #endregion
 
