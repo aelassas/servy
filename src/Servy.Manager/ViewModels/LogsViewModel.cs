@@ -373,7 +373,13 @@ namespace Servy.Manager.ViewModels
                 ScrollLogsToTopRequested?.Invoke();
 
                 stopwatch.Stop();
-                FooterText = Helper.GetRowsInfo(_logs.Count, stopwatch.Elapsed, Strings.Footer_LogRowText);
+
+                FooterText = Helper.GetRowsInfo(
+                    count: _logs.Count,
+                    duration: stopwatch.Elapsed,
+                    noneFormat: Strings.Footer_Log_None,
+                    oneFormat: Strings.Footer_Log_One,
+                    manyFormat: Strings.Footer_Log_Many);
             }
             catch (OperationCanceledException)
             {

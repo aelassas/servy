@@ -412,11 +412,65 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Found {0} logs in {1}.
+        /// </summary>
+        public static string Footer_Log_Many {
+            get {
+                return ResourceManager.GetString("Footer_Log_Many", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à No logs found in {0}.
+        /// </summary>
+        public static string Footer_Log_None {
+            get {
+                return ResourceManager.GetString("Footer_Log_None", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Found 1 log in {0}.
+        /// </summary>
+        public static string Footer_Log_One {
+            get {
+                return ResourceManager.GetString("Footer_Log_One", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à log.
         /// </summary>
         public static string Footer_LogRowText {
             get {
                 return ResourceManager.GetString("Footer_LogRowText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Loaded {0} services in {1}.
+        /// </summary>
+        public static string Footer_Service_Many {
+            get {
+                return ResourceManager.GetString("Footer_Service_Many", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à No services loaded in {0}.
+        /// </summary>
+        public static string Footer_Service_None {
+            get {
+                return ResourceManager.GetString("Footer_Service_None", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Loaded 1 service in {0}.
+        /// </summary>
+        public static string Footer_Service_One {
+            get {
+                return ResourceManager.GetString("Footer_Service_One", resourceCulture);
             }
         }
         
