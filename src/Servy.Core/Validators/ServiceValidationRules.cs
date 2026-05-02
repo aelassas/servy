@@ -71,9 +71,9 @@ namespace Servy.Core.Validators
                 result.Errors.Add(Strings.Msg_InvalidWrapperExePath);
             if (!string.IsNullOrWhiteSpace(dto.StartupDirectory) && !_processHelper.ValidatePath(dto.StartupDirectory, false))
                 result.Errors.Add(Strings.Msg_InvalidStartupDirectory);
-            if (!string.IsNullOrWhiteSpace(dto.StdoutPath) && (!Helper.IsValidPath(dto.StdoutPath) || !Helper.CreateParentDirectory(dto.StdoutPath)))
+            if (!string.IsNullOrWhiteSpace(dto.StdoutPath) && !Helper.IsValidPath(dto.StdoutPath))
                 result.Errors.Add(Strings.Msg_InvalidStdoutPath);
-            if (!string.IsNullOrWhiteSpace(dto.StderrPath) && (!Helper.IsValidPath(dto.StderrPath) || !Helper.CreateParentDirectory(dto.StderrPath)))
+            if (!string.IsNullOrWhiteSpace(dto.StderrPath) && !Helper.IsValidPath(dto.StderrPath))
                 result.Errors.Add(Strings.Msg_InvalidStderrPath);
 
             // Timeouts & Rotation Bounds
@@ -130,9 +130,9 @@ namespace Servy.Core.Validators
                 result.Errors.Add(Strings.Msg_InvalidPreLaunchStartupDirectory);
             if (!EnvironmentVariablesValidator.Validate(StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables), out var preLaunchEnvErrorMsg))
                 result.Errors.Add(preLaunchEnvErrorMsg);
-            if (!string.IsNullOrWhiteSpace(dto.PreLaunchStdoutPath) && (!Helper.IsValidPath(dto.PreLaunchStdoutPath) || !Helper.CreateParentDirectory(dto.PreLaunchStdoutPath)))
+            if (!string.IsNullOrWhiteSpace(dto.PreLaunchStdoutPath) && !Helper.IsValidPath(dto.PreLaunchStdoutPath))
                 result.Errors.Add(Strings.Msg_InvalidPreLaunchStdoutPath);
-            if (!string.IsNullOrWhiteSpace(dto.PreLaunchStderrPath) && (!Helper.IsValidPath(dto.PreLaunchStderrPath) || !Helper.CreateParentDirectory(dto.PreLaunchStderrPath)))
+            if (!string.IsNullOrWhiteSpace(dto.PreLaunchStderrPath) && !Helper.IsValidPath(dto.PreLaunchStderrPath))
                 result.Errors.Add(Strings.Msg_InvalidPreLaunchStderrPath);
             if (dto.PreLaunchTimeoutSeconds.HasValue && (dto.PreLaunchTimeoutSeconds < AppConfig.MinPreLaunchTimeoutSeconds || dto.PreLaunchTimeoutSeconds > AppConfig.MaxPreLaunchTimeoutSeconds))
                 result.Errors.Add(string.Format(Strings.Msg_InvalidPreLaunchTimeout, AppConfig.MinPreLaunchTimeoutSeconds, AppConfig.MaxPreLaunchTimeoutSeconds));
