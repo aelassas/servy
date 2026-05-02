@@ -20,7 +20,7 @@ namespace Servy.Core.UnitTests.Native
             ProcessAccess access = ProcessAccess.QueryLimitedInformation;
 
             // Act
-            using (Handle handle = OpenProcess(access, false, currentPid))
+            using (SafeWinProcessHandle handle = OpenProcess(access, false, currentPid))
             {
                 // Assert
                 Assert.NotNull(handle);
@@ -43,7 +43,7 @@ namespace Servy.Core.UnitTests.Native
             int nonExistentPid = 999999;
 
             // Act
-            using (Handle handle = OpenProcess(ProcessAccess.QueryLimitedInformation, false, nonExistentPid))
+            using (SafeWinProcessHandle handle = OpenProcess(ProcessAccess.QueryLimitedInformation, false, nonExistentPid))
             {
                 // Assert
                 Assert.NotNull(handle);
@@ -57,7 +57,7 @@ namespace Servy.Core.UnitTests.Native
         {
             // Arrange
             int currentPid = Process.GetCurrentProcess().Id;
-            Handle handle = OpenProcess(ProcessAccess.QueryLimitedInformation, false, currentPid);
+            SafeWinProcessHandle handle = OpenProcess(ProcessAccess.QueryLimitedInformation, false, currentPid);
 
             // Act
             handle.Dispose();
@@ -79,7 +79,7 @@ namespace Servy.Core.UnitTests.Native
             int currentPid = Process.GetCurrentProcess().Id;
 
             // Act
-            using (Handle handle = OpenProcess(ProcessAccess.QueryLimitedInformation, false, currentPid))
+            using (SafeWinProcessHandle handle = OpenProcess(ProcessAccess.QueryLimitedInformation, false, currentPid))
             {
                 IntPtr convertedPtr = handle.DangerousGetHandle();
 

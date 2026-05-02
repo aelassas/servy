@@ -59,10 +59,8 @@ namespace Servy.Infrastructure.Data
                         throw;
                     }
 
-                    // Shorter delay calculation specifically for the sync path
-                    int backoff = AppConfig.DbSyncInitialDelayMs * (int)Math.Pow(2, i);
-                    int jitter = _random.Value.Next(0, AppConfig.DbSyncMaxJitterMs + 1);
-                    int delay = backoff + jitter;
+                    // Use the unified helper with Sync-specific configuration
+                    int delay = CalculateBackoff(i, AppConfig.DbSyncInitialDelayMs, AppConfig.DbSyncMaxJitterMs);
 
                     Logger.Warn($"Database busy (sync attempt {i + 1}/{AppConfig.DbSyncMaxRetries}). Spinning for {delay}ms...");
 
@@ -91,7 +89,8 @@ namespace Servy.Infrastructure.Data
                 {
                     if (i == AppConfig.DbAsyncMaxRetries - 1) throw;
 
-                    int delay = CalculateBackoff(i);
+                    // Use the unified helper with Async-specific configuration
+                    int delay = CalculateBackoff(i, AppConfig.DbAsyncInitialDelayMs, AppConfig.DbAsyncMaxJitterMs);
                     Logger.Warn($"Database busy (async attempt {i + 1}/{AppConfig.DbAsyncMaxRetries}). Retrying in {delay}ms...");
 
                     // Critical: Pass the token to Task.Delay so we don't hang if cancelled during backoff
@@ -103,17 +102,19 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Calculates the delay for the next async retry attempt using exponential backoff and jitter.
+        /// Calculates the delay for a retry attempt using exponential backoff and jitter.
         /// </summary>
         /// <param name="attempt">The zero-based attempt index.</param>
-        /// <returns>The delay in milliseconds.</returns>
-        private int CalculateBackoff(int attempt)
+        /// <param name="initialDelayMs">The base delay for the first retry.</param>
+        /// <param name="maxJitterMs">The maximum random jitter to add.</param>
+        /// <returns>The calculated delay in milliseconds.</returns>
+        private int CalculateBackoff(int attempt, int initialDelayMs, int maxJitterMs)
         {
-            // Exponential: 100, 200, 400...
-            int backoff = AppConfig.DbAsyncInitialDelayMs * (int)Math.Pow(2, attempt);
+            // Exponential backoff: base * 2^attempt
+            int backoff = initialDelayMs * (int)Math.Pow(2, attempt);
 
-            // Jitter: 0 to 50ms (Thread-safe and lock-free)
-            int jitter = _random.Value.Next(0, AppConfig.DbAsyncMaxJitterMs + 1);
+            // Add jitter to prevent "thundering herd" collisions
+            int jitter = _random.Value.Next(0, maxJitterMs + 1);
 
             return backoff + jitter;
         }

@@ -11,9 +11,9 @@ namespace Servy.Core.Native
     /// is closed exactly once, even if the object is finalized or disposed multiple times.
     /// </remarks>
     [ExcludeFromCodeCoverage]
-    public sealed class Handle : SafeHandleZeroOrMinusOneIsInvalid
+    public sealed class SafeWinProcessHandle : SafeHandleZeroOrMinusOneIsInvalid
     {
-        public Handle() : base(true) { }
+        public SafeWinProcessHandle() : base(true) { }
 
         protected override bool ReleaseHandle()
         {

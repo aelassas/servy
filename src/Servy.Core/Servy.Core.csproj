@@ -128,7 +128,7 @@
     <Compile Include="Logging\Logger.cs" />
     <Compile Include="Logging\LogLevel.cs" />
     <Compile Include="Native\Errors.cs" />
-    <Compile Include="Native\Handle.cs" />
+    <Compile Include="Native\SafeWinProcessHandle.cs" />
     <Compile Include="Resources\Strings.Designer.cs">
       <DependentUpon>Strings.resx</DependentUpon>
       <AutoGen>True</AutoGen>

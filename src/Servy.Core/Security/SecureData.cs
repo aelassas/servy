@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 
 namespace Servy.Core.Security
 {
@@ -18,7 +19,7 @@ namespace Servy.Core.Security
         private readonly byte[] _v1StaticIv;
         private readonly byte[] _v2EncryptionKey;
         private readonly byte[] _v2HmacKey;
-        private bool _disposed;
+        private int _disposed;
 
         private const int BufferSize = 4096;
         private const string EncryptMarker = "SERVY_ENC:";
@@ -497,20 +498,20 @@ namespace Servy.Core.Security
         /// </summary>
         protected virtual void Dispose(bool disposing)
         {
-            if (_disposed) return;
+            // 1. ATOMIC GUARD: Flip the flag BEFORE wiping memory.
+            // Interlocked.Exchange returns the original value. If it wasn't 0 (False), 
+            // another thread has already initiated disposal.
+            if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
 
             if (disposing)
             {
-                // Zero-out sensitive managed byte arrays.
-                // Even though these are managed objects, we treat them as critical 
-                // resources that must be wiped before the memory is reclaimed.
+                // 2. ZEROING: Because the flag is already flipped, new calls to 
+                // Encrypt/Decrypt will now fail via ThrowIfDisposed.
                 if (_v1MasterKey != null) Array.Clear(_v1MasterKey, 0, _v1MasterKey.Length);
                 if (_v1StaticIv != null) Array.Clear(_v1StaticIv, 0, _v1StaticIv.Length);
                 if (_v2EncryptionKey != null) Array.Clear(_v2EncryptionKey, 0, _v2EncryptionKey.Length);
                 if (_v2HmacKey != null) Array.Clear(_v2HmacKey, 0, _v2HmacKey.Length);
             }
-
-            _disposed = true;
         }
 
         /// <summary>
@@ -518,7 +519,9 @@ namespace Servy.Core.Security
         /// </summary>
         private void ThrowIfDisposed()
         {
-            if (_disposed)
+            // Use Volatile.Read to ensure we see the latest state across CPU cores 
+            // without the overhead of a full lock.
+            if (Volatile.Read(ref _disposed) != 0)
                 throw new ObjectDisposedException(GetType().Name);
         }
     }

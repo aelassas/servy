@@ -138,7 +138,7 @@ namespace Servy.Core.Services
 
                     // 1. Heuristic: Only include events where the provider contains "Servy"
                     // This prevents capturing unrelated system/app logs even when _sourceName is empty.
-                    if (provider.IndexOf(AppConfig.EventSource, StringComparison.OrdinalIgnoreCase) < 0)
+                    if (!string.IsNullOrEmpty(_sourceName) && provider.IndexOf(_sourceName, StringComparison.OrdinalIgnoreCase) < 0)
                         continue;
 
                     // 2. Formatting Check: Ensure it follows the Servy log pattern [Service] Message

@@ -524,7 +524,7 @@ namespace Servy.Core.Native
 
         /// <summary>Opens an existing local process object.</summary>
         [DllImport("kernel32.dll")]
-        public static extern Handle OpenProcess(ProcessAccess desiredAccess, bool inheritHandle, int processId);
+        public static extern SafeWinProcessHandle OpenProcess(ProcessAccess desiredAccess, bool inheritHandle, int processId);
 
         /// <summary>Retrieves information about the specified process.</summary>
         [DllImport("ntdll.dll")]
