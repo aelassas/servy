@@ -20,7 +20,14 @@ namespace Servy.Restarter
         }
 
         /// <inheritdoc />
-        public ServiceControllerStatus Status => _controller.Status;
+        public ServiceControllerStatus Status
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _controller.Status;
+            }
+        }
 
         /// <inheritdoc />
         public void Start()
