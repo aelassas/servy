@@ -41,11 +41,11 @@ namespace Servy.Restarter
                     try
                     {
                         controller.Stop();
-                        var startRemaining = timeout - stopwatch.Elapsed;
-                        if (startRemaining <= TimeSpan.Zero)
+                        var stopRemaining = timeout - stopwatch.Elapsed;
+                        if (stopRemaining <= TimeSpan.Zero)
                             throw new System.TimeoutException($"No time remaining to start service '{serviceName}'.");
 
-                        controller.WaitForStatus(ServiceControllerStatus.Stopped, startRemaining);
+                        controller.WaitForStatus(ServiceControllerStatus.Stopped, stopRemaining);
                     }
                     catch (InvalidOperationException)
                     {
@@ -59,7 +59,9 @@ namespace Servy.Restarter
                 controller.Start();
                 var remaining = timeout - stopwatch.Elapsed;
                 if (remaining <= TimeSpan.Zero)
-                    throw new System.TimeoutException("Timeout expired before the service could be started.");
+                    throw new System.TimeoutException(
+                        $"Timeout expired while waiting for service '{serviceName}' to reach Running. " +
+                        "The Start command was issued; the service may still complete the transition.");
                 controller.WaitForStatus(ServiceControllerStatus.Running, remaining);
             }
         }
