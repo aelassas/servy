@@ -1336,7 +1336,7 @@ namespace Servy.Service
                     Arguments = args,
                     WorkingDirectory = workingDir,
                     EnvironmentVariables = _options.EnvironmentVariables,
-                    FireAndForget = true, // Post-stop is always fire-and-forget
+                    FireAndForget = true, // Failure program is always fire-and-forget
                     EnableConsoleUI = _options.EnableConsoleUI,
                 };
 
