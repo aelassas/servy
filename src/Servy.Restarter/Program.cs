@@ -116,7 +116,11 @@ namespace Servy.Restarter
                 scopedLogger.SetLogLevel(logLevel);
 
                 // Sync Event Log enablement to the instance
-                var isEventLogEnabled = bool.TryParse(config["EnableEventLog"] ?? "true", out var elEnabled) && elEnabled;
+                bool isEventLogEnabled;
+                if (!bool.TryParse(config["EnableEventLog"], out isEventLogEnabled))
+                {
+                    isEventLogEnabled = AppConfig.DefaultEnableEventLog;
+                }
                 scopedLogger.SetIsEventLogEnabled(isEventLogEnabled);
 
                 // 5. Initialize database and helpers

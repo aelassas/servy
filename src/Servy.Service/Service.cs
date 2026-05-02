@@ -309,7 +309,11 @@ namespace Servy.Service
                 }
                 Logger.SetDateRotationType(dateRotationType);
 
-                var isEventLogEnabled = bool.TryParse(config["EnableEventLog"] ?? "true", out var elEnabled) && elEnabled;
+                bool isEventLogEnabled;
+                if (!bool.TryParse(config["EnableEventLog"], out isEventLogEnabled))
+                {
+                    isEventLogEnabled = AppConfig.DefaultEnableEventLog;
+                }
                 _logger.SetIsEventLogEnabled(isEventLogEnabled);
 
                 if (int.TryParse(config["LogRotationSizeMB"], out var logRotationSizeMB) && logRotationSizeMB > 0)
