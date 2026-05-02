@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Media;
 
@@ -29,23 +30,42 @@ namespace Servy.UI.Helpers
         }
 
         /// <summary>
-        /// Formats a <see cref="TimeSpan"/> into a human-readable string.
+        /// Formats a <see cref="TimeSpan"/> into a human-readable string, omitting zero-value components.
         /// </summary>
         /// <param name="duration">The duration to format.</param>
         /// <returns>
-        /// A formatted string representing the duration, for example:
-        /// <c>1h 23m 45s</c>, <c>5m 12s</c>, <c>15s 50ms</c>, or <c>250ms</c>.
+        /// A formatted string such as <c>1h 5s</c>, <c>15s</c>, or <c>0ms</c> if the duration is zero.
         /// </returns>
         public static string FormatDuration(TimeSpan duration)
         {
-            if (duration.TotalHours >= 1)
-                return $"{(int)duration.TotalHours}h {duration.Minutes}m {duration.Seconds}s";
-            else if (duration.TotalMinutes >= 1)
-                return $"{(int)duration.TotalMinutes}m {duration.Seconds}s";
-            else if (duration.TotalSeconds >= 1)
-                return $"{(int)duration.TotalSeconds}s {duration.Milliseconds}ms";
-            else
-                return $"{duration.Milliseconds}ms";
+            var parts = new List<string>();
+
+            // 1. Capture total hours (handling durations > 24h if necessary)
+            if ((int)duration.TotalHours > 0)
+            {
+                parts.Add($"{(int)duration.TotalHours}h");
+            }
+
+            // 2. Capture minutes (0-59)
+            if (duration.Minutes > 0)
+            {
+                parts.Add($"{duration.Minutes}m");
+            }
+
+            // 3. Capture seconds (0-59)
+            if (duration.Seconds > 0)
+            {
+                parts.Add($"{duration.Seconds}s");
+            }
+
+            // 4. Capture milliseconds (0-999)
+            if (duration.Milliseconds > 0)
+            {
+                parts.Add($"{duration.Milliseconds}ms");
+            }
+
+            // 5. Join parts with a space, or return "0ms" for zero/near-zero durations
+            return parts.Count > 0 ? string.Join(" ", parts) : "0ms";
         }
 
         /// <summary>
