@@ -164,6 +164,8 @@ namespace Servy.Manager.ViewModels
                 IsBusy = true;
                 SearchButtonText = Strings.Button_Searching;
 
+                // Yield to the UI dispatcher to allow visual updates before the blocking call,
+                // safely bypassing during xUnit test runs.
                 await _uiDispatcher.YieldAsync();
 
                 var results = await ServiceCommands.SearchServicesAsync(SearchText, false, token);

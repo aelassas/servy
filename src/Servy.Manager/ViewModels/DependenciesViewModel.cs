@@ -144,7 +144,6 @@ namespace Servy.Manager.ViewModels
             ServiceCommands = serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
 
-            SearchCommand = new AsyncCommand(SearchServicesAsync);
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
             RefreshCommand = new AsyncCommand(LoadDependencyTreeAsync);
             ExpandAllCommand = new RelayCommand<object>(_ => SetExpansion(DependencyTree, true));
@@ -288,60 +287,6 @@ namespace Servy.Manager.ViewModels
         private void ResetPid()
         {
             Pid = UiConstants.NotAvailable;
-        }
-
-        /// <summary>
-        /// Searches for services based on the <see cref="SearchText"/>.
-        /// Updates the <see cref="Services"/> collection on the UI thread.
-        /// </summary>
-        /// <param name="parameter">Unused command parameter.</param>
-        private async Task SearchServicesAsync(object parameter)
-        {
-            // Thread-safe atomic swap for left-panel search
-            // This prevents searching from destroying the active monitoring token
-            var newCts = new CancellationTokenSource();
-            var oldCts = Interlocked.Exchange(ref _serviceSearchCts, newCts);
-            if (oldCts != null)
-            {
-                oldCts.Cancel();
-                oldCts.Dispose();
-            }
-
-            var token = newCts.Token;
-
-            try
-            {
-                _cursorService.SetWaitCursor();
-                IsBusy = true;
-                SearchButtonText = Strings.Button_Searching;
-
-                if (Application.Current?.Dispatcher != null && !Helper.IsRunningUnderXunit())
-                {
-                    await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
-                }
-
-                var results = await ServiceCommands.SearchServicesAsync(SearchText, false, token);
-
-                Services.Clear();
-                foreach (var s in results)
-                {
-                    Services.Add(new DependencyService { Name = s.Name, Pid = null });
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Search was cancelled; no action needed.
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to search services.", ex);
-            }
-            finally
-            {
-                _cursorService.ResetCursor();
-                IsBusy = false;
-                SearchButtonText = Strings.Button_Search;
-            }
         }
 
         /// <summary>
