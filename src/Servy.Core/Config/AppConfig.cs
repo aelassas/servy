@@ -295,6 +295,11 @@ namespace Servy.Core.Config
         /// <summary>
         /// Default stop timeout in seconds to wait for exit. Default is 5 seconds.
         /// </summary>
+        /// <remarks>
+        /// <see cref="DefaultServiceStopTimeoutSeconds"/> is a separate
+        /// constant used by ServiceManager as a wall-clock floor when the
+        /// configured per-service value would be unreasonably short.
+        /// </remarks>
         public const int DefaultStopTimeout = 5;
 
         /// <summary>
