@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 
 namespace Servy.UI
 {
@@ -53,6 +53,11 @@ namespace Servy.UI
             finally
             {
                 _suppressNotification = false;
+
+                // Explicitly notify bindings that Count and the indexer have changed,
+                // as manual manipulation of the internal 'Items' collection bypasses these.
+                OnPropertyChanged(new PropertyChangedEventArgs("Count"));
+                OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
                 OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
             }
         }
@@ -110,6 +115,10 @@ namespace Servy.UI
             finally
             {
                 _suppressNotification = false;
+
+                // Explicitly notify bindings that Count and the indexer have changed.
+                OnPropertyChanged(new PropertyChangedEventArgs("Count"));
+                OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
                 OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
             }
         }
