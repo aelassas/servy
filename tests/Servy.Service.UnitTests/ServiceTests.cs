@@ -247,8 +247,9 @@ namespace Servy.Service.UnitTests
                 It.IsAny<Exception>()
                 ), Times.AtLeastOnce);
 
-            // Verify root logger was disposed after promotion
-            _mockLogger.Verify(l => l.Dispose(), Times.Once);
+            // The root logger must NOT be disposed because the scoped logger
+            // delegates its underlying EventLog/File operations to it.
+            _mockLogger.Verify(l => l.Dispose(), Times.Never);
         }
 
         [Fact]
