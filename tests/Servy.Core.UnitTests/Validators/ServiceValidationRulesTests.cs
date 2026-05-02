@@ -74,14 +74,11 @@ namespace Servy.Core.UnitTests.Validators
         public void Validate_ExceedingLengthLimits_ReturnsWarnings()
         {
             var dto = CreateValidDto();
-            dto.Name = new string('A', AppConfig.MaxServiceNameLength + 1);
-            dto.DisplayName = new string('B', AppConfig.MaxDisplayNameLength + 1);
             dto.Description = new string('C', AppConfig.MaxDescriptionLength + 1);
-            dto.Parameters = new string('D', AppConfig.MaxArgumentLength + 1);
 
             var result = _sut.Validate(dto);
 
-            Assert.Equal(4, result.Warnings.Count);
+            Assert.Single(result.Warnings);
             Assert.Contains(result.Warnings, w => w.Contains("exceeds"));
         }
 

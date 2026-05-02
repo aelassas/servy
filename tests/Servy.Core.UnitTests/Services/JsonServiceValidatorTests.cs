@@ -58,7 +58,7 @@ namespace Servy.Core.UnitTests.Services
             {
                 Name = "TestService",
                 ExecutablePath = "C:\\path\\to\\exe.exe",
-                Description = new string('A', AppConfig.MaxDescriptionLength + 1)
+                DisplayName = new string('A', AppConfig.MaxDisplayNameLength + 1)
             };
             var json = JsonConvert.SerializeObject(dto);
 
@@ -67,7 +67,7 @@ namespace Servy.Core.UnitTests.Services
             var result = _validator.TryValidate(json, out var error);
 
             Assert.False(result);
-            Assert.Equal(string.Format(Strings.Msg_DescriptionLengthReached, AppConfig.MaxDescriptionLength), error);
+            Assert.Equal(string.Format(Strings.Msg_DisplayNameLengthReached, AppConfig.MaxDisplayNameLength), error);
         }
 
         [Theory]
