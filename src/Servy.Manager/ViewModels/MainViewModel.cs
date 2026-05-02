@@ -796,8 +796,12 @@ namespace Servy.Manager.ViewModels
         /// during the last operation.
         /// </summary>
         private void SetFooterText(Stopwatch stopwatch) =>
-            FooterText = UI.Helpers.Helper.GetRowsInfo(_services.Count, stopwatch.Elapsed, Strings.Footer_ServiceRowText);
-
+            FooterText = UI.Helpers.Helper.GetRowsInfo(
+                count: _services.Count,
+                duration: stopwatch.Elapsed,
+                noneFormat: Strings.Footer_Service_None,
+                oneFormat: Strings.Footer_Service_One,
+                manyFormat: Strings.Footer_Service_Many);
         /// <summary>
         /// Executes a bulk operation on all selected and installed services.
         /// </summary>

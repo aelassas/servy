@@ -63,25 +63,39 @@ namespace Servy.UI.Helpers
         /// <summary>
         /// Generates a message describing how many rows were processed within a given duration.
         /// </summary>
-        /// <param name="count">The number of rows.</param>
-        /// <param name="duration">The duration of the operation.</param>
-        /// <param name="rowText">The singular form of the row name (e.g., "row", "item"). The method will append "s" for plural cases.</param>
+        /// <param name="count">The number of items processed.</param>
+        /// <param name="duration">The time taken for the operation.</param>
+        /// <param name="noneFormat">Template for zero items (e.g. "No services loaded in {0}").</param>
+        /// <param name="oneFormat">Template for one item (e.g. "Loaded 1 service in {0}").</param>
+        /// <param name="manyFormat">Template for multiple items (e.g. "Loaded {0} services in {1}").</param>
         /// <returns>
         /// A string such as:  
-        /// <c>No items in 500ms</c>,  
-        /// <c>1 item in 2s</c>,  
-        /// <c>1,234 items in 1m 20s</c>.
+        /// <c>No services in 500ms</c>,  
+        /// <c>1 services in 2s</c>,  
+        /// <c>1,234 logs in 1m 20s</c>.
         /// </returns>
-        public static string GetRowsInfo(int count, TimeSpan duration, string rowText)
+        public static string GetRowsInfo(
+            int count,
+            TimeSpan duration,
+            string noneFormat,
+            string oneFormat,
+            string manyFormat)
         {
             var durationText = FormatDuration(duration);
 
             if (count == 0)
-                return $"No {rowText}s loaded in {durationText}";
+            {
+                return string.Format(noneFormat, durationText);
+            }
+
             if (count == 1)
-                return $"Loaded 1 {rowText} in {durationText}";
-            else
-                return $"Loaded {FormatNumber(count)} {rowText}s in {durationText}";
+            {
+                return string.Format(oneFormat, durationText);
+            }
+
+            // Pass the formatted count and the duration to the plural template
+            return string.Format(manyFormat, FormatNumber(count), durationText);
         }
+
     }
 }
