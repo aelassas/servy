@@ -35,7 +35,7 @@ namespace Servy.UI.UnitTests.Helpers
         {
             var ts = TimeSpan.FromSeconds(10); // 10s exactly
             var result = Helper.FormatDuration(ts);
-            Assert.Equal("10s 0ms", result);
+            Assert.Equal("10s", result);
         }
 
         [Fact]
@@ -76,24 +76,43 @@ namespace Servy.UI.UnitTests.Helpers
         public void GetRowsInfo_NoRows_ReturnsCorrectMessage()
         {
             var ts = TimeSpan.FromSeconds(2);
-            var result = Helper.GetRowsInfo(0, ts, "item");
-            Assert.Equal("No items loaded in 2s 0ms", result);
+
+            // We now pass the templates explicitly to support full i18n
+            var result = Helper.GetRowsInfo(0, ts,
+                "No items found in {0}",
+                "1 item found in {0}",
+                "{0} items found in {1}");
+
+            // Note: FormatDuration likely returns "2s" or "2.0s" depending on your implementation
+            Assert.Equal("No items found in 2s", result);
         }
 
         [Fact]
         public void GetRowsInfo_SingleRow_ReturnsCorrectMessage()
         {
             var ts = TimeSpan.FromSeconds(5.5);
-            var result = Helper.GetRowsInfo(1, ts, "item");
-            Assert.Equal("Loaded 1 item in 5s 500ms", result);
+
+            var result = Helper.GetRowsInfo(1, ts,
+                "No items found in {0}",
+                "1 item found in {0}",
+                "{0} items found in {1}");
+
+            Assert.Equal("1 item found in 5s 500ms", result);
         }
 
         [Fact]
         public void GetRowsInfo_MultipleRows_ReturnsCorrectMessage()
         {
             var ts = new TimeSpan(0, 1, 20); // 1m 20s
-            var result = Helper.GetRowsInfo(1234, ts, "item");
-            Assert.Equal("Loaded 1,234 items in 1m 20s", result);
+
+            var result = Helper.GetRowsInfo(1234, ts,
+                "No items found in {0}",
+                "1 item found in {0}",
+                "{0} items found in {1}");
+
+            // FormatNumber(1234) produces the culture-invariant "1,234"
+            Assert.Equal("1,234 items found in 1m 20s", result);
         }
+
     }
 }

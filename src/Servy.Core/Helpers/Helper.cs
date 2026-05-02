@@ -271,7 +271,8 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="assembly">Executing assembly.</param>
         /// <returns>
-        /// A friendly string such as ".NET 8.0", or "Unknown" if the metadata is missing.
+        /// A friendly string such as ".NET 8.0", ".NET Framework 4.8", 
+        /// or "Unknown" if the metadata is missing.
         /// </returns>
         public static string GetBuiltWithFramework(Assembly? assembly = null)
         {
@@ -281,25 +282,44 @@ namespace Servy.Core.Helpers
                 .GetCustomAttributes<AssemblyMetadataAttribute>()
                 .FirstOrDefault(a => a.Key == "BuiltWithFramework");
 
-            if (attr == null)
+            if (attr == null || string.IsNullOrWhiteSpace(attr.Value))
                 return "Unknown";
 
             var tfm = attr.Value;
 
-            // TFM can be null
-            if (string.IsNullOrWhiteSpace(tfm))
-                return "Unknown";
-
-            // Normalize: remove platform suffix (e.g. "net8.0-windows" -> "net8.0")
+            // 1. Normalize: remove platform suffix (e.g. "net8.0-windows" -> "net8.0")
             var dashIndex = tfm.IndexOf('-');
             if (dashIndex > 0)
                 tfm = tfm.Substring(0, dashIndex);
 
-            // Convert "net8.0" to ".NET 8.0"
-            if (tfm.StartsWith("net") && tfm.Length > 3)
-                return $".NET {tfm.Substring(3)}";
+            // 2. Handle .NET Standard
+            if (tfm.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase))
+                return $".NET Standard {tfm.Substring("netstandard".Length)}";
 
-            // Fallback: return raw value
+            // 3. Handle .NET CoreApp (pre-.NET 5)
+            if (tfm.StartsWith("netcoreapp", StringComparison.OrdinalIgnoreCase))
+                return $".NET Core {tfm.Substring("netcoreapp".Length)}";
+
+            // 4. Handle .NET Framework and Modern .NET (net48, net5.0, net8.0, etc.)
+            if (tfm.StartsWith("net", StringComparison.OrdinalIgnoreCase) && tfm.Length > 3 && char.IsDigit(tfm[3]))
+            {
+                var rest = tfm.Substring(3);
+
+                // If there is no dot, it's a legacy .NET Framework TFM (e.g., "net48", "net472")
+                if (!rest.Contains('.'))
+                {
+                    // Format "48" as "4.8" or "472" as "4.7.2"
+                    var version = rest.Length > 1 ? rest.Insert(1, ".") : rest;
+                    if (version.Length > 3) version = version.Insert(3, ".");
+
+                    return $".NET Framework {version}";
+                }
+
+                // Modern .NET (5.0, 6.0, 8.0+)
+                return $".NET {rest}";
+            }
+
+            // Fallback: return raw value if it doesn't match known patterns
             return tfm;
         }
 
