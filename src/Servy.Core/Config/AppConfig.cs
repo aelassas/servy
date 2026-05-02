@@ -398,6 +398,11 @@ namespace Servy.Core.Config
         public const DateRotationType DefaultDateRotationType = DateRotationType.Daily;
 
         /// <summary>
+        /// The default value for <c>EnableEventLog</c>. Default is <c>true</c>.
+        /// </summary>
+        public const bool DefaultEnableEventLog = true;
+
+        /// <summary>
         /// The default value for <c>UseLocalTimeForRotation</c>.
         /// </summary>
         /// <remarks>
