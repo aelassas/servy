@@ -444,9 +444,9 @@ namespace Servy.Service
 
                 // PROMOTE LOGGER IMMEDIATELY
                 // Now every log from this point forward (including validation errors) is prefixed.
-                var rootLogger = _logger;
-                _logger = rootLogger?.CreateScoped(options.ServiceName!);
-                rootLogger?.Dispose();
+                // DO NOT DISPOSE the root logger, as the scoped logger relies on its unmanaged resources 
+                // (EventLog handles, FileStreams) to function.
+                _logger = _logger?.CreateScoped(options.ServiceName!);
 
                 // Log and Validate using the new scoped _logger
                 if (!_serviceHelper.ValidateAndLog(options, _logger, _processHelper, fullArgs))
