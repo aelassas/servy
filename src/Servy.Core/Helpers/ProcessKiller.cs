@@ -256,12 +256,12 @@ namespace Servy.Core.Helpers
             }
             catch (Win32Exception ex)
             {
-                Logger.Error($"Win32 error in KillProcessTreeAndParents('{processName}'): {ex.Message}", ex);
+                Logger.Error($"Win32 error in KillProcessTreeAndParents('{processName}').", ex);
                 return false;
             }
             catch (Exception ex)
             {
-                Logger.Error($"Unexpected error in KillProcessTreeAndParents('{processName}'): {ex.Message}", ex);
+                Logger.Error($"Unexpected error in KillProcessTreeAndParents('{processName}').", ex);
                 return false;
             }
         }

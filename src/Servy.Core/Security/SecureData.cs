@@ -208,7 +208,7 @@ namespace Servy.Core.Security
                 {
                     // We log the failure and re-throw. Upstream callers (UI/CLI) must handle this failure 
                     // to prevent the use of tampered or corrupted credentials.
-                    Logger.Error($"Integrity failure for marked payload: {ex.Message}", ex);
+                    Logger.Error("Integrity failure for marked payload.", ex);
                     throw;
                 }
             }

@@ -170,7 +170,7 @@ namespace Servy.Service.ProcessManagement
             }
             catch (Exception ex)
             {
-                logger.Error($"Failed during synchronous execution or log flushing for '{options.ExecutablePath}': {ex.Message}", ex);
+                logger.Error($"Failed during synchronous execution or log flushing for '{options.ExecutablePath}'.", ex);
                 throw;
             }
             finally
