@@ -15,7 +15,6 @@ namespace Servy.Core.Security
     /// Provides secure storage and retrieval of an AES encryption key and IV using Windows DPAPI.
     /// Each instance manages its own key and IV file paths.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public class ProtectedKeyProvider : IProtectedKeyProvider
     {
         #region Security & Synchronization Settings
@@ -115,6 +114,7 @@ namespace Servy.Core.Security
         /// they cannot decrypt the material on a different machine, effectively making the protected files non-portable.
         /// </para>
         /// </remarks>
+        [ExcludeFromCodeCoverage]
         private static byte[] GetMachineEntropy()
         {
             // ROBUSTNESS: Force the 64-bit registry view to prevent WoW64 redirection.
@@ -333,6 +333,7 @@ namespace Servy.Core.Security
         /// </summary>
         /// <param name="path">The full file path to store the protected data.</param>
         /// <param name="data">The plaintext data to protect.</param>
+        [ExcludeFromCodeCoverage]
         private void SaveProtected(string path, byte[] data)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
