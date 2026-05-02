@@ -57,7 +57,7 @@ namespace Servy.Restarter
             }
 
             IServiceRestarter restarter = new ServiceRestarter();
-            IServyLogger rootLogger = new EventLogLogger(AppConfig.EventSource);
+            IServyLogger rootLogger = null; // Declare as nullable for safe finally disposal
             IServyLogger scopedLogger = null;
             AppDbContext dbContext = null;
             SecureData secureData = null;
@@ -66,6 +66,7 @@ namespace Servy.Restarter
             {
                 // 1. Ensure event source exists before doing anything else
                 Helper.EnsureEventSourceExists();
+                rootLogger = new EventLogLogger(AppConfig.EventSource);
 
                 // 2. Load configuration
                 var config = ConfigurationManager.AppSettings;
@@ -105,8 +106,11 @@ namespace Servy.Restarter
                 }
                 Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
 
-                // 4. PROMOTE / SCOPE the logger after global config is set
+                // 4. PROMOTE / SCOPE the logger
+                // Using the instance logger ensures that 'serviceName' is prepended 
+                // and events are mirrored to the Windows Event Log.
                 scopedLogger = rootLogger.CreateScoped(serviceName);
+                scopedLogger.SetLogLevel(logLevel);
 
                 // Set log level
                 scopedLogger.SetLogLevel(logLevel);
@@ -135,24 +139,37 @@ namespace Servy.Restarter
                 }
 
                 // 7. Execution
-                Logger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
+                scopedLogger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
 
                 restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));
 
-                Logger.Info($"Successfully restarted service '{serviceName}'.");
+                scopedLogger.Info($"Successfully restarted service '{serviceName}'.");
             }
             catch (Exception ex)
             {
-                // Use the scoped logger if available, otherwise fallback to root
-                (scopedLogger ?? rootLogger).Error("Servy.Restarter.exe failed to restart the service.", ex);
+                // Resilient fallback: scoped > root > static
+                var finalLogger = scopedLogger ?? rootLogger;
+                if (finalLogger != null)
+                {
+                    finalLogger.Error("Servy.Restarter.exe failed to restart the service.", ex);
+                }
+                else
+                {
+                    Logger.Error("Servy.Restarter.exe failed to initialize or execute.", ex);
+                }
                 Environment.ExitCode = 1;
             }
             finally
             {
-                // Clean up
+                // Standard teardown
                 secureData?.Dispose();
+
+                // ScopedLogger (proxy) disposal is a no-op, but included for pattern consistency.
                 scopedLogger?.Dispose();
-                rootLogger.Dispose();
+
+                // rootLogger actually disposes the unmanaged EventLog handle.
+                rootLogger?.Dispose();
+
                 dbContext?.Dispose();
                 Logger.Shutdown();
             }

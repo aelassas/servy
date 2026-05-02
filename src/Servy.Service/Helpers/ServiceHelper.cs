@@ -343,7 +343,7 @@ namespace Servy.Service.Helpers
                     // 1. Wait for the restarter to complete the Stop/Start cycle
                     if (!process.WaitForExit(AppConfig.RestarterExeMaxWaitMs))
                     {
-                        logger?.Error($"Servy.Restarter.exe timed out after {AppConfig.RestarterExeMaxWaitMs / 60_000} minutes minutes. Forcing termination to prevent orphan conflicts.");
+                        logger?.Error($"Servy.Restarter.exe timed out after {AppConfig.RestarterExeMaxWaitMs / 60_000} minutes. Forcing termination to prevent orphan conflicts.");
 
                         try
                         {
