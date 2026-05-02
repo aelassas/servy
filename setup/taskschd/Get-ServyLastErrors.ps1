@@ -90,6 +90,7 @@ function Get-ServyLastErrors {
       }else{
           Write-Warning "Get-ServyLastErrors: Missing required dependencies in '$PSScriptRoot'"
     }
+  }
 
     # Throw instead of exit to preserve caller's process/cleanup
     throw "Servy Event Query Failure: $errorMsg"
