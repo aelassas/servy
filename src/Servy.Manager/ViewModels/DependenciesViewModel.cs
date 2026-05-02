@@ -228,18 +228,47 @@ namespace Servy.Manager.ViewModels
         /// <param name="isExpanded">
         /// <see langword="true"/> to expand the nodes; <see langword="false"/> to collapse them.
         /// </param>
-        /// <remarks>
-        /// This method performs a deep traversal of the dependency tree. 
-        /// Ensure that the UI is bound to the <see cref="ServiceDependencyNode.IsExpanded"/> 
-        /// property for the changes to reflect visually.
-        /// </remarks>
         private void SetExpansion(IEnumerable<ServiceDependencyNode> nodes, bool isExpanded)
         {
             if (nodes == null) return;
+
+            // Use a HashSet to track visited nodes and prevent infinite recursion in case of 
+            // circular dependencies or shared nodes.
+            var visited = new HashSet<ServiceDependencyNode>();
+            SetExpansionRecursive(nodes, isExpanded, visited);
+        }
+
+        /// <summary>
+        /// Performs the recursive traversal to update the expansion state of dependency nodes while 
+        /// protecting against circular references.
+        /// </summary>
+        /// <param name="nodes">The collection of <see cref="ServiceDependencyNode"/> to process.</param>
+        /// <param name="isExpanded">
+        /// <see langword="true"/> to expand the nodes; <see langword="false"/> to collapse them.
+        /// </param>
+        /// <param name="visited">
+        /// A tracking set used to detect already-processed nodes. This prevents infinite recursion 
+        /// and potential <see cref="StackOverflowException"/> crashes if the dependency tree 
+        /// contains cycles or shared nodes.
+        /// </param>
+        /// <remarks>
+        /// This internal helper ensures the stability of the management layer 
+        /// by providing a cycle guard during deep tree traversal, a critical safety measure when 
+        /// handling complex Win32 SCM dependency graphs.
+        /// </remarks>
+        private void SetExpansionRecursive(IEnumerable<ServiceDependencyNode> nodes, bool isExpanded, HashSet<ServiceDependencyNode> visited)
+        {
             foreach (var node in nodes)
             {
+                // If we've already processed this node in this traversal, skip it.
+                if (!visited.Add(node)) continue;
+
                 node.IsExpanded = isExpanded;
-                SetExpansion(node.Dependencies, isExpanded);
+
+                if (node.Dependencies != null)
+                {
+                    SetExpansionRecursive(node.Dependencies, isExpanded, visited);
+                }
             }
         }
 
