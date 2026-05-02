@@ -1319,6 +1319,7 @@ namespace Servy.Service
 
             try
             {
+                // 1. Prepare Environment and Arguments
                 var (_, args) = ExpandAndAudit(
                     _options.EnvironmentVariables,
                     _options.FailureProgramArgs ?? string.Empty
@@ -1328,32 +1329,31 @@ namespace Servy.Service
                     ? Path.GetDirectoryName(_options.FailureProgramPath) ?? string.Empty
                     : _options.FailureProgramWorkingDirectory;
 
-                var psi = new ProcessStartInfo
+                // 2. Configure Launch Options
+                var launchOptions = new ProcessLaunchOptions
                 {
-                    FileName = _options.FailureProgramPath,
+                    ExecutablePath = _options.FailureProgramPath,
                     Arguments = args,
                     WorkingDirectory = workingDir,
-                    UseShellExecute = false,
-                    CreateNoWindow = !_options.EnableConsoleUI,
+                    EnvironmentVariables = _options.EnvironmentVariables,
+                    FireAndForget = true, // Post-stop is always fire-and-forget
+                    EnableConsoleUI = _options.EnableConsoleUI,
                 };
 
-                // Fire-and-forget: start the process without waiting
-                var process = Process.Start(psi);
+                _logger?.Info($"Running failure program: {launchOptions.ExecutablePath}");
 
-                if (process != null)
+                // 3. Launch via Centralized Utility
+                // We use the wrapper but do not store it in _trackedHooks as this process 
+                // should outlive the service teardown.
+                using (var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger))
                 {
-                    // IMPORTANT: This process is not added to _trackedHooks to be killed during cleanup, 
-                    // because it's meant to run independently after we've stopped the main process tree.
-                    using (process)
+                    if (process == null)
                     {
-                        _logger?.Info($"Running failure program: {psi.FileName}");
-                        // The OS process continues running, but the managed handle is freed.
+                        _logger?.Error($"Failed to start failure program: {launchOptions.ExecutablePath}");
                     }
+                    // The process wrapper is disposed, but the underlying OS process continues.
                 }
-                else
-                {
-                    _logger?.Error($"Failed to run failure program: {psi.FileName}");
-                }
+
             }
             catch (Exception ex)
             {
