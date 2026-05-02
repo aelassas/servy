@@ -521,6 +521,35 @@ namespace Servy.Core.Native
         [DllImport("kernel32.dll")]
         public static extern ulong GetTickCount64();
 
+        /// <summary>
+        /// Parses a Unicode command-line string and returns an array of pointers to the command-line arguments, 
+        /// along with a count of such arguments, in a manner similar to standard C run-time argv/argc values.
+        /// </summary>
+        /// <param name="lpCmdLine">A pointer to a null-terminated Unicode string that contains the full command line.</param>
+        /// <param name="pNumArgs">A pointer to an integer that receives the number of array elements returned.</param>
+        /// <returns>
+        /// If the function succeeds, the return value is a pointer to an array of Unicode string pointers. 
+        /// If the function fails, the return value is <see cref="IntPtr.Zero"/>.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// The memory allocated for the argument list must be freed by calling <see cref="LocalFree"/> 
+        /// using the pointer returned by this function.
+        /// </para>
+        /// <para>
+        /// This method is essential for correctly resolving unquoted service paths that contain spaces 
+        /// (e.g., "C:\Program Files\Servy\Servy.Service.exe"), as it mirrors the OS's own argument parsing logic.
+        /// </para>
+        /// </remarks>
+        [DllImport("shell32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern IntPtr CommandLineToArgvW(
+            [MarshalAs(UnmanagedType.LPWStr)] string lpCmdLine,
+            out int pNumArgs);
+
+        /// <summary>Frees the specified local memory object and invalidates its handle.</summary>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr LocalFree(IntPtr hMem);
+
         #endregion
 
         #region Console Functions

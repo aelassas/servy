@@ -2,7 +2,10 @@
 using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Logging;
+using Servy.Core.Native;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using System.ServiceProcess;
 
 namespace Servy.Core.Helpers
@@ -272,24 +275,44 @@ namespace Servy.Core.Helpers
                             string expandedPath = Environment.ExpandEnvironmentVariables(pathName);
 
                             // 2. Extract the actual exe path (Handling quotes and arguments)
-                            string exePath;
-                            int firstQuote = expandedPath.IndexOf('"');
-                            if (firstQuote >= 0)
+                            string? exePath = null;
+                            int argc;
+
+                            // Call the native API
+                            IntPtr argsPtr = NativeMethods.CommandLineToArgvW(expandedPath, out argc);
+
+                            if (argsPtr != IntPtr.Zero)
                             {
-                                int secondQuote = expandedPath.IndexOf('"', firstQuote + 1);
-                                if (secondQuote > firstQuote)
-                                    exePath = expandedPath.Substring(firstQuote + 1, secondQuote - firstQuote - 1);
-                                else
-                                    exePath = expandedPath; // Fallback
-                            }
-                            else
-                            {
-                                // If no quotes, take until first space (arguments)
-                                int firstSpace = expandedPath.IndexOf(' ');
-                                exePath = firstSpace > 0 ? expandedPath.Substring(0, firstSpace) : expandedPath;
+                                try
+                                {
+                                    if (argc >= 1)
+                                    {
+                                        // Read the first pointer (index 0) from the array of pointers.
+                                        IntPtr firstArgPtr = Marshal.ReadIntPtr(argsPtr);
+
+                                        // Convert the native Unicode string at that address into a C# string.
+                                        exePath = Marshal.PtrToStringUni(firstArgPtr);
+                                    }
+                                }
+                                finally
+                                {
+                                    // CRITICAL: You must free the memory allocated by shell32.dll
+                                    NativeMethods.LocalFree(argsPtr);
+                                }
                             }
 
-                            // 4. Resolve the filename and compare
+                            // 3. Fallback and Comparison Logic
+                            if (exePath == null)
+                            {
+                                // If native parsing failed, use your identity check fallback
+                                if (expandedPath.IndexOf(wrapperExe, StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    result.Add(sc.ServiceName);
+                                    continue; // Move to the next service in the loop
+                                }
+                                exePath = expandedPath;
+                            }
+
                             try
                             {
                                 var exeName = Path.GetFileName(exePath);
@@ -299,6 +322,7 @@ namespace Servy.Core.Helpers
                                 }
                             }
                             catch (ArgumentException) { /* Handle invalid paths gracefully */ }
+
                         }
                     }
                 }
