@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using static Servy.Core.Native.NativeMethods;
@@ -10,7 +9,6 @@ namespace Servy.Core.Native
     /// <summary>
     /// Provides methods to ensure that a given account has the "Log on as a service" privilege.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public static class LogonAsServiceGrant
     {
         private const string SE_SERVICE_LOGON_NAME = "SeServiceLogonRight";

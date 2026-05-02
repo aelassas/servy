@@ -4,12 +4,10 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using static Servy.Core.Native.NativeMethods;
@@ -20,7 +18,6 @@ namespace Servy.Core.Helpers
     /// Provides helper methods for retrieving and formatting process-related information
     /// such as CPU usage and RAM usage.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public class ProcessHelper : IProcessHelper
     {
         private long _lastPruneTicks = DateTime.MinValue.Ticks;
