@@ -6,7 +6,8 @@
     public static class EnvironmentVariablesValidator
     {
         /// <summary>
-        /// Validates the format of the environment variables input. Supports variables separated by unescaped semicolons or new lines. Checks that each variable contains exactly one unescaped equals character, and that the variable key before the equals sign is not empty.
+        /// Validates the format of the environment variables input. Supports variables separated by unescaped semicolons or new lines. 
+        /// Checks that each variable contains at least one unescaped equals character, and that the variable key before the equals sign is not empty.
         /// </summary>
         /// <param name="environmentVariables">The raw environment variables string to validate.</param>
         /// <param name="errorMessage">When validation fails, contains the error message describing the issue; otherwise, an empty string.</param>
@@ -29,17 +30,15 @@
                 if (string.IsNullOrWhiteSpace(variable))
                     continue;
 
-                // Count unescaped '=' in variable
-                int unescapedEqualsCount = EscapedTokenizer.CountUnescapedChar(variable, '=');
+                // Optimization: Use IndexOfUnescapedChar directly to perform existence check and 
+                // locate the delimiter in a single pass, matching the parser's pattern.
+                int idx = EscapedTokenizer.IndexOfUnescapedChar(variable, '=');
 
-                if (unescapedEqualsCount < 1)
+                if (idx < 0)
                 {
                     errorMessage = "Each variable must contain an unescaped '=' character to separate the key from the value.";
                     return false;
                 }
-
-                // Find index of first unescaped '='
-                int idx = EscapedTokenizer.IndexOfUnescapedChar(variable, '=');
 
                 // Extract key and trim
                 string key = variable.Substring(0, idx).Trim();

@@ -79,7 +79,7 @@ namespace Servy.Core.Helpers
                         await _serviceHelper.StopServices(runningServices);
                     }
 
-                    if (!TerminateBlockingProcesses(extension, targetFileName, targetPath))
+                    if (!TerminateBlockingProcesses(targetPath))
                         return false;
 
                     Stream? resourceStream = assembly.GetManifestResourceStream(resourceName);
@@ -132,7 +132,7 @@ namespace Servy.Core.Helpers
                 if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, out var targetPath, out var targetFileName, out var resourceName))
                     return true;
 
-                if (!TerminateBlockingProcesses(extension, targetFileName, targetPath))
+                if (!TerminateBlockingProcesses(targetPath))
                     return false;
 
                 Stream? resourceStream = assembly.GetManifestResourceStream(resourceName);
@@ -283,11 +283,9 @@ namespace Servy.Core.Helpers
         /// Safely terminates any processes holding locks on the target file by identifying them by path.
         /// This prevents collateral damage to other service instances using the same utility names.
         /// </summary>
-        /// <param name="extension">The file extension (no longer strictly needed but kept for signature compatibility).</param>
-        /// <param name="targetFileName">The bare filename (no longer used for killing to avoid broad matches).</param>
         /// <param name="targetPath">The full path to the file to check for active file handles.</param>
         /// <returns>True if the file was successfully cleared of blocking processes; false if termination failed.</returns>
-        private bool TerminateBlockingProcesses(string extension, string targetFileName, string targetPath)
+        private bool TerminateBlockingProcesses(string targetPath)
         {
             // Fix for #Warning: Use path-based identification for all resource types.
             // Name-based matching (targetFileName) hits unrelated services on the same host 
