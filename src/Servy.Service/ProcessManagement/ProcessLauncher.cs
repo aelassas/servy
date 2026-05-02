@@ -15,15 +15,19 @@ namespace Servy.Service.ProcessManagement
         /// <summary>
         /// Orchestrates the initialization and startup of an external process based on the provided options.
         /// </summary>
+        /// <remarks>
+        /// This implementation implements lazy-loading to prevent zero-byte log file sprawl 
+        /// and uses local path captures to satisfy compiler null-safety analysis inside event handlers.
+        /// </remarks>
         /// <param name="options">The configuration parameters for the process launch.</param>
         /// <param name="factory">The factory used to create the process wrapper.</param>
         /// <param name="logger">The logger instance for operational telemetry.</param>
         /// <returns>An initialized and started <see cref="IProcessWrapper"/>.</returns>
         /// <exception cref="TimeoutException">Thrown if a synchronous wait operation exceeds the configured timeout.</exception>
         public static IProcessWrapper Start(
-                    ProcessLaunchOptions options,
-                    IProcessFactory factory,
-                    IServyLogger logger)
+            ProcessLaunchOptions options,
+            IProcessFactory factory,
+            IServyLogger logger)
         {
             // 1. Resolve environment variables and arguments
             var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.EnvironmentVariables);
@@ -81,68 +85,96 @@ namespace Servy.Service.ProcessManagement
 
                 // Sync objects with strong identity (local to this execution)
                 object stdoutLock = new object();
-                object stderrLock = new object();
+                // If paths match, we must synchronize both streams on the exact same lock
+                object stderrLock = pathsMatch ? stdoutLock : new object();
                 var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
-                // Ensure directories exist for the log files
-                Helper.EnsureDirectoryExists(options.StdOutPath);
-                if (!pathsMatch) Helper.EnsureDirectoryExists(options.StdErrPath);
+                // Capture paths into local variables to satisfy null-safety analysis
+                // and ensure the closure uses a stable, non-null reference.
+                string? outPath = options.StdOutPath;
+                string? errPath = options.StdErrPath;
 
-                // Setup StdOut Writer
-                if (psi.RedirectStandardOutput && !string.IsNullOrWhiteSpace(options.StdOutPath))
+                // Setup StdOut Writer (Lazy Init)
+                if (psi.RedirectStandardOutput && !string.IsNullOrWhiteSpace(outPath))
                 {
-                    // ROBUSTNESS: Use the safe StreamWriter pattern to ensure the FileStream 
-                    // is disposed if the StreamWriter constructor throws.
-                    FileStream? stdoutFs = null;
-                    try
-                    {
-                        stdoutFs = new FileStream(options.StdOutPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
-                        stdoutWriter = new StreamWriter(stdoutFs, encoding) { AutoFlush = true };
-                    }
-                    catch
-                    {
-                        stdoutFs?.Dispose();
-                        throw;
-                    }
-
                     process.UnderlyingProcess.OutputDataReceived += (_, e) =>
                     {
                         if (e.Data != null)
                         {
-                            // Lock on the dedicated sync object, not the resource itself
-                            lock (stdoutLock) { stdoutWriter.WriteLine(e.Data); }
+                            lock (stdoutLock)
+                            {
+                                if (stdoutWriter == null)
+                                {
+                                    // outPath is now guaranteed to be non-null by the outer check
+                                    Helper.EnsureDirectoryExists(outPath);
+                                    FileStream? stdoutFs = null;
+                                    try
+                                    {
+                                        stdoutFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                                        stdoutWriter = new StreamWriter(stdoutFs, encoding) { AutoFlush = true };
+                                    }
+                                    catch
+                                    {
+                                        stdoutFs?.Dispose();
+                                        throw;
+                                    }
+                                }
+                                stdoutWriter.WriteLine(e.Data);
+                            }
                         }
                     };
                 }
 
-                // Setup StdErr Writer
-                if (psi.RedirectStandardError && !string.IsNullOrWhiteSpace(options.StdErrPath))
+                // Setup StdErr Writer (Lazy Init)
+                if (psi.RedirectStandardError && !string.IsNullOrWhiteSpace(errPath))
                 {
-                    if (pathsMatch && stdoutWriter != null)
-                    {
-                        stderrWriter = stdoutWriter;
-                        stderrLock = stdoutLock; // Use the same lock if writing to the same file
-                    }
-                    else
-                    {
-                        FileStream? stderrFs = null;
-                        try
-                        {
-                            stderrFs = new FileStream(options.StdErrPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
-                            stderrWriter = new StreamWriter(stderrFs, encoding) { AutoFlush = true };
-                        }
-                        catch
-                        {
-                            stderrFs?.Dispose();
-                            throw;
-                        }
-                    }
-
                     process.UnderlyingProcess.ErrorDataReceived += (_, e) =>
                     {
                         if (e.Data != null)
                         {
-                            lock (stderrLock) { stderrWriter.WriteLine(e.Data); }
+                            lock (stderrLock)
+                            {
+                                if (pathsMatch && !string.IsNullOrWhiteSpace(outPath))
+                                {
+                                    // Multiplexing into the same file: initialize stdoutWriter if it hasn't been yet
+                                    if (stdoutWriter == null)
+                                    {
+                                        Helper.EnsureDirectoryExists(outPath);
+                                        FileStream? sharedFs = null;
+                                        try
+                                        {
+                                            sharedFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                                            stdoutWriter = new StreamWriter(sharedFs, encoding) { AutoFlush = true };
+                                        }
+                                        catch
+                                        {
+                                            sharedFs?.Dispose();
+                                            throw;
+                                        }
+                                    }
+                                    stdoutWriter.WriteLine(e.Data);
+                                }
+                                else
+                                {
+                                    // Independent file
+                                    if (stderrWriter == null)
+                                    {
+                                        Helper.EnsureDirectoryExists(errPath);
+                                        FileStream? stderrFs = null;
+                                        try
+                                        {
+                                            stderrFs = new FileStream(errPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                                            stderrWriter = new StreamWriter(stderrFs, encoding) { AutoFlush = true };
+                                        }
+                                        catch
+                                        {
+                                            stderrFs?.Dispose();
+                                            throw;
+                                        }
+                                    }
+                                    stderrWriter.WriteLine(e.Data);
+                                }
+                            }
                         }
                     };
                 }

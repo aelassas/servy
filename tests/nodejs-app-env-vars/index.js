@@ -53,7 +53,7 @@ fs.appendFileSync(filePath, '\n', "utf8")
 // fs.writeFileSync(filePath, (new Date()).toISOString(), 'utf-8')
 
 // simulate some work
-await new Promise((res) => setTimeout(res, 6 * 1000))
+await new Promise((res) => setTimeout(res, 2 * 1000))
 process.stdout.write('stdout boo!\n')
 process.stderr.write('stderr boo!\n')
 
