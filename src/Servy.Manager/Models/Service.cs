@@ -16,7 +16,7 @@ namespace Servy.Manager.Models
         private bool _isInstalled;
         private bool _isDesktopAppAvailable;
         private ServiceStartType? _startupType;
-        private string _userSession;
+        private string _logOnAs;
         private int? _pid;
         private bool _isPidEnabled;
         private double? _cpuUsage;
@@ -81,12 +81,12 @@ namespace Servy.Manager.Models
         }
 
         /// <summary>
-        /// Gets or sets the user session under which the service runs.
+        /// Gets or sets the LogOnAs identity (account or built-in identity) under which the service runs.
         /// </summary>
         public string LogOnAs
         {
-            get => _userSession;
-            set => SetProperty(ref _userSession, value);
+            get => _logOnAs;
+            set => SetProperty(ref _logOnAs, value);
         }
 
         /// <summary>

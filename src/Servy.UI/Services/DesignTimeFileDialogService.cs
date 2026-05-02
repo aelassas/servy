@@ -16,18 +16,18 @@
         }
 
         /// <summary>
-        /// Simulates selecting an executable file by returning a static path.
+        /// Simulates selecting an XML configuration file by returning a static path.
         /// </summary>
-        /// <returns>A sample executable path.</returns>
+        /// <returns>A sample XML configuration path.</returns>
         public string OpenXml()
         {
             return @"C:\DesignTime\Service.xml";
         }
 
         /// <summary>
-        /// Simulates selecting an executable file by returning a static path.
+        /// Simulates selecting a JSON configuration file by returning a static path.
         /// </summary>
-        /// <returns>A sample executable path.</returns>
+        /// <returns>A sample JSON configuration path.</returns>
         public string OpenJson()
         {
             return @"C:\DesignTime\Service.json";

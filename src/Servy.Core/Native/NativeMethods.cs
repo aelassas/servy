@@ -918,17 +918,40 @@ namespace Servy.Core.Native
         }
 
         /// <summary>
-        /// Replaces a destination file with a source file atomically, ensuring that the source's 
+        /// Atomically replaces a destination file with a source file, ensuring that the source's 
         /// security descriptor (ACLs) and metadata are preserved at the destination.
         /// </summary>
         /// <param name="source">The path to the source file.</param>
-        /// <param name="destination">The path to the destination file.</param>
-        /// <exception cref="Win32Exception">Thrown if the native move operation fails.</exception>
+        /// <param name="destination">The path to the destination file to replace.</param>
+        /// <remarks>
+        /// <para>
+        /// <b>Volume Constraint:</b> This operation is only atomic when both <paramref name="source"/> 
+        /// and <paramref name="destination"/> reside on the SAME volume. 
+        /// </para>
+        /// <para>
+        /// If the paths reside on different volumes, this method will throw an <see cref="IOException"/> 
+        /// instead of falling back to a non-atomic copy+delete operation. This prevents partial-state 
+        /// windows during critical operations like key rotation or service configuration updates.
+        /// </para>
+        /// </remarks>
+        /// <exception cref="IOException">Thrown when source and destination are on different volumes.</exception>
+        /// <exception cref="Win32Exception">Thrown when the native MoveFileEx call fails for other reasons.</exception>
         public static void AtomicSecureMove(string source, string destination)
         {
+            const int ERROR_NOT_SAME_DEVICE = 0x11; // 17
+
             if (!MoveFileEx(source, destination, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
             {
                 var error = Marshal.GetLastWin32Error();
+
+                if (error == ERROR_NOT_SAME_DEVICE)
+                {
+                    // Provide a high-visibility diagnostic message for deployment troubleshooting.
+                    throw new IOException(
+                        $"AtomicSecureMove failed: Source and destination must be on the same volume to ensure atomicity. " +
+                        $"Source: '{Path.GetPathRoot(source)}', Destination: '{Path.GetPathRoot(destination)}'.");
+                }
+
                 throw new Win32Exception(error, $"Failed to atomically replace secure file. Win32 Error: {error}");
             }
         }
