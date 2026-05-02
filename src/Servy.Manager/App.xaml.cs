@@ -150,7 +150,7 @@ namespace Servy.Manager
         }
 
         /// <summary>
-        /// Dependencis tab refresh interval in seconds.
+        /// Dependencies tab refresh interval in seconds.
         /// </summary>
         public int DependenciesRefreshIntervalInMs { get; private set; }
 
