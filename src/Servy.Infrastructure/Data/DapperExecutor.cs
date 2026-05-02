@@ -20,9 +20,6 @@ namespace Servy.Infrastructure.Data
     {
         private readonly IAppDbContext _dbContext;
 
-        // Thread-safe Random
-        private static readonly ThreadLocal<Random> _random = new ThreadLocal<Random>(() => new Random());
-
         /// <summary>
         /// Initializes a new instance of the <see cref="DapperExecutor"/> class.
         /// </summary>
@@ -56,7 +53,7 @@ namespace Servy.Infrastructure.Data
 
                     // Shorter delay calculation specifically for the sync path
                     int backoff = AppConfig.DbSyncInitialDelayMs * (int)Math.Pow(2, i);
-                    int jitter = _random.Value!.Next(0, AppConfig.DbSyncMaxJitterMs + 1);
+                    int jitter = Random.Shared.Next(0, AppConfig.DbAsyncMaxJitterMs + 1);
                     int delay = backoff + jitter;
 
                     Logger.Warn($"Database busy (sync attempt {i + 1}/{AppConfig.DbSyncMaxRetries}). Spinning for {delay}ms...");
@@ -108,7 +105,7 @@ namespace Servy.Infrastructure.Data
             int backoff = AppConfig.DbAsyncInitialDelayMs * (int)Math.Pow(2, attempt);
 
             // Jitter: 0 to 50ms (Thread-safe and lock-free)
-            int jitter = _random.Value!.Next(0, AppConfig.DbAsyncMaxJitterMs + 1);
+            int jitter = Random.Shared.Next(0, AppConfig.DbAsyncMaxJitterMs + 1);
 
             return backoff + jitter;
         }
