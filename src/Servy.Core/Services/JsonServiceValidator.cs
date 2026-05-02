@@ -68,17 +68,19 @@ namespace Servy.Core.Services
             }
 
             // 2. DEEP DOMAIN VALIDATION
+            var sanitizedName = (dto.Name ?? "Unknown").Replace("\r", "").Replace("\n", ""); // Sanitize the untrusted name to prevent log injection
             var validation = _serviceValidationRules.Validate(dto);
-            if (validation.Errors.Any() || validation.Warnings.Any())
+            if (validation.Errors.Any())
             {
-                errorMessage = string.Join("\n", validation.Errors.Concat(validation.Warnings));
-
-                // Sanitize the untrusted name to prevent log injection
-                // We strip newlines and carriage returns to keep the log entry on a single line.
-                var sanitizedName = (dto.Name ?? "Unknown").Replace("\r", "").Replace("\n", "");
+                errorMessage = string.Join("\n", validation.Errors);
 
                 Logger.Warn($"JSON Import Blocked: Logical violation for service '{sanitizedName}'. Reason: {errorMessage}");
                 return false;
+            }
+
+            if (validation.Warnings.Any())
+            {
+                Logger.Warn($"XML Import succeeded with warnings for service '{sanitizedName}': {string.Join("\n", validation.Warnings)}");
             }
 
             // 3. Executable Path Integrity
