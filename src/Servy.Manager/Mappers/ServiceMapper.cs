@@ -1,7 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
-using Servy.Manager.Config;
 using Servy.Manager.Models;
 using System;
 using System.Threading.Tasks;

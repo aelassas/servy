@@ -287,14 +287,26 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Retrieves the last write time of the assembly that contains the embedded resource.
-        /// This timestamp is used to determine whether the resource should be updated on disk.
+        /// Retrieves the last write time of the host process executable.
         /// </summary>
         /// <returns>
-        /// The UTC <see cref="DateTime"/> representing the assembly's last write time,
-        /// or <see cref="DateTime.UtcNow"/> if it cannot be determined.
+        /// The <see cref="DateTime"/> (UTC) when the host process (.exe) was last modified, 
+        /// or <see cref="DateTime.UtcNow"/> if the file cannot be accessed.
         /// </returns>
-        public DateTime GetEmbeddedResourceLastWriteTimeUTC()
+        /// <remarks>
+        /// <para>
+        /// This method uses the main module of the current process as a proxy for the 
+        /// "deployment timestamp." This is an acceptable proxy in the current single-exe 
+        /// distribution model of Servy, as it represents the last time the application 
+        /// artifacts were updated on the host machine.
+        /// </para>
+        /// <para>
+        /// Note: If resources are moved to a separate library assembly in the future, 
+        /// this method should be updated to query that specific assembly's file path 
+        /// to ensure accurate re-extraction logic.
+        /// </para>
+        /// </remarks>
+        public DateTime GetHostProcessLastWriteTimeUTC()
         {
             // Try to get the executable's last write time
             try
@@ -386,7 +398,7 @@ namespace Servy.Core.Helpers
             if (File.Exists(targetPath))
             {
                 DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
-                DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTimeUTC();
+                DateTime embeddedResourceTime = GetHostProcessLastWriteTimeUTC();
 
                 Logger.Debug($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
                 Logger.Debug($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");

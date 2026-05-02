@@ -13,7 +13,8 @@ namespace Servy.Infrastructure.Helpers
         /// Ensures that the database exists and is initialized.
         /// </summary>
         /// <param name="dbContext">The database context. Cannot be null.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="dbContext"/> is null.</exception>
+        /// <param name="initializer">A callback that receives the open <see cref="DbConnection"/> and applies schema/migration logic. Cannot be null.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="dbContext"/> or <paramref name="initializer"/> is null.</exception>
         public static void InitializeDatabase(IAppDbContext dbContext, Action<DbConnection> initializer)
         {
             if (dbContext == null) throw new ArgumentNullException(nameof(dbContext));
