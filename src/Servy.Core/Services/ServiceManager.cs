@@ -413,34 +413,47 @@ namespace Servy.Core.Services
                                 Logger.Warn($"Failed to update existing service configuration for service '{options.ServiceName}'.");
                             }
 
-                            if (options.StartType == ServiceStartType.AutomaticDelayedStart || options.StartType == ServiceStartType.Automatic)
+                            // Open the existing service for configuration updates (delayed start and pre-shutdown)
+                            using (var existingServiceHandle = _windowsServiceApi.OpenService(
+                                scmHandle,
+                                options.ServiceName,
+                                SERVICE_CHANGE_CONFIG))
                             {
-                                cancellationToken.ThrowIfCancellationRequested();
-                                using (var existingServiceHandle = _windowsServiceApi.OpenService(
-                                    scmHandle,
-                                    options.ServiceName,
-                                    SERVICE_CHANGE_CONFIG))
+                                if (existingServiceHandle.IsInvalid)
                                 {
-                                    if (existingServiceHandle.IsInvalid)
-                                    {
-                                        var err = _win32ErrorProvider.GetLastWin32Error();
-                                        Logger.Error($"Failed to open service '{options.ServiceName}' for config update. Win32 error: {err}");
-                                        return OperationResult.Failure($"Failed to open service '{options.ServiceName}' for configuration update. Error code: {err}");
-                                    }
+                                    var err = _win32ErrorProvider.GetLastWin32Error();
+                                    Logger.Error($"Failed to open service '{options.ServiceName}' for config update. Win32 error: {err}");
+                                    return OperationResult.Failure($"Failed to open service '{options.ServiceName}' for configuration update. Error code: {err}");
+                                }
 
-                                    var delayedAutostart = options.StartType == ServiceStartType.AutomaticDelayedStart;
-                                    var success = ChangeServiceConfig2(existingServiceHandle, delayedAutostart);
+                                // 1. Update Delayed Auto-start
+                                var delayedAutostart = options.StartType == ServiceStartType.AutomaticDelayedStart;
+                                var success = ChangeServiceConfig2(existingServiceHandle, delayedAutostart);
 
-                                    if (success)
-                                    {
-                                        Logger.Info($"Delayed auto-start {(delayedAutostart ? "enabled" : "disabled")} for existing service '{options.ServiceName}'.");
-                                    }
-                                    else
-                                    {
-                                        string errorMsg = $"Failed to set delayed auto-start for existing service '{options.ServiceName}'.";
-                                        Logger.Error(errorMsg);
-                                        return OperationResult.Failure(errorMsg);
-                                    }
+                                if (success)
+                                {
+                                    Logger.Info($"Delayed auto-start {(delayedAutostart ? "enabled" : "disabled")} for existing service '{options.ServiceName}'.");
+                                }
+                                else
+                                {
+                                    string errorMsg = $"Failed to set delayed auto-start for existing service '{options.ServiceName}'.";
+                                    Logger.Error(errorMsg);
+                                    return OperationResult.Failure(errorMsg);
+                                }
+
+                                // 2. Fix (#962): Update Pre-shutdown Timeout for existing service
+                                // This ensures that updates to StopTimeout or PreStopTimeout are reflected in the OS SCM.
+                                var preShutdownSuccess = EnablePreShutdown(existingServiceHandle, finalTimeoutMs);
+                                if (preShutdownSuccess)
+                                {
+                                    Logger.Info($"Pre-shutdown timeout updated to {totalWaitTime} seconds for existing service '{options.ServiceName}'.");
+                                }
+                                else
+                                {
+                                    // We treat this as a failure because an incorrect timeout can lead to data corruption during shutdown.
+                                    string errorMsg = $"Failed to update pre-shutdown timeout for existing service '{options.ServiceName}'.";
+                                    Logger.Error(errorMsg);
+                                    return OperationResult.Failure(errorMsg);
                                 }
                             }
 

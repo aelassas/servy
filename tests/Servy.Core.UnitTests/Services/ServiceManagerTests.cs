@@ -450,6 +450,7 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<int>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny)).Returns(true);
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<int>(), It.IsAny<IntPtr>())).Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle.DangerousGetHandle())).Returns(true);
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle.DangerousGetHandle())).Returns(true);
