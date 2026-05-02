@@ -213,80 +213,31 @@ namespace Servy.Service.ProcessManagement
         public bool? Stop(int timeoutMs)
         {
             ThrowIfDisposed();
-
-            if (_process.HasExited)
-            {
-                return null;
-            }
-
-            bool? sent = SendCtrlC(_process);
-            if (!sent.HasValue)
-            {
-                return null;
-            }
-
-            if (!sent.Value)
-            {
-                try
-                {
-                    sent = _process.CloseMainWindow();
-                }
-                catch (InvalidOperationException)
-                {
-                    return null;
-                }
-            }
-
-            if (sent.Value && _process.WaitForExit(timeoutMs))
-            {
-                return true;
-            }
-
-            // Force kill
-            _logger?.Info("Graceful shutdown not supported. Forcing kill.");
-
-            try
-            {
-                _process.Kill();
-            }
-            catch (Exception ex)
-            {
-                _logger?.Warn($"Kill failed: {ex.Message}");
-            }
-
-            if (!_process.WaitForExit(timeoutMs))
-            {
-                _logger?.Warn($"Process did not exit within {timeoutMs / 1000.0} seconds after forced kill.");
-            }
-
-            return false;
+            return TryStopGracefullyOrKill(_process, timeoutMs, timeoutMs);
         }
 
         /// <summary>
-        /// Stops the specified process.
+        /// Attempts to gracefully stop a process via Ctrl+C and CloseMainWindow, falling back to a forced kill.
         /// </summary>
-        /// <param name="process">Process.</param>
-        /// <param name="timeoutMs">Timeout in Milliseconds.</param>
-        private void StopPrivate(Process process, int timeoutMs)
+        /// <param name="process">The target process.</param>
+        /// <param name="timeoutMs">The timeout in milliseconds to wait for a graceful exit.</param>
+        /// <param name="postKillWaitMs">The timeout in milliseconds to wait after a forced kill is issued.</param>
+        /// <returns>
+        /// <see langword="null"/> if the process was already dead;
+        /// <see langword="true"/> if the process stopped gracefully;
+        /// <see langword="false"/> if the process had to be forcefully killed.
+        /// </returns>
+        private bool? TryStopGracefullyOrKill(Process process, int timeoutMs, int postKillWaitMs)
         {
-            _logger?.Info($"Stopping process '{process.Format()}'...");
-
-            void LogProcessExited()
-            {
-                _logger?.Info($"Process '{process.Format()}' has already exited.");
-            }
-
             if (process.HasExited)
             {
-                LogProcessExited();
-                return;
+                return null;
             }
 
             bool? sent = SendCtrlC(process);
             if (!sent.HasValue)
             {
-                LogProcessExited();
-                return;
+                return null;
             }
 
             if (!sent.Value)
@@ -297,35 +248,33 @@ namespace Servy.Service.ProcessManagement
                 }
                 catch (InvalidOperationException)
                 {
-                    LogProcessExited();
-                    return;
+                    return null;
                 }
             }
 
             if (sent.Value && process.WaitForExit(timeoutMs))
             {
-                _logger?.Info($"Process '{process.Format()}' canceled with code {process.ExitCode}.");
-                return;
+                return true;
             }
 
-            _logger?.Info($"Graceful shutdown not supported. Forcing kill: {process.Format()}");
+            // Force kill
+            _logger?.Info($"Graceful shutdown not supported or timed out. Forcing kill: {process.Format()}");
+
             try
             {
                 process.Kill();
-
-                // Wait for the kernel to finish cleaning up the process.
-                // This ensures the process tree is stable before the caller enumerates children.
-                if (!process.WaitForExit(3000))
-                {
-                    _logger?.Warn($"Process '{process.Format()}' killed, but did not exit within 3s. Moving to children anyway.");
-                }
             }
             catch (Exception ex)
             {
-                _logger?.Warn($"Kill failed: {ex.Message}");
+                _logger?.Warn($"Kill failed for '{process.Format()}': {ex.Message}");
             }
 
-            _logger?.Info($"Process '{process.Format()}' terminated.");
+            if (!process.WaitForExit(postKillWaitMs))
+            {
+                _logger?.Warn($"Process '{process.Format()}' killed, but did not exit within {postKillWaitMs / 1000.0}s.");
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -359,7 +308,21 @@ namespace Servy.Service.ProcessManagement
 
             // 2. TERMINATION: Kill the current node now that its children are dead
             _logger?.Info($"Terminating node: {process.ProcessName} (PID: {process.Id})");
-            StopPrivate(process, timeoutMs);
+
+            bool? result = TryStopGracefullyOrKill(process, timeoutMs, 3000);
+
+            if (result == null)
+            {
+                _logger?.Info($"Process '{process.Format()}' has already exited.");
+            }
+            else if (result == true)
+            {
+                _logger?.Info($"Process '{process.Format()}' canceled with code {process.ExitCode}.");
+            }
+            else
+            {
+                _logger?.Info($"Process '{process.Format()}' terminated.");
+            }
         }
 
         /// <inheritdoc/>
