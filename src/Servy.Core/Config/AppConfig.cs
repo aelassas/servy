@@ -419,6 +419,11 @@ namespace Servy.Core.Config
         /// </remarks>
         public const int AppAvailabilityPollIntervalMs = 3000;
 
+        /// <summary>
+        /// The GitHub API endpoint used to retrieve the latest release metadata.
+        /// </summary>
+        public const string LatestReleaseApiUrl = "https://api.github.com/repos/aelassas/servy/releases/latest";
+
         #endregion
 
         #region Limits, Thresholds & Constraints
