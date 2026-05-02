@@ -20,7 +20,7 @@ namespace Servy.Manager.ViewModels
     public abstract class ServiceSearchViewModelBase : ViewModelBase, IDisposable
     {
         #region Private fields
-        
+
         private bool _disposedValue;
         private string? _searchText;
         private string? _searchButtonText = Strings.Button_Search;
@@ -139,7 +139,7 @@ namespace Servy.Manager.ViewModels
         /// </remarks>
         private async Task SearchServicesAsync(object? parameter)
         {
-            if(ServiceCommands == null)
+            if (ServiceCommands == null)
             {
                 Logger.Warn($"ServiceCommands is not set in {GetType().Name}. Search operation aborted.");
                 return;
@@ -161,6 +161,8 @@ namespace Servy.Manager.ViewModels
                 IsBusy = true;
                 SearchButtonText = Strings.Button_Searching;
 
+                // Yield to the UI dispatcher to allow visual updates before the blocking call,
+                // safely bypassing during xUnit test runs.
                 await _uiDispatcher.YieldAsync();
 
                 var results = await ServiceCommands.SearchServicesAsync(SearchText, false, token);
