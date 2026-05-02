@@ -3,9 +3,11 @@ using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Data;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using System.Security;
+using System.Text;
 
 namespace Servy.CLI.Commands
 {
@@ -203,7 +205,10 @@ namespace Servy.CLI.Commands
             }
 
             // 8. Final Atomic Write
-            File.WriteAllText(fullPath, content);
+            Helper.WriteFileAtomic(fullPath, stream =>
+            {
+                using (var sw = new StreamWriter(stream, new UTF8Encoding(false))) { sw.Write(content); }
+            });
         }
 
     }
