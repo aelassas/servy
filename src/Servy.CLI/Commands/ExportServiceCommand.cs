@@ -4,6 +4,7 @@ using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Config;
 using Servy.Core.Data;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using System;
@@ -181,7 +182,10 @@ namespace Servy.CLI.Commands
                 Directory.CreateDirectory(directory);
             }
 
-            File.WriteAllText(fullPath, content);
+            Helper.WriteFileAtomic(fullPath, stream =>
+            {
+                using (var sw = new StreamWriter(stream, new UTF8Encoding(false))) { sw.Write(content); }
+            });
         }
 
         /// <summary>
