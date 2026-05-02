@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32.SafeHandles;
 using Servy.Core.Config;
+using Servy.Core.Logging;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
@@ -933,10 +934,13 @@ namespace Servy.Core.Native
         /// Extracts the unique <see cref="FILE_IDENTITY"/> from an open <see cref="FileStream"/>.
         /// </summary>
         /// <param name="fs">The open file stream.</param>
-        /// <returns>A populated identity structure.</returns>
-        public static FILE_IDENTITY GetFileIdentity(FileStream fs)
+        /// <param name="logger">Optional logger to surface probe failures for observability.</param>
+        /// <returns>A populated identity structure. Check <see cref="FILE_IDENTITY.IsValidHandleInfo"/> for success state.</returns>
+        public static FILE_IDENTITY GetFileIdentity(FileStream fs, IServyLogger? logger = null)
         {
             var identity = new FILE_IDENTITY();
+
+            // 1. Kernel32 Handle Probe
             try
             {
                 if (GetFileInformationByHandle(fs.SafeFileHandle, out var info))
@@ -946,23 +950,35 @@ namespace Servy.Core.Native
                     identity.IsValidHandleInfo = true;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Fallback or log failure here if necessary
+                // Surfaces P/Invoke failures or AccessViolation/ObjectDisposed exceptions
+                logger?.Debug($"GetFileIdentity: Kernel32 handle probe failed for '{fs.Name}'. Exception: {ex.GetType().Name} - {ex.Message}");
             }
 
+            // 2. Prefix-Hash Content Probe
+            // Note: We use a separate block to ensure that a handle-info failure 
+            // does not prevent a best-effort content hash check.
             try
             {
-                long origPos = fs.Position;
-                fs.Seek(0, SeekOrigin.Begin);
-                byte[] buffer = new byte[64];
-                int read = fs.Read(buffer, 0, buffer.Length);
-                identity.PrefixHash = Convert.ToBase64String(buffer, 0, read);
-                fs.Seek(origPos, SeekOrigin.Begin);
+                if (fs.CanSeek)
+                {
+                    long origPos = fs.Position;
+                    fs.Seek(0, SeekOrigin.Begin);
+
+                    byte[] buffer = new byte[64];
+                    int read = fs.Read(buffer, 0, buffer.Length);
+
+                    identity.PrefixHash = Convert.ToBase64String(buffer, 0, read);
+
+                    // Restore position to avoid side-effects for the caller
+                    fs.Seek(origPos, SeekOrigin.Begin);
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                // Fallback or log failure here if necessary
+                // Surfaces Seek/Read failures (e.g. file truncated or locked by another process)
+                logger?.Debug($"GetFileIdentity: Prefix-hash probe failed for '{fs.Name}'. Exception: {ex.GetType().Name} - {ex.Message}");
             }
 
             return identity;
