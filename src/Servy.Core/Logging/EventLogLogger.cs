@@ -81,12 +81,7 @@ namespace Servy.Core.Logging
             // If we want nested prefixes (e.g., [Parent][Child]), use:
             // var newPrefix = string.IsNullOrEmpty(Prefix) ? prefix : $"{Prefix}][{prefix}";
 
-            return new EventLogLogger(
-                _source,
-                _currentLogLevel,
-                _isEventLogEnabled,
-                prefix
-            );
+            return new ScopedEventLogLogger(this, prefix);
         }
 
         /// <inheritdoc/>
@@ -242,10 +237,75 @@ namespace Servy.Core.Logging
         /// </summary>
         /// <param name="message">The original log message.</param>
         /// <returns>The formatted message with prefix if available.</returns>
-        private string Format(string message)
+        protected virtual string Format(string message)
         {
             // Since Prefix is now immutable, this is thread-safe.
             return string.IsNullOrWhiteSpace(Prefix) ? message : $"[{Prefix}] {message}";
+        }
+
+        #endregion
+
+        #region ScopedLogger
+
+        /// <summary>
+        /// A lightweight wrapper that delegates logging to the parent <see cref="EventLogLogger"/> instance.
+        /// This prevents allocating a new native <see cref="EventLog"/> handle for every scope creation.
+        /// </summary>
+        private sealed class ScopedEventLogLogger : IServyLogger
+        {
+            private readonly EventLogLogger _parent;
+
+            /// <inheritdoc/>
+            public string? Prefix { get; }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ScopedEventLogLogger"/> class.
+            /// </summary>
+            /// <param name="parent">The parent logger instance that holds the unmanaged EventLog handle.</param>
+            /// <param name="prefix">The prefix for this scoped logger.</param>
+            public ScopedEventLogLogger(EventLogLogger parent, string prefix)
+            {
+                _parent = parent;
+                Prefix = prefix;
+            }
+
+            // Route all logging calls to the parent, but apply our own prefix formatting first
+
+            /// <inheritdoc/>
+            public void Debug(string message, Exception? ex = null) => _parent.Debug(Format(message), ex);
+
+            /// <inheritdoc/>
+            public void Info(string message) => _parent.Info(Format(message));
+
+            /// <inheritdoc/>
+            public void Warn(string message) => _parent.Warn(Format(message));
+
+            /// <inheritdoc/>
+            public void Error(string message, Exception? ex = null) => _parent.Error(Format(message), ex);
+
+            /// <inheritdoc/>
+            public void SetLogLevel(LogLevel level) => _parent.SetLogLevel(level);
+
+            /// <inheritdoc/>
+            public void SetIsEventLogEnabled(bool isEnabled) => _parent.SetIsEventLogEnabled(isEnabled);
+
+            /// <summary>
+            /// No-op implementation. The parent <see cref="EventLogLogger"/> owns the unmanaged resources.
+            /// </summary>
+            public void Dispose() { /* no-op; parent owns the EventLog */ }
+
+            /// <inheritdoc/>
+            public IServyLogger CreateScoped(string prefix) => new ScopedEventLogLogger(_parent, prefix);
+
+            /// <summary>
+            /// Formats a log message by prepending the <see cref="Prefix"/> if it is set.
+            /// </summary>
+            /// <param name="message">The original log message.</param>
+            /// <returns>The formatted message with prefix if available.</returns>
+            private string Format(string message)
+            {
+                return string.IsNullOrWhiteSpace(Prefix) ? message : $"[{Prefix}] {message}";
+            }
         }
 
         #endregion
