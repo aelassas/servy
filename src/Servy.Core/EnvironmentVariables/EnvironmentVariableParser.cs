@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Servy.Core.EnvironmentVariables
+﻿namespace Servy.Core.EnvironmentVariables
 {
     /// <summary>
     /// Provides methods to parse environment variables strings with escaping support.
@@ -9,8 +6,17 @@ namespace Servy.Core.EnvironmentVariables
     public static class EnvironmentVariableParser
     {
         /// <summary>
-        /// Parses a normalized environment variables string into a list of environment variable objects. Supports escaping of equals signs and semicolons with a backslash, and supports both semicolon and newline delimiters.
+        /// Parses a normalized environment variables string into a list of environment variable objects. 
+        /// Supports escaping of equals signs and semicolons with a backslash, and supports both semicolon and newline delimiters.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Quote Handling:</b> Unescaped double quotes surrounding a value are automatically stripped to support 
+        /// common configuration conventions (e.g., <c>KEY="value"</c> becomes <c>value</c>). 
+        /// To enforce a value that literally begins and ends with double quotes, escape the quotes 
+        /// (e.g., <c>KEY=\"value\"</c> or <c>KEY="\"value\""</c>).
+        /// </para>
+        /// </remarks>
         /// <param name="input">The normalized environment variables string containing semicolon or newline separators with optional escapes.</param>
         /// <returns>A list of parsed environment variables as instantiated objects.</returns>
         /// <exception cref="FormatException">Thrown if any variable is missing an unescaped equals sign or has an empty key.</exception>
@@ -40,17 +46,21 @@ namespace Servy.Core.EnvironmentVariables
                 var rawKey = part.Substring(0, eqIdx);
                 var rawValue = part.Substring(eqIdx + 1);
 
-                // Unescape both key and value
                 var key = EscapedTokenizer.Unescape(rawKey).Trim();
-                var unescaped = EscapedTokenizer.Unescape(rawValue).Trim();
 
-                // Remove surrounding quotes only if both start and end with a quote
-                if (unescaped.Length >= 2 && unescaped[0] == '"' && unescaped[unescaped.Length - 1] == '"')
+                // 1. Trim whitespace first to expose structural quotes
+                var trimmedValue = rawValue.Trim();
+
+                // 2. Remove surrounding quotes ONLY. By doing this BEFORE unescaping, 
+                // we allow users to pass escaped quotes (e.g., \"hello\") that bypass this 
+                // structural strip and survive into the final value.
+                if (trimmedValue.Length >= 2 && trimmedValue[0] == '"' && trimmedValue[trimmedValue.Length - 1] == '"')
                 {
-                    unescaped = unescaped.Substring(1, unescaped.Length - 2);
+                    trimmedValue = trimmedValue.Substring(1, trimmedValue.Length - 2);
                 }
 
-                var value = unescaped;
+                // 3. Finally, unescape the inner content
+                var value = EscapedTokenizer.Unescape(trimmedValue);
 
                 if (string.IsNullOrEmpty(key))
                     throw new FormatException($"Environment variable key cannot be empty: {part}");

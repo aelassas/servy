@@ -445,8 +445,8 @@ namespace Servy.Core.UnitTests.Security
             Assert.Null(record);
 
             // Verify state remains disposed
-            bool disposedField = GetPrivateField<bool>(secureData, "_disposed");
-            Assert.True(disposedField);
+            int disposedField = GetPrivateField<int>(secureData, "_disposed");
+            Assert.Equal(1, disposedField);
         }
 
         private T GetPrivateField<T>(object obj, string fieldName)

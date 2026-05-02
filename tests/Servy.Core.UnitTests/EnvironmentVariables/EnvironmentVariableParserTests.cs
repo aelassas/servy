@@ -1,6 +1,4 @@
 ﻿using Servy.Core.EnvironmentVariables;
-using System.Reflection;
-using Xunit;
 
 namespace Servy.Core.UnitTests.EnvironmentVariables
 {
@@ -299,5 +297,65 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Single(result);
             Assert.Equal(@"a\\\=b", result[0]);
         }
+
+        [Theory]
+        [InlineData("KEY=\"hello\"", "hello")]           // Standard structural quotes
+        [InlineData("KEY= \"hello\" ", "hello")]         // Structural quotes with surrounding whitespace
+        [InlineData("KEY='hello'", "'hello'")]           // Single quotes are NOT structural; preserved literally
+        [InlineData("KEY=\"hello", "\"hello")]           // Unmatched quotes are preserved literally
+        public void Parse_StructuralQuotes_Behavior(string input, string expectedValue)
+        {
+            var result = EnvironmentVariableParser.Parse(input);
+            Assert.Equal(expectedValue, result[0].Value);
+        }
+
+        [Theory]
+        // 1. Literal quotes: Bypasses stripping because it starts with a backslash.
+        // Parser Input: KEY=\"hello\" -> Result: "hello"
+        [InlineData("KEY=\\\"hello\\\"", "\"hello\"")]
+
+        // 2. Multiple literal quotes: Bypasses stripping.
+        // Parser Input: KEY=\"\"\"\" -> Result: ""
+        [InlineData("KEY=\\\"\\\"", "\"\"")]
+
+        // 3. Structural quotes: Stripping is triggered because it starts/ends with ".
+        // Parser Input: KEY= "hello" -> Result: hello
+        [InlineData("KEY= \"hello\" ", "hello")]
+
+        // 4. Nested quotes: Outer are stripped, inner are unescaped.
+        // Parser Input: KEY="\"hello\"" -> Result: "hello"
+        [InlineData("KEY=\"\\\"hello\\\"\"", "\"hello\"")]
+        public void Parse_LiteralQuotes_PreservedWhenEscaped(string input, string expectedValue)
+        {
+            var result = EnvironmentVariableParser.Parse(input);
+            Assert.Equal(expectedValue, result[0].Value);
+        }
+
+        [Fact]
+        public void Parse_NestedQuotes_PreservedWhenOuterAreStructural()
+        {
+            // Input: KEY="\"hello\""
+            // 1. Trim: KEY="\"hello\""
+            // 2. Strip structural quotes: \"hello\"
+            // 3. Unescape: "hello"
+            var input = "KEY=\"\\\"hello\\\"\"";
+            var result = EnvironmentVariableParser.Parse(input);
+
+            Assert.Single(result);
+            Assert.Equal("\"hello\"", result[0].Value);
+        }
+
+        [Fact]
+        public void Parse_HandlesComplexEscapingWithQuotes()
+        {
+            // Verifies that escaped delimiters inside structural quotes work correctly
+            var input = "KEY=\"Value\\;WithSemicolon\";KEY2=NEXT";
+            var result = EnvironmentVariableParser.Parse(input);
+
+            Assert.Equal(2, result.Count);
+            Assert.Equal("Value;WithSemicolon", result[0].Value);
+            Assert.Equal("NEXT", result[1].Value);
+        }
+
     }
 }
