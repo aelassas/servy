@@ -452,9 +452,13 @@ namespace Servy.Core.Config
         public const int DefaultSearchDebounceDelayMs = 300;
 
         /// <summary>
-        /// Default maximum number of concurrent SCM operations during bulk start/stop/restart.
-        /// Caps at this value to prevent SCM saturation regardless of core count.
+        /// The default maximum number of concurrent Service Control Manager (SCM) operations 
+        /// permitted during bulk lifecycle tasks (start, stop, or restart).
         /// </summary>
+        /// <remarks>
+        /// To prevent thread starvation and SCM contention, the actual degree of parallelism is 
+        /// throttled by a hardware-aware ceiling: <c>Math.Min(Environment.ProcessorCount * 2, MaxBulkOperationParallelism)</c>.
+        /// </remarks>
         public const int DefaultMaxBulkOperationParallelism = 8;
 
         #endregion

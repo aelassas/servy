@@ -59,9 +59,13 @@ namespace Servy.Manager.Config
         int SearchDebounceDelayMs { get; }
 
         /// <summary>
-        /// Maximum number of concurrent SCM operations during bulk start/stop/restart.
-        /// Caps at this value to prevent SCM saturation regardless of core count.
+        /// Maximum number of concurrent Service Control Manager (SCM) operations 
+        /// permitted during bulk lifecycle tasks (start, stop, or restart).
         /// </summary>
+        /// <remarks>
+        /// To prevent thread starvation and SCM contention, the actual degree of parallelism is 
+        /// throttled by a hardware-aware ceiling: <c>Math.Min(Environment.ProcessorCount * 2, MaxBulkOperationParallelism)</c>.
+        /// </remarks>
         int MaxBulkOperationParallelism { get; }
     }
 }

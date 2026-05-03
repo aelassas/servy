@@ -104,15 +104,10 @@ namespace Servy
         /// </summary>
         public string? AESIVFilePath => _bootstrapper.AESIVFilePath;
 
-        /// <summary>
-        /// Servy Manager App publish path.
-        /// </summary>
+        /// <inheritdoc/>
         public string? ManagerAppPublishPath { get; private set; }
 
-        /// <summary>
-        /// Indicates whether the Manager application is available.
-        /// Dynamically updates if the application is installed or removed during runtime.
-        /// </summary>
+        /// <inheritdoc/>
         public bool IsManagerAppAvailable
         {
             get => _isManagerAppAvailable;
@@ -126,14 +121,7 @@ namespace Servy
             }
         }
 
-        /// <summary>
-        /// Gets a value indicating whether software rendering has been forced for the current session.
-        /// </summary>
-        /// <remarks>
-        /// This property is typically set during application startup if the system detects 
-        /// a remote session, low-tier graphics hardware, or if the <see cref="AppConfig.ForceSoftwareRenderingArg"/> 
-        /// command-line argument is present.
-        /// </remarks>
+        /// <inheritdoc/>
         public bool ForceSoftwareRendering => _bootstrapper.ForceSoftwareRendering;
 
         #endregion
