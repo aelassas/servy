@@ -121,7 +121,7 @@ namespace Servy.Core.UnitTests.Helpers
             var mockProcessHelper = new Mock<IProcessHelper>();
 
             // Act
-            var result = _processKiller.KillProcessesUsingFile(mockProcessHelper.Object, fakePath);
+            var result = _processKiller.KillProcessesUsingFile(fakePath);
 
             // Assert
             // The method returns true and logs an error if the target file is missing

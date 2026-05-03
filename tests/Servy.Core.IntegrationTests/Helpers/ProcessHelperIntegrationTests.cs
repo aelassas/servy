@@ -14,14 +14,14 @@ namespace Servy.Core.IntegrationTests.Helpers
     /// Verifies OS-level interactions including file system resolution, environment variable expansion, 
     /// and native Windows process tree traversal.
     /// </summary>
-    public class ProcessHelperTests : IDisposable
+    public class ProcessHelperIntegrationTests : IDisposable
     {
         private readonly ProcessHelper _sut;
         private readonly string _tempDirectory;
         private readonly string _tempFile;
         private readonly List<Process> _spawnedProcesses;
 
-        public ProcessHelperTests()
+        public ProcessHelperIntegrationTests()
         {
             _sut = new ProcessHelper();
             _spawnedProcesses = new List<Process>();

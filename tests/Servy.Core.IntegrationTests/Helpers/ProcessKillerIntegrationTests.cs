@@ -214,7 +214,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         public void KillProcessesUsingFile_FileNotFound_ReturnsTrue()
         {
             string fakePath = Path.Combine(Path.GetTempPath(), $"missing_file_{Guid.NewGuid()}.txt");
-            bool result = _processKiller.KillProcessesUsingFile(_processHelper, fakePath);
+            bool result = _processKiller.KillProcessesUsingFile(fakePath);
             Assert.True(result);
         }
 
@@ -236,7 +236,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             var lockingProcess = SpawnFileLockingProcess(testFile);
 
-            bool result = _processKiller.KillProcessesUsingFile(_processHelper, testFile);
+            bool result = _processKiller.KillProcessesUsingFile(testFile);
 
             Thread.Sleep(1000);
 

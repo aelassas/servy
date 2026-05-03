@@ -23,22 +23,18 @@ namespace Servy.Core.Helpers
     public class ResourceHelper
     {
         private readonly ServiceHelper _serviceHelper;
-        private readonly IProcessHelper _processHelper;
         private readonly IProcessKiller _processKiller;
 
         /// <summary>
         /// Initializes a new instance of the ResourceHelper class using the specified service repository.
         /// </summary>
         /// <param name="serviceRepository">The service repository used to access and manage service-related resources. Cannot be null.</param>
-        /// <param name="processHelper">The process helper used to manage processes. Cannot be null.</param>
         /// <param name="processKiller">The process killer used to terminate processes. Cannot be null.</param>
         public ResourceHelper(
             IServiceRepository serviceRepository,
-            IProcessHelper processHelper,
             IProcessKiller processKiller)
         {
             _serviceHelper = new ServiceHelper(serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository)));
-            _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
             _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
         }
 
@@ -76,7 +72,7 @@ namespace Servy.Core.Helpers
                         await _serviceHelper.StopServices(runningServices);
                     }
 
-                    if (!TerminateBlockingProcesses(_processHelper, extension, targetFileName, targetPath))
+                    if (!TerminateBlockingProcesses(extension, targetFileName, targetPath))
                         return false;
 
                     Stream resourceStream = assembly.GetManifestResourceStream(resourceName);
@@ -131,7 +127,7 @@ namespace Servy.Core.Helpers
                 if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, subfolder, out var targetPath, out var targetFileName, out var resourceName))
                     return true;
 
-                if (!TerminateBlockingProcesses(_processHelper, extension, targetFileName, targetPath))
+                if (!TerminateBlockingProcesses(extension, targetFileName, targetPath))
                     return false;
 
                 Stream resourceStream = assembly.GetManifestResourceStream(resourceName);
@@ -237,7 +233,7 @@ namespace Servy.Core.Helpers
                     {
                         try
                         {
-                            if (!TerminateBlockingProcesses(_processHelper, resourceItem.Extension, resourceItem.TargetFileName, resourceItem.TargetPath, skipDll: true))
+                            if (!TerminateBlockingProcesses(resourceItem.Extension, resourceItem.TargetFileName, resourceItem.TargetPath, skipDll: true))
                             {
                                 res = false;
                                 continue;
@@ -416,13 +412,12 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Evaluates the file extension type and attempts to safely terminate any processes holding locks on the target file.
         /// </summary>
-        /// <param name="processHelper">An instance of IProcessHelper used to query running processes.</param>
         /// <param name="extension">The file extension used to determine the termination strategy(e.g., "exe", "dll").</param>
         /// <param name="targetFileName">The name of the file to search for in the process list.</param>
         /// <param name="targetPath">The full path to the file to check for active file handles.</param>
         /// <param name="skipDll">If true, skips termination of processes using the file if it's a DLL. This is used when multiple resources are being copied to avoid redundant process termination attempts.</param>
         /// <returns>True if all blocking processes were terminated or none were found; false if termination failed.</returns>
-        private bool TerminateBlockingProcesses(IProcessHelper processHelper, string extension, string targetFileName, string targetPath, bool skipDll = false)
+        private bool TerminateBlockingProcesses(string extension, string targetFileName, string targetPath, bool skipDll = false)
         {
             var isExe = extension.Equals("exe", StringComparison.OrdinalIgnoreCase);
             var isDll = extension.Equals("dll", StringComparison.OrdinalIgnoreCase);
@@ -430,7 +425,7 @@ namespace Servy.Core.Helpers
             if (isExe && !_processKiller.KillProcessTreeAndParents(targetFileName))
                 return false;
 
-            if (isDll && !skipDll && !_processKiller.KillProcessesUsingFile(processHelper, targetPath))
+            if (isDll && !skipDll && !_processKiller.KillProcessesUsingFile(targetPath))
                 return false;
 
             return true;

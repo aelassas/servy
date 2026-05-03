@@ -47,13 +47,12 @@
         /// <summary>
         /// Discovers and violently terminates any process trees holding an active lock on the specified file path using diagnostic tooling.
         /// </summary>
-        /// <param name="processHelper">The <see cref="IProcessHelper"/> instance used to resolve process information.</param>
         /// <param name="filePath">The absolute path of the targeted file currently constrained by an active lock.</param>
         /// <returns>A boolean value indicating whether the lock release operation resolved and executed without encountering critical errors.</returns>
         /// <remarks>
         /// This method requires Sysinternals Handle.exe or Handle64.exe to be available
         /// and assumes its path is in <c>C:\Program Files\Sysinternals\handle64.exe</c> by default.
         /// </remarks>
-        bool KillProcessesUsingFile(IProcessHelper processHelper, string filePath);
+        bool KillProcessesUsingFile(string filePath);
     }
 }

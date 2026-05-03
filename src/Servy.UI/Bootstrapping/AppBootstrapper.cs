@@ -270,7 +270,7 @@ namespace Servy.UI.Bootstrapping
                     var jsonSerializer = new JsonServiceSerializer();
 
                     ServiceRepository = new ServiceRepository(dapperExecutor, SecureData, xmlSerializer, jsonSerializer);
-                    var resourceHelper = new ResourceHelper(ServiceRepository, _processHelper, _processKiller);
+                    var resourceHelper = new ResourceHelper(ServiceRepository, _processKiller);
 
                     // Binary Resource Extraction
                     if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
