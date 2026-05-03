@@ -4,9 +4,6 @@ using Servy.Core.Logging;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-#if !DEBUG
-using Servy.Core.Config;
-#endif
 
 namespace Servy.Core.Helpers
 {
