@@ -496,7 +496,7 @@ namespace Servy.Service
                 // Reset restart attempts on service start to avoid blocking recovery
                 if (_recoveryActionEnabled)
                 {
-                    _ = Task.Run(() => ConditionalResetRestartAttemptsAsync(options))
+                    _ = Task.Run(() => ConditionalResetRestartAttemptsAsync(options, _cancellationSource?.Token ?? CancellationToken.None))
                             .ContinueWith(t =>
                             {
                                 if (t.IsFaulted)
@@ -723,6 +723,7 @@ namespace Servy.Service
         /// between startup and health checks.
         /// </summary>
         /// <param name="options">The startup options containing heartbeat and timeout configurations used to calculate the stability threshold.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <remarks>
         /// This method performs two distinct checks:
         /// <list type="number">
@@ -742,16 +743,16 @@ namespace Servy.Service
         /// </item>
         /// </list>
         /// </remarks>
-        private async Task ConditionalResetRestartAttemptsAsync(StartOptions options)
+        private async Task ConditionalResetRestartAttemptsAsync(StartOptions options, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(_restartAttemptsFile)) return;
 
             // Wait for the lock to secure the entire transaction
-            await _fileSemaphore.WaitAsync();
+            await _fileSemaphore.WaitAsync(cancellationToken);
             try
             {
                 // 1. Protected Read (Exit early if already 0)
-                if ((await ReadAttemptsInternalAsync(default)) == 0) return;
+                if ((await ReadAttemptsInternalAsync(cancellationToken)) == 0) return;
 
                 if (!File.Exists(_restartAttemptsFile)) return;
 
@@ -799,7 +800,7 @@ namespace Servy.Service
                 if (secondsSinceLastAttempt > resetThresholdSeconds)
                 {
                     _logger?.Info($"Resetting restart attempts counter. Stable for {secondsSinceLastAttempt:F1} seconds.");
-                    await WriteAttemptsInternalAsync(0, default);
+                    await WriteAttemptsInternalAsync(0, cancellationToken);
                 }
             }
             catch (Exception ex)
@@ -1914,7 +1915,7 @@ namespace Servy.Service
                 {
                     // STABILITY CHECK (Disk I/O)
                     // This is safely outside the health lock, preventing it from stalling OnProcessExited.
-                    await ConditionalResetRestartAttemptsAsync(_options!);
+                    await ConditionalResetRestartAttemptsAsync(_options!, _cancellationSource?.Token ?? CancellationToken.None);
                 }
 
                 if (shouldStop) Stop();

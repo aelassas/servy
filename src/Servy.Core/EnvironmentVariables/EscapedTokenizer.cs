@@ -23,17 +23,8 @@ namespace Servy.Core.EnvironmentVariables
                 char c = input[i];
                 if (delimiters.Contains(c))
                 {
-                    // Count backslashes immediately before this delimiter
-                    int backslashCount = 0;
-                    int j = i - 1;
-                    while (j >= 0 && input[j] == '\\')
-                    {
-                        backslashCount++;
-                        j--;
-                    }
-
-                    // If even number of backslashes -> delimiter is unescaped
-                    if (backslashCount % 2 == 0)
+                    // If not escaped, split here
+                    if (!IsEscapedAt(input, i))
                     {
                         segments.Add(sb.ToString());
                         sb.Clear();
@@ -60,21 +51,11 @@ namespace Servy.Core.EnvironmentVariables
             {
                 if (str[i] == ch)
                 {
-                    // Count how many backslashes immediately precede this character
-                    int backslashCount = 0;
-                    int j = i - 1;
-                    while (j >= 0 && str[j] == '\\')
-                    {
-                        backslashCount++;
-                        j--;
-                    }
-
-                    // If even number of backslashes -> char is unescaped
-                    if (backslashCount % 2 == 0)
+                    // If not escaped, return the index
+                    if (!IsEscapedAt(str, i))
                     {
                         return i;
                     }
-                    // else char is escaped, skip it
                 }
             }
 
@@ -95,21 +76,11 @@ namespace Servy.Core.EnvironmentVariables
             {
                 if (str[i] == ch)
                 {
-                    // Count how many backslashes immediately precede this character
-                    int backslashCount = 0;
-                    int j = i - 1;
-                    while (j >= 0 && str[j] == '\\')
-                    {
-                        backslashCount++;
-                        j--;
-                    }
-
-                    // If even number of backslashes, this char is unescaped
-                    if (backslashCount % 2 == 0)
+                    // If not escaped, count it
+                    if (!IsEscapedAt(str, i))
                     {
                         count++;
                     }
-                    // else escaped, do not count
                 }
             }
 
@@ -158,6 +129,22 @@ namespace Servy.Core.EnvironmentVariables
                 sb.Append('\\');
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Determines if the character at the specified index is escaped by an odd number of preceding backslashes.
+        /// </summary>
+        /// <param name="s">The string to examine.</param>
+        /// <param name="index">The position of the character to check.</param>
+        /// <returns>true if the character is escaped; otherwise, false.</returns>
+        private static bool IsEscapedAt(string s, int index)
+        {
+            int backslashCount = 0;
+            for (int j = index - 1; j >= 0 && s[j] == '\\'; j--)
+            {
+                backslashCount++;
+            }
+            return backslashCount % 2 != 0;
         }
     }
 }

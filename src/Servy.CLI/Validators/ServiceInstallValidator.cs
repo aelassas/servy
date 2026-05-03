@@ -15,14 +15,14 @@ namespace Servy.CLI.Validators
     /// </summary>
     public class ServiceInstallValidator : IServiceInstallValidator
     {
-        private readonly ServiceValidationRules _serviceValidationRules;
+        private readonly IServiceValidationRules _serviceValidationRules;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceInstallValidator"/> class with the specified validation rules.
         /// </summary>
         /// <param name="serviceValidationRules">Shared validation rules for service installation.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceValidationRules"/> is null.</exception>
-        public ServiceInstallValidator(ServiceValidationRules serviceValidationRules)
+        public ServiceInstallValidator(IServiceValidationRules serviceValidationRules)
         {
             _serviceValidationRules = serviceValidationRules ?? throw new ArgumentNullException(nameof(serviceValidationRules));
         }
@@ -48,8 +48,9 @@ namespace Servy.CLI.Validators
 
             if (!result.IsValid)
             {
-                // CLI typically reports one error at a time for better readability
-                var firstIssue = result.Warnings.Concat(result.Errors).First();
+                // CLI reports the first issue. Errors are prioritized over warnings 
+                // to ensure blocking issues are addressed first.
+                var firstIssue = result.Errors.Concat(result.Warnings).First();
                 return CommandResult.Fail(firstIssue);
             }
 

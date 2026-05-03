@@ -8,6 +8,7 @@
 #      - choco.yml        → Publishes the Chocolatey package
 #      - scoop.yml        → Publishes the Scoop manifest to aelassas/scoop-bucket
 #      - bump-version.yml → Bumps version
+#      - changelog.yml    → Updates the project changelog
 #
 #  Behavior:
 #    • Automatically runs after any of the above workflows complete.
@@ -19,10 +20,9 @@
 #    ![release](https://github.com/aelassas/servy/actions/workflows/release.yml/badge.svg)
 #
 #  Result:
-#    Green  → All release workflows succeeded
-#    Red    → One or more failed or skipped
+#    Green  -> All release workflows succeeded
+#    Red    -> One or more failed, skipped, or missing
 # ==============================================================
-
 name: release
 
 on:
@@ -43,7 +43,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const workflows = ["winget", "choco", "scoop", "bump-version"];
+            const workflows = ["winget", "choco", "scoop", "bump-version", "changelog"];
             const failed = [];
             const pending = [];
 
@@ -56,6 +56,7 @@ jobs:
               });
 
               const run = runs.data.workflow_runs[0];
+              
               if (run) {
                 console.log(`${wf}: ${run.conclusion}`);
                 if (run.conclusion === null) {
@@ -64,14 +65,15 @@ jobs:
                   failed.push(wf);
                 }
               } else {
-                console.log(`${wf} (no runs)`);
+                console.log(`${wf} (no runs found)`);
+                failed.push(`${wf} (no runs found)`);
               }
             }
 
             if (failed.length > 0) {
-              core.setFailed(`Some workflows failed: ${failed.join(", ")}`);
+              core.setFailed(`Release criteria not met. Failed/Missing: ${failed.join(", ")}`);
             } else if (pending.length > 0) {
-              core.warning(`Some workflows are still running: ${pending.join(", ")}`);
+              core.warning(`Release status is incomplete. Pending: ${pending.join(", ")}`);
             } else {
               console.log("All release workflows succeeded!");
             }

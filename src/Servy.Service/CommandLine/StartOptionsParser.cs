@@ -29,6 +29,7 @@ namespace Servy.Service.CommandLine
                 throw new ArgumentException("No arguments provided");
             }
 
+            // The service name is expected as the second argument (e.g., Servy.Service.exe "MyService")
             var serviceName = fullArgs.Length > 1 ? fullArgs[1] : string.Empty;
 
             if (string.IsNullOrWhiteSpace(serviceName))
@@ -50,7 +51,11 @@ namespace Servy.Service.CommandLine
                 ExecutablePath = processHelper.ResolvePath(serviceDto.ExecutablePath ?? string.Empty),
                 ExecutableArgs = Helper.EscapeBackslashes(serviceDto.Parameters ?? string.Empty),
                 WorkingDirectory = processHelper.ResolvePath(serviceDto.StartupDirectory ?? string.Empty),
-                Priority = MapPriority((ProcessPriority)(serviceDto.Priority ?? (int)ProcessPriority.Normal)),
+
+                // Use ConfigParser.ParseEnum to ensure the priority is a valid member of ProcessPriority.
+                // This prevents undefined enum values from entering the process mapping logic.
+                Priority = MapPriority(ConfigParser.ParseEnum(serviceDto.Priority, AppConfig.DefaultPriority)),
+
                 EnableConsoleUI = serviceDto.EnableConsoleUI ?? false,
 
                 // Logging
@@ -63,13 +68,16 @@ namespace Servy.Service.CommandLine
                 EnableHealthMonitoring = serviceDto.EnableHealthMonitoring ?? false,
                 HeartbeatInterval = serviceDto.HeartbeatInterval ?? AppConfig.DefaultHeartbeatInterval,
                 MaxFailedChecks = serviceDto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks,
+
+                // Validate RecoveryAction to ensure pattern matching in health handlers behaves predictably.
                 RecoveryAction = (serviceDto.EnableHealthMonitoring ?? false)
-                    ? (RecoveryAction)(serviceDto.RecoveryAction ?? (int)AppConfig.DefaultRecoveryAction)
+                    ? ConfigParser.ParseEnum(serviceDto.RecoveryAction, AppConfig.DefaultRecoveryAction)
                     : RecoveryAction.None,
+
                 MaxRestartAttempts = serviceDto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
                 EnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.EnvironmentVariables ?? string.Empty),
 
-                // Pre-Launch args
+                // Pre-Launch settings
                 PreLaunchExecutablePath = processHelper.ResolvePath(serviceDto.PreLaunchExecutablePath ?? string.Empty),
                 PreLaunchWorkingDirectory = processHelper.ResolvePath(serviceDto.PreLaunchStartupDirectory ?? string.Empty),
                 PreLaunchExecutableArgs = Helper.EscapeBackslashes(serviceDto.PreLaunchParameters ?? string.Empty),
@@ -80,43 +88,40 @@ namespace Servy.Service.CommandLine
                 PreLaunchRetryAttempts = serviceDto.PreLaunchRetryAttempts ?? AppConfig.DefaultPreLaunchRetryAttempts,
                 PreLaunchIgnoreFailure = serviceDto.PreLaunchIgnoreFailure ?? false,
 
-                // Failure program
+                // Failure program settings
                 FailureProgramPath = processHelper.ResolvePath(serviceDto.FailureProgramPath ?? string.Empty),
                 FailureProgramWorkingDirectory = processHelper.ResolvePath(serviceDto.FailureProgramStartupDirectory ?? string.Empty),
                 FailureProgramArgs = Helper.EscapeBackslashes(serviceDto.FailureProgramParameters ?? string.Empty),
 
-                // Post-Launch args
+                // Post-Launch settings
                 PostLaunchExecutablePath = processHelper.ResolvePath(serviceDto.PostLaunchExecutablePath ?? string.Empty),
                 PostLaunchWorkingDirectory = processHelper.ResolvePath(serviceDto.PostLaunchStartupDirectory ?? string.Empty),
                 PostLaunchExecutableArgs = Helper.EscapeBackslashes(serviceDto.PostLaunchParameters ?? string.Empty),
 
-                // Debug Logs
+                // Operational toggles
                 EnableDebugLogs = serviceDto.EnableDebugLogs ?? false,
-
-                // Max Rotations
                 MaxRotations = serviceDto.MaxRotations ?? AppConfig.DefaultMaxRotations,
-
-                // Date & Size Rotation
                 EnableSizeRotation = serviceDto.EnableSizeRotation ?? false,
                 EnableDateRotation = serviceDto.EnableDateRotation ?? false,
-                DateRotationType = (DateRotationType)(serviceDto.DateRotationType ?? (int)DateRotationType.Daily),
 
-                // Start and Stop timeouts
+                // Validate DateRotationType to prevent disabling rotation logic due to out-of-range integer values.
+                DateRotationType = ConfigParser.ParseEnum(serviceDto.DateRotationType, AppConfig.DefaultDateRotationType),
+
+                // Lifespan timeouts
                 StartTimeout = serviceDto.StartTimeout ?? AppConfig.DefaultStartTimeout,
                 StopTimeout = serviceDto.StopTimeout ?? AppConfig.DefaultStopTimeout,
 
-                // Pre-Stop
+                // Pre-Stop settings
                 PreStopExecutablePath = processHelper.ResolvePath(serviceDto.PreStopExecutablePath ?? string.Empty),
                 PreStopWorkingDirectory = processHelper.ResolvePath(serviceDto.PreStopStartupDirectory ?? string.Empty),
                 PreStopExecutableArgs = Helper.EscapeBackslashes(serviceDto.PreStopParameters ?? string.Empty),
                 PreStopTimeout = serviceDto.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds,
                 PreStopLogAsError = serviceDto.PreStopLogAsError ?? false,
 
-                // Post-Stop
+                // Post-Stop settings
                 PostStopExecutablePath = processHelper.ResolvePath(serviceDto.PostStopExecutablePath ?? string.Empty),
                 PostStopWorkingDirectory = processHelper.ResolvePath(serviceDto.PostStopStartupDirectory ?? string.Empty),
                 PostStopExecutableArgs = Helper.EscapeBackslashes(serviceDto.PostStopParameters ?? string.Empty),
-
             };
         }
 

@@ -1,13 +1,10 @@
-# This worflow is disabled because reflection-based SCM registration has been replaced by native P/Invoke calls.
+# This workflow is disabled because reflection-based SCM registration has been replaced by native P/Invoke calls.
+# This workflow is kept for emergency reflection-regression diagnosis.
 
 name: dotnet-reflection
 
 on: 
   workflow_dispatch:
-  # push:
-  #   branches: [ main ]
-  # pull_request:
-  #   branches: [ main ]
 
 permissions:
   contents: read

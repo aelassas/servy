@@ -80,7 +80,7 @@ namespace Servy.Service.ProcessManagement
             var process = factory.Create(psi, logger);
 
             // ROBUSTNESS: Track ownership. If the method fails before returning, 
-            // we must dispose the process to prevent handle leaks.
+            // we must terminate the process and dispose the wrapper to prevent handle and process leaks.
             bool returnedOwnership = false;
 
             StreamWriter? stdoutWriter = null;
@@ -120,7 +120,6 @@ namespace Servy.Service.ProcessManagement
                             {
                                 if (stdoutWriter == null)
                                 {
-                                    // outPath is now guaranteed to be non-null by the outer check
                                     Helper.EnsureDirectoryExists(outPath);
                                     FileStream? stdoutFs = null;
                                     try
@@ -220,11 +219,26 @@ namespace Servy.Service.ProcessManagement
                     stderrWriter?.Dispose();
                 }
 
-                // ROBUSTNESS: If we didn't reach a 'return' statement successfully, 
-                // clean up the process wrapper to prevent a handle leak.
-                if (!returnedOwnership)
+                // ROBUSTNESS: If we didn't successfully return ownership, the process is orphaned.
+                // We must kill the process tree before disposing the wrapper to avoid leaking child processes.
+                if (!returnedOwnership && process != null)
                 {
-                    process?.Dispose();
+                    try
+                    {
+                        // Check if the process actually started and is still running.
+                        // process.Start() is the first entry in the try block; if any subsequent logic throws,
+                        // we must ensure the child does not remain active and unsupervised.
+                        if (!process.HasExited)
+                        {
+                            process.Kill(true);
+                        }
+                    }
+                    catch (Exception killEx)
+                    {
+                        // Log but don't rethrow, as we need the original exception to propagate.
+                        logger.Warn($"Failed to kill orphaned child after launch failure: {killEx.Message}");
+                    }
+                    process.Dispose();
                 }
             }
         }

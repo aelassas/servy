@@ -91,16 +91,27 @@ namespace Servy.Core.Helpers
 
                 if (!process.WaitForExit(AppConfig.HandleExeTimeoutMs))
                 {
-                    try { process.Kill(entireProcessTree: true); }
-                    catch (InvalidOperationException) { /* Already exited, expected */ }
+                    try
+                    {
+                        process.Kill(entireProcessTree: true);
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        /* Already exited, expected */
+                    }
                     catch (Exception killEx)
                     {
                         Logger.Warn($"Failed to kill handle.exe after timeout (PID {process.Id}): {killEx.Message}");
                     }
+
+                    // FIX: Final WaitForExit() with no timeout flushes any in-flight async event handlers.
+                    // This prevents unsynchronized access to errorBuilder below.
+                    process.WaitForExit();
+
                     throw new TimeoutException($"handle.exe timed out. Stderr: {errorBuilder}");
                 }
 
-                // Final WaitForExit() with no timeout flushes any in-flight async event handlers
+                // Final WaitForExit() with no timeout flushes any in-flight async event handlers for the success path
                 process.WaitForExit();
                 string output = outputBuilder.ToString();
 

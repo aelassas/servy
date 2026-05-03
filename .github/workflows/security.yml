@@ -55,7 +55,7 @@ jobs:
         run: dotnet restore Servy.sln
 
       - name: Scan for vulnerable packages
-        shell: powershell
+        shell: pwsh
         run: |
           $results = dotnet list Servy.sln package --vulnerable --include-transitive
           Write-Output $results

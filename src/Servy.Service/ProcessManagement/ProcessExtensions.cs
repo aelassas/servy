@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Logging;
 using Servy.Core.Native;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -23,17 +24,11 @@ namespace Servy.Service.ProcessManagement
             }
             catch (InvalidOperationException)
             {
-                // If the process has completely flushed from RAM, accessing .Id 
-                // can sometimes throw a second InvalidOperationException. 
-                // It's safer to catch everything here.
-                try
-                {
-                    return $"({process.Id})";
-                }
-                catch
-                {
-                    return "(Exited Process)";
-                }
+                try { return $"({process.Id})"; } catch { return "(Exited Process)"; }
+            }
+            catch (Win32Exception)
+            {
+                try { return $"(PID {process.Id})"; } catch { return "(Inaccessible Process)"; }
             }
         }
 

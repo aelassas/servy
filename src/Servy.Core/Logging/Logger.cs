@@ -3,6 +3,7 @@ using Servy.Core.Enums;
 using Servy.Core.IO;
 using Servy.Core.Security;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace Servy.Core.Logging
 {
@@ -184,11 +185,6 @@ namespace Servy.Core.Logging
         /// <param name="dateRotationType">
         /// The new <see cref="DateRotationType"/> to apply (e.g., Daily, Weekly, Monthly, or None).
         /// </param>
-        /// <remarks>
-        /// If the rotation type is changed and a log file is currently open, the internal writer 
-        /// will be re-initialized to ensure the new rotation logic is applied immediately 
-        /// to the next write operation.
-        /// </remarks>
         public static void SetDateRotationType(DateRotationType dateRotationType)
         {
             lock (_lock)
@@ -197,7 +193,6 @@ namespace Servy.Core.Logging
                 {
                     _dateRotationType = dateRotationType;
 
-                    // If we have an active writer, recreate it to apply the new size constraint
                     if (_writer != null)
                     {
                         InternalInitialize();
@@ -264,7 +259,7 @@ namespace Servy.Core.Logging
         {
             if (_currentLogLevel <= LogLevel.Debug)
             {
-                Log(LogLevel.Debug, ex != null ? $"{message}{Environment.NewLine}Exception: {ex}" : message);
+                Log(LogLevel.Debug, ex != null ? $"{message} | Exception: {FormatException(ex)}" : message);
             }
         }
 
@@ -291,7 +286,7 @@ namespace Servy.Core.Logging
         {
             if (_currentLogLevel <= LogLevel.Warn)
             {
-                Log(LogLevel.Warn, ex != null ? $"{message}{Environment.NewLine}Exception: {ex}" : message);
+                Log(LogLevel.Warn, ex != null ? $"{message} | Exception: {FormatException(ex)}" : message);
             }
         }
 
@@ -304,7 +299,7 @@ namespace Servy.Core.Logging
         {
             if (_currentLogLevel <= LogLevel.Error)
             {
-                Log(LogLevel.Error, ex != null ? $"{message}{Environment.NewLine}Exception: {ex}" : message);
+                Log(LogLevel.Error, ex != null ? $"{message} | Exception: {FormatException(ex)}" : message);
             }
         }
 
@@ -324,9 +319,7 @@ namespace Servy.Core.Logging
             {
                 lock (_lock)
                 {
-                    // 2. Double-check: If a thread was waiting for the lock while 
-                    // InternalInitialize was running, it will now correctly see 
-                    // either null or the NEW writer.
+                    // 2. Double-check: Correctly see either null or the NEW writer.
                     if (_writer == null) return;
 
                     string levelName = (int)level >= 0 && (int)level < LevelStrings.Length
@@ -395,7 +388,35 @@ namespace Servy.Core.Logging
             SecurityHelper.CreateSecureDirectory(LogsPath, breakInheritance: false);
         }
 
-        #endregion
+        /// <summary>
+        /// Formats an exception into a scannable, single-line representation.
+        /// </summary>
+        /// <param name="ex">The exception to format.</param>
+        /// <returns>A formatted string with frame separators instead of newlines.</returns>
+        private static string FormatException(Exception ex)
+        {
+            var sb = new StringBuilder();
+            sb.Append($"{ex.GetType().Name}: {ex.Message}");
 
+            if (!string.IsNullOrWhiteSpace(ex.StackTrace))
+            {
+                // Replace multi-line stack trace with a single-line version using a visible separator
+                var sanitizedStack = ex.StackTrace
+                    .Replace("\r", "")
+                    .Replace("\n", " ; ")
+                    .Trim();
+                sb.Append($" (at {sanitizedStack})");
+            }
+
+            if (ex.InnerException != null)
+            {
+                // Recursive capture for nested issues
+                sb.Append($" [Inner -> {FormatException(ex.InnerException)}]");
+            }
+
+            return sb.ToString();
+        }
+
+        #endregion
     }
 }
