@@ -15,8 +15,16 @@ namespace Servy.Core.Helpers
     /// </summary>
     public class ProcessHelper : IProcessHelper
     {
-        private long _lastPruneTicks = DateTime.MinValue.Ticks;
+        /// <summary>
+        /// Enironment Variable Placeholder Regex.
+        /// </summary>
+        private static readonly Regex UnexpandedEnvVarRegex = new Regex(
+            @"%[^%]+%",
+            RegexOptions.Compiled,
+            AppConfig.InputRegexTimeout);
 
+        private long _lastPruneTicks = DateTime.MinValue.Ticks;
+        
         /// <summary>
         /// Maintains a lightweight sync object for each PID to allow concurrent metrics gathering 
         /// for different processes, while serializing requests for the same process.
@@ -314,7 +322,7 @@ namespace Servy.Core.Helpers
 
             // 2. Strict Check: If the path still contains %, expansion likely failed 
             // because the variable is not defined for the service account (e.g., LocalSystem).
-            var match = Regex.Match(expandedPath, @"%[^%]+%");
+            var match = UnexpandedEnvVarRegex.Match(expandedPath);
             if (match.Success)
             {
                 var varName = match.Groups[0].Value;
