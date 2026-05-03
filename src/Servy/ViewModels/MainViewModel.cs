@@ -4,14 +4,12 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Core.Services;
-using Servy.Core.Validators;
+using Servy.Design;
 using Servy.Models;
 using Servy.Resources;
 using Servy.Services;
 using Servy.UI.Commands;
 using Servy.UI.Services;
-using Servy.Validators;
 using Servy.ViewModels.Items;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -25,7 +23,7 @@ namespace Servy.ViewModels
     /// Implements properties, commands, and logic for configuring and managing Windows services
     /// such as install, uninstall, start, stop, and restart.
     /// </summary>
-    public partial class MainViewModel : INotifyPropertyChanged
+    public partial class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         #region Private Fields
 
@@ -37,6 +35,7 @@ namespace Servy.ViewModels
         private bool _isManagerAppAvailable;
         private readonly IAppConfiguration _appConfig;
         private bool _isBusy;
+        private bool _disposed;
 
         #endregion
 
@@ -841,53 +840,7 @@ namespace Servy.ViewModels
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
 
             // Initialize defaults
-            ServiceName = string.Empty;
-            ServiceDisplayName = string.Empty;
-            ServiceDescription = string.Empty;
-            ProcessPath = string.Empty;
-            StartupDirectory = string.Empty;
-            ProcessParameters = string.Empty;
-            SelectedStartupType = ServiceStartType.Automatic;
-            SelectedProcessPriority = ProcessPriority.Normal;
-            EnableConsoleUI = false;
-            StartTimeout = DefaultStartTimeout.ToString();
-            StopTimeout = DefaultStopTimeout.ToString();
-            EnableSizeRotation = false;
-            RotationSize = DefaultRotationSizeMB.ToString();
-            EnableDateRotation = false;
-            SelectedDateRotationType = DateRotationType.Daily;
-            MaxRotations = DefaultMaxRotations.ToString();
-            UseLocalTimeForRotation = DefaultUseLocalTimeForRotation;
-            SelectedRecoveryAction = RecoveryAction.RestartService;
-            HeartbeatInterval = DefaultHeartbeatInterval.ToString();
-            MaxFailedChecks = DefaultMaxFailedChecks.ToString();
-            MaxRestartAttempts = DefaultMaxRestartAttempts.ToString();
-
-            PreLaunchExecutablePath = string.Empty;
-            PreLaunchStartupDirectory = string.Empty;
-            PreLaunchParameters = string.Empty;
-            PreLaunchEnvironmentVariables = string.Empty;
-            PreLaunchStdoutPath = string.Empty;
-            PreLaunchStderrPath = string.Empty;
-            PreLaunchTimeoutSeconds = DefaultPreLaunchTimeoutSeconds.ToString();
-            PreLaunchRetryAttempts = DefaultPreLaunchRetryAttempts.ToString();
-            PreLaunchIgnoreFailure = false;
-
-            PostLaunchExecutablePath = string.Empty;
-            PostLaunchStartupDirectory = string.Empty;
-            PostLaunchParameters = string.Empty;
-
-            EnableDebugLogs = false;
-
-            PreStopExecutablePath = string.Empty;
-            PreStopStartupDirectory = string.Empty;
-            PreStopParameters = string.Empty;
-            PreStopTimeoutSeconds = DefaultPreStopTimeoutSeconds.ToString();
-            PreStopLogAsError = false;
-
-            PostStopExecutablePath = string.Empty;
-            PostStopStartupDirectory = string.Empty;
-            PostStopParameters = string.Empty;
+            ResetToDefaults();
 
             // Commands
             BrowseProcessPathCommand = new RelayCommand<object>(_ => BrowseProcessPath());
@@ -940,27 +893,15 @@ namespace Servy.ViewModels
         /// </summary>
         public MainViewModel() : this(
             new DesignTimeFileDialogService(),
-            null,
-            null,
-            null,
-            null,
-            null
+            new DesignTimeServiceCommands(),
+            new UI.Design.DesignTimeMessageBoxService(),             
+            new UI.Design.DesignTimeServiceRepository(),
+            new UI.Design.DesignTimeHelpService(),
+            new DesignTimeAppConfig()
             )
         {
-            Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
-            var serviceManager = new ServiceManager(controllerFactory, new ServiceControllerProvider(controllerFactory), new WindowsServiceApi(), new Win32ErrorProvider(), null);
-            ServiceCommands = new ServiceCommands(
-                ModelToServiceDto,
-                BindServiceDtoToModel,
-                serviceManager,
-                new MessageBoxService(),
-                new FileDialogService(),
-                new ServiceConfigurationValidator(new MessageBoxService(), new ServiceValidationRules(new ProcessHelper())),
-                new XmlServiceValidator(new ProcessHelper(), new ServiceValidationRules(new ProcessHelper())),
-                new JsonServiceValidator(new ProcessHelper(), new ServiceValidationRules(new ProcessHelper())),
-                null,
-                new CursorService()
-            );
+            // The body is now intentionally empty. 
+            // All dependencies are safely injected via the chained call, bypassing the ArgumentNullException traps.
         }
 
         #endregion
@@ -1006,6 +947,77 @@ namespace Servy.ViewModels
             {
                 IsManagerAppAvailable = ((IAppConfiguration)sender!).IsManagerAppAvailable;
             }
+        }
+
+        /// <summary>
+        /// Resets all fields to their default values.
+        /// </summary>
+        private void ResetToDefaults()
+        {
+            ServiceName = string.Empty;
+            ServiceDisplayName = string.Empty;
+            ServiceDescription = string.Empty;
+            ProcessPath = string.Empty;
+            StartupDirectory = string.Empty;
+            ProcessParameters = string.Empty;
+            SelectedStartupType = ServiceStartType.Automatic;
+            SelectedProcessPriority = ProcessPriority.Normal;
+            EnableConsoleUI = false;
+            EnableSizeRotation = false;
+            RotationSize = DefaultRotationSizeMB.ToString();
+            MaxRotations = DefaultMaxRotations.ToString();
+            EnableDateRotation = false;
+            SelectedDateRotationType = DateRotationType.Daily;
+            StdoutPath = string.Empty;
+            StderrPath = string.Empty;
+            EnableHealthMonitoring = false;
+            SelectedRecoveryAction = RecoveryAction.RestartService;
+            UseLocalTimeForRotation = DefaultUseLocalTimeForRotation;
+            HeartbeatInterval = DefaultHeartbeatInterval.ToString();
+            MaxFailedChecks = DefaultMaxFailedChecks.ToString();
+            MaxRestartAttempts = DefaultMaxRestartAttempts.ToString();
+            FailureProgramPath = string.Empty;
+            FailureProgramStartupDirectory = string.Empty;
+            FailureProgramParameters = string.Empty;
+
+            EnvironmentVariables = string.Empty;
+            ServiceDependencies = string.Empty;
+
+            RunAsLocalSystem = true;
+            UserAccount = string.Empty;
+            Password = string.Empty;
+            ConfirmPassword = string.Empty;
+
+            PreLaunchExecutablePath = string.Empty;
+            PreLaunchStartupDirectory = string.Empty;
+            PreLaunchParameters = string.Empty;
+            PreLaunchEnvironmentVariables = string.Empty;
+            PreLaunchStdoutPath = string.Empty;
+            PreLaunchStderrPath = string.Empty;
+            PreLaunchTimeoutSeconds = DefaultPreLaunchTimeoutSeconds.ToString();
+            PreLaunchRetryAttempts = DefaultPreLaunchRetryAttempts.ToString();
+            PreLaunchIgnoreFailure = false;
+
+            PostLaunchExecutablePath = string.Empty;
+            PostLaunchStartupDirectory = string.Empty;
+            PostLaunchParameters = string.Empty;
+
+            EnableDebugLogs = false;
+
+            StartTimeout = DefaultStartTimeout.ToString();
+            StopTimeout = DefaultStopTimeout.ToString();
+
+            // Pre-Stop
+            PreStopExecutablePath = string.Empty;
+            PreStopStartupDirectory = string.Empty;
+            PreStopParameters = string.Empty;
+            PreStopTimeoutSeconds = DefaultPreStopTimeoutSeconds.ToString();
+            PreStopLogAsError = false;
+
+            // Post-Stop
+            PostStopExecutablePath = string.Empty;
+            PostStopStartupDirectory = string.Empty;
+            PostStopParameters = string.Empty;
         }
 
         #endregion
@@ -1224,70 +1236,7 @@ namespace Servy.ViewModels
                 return;
 
             // Clear all fields
-            ServiceName = string.Empty;
-            ServiceDisplayName = string.Empty;
-            ServiceDescription = string.Empty;
-            ProcessPath = string.Empty;
-            StartupDirectory = string.Empty;
-            ProcessParameters = string.Empty;
-            SelectedStartupType = ServiceStartType.Automatic;
-            SelectedProcessPriority = ProcessPriority.Normal;
-            EnableConsoleUI = false;
-            EnableSizeRotation = false;
-            RotationSize = DefaultRotationSizeMB.ToString();
-            MaxRotations = DefaultMaxRotations.ToString();
-            EnableDateRotation = false;
-            SelectedDateRotationType = DateRotationType.Daily;
-            StdoutPath = string.Empty;
-            StderrPath = string.Empty;
-            EnableHealthMonitoring = false;
-            SelectedRecoveryAction = RecoveryAction.RestartService;
-            UseLocalTimeForRotation = DefaultUseLocalTimeForRotation;
-            HeartbeatInterval = DefaultHeartbeatInterval.ToString();
-            MaxFailedChecks = DefaultMaxFailedChecks.ToString();
-            MaxRestartAttempts = DefaultMaxRestartAttempts.ToString();
-            FailureProgramPath = string.Empty;
-            FailureProgramStartupDirectory = string.Empty;
-            FailureProgramParameters = string.Empty;
-
-            EnvironmentVariables = string.Empty;
-            ServiceDependencies = string.Empty;
-
-            RunAsLocalSystem = true;
-            UserAccount = string.Empty;
-            Password = string.Empty;
-            ConfirmPassword = string.Empty;
-
-            PreLaunchExecutablePath = string.Empty;
-            PreLaunchStartupDirectory = string.Empty;
-            PreLaunchParameters = string.Empty;
-            PreLaunchEnvironmentVariables = string.Empty;
-            PreLaunchStdoutPath = string.Empty;
-            PreLaunchStderrPath = string.Empty;
-            PreLaunchTimeoutSeconds = DefaultPreLaunchTimeoutSeconds.ToString();
-            PreLaunchRetryAttempts = DefaultPreLaunchRetryAttempts.ToString();
-            PreLaunchIgnoreFailure = false;
-
-            PostLaunchExecutablePath = string.Empty;
-            PostLaunchStartupDirectory = string.Empty;
-            PostLaunchParameters = string.Empty;
-
-            EnableDebugLogs = false;
-
-            StartTimeout = DefaultStartTimeout.ToString();
-            StopTimeout = DefaultStopTimeout.ToString();
-
-            // Pre-Stop
-            PreStopExecutablePath = string.Empty;
-            PreStopStartupDirectory = string.Empty;
-            PreStopParameters = string.Empty;
-            PreStopTimeoutSeconds = DefaultPreStopTimeoutSeconds.ToString();
-            PreStopLogAsError = false;
-
-            // Post-Stop
-            PostStopExecutablePath = string.Empty;
-            PostStopStartupDirectory = string.Empty;
-            PostStopParameters = string.Empty;
+            ResetToDefaults();
         }
 
         #endregion
@@ -1537,6 +1486,34 @@ namespace Servy.ViewModels
                 PostStopStartupDirectory = PostStopStartupDirectory,
                 PostStopParameters = PostStopParameters,
             };
+        }
+
+        #endregion
+
+        #region IDisposable implementation
+
+        /// <summary>
+        /// Public dispose method that clients call.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Protected virtual dispose method following the standard pattern.
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+
+            if (disposing)
+            {
+                _appConfig.PropertyChanged -= AppConfig_PropertyChanged;
+            }
+
+            _disposed = true;
         }
 
         #endregion

@@ -2,6 +2,7 @@
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Manager.Config;
+using Servy.Manager.Design;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
@@ -172,8 +173,8 @@ namespace Servy.Manager.ViewModels
             IUiDispatcher uiDispatcher
             ) : base(cursorService, uiDispatcher)
         {
-            _serviceRepository = serviceRepository;
-            ServiceCommands = serviceCommands;
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            ServiceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
@@ -185,12 +186,12 @@ namespace Servy.Manager.ViewModels
         /// Design-Time constructor.
         /// </summary>
         public PerformanceViewModel() : this(
-            null!,
-            null!,
+            new UI.Design.DesignTimeServiceRepository(),
+            new DesignTimeServiceCommands(),
             new DesignTimeAppConfig(),
-            null!,
-            new ProcessHelper(),
-            null!
+            new UI.Design.DesignTimeCursorService(),
+            new UI.Design.DesignTimeProcessHelper(),
+            new UI.Design.DesignTimeUiDispatcher()
             )
             { }
 

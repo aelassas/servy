@@ -5,6 +5,7 @@ using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Config;
+using Servy.Manager.Design;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
@@ -24,7 +25,7 @@ namespace Servy.Manager.ViewModels
     /// ViewModel for the main window of Servy Manager.
     /// Holds the list of services and exposes commands for managing them.
     /// </summary>
-    public class MainViewModel : INotifyPropertyChanged
+    public class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         #region Constants
 
@@ -62,6 +63,7 @@ namespace Servy.Manager.ViewModels
         private readonly IProcessHelper _processHelper;
 
         private IDisposable? _busyCursor; // Manages the busy cursor explicitly for Sequential tasks
+        private bool _disposed;
 
         #endregion
 
@@ -328,8 +330,8 @@ namespace Servy.Manager.ViewModels
             Dispatcher? dispatcher = null
             )
         {
-            _serviceManager = serviceManager;
-            _serviceRepository = serviceRepository;
+            _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _serviceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
             ServiceCommands = _serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
@@ -373,18 +375,18 @@ namespace Servy.Manager.ViewModels
         /// to prevent <see cref="ArgumentNullException"/> when the XAML designer instantiates the VM.
         /// </remarks>
         public MainViewModel() : this(
-            null,                          // IServiceCommands
-            null,                          // IServiceRepository
-            null!,                          // IServiceManager
-            null,                          // IMessageBoxService
-            null,                          // IFileDialogService
+            new UI.Design.DesignTimeServiceManager(),     // IServiceManager
+            new UI.Design.DesignTimeServiceRepository(),  // IServiceRepository
+            new DesignTimeServiceCommands(),              // IServiceCommands
+            new UI.Design.DesignTimeHelpService(),        // HelpService
+            new UI.Design.DesignTimeMessageBoxService(),  // IFileDialogService
             new PerformanceViewModel(),    // Design-time PerformanceVM
             new ConsoleViewModel(),        // Design-time ConsoleVM
             new DependenciesViewModel(),   // Design-time DependenciesVM
             new DesignTimeAppConfig(),     // AppConfig placeholder
-            new CursorService(), // CursorService placeholder
-            new ProcessHelper(), // ProcessHelper placeholder
-            null                           // ICursorService
+            new UI.Design.DesignTimeCursorService(), // CursorService placeholder
+            new UI.Design.DesignTimeProcessHelper(), // ProcessHelper placeholder
+            null                                     // dispatcher
         )
         { }
 
@@ -1224,6 +1226,34 @@ namespace Servy.Manager.ViewModels
         public async Task Refresh()
         {
             await SearchServicesAsync(null);
+        }
+
+        #endregion
+
+        #region IDisposable implementation
+
+        /// <summary>
+        /// Public dispose method that clients call.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Protected virtual dispose method following the standard pattern.
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+
+            if (disposing)
+            {
+                _appConfig.PropertyChanged -= AppConfig_PropertyChanged;
+            }
+
+            _disposed = true;
         }
 
         #endregion

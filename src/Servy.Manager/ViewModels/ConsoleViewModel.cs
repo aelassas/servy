@@ -3,6 +3,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Manager.Config;
+using Servy.Manager.Design;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.Utils;
@@ -207,8 +208,8 @@ namespace Servy.Manager.ViewModels
             IUiDispatcher uiDispatcher
             ) : base(cursorService, uiDispatcher)
         {
-            _serviceRepository = serviceRepository;
-            ServiceCommands = serviceCommands;
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            ServiceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
             ClearSelectionCommand = new RelayCommand<object>(_ => SetSelectionActive(false));
@@ -231,11 +232,11 @@ namespace Servy.Manager.ViewModels
         /// Design-Time constructor.
         /// </summary>
         public ConsoleViewModel() : this(
-            null!,
-            null!,
+            new UI.Design.DesignTimeServiceRepository(),
+            new DesignTimeServiceCommands(),
             new DesignTimeAppConfig(),
-            null!,
-            null!
+            new UI.Design.DesignTimeCursorService(),
+            new UI.Design.DesignTimeUiDispatcher()
             )
         { }
 
