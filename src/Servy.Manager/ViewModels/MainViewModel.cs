@@ -32,16 +32,6 @@ namespace Servy.Manager.ViewModels
     /// </summary>
     public class MainViewModel : INotifyPropertyChanged, IDisposable
     {
-        #region Constants
-
-        /// <summary>
-        /// Maximum number of concurrent SCM operations during bulk start/stop/restart.
-        /// Caps at this value to prevent SCM saturation regardless of core count.
-        /// </summary>
-        private const int MaxBulkOperationParallelism = 8;
-
-        #endregion
-
         #region Private Fields
 
         private readonly Dispatcher _dispatcher;
@@ -808,7 +798,7 @@ namespace Servy.Manager.ViewModels
                 await SetBusyStateAsync(true);
 
                 // 3. Dispatch all operations concurrently: Scale based on hardware
-                int maxDegreeOfParallelism = Math.Min(Environment.ProcessorCount * 2, MaxBulkOperationParallelism);
+                int maxDegreeOfParallelism = Math.Min(Environment.ProcessorCount * 2, _appConfig.MaxBulkOperationParallelism);
 
                 using (var throttler = new SemaphoreSlim(maxDegreeOfParallelism))
                 {
