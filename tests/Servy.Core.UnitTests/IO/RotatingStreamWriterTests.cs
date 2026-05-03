@@ -758,23 +758,32 @@ namespace Servy.Core.UnitTests.IO
         public void Rotate_WhenFileMissingOrEmpty_ReturnsEarly()
         {
             var filePath = Path.Combine(_testDir, "missing_rotate.txt");
-            using (var writer = CreateWriter(filePath, true, 5, false, DateRotationType.Daily, 0))
-            {
-                // 1. File doesn't exist
-                InvokeRotate(writer);
-                Assert.False(File.Exists(filePath));
 
-                // 2. File exists but is empty
-                writer.Write(""); // Lazy init -> 0 bytes
+            // Arrange: Set a small limit (5 bytes).
+            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 5))
+            {
+                // 1. Case: File doesn't exist yet (Lazy Init)
+                // Calling Write("") triggers CheckRotation, but _writer is still null 
+                // until the write physically starts.
+                writer.Write("");
                 writer.Flush();
+
+                // At this point, the file exists but is 0 bytes.
                 Assert.True(File.Exists(filePath));
                 Assert.Equal(0, new FileInfo(filePath).Length);
 
-                InvokeRotate(writer);
+                // 2. Case: File exists but is empty
+                // We call Write("") again. Internally, CheckRotation() is called.
+                // It sees Length (0) < limit (5) and returns early.
+                writer.Write("");
+                writer.Flush();
 
-                // Ensure no rotated file was generated
+                // Assert: Ensure no rotated file was generated
                 var rotatedFiles = Directory.GetFiles(_testDir, "missing_rotate.*.txt");
                 Assert.Empty(rotatedFiles);
+
+                // Assert: The original file should still be 0 bytes
+                Assert.Equal(0, new FileInfo(filePath).Length);
             }
         }
 
@@ -963,16 +972,19 @@ namespace Servy.Core.UnitTests.IO
         public void CheckRotation_EarlyReturn_WhenDisabled()
         {
             var filePath = Path.Combine(_testDir, "gatekeeper.log");
-            // Arrange: Set a high limit so the first write DOES NOT rotate
             using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 1000))
             {
-                writer.Write("initial_data"); // 12 bytes < 1000 (No rotation)
+                writer.Write("initial_data");
                 writer.Flush();
 
                 // 1. Trip breaker manually
                 SetPrivateField(writer, "_rotationDisabled", true);
 
-                // 2. Act: This should trigger a rotation (1000+ bytes), but won't
+                // FIX: Set the cooldown to the future so the self-healing logic 
+                // doesn't immediately reset the breaker to false.
+                SetPrivateField(writer, "_disabledCooldownUntil", DateTime.Now.AddMinutes(10));
+
+                // 2. Act: This would normally rotate, but is now blocked by the breaker
                 writer.Write(new string('X', 1100));
                 writer.Flush();
 
@@ -987,58 +999,65 @@ namespace Servy.Core.UnitTests.IO
         public async Task Rotate_TransientIOException_SucceedsOnRetry()
         {
             var filePath = Path.Combine(_testDir, "transient.log");
-            File.WriteAllText(filePath, "some logs");
+            // Ensure the file has content so the Length > 0 guard doesn't trigger an early return
+            File.WriteAllText(filePath, "initial_data");
 
-            using (var writer = CreateWriter(filePath))
+            // Arrange: Set a small limit (5 bytes) so the next write triggers a rotation attempt.
+            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 5))
             {
                 var startedSignal = new ManualResetEventSlim(false);
-                var rotateTask = Task.CompletedTask;
 
-                // 1. Lock the file
-                // We do not wrap this in a 'using' block because we want precise control 
-                // over when it is disposed, completely independent of the 'await rotateTask' scope.
+                // 1. Lock the file exclusively. 
+                // This will cause the first File.Move attempt inside PerformPhysicalRotation to throw an IOException.
                 var locker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
                 try
                 {
-                    // 2. Start rotation
-                    rotateTask = Task.Run(() =>
+                    // 2. Start rotation via the public API in a background task
+                    var rotateTask = Task.Run(() =>
                     {
-                        startedSignal.Set(); // Signal that we are entering the method
-                        var method = typeof(RotatingStreamWriter).GetMethod("Rotate", BindingFlags.NonPublic | BindingFlags.Instance);
-                        method!.Invoke(writer, null);
+                        startedSignal.Set();
+                        // This call triggers CheckRotation -> PrepareRotation -> PerformPhysicalRotation
+                        writer.Write("trigger_rotation");
+                        writer.Flush();
                     }, TestContext.Current.CancellationToken);
 
-                    // 3. Ensure the task has actually spun up
+                    // 3. Ensure the background task has started and hit the lock
                     startedSignal.Wait(2000, TestContext.Current.CancellationToken);
 
-                    // CRITICAL CI FIX: 
-                    // We must hold the lock long enough to trigger Attempt 0's catch block, 
-                    // but release it BEFORE the internal SpinWait (50ms) finishes Attempt 1.
-                    // Using Thread.Sleep avoids async scheduling starvation (Task.Delay), 
-                    // which easily stretches to 150ms+ on CPU-starved GitHub Action runners.
-                    Thread.Sleep(15);
+                    // Give the background thread enough time to hit Attempt 0 and enter its 50ms Thread.Sleep
+                    Thread.Sleep(20);
+
+                    // 4. Release the lock NOW. 
+                    // The next retry (Attempt 1) inside PerformPhysicalRotation will now find the file accessible.
+                    locker.Dispose();
+
+                    // Wait for the rotation task to complete its retries and succeed
+                    await rotateTask;
                 }
                 finally
                 {
-                    // 4. Release the lock IMMEDIATELY so the next retry succeeds
+                    // Safety cleanup if the try block failed
                     locker.Dispose();
                 }
-
-                // Wait for the rotation to finish its internal retries
-                await rotateTask;
 
                 // 5. Assert
                 bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled")!;
                 DateTime cooldown = (DateTime)GetPrivateField(writer, "_rotationCooldownUntil")!;
 
+                // The circuit breaker should remain closed because IOException is treated as transient.
                 Assert.False(isDisabled, "Breaker should not trip on IOException.");
 
-                // If this fails, the lock was held longer than the total retry budget.
-                Assert.True(cooldown == DateTime.MinValue,
-                    $"Cooldown should be MinValue but was {cooldown:O}. This means the rotation failed all retries.");
+                // Successful rotation clears the cooldown. 
+                // If this is not MinValue, it means all retries were exhausted while the lock was still held.
+                Assert.Equal(DateTime.MinValue, cooldown);
 
-                Assert.False(File.Exists(filePath), "File should have been moved successfully.");
+                // Verify the original file was successfully moved/rotated
+                Assert.False(File.Exists(filePath), "The base log file should have been moved successfully after the lock was released.");
+
+                // Verify the rotated file exists (using the timestamp-before-extension logic)
+                var rotatedFiles = Directory.GetFiles(_testDir, "transient.*.log");
+                Assert.NotEmpty(rotatedFiles);
             }
         }
 
@@ -1046,29 +1065,31 @@ namespace Servy.Core.UnitTests.IO
         public void Rotate_PersistentIOException_ReachedLimit_SetsCooldown()
         {
             var filePath = Path.Combine(_testDir, "persistent.log");
-            File.WriteAllText(filePath, "more logs");
+            // Ensure the file has content so it isn't skipped by the "Length == 0" guard
+            File.WriteAllText(filePath, "initial content");
 
-            using (var writer = CreateWriter(filePath))
+            // Arrange: Set a small limit (5 bytes) to ensure the next write triggers rotation
+            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 5))
             {
-                // 1. Lock the file and KEEP it locked
+                // 1. Lock the file and KEEP it locked to force an IOException during the Move operation
                 using (var locker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    // 2. Act
-                    var rotateMethod = typeof(RotatingStreamWriter).GetMethod("Rotate", BindingFlags.NonPublic | BindingFlags.Instance);
-                    rotateMethod!.Invoke(writer, null);
+                    // 2. Act: This write triggers the flow: CheckRotation -> PrepareRotation -> PerformPhysicalRotation
+                    writer.Write("trigger_rotation");
+                    writer.Flush();
                 }
 
                 // 3. Assert
                 bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled")!;
                 DateTime cooldown = (DateTime)GetPrivateField(writer, "_rotationCooldownUntil")!;
 
-                // Check that rotation failed but the breaker DID NOT trip
+                // IOException is treated as a transient contention issue, so the breaker should remain CLOSED
                 Assert.False(isDisabled, "IOException should NOT trip the circuit breaker.");
 
-                // Check that the limit was reached and cooldown was applied
+                // Check that the cooldown was applied (PrepareRotation sets this to 1000ms by default)
                 Assert.True(cooldown > DateTime.UtcNow, "Rotation should be on cooldown after exhausting retries.");
 
-                // Verify the original file still exists (rotation failed)
+                // Verify the original file still exists because the external lock blocked the File.Move
                 Assert.True(File.Exists(filePath), "The original log file should still exist because rotation was deferred.");
             }
         }
@@ -1083,7 +1104,8 @@ namespace Servy.Core.UnitTests.IO
             // 1. Initialize DirectoryInfo to access ACL extension methods
             var dirInfo = new DirectoryInfo(subDir);
 
-            using (var writer = CreateWriter(filePath))
+            // Arrange: Use a small rotation size (10 bytes) so the next write triggers rotation.
+            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 10))
             {
                 writer.Write("init");
                 writer.Flush();
@@ -1098,18 +1120,20 @@ namespace Servy.Core.UnitTests.IO
 
                 acl.AddAccessRule(rule);
 
-                // 3. Apply the rule back to the DirectoryInfo instance
-                dirInfo.SetAccessControl(acl);
-
                 try
                 {
-                    var rotateMethod = typeof(RotatingStreamWriter).GetMethod("Rotate", BindingFlags.NonPublic | BindingFlags.Instance);
-                    rotateMethod!.Invoke(writer, null);
+                    // 3. Apply the rule back to the DirectoryInfo instance
+                    // This causes PerformPhysicalRotation -> File.Move to fail with UnauthorizedAccessException.
+                    dirInfo.SetAccessControl(acl);
+
+                    // 4. Act: This write pushes the file over the 10-byte limit.
+                    // This invokes the internal flow: CheckRotation -> PerformPhysicalRotation.
+                    writer.Write("trigger_rotation_failure");
+                    writer.Flush();
                 }
                 finally
                 {
-                    // 4. CLEANUP: Re-fetch and remove the rule via the instance
-                    // We re-fetch to ensure we have the most current state for removal
+                    // 5. CLEANUP: Re-fetch and remove the rule via the instance
                     var cleanupAcl = dirInfo.GetAccessControl();
                     cleanupAcl.RemoveAccessRule(rule);
                     dirInfo.SetAccessControl(cleanupAcl);
@@ -1120,8 +1144,132 @@ namespace Servy.Core.UnitTests.IO
                     }
                 }
 
+                // 6. Assert: Verify the circuit breaker tripped due to the Exception.
                 bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled")!;
-                Assert.True(isDisabled, "Circuit breaker should trip on permanent UnauthorizedAccessException.");
+                Assert.True(isDisabled, "Circuit breaker should trip on permanent failure (UnauthorizedAccessException).");
+            }
+        }
+
+        #endregion
+
+        #region New Logic Coverage (Self-Healing, Weekly Boundary, Hard Failures)
+
+        [Fact]
+        public void CheckRotation_CircuitBreaker_HealsAfterCooldownExpires()
+        {
+            var filePath = Path.Combine(_testDir, "healing.log");
+            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 10))
+            {
+                writer.Write("initial");
+                writer.Flush();
+
+                // 1. Manually trip the breaker and set the cooldown to the PAST
+                SetPrivateField(writer, "_rotationDisabled", true);
+                SetPrivateField(writer, "_disabledCooldownUntil", DateTime.UtcNow.AddMinutes(-1));
+
+                // 2. Act: This write should trigger the healing logic, reset the breaker, and rotate
+                writer.Write("this_forces_rotation");
+                writer.Flush();
+
+                // 3. Assert
+                bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled")!;
+                Assert.False(isDisabled, "Breaker should reset automatically after the cooldown expires.");
+
+                var rotated = Directory.GetFiles(_testDir, "healing.*.log").Where(f => !f.EndsWith("healing.log"));
+                Assert.NotEmpty(rotated); // Proves the rotation actually resumed
+            }
+        }
+
+        [Fact]
+        public void CheckRotation_WhenDisabledAndFileIsHuge_LogsWarningAndReturnsEarly()
+        {
+            var filePath = Path.Combine(_testDir, "huge.log");
+
+            // Arrange: Set limit to 10 bytes
+            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 10))
+            {
+                // 1. Trip the breaker FIRST with a FUTURE cooldown.
+                // This ensures the upcoming writes bypass the rotation logic entirely.
+                SetPrivateField(writer, "_rotationDisabled", true);
+                SetPrivateField(writer, "_disabledCooldownUntil", DateTime.UtcNow.AddMinutes(10));
+
+                // 2. Write 30 bytes (3x the limit). 
+                // Because the breaker is tripped, the writer will append the data but skip rotation.
+                writer.Write(new string('X', 30));
+                writer.Flush();
+
+                // 3. Act: This subsequent write hits the "file size > 2x limit while disabled" warning branch.
+                var exception = Record.Exception(() => writer.Write("more"));
+
+                // 4. Assert
+                Assert.Null(exception); // Handled gracefully without throwing
+
+                // Verify the file was allowed to grow without generating any rotated files
+                var rotated = Directory.GetFiles(_testDir, "huge.*.log").Where(f => !f.EndsWith("huge.log"));
+                Assert.Empty(rotated);
+
+                // Optional: Verify the base file is indeed huge
+                Assert.True(new FileInfo(filePath).Length >= 30, "The base log file should have grown past its limit.");
+            }
+        }
+
+        [Fact]
+        public void DateRotation_Weekly_Rotates_WhenSameCalendarYearButOver7Days()
+        {
+            // This specifically covers Bug #1116 (ISO Calendar Year Mismatch)
+            var filePath = Path.Combine(_testDir, "weekly_iso_bug.log");
+
+            // Wed, Jan 1, 2025 (ISO Week 1 of 2025)
+            var lastRotationDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            // Mon, Dec 29, 2025 (ISO Week 1 of 2026, but still Calendar Year 2025)
+            var nowUtc = new DateTime(2025, 12, 29, 0, 0, 0, DateTimeKind.Utc);
+
+            using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0))
+            {
+                SetPrivateField(writer, "_lastRotationDate", lastRotationDate);
+
+                // Act
+                var args = new object[] { nowUtc };
+                var shouldRotate = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate", args);
+
+                // Assert: The 7-day fallback should catch this and allow rotation
+                Assert.True(shouldRotate, "Should rotate because > 7 days have passed, despite both dates reporting as ISO Week 1 of Calendar Year 2025.");
+            }
+        }
+
+        [Fact]
+        public void PerformPhysicalRotation_NonIOException_TripsCircuitBreaker()
+        {
+            var filePath = Path.Combine(_testDir, "non_io.log");
+            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 10))
+            {
+                writer.Write("init");
+                writer.Flush();
+
+                var method = typeof(RotatingStreamWriter).GetMethod("PerformPhysicalRotation", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                // Create a dummy file in the current working directory to guarantee File.Exists() evaluates to true
+                // inside GenerateUniqueFileName, which then attempts Path.GetDirectoryName("just_a_name.log") == string.Empty.
+                var badRotatedPath = "just_a_name.log";
+                File.WriteAllText(badRotatedPath, "dummy");
+
+                try
+                {
+                    // Act: This will throw an ArgumentException ("Cannot determine directory from path...")
+                    // which is caught by the broad `catch (Exception)` block in PerformPhysicalRotation.
+                    method!.Invoke(writer, new object[] { filePath, badRotatedPath });
+                }
+                finally
+                {
+                    if (File.Exists(badRotatedPath)) File.Delete(badRotatedPath);
+                }
+
+                // Assert
+                bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled")!;
+                DateTime cooldown = (DateTime)GetPrivateField(writer, "_disabledCooldownUntil")!;
+
+                Assert.True(isDisabled, "A non-IOException should successfully trip the circuit breaker.");
+                Assert.True(cooldown > DateTime.UtcNow, "Circuit breaker cooldown should be set to the future.");
             }
         }
 
