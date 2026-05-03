@@ -9,9 +9,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-#if !DEBUG
-using Servy.Core.Config;
-#endif
 
 namespace Servy.Core.Helpers
 {
