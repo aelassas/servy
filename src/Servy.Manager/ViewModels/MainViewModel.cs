@@ -165,12 +165,12 @@ namespace Servy.Manager.ViewModels
             }
         }
 
-        private IServiceCommands? _serviceCommands;
+        private IServiceCommands _serviceCommands;
 
         /// <summary>
         /// The set of service commands available for each service row.
         /// </summary>
-        public IServiceCommands? ServiceCommands
+        public IServiceCommands ServiceCommands
         {
             get => _serviceCommands;
             set
@@ -316,7 +316,7 @@ namespace Servy.Manager.ViewModels
         public MainViewModel(
             IServiceManager? serviceManager,
             IServiceRepository? serviceRepository,
-            IServiceCommands? serviceCommands,
+            IServiceCommands serviceCommands,
             IHelpService? helpService,
             IMessageBoxService? messageBoxService,
             PerformanceViewModel? performanceVM,
@@ -330,7 +330,8 @@ namespace Servy.Manager.ViewModels
         {
             _serviceManager = serviceManager;
             _serviceRepository = serviceRepository;
-            ServiceCommands = serviceCommands;
+            _serviceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
+            ServiceCommands = _serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
             _helpService = helpService;
@@ -365,22 +366,26 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Parameterless constructor for XAML designer support.
+        /// Initializes a new instance of the <see cref="MainViewModel"/> class for design-time support.
         /// </summary>
-        public MainViewModel() :
-                    this(
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null
-                        )
+        /// <remarks>
+        /// This constructor provides lightweight, no-op implementations of mandatory dependencies
+        /// to prevent <see cref="ArgumentNullException"/> when the XAML designer instantiates the VM.
+        /// </remarks>
+        public MainViewModel() : this(
+            null,                          // IServiceCommands
+            null,                          // IServiceRepository
+            null!,                          // IServiceManager
+            null,                          // IMessageBoxService
+            null,                          // IFileDialogService
+            new PerformanceViewModel(),    // Design-time PerformanceVM
+            new ConsoleViewModel(),        // Design-time ConsoleVM
+            new DependenciesViewModel(),   // Design-time DependenciesVM
+            new DesignTimeAppConfig(),     // AppConfig placeholder
+            new CursorService(), // CursorService placeholder
+            new ProcessHelper(), // ProcessHelper placeholder
+            null                           // ICursorService
+        )
         { }
 
         #endregion
@@ -580,7 +585,7 @@ namespace Servy.Manager.ViewModels
                 stopwatch.Stop();
                 SetFooterText(stopwatch);
 
-                // Setp 5: refresh all service statuses and details in the background
+                // Step 5: refresh all service statuses and details in the background
                 _ = Task.Run(async () =>
                 {
                     try

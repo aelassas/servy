@@ -9,6 +9,7 @@ using Servy.UI.Constants;
 using Servy.UI.Services;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace Servy.Manager.ViewModels
 {
@@ -163,7 +164,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="processHelper">The process helper used to format process commands.</param>
         /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
         public PerformanceViewModel(
-            IServiceRepository? serviceRepository,
+            IServiceRepository serviceRepository,
             IServiceCommands serviceCommands,
             IAppConfiguration appConfig,
             ICursorService cursorService,
@@ -171,7 +172,7 @@ namespace Servy.Manager.ViewModels
             IUiDispatcher uiDispatcher
             ) : base(cursorService, uiDispatcher)
         {
-            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
@@ -179,6 +180,19 @@ namespace Servy.Manager.ViewModels
 
             InitTimer();
         }
+
+        /// <summary>
+        /// Design-Time constructor.
+        /// </summary>
+        public PerformanceViewModel() : this(
+            null!,
+            null!,
+            new DesignTimeAppConfig(),
+            null!,
+            new ProcessHelper(),
+            null!
+            )
+            { }
 
         #endregion
 

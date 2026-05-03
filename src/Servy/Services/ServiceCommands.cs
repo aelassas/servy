@@ -215,7 +215,7 @@ namespace Servy.Services
                     EnableDebugLogs = config.EnableDebugLogs
                 };
 
-                var res = await _serviceManager.InstallServiceAsync(options);
+                var res = await _serviceManager.InstallServiceAsync(options, cancellationToken);
 
                 if (res.IsSuccess)
                 {
@@ -333,22 +333,24 @@ namespace Servy.Services
                 Strings.ExportJson_Success);
 
         ///<inheritdoc/>
-        public Task ImportXmlConfig() =>
+        public Task ImportXmlConfig(CancellationToken cancellationToken) =>
             ImportConfigAsync(
                 _dialogService.OpenXml,
                 (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
                 (content) => new XmlServiceSerializer().Deserialize(content),
                 "XML",
-                Strings.Msg_FailedToLoadXml);
+                Strings.Msg_FailedToLoadXml,
+                cancellationToken);
 
         ///<inheritdoc/>
-        public Task ImportJsonConfig() =>
+        public Task ImportJsonConfig(CancellationToken cancellationToken) =>
             ImportConfigAsync(
                 _dialogService.OpenJson,
                 (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
                 (content) => new JsonServiceSerializer().Deserialize(content),
                 "JSON",
-                Strings.Msg_FailedToLoadJson);
+                Strings.Msg_FailedToLoadJson,
+                cancellationToken);
 
         ///<inheritdoc/>
         public async Task OpenManager()
@@ -522,6 +524,7 @@ namespace Servy.Services
         /// <param name="deserialize">A delegate that converts the raw file content into a <see cref="ServiceDto"/>.</param>
         /// <param name="formatName">A display-friendly name of the format (e.g., "XML", "JSON") used for logging.</param>
         /// <param name="loadErrorMessage">The localized message to display if the file content cannot be mapped to the DTO.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task representing the asynchronous import operation.</returns>
         /// <remarks>
         /// The import process follows a multi-stage security gate:
@@ -535,7 +538,8 @@ namespace Servy.Services
             Func<string, (bool IsValid, string? ErrorMsg)> validateContent,
             Func<string, ServiceDto?> deserialize,
             string formatName,
-            string loadErrorMessage)
+            string loadErrorMessage,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -545,7 +549,7 @@ namespace Servy.Services
                 if (!await ImportGuard.ValidateFileSizeAsync(path, _messageBoxService, Caption, AppConfig.MaxConfigFileSizeMB, Strings.Msg_ConfigSizeLimitReached))
                     return;
 
-                var content = await File.ReadAllTextAsync(path);
+                var content = await File.ReadAllTextAsync(path, cancellationToken);
                 var validation = validateContent(content);
                 if (!validation.IsValid)
                 {

@@ -128,14 +128,14 @@ namespace Servy.Manager.ViewModels
         /// <param name="cursorService">Service used to control the cursor state.</param>
         /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
         public DependenciesViewModel(
-            IServiceRepository? serviceRepository,
+            IServiceRepository serviceRepository,
             IServiceManager serviceManager,
             IServiceCommands serviceCommands,
             IAppConfiguration appConfig,
             ICursorService cursorService,
             IUiDispatcher uiDispatcher) : base(cursorService, uiDispatcher)
         {
-            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _serviceRepository = serviceRepository;
             _serviceManager = serviceManager;
             ServiceCommands = serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
@@ -147,6 +147,19 @@ namespace Servy.Manager.ViewModels
 
             InitTimer();
         }
+
+        /// <summary>
+        /// Design-Time constructor.
+        /// </summary>
+        public DependenciesViewModel() : this(
+            null!,
+            null!,
+            null!,
+            new DesignTimeAppConfig(),
+            null!,
+            null!
+            )
+        { }
 
         #endregion
 

@@ -459,7 +459,7 @@ namespace Servy.UnitTests.Services
 
             File.WriteAllText(path, xmlContent);
 
-            var task = sut.ImportXmlConfig() as Task;
+            var task = sut.ImportXmlConfig(TestContext.Current.CancellationToken) as Task;
             if (task != null) await task;
 
             try
@@ -497,7 +497,7 @@ namespace Servy.UnitTests.Services
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny))
                 .Returns(true);
 
-            var task = sut.ImportJsonConfig() as Task;
+            var task = sut.ImportJsonConfig(TestContext.Current.CancellationToken) as Task;
             if (task != null) await task;
 
             if (File.Exists(path)) File.Delete(path);
@@ -511,7 +511,7 @@ namespace Servy.UnitTests.Services
             var sut = CreateSut();
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(string.Empty);
 
-            sut.ImportXmlConfig();
+            sut.ImportXmlConfig(TestContext.Current.CancellationToken);
 
             _messageBoxService.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }

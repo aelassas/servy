@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Data;
 using Servy.Core.DTOs;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Manager.Config;
 using Servy.Manager.Models;
@@ -199,14 +200,14 @@ namespace Servy.Manager.ViewModels
         /// <param name="cursorService">Service used to control the cursor state.</param>
         /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
         public ConsoleViewModel(
-            IServiceRepository? serviceRepository,
+            IServiceRepository serviceRepository,
             IServiceCommands serviceCommands,
             IAppConfiguration appConfig,
             ICursorService cursorService,
             IUiDispatcher uiDispatcher
             ) : base(cursorService, uiDispatcher)
         {
-            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
@@ -225,6 +226,18 @@ namespace Servy.Manager.ViewModels
                 return line?.Text.IndexOf(ConsoleSearchText, StringComparison.OrdinalIgnoreCase) >= 0;
             };
         }
+
+        /// <summary>
+        /// Design-Time constructor.
+        /// </summary>
+        public ConsoleViewModel() : this(
+            null!,
+            null!,
+            new DesignTimeAppConfig(),
+            null!,
+            null!
+            )
+        { }
 
         #endregion
 
