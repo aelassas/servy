@@ -251,7 +251,8 @@ namespace Servy.Core.Helpers
                 totalRam += metrics.RamUsage;
             }
 
-            // We allow the sum to exceed 100% to accurately reflect multi-core utilization.
+            // CPU is normalized 0-100% of whole-machine capacity. The sum across a tree
+            // is bounded by 100% because they share the same physical cores.
             return new ProcessMetrics(totalCpu, totalRam);
         }
 

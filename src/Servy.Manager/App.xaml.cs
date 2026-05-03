@@ -177,6 +177,12 @@ namespace Servy.Manager
         /// </summary>
         public int SearchDebounceDelayMs { get; private set; }
 
+        /// <summary>
+        /// Maximum number of concurrent SCM operations during bulk start/stop/restart.
+        /// Caps at this value to prevent SCM saturation regardless of core count.
+        /// </summary>
+        public int MaxBulkOperationParallelism { get; private set; }
+
         #endregion
 
         #region Constructors
@@ -315,6 +321,8 @@ namespace Servy.Manager
                     LogsWindowDays = int.TryParse(config["LogsWindowDays"], out var lwd) ? lwd : AppConfig.DefaultLogsWindowDays;
 
                     SearchDebounceDelayMs = int.TryParse(config["SearchDebounceDelayMs"], out var sdd) ? sdd : AppConfig.DefaultSearchDebounceDelayMs;
+
+                    MaxBulkOperationParallelism = int.TryParse(config["MaxBulkOperationParallelism"], out var mbp) ? mbp : AppConfig.DefaultMaxBulkOperationParallelism;
 
                     StartAvailabilityMonitor();
                 }

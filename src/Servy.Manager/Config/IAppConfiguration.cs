@@ -57,5 +57,11 @@ namespace Servy.Manager.Config
         /// Delay in milliseconds to debounce search keystrokes before filtering in console tab.
         /// </summary>
         int SearchDebounceDelayMs { get; }
+
+        /// <summary>
+        /// Maximum number of concurrent SCM operations during bulk start/stop/restart.
+        /// Caps at this value to prevent SCM saturation regardless of core count.
+        /// </summary>
+        int MaxBulkOperationParallelism { get; }
     }
 }

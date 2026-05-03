@@ -165,7 +165,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="processHelper">The process helper used to format process commands.</param>
         /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
         public PerformanceViewModel(
-            IServiceRepository serviceRepository,
+            IServiceRepository? serviceRepository,
             IServiceCommands serviceCommands,
             IAppConfiguration appConfig,
             ICursorService cursorService,

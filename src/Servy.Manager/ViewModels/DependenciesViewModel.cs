@@ -129,7 +129,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="cursorService">Service used to control the cursor state.</param>
         /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
         public DependenciesViewModel(
-            IServiceRepository serviceRepository,
+            IServiceRepository? serviceRepository,
             IServiceManager serviceManager,
             IServiceCommands serviceCommands,
             IAppConfiguration appConfig,
