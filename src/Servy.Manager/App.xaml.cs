@@ -107,35 +107,22 @@ namespace Servy.Manager
         /// </summary>
         public string AESIVFilePath => _bootstrapper.AESIVFilePath;
 
-        /// <summary>
-        /// Service status refresh interval in seconds.
-        /// </summary>
+        /// <inheritdoc/>
         public int RefreshIntervalInSeconds { get; private set; }
 
-        /// <summary>
-        /// Performance refresh interval in seconds.
-        /// </summary>
+        /// <inheritdoc/>
         public int PerformanceRefreshIntervalInMs { get; private set; }
 
-        /// <summary>
-        /// Console refresh interval in seconds.
-        /// </summary>
+        /// <inheritdoc/>
         public int ConsoleRefreshIntervalInMs { get; private set; }
 
-        /// <summary>
-        /// Gets the maximum number of lines that can be displayed in the console output.
-        /// </summary>
+        /// <inheritdoc/>
         public int ConsoleMaxLines { get; private set; }
 
-        /// <summary>
-        /// Servy Desktop App publish path.
-        /// </summary>
+        /// <inheritdoc/>
         public string DesktopAppPublishPath { get; private set; }
 
-        /// <summary>
-        /// Indicates whether the configuration application is available.
-        /// Dynamically updates if the application is installed or removed during runtime.
-        /// </summary>
+        /// <inheritdoc/>
         public bool IsDesktopAppAvailable
         {
             get => _isDesktopAppAvailable;
@@ -149,41 +136,22 @@ namespace Servy.Manager
             }
         }
 
-        /// <summary>
-        /// Dependencies tab refresh interval in seconds.
-        /// </summary>
+        /// <inheritdoc/>
         public int DependenciesRefreshIntervalInMs { get; private set; }
 
-        /// <summary>
-        /// Gets a value indicating whether software rendering has been forced for the current session.
-        /// </summary>
-        /// <remarks>
-        /// This property is typically set during application startup if the system detects 
-        /// a remote session, low-tier graphics hardware, or if the <see cref="AppConfig.ForceSoftwareRenderingArg"/> 
-        /// command-line argument is present.
-        /// </remarks>
+        /// <inheritdoc/>
         public bool ForceSoftwareRendering => _bootstrapper.ForceSoftwareRendering;
 
-        /// <summary>
-        /// Log level for the application, loaded from configuration. This determines the verbosity of logs.
-        /// </summary>
+        /// <inheritdoc/>
         public LogLevel LogLevel { get; private set; }
 
-        /// <summary>
-        /// Gets the window period in days for the logs tab search, loaded from configuration. 
-        /// This determines the default date range applied when retrieving service log entries.
-        /// </summary>
+        /// <inheritdoc/>
         public int LogsWindowDays { get; private set; }
 
-        /// <summary>
-        /// Delay in milliseconds to debounce search keystrokes before filtering in console tab.
-        /// </summary>
+        /// <inheritdoc/>
         public int SearchDebounceDelayMs { get; private set; }
 
-        /// <summary>
-        /// Maximum number of concurrent SCM operations during bulk start/stop/restart.
-        /// Caps at this value to prevent SCM saturation regardless of core count.
-        /// </summary>
+        /// <inheritdoc/>
         public int MaxBulkOperationParallelism { get; private set; }
 
         #endregion
