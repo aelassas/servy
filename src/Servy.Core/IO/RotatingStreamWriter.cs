@@ -154,39 +154,23 @@ namespace Servy.Core.IO
         /// <param name="line">The line of text to write.</param>
         public void WriteLine(string line)
         {
-            string? pathToRotate = null;
-            string? targetRotatedPath = null;
-
-            lock (_lock)
-            {
-                if (_disposed) return;
-
-                // 1. Lazy Initialize if null (either first run or just rotated)
-                if (_writer == null)
-                {
-                    InitializeWriter();
-                }
-
-                _writer!.WriteLine(line);
-                // AutoFlush is true in InitializeWriter, but explicit flush ensures 
-                // the FileInfo.Length is accurate for the next CheckRotation call.
-                _writer!.Flush();
-
-                // 2. Check if we need to rotate
-                (pathToRotate, targetRotatedPath) = CheckRotation();
-            }
-
-            // Perform the physical file move and retry logic completely outside the lock
-            if (pathToRotate != null && targetRotatedPath != null)
-            {
-                PerformPhysicalRotation(pathToRotate, targetRotatedPath);
-            }
+            WriteInternal(w => w.WriteLine(line));
         }
 
         /// <summary>
         /// Writes text to the log file without adding a newline, checking for rotation.
         /// </summary>
+        /// <param name="text">The text to write.</param>
         public void Write(string text)
+        {
+            WriteInternal(w => w.Write(text));
+        }
+
+        /// <summary>
+        /// Shared internal logic for writing to the underlying stream and triggering rotation checks.
+        /// </summary>
+        /// <param name="writeAction">The specific write operation to perform on the <see cref="StreamWriter"/>.</param>
+        private void WriteInternal(Action<StreamWriter> writeAction)
         {
             string? pathToRotate = null;
             string? targetRotatedPath = null;
@@ -201,7 +185,9 @@ namespace Servy.Core.IO
                     InitializeWriter();
                 }
 
-                _writer!.Write(text);
+                // Execute the provided write action (Write or WriteLine)
+                writeAction(_writer!);
+
                 // AutoFlush is true in InitializeWriter, but explicit flush ensures 
                 // the FileInfo.Length is accurate for the next CheckRotation call.
                 _writer!.Flush();
@@ -211,6 +197,7 @@ namespace Servy.Core.IO
             }
 
             // Perform the physical file move and retry logic completely outside the lock
+            // to prevent blocking other threads during I/O-intensive rotation operations.
             if (pathToRotate != null && targetRotatedPath != null)
             {
                 PerformPhysicalRotation(pathToRotate, targetRotatedPath);
