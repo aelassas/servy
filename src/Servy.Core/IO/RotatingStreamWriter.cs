@@ -43,9 +43,15 @@ namespace Servy.Core.IO
         /// </summary>
         private bool _rotationDisabled;
 
+        /// <summary>
+        /// The timestamp when the circuit breaker will auto-reset to a half-open state.
+        /// </summary>
+        private DateTime _disabledCooldownUntil = DateTime.MinValue;
+
         // --- Cooldown and fast-fail constraints ---
         private DateTime _rotationCooldownUntil = DateTime.MinValue;
         private const int RotationCooldownMs = 1000;
+        private const int CriticalFailureCooldownMs = 600000; // 10 minutes before re-attempting a hard-failed rotation
         private const int MaxSyncRotationRetries = 3;
         private const int SyncRotationRetryDelayMs = 50;
 
@@ -146,6 +152,9 @@ namespace Servy.Core.IO
         /// <param name="line">The line of text to write.</param>
         public void WriteLine(string line)
         {
+            string pathToRotate = null;
+            string targetRotatedPath = null;
+
             lock (_lock)
             {
                 if (_disposed) return;
@@ -162,7 +171,13 @@ namespace Servy.Core.IO
                 _writer.Flush();
 
                 // 2. Check if we need to rotate
-                CheckRotation();
+                (pathToRotate, targetRotatedPath) = CheckRotation();
+            }
+
+            // Perform the physical file move and retry logic completely outside the lock
+            if (pathToRotate != null && targetRotatedPath != null)
+            {
+                PerformPhysicalRotation(pathToRotate, targetRotatedPath);
             }
         }
 
@@ -171,6 +186,9 @@ namespace Servy.Core.IO
         /// </summary>
         public void Write(string text)
         {
+            string pathToRotate = null;
+            string targetRotatedPath = null;
+
             lock (_lock)
             {
                 if (_disposed) return;
@@ -187,7 +205,13 @@ namespace Servy.Core.IO
                 _writer.Flush();
 
                 // 2. Check if we need to rotate
-                CheckRotation();
+                (pathToRotate, targetRotatedPath) = CheckRotation();
+            }
+
+            // Perform the physical file move and retry logic completely outside the lock
+            if (pathToRotate != null && targetRotatedPath != null)
+            {
+                PerformPhysicalRotation(pathToRotate, targetRotatedPath);
             }
         }
 
@@ -216,7 +240,10 @@ namespace Servy.Core.IO
                         _lastRotationDate, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
                     var thisWeek = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
                         now, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
-                    return thisWeek != lastWeek || now.Year != _lastRotationDate.Year;
+
+                    // ROBUSTNESS: Ensure year-over-year transitions where both dates fall in ISO week 1 
+                    // do not bypass rotation when a full calendar year has actually passed.
+                    return (now.Date - _lastRotationDate.Date).TotalDays >= 7 || thisWeek != lastWeek;
 
                 case DateRotationType.Monthly:
                     return now.Month != _lastRotationDate.Month || now.Year != _lastRotationDate.Year;
@@ -229,19 +256,40 @@ namespace Servy.Core.IO
         /// <summary>
         /// Determines whether the current log file should be rotated,
         /// based on enabled rotation modes (size and/or date).
+        /// If rotation is required, detaches the writer and returns the target paths.
         /// </summary>
-        private void CheckRotation()
+        private (string oldPath, string newPath) CheckRotation()
         {
-            // If writer is null, the file hasn't been created yet.
-            // If rotation is disabled (Circuit Breaker tripped), do nothing to save CPU.
-            if (_rotationDisabled || _writer == null) return;
+            var now = _timeProvider();
 
-            // If we recently failed a rotation due to a lock, bypass rotation checks 
-            // until the cooldown expires to prevent pipe stalling.
-            if (_timeProvider() < _rotationCooldownUntil) return;
+            // Self-Healing Circuit Breaker: Try to clear a disabled state after a cool-off period.
+            if (_rotationDisabled)
+            {
+                if (now > _disabledCooldownUntil)
+                {
+                    Logger.Info($"Log rotation circuit breaker resetting for '{_file.Name}'. Attempting rotation again.");
+                    _rotationDisabled = false;
+                }
+                else
+                {
+                    // Optionally log a warning if file size gets egregiously large while disabled
+                    _file.Refresh();
+                    if (_enableSizeRotation && _file.Exists && _file.Length > _rotationSizeInBytes * 2)
+                    {
+                        Logger.Warn($"Log rotation is currently disabled due to previous errors. File '{_file.Name}' has exceeded twice its max size ({_file.Length} bytes).");
+                    }
+                    return (null, null);
+                }
+            }
+
+            if (_writer == null) return (null, null);
+
+            // If we recently failed a rotation due to an IO lock, bypass rotation checks 
+            // until the short IO cooldown expires to prevent pipe stalling.
+            if (now < _rotationCooldownUntil) return (null, null);
 
             _file.Refresh();
-            if (!_file.Exists) return;
+            if (!_file.Exists) return (null, null);
 
             long currentLength = _file.Length;
 
@@ -254,25 +302,47 @@ namespace Servy.Core.IO
                 rotateBySize = true;
             }
 
-            // If size rotation matches, rotate immediately and return
             if (rotateBySize)
             {
-                Rotate();
-                _lastRotationDate = _timeProvider(); // Uses the seam
-                return;
+                return PrepareRotation(now);
             }
 
             // --- DATE ROTATION ---
             if (_enableDateRotation)
             {
-                rotateByDate = ShouldRotateByDate(_timeProvider()); // Uses the seam
+                rotateByDate = ShouldRotateByDate(now);
             }
 
             if (rotateByDate)
             {
-                Rotate();
-                _lastRotationDate = _timeProvider(); // Uses the seam
+                return PrepareRotation(now);
             }
+
+            return (null, null);
+        }
+
+        /// <summary>
+        /// Atomically detaches the writer from the current log file and constructs the rotation paths.
+        /// </summary>
+        private (string oldPath, string newPath) PrepareRotation(DateTime now)
+        {
+            CloseWriter();
+
+            var timestamp = now.ToString("yyyyMMdd_HHmmss");
+
+            var directory = Path.GetDirectoryName(_file.FullName) ?? AppFoldersHelper.GetAppDirectory();
+            var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
+            var extension = Path.GetExtension(_file.FullName);
+
+            var newFileName = $"{fileNameWithoutExt}.{timestamp}{extension}";
+            var rotatedPath = Path.Combine(directory, newFileName);
+
+            // Set the short IO cooldown immediately inside the lock so subsequent concurrent writes 
+            // don't try to rotate the detached file while the physical move is pending.
+            _rotationCooldownUntil = now.AddMilliseconds(RotationCooldownMs);
+            _lastRotationDate = now;
+
+            return (_file.FullName, rotatedPath);
         }
 
         /// <summary>
@@ -423,29 +493,21 @@ namespace Servy.Core.IO
         }
 
         /// <summary>
-        /// Rotates the current log file by inserting a timestamp before the file extension.
-        /// Includes a fast-fail retry mechanism and cooldown to prevent child process stalling.
+        /// Executes the physical file rename operation outside the public write lock.
+        /// Includes a fast-fail retry mechanism to gracefully handle external file contention.
         /// </summary>
-        private void Rotate()
+        private void PerformPhysicalRotation(string oldPath, string rotatedPath)
         {
-            // GUARD: Don't even touch the disk if the circuit is open or cooling down
-            if (_rotationDisabled || _timeProvider() < _rotationCooldownUntil) return;
-
-            _file.Refresh();
-            if (!_file.Exists || _file.Length == 0) return;
-
-            CloseWriter();
-
-            var now = _timeProvider();
-            var timestamp = now.ToString("yyyyMMdd_HHmmss");
-
-            var directory = Path.GetDirectoryName(_file.FullName) ?? AppFoldersHelper.GetAppDirectory();
-            var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
-            var extension = Path.GetExtension(_file.FullName);
-
-            var newFileName = $"{fileNameWithoutExt}.{timestamp}{extension}";
-            var rotatedPath = Path.Combine(directory, newFileName);
-            rotatedPath = GenerateUniqueFileName(rotatedPath);
+            // Execute uniqueness generation outside the lock to minimize the critical section window
+            try
+            {
+                rotatedPath = GenerateUniqueFileName(rotatedPath);
+            }
+            catch (Exception ex)
+            {
+                TripCircuitBreaker($"Failed to generate unique filename for rotation: {ex.Message}", ex);
+                return;
+            }
 
             bool success = false;
 
@@ -453,7 +515,7 @@ namespace Servy.Core.IO
             {
                 try
                 {
-                    File.Move(_file.FullName, rotatedPath);
+                    File.Move(oldPath, rotatedPath);
                     success = true;
                     break;
                 }
@@ -461,34 +523,47 @@ namespace Servy.Core.IO
                 {
                     if (attempt < MaxSyncRotationRetries - 1)
                     {
+                        // Unlocked sleep! Writers can proceed to generate a new file.
                         Thread.Sleep(SyncRotationRetryDelayMs);
                     }
                     else
                     {
                         Logger.Warn($"Log rotation deferred due to file lock on '{_file.Name}': {ex.Message}. Will retry in {RotationCooldownMs}ms.");
-                        _rotationCooldownUntil = _timeProvider().AddMilliseconds(RotationCooldownMs);
-                        return;
+                        return; // IO Cooldown is already active, we just abort this attempt
                     }
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"Log rotation critical failure: {ex.Message}. Rotation will be disabled until service restart.", ex);
-                    _rotationDisabled = true;
+                    TripCircuitBreaker($"Log rotation critical failure: {ex.Message}", ex);
                     break;
                 }
             }
 
             if (success)
             {
-                // HEALING: Reset the breaker state on success
-                _rotationCooldownUntil = DateTime.MinValue;
-                _rotationDisabled = false;
+                lock (_lock)
+                {
+                    // HEALING: Reset the breaker state on success
+                    _rotationCooldownUntil = DateTime.MinValue;
+                    _rotationDisabled = false;
+                    _disabledCooldownUntil = DateTime.MinValue;
+                }
 
+                // File management processes are safe to run unlocked
                 EnforceMaxRotations();
             }
-            else
+        }
+
+        /// <summary>
+        /// Trips the circuit breaker, disabling rotation until the critical cooldown period expires.
+        /// </summary>
+        private void TripCircuitBreaker(string message, Exception ex)
+        {
+            Logger.Error($"{message}. Rotation will be disabled for {CriticalFailureCooldownMs / 60000} minutes.", ex);
+            lock (_lock)
             {
-                Logger.Warn($"Log rotation disabled for: {_file.FullName} due to persistent error.");
+                _rotationDisabled = true;
+                _disabledCooldownUntil = _timeProvider().AddMilliseconds(CriticalFailureCooldownMs);
             }
         }
 
