@@ -549,7 +549,7 @@ namespace Servy.Core.Services
                     {
                         // We log this as a warning rather than a failure, as we can still attempt 
                         // the stop and delete commands, but it's important for diagnostic visibility.
-                        Logger.Warn($"Failed to standardize start type before uninstall for '{serviceName}': Win32 Error {Marshal.GetLastWin32Error()}");
+                        Logger.Warn($"Failed to standardize start type before uninstall for '{serviceName}': Win32 Error {_win32ErrorProvider.GetLastWin32Error()}");
                     }
 
                     // Trigger the stop command
@@ -585,7 +585,7 @@ namespace Servy.Core.Services
                     }
                     else
                     {
-                        string errorMsg = $"Failed to uninstall service '{serviceName}'. Win32 Error {Marshal.GetLastWin32Error()}";
+                        string errorMsg = $"Failed to uninstall service '{serviceName}'. Win32 Error {_win32ErrorProvider.GetLastWin32Error()}";
                         Logger.Error(errorMsg);
                         return OperationResult.Failure(errorMsg);
                     }
