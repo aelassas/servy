@@ -29,6 +29,21 @@ namespace Servy.Service.ProcessManagement
             IProcessFactory factory,
             IServyLogger logger)
         {
+            // 0. Precondition Validation
+            if (options == null) throw new ArgumentNullException(nameof(options));
+
+            if (string.IsNullOrWhiteSpace(options.ExecutablePath))
+            {
+                throw new ArgumentException("Executable path must be provided.", nameof(options));
+            }
+
+            if (!options.FireAndForget && options.TimeoutMs <= 0)
+            {
+                throw new ArgumentException(
+                    "Synchronous launch requires TimeoutMs > 0. Set FireAndForget = true for unbounded launches.",
+                    nameof(options));
+            }
+
             // 1. Resolve environment variables and arguments
             var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.EnvironmentVariables);
             var finalArgs = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.Arguments ?? string.Empty, expandedEnv);
@@ -183,13 +198,6 @@ namespace Servy.Service.ProcessManagement
                 if (psi.RedirectStandardError) process.BeginErrorReadLine();
 
                 // Synchronous mode: Wait for exit while pulsing the SCM
-                if (options.TimeoutMs <= 0)
-                {
-                    throw new ArgumentException(
-                        "Synchronous launch requires TimeoutMs > 0. Set FireAndForget = true for unbounded launches.",
-                        nameof(options));
-                }
-
                 WaitForExitWithHeartbeat(process, options, logger);
 
                 // Ensure all async reads are finished before disposing streams

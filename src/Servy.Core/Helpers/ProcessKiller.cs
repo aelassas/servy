@@ -78,23 +78,25 @@ namespace Servy.Core.Helpers
             int selfPid;
             using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
 
-            // Step 1: Create a handle-less view of the entire system process table
-            var byParent = BuildParentChildMapNative();
+            // Step 1: Create a handle-less view of the entire system process table in a single pass
+            var (_, byParent) = BuildSnapshotAndChildMapNative();
 
             // Step 2: Recursively terminate descendants using the map
             WalkAndKillChildren(parentPid, DateTime.MinValue, selfPid, byParent);
         }
 
         /// <summary>
-        /// Performs a single-pass iteration of the OS process table using Toolhelp32 to build an in-memory parent-to-children relationship map.
+        /// Performs a single-pass iteration of the OS process table using Toolhelp32 to build both an in-memory 
+        /// parent-to-children relationship map and a complete snapshot map for upward traversal.
         /// </summary>
-        /// <returns>A dictionary where keys are Parent PIDs and values are lists of Child PIDs.</returns>
-        private Dictionary<int, List<int>> BuildParentChildMapNative()
+        /// <returns>A tuple containing the metadata snapshot map and the parent-to-child relationship map.</returns>
+        private (Dictionary<int, ProcessInfoNode> Snapshot, Dictionary<int, List<int>> ByParent) BuildSnapshotAndChildMapNative()
         {
+            var snapshotMap = new Dictionary<int, ProcessInfoNode>();
             var byParent = new Dictionary<int, List<int>>();
             IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
-            if (snapshot == IntPtr.Zero || snapshot == new IntPtr(-1)) return byParent;
+            if (snapshot == IntPtr.Zero || snapshot == new IntPtr(-1)) return (snapshotMap, byParent);
 
             try
             {
@@ -106,47 +108,27 @@ namespace Servy.Core.Helpers
                         int ppid = (int)pe32.th32ParentProcessID;
                         int pid = (int)pe32.th32ProcessID;
 
+                        // 1. Populate the upward-traversal metadata map
+                        snapshotMap[pid] = new ProcessInfoNode
+                        {
+                            ParentId = ppid,
+                            Name = pe32.szExeFile
+                        };
+
+                        // 2. Populate the downward-traversal relationship map
                         if (!byParent.TryGetValue(ppid, out var children))
                         {
                             children = new List<int>();
                             byParent[ppid] = children;
                         }
                         children.Add(pid);
+
                     } while (Process32Next(snapshot, ref pe32));
                 }
             }
             finally { CloseHandle(snapshot); }
-            return byParent;
-        }
 
-        /// <summary>
-        /// Performs a single-pass iteration of the OS process table to build a complete relationship and name map for upward traversal.
-        /// </summary>
-        /// <returns>A dictionary mapping process identifiers to their corresponding snapshot metadata nodes.</returns>
-        private Dictionary<int, ProcessInfoNode> BuildProcessSnapshotNative()
-        {
-            var snapshotMap = new Dictionary<int, ProcessInfoNode>();
-            IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-
-            if (snapshot == IntPtr.Zero || snapshot == new IntPtr(-1)) return snapshotMap;
-
-            try
-            {
-                PROCESSENTRY32 pe32 = new PROCESSENTRY32 { dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32)) };
-                if (Process32First(snapshot, ref pe32))
-                {
-                    do
-                    {
-                        snapshotMap[(int)pe32.th32ProcessID] = new ProcessInfoNode
-                        {
-                            ParentId = (int)pe32.th32ParentProcessID,
-                            Name = pe32.szExeFile
-                        };
-                    } while (Process32Next(snapshot, ref pe32));
-                }
-            }
-            finally { CloseHandle(snapshot); }
-            return snapshotMap;
+            return (snapshotMap, byParent);
         }
 
         /// <summary>
@@ -215,9 +197,10 @@ namespace Servy.Core.Helpers
 
                 int selfPid;
                 using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
-                var completeSnapshot = BuildProcessSnapshotNative();
+
+                // Single Toolhelp32 walk populates both maps, eliminating redundant syscalls and race conditions
+                var (completeSnapshot, byParent) = BuildSnapshotAndChildMapNative();
                 var protectedPids = GetAncestorPids(completeSnapshot);
-                var byParent = BuildParentChildMapNative();
 
                 var allProcesses = Process.GetProcesses();
                 try
@@ -268,7 +251,8 @@ namespace Servy.Core.Helpers
         {
             if (pid <= 0) return false;
 
-            var completeSnapshot = BuildProcessSnapshotNative();
+            // Single Toolhelp32 walk populates both maps
+            var (completeSnapshot, byParent) = BuildSnapshotAndChildMapNative();
             var protectedPids = GetAncestorPids(completeSnapshot);
 
             // SECURITY: Resolve process handle and apply full safety check
@@ -286,7 +270,6 @@ namespace Servy.Core.Helpers
 
                 int selfPid;
                 using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
-                var byParent = BuildParentChildMapNative();
 
                 // ROBUSTNESS: Perform the parent kill walk BEFORE the tree kill walk.
                 if (killParents) KillParentProcesses(target.Id, target.StartTime, protectedPids, completeSnapshot);

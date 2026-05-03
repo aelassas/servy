@@ -51,17 +51,6 @@ namespace Servy.Service.ProcessManagement
         /// <br/><strong>Note:</strong> The caller assumes ownership of these objects and 
         /// must call <c>Dispose()</c> on each to prevent native handle leaks.
         /// </returns>
-        /// <remarks>
-        /// <para>
-        /// This method uses <c>CreateToolhelp32Snapshot</c> to bypass WMI dependencies, 
-        /// ensuring reliable process enumeration even on hardened servers where WMI is disabled.
-        /// </para>
-        /// <para>
-        /// <b>PID Reuse Protection:</b> Since Windows recycles PIDs, we verify that 
-        /// <c>child.StartTime >= parentStartTime</c>. A 1-second buffer is subtracted from 
-        /// the parent start time to account for OS clock tick precision.
-        /// </para>
-        /// </remarks>
         public static List<Process> GetChildren(int parentPid, DateTime parentStartTime)
         {
             var children = new List<Process>();
@@ -71,7 +60,7 @@ namespace Servy.Service.ProcessManagement
 
             // 1. Take a snapshot of all processes currently in the system.
             IntPtr hSnapshot = NativeMethods.CreateToolhelp32Snapshot(NativeMethods.TH32CS_SNAPPROCESS, 0);
-            if (hSnapshot == NativeMethods.INVALID_HANDLE_VALUE)
+            if (hSnapshot == NativeMethods.INVALID_HANDLE_VALUE || hSnapshot == IntPtr.Zero)
             {
                 Logger.Error($"Failed to create Toolhelp32 snapshot. Win32 Error: {Marshal.GetLastWin32Error()}");
                 return children;
@@ -139,36 +128,98 @@ namespace Servy.Service.ProcessManagement
         {
             var allDescendants = new List<Process>();
 
-            // Fetch Level 1 children using your existing Toolhelp32/WMI method
-            var directChildren = GetChildren(parentPid, parentStartTime);
+            if (parentPid <= 0 || parentStartTime == DateTime.MinValue)
+                return allDescendants;
 
-            foreach (var child in directChildren)
+            // 1. ONE snapshot, build parent->children map
+            var byParent = BuildParentChildMapNative();
+
+            // 2. BFS over the map, materialize Process objects only for verified descendants
+            var queue = new Queue<(int Pid, DateTime StartTime)>();
+            queue.Enqueue((parentPid, parentStartTime));
+
+            while (queue.Count > 0)
             {
-                // 1. Add the current child to the flat list
-                allDescendants.Add(child);
+                var current = queue.Dequeue();
 
-                try
+                // If this PID has no children in the snapshot map, continue to the next
+                if (!byParent.TryGetValue(current.Pid, out var childrenPids))
+                    continue;
+
+                foreach (int childPid in childrenPids)
                 {
-                    // Capture state for the next level of recursion
-                    int childPid = child.Id;
-                    DateTime childStartTime = child.StartTime;
+                    try
+                    {
+                        var child = Process.GetProcessById(childPid);
 
-                    // 2. Recursively fetch grandchildren
-                    var deeperDescendants = GetAllDescendants(childPid, childStartTime);
+                        // Strict StartTime check to prevent PID reuse collisions
+                        if (child.StartTime >= current.StartTime.AddSeconds(-1))
+                        {
+                            allDescendants.Add(child);
 
-                    // 3. Flatten the result into our main list
-                    allDescendants.AddRange(deeperDescendants);
-                }
-                catch
-                {
-                    // If the child died between being captured and us reading its .Id/.StartTime,
-                    // or if it threw Access Denied, we safely ignore the recursion. 
-                    // The dead process remains in 'allDescendants' so the caller can properly Dispose() it.
+                            // Queue the validated child for the next level of BFS
+                            queue.Enqueue((childPid, child.StartTime));
+                        }
+                        else
+                        {
+                            child.Dispose(); // Not our child, dispose it immediately
+                        }
+                    }
+                    catch (ArgumentException) { /* PID gone, expected */ }
+                    catch (System.ComponentModel.Win32Exception) { /* Access denied, expected */ }
+                    catch (Exception ex)
+                    {
+                        Logger.Debug($"Unexpected error while resolving descendant PID {childPid}: {ex.Message}");
+                    }
                 }
             }
 
             return allDescendants;
         }
 
+        /// <summary>
+        /// Performs a single-pass iteration of the OS process table using Toolhelp32 to build an in-memory parent-to-children relationship map.
+        /// </summary>
+        /// <returns>A dictionary where keys are Parent PIDs and values are lists of Child PIDs.</returns>
+        private static Dictionary<int, List<int>> BuildParentChildMapNative()
+        {
+            var byParent = new Dictionary<int, List<int>>();
+            IntPtr hSnapshot = NativeMethods.CreateToolhelp32Snapshot(NativeMethods.TH32CS_SNAPPROCESS, 0);
+
+            if (hSnapshot == NativeMethods.INVALID_HANDLE_VALUE || hSnapshot == IntPtr.Zero)
+            {
+                Logger.Error($"Failed to create Toolhelp32 snapshot. Win32 Error: {Marshal.GetLastWin32Error()}");
+                return byParent;
+            }
+
+            try
+            {
+                var pe32 = new NativeMethods.PROCESSENTRY32();
+                pe32.dwSize = (uint)Marshal.SizeOf(typeof(NativeMethods.PROCESSENTRY32));
+
+                if (NativeMethods.Process32First(hSnapshot, ref pe32))
+                {
+                    do
+                    {
+                        int ppid = (int)pe32.th32ParentProcessID;
+                        int pid = (int)pe32.th32ProcessID;
+
+                        if (!byParent.TryGetValue(ppid, out var children))
+                        {
+                            children = new List<int>();
+                            byParent[ppid] = children;
+                        }
+                        children.Add(pid);
+
+                    } while (NativeMethods.Process32Next(hSnapshot, ref pe32));
+                }
+            }
+            finally
+            {
+                NativeMethods.CloseHandle(hSnapshot);
+            }
+
+            return byParent;
+        }
     }
 }
