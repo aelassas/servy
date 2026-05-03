@@ -1859,7 +1859,7 @@ namespace Servy.Core.UnitTests.Services
             var result = _serviceManager.GetServiceStartupType("AnyService", TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.Null(result);
+            Assert.Equal(ServiceStartType.Unknown, result);
         }
 
         [Fact]
