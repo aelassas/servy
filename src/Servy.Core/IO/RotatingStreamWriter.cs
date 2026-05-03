@@ -16,7 +16,12 @@ namespace Servy.Core.IO
     /// </summary>
     public class RotatingStreamWriter : IDisposable
     {
-        private static readonly Regex _rotatedTimestampRegex = new Regex(@"^\d{8}_\d{6}(?:\.\(\d+\))?$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
+        /// <summary>
+        /// Validates the rotated filename segment. 
+        /// Updated to allow chained collision suffixes (e.g., .20260429_213213.(1).(2)) 
+        /// produced during high-frequency rotations within a single second.
+        /// </summary>
+        private static readonly Regex _rotatedTimestampRegex = new Regex(@"^\d{8}_\d{6}(?:\.\(\d+\))*$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
         private bool _disposed;
         private readonly FileInfo _file;

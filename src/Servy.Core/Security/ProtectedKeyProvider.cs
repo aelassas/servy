@@ -13,9 +13,10 @@ namespace Servy.Core.Security
 {
     /// <summary>
     /// Provides secure storage and retrieval of an AES encryption key and IV using Windows DPAPI.
-    /// Each instance manages its own key and IV file paths.
+    /// Each instance manages its own key and IV file paths, utilizing in-memory caching to optimize
+    /// performance and minimize DPAPI/Disk I/O roundtrips.
     /// </summary>
-    public class ProtectedKeyProvider : IProtectedKeyProvider
+    public class ProtectedKeyProvider : IProtectedKeyProvider, IDisposable
     {
         #region Security & Synchronization Settings
 
@@ -59,6 +60,12 @@ namespace Servy.Core.Security
         private readonly string _keyFilePath;
         private readonly string _ivFilePath;
 
+        // In-memory cache for unprotected materials
+        private byte[]? _cachedKey;
+        private byte[]? _cachedIv;
+        private readonly object _cacheLock = new object();
+        private int _disposed;
+
         #endregion
 
         #region Constructors
@@ -88,14 +95,70 @@ namespace Servy.Core.Security
         #region IProtectedKeyProvider Implementation
 
         ///<inheritdoc/>
-        public byte[] GetKey() => GetOrGenerate(_keyFilePath, 32);
+        public byte[] GetKey()
+        {
+            ThrowIfDisposed();
+            return GetCachedOrGenerate(ref _cachedKey, _keyFilePath, 32);
+        }
 
         ///<inheritdoc/>
-        public byte[] GetIV() => GetOrGenerate(_ivFilePath, 16);
+        public byte[] GetIV()
+        {
+            ThrowIfDisposed();
+            return GetCachedOrGenerate(ref _cachedIv, _ivFilePath, 16);
+        }
 
         #endregion
 
         #region Private Helpers
+
+        /// <summary>
+        /// Safely retrieves the key from the cache or generates it, ensuring thread-safety
+        /// and preventing callers from mutating the internal cache via array cloning.
+        /// </summary>
+        private byte[] GetCachedOrGenerate(ref byte[]? cacheField, string path, int length)
+        {
+            // Fast-path read
+            if (cacheField != null)
+            {
+                return (byte[])cacheField.Clone();
+            }
+
+            lock (_cacheLock)
+            {
+                // Double-check lock
+                if (cacheField != null)
+                {
+                    return (byte[])cacheField.Clone();
+                }
+
+                byte[] decrypted = GetOrGenerate(path, length);
+
+                // Store a clone in the cache so the return value can't be used to mutate the cache
+                cacheField = (byte[])decrypted.Clone();
+                return decrypted;
+            }
+        }
+
+        /// <summary>
+        /// Explicitly invalidates the in-memory cache and zeroes out the backing arrays.
+        /// </summary>
+        private void InvalidateCache()
+        {
+            lock (_cacheLock)
+            {
+                if (_cachedKey != null)
+                {
+                    CryptographicOperations.ZeroMemory(_cachedKey);
+                    _cachedKey = null;
+                }
+                if (_cachedIv != null)
+                {
+                    CryptographicOperations.ZeroMemory(_cachedIv);
+                    _cachedIv = null;
+                }
+            }
+        }
 
         /// <summary>
         /// Retrieves a machine-unique entropy value for use as an additional protection layer in DPAPI operations.
@@ -253,7 +316,10 @@ namespace Servy.Core.Security
                                     eventLog.WriteEntry($"[{AppConfig.EventSource}] {escalatedMsg}\n\nError: {ex.Message}", EventLogEntryType.Error, EventIds.PersistentMigrationFailure);
                                 }
                             }
-                            catch { /* Silently ignore if direct event log creation fails */ }
+                            catch (Exception eventLogEx)
+                            {
+                                Logger.Debug($"EventLog write failed (falling back to file logger): {eventLogEx.GetType().Name} - {eventLogEx.Message}");
+                            }
 
                             Logger.Error(escalatedMsg, ex);
                         }
@@ -271,10 +337,9 @@ namespace Servy.Core.Security
                                     eventLog.WriteEntry($"[{AppConfig.EventSource}] {warningMsg}", EventLogEntryType.Warning, EventIds.TransientMigrationWarning);
                                 }
                             }
-                            catch
+                            catch (Exception eventLogEx)
                             {
-                                // Fallback: If we can't write to the Event Log (e.g. permission issues), 
-                                // the file logger is our only hope.
+                                Logger.Debug($"EventLog write failed (falling back to file logger): {eventLogEx.GetType().Name} - {eventLogEx.Message}");
                             }
 
                             Logger.Warn($"[EventID: {EventIds.TransientMigrationWarning}] {warningMsg}");
@@ -307,10 +372,9 @@ namespace Servy.Core.Security
                         eventLog.WriteEntry($"[{AppConfig.EventSource}] {errorMsg}\n\n{workaround}\n\nException: {ex.Message}", EventLogEntryType.Error, EventIds.KeyUnprotectFailed);
                     }
                 }
-                catch
+                catch (Exception eventLogEx)
                 {
-                    // Silently ignore if direct event log creation fails (e.g., missing registry permissions), 
-                    // the static Logger below will still catch it.
+                    Logger.Debug($"EventLog write failed (falling back to file logger): {eventLogEx.GetType().Name} - {eventLogEx.Message}");
                 }
 
                 var msg = $"{errorMsg}\n{workaround}";
@@ -393,6 +457,9 @@ namespace Servy.Core.Security
 
                     // Atomically replace the existing file
                     File.Move(tempPath, path, overwrite: true);
+
+                    // Explicit invalidation on successful key rotation
+                    InvalidateCache();
                 }
                 finally
                 {
@@ -427,6 +494,55 @@ namespace Servy.Core.Security
                 rng.GetBytes(buffer);
             }
             return buffer;
+        }
+
+        #endregion
+
+        #region IDisposable Implementation
+
+        /// <summary>
+        /// Performs strict memory-zeroing of the cached cryptographic material.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases the unmanaged resources used by the <see cref="ProtectedKeyProvider"/> and optionally releases the managed resources.
+        /// </summary>
+        /// <param name="disposing">
+        /// <see langword="true"/> to release both managed and unmanaged resources; 
+        /// <see langword="false"/> to release only unmanaged resources.
+        /// </param>
+        /// <remarks>
+        /// This implementation uses <see cref="Interlocked.Exchange(ref int, int)"/> as an atomic guard to ensure memory 
+        /// zeroing occurs only once. Managed resource cleanup involves zeroing sensitive cached key material.
+        /// </remarks>
+        protected virtual void Dispose(bool disposing)
+        {
+            // ATOMIC GUARD: Flip the flag BEFORE wiping memory.
+            if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+
+            if (disposing)
+            {
+                InvalidateCache();
+            }
+        }
+
+        /// <summary>
+        /// Throws an <see cref="ObjectDisposedException"/> if this instance has already been disposed.
+        /// </summary>
+        /// <remarks>
+        /// Utilizes <see cref="Volatile.Read(ref int)"/> to ensure the disposal state is accurately 
+        /// synchronized across CPU caches without the overhead of a full lock.
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">Thrown if the provider has been disposed.</exception>
+        private void ThrowIfDisposed()
+        {
+            if (Volatile.Read(ref _disposed) != 0)
+                throw new ObjectDisposedException(GetType().Name);
         }
 
         #endregion
