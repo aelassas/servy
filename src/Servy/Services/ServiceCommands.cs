@@ -103,77 +103,31 @@ namespace Servy.Services
                 return false;
             }
 
-            // 1. Build the DTO (The Single Source of Truth for this operation)
-            var dto = new ServiceDto
+            // 1. Obtain the canonical DTO from the ViewModel
+            // This removes the sentinel-vs-default divergence (e.g., -1 vs DefaultRotationSize)
+            var dto = _modelToServiceDto();
+
+            if (dto == null)
             {
-                Name = config.Name ?? string.Empty,
-                DisplayName = config.DisplayName ?? string.Empty,
-                Description = config.Description,
-                ExecutablePath = config.ExecutablePath ?? string.Empty,
-                StartupDirectory = config.StartupDirectory,
-                Parameters = config.Parameters,
-                StartupType = (int)config.StartupType,
-                Priority = (int)config.Priority,
-                EnableConsoleUI = config.EnableConsoleUI,
-                StdoutPath = config.StdoutPath,
-                StderrPath = config.StderrPath,
-                EnableSizeRotation = config.EnableSizeRotation,
-                RotationSize = int.TryParse(config.RotationSize, out var rs) ? rs : -1,
-                EnableDateRotation = config.EnableDateRotation,
-                DateRotationType = (int)config.DateRotationType,
-                MaxRotations = int.TryParse(config.MaxRotations, out var mrn) ? mrn : -1,
-                UseLocalTimeForRotation = config.UseLocalTimeForRotation,
-                EnableDebugLogs = config.EnableDebugLogs,
-                EnableHealthMonitoring = config.EnableHealthMonitoring,
-                HeartbeatInterval = int.TryParse(config.HeartbeatInterval, out var hi) ? hi : -1,
-                MaxFailedChecks = int.TryParse(config.MaxFailedChecks, out var mf) ? mf : -1,
-                RecoveryAction = (int)config.RecoveryAction,
-                MaxRestartAttempts = int.TryParse(config.MaxRestartAttempts, out var mr) ? mr : -1,
-                FailureProgramPath = config.FailureProgramPath,
-                FailureProgramStartupDirectory = config.FailureProgramStartupDirectory,
-                FailureProgramParameters = config.FailureProgramParameters,
-                EnvironmentVariables = config.EnvironmentVariables,
-                ServiceDependencies = config.ServiceDependencies,
-                RunAsLocalSystem = config.RunAsLocalSystem,
+                return false;
+            }
 
-                // Trust the DTO to handle the identity logic
-                UserAccount = config.RunAsLocalSystem ? null : config.UserAccount,
-                Password = config.RunAsLocalSystem ? null : config.Password,
+            // 2. Apply install-specific overrides and masking
+            // Ensure Description is not null for OS service registration
+            dto.Description = dto.Description ?? string.Empty;
 
-                PreLaunchExecutablePath = config.PreLaunchExecutablePath,
-                PreLaunchStartupDirectory = config.PreLaunchStartupDirectory,
-                PreLaunchParameters = config.PreLaunchParameters,
-                PreLaunchEnvironmentVariables = config.PreLaunchEnvironmentVariables,
-                PreLaunchStdoutPath = config.PreLaunchStdoutPath,
-                PreLaunchStderrPath = config.PreLaunchStderrPath,
-                PreLaunchTimeoutSeconds = int.TryParse(config.PreLaunchTimeoutSeconds, out var pt) ? pt : -1,
-                PreLaunchRetryAttempts = int.TryParse(config.PreLaunchRetryAttempts, out var pra) ? pra : -1,
-                PreLaunchIgnoreFailure = config.PreLaunchIgnoreFailure,
+            // Mask credentials if running as LocalSystem
+            if (config.RunAsLocalSystem)
+            {
+                dto.UserAccount = null;
+                dto.Password = null;
+            }
 
-                PostLaunchExecutablePath = config.PostLaunchExecutablePath,
-                PostLaunchStartupDirectory = config.PostLaunchStartupDirectory,
-                PostLaunchParameters = config.PostLaunchParameters,
-
-                StartTimeout = int.TryParse(config.StartTimeout, out var st) ? st : -1,
-                StopTimeout = int.TryParse(config.StopTimeout, out var sot) ? sot : -1,
-
-                // Pre-Stop
-                PreStopExecutablePath = config.PreStopExecutablePath,
-                PreStopStartupDirectory = config.PreStopStartupDirectory,
-                PreStopParameters = config.PreStopParameters,
-                PreStopTimeoutSeconds = int.TryParse(config.PreStopTimeoutSeconds, out var pst) ? pst : -1,
-                PreStopLogAsError = config.PreStopLogAsError,
-
-                // Post-Stop
-                PostStopExecutablePath = config.PostStopExecutablePath,
-                PostStopStartupDirectory = config.PostStopStartupDirectory,
-                PostStopParameters = config.PostStopParameters,
-            };
-
-            // 2. Validate the DTO
+            // 3. Validate the DTO
+            // We pass config.ConfirmPassword directly to the validator as it is a UI-only field
             if (!await _serviceConfigurationValidator.Validate(dto, wrapperExePath: wrapperExePath, confirmPassword: config.ConfirmPassword))
             {
-                return false; // Validation failed, errors shown in MessageBox
+                return false;
             }
 
             if (_serviceManager.IsServiceInstalled(dto.Name))
@@ -188,25 +142,22 @@ namespace Servy.Services
             try
             {
                 _cursorService.SetWaitCursor();
-                var rotationSizeValue = dto.RotationSize > 0
-                    ? (ulong)dto.RotationSize * 1024 * 1024
-                    : 0;
 
-                var normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
-                var normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
+                // 4. Map Install Options strictly from the validated DTO
+                // Conversion logic (like MB to Bytes) is handled here just before the service call
+                var rotationSizeValue = dto.RotationSize > 0 ? AppConfig.ToBytes(dto.RotationSize ?? AppConfig.DefaultRotationSizeMB) : 0;
 
-                // 3. Map Install Options strictly from the validated DTO
                 var options = new InstallServiceOptions
                 {
                     ServiceName = dto.Name,
                     DisplayName = dto.DisplayName,
-                    Description = dto.Description ?? string.Empty,
+                    Description = dto.Description,
                     WrapperExePath = wrapperExePath,
                     RealExePath = dto.ExecutablePath,
                     WorkingDirectory = dto.StartupDirectory,
                     RealArgs = dto.Parameters,
-                    StartType = (ServiceStartType)dto.StartupType,
-                    ProcessPriority = (ProcessPriority)dto.Priority,
+                    StartType = (ServiceStartType)(dto.StartupType ?? (int)AppConfig.DefaultStartupType),
+                    ProcessPriority = (ProcessPriority)(dto.Priority ?? (int)AppConfig.DefaultPriority),
                     EnableConsoleUI = dto.EnableConsoleUI ?? AppConfig.DefaultEnableConsoleUI,
                     Username = dto.UserAccount,
                     Password = dto.Password,
@@ -217,22 +168,22 @@ namespace Servy.Services
                     RotationSizeInBytes = rotationSizeValue,
                     MaxRotations = dto.MaxRotations,
                     EnableDateRotation = dto.EnableDateRotation ?? AppConfig.DefaultEnableDateRotation,
-                    DateRotationType = (DateRotationType)dto.DateRotationType,
+                    DateRotationType = (DateRotationType)(dto.DateRotationType ?? (int)AppConfig.DefaultDateRotationType),
                     UseLocalTimeForRotation = dto.UseLocalTimeForRotation ?? AppConfig.DefaultUseLocalTimeForRotation,
 
                     EnableHealthMonitoring = dto.EnableHealthMonitoring ?? AppConfig.DefaultEnableHealthMonitoring,
                     HeartbeatInterval = dto.HeartbeatInterval ?? AppConfig.DefaultHeartbeatInterval,
                     MaxFailedChecks = dto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks,
-                    RecoveryAction = (RecoveryAction)dto.RecoveryAction,
+                    RecoveryAction = (RecoveryAction)(dto.RecoveryAction ?? (int)AppConfig.DefaultRecoveryAction),
                     MaxRestartAttempts = dto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
 
-                    EnvironmentVariables = normalizedEnvVars,
+                    EnvironmentVariables = dto.EnvironmentVariables,
                     ServiceDependencies = dto.ServiceDependencies,
 
                     PreLaunchExePath = dto.PreLaunchExecutablePath,
                     PreLaunchWorkingDirectory = dto.PreLaunchStartupDirectory,
                     PreLaunchArgs = dto.PreLaunchParameters,
-                    PreLaunchEnvironmentVariables = normalizedPreLaunchEnvVars,
+                    PreLaunchEnvironmentVariables = dto.PreLaunchEnvironmentVariables,
                     PreLaunchStdoutPath = dto.PreLaunchStdoutPath,
                     PreLaunchStderrPath = dto.PreLaunchStderrPath,
                     PreLaunchTimeout = dto.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds,
@@ -260,7 +211,7 @@ namespace Servy.Services
                     PostStopWorkingDirectory = dto.PostStopStartupDirectory,
                     PostStopArgs = dto.PostStopParameters,
 
-                    // Fields not tracked in the persistent DTO fall back to the config
+                    // Maintain the EnableDebugLogs override from the incoming config
                     EnableDebugLogs = config.EnableDebugLogs
                 };
 
@@ -271,11 +222,9 @@ namespace Servy.Services
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceInstalled, Caption);
                     return true;
                 }
-                else
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
-                    return false;
-                }
+
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                return false;
             }
             catch (UnauthorizedAccessException)
             {

@@ -24,15 +24,6 @@ namespace Servy.Manager.ViewModels
     /// </summary>
     public class ConsoleViewModel : MonitoringViewModelBase
     {
-        #region Constants
-
-        /// <summary>
-        /// Delay in milliseconds to debounce search keystrokes before filtering.
-        /// </summary>
-        private const int SearchDebounceDelayMs = 300;
-
-        #endregion
-
         #region Fields
 
         private readonly IServiceRepository _serviceRepository;
@@ -344,7 +335,7 @@ namespace Servy.Manager.ViewModels
             try
             {
                 // Wait for the user to stop typing
-                await Task.Delay(SearchDebounceDelayMs, token);
+                await Task.Delay(_appConfig.SearchDebounceDelayMs, token);
 
                 // Return to the UI thread to refresh the View safely
                 if (Application.Current?.Dispatcher is Dispatcher dispatcher)

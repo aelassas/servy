@@ -446,6 +446,11 @@ namespace Servy.Core.Config
         /// </summary>
         public const string LatestReleaseApiUrl = "https://api.github.com/repos/aelassas/servy/releases/latest";
 
+        /// <summary>
+        /// Default delay in milliseconds to debounce search keystrokes before filtering in console tab.
+        /// </summary>
+        public const int DefaultSearchDebounceDelayMs = 300;
+
         #endregion
 
         #region Limits, Thresholds & Constraints
@@ -590,6 +595,11 @@ namespace Servy.Core.Config
         /// Time delta in minutes to consider an embedded resource as "newer" than an existing file
         /// </summary>
         public const int ResourceStalenessThresholdMinutes = 20;
+
+        /// <summary>
+        /// Bytes in a Megabyte (MB). Used for converting rotation size from MB to bytes.
+        /// </summary>
+        public const long BytesInMegabyte = 1024 * 1024;
 
         #endregion
 
@@ -786,15 +796,7 @@ namespace Servy.Core.Config
         /// in RELEASE mode, it looks in the ProgramData folder.
         /// </summary>
         /// <returns>The full path to the Handle executable.</returns>
-        public static string GetHandleExePath()
-        {
-#if DEBUG
-            var handleExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{AppConfig.HandleExeFileName}.exe");
-#else
-            var handleExePath  = Path.Combine(AppConfig.ProgramDataPath, $"{AppConfig.HandleExeFileName}.exe");
-#endif
-            return handleExePath;
-        }
+        public static string GetHandleExePath() => ResolveExe(HandleExeFileName);
 
         /// <summary>
         /// Gets the absolute path to the Servy CLI service executable.
@@ -804,15 +806,7 @@ namespace Servy.Core.Config
         /// In <c>RELEASE</c> builds, the path points to the executable located in the ProgramData folder.
         /// </remarks>
         /// <returns>The full file path to <c>ServyServiceCLI.exe</c>.</returns>
-        public static string GetServyCLIServicePath()
-        {
-#if DEBUG
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{AppConfig.ServyServiceCLIFileName}.exe");
-#else
-            var wrapperExePath = Path.Combine(AppConfig.ProgramDataPath, $"{AppConfig.ServyServiceCLIFileName}.exe");
-#endif
-            return wrapperExePath;
-        }
+        public static string GetServyCLIServicePath() => ResolveExe(ServyServiceCLIFileName);
 
         /// <summary>
         /// Gets the absolute path to the Servy UI service executable.
@@ -822,15 +816,32 @@ namespace Servy.Core.Config
         /// In <c>RELEASE</c> builds, the path points to the executable located in the ProgramData folder.
         /// </remarks>
         /// <returns>The full file path to <c>ServyServiceUI.exe</c>.</returns>
-        public static string GetServyUIServicePath()
-        {
+        public static string GetServyUIServicePath() => ResolveExe(ServyServiceUIFileName);
+
+        /// <summary>
+        /// Converts a size in megabytes (MB) to bytes.
+        /// </summary>
+        /// <param name="megabytes">The size in megabytes.</param>
+        /// <returns>The size in bytes.</returns>
+        public static long ToBytes(int megabytes) => (long)megabytes * BytesInMegabyte;
+
+        #endregion
+
+        #region Private Helpers
+
+        /// <summary>
+        /// Resolves the absolute path for an executable based on the current build configuration.
+        /// </summary>
+        /// <param name="fileName">The base name of the executable (without the .exe extension).</param>
+        /// <returns>The fully qualified path to the executable.</returns>
+        private static string ResolveExe(string fileName) =>
+            Path.Combine(
 #if DEBUG
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{AppConfig.ServyServiceUIFileName}.exe");
+                AppDomain.CurrentDomain.BaseDirectory,
 #else
-            var wrapperExePath = Path.Combine(AppConfig.ProgramDataPath, $"{AppConfig.ServyServiceUIFileName}.exe");
+                ProgramDataPath,
 #endif
-            return wrapperExePath;
-        }
+                $"{fileName}.exe");
 
         #endregion
     }

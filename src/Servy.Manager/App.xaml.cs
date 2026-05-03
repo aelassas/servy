@@ -172,6 +172,11 @@ namespace Servy.Manager
         /// </summary>
         public int LogsWindowDays { get; private set; }
 
+        /// <summary>
+        /// Delay in milliseconds to debounce search keystrokes before filtering in console tab.
+        /// </summary>
+        public int SearchDebounceDelayMs { get; private set; }
+
         #endregion
 
         #region Constructors
@@ -308,6 +313,8 @@ namespace Servy.Manager
                     }
 
                     LogsWindowDays = int.TryParse(config["LogsWindowDays"], out var lwd) ? lwd : AppConfig.DefaultLogsWindowDays;
+
+                    SearchDebounceDelayMs = int.TryParse(config["SearchDebounceDelayMs"], out var sdd) ? sdd : AppConfig.DefaultSearchDebounceDelayMs;
 
                     StartAvailabilityMonitor();
                 }

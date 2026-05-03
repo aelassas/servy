@@ -24,7 +24,7 @@ namespace Servy.Core.Helpers
         /// </param>
         /// <returns>The parsed integer, or <paramref name="defaultValue"/> if parsing fails.</returns>
         public static int ParseInt(
-            string rawValue,
+            string? rawValue,
             int defaultValue,
             [CallerArgumentExpression("rawValue")] string fieldName = "")
         {

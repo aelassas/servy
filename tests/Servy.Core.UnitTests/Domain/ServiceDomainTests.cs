@@ -192,7 +192,7 @@ namespace Servy.Core.UnitTests.Domain
                  .Setup(s => s.InstallServiceAsync(It.Is<InstallServiceOptions>(o =>
                      o.ServiceName == service.Name &&
                      o.EnableSizeRotation == true &&
-                     o.RotationSizeInBytes == (ulong)service.RotationSize * 1024 * 1024 &&
+                     o.RotationSizeInBytes == (long)service.RotationSize * 1024L * 1024L &&
                      o.EnableHealthMonitoring == true &&
                      o.RecoveryAction == service.RecoveryAction
                  ), It.IsAny<CancellationToken>()))
