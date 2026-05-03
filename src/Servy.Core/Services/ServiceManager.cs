@@ -794,7 +794,7 @@ namespace Servy.Core.Services
                         case ServiceStartMode.Automatic: startupType = ServiceStartType.Automatic; break;
                         case ServiceStartMode.Manual: startupType = ServiceStartType.Manual; break;
                         case ServiceStartMode.Disabled: startupType = ServiceStartType.Disabled; break;
-                        default: return null;
+                        default: return ServiceStartType.Unknown;
                     }
 
                     // If automatic, drill down with P/Invoke to check for Delayed Auto-Start
@@ -1055,7 +1055,7 @@ namespace Servy.Core.Services
                     case ServiceStartMode.Automatic: return ServiceStartType.Automatic;
                     case ServiceStartMode.Manual: return ServiceStartType.Manual;
                     case ServiceStartMode.Disabled: return ServiceStartType.Disabled;
-                    default: return ServiceStartType.Manual;
+                    default: return ServiceStartType.Unknown;
                 }
             }
             catch (Win32Exception ex)
