@@ -335,7 +335,8 @@ namespace Servy.Manager.ViewModels
         {
             _serviceManager = serviceManager;
             _serviceRepository = serviceRepository;
-            ServiceCommands = serviceCommands;
+            _serviceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
+            ServiceCommands = _serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
             _helpService = helpService;
@@ -579,7 +580,7 @@ namespace Servy.Manager.ViewModels
                 stopwatch.Stop();
                 SetFooterText(stopwatch);
 
-                // Setp 5: refresh all service statuses and details in the background
+                // Step 5: refresh all service statuses and details in the background
                 _ = Task.Run(async () =>
                 {
                     try

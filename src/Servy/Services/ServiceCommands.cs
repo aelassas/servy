@@ -218,7 +218,7 @@ namespace Servy.Services
                     EnableDebugLogs = config.EnableDebugLogs
                 };
 
-                var res = await _serviceManager.InstallServiceAsync(options);
+                var res = await _serviceManager.InstallServiceAsync(options, cancellationToken);
 
                 if (res.IsSuccess)
                 {

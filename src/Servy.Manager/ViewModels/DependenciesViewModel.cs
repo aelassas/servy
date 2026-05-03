@@ -152,6 +152,19 @@ namespace Servy.Manager.ViewModels
             InitTimer();
         }
 
+        /// <summary>
+        /// Design-Time constructor.
+        /// </summary>
+        public DependenciesViewModel() : this(
+            null,
+            null,
+            null,
+            new DesignTimeAppConfig(),
+            null,
+            null
+            )
+        { }
+
         #endregion
 
         #region MonitoringViewModelBase Implementation

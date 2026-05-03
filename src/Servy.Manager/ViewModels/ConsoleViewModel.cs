@@ -210,7 +210,7 @@ namespace Servy.Manager.ViewModels
             IUiDispatcher uiDispatcher
             ) : base(cursorService, uiDispatcher)
         {
-            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
@@ -229,6 +229,18 @@ namespace Servy.Manager.ViewModels
                 return line?.Text.IndexOf(ConsoleSearchText, StringComparison.OrdinalIgnoreCase) >= 0;
             };
         }
+
+        /// <summary>
+        /// Design-Time constructor.
+        /// </summary>
+        public ConsoleViewModel() : this(
+            null,
+            null,
+            new DesignTimeAppConfig(),
+            null,
+            null
+            )
+        { }
 
         #endregion
 
