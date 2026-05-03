@@ -217,7 +217,8 @@ namespace Servy.Core.Helpers
                     return false;
                 }
 
-                int selfPid = Process.GetCurrentProcess().Id;
+                int selfPid;
+                using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
                 var completeSnapshot = BuildProcessSnapshotNative();
                 var protectedPids = GetAncestorPids(completeSnapshot);
                 var byParent = BuildParentChildMapNative();
@@ -287,7 +288,8 @@ namespace Servy.Core.Helpers
                     return false;
                 }
 
-                int selfPid = Process.GetCurrentProcess().Id;
+                int selfPid;
+                using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
                 var byParent = BuildParentChildMapNative();
 
                 // ROBUSTNESS: Perform the parent kill walk BEFORE the tree kill walk.
