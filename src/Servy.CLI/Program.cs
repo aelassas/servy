@@ -5,6 +5,7 @@ using Servy.CLI.Helpers;
 using Servy.CLI.Options;
 using Servy.CLI.Validators;
 using Servy.Core.Config;
+using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -69,6 +70,7 @@ namespace Servy.CLI
                 Environment.Exit(1064);
             }
 
+            IAppDbContext? dbContext = null;
             try
             {
                 var verbs = GetVerbs();
@@ -138,7 +140,7 @@ namespace Servy.CLI
                 Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
 
                 // Initialize shared dependencies
-                var dbContext = new AppDbContext(connectionString);
+                dbContext = new AppDbContext(connectionString);
                 var dapperExecutor = new DapperExecutor(dbContext);
                 var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
                 _secureData = new SecureData(protectedKeyProvider);
@@ -273,6 +275,7 @@ namespace Servy.CLI
             finally
             {
                 _secureData?.Dispose();
+                dbContext?.Dispose();
                 Logger.Shutdown();
             }
         }
