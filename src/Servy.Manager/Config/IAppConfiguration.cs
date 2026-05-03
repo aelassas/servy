@@ -53,5 +53,9 @@ namespace Servy.Manager.Config
         /// </summary>
         int LogsWindowDays { get; }
 
+        /// <summary>
+        /// Delay in milliseconds to debounce search keystrokes before filtering in console tab.
+        /// </summary>
+        int SearchDebounceDelayMs { get; }
     }
 }

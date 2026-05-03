@@ -28,6 +28,7 @@ namespace Servy.UnitTests.Services
         private readonly Mock<IJsonServiceValidator> _jsonServiceValidatorMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
         private readonly Mock<ICursorService> _cursorServiceMock;
+        private readonly Mock<Func<ServiceDto>> _modelToServiceDtoMock;
 
         public ServiceCommandsTests()
         {
@@ -39,6 +40,8 @@ namespace Servy.UnitTests.Services
             _jsonServiceValidatorMock = new Mock<IJsonServiceValidator>();
             _appConfigMock = new Mock<IAppConfiguration>();
             _cursorServiceMock = new Mock<ICursorService>();
+
+            _modelToServiceDtoMock = new Mock<Func<ServiceDto>>();
 
             // Setup safe defaults for ServiceManager to prevent NullReferenceExceptions internally
             _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
@@ -63,7 +66,7 @@ namespace Servy.UnitTests.Services
         private ServiceCommands CreateSut(Action<ServiceDto> bindSpy = null)
         {
             return new ServiceCommands(
-                modelToServiceDto: () => new ServiceDto(),
+                modelToServiceDto: _modelToServiceDtoMock.Object,
                 bindServiceDtoToModel: bindSpy ?? (dto => { }),
                 serviceManager: _serviceManagerMock.Object,
                 messageBoxService: _messageBoxService.Object,
@@ -81,6 +84,8 @@ namespace Servy.UnitTests.Services
         {
             // Arrange
             var sut = CreateSut();
+
+            // 1. The raw UI configuration passed into the method
             var config = new ServiceConfiguration
             {
                 Name = "TestService",
@@ -141,10 +146,78 @@ namespace Servy.UnitTests.Services
 
                 PostStopExecutablePath = @"C:\post-stop.exe",
                 PostStopStartupDirectory = @"C:\postStopDir",
-                PostStopParameters = "postStopArgs"
+                PostStopParameters = "postStopArgs",
             };
 
-            // CRITICAL FIX: Ensure the wrapper executable exists for the test to bypass the early exit check
+            // 2. The canonical DTO expected to be returned by the ViewModel mapper
+            var expectedDto = new ServiceDto
+            {
+                Name = config.Name,
+                DisplayName = config.DisplayName,
+                Description = config.Description,
+                ExecutablePath = config.ExecutablePath,
+                StartupDirectory = config.StartupDirectory,
+                Parameters = config.Parameters,
+                StartupType = (int)config.StartupType,
+                Priority = (int)config.Priority,
+                StdoutPath = config.StdoutPath,
+                StderrPath = config.StderrPath,
+                EnableSizeRotation = config.EnableSizeRotation,
+                RotationSize = int.Parse(config.RotationSize),
+                UseLocalTimeForRotation = config.UseLocalTimeForRotation,
+                EnableHealthMonitoring = config.EnableHealthMonitoring,
+                HeartbeatInterval = int.Parse(config.HeartbeatInterval),
+                MaxFailedChecks = int.Parse(config.MaxFailedChecks),
+                RecoveryAction = (int)config.RecoveryAction,
+                MaxRestartAttempts = int.Parse(config.MaxRestartAttempts),
+
+                // Emulate the normalization done by the ViewModel mapping
+                EnvironmentVariables = StringHelper.NormalizeString(config.EnvironmentVariables),
+                ServiceDependencies = StringHelper.NormalizeString(config.ServiceDependencies),
+
+                UserAccount = config.UserAccount,
+                Password = config.Password,
+
+                PreLaunchExecutablePath = config.PreLaunchExecutablePath,
+                PreLaunchStartupDirectory = config.PreLaunchStartupDirectory,
+                PreLaunchParameters = config.PreLaunchParameters,
+                PreLaunchEnvironmentVariables = StringHelper.NormalizeString(config.PreLaunchEnvironmentVariables),
+                PreLaunchStdoutPath = config.PreLaunchStdoutPath,
+                PreLaunchStderrPath = config.PreLaunchStderrPath,
+                PreLaunchTimeoutSeconds = int.Parse(config.PreLaunchTimeoutSeconds),
+                PreLaunchRetryAttempts = int.Parse(config.PreLaunchRetryAttempts),
+                PreLaunchIgnoreFailure = config.PreLaunchIgnoreFailure,
+
+                FailureProgramPath = config.FailureProgramPath,
+                FailureProgramStartupDirectory = config.FailureProgramStartupDirectory,
+                FailureProgramParameters = config.FailureProgramParameters,
+
+                PostLaunchExecutablePath = config.PostLaunchExecutablePath,
+                PostLaunchStartupDirectory = config.PostLaunchStartupDirectory,
+                PostLaunchParameters = config.PostLaunchParameters,
+
+                MaxRotations = int.Parse(config.MaxRotations),
+                EnableDateRotation = config.EnableDateRotation,
+                DateRotationType = (int)config.DateRotationType,
+                StartTimeout = int.Parse(config.StartTimeout),
+                StopTimeout = int.Parse(config.StopTimeout),
+
+                PreStopExecutablePath = config.PreStopExecutablePath,
+                PreStopStartupDirectory = config.PreStopStartupDirectory,
+                PreStopParameters = config.PreStopParameters,
+                PreStopTimeoutSeconds = int.Parse(config.PreStopTimeoutSeconds),
+                PreStopLogAsError = config.PreStopLogAsError,
+
+                PostStopExecutablePath = config.PostStopExecutablePath,
+                PostStopStartupDirectory = config.PostStopStartupDirectory,
+                PostStopParameters = config.PostStopParameters
+            };
+
+            // CRITICAL FIX 1: Mock the delegate to return the DTO so InstallService doesn't fail early.
+            // Replace `_modelToServiceDtoMock` with the actual name of your mock field.
+            _modelToServiceDtoMock.Setup(m => m()).Returns(expectedDto);
+
+            // CRITICAL FIX 2: Ensure the wrapper executable exists for the test to bypass the early exit check
             var wrapperPath = Core.Config.AppConfig.GetServyUIServicePath();
             try
             {
@@ -164,69 +237,70 @@ namespace Servy.UnitTests.Services
             // Assert
             Assert.True(result, "InstallService returned false. The validation or File.Exists check failed.");
 
+            // CRITICAL FIX 3: Verify the options against the DTO, not the raw strings from the config
             _serviceManagerMock.Verify(m => m.InstallServiceAsync(
                 It.Is<InstallServiceOptions>(c =>
-                    c.ServiceName == config.Name &&
-                    c.DisplayName == config.DisplayName &&
-                    c.Description == config.Description &&
-                    c.RealExePath == config.ExecutablePath &&
-                    c.WorkingDirectory == config.StartupDirectory &&
-                    c.RealArgs == config.Parameters &&
-                    c.StartType == config.StartupType &&
-                    c.ProcessPriority == config.Priority &&
+                    c.ServiceName == expectedDto.Name &&
+                    c.DisplayName == expectedDto.DisplayName &&
+                    c.Description == expectedDto.Description &&
+                    c.RealExePath == expectedDto.ExecutablePath &&
+                    c.WorkingDirectory == expectedDto.StartupDirectory &&
+                    c.RealArgs == expectedDto.Parameters &&
+                    c.StartType == (ServiceStartType)expectedDto.StartupType &&
+                    c.ProcessPriority == (ProcessPriority)expectedDto.Priority &&
 
-                    c.StdoutPath == config.StdoutPath &&
-                    c.StderrPath == config.StderrPath &&
-                    c.EnableSizeRotation == config.EnableSizeRotation &&
-                    c.RotationSizeInBytes == (ulong.Parse(config.RotationSize) * 1024 * 1024) &&
-                    c.EnableDateRotation == config.EnableDateRotation &&
-                    c.DateRotationType == config.DateRotationType &&
-                    c.MaxRotations == int.Parse(config.MaxRotations) &&
-                    c.UseLocalTimeForRotation == config.UseLocalTimeForRotation &&
+                    c.StdoutPath == expectedDto.StdoutPath &&
+                    c.StderrPath == expectedDto.StderrPath &&
+                    c.EnableSizeRotation == expectedDto.EnableSizeRotation &&
+                    c.RotationSizeInBytes == (expectedDto.RotationSize * 1024L * 1024L) &&
+                    c.EnableDateRotation == expectedDto.EnableDateRotation &&
+                    c.DateRotationType == (DateRotationType)expectedDto.DateRotationType &&
+                    c.MaxRotations == expectedDto.MaxRotations &&
+                    c.UseLocalTimeForRotation == expectedDto.UseLocalTimeForRotation &&
 
-                    c.EnableHealthMonitoring == config.EnableHealthMonitoring &&
-                    c.HeartbeatInterval == int.Parse(config.HeartbeatInterval) &&
-                    c.MaxFailedChecks == int.Parse(config.MaxFailedChecks) &&
-                    c.RecoveryAction == config.RecoveryAction &&
-                    c.MaxRestartAttempts == int.Parse(config.MaxRestartAttempts) &&
-                    c.FailureProgramPath == config.FailureProgramPath &&
-                    c.FailureProgramWorkingDirectory == config.FailureProgramStartupDirectory &&
-                    c.FailureProgramArgs == config.FailureProgramParameters &&
+                    c.EnableHealthMonitoring == expectedDto.EnableHealthMonitoring &&
+                    c.HeartbeatInterval == expectedDto.HeartbeatInterval &&
+                    c.MaxFailedChecks == expectedDto.MaxFailedChecks &&
+                    c.RecoveryAction == (RecoveryAction)expectedDto.RecoveryAction &&
+                    c.MaxRestartAttempts == expectedDto.MaxRestartAttempts &&
+                    c.FailureProgramPath == expectedDto.FailureProgramPath &&
+                    c.FailureProgramWorkingDirectory == expectedDto.FailureProgramStartupDirectory &&
+                    c.FailureProgramArgs == expectedDto.FailureProgramParameters &&
 
-                    // CRITICAL FIX: The production code normalizes these strings, so the mock must expect the normalized version
-                    c.EnvironmentVariables == StringHelper.NormalizeString(config.EnvironmentVariables) &&
-                    c.ServiceDependencies == config.ServiceDependencies &&
-                    c.Username == config.UserAccount &&
-                    c.Password == config.Password &&
+                    c.EnvironmentVariables == expectedDto.EnvironmentVariables &&
+                    c.ServiceDependencies == expectedDto.ServiceDependencies &&
+                    c.Username == expectedDto.UserAccount &&
+                    c.Password == expectedDto.Password &&
 
-                    c.PreLaunchExePath == config.PreLaunchExecutablePath &&
-                    c.PreLaunchWorkingDirectory == config.PreLaunchStartupDirectory &&
-                    c.PreLaunchArgs == config.PreLaunchParameters &&
+                    c.PreLaunchExePath == expectedDto.PreLaunchExecutablePath &&
+                    c.PreLaunchWorkingDirectory == expectedDto.PreLaunchStartupDirectory &&
+                    c.PreLaunchArgs == expectedDto.PreLaunchParameters &&
 
-                    // CRITICAL FIX: Same normalization needed here
-                    c.PreLaunchEnvironmentVariables == StringHelper.NormalizeString(config.PreLaunchEnvironmentVariables) &&
-                    c.PreLaunchStdoutPath == config.PreLaunchStdoutPath &&
-                    c.PreLaunchStderrPath == config.PreLaunchStderrPath &&
-                    c.PreLaunchTimeout == int.Parse(config.PreLaunchTimeoutSeconds) &&
-                    c.PreLaunchRetryAttempts == int.Parse(config.PreLaunchRetryAttempts) &&
-                    c.PreLaunchIgnoreFailure == config.PreLaunchIgnoreFailure &&
+                    c.PreLaunchEnvironmentVariables == expectedDto.PreLaunchEnvironmentVariables &&
+                    c.PreLaunchStdoutPath == expectedDto.PreLaunchStdoutPath &&
+                    c.PreLaunchStderrPath == expectedDto.PreLaunchStderrPath &&
+                    c.PreLaunchTimeout == expectedDto.PreLaunchTimeoutSeconds &&
+                    c.PreLaunchRetryAttempts == expectedDto.PreLaunchRetryAttempts &&
+                    c.PreLaunchIgnoreFailure == expectedDto.PreLaunchIgnoreFailure &&
 
-                    c.PostLaunchExePath == config.PostLaunchExecutablePath &&
-                    c.PostLaunchWorkingDirectory == config.PostLaunchStartupDirectory &&
-                    c.PostLaunchArgs == config.PostLaunchParameters &&
-                    c.StartTimeout == int.Parse(config.StartTimeout) &&
-                    c.StopTimeout == int.Parse(config.StopTimeout) &&
+                    c.PostLaunchExePath == expectedDto.PostLaunchExecutablePath &&
+                    c.PostLaunchWorkingDirectory == expectedDto.PostLaunchStartupDirectory &&
+                    c.PostLaunchArgs == expectedDto.PostLaunchParameters &&
+                    c.StartTimeout == expectedDto.StartTimeout &&
+                    c.StopTimeout == expectedDto.StopTimeout &&
+
+                    // Note: EnableDebugLogs still comes from the config directly in the refactored method
                     c.EnableDebugLogs == config.EnableDebugLogs &&
 
-                    c.PreStopExePath == config.PreStopExecutablePath &&
-                    c.PreStopWorkingDirectory == config.PreStopStartupDirectory &&
-                    c.PreStopArgs == config.PreStopParameters &&
-                    c.PreStopTimeout == int.Parse(config.PreStopTimeoutSeconds) &&
-                    c.PreStopLogAsError == config.PreStopLogAsError &&
+                    c.PreStopExePath == expectedDto.PreStopExecutablePath &&
+                    c.PreStopWorkingDirectory == expectedDto.PreStopStartupDirectory &&
+                    c.PreStopArgs == expectedDto.PreStopParameters &&
+                    c.PreStopTimeout == expectedDto.PreStopTimeoutSeconds &&
+                    c.PreStopLogAsError == expectedDto.PreStopLogAsError &&
 
-                    c.PostStopExePath == config.PostStopExecutablePath &&
-                    c.PostStopWorkingDirectory == config.PostStopStartupDirectory &&
-                    c.PostStopArgs == config.PostStopParameters
+                    c.PostStopExePath == expectedDto.PostStopExecutablePath &&
+                    c.PostStopWorkingDirectory == expectedDto.PostStopStartupDirectory &&
+                    c.PostStopArgs == expectedDto.PostStopParameters
                 ), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -287,35 +361,80 @@ namespace Servy.UnitTests.Services
         [Fact]
         public async Task ExportXmlCommand_ValidModel_ShowsSuccessMessage()
         {
+            // Arrange
             var sut = CreateSut();
-            var path = "export.xml";
+
+            // Use a unique temporary path to ensure thread-safety during parallel test execution
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.xml");
+
             _dialogServiceMock.Setup(d => d.SaveXml(It.IsAny<string>())).Returns(path);
 
-            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            // FIX 1: Setup the parameterless delegate. 
+            // In the refactored ServiceCommands, this is the source of the DTO.
+            _modelToServiceDtoMock.Setup(m => m()).Returns(new ServiceDto { Name = "Service" });
 
-            var task = sut.ExportXmlConfig(string.Empty) as Task;
-            if (task != null) await task;
+            // FIX 2: Match the 3-parameter validator signature (ServiceDto, string, string).
+            // ExportConfigAsync passes 'null' for the wrapper path.
+            _serviceConfigurationValidator.Setup(d => d.Validate(
+                It.IsAny<ServiceDto>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()))
+                .ReturnsAsync(true);
 
-            _messageBoxService.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
-            Assert.True(File.Exists(path));
-            File.Delete(path);
+            try
+            {
+                // Act - Direct await ensures exceptions are caught by the test runner
+                await sut.ExportXmlConfig(string.Empty);
+
+                // Assert
+                _messageBoxService.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+                Assert.True(File.Exists(path), "The XML file was not physically written to disk.");
+            }
+            finally
+            {
+                // Cleanup the physical file generated by the static ServiceExporter
+                if (File.Exists(path)) File.Delete(path);
+            }
         }
 
         [Fact]
         public async Task ExportJsonCommand_ValidModel_ShowsSuccessMessage()
         {
+            // Arrange
             var sut = CreateSut();
-            var path = "export.json";
+
+            // Use a temporary path to avoid permission issues and ensure a clean environment
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
+
             _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(path);
 
-            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            // FIX 1: Ensure the validator mock matches the 3-parameter signature used in ExportConfigAsync.
+            // We use 'string' to allow the 'null' wrapperExePath passed during exports.
+            _serviceConfigurationValidator.Setup(d => d.Validate(
+                It.IsAny<ServiceDto>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()))
+                .ReturnsAsync(true);
 
-            var task = sut.ExportJsonConfig(string.Empty) as Task;
-            if (task != null) await task;
+            // FIX 2: Correct the delegate setup. It is a parameterless Func<ServiceDto>.
+            _modelToServiceDtoMock.Setup(m => m()).Returns(new ServiceDto { Name = "Service" });
 
-            _messageBoxService.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
-            Assert.True(File.Exists(path));
-            File.Delete(path);
+            try
+            {
+                // Act - Direct await is cleaner than the 'as Task' casting
+                await sut.ExportJsonConfig(string.Empty);
+
+                // Assert
+                _messageBoxService.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+
+                // Verify the static ServiceExporter actually wrote the file
+                Assert.True(File.Exists(path), "The JSON export file was not created.");
+            }
+            finally
+            {
+                // Cleanup the physical file created by ServiceExporter.ExportJson
+                if (File.Exists(path)) File.Delete(path);
+            }
         }
 
         [Fact]
@@ -374,7 +493,8 @@ namespace Servy.UnitTests.Services
                 It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
 
             bool bindCalled = false;
-            var sut = CreateSut(d => {
+            var sut = CreateSut(d =>
+            {
                 bindCalled = true;
                 Assert.Equal("TestService", d.Name);
             });

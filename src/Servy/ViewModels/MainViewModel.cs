@@ -1456,77 +1456,89 @@ namespace Servy.ViewModels
         /// </returns>
         /// <remarks>
         /// This method performs the inverse operation of <see cref="BindServiceDtoToModel(ServiceDto)"/>.
-        /// It maps all ViewModel properties back into the DTO, converting text-based numeric values into integers
-        /// and normalizing certain string inputs (such as environment variables and dependencies) into 
-        /// semicolon-delimited format suitable for persistence or serialization.
-        /// 
-        /// If parsing fails for numeric fields, safe defaults are applied (e.g., <c>0</c> or <c>30</c> seconds for timeouts).
+        /// It maps all ViewModel properties back into the DTO, utilizing <see cref="ConfigParser.ParseInt"/> 
+        /// to ensure malformed numeric inputs are logged as warnings before applying defaults.
         /// </remarks>
         public ServiceDto ModelToServiceDto()
         {
-            var dto = new ServiceDto
+            return new ServiceDto
             {
-                Name = ServiceName,
-                DisplayName = ServiceDisplayName,
+                Name = ServiceName ?? string.Empty,
+                DisplayName = ServiceDisplayName ?? string.Empty,
                 Description = ServiceDescription,
-                ExecutablePath = ProcessPath,
+                ExecutablePath = ProcessPath ?? string.Empty,
                 StartupDirectory = StartupDirectory,
                 Parameters = ProcessParameters,
                 StartupType = (int)SelectedStartupType,
                 Priority = (int)SelectedProcessPriority,
+
+                // Basic UI and Logging
                 EnableConsoleUI = EnableConsoleUI,
                 StdoutPath = StdoutPath,
                 StderrPath = StderrPath,
+
+                // Log Rotation
                 EnableSizeRotation = EnableSizeRotation,
-                RotationSize = int.TryParse(RotationSize, out var rs) ? rs : DefaultRotationSizeMB,
+                RotationSize = ConfigParser.ParseInt(RotationSize, -1),
                 EnableDateRotation = EnableDateRotation,
                 DateRotationType = (int)SelectedDateRotationType,
-                MaxRotations = int.TryParse(MaxRotations, out var mrs) ? mrs : DefaultMaxRotations,
+                MaxRotations = ConfigParser.ParseInt(MaxRotations, -1),
                 UseLocalTimeForRotation = UseLocalTimeForRotation,
+
+                // Health Monitoring
                 EnableHealthMonitoring = EnableHealthMonitoring,
-                HeartbeatInterval = int.TryParse(HeartbeatInterval, out var hi) ? hi : DefaultHeartbeatInterval,
-                MaxFailedChecks = int.TryParse(MaxFailedChecks, out var mf) ? mf : DefaultMaxFailedChecks,
+                HeartbeatInterval = ConfigParser.ParseInt(HeartbeatInterval, -1),
+                MaxFailedChecks = ConfigParser.ParseInt(MaxFailedChecks, -1),
                 RecoveryAction = (int)SelectedRecoveryAction,
-                MaxRestartAttempts = int.TryParse(MaxRestartAttempts, out var mr) ? mr : DefaultMaxRestartAttempts,
+                MaxRestartAttempts = ConfigParser.ParseInt(MaxRestartAttempts, -1),
+
+                // Failure Actions
                 FailureProgramPath = FailureProgramPath,
                 FailureProgramStartupDirectory = FailureProgramStartupDirectory,
                 FailureProgramParameters = FailureProgramParameters,
+
+                // Normalized Strings
                 EnvironmentVariables = StringHelper.NormalizeString(EnvironmentVariables),
                 ServiceDependencies = StringHelper.NormalizeString(ServiceDependencies),
+
+                // Credentials
                 RunAsLocalSystem = RunAsLocalSystem,
                 UserAccount = UserAccount,
                 Password = Password,
+
+                // Pre-Launch Configuration
                 PreLaunchExecutablePath = PreLaunchExecutablePath,
                 PreLaunchStartupDirectory = PreLaunchStartupDirectory,
                 PreLaunchParameters = PreLaunchParameters,
                 PreLaunchEnvironmentVariables = StringHelper.NormalizeString(PreLaunchEnvironmentVariables),
                 PreLaunchStdoutPath = PreLaunchStdoutPath,
                 PreLaunchStderrPath = PreLaunchStderrPath,
-                PreLaunchTimeoutSeconds = int.TryParse(PreLaunchTimeoutSeconds, out var pt) ? pt : DefaultPreLaunchTimeoutSeconds,
-                PreLaunchRetryAttempts = int.TryParse(PreLaunchRetryAttempts, out var pr) ? pr : DefaultPreLaunchRetryAttempts,
+                PreLaunchTimeoutSeconds = ConfigParser.ParseInt(PreLaunchTimeoutSeconds, -1),
+                PreLaunchRetryAttempts = ConfigParser.ParseInt(PreLaunchRetryAttempts, -1),
                 PreLaunchIgnoreFailure = PreLaunchIgnoreFailure,
 
+                // Post-Launch Configuration
                 PostLaunchExecutablePath = PostLaunchExecutablePath,
                 PostLaunchStartupDirectory = PostLaunchStartupDirectory,
                 PostLaunchParameters = PostLaunchParameters,
 
+                // Debug and Lifecycle Timeouts
                 EnableDebugLogs = EnableDebugLogs,
+                StartTimeout = ConfigParser.ParseInt(StartTimeout, -1),
+                StopTimeout = ConfigParser.ParseInt(StopTimeout, -1),
 
-                StartTimeout = int.TryParse(StartTimeout, out var startTimeout) ? startTimeout : DefaultStartTimeout,
-                StopTimeout = int.TryParse(StopTimeout, out var stopTimeout) ? stopTimeout : DefaultStopTimeout,
-
+                // Pre-Stop Configuration
                 PreStopExecutablePath = PreStopExecutablePath,
                 PreStopStartupDirectory = PreStopStartupDirectory,
                 PreStopParameters = PreStopParameters,
-                PreStopTimeoutSeconds = int.TryParse(PreStopTimeoutSeconds, out var pst) ? pst : DefaultPreStopTimeoutSeconds,
+                PreStopTimeoutSeconds = ConfigParser.ParseInt(PreStopTimeoutSeconds, -1),
                 PreStopLogAsError = PreStopLogAsError,
 
+                // Post-Stop Configuration
                 PostStopExecutablePath = PostStopExecutablePath,
                 PostStopStartupDirectory = PostStopStartupDirectory,
                 PostStopParameters = PostStopParameters,
             };
-
-            return dto;
         }
 
         #endregion

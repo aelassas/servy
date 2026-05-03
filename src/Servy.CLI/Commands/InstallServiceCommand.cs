@@ -4,6 +4,7 @@ using Servy.CLI.Resources;
 using Servy.CLI.Validators;
 using Servy.Core.Config;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
@@ -68,16 +69,16 @@ namespace Servy.CLI.Commands
                 var recoveryAction = ParseEnumOption(opts.RecoveryAction, AppConfig.DefaultRecoveryAction);
 
                 // Parse numeric options
-                ulong rotationSize = (ulong.TryParse(opts.RotationSize, out var rot) ? rot : (ulong)AppConfig.DefaultRotationSizeMB) * 1024 * 1024;
-                int heartbeatInterval = int.TryParse(opts.HeartbeatInterval, out var hb) ? hb : AppConfig.DefaultHeartbeatInterval;
-                int maxFailedChecks = int.TryParse(opts.MaxFailedChecks, out var mf) ? mf : AppConfig.DefaultMaxFailedChecks;
-                int maxRestartAttempts = int.TryParse(opts.MaxRestartAttempts, out var mr) ? mr : AppConfig.DefaultMaxRestartAttempts;
-                int preLaunchTimeout = int.TryParse(opts.PreLaunchTimeout, out var plTimeout) ? plTimeout : AppConfig.DefaultPreLaunchTimeoutSeconds;
-                int preLaunchRetryAttempts = int.TryParse(opts.PreLaunchRetryAttempts, out var plRetry) ? plRetry : AppConfig.DefaultPreLaunchRetryAttempts;
-                int maxRotations = int.TryParse(opts.MaxRotations, out var maxRot) ? maxRot : AppConfig.DefaultMaxRotations;
-                int startTimeout = int.TryParse(opts.StartTimeout, out var stTimeout) ? stTimeout : AppConfig.DefaultStartTimeout;
-                int stopTimeout = int.TryParse(opts.StopTimeout, out var spTimeout) ? spTimeout : AppConfig.DefaultStopTimeout;
-                int preStopTimeout = int.TryParse(opts.PreStopTimeout, out var psTimeout) ? psTimeout : AppConfig.DefaultPreStopTimeoutSeconds;
+                long rotationSizeBytes = AppConfig.ToBytes(ConfigParser.ParseInt(opts.RotationSize, AppConfig.DefaultRotationSizeMB));
+                int heartbeatInterval = ConfigParser.ParseInt(opts.HeartbeatInterval, AppConfig.DefaultHeartbeatInterval);
+                int maxFailedChecks = ConfigParser.ParseInt(opts.MaxFailedChecks, AppConfig.DefaultMaxFailedChecks);
+                int maxRestartAttempts = ConfigParser.ParseInt(opts.MaxRestartAttempts, AppConfig.DefaultMaxRestartAttempts);
+                int preLaunchTimeout = ConfigParser.ParseInt(opts.PreLaunchTimeout, AppConfig.DefaultPreLaunchTimeoutSeconds);
+                int preLaunchRetryAttempts = ConfigParser.ParseInt(opts.PreLaunchRetryAttempts, AppConfig.DefaultPreLaunchRetryAttempts);
+                int maxRotations = ConfigParser.ParseInt(opts.MaxRotations, AppConfig.DefaultMaxRotations);
+                int startTimeout = ConfigParser.ParseInt(opts.StartTimeout, AppConfig.DefaultStartTimeout);
+                int stopTimeout = ConfigParser.ParseInt(opts.StopTimeout, AppConfig.DefaultStopTimeout);
+                int preStopTimeout = ConfigParser.ParseInt(opts.PreStopTimeout, AppConfig.DefaultPreStopTimeoutSeconds);
 
                 var options = new InstallServiceOptions
                 {
@@ -93,7 +94,7 @@ namespace Servy.CLI.Commands
                     StdoutPath = opts.StdoutPath,
                     StderrPath = opts.StderrPath,
                     EnableSizeRotation = opts.EnableRotation || opts.EnableSizeRotation,
-                    RotationSizeInBytes = rotationSize,
+                    RotationSizeInBytes = rotationSizeBytes,
                     UseLocalTimeForRotation = opts.UseLocalTimeForRotation,
                     EnableHealthMonitoring = opts.EnableHealthMonitoring,
                     HeartbeatInterval = heartbeatInterval,
