@@ -75,6 +75,10 @@ namespace Servy.Core.Mappers
                 StartTimeout = domain.StartTimeout,
                 StopTimeout = domain.StopTimeout,
 
+                Pid = domain.Pid,
+                ActiveStdoutPath = domain.ActiveStdoutPath,
+                ActiveStderrPath = domain.ActiveStderrPath,
+
                 PreStopExecutablePath = domain.PreStopExecutablePath,
                 PreStopStartupDirectory = domain.PreStopStartupDirectory,
                 PreStopParameters = domain.PreStopParameters,
