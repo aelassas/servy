@@ -1869,7 +1869,8 @@ namespace Servy.Service
                     }
                     finally
                     {
-                        Environment.Exit(1);
+                        var code = Environment.ExitCode != 0 ? Environment.ExitCode : 1;
+                        Environment.Exit(code);
                     }
                     return;
                 }
