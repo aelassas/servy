@@ -1458,9 +1458,9 @@ namespace Servy.Service
         /// Handles redirected standard output from the child process.
         /// Writes output lines to the rotating stdout writer.
         /// </summary>
-        private void OnOutputDataReceived(object? sender, DataReceivedEventArgs e)
+        private void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
         {
-            if (!string.IsNullOrWhiteSpace(e.Data))
+            if (e.Data != null)
             {
                 _stdoutWriter?.WriteLine(e.Data);
             }
@@ -1470,12 +1470,11 @@ namespace Servy.Service
         /// Handles redirected standard error output from the child process.
         /// Writes error lines to the rotating stderr writer and logs errors.
         /// </summary>
-        private void OnErrorDataReceived(object? sender, DataReceivedEventArgs e)
+        private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
-            if (!string.IsNullOrWhiteSpace(e.Data))
+            if (e.Data != null)
             {
                 _stderrWriter?.WriteLine(e.Data);
-                //_logger?.Error($"[Error] {e.Data}");
             }
         }
 
