@@ -705,7 +705,7 @@ jobs:
 
       - name: Cool down API
         run: Start-Sleep -s 15
-        shell: powershell
+        shell: pwsh
 
       - name: Scan Portable Package with VirusTotal
         id: vt_portable

@@ -36,17 +36,14 @@ namespace Servy.Service.ProcessManagement
         /// <param name="disposing">True if called from Dispose, false if called from Finalizer.</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (_disposed)
-            {
-                return;
-            }
+            if (_disposed) return;
 
             if (disposing)
             {
                 Process?.Dispose();
-
-                _disposed = true;
             }
+
+            _disposed = true;
         }
     }
 }

@@ -447,8 +447,17 @@ namespace Servy.Service.Helpers
         {
             if (string.IsNullOrWhiteSpace(value)) return value;
 
-            // Use the strict key matcher to avoid greedy substring matches
-            bool isSensitive = KeyMatcherRegex.IsMatch(key);
+            bool isSensitive;
+            try
+            {
+                // Use the strict key matcher to avoid greedy substring matches
+                isSensitive = KeyMatcherRegex.IsMatch(key);
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                Logger.Warn($"Regex timeout while classifying key '{key}'. Defaulting to masked.");
+                return "********";
+            }
 
             return isSensitive ? "********" : value;
         }

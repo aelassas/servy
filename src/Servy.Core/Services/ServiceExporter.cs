@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
+using Servy.Core.IO;
 using Servy.Core.Security;
 using System.IO;
 using System.Text;
@@ -86,15 +87,6 @@ namespace Servy.Core.Services
                     writer.Write(jsonContent);
                 }
             });
-        }
-
-        /// <summary>
-        /// Custom StringWriter that reports UTF-8 as its encoding.
-        /// Required because the default StringWriter reports UTF-16.
-        /// </summary>
-        private sealed class Utf8StringWriter : StringWriter
-        {
-            public override Encoding Encoding => Encoding.UTF8;
         }
     }
 }
