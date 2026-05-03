@@ -20,6 +20,14 @@ namespace Servy.Core.Helpers
     /// </summary>
     public class ProcessHelper : IProcessHelper
     {
+        /// <summary>
+        /// Unexpanded Enironment Variable Regex.
+        /// </summary>
+        private static readonly Regex UnexpandedEnvVarRegex = new Regex(
+            @"%[^%]+%",
+            RegexOptions.Compiled,
+            AppConfig.InputRegexTimeout);
+
         private long _lastPruneTicks = DateTime.MinValue.Ticks;
 
         /// <summary>
@@ -319,7 +327,7 @@ namespace Servy.Core.Helpers
 
             // 2. Strict Check: If the path still contains %, expansion likely failed 
             // because the variable is not defined for the service account (e.g., LocalSystem).
-            var match = Regex.Match(expandedPath, @"%[^%]+%");
+            var match = UnexpandedEnvVarRegex.Match(expandedPath);
             if (match.Success)
             {
                 var varName = match.Groups[0].Value;
