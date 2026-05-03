@@ -2,6 +2,7 @@
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Manager.Config;
+using Servy.Manager.Design;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.Utils;
@@ -234,11 +235,11 @@ namespace Servy.Manager.ViewModels
         /// Design-Time constructor.
         /// </summary>
         public ConsoleViewModel() : this(
-            null,
-            null,
+            new UI.Design.DesignTimeServiceRepository(),
+            new DesignTimeServiceCommands(),
             new DesignTimeAppConfig(),
-            null,
-            null
+            new UI.Design.DesignTimeCursorService(),
+            new UI.Design.DesignTimeUiDispatcher()
             )
         { }
 

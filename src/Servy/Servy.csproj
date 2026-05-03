@@ -110,8 +110,10 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Config\AppConfig.cs" />
+    <Compile Include="Config\DesignTimeAppConfig.cs" />
     <Compile Include="Config\IAppConfiguration.cs" />
     <Compile Include="Converters\InverseBooleanConverter.cs" />
+    <Compile Include="Design\DesignTimeMocks.cs" />
     <Compile Include="Validators\IServiceConfigurationValidator.cs" />
     <Compile Include="Helpers\PasswordBoxHelper.cs" />
     <Compile Include="Validators\ServiceConfigurationValidator.cs" />

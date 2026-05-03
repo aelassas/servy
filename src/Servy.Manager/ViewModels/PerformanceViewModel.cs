@@ -2,6 +2,7 @@
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Manager.Config;
+using Servy.Manager.Design;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
@@ -185,18 +186,18 @@ namespace Servy.Manager.ViewModels
             InitTimer();
         }
 
-               /// <summary>
+        /// <summary>
         /// Design-Time constructor.
         /// </summary>
         public PerformanceViewModel() : this(
-            null,
-            null,
+            new UI.Design.DesignTimeServiceRepository(),
+            new DesignTimeServiceCommands(),
             new DesignTimeAppConfig(),
-            null,
-            new ProcessHelper(),
-            null
+            new UI.Design.DesignTimeCursorService(),
+            new UI.Design.DesignTimeProcessHelper(),
+            new UI.Design.DesignTimeUiDispatcher()
             )
-            { }
+        { }
 
         #endregion
 
