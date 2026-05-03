@@ -1399,7 +1399,7 @@ namespace Servy.Service
         /// </summary>
         private void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
         {
-            if (!string.IsNullOrWhiteSpace(e.Data))
+            if (e.Data != null)
             {
                 _stdoutWriter?.WriteLine(e.Data);
             }
@@ -1411,10 +1411,9 @@ namespace Servy.Service
         /// </summary>
         private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
-            if (!string.IsNullOrWhiteSpace(e.Data))
+            if (e.Data != null)
             {
                 _stderrWriter?.WriteLine(e.Data);
-                //_logger?.Error($"[Error] {e.Data}");
             }
         }
 
