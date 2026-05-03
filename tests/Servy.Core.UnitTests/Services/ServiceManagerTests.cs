@@ -1864,7 +1864,7 @@ namespace Servy.Core.UnitTests.Services
             var result = _serviceManager.GetServiceStartupType("AnyService");
 
             // Assert
-            Assert.Null(result);
+            Assert.Equal(ServiceStartType.Unknown, result);
         }
 
         [Fact]
