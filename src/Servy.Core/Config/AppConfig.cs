@@ -573,6 +573,12 @@ namespace Servy.Core.Config
         /// </remarks>
         public const int MaxImportPayloadSizeChars = MaxConfigFileSizeMB * 1_000_000;
 
+        /// <summary>
+        /// The maximum age in minutes an extracted resource can be before it is considered stale.
+        /// Time delta in minutes to consider an embedded resource as "newer" than an existing file
+        /// </summary>
+        public const int ResourceStalenessThresholdMinutes = 20;
+
         #endregion
 
         #region Minimum Constraints

@@ -141,6 +141,7 @@ namespace Servy.Service
         private volatile bool _isRebooting = false;
         private readonly IProcessHelper _processHelper;
         private readonly IProcessKiller _processKiller;
+        private readonly IAppDbContext _dbContext;
 
         #endregion
 
@@ -347,10 +348,10 @@ namespace Servy.Service
                     $"  UseLocalTimeForRotation: {useLocalTimeForRotation}");
 
                 // Initialize database and helpers
-                var dbContext = new AppDbContext(connectionString);
-                DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+                _dbContext = new AppDbContext(connectionString);
+                DatabaseInitializer.InitializeDatabase(_dbContext, SQLiteDbInitializer.Initialize);
 
-                var dapperExecutor = new DapperExecutor(dbContext);
+                var dapperExecutor = new DapperExecutor(_dbContext);
                 var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
                 _secureData = new SecureData(protectedKeyProvider);
                 var xmlSerializer = new XmlServiceSerializer();
@@ -2065,6 +2066,7 @@ namespace Servy.Service
                         _cancellationSource = null;
 
                         _secureData?.Dispose();
+                        _dbContext?.Dispose();
                     }
                 }
             }

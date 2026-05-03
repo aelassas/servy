@@ -1,4 +1,5 @@
-﻿using Servy.Core.Data;
+﻿using Servy.Core.Config;
+using Servy.Core.Data;
 using Servy.Core.Logging;
 using System;
 using System.Collections.Generic;
@@ -21,11 +22,6 @@ namespace Servy.Core.Helpers
     [ExcludeFromCodeCoverage]
     public class ResourceHelper
     {
-        /// <summary>
-        /// The maximum age in minutes an extracted resource can be before it is considered stale.
-        /// </summary>
-        private const int ResourceStalenessThresholdMinutes = 20; // Time delta in minutes to consider an embedded resource as "newer" than an existing file
-
         private readonly ServiceHelper _serviceHelper;
         private readonly IProcessHelper _processHelper;
         private readonly IProcessKiller _processKiller;
@@ -404,11 +400,11 @@ namespace Servy.Core.Helpers
                 Logger.Debug($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");
 
                 // Only copy if the embedded resource is newer by more than DeltaMinutes
-                bool shouldCopy = embeddedResourceTime > existingFileTime.AddMinutes(ResourceStalenessThresholdMinutes);
+                bool shouldCopy = embeddedResourceTime > existingFileTime.AddMinutes(AppConfig.ResourceStalenessThresholdMinutes);
 
                 if (!shouldCopy && embeddedResourceTime > existingFileTime)
                 {
-                    Logger.Debug($"Embedded resource '{resourceName}' is newer, but within the {ResourceStalenessThresholdMinutes}-minute delta. Skipping copy.");
+                    Logger.Debug($"Embedded resource '{resourceName}' is newer, but within the {AppConfig.ResourceStalenessThresholdMinutes}-minute delta. Skipping copy.");
                 }
 
                 return shouldCopy;
