@@ -16,7 +16,7 @@ namespace Servy.Core.Helpers
     public class ProcessHelper : IProcessHelper
     {
         /// <summary>
-        /// Enironment Variable Placeholder Regex.
+        /// Unexpanded Enironment Variable Regex.
         /// </summary>
         private static readonly Regex UnexpandedEnvVarRegex = new Regex(
             @"%[^%]+%",
