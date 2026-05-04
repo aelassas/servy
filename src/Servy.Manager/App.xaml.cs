@@ -24,9 +24,8 @@ using Servy.Manager.Converters;
 using Servy.Core.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Servy.Core.Validators;
-using System;
 using System.Threading.Tasks;
-using System.Threading;
+using System;
 
 namespace Servy.Manager
 {
@@ -58,10 +57,6 @@ namespace Servy.Manager
 
         private readonly AppBootstrapper _bootstrapper;
         private bool _isDesktopAppAvailable;
-        private FileSystemWatcher _availabilityWatcher;
-        private FileSystemEventHandler _availabilityChangedHandler;
-        private RenamedEventHandler _availabilityRenamedHandler;
-        private readonly CancellationTokenSource _appLifetimeCts = new CancellationTokenSource();
 
         #endregion
 
@@ -136,7 +131,9 @@ namespace Servy.Manager
             }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Gets the dependencies refresh interval in milliseconds.
+        /// </summary>
         public int DependenciesRefreshIntervalInMs { get; private set; }
 
         /// <inheritdoc/>
@@ -287,177 +284,13 @@ namespace Servy.Manager
                     {
                         Logger.Warn($"Desktop app executable not found: {DesktopAppPublishPath}");
                     }
-
-                    LogsWindowDays = int.TryParse(config["LogsWindowDays"], out var lwd) ? lwd : AppConfig.DefaultLogsWindowDays;
-
-                    SearchDebounceDelayMs = int.TryParse(config["SearchDebounceDelayMs"], out var sdd) ? sdd : AppConfig.DefaultSearchDebounceDelayMs;
-
-                    MaxBulkOperationParallelism = int.TryParse(config["MaxBulkOperationParallelism"], out var mbp) ? mbp : AppConfig.DefaultMaxBulkOperationParallelism;
-
-                    StartAvailabilityMonitor();
                 }
             };
 
             _bootstrapper = new AppBootstrapper(
                 options,
-                Services.GetRequiredService<IProcessHelper>(),
                 Services.GetRequiredService<IProcessKiller>()
                 );
-        }
-
-        #endregion
-
-        #region Private Methods
-
-        /// <summary>
-        /// Starts a real-time, resilient background monitor to track the availability of the 
-        /// desktop configuration application.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// This implementation follows a multi-phase state machine approach to ensure high 
-        /// reliability and zero side-effects:
-        /// </para>
-        /// <list type="bullet">
-        /// <item>
-        /// <description>
-        /// <b>Phase 1 (Polling):</b> Employs a non-blocking loop to wait for the target directory's 
-        /// creation. If the directory already exists, this phase is skipped.
-        /// </description>
-        /// </item>
-        /// <item>
-        /// <description>
-        /// <b>Phase 2 (Attachment):</b> Initializes the <see cref="FileSystemWatcher"/> once 
-        /// the path is valid, providing instant event-driven updates for file lifecycle changes.
-        /// </description>
-        /// </item>
-        /// <item>
-        /// <description>
-        /// <b>Phase 3 (Heartbeat):</b> Since <see cref="FileSystemWatcher"/> becomes orphaned 
-        /// and silent if its root directory is renamed or deleted, a background heartbeat 
-        /// periodically verifies directory existence.
-        /// </description>
-        /// </item>
-        /// <item>
-        /// <description>
-        /// <b>Phase 4 (Recovery):</b> If the directory is lost, the watcher is deterministically 
-        /// cleaned up, the UI state is updated, and the monitor seamlessly reverts to Phase 1.
-        /// </description>
-        /// </item>
-        /// </list>
-        /// </remarks>
-        private async void StartAvailabilityMonitor()
-        {
-            if (string.IsNullOrEmpty(DesktopAppPublishPath)) return;
-
-            string directory = Path.GetDirectoryName(DesktopAppPublishPath);
-            string fileName = Path.GetFileName(DesktopAppPublishPath);
-
-            if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName)) return;
-
-            try
-            {
-                // Outer loop keeps the monitor alive for the lifetime of the application
-                while (!_appLifetimeCts.Token.IsCancellationRequested)
-                {
-                    // PHASE 1: Waiting for Installation
-                    // Deferred Attachment: Wait for the directory to exist naturally on disk.
-                    while (!Directory.Exists(directory))
-                    {
-                        await Task.Delay(AppConfig.AppAvailabilityPollIntervalMs, _appLifetimeCts.Token);
-                    }
-
-                    // PHASE 2: Attachment
-                    // Initialize the watcher now that the path is valid.
-                    _availabilityWatcher = new FileSystemWatcher(directory, fileName)
-                    {
-                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.CreationTime | NotifyFilters.LastWrite,
-                        EnableRaisingEvents = true
-                    };
-
-                    _availabilityChangedHandler = (s, e) => UpdateAvailabilityState();
-                    _availabilityRenamedHandler = (s, e) => UpdateAvailabilityState();
-
-                    _availabilityWatcher.Created += _availabilityChangedHandler;
-                    _availabilityWatcher.Deleted += _availabilityChangedHandler;
-                    _availabilityWatcher.Changed += _availabilityChangedHandler;
-                    _availabilityWatcher.Renamed += _availabilityRenamedHandler;
-
-                    // Log unexpected buffer overflows, but we no longer rely on this for directory renames
-                    _availabilityWatcher.Error += (s, e) =>
-                        Logger.Warn($"FileSystemWatcher for {fileName} entered an error state.");
-
-                    // Perform an initial check immediately upon attachment
-                    UpdateAvailabilityState();
-
-                    // PHASE 3: The Heartbeat
-                    // FileSystemWatcher is completely blind if its own root directory is renamed or deleted.
-                    // We use a low-cost heartbeat to verify the directory still exists.
-                    while (Directory.Exists(directory))
-                    {
-                        await Task.Delay(AppConfig.AppAvailabilityPollIntervalMs, _appLifetimeCts.Token);
-                    }
-
-                    // PHASE 4: Recovery
-                    // If the code reaches this point, the parent directory was renamed or deleted.
-                    // We clean up the stale watcher, force a UI update to 'False', and let the 
-                    // outer loop drop us seamlessly back into Phase 1 to wait for it to return.
-                    Current.Dispatcher.Invoke(() =>
-                    {
-                        CleanupAvailabilityWatcher();
-                        UpdateAvailabilityState();
-                    });
-                }
-            }
-            catch (TaskCanceledException)
-            {
-                // Expected during app shutdown, exit gracefully
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to initialize FileSystemWatcher for {fileName}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Re-evaluates the availability of the target app and safely updates the UI binding.
-        /// </summary>
-        private void UpdateAvailabilityState()
-        {
-            // Dispatch to UI thread to safely update data-bound properties from the watcher's background thread
-            Current.Dispatcher.InvokeAsync(() =>
-            {
-                if (!string.IsNullOrEmpty(DesktopAppPublishPath))
-                {
-                    IsDesktopAppAvailable = File.Exists(DesktopAppPublishPath);
-                }
-            });
-        }
-
-        /// <summary>
-        /// Safely detaches handlers and disposes of the current availability watcher.
-        /// </summary>
-        private void CleanupAvailabilityWatcher()
-        {
-            if (_availabilityWatcher != null)
-            {
-                _availabilityWatcher.EnableRaisingEvents = false;
-
-                if (_availabilityChangedHandler != null)
-                {
-                    _availabilityWatcher.Created -= _availabilityChangedHandler;
-                    _availabilityWatcher.Deleted -= _availabilityChangedHandler;
-                    _availabilityWatcher.Changed -= _availabilityChangedHandler;
-                }
-
-                if (_availabilityRenamedHandler != null)
-                {
-                    _availabilityWatcher.Renamed -= _availabilityRenamedHandler;
-                }
-
-                _availabilityWatcher.Dispose();
-                _availabilityWatcher = null;
-            }
         }
 
         #endregion
@@ -472,51 +305,23 @@ namespace Servy.Manager
         /// <param name="e">The startup event arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
         {
+            if (Services == null)
+            {
+                throw new InvalidOperationException("Service provider is not initialized.");
+            }
+
+            // 1. Run base bootstrapper startup (initializes configuration and logger)
             _bootstrapper.OnStartup(this, e);
             base.OnStartup(e);
 
+            // 2. SAFE START: Start the monitor now that _bootstrapper is guaranteed to be initialized
+            // and configuration has been processed by the call above.
+            _bootstrapper.StartAvailabilityMonitor(DesktopAppPublishPath, isAvailable => IsDesktopAppAvailable = isAvailable, this);
+
+            // 3. Fire-and-forget initialization
             // Use a dedicated async method instead of a chained ContinueWith 
             // to ensure the startup lifecycle and any faults are correctly observed.
-            _ = InitializeAppWithFaultHandlingAsync(e, Services.GetRequiredService<IProcessHelper>());
-        }
-
-        /// <summary>
-        /// Asynchronously initializes the application and handles any critical faults 
-        /// that occur before the UI is ready.
-        /// </summary>
-        /// <param name="e">The startup event arguments.</param>
-        /// <param name="processHelper">An instance of <see cref="IProcessHelper"/> used to query running processes.</param>
-        /// <returns>A <see cref="Task"/> representing the initialization process.</returns>
-        private async Task InitializeAppWithFaultHandlingAsync(StartupEventArgs e, IProcessHelper processHelper)
-        {
-            try
-            {
-                await _bootstrapper.InitializeAppAsync(this, e, processHelper);
-            }
-            catch (Exception ex)
-            {
-                // Ensure we catch the actual exception, not just a faulted task
-                Logger.Error("Critical Startup Fault in InitializeApp", ex);
-
-                // Ensure UI interaction happens on the UI thread to prevent 
-                // cross-thread exceptions during the crash report.
-                await Current.Dispatcher.InvokeAsync(() =>
-                {
-                    try
-                    {
-                        MessageBox.Show(
-                            $"Critical Startup Fault: {ex.Message}",
-                            Config.AppConfig.Caption,
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
-                    }
-                    finally
-                    {
-                        // Hard exit to prevent the app from lingering as a background process.
-                        Shutdown(1);
-                    }
-                });
-            }
+            _ = _bootstrapper.InitializeAppWithFaultHandlingAsync(this, e, Config.AppConfig.Caption);
         }
 
         /// <summary>
@@ -533,10 +338,6 @@ namespace Servy.Manager
         {
             try
             {
-                CleanupAvailabilityWatcher();
-                _appLifetimeCts?.Cancel();
-                _appLifetimeCts?.Dispose();
-                _availabilityWatcher?.Dispose();
                 _bootstrapper.OnExit(e);
             }
             finally
