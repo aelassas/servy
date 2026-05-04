@@ -200,28 +200,17 @@ jobs:
           & $env:SEVEN_ZIP | Select-String "7-Zip"
 
       # -----------------------------------------------------
-      # Build projects individually
+      # Build projects
       # -----------------------------------------------------
+      - name: Restore dependencies
+        shell: pwsh
+        run: |
+          dotnet restore Servy.sln
+
       - name: Build Servy projects
         shell: pwsh
         run: |
-          $projects = @(
-            "src\Servy.Restarter\Servy.Restarter.csproj",
-            "src\Servy.Service\Servy.Service.csproj",
-            "src\Servy\Servy.csproj",
-            "src\Servy.CLI\Servy.CLI.csproj",
-            "src\Servy.Manager\Servy.Manager.csproj"
-          )
-
-          foreach ($proj in $projects) {
-            Write-Host "Restoring $proj..."
-            dotnet restore $proj --runtime win-x64
-          }
-
-          foreach ($proj in $projects) {
-            Write-Host "Building $proj ($env:CONFIGURATION)..."
-            dotnet build $proj --configuration $env:CONFIGURATION --no-restore
-          }
+          dotnet build Servy.sln --no-restore
 
       # -----------------------------------------------------
       # Run unit tests
