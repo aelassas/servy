@@ -115,9 +115,6 @@ namespace Servy.Restarter
                 scopedLogger = rootLogger.CreateScoped(serviceName);
                 scopedLogger.SetLogLevel(logLevel);
 
-                // Set log level
-                scopedLogger.SetLogLevel(logLevel);
-
                 // Sync Event Log enablement to the instance
                 bool isEventLogEnabled;
                 if (!bool.TryParse(config["EnableEventLog"], out isEventLogEnabled))
