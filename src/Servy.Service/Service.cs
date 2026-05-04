@@ -2161,7 +2161,7 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Error("Teardown error during {reason}.", ex);
+                    _logger?.Error($"Teardown error during {reason}.", ex);
 
                     // Reset the tearing down flag so the service can attempt recovery 
                     // if the child process exits or the SCM attempts another stop.
