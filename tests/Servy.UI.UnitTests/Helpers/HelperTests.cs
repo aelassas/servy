@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using Xunit;
-using Servy.UI.Helpers;
 
 namespace Servy.UI.UnitTests.Helpers
 {
@@ -16,26 +11,36 @@ namespace Servy.UI.UnitTests.Helpers
         #region GetVisualChild Tests
 
         [Fact]
-        public void GetVisualChild_NoChildren_ReturnsNull()
+        public async Task GetVisualChild_NoChildren_ReturnsNull()
         {
-            Helper.RunInSTA(() =>
+            await Helper.RunInSTAContext(async () =>
             {
                 // Branch: Loop i < GetChildrenCount (zero count)
                 var border = new Border();
+
+                // Force layout generation
+                border.Measure(new Size(100, 100));
+                border.Arrange(new Rect(0, 0, 100, 100));
+
                 var result = UI.Helpers.Helper.GetVisualChild<ScrollViewer>(border);
                 Assert.Null(result);
             });
         }
 
         [Fact]
-        public void GetVisualChild_ImmediateChildFound_ReturnsChild()
+        public async Task GetVisualChild_ImmediateChildFound_ReturnsChild()
         {
-            Helper.RunInSTA(() =>
+            await Helper.RunInSTAContext(async () =>
             {
                 // Branch: if (child is T t) return t;
                 var grid = new Grid();
                 var scrollViewer = new ScrollViewer();
                 grid.Children.Add(scrollViewer);
+
+                // Force WPF to build the visual tree in memory
+                grid.Measure(new Size(100, 100));
+                grid.Arrange(new Rect(0, 0, 100, 100));
+                grid.UpdateLayout();
 
                 var result = UI.Helpers.Helper.GetVisualChild<ScrollViewer>(grid);
 
@@ -45,9 +50,9 @@ namespace Servy.UI.UnitTests.Helpers
         }
 
         [Fact]
-        public void GetVisualChild_DeepChildFound_ReturnsChild()
+        public async Task GetVisualChild_DeepChildFound_ReturnsChild()
         {
-            Helper.RunInSTA(() =>
+            await Helper.RunInSTAContext(async () =>
             {
                 // Branch: var res = GetVisualChild<T>(child); if (res != null) return res;
                 var grid = new Grid();
@@ -56,6 +61,11 @@ namespace Servy.UI.UnitTests.Helpers
 
                 grid.Children.Add(border);
                 border.Child = scrollViewer;
+
+                // Force WPF to build the deep visual tree in memory
+                grid.Measure(new Size(100, 100));
+                grid.Arrange(new Rect(0, 0, 100, 100));
+                grid.UpdateLayout();
 
                 var result = UI.Helpers.Helper.GetVisualChild<ScrollViewer>(grid);
 
