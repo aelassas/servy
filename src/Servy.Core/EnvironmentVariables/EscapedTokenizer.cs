@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -91,7 +90,7 @@ namespace Servy.Core.EnvironmentVariables
         }
 
         /// <summary>
-        /// Unescapes backslash-escaped characters, converting escaped equals, semicolons, quotes, and backslashes into their literal equivalents.
+        /// Unescapes backslash-escaped characters, converting escaped equals, semicolons, quotes, newlines, and backslashes into their literal equivalents.
         /// </summary>
         /// <param name="input">The input string to unescape.</param>
         /// <returns>The fully unescaped string.</returns>
@@ -107,8 +106,9 @@ namespace Servy.Core.EnvironmentVariables
             {
                 if (escape)
                 {
-                    // Unescape =, ;, \, and " 
-                    if (c == '=' || c == ';' || c == '\\' || c == '"')
+                    // Added \r and \n to match the delimiter set used in SplitByUnescapedDelimiters.
+                    // Unescape =, ;, \, ", \r, and \n
+                    if (c == '=' || c == ';' || c == '\\' || c == '"' || c == '\r' || c == '\n')
                         sb.Append(c);
                     else
                     {

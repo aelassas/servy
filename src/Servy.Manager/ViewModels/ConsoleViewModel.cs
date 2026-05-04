@@ -673,15 +673,7 @@ namespace Servy.Manager.ViewModels
                         oldTailingCts.Dispose();
                     }
 
-                    // 3. Dispose Monitoring CTS
-                    var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
-                    if (oldMonitoringCts != null)
-                    {
-                        oldMonitoringCts.Cancel();
-                        oldMonitoringCts.Dispose();
-                    }
-
-                    // 4. Dispose Log Filter Debounce CTS
+                    // 3. Dispose Log Filter Debounce CTS
                     var oldFilterCts = Interlocked.Exchange(ref _logFilterCts, null);
                     if (oldFilterCts != null)
                     {

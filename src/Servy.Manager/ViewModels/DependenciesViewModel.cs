@@ -1,11 +1,9 @@
 ﻿using Servy.Core.Data;
-using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Config;
 using Servy.Manager.Design;
 using Servy.Manager.Models;
-using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
 using Servy.UI.Constants;
@@ -15,9 +13,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
-using System.Windows.Threading;
 
 namespace Servy.Manager.ViewModels
 {
@@ -382,15 +378,7 @@ namespace Servy.Manager.ViewModels
             {
                 if (disposing)
                 {
-                    // 1. Dispose Monitoring CTS
-                    var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
-                    if (oldMonitoringCts != null)
-                    {
-                        oldMonitoringCts.Cancel();
-                        oldMonitoringCts.Dispose();
-                    }
-
-                    // 2. Dispose Tree Loading CTS
+                    // Dispose Tree Loading CTS
                     var oldLoadTreeCts = Interlocked.Exchange(ref _loadTreeCts, null);
                     if (oldLoadTreeCts != null)
                     {

@@ -39,7 +39,8 @@ namespace Servy.Manager.Converters
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             // Pattern matching handles the null check and unboxing in one go.
-            // If the bound property is double? and is null, this will safely return false.
+            // If the bound property is double? and is null, the pattern match fails
+            // and we fall through to the UnknownRamUsage placeholder.
             if (value is long ramUsage)
             {
                 return _processHelper.FormatRamUsage(ramUsage);

@@ -441,30 +441,6 @@ namespace Servy.Manager.ViewModels
             }
         }
 
-        /// <summary>
-        /// Cleans up resources, cancels background tasks, and explicitly unsubscribes 
-        /// from timer events to prevent memory leaks.
-        /// </summary>
-        protected override void Dispose(bool disposing)
-        {
-            if (!_disposedValue)
-            {
-                if (disposing)
-                {
-                    // Cancel and dispose the Monitoring CTS
-                    var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
-                    if (oldMonitoringCts != null)
-                    {
-                        oldMonitoringCts.Cancel();
-                        oldMonitoringCts.Dispose();
-                    }
-                }
-
-                base.Dispose(disposing);
-                _disposedValue = true;
-            }
-        }
-
         #endregion
 
     }
