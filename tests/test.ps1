@@ -57,6 +57,7 @@ $TestProjects = @(
     Join-Path $ScriptDir "Servy.Service.UnitTests\Servy.Service.UnitTests.csproj"
     Join-Path $ScriptDir "Servy.Service.IntegrationTests\Servy.Service.IntegrationTests.csproj"
     Join-Path $ScriptDir "Servy.UI.UnitTests\Servy.UI.UnitTests.csproj"
+    Join-Path $ScriptDir "Servy.UI.IntegrationTests\Servy.UI.IntegrationTests.csproj"
     Join-Path $ScriptDir "Servy.UnitTests\Servy.UnitTests.csproj"
     Join-Path $ScriptDir "Servy.Manager.UnitTests\Servy.Manager.UnitTests.csproj"
     Join-Path $ScriptDir "Servy.CLI.UnitTests\Servy.CLI.UnitTests.csproj"

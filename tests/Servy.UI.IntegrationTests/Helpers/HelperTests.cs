@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Servy.Testing;
+using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Xunit;
 
-namespace Servy.UI.UnitTests.Helpers
+namespace Servy.UI.IntegrationTests.Helpers
 {
     public class HelperTests
     {

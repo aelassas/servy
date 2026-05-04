@@ -1,7 +1,7 @@
 ﻿using Servy.UI.Services;
 using Xunit;
 
-namespace Servy.UI.UnitTests.Services
+namespace Servy.UI.IntegrationTests.Services
 {
     public class FileDialogServiceTests
     {

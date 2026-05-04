@@ -6,11 +6,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{B9711395-1470-4868-8477-45E7FE2F6A07}</ProjectGuid>
+    <ProjectGuid>{D9F89DE3-F534-4184-9E9E-64380BC4118A}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Servy.UI.UnitTests</RootNamespace>
-    <AssemblyName>Servy.UI.UnitTests</AssemblyName>
+    <RootNamespace>Servy.UI.IntegrationTests</RootNamespace>
+    <AssemblyName>Servy.UI.IntegrationTests</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -44,6 +44,7 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x64\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
@@ -94,7 +95,6 @@
       <HintPath>..\..\packages\System.Runtime.CompilerServices.Unsafe.6.1.2\lib\net462\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.4.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\..\packages\System.Threading.Tasks.Extensions.4.6.3\lib\net462\System.Threading.Tasks.Extensions.dll</HintPath>
     </Reference>
@@ -119,27 +119,26 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BulkObservableCollectionTests.cs" />
-    <Compile Include="Commands\AsyncCommandTests.cs" />
-    <Compile Include="Commands\RelayCommandTests.cs" />
-    <Compile Include="Converters\BoolToVisibilityConverterTests.cs" />
-    <Compile Include="Converters\InverseBooleanConverterTests.cs" />
-    <Compile Include="Design\DesignTimeMocksTests.cs" />
-    <Compile Include="Helpers\ImportGuardTests.cs" />
+    <Compile Include="Helpers\HelperTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\CursorServiceTests.cs" />
+    <Compile Include="Services\FileDialogServiceTests.cs" />
+    <Compile Include="Services\HelpServiceTests.cs" />
+    <Compile Include="Services\MessageBoxServiceTests.cs" />
+    <Compile Include="Services\WpfUiDispatcherTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Servy.Core\Servy.Core.csproj">
-      <Project>{4d92fa0d-47bb-4658-91cd-774a25adeb87}</Project>
-      <Name>Servy.Core</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\Servy.UI\Servy.UI.csproj">
       <Project>{4b7e8659-0b61-4eeb-94df-0458bc3e571d}</Project>
       <Name>Servy.UI</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj">
+      <Project>{4bc9a435-c352-4953-82b8-b419b13e8f56}</Project>
+      <Name>Servy.Testing</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -4,7 +4,7 @@ using System;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Servy.UI.UnitTests.Services
+namespace Servy.UI.IntegrationTests.Services
 {
     public class HelpServiceTests
     {

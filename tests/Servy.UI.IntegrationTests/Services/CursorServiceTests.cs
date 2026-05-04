@@ -6,8 +6,9 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using Xunit;
 using Servy.UI.Services;
+using Servy.Testing;
 
-namespace Servy.UI.UnitTests.Services
+namespace Servy.UI.IntegrationTests.Services
 {
     public class CursorServiceTests
     {
@@ -48,31 +49,21 @@ namespace Servy.UI.UnitTests.Services
         [Fact]
         public async Task ResetCursor_FromBackgroundThread_InvokesOnDispatcher()
         {
-            // This test requires an active STA thread pumping messages
-            var tcs = new TaskCompletionSource<bool>();
-
-            Helper.RunInSTA(() =>
+            // Use the persistent STA context instead of the synchronous RunInSTA
+            await Helper.RunInSTAContext(async () =>
             {
                 EnsureApplicationContext();
                 Mouse.OverrideCursor = Cursors.Hand;
 
-                // Branch: else { Application.Current.Dispatcher.InvokeAsync(...) }
-                // Call the service from a background thread while the STA thread pumps
-                Task.Run(() =>
+                // The service should detect we are on a background thread 
+                // and use Dispatcher.InvokeAsync
+                await Task.Run(() =>
                 {
                     _service.ResetCursor();
-                    tcs.SetResult(true);
                 });
 
-                // Pump the dispatcher to allow the InvokeAsync call to execute
-                DoEvents();
-            });
-
-            await tcs.Task;
-
-            // Verification depends on the cursor state being reset after the dispatcher work
-            Helper.RunInSTA(() =>
-            {
+                // Verification: Since we are back on the STA thread after the await,
+                // we can check the cursor state immediately.
                 Assert.Null(Mouse.OverrideCursor);
             });
         }

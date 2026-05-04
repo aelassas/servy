@@ -1,12 +1,9 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Threading;
-using Xunit;
+﻿using Servy.Testing;
 using Servy.UI.Services;
+using System.Threading.Tasks;
+using Xunit;
 
-namespace Servy.UI.UnitTests.Services
+namespace Servy.UI.IntegrationTests.Services
 {
     public class MessageBoxServiceTests
     {

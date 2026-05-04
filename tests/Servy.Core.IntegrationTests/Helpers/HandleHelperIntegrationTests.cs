@@ -13,21 +13,22 @@ namespace Servy.Core.IntegrationTests.Helpers
     /// Integration tests for the HandleHelper class.
     /// These tests require handle.exe to be present and the runner to be elevated.
     /// </summary>
+    [CollectionDefinition("HandleHelperIntegrationTests", DisableParallelization = true)]
     public class HandleHelperIntegrationTests : IDisposable
     {
-        private readonly string _handleExePath;
+        // FIX: Make the path and extraction state static so it only initializes once per test run
+        private static readonly string _handleExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64.exe");
+        private static readonly object _extractionLock = new object();
+        private static bool _isExtracted = false;
+
         private readonly List<string> _tempFiles = new List<string>();
         private readonly List<FileStream> _openedStreams = new List<FileStream>();
-        private readonly IProcessHelper _processHelper = new ProcessHelper();
 
         /// <summary>
         /// Initializes the test class by ensuring handle64.exe is extracted from resources.
         /// </summary>
         public HandleHelperIntegrationTests()
         {
-            // Setup the path in the test execution directory
-            _handleExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64.exe");
-
             ExtractHandleExe();
 
             if (!File.Exists(_handleExePath))
@@ -41,38 +42,48 @@ namespace Servy.Core.IntegrationTests.Helpers
         /// </summary>
         private void ExtractHandleExe()
         {
-            if (File.Exists(_handleExePath)) return;
+            // Fast path: if already extracted in this test run, skip immediately
+            if (_isExtracted || File.Exists(_handleExePath)) return;
 
-            var assembly = Assembly.GetExecutingAssembly();
-            // Resource names usually follow: ProjectNamespace.Folder.FileName.Extension
-            // Update "Servy.Core.IntegrationTests" to match your actual test project namespace if different.
-            string resourceName = "Servy.Core.IntegrationTests.Resources.handle64.exe";
-
-            using (Stream resourceStream = assembly.GetManifestResourceStream(resourceName))
+            // FIX: Thread-safe lock prevents multiple tests from extracting simultaneously
+            lock (_extractionLock)
             {
-                if (resourceStream == null)
+                if (_isExtracted || File.Exists(_handleExePath)) return;
+
+                var assembly = Assembly.GetExecutingAssembly();
+                // Resource names usually follow: ProjectNamespace.Folder.FileName.Extension
+                // Update "Servy.Core.IntegrationTests" to match your actual test project namespace if different.
+                string resourceName = "Servy.Core.IntegrationTests.Resources.handle64.exe";
+
+                using (Stream resourceStream = assembly.GetManifestResourceStream(resourceName))
                 {
-                    // Fallback: try to find the resource by name if the full namespace path is unknown
-                    var actualName = assembly.GetManifestResourceNames()
-                        .FirstOrDefault(n => n.EndsWith("handle64.exe"));
-
-                    if (actualName == null) return;
-
-                    using (var fallbackStream = assembly.GetManifestResourceStream(actualName))
+                    if (resourceStream == null)
                     {
-                        WriteResourceToDisk(fallbackStream);
+                        // Fallback: try to find the resource by name if the full namespace path is unknown
+                        var actualName = assembly.GetManifestResourceNames()
+                            .FirstOrDefault(n => n.EndsWith("handle64.exe"));
+
+                        if (actualName == null) return;
+
+                        using (var fallbackStream = assembly.GetManifestResourceStream(actualName))
+                        {
+                            WriteResourceToDisk(fallbackStream);
+                        }
+                    }
+                    else
+                    {
+                        WriteResourceToDisk(resourceStream);
                     }
                 }
-                else
-                {
-                    WriteResourceToDisk(resourceStream);
-                }
+
+                _isExtracted = true;
             }
         }
 
         private void WriteResourceToDisk(Stream stream)
         {
-            using (FileStream fileStream = new FileStream(_handleExePath, FileMode.Create, FileAccess.Write))
+            // FIX: Added FileShare.ReadWrite to prevent locking crashes if Antivirus scans it during write
+            using (FileStream fileStream = new FileStream(_handleExePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
             {
                 stream.CopyTo(fileStream);
             }
@@ -97,11 +108,9 @@ namespace Servy.Core.IntegrationTests.Helpers
                 }
             }
 
-            // Optional: Cleanup the extracted handle64.exe
-            if (File.Exists(_handleExePath))
-            {
-                try { File.Delete(_handleExePath); } catch { /* Ignore cleanup errors */ }
-            }
+            // FIX: DO NOT delete handle64.exe here.
+            // Deleting an executable while another test's constructor is initializing causes the IOException.
+            // Leaving it in the bin folder is completely safe for integration tests.
         }
 
         private string CreateTempFile()

@@ -69,6 +69,7 @@ jobs:
               @{ Name = "Servy.Service.UnitTests"; Dir = "Service"; Filter = "Category!=ReflectionValidation" }
               @{ Name = "Servy.Service.IntegrationTests"; Dir = "Service"; Filter = $null }
               @{ Name = "Servy.UI.UnitTests"; Dir = "UI"; Filter = $null }
+              @{ Name = "Servy.UI.IntegrationTests"; Dir = "UI"; Filter = $null }
               @{ Name = "Servy.UnitTests"; Dir = "UnitTests"; Filter = $null }
               @{ Name = "Servy.Manager.UnitTests"; Dir = "Manager"; Filter = $null }
               @{ Name = "Servy.CLI.UnitTests"; Dir = "CLI"; Filter = $null }

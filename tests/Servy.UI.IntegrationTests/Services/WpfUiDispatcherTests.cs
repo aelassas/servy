@@ -1,11 +1,10 @@
-﻿using System;
-using System.Threading;
+﻿using Servy.Testing;
+using Servy.UI.Services;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using Xunit;
-using Servy.UI.Services;
 
-namespace Servy.UI.UnitTests.Services
+namespace Servy.UI.IntegrationTests.Services
 {
     public class WpfUiDispatcherTests
     {

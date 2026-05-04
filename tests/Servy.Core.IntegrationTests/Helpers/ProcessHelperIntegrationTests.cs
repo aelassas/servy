@@ -14,6 +14,7 @@ namespace Servy.Core.IntegrationTests.Helpers
     /// Verifies OS-level interactions including file system resolution, environment variable expansion, 
     /// and native Windows process tree traversal.
     /// </summary>
+    [CollectionDefinition("ProcessHelperIntegrationTests", DisableParallelization = true)]
     public class ProcessHelperIntegrationTests : IDisposable
     {
         private readonly ProcessHelper _sut;
@@ -189,7 +190,8 @@ namespace Servy.Core.IntegrationTests.Helpers
             var childProcessInfo = new ProcessStartInfo("cmd.exe", "/c ping 127.0.0.1 -n 3")
             {
                 CreateNoWindow = true,
-                UseShellExecute = false
+                UseShellExecute = false,
+                WorkingDirectory = Path.GetTempPath(),
             };
 
             var childProcess = Process.Start(childProcessInfo);
