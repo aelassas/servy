@@ -958,7 +958,7 @@ function Install-ServyService {
 
     [switch] $EnableDateRotation,
 
-    [ValidateSet("Daily", "Weekly", "Monthly")]
+    [ValidateSet("Daily", "Weekly", "Monthly", "None")]
     [string] $DateRotationType,
 
     [ValidateRange(0, 10000)]
