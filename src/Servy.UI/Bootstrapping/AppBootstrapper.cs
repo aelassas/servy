@@ -10,9 +10,7 @@ using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
 using System.Diagnostics;
-#if !DEBUG
 using System.IO;
-#endif
 using System.Reflection;
 using System.Windows;
 using System.Windows.Interop;
@@ -25,10 +23,23 @@ namespace Servy.UI.Bootstrapping
     /// </summary>
     /// <remarks>
     /// This class centralizes shared logic for Rendering Tier detection, unhandled exception 
-    /// orchestration, configuration loading via JSON, and embedded resource extraction.
+    /// orchestration, configuration loading via JSON, embedded resource extraction, and target app availability monitoring.
     /// </remarks>
     public class AppBootstrapper
     {
+        #region Private Fields
+
+        private readonly BootstrapperOptions _options;
+        private readonly IProcessKiller _processKiller;
+        private IConfiguration? _configuration;
+
+        private FileSystemWatcher? _availabilityWatcher;
+        private FileSystemEventHandler? _availabilityChangedHandler;
+        private RenamedEventHandler? _availabilityRenamedHandler;
+        private readonly CancellationTokenSource _appLifetimeCts = new CancellationTokenSource();
+
+        #endregion
+
         #region Properties
 
         /// <summary>
@@ -68,9 +79,6 @@ namespace Servy.UI.Bootstrapping
 
         #endregion
 
-        private readonly BootstrapperOptions _options;
-        private readonly IProcessKiller _processKiller;
-        private IConfiguration? _configuration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppBootstrapper"/> class.
@@ -215,6 +223,42 @@ namespace Servy.UI.Bootstrapping
         }
 
         /// <summary>
+        /// Asynchronously initializes the application and handles any critical faults 
+        /// that occur before the UI is ready.
+        /// </summary>
+        /// <param name="app">The active WPF application instance.</param>
+        /// <param name="e">The startup event arguments.</param>
+        /// <param name="caption">Error dialog caption.</param>
+        /// <returns>A <see cref="Task"/> representing the execution.</returns>
+        public async Task InitializeAppWithFaultHandlingAsync(Application app, StartupEventArgs e, string caption)
+        {
+            try
+            {
+                await InitializeAppAsync(app, e);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Critical Startup Fault in InitializeApp", ex);
+
+                await app.Dispatcher.InvokeAsync(() =>
+                {
+                    try
+                    {
+                        MessageBox.Show(
+                            $"Critical Startup Fault: {ex.Message}",
+                            caption,
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
+                    finally
+                    {
+                        app.Shutdown(1);
+                    }
+                });
+            }
+        }
+
+        /// <summary>
         /// Asynchronously handles heavy initialization tasks such as database migrations, 
         /// resource extraction, and window orchestration.
         /// </summary>
@@ -318,11 +362,135 @@ namespace Servy.UI.Bootstrapping
         }
 
         /// <summary>
+        /// Starts a real-time, resilient background monitor to track the availability of the target application.
+        /// </summary>
+        /// <param name="targetAppPublishPath">The path to the target application executable.</param>
+        /// <param name="updateAvailabilityCallback">The callback to invoke when the target application's availability state changes.</param>
+        /// <param name="app">The active WPF application instance.</param>
+        public async void StartAvailabilityMonitor(string? targetAppPublishPath, Action<bool> updateAvailabilityCallback, Application app)
+        {
+            if (string.IsNullOrEmpty(targetAppPublishPath)) return;
+
+            string? directory = Path.GetDirectoryName(targetAppPublishPath);
+            string fileName = Path.GetFileName(targetAppPublishPath);
+
+            if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName)) return;
+
+            try
+            {
+                // Outer loop keeps the monitor alive for the lifetime of the application
+                while (!_appLifetimeCts.Token.IsCancellationRequested)
+                {
+                    // PHASE 1: Waiting for Installation
+                    // Deferred Attachment: Wait for the directory to exist naturally on disk.
+                    while (!Directory.Exists(directory))
+                    {
+                        await Task.Delay(AppConfig.AppAvailabilityPollIntervalMs, _appLifetimeCts.Token);
+                    }
+
+                    // PHASE 2: Attachment
+                    // Initialize the watcher now that the path is valid.
+                    _availabilityWatcher = new FileSystemWatcher(directory, fileName)
+                    {
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.CreationTime | NotifyFilters.LastWrite,
+                        EnableRaisingEvents = true
+                    };
+
+                    _availabilityChangedHandler = (s, e) => UpdateAvailabilityState(targetAppPublishPath, updateAvailabilityCallback, app);
+                    _availabilityRenamedHandler = (s, e) => UpdateAvailabilityState(targetAppPublishPath, updateAvailabilityCallback, app);
+
+                    _availabilityWatcher.Created += _availabilityChangedHandler;
+                    _availabilityWatcher.Deleted += _availabilityChangedHandler;
+                    _availabilityWatcher.Changed += _availabilityChangedHandler;
+                    _availabilityWatcher.Renamed += _availabilityRenamedHandler;
+
+                    // Log unexpected buffer overflows, but we no longer rely on this for directory renames
+                    _availabilityWatcher.Error += (s, e) =>
+                        Logger.Warn($"FileSystemWatcher for {fileName} entered an error state.");
+
+                    // Perform an initial check immediately upon attachment
+                    UpdateAvailabilityState(targetAppPublishPath, updateAvailabilityCallback, app);
+
+                    // PHASE 3: The Heartbeat
+                    // FileSystemWatcher is completely blind if its own root directory is renamed or deleted.
+                    // We use a low-cost heartbeat to verify the directory still exists.
+                    while (Directory.Exists(directory))
+                    {
+                        await Task.Delay(AppConfig.AppAvailabilityPollIntervalMs, _appLifetimeCts.Token);
+                    }
+
+                    // PHASE 4: Recovery
+                    // If the code reaches this point, the parent directory was renamed or deleted.
+                    // We clean up the stale watcher, force a UI update to 'False', and let the 
+                    // outer loop drop us seamlessly back into Phase 1 to wait for it to return.
+                    app.Dispatcher.Invoke(() =>
+                    {
+                        CleanupAvailabilityWatcher();
+                        UpdateAvailabilityState(targetAppPublishPath, updateAvailabilityCallback, app);
+                    });
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                // Expected during app shutdown, exit gracefully
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to initialize FileSystemWatcher for {fileName}", ex);
+            }
+        }
+
+        private void UpdateAvailabilityState(string targetAppPublishPath, Action<bool> updateAvailabilityCallback, Application app)
+        {
+            // Dispatch to UI thread to safely update data-bound properties from the watcher's background thread
+            app.Dispatcher.InvokeAsync(() =>
+            {
+                if (!string.IsNullOrEmpty(targetAppPublishPath))
+                {
+                    updateAvailabilityCallback(File.Exists(targetAppPublishPath));
+                }
+            });
+        }
+
+        /// <summary>
+        /// Safely detaches event handlers and disposes of the current availability watcher to prevent 
+        /// memory leaks and ensure a clean state before re-attachment or shutdown.
+        /// </summary>
+        private void CleanupAvailabilityWatcher()
+        {
+            if (_availabilityWatcher != null)
+            {
+                // Disable event raising first to prevent race conditions during detachment
+                _availabilityWatcher.EnableRaisingEvents = false;
+
+                if (_availabilityChangedHandler != null)
+                {
+                    _availabilityWatcher.Created -= _availabilityChangedHandler;
+                    _availabilityWatcher.Deleted -= _availabilityChangedHandler;
+                    _availabilityWatcher.Changed -= _availabilityChangedHandler;
+                }
+
+                if (_availabilityRenamedHandler != null)
+                {
+                    _availabilityWatcher.Renamed -= _availabilityRenamedHandler;
+                }
+
+                _availabilityWatcher.Dispose();
+                _availabilityWatcher = null;
+            }
+        }
+
+        /// <summary>
         /// Orchestrates the deterministic cleanup of application resources during the exit sequence.
         /// </summary>
         /// <param name="e">The <see cref="ExitEventArgs"/> containing the event data.</param>
         public void OnExit(ExitEventArgs e)
         {
+            CleanupAvailabilityWatcher();
+            TryDispose(() => _appLifetimeCts?.Cancel(), nameof(_appLifetimeCts));
+            TryDispose(() => _appLifetimeCts?.Dispose(), nameof(_appLifetimeCts));
+            TryDispose(() => _availabilityWatcher?.Dispose(), nameof(_availabilityWatcher));
+
             TryDispose(() => DbContext?.Dispose(), nameof(DbContext));
             TryDispose(() => SecureData?.Dispose(), nameof(SecureData));
         }
