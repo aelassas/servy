@@ -73,9 +73,12 @@
                     fs.Seek(peOffset + 24, SeekOrigin.Begin);
                     ushort magic = reader.ReadUInt16();
 
-                    // 5. Determine Subsystem Offset
+                    // Validate the magic word
                     // PE32 (32-bit) uses Magic 0x10B. PE32+ (64-bit) uses 0x20B.
-                    // Subsystem is 68 bytes into the Optional Header for BOTH.
+                    if (magic != 0x10B && magic != 0x20B) return false;
+
+                    // 5. Determine Subsystem Offset
+                    // Subsystem is 68 bytes into the Optional Header for BOTH PE32 and PE32+.
                     fs.Seek(peOffset + 24 + 68, SeekOrigin.Begin);
                     ushort subsystem = reader.ReadUInt16();
 

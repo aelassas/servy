@@ -1,14 +1,13 @@
 ﻿using Servy.Core.Enums;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using Servy.UI.ViewModels; // Inheriting from the centralized UI ViewModel base
 
 namespace Servy.Manager.Models
 {
     /// <summary>
     /// Represents a Windows service and its metadata within Servy Manager.
-    /// Implements INotifyPropertyChanged to support UI bindings.
+    /// Implements INotifyPropertyChanged via ViewModelBase to support UI bindings.
     /// </summary>
-    public class Service : INotifyPropertyChanged
+    public class Service : ViewModelBase
     {
         private string? _name;
         private string? _description;
@@ -32,7 +31,7 @@ namespace Servy.Manager.Models
         public string? Name
         {
             get => _name;
-            set => SetProperty(ref _name, value);
+            set => Set(ref _name, value);
         }
 
         /// <summary>
@@ -41,7 +40,7 @@ namespace Servy.Manager.Models
         public string? Description
         {
             get => _description;
-            set => SetProperty(ref _description, value);
+            set => Set(ref _description, value);
         }
 
         /// <summary>
@@ -50,7 +49,7 @@ namespace Servy.Manager.Models
         public ServiceStatus? Status
         {
             get => _status;
-            set => SetProperty(ref _status, value);
+            set => Set(ref _status, value);
         }
 
         /// <summary>
@@ -59,7 +58,7 @@ namespace Servy.Manager.Models
         public bool IsInstalled
         {
             get => _isInstalled;
-            set => SetProperty(ref _isInstalled, value);
+            set => Set(ref _isInstalled, value);
         }
 
         /// <summary>
@@ -68,7 +67,7 @@ namespace Servy.Manager.Models
         public bool IsDesktopAppAvailable
         {
             get => _isDesktopAppAvailable;
-            set => SetProperty(ref _isDesktopAppAvailable, value);
+            set => Set(ref _isDesktopAppAvailable, value);
         }
 
         /// <summary>
@@ -77,7 +76,7 @@ namespace Servy.Manager.Models
         public ServiceStartType? StartupType
         {
             get => _startupType;
-            set => SetProperty(ref _startupType, value);
+            set => Set(ref _startupType, value);
         }
 
         /// <summary>
@@ -86,7 +85,7 @@ namespace Servy.Manager.Models
         public string? LogOnAs
         {
             get => _logOnAs;
-            set => SetProperty(ref _logOnAs, value);
+            set => Set(ref _logOnAs, value);
         }
 
         /// <summary>
@@ -95,7 +94,7 @@ namespace Servy.Manager.Models
         public int? Pid
         {
             get => _pid;
-            set => SetProperty(ref _pid, value);
+            set => Set(ref _pid, value);
         }
 
         /// <summary>
@@ -104,7 +103,7 @@ namespace Servy.Manager.Models
         public bool IsPidEnabled
         {
             get => _isPidEnabled;
-            set => SetProperty(ref _isPidEnabled, value);
+            set => Set(ref _isPidEnabled, value);
         }
 
         /// <summary>
@@ -114,7 +113,7 @@ namespace Servy.Manager.Models
         public double? CpuUsage
         {
             get => _cpuUsage;
-            set => SetProperty(ref _cpuUsage, value);
+            set => Set(ref _cpuUsage, value);
         }
 
         /// <summary>
@@ -123,7 +122,7 @@ namespace Servy.Manager.Models
         public long? RamUsage
         {
             get => _ramUsage;
-            set => SetProperty(ref _ramUsage, value);
+            set => Set(ref _ramUsage, value);
         }
 
         /// <summary>
@@ -132,7 +131,7 @@ namespace Servy.Manager.Models
         public string? StdoutPath
         {
             get => _stdoutPath;
-            set => SetProperty(ref _stdoutPath, value);
+            set => Set(ref _stdoutPath, value);
         }
 
         /// <summary>
@@ -141,7 +140,7 @@ namespace Servy.Manager.Models
         public string? StderrPath
         {
             get => _stderrPath;
-            set => SetProperty(ref _stderrPath, value);
+            set => Set(ref _stderrPath, value);
         }
 
         /// <summary>
@@ -150,7 +149,7 @@ namespace Servy.Manager.Models
         public string? ActiveStdoutPath
         {
             get => _activeStdoutPath;
-            set => SetProperty(ref _activeStdoutPath, value);
+            set => Set(ref _activeStdoutPath, value);
         }
 
         /// <summary>
@@ -159,34 +158,7 @@ namespace Servy.Manager.Models
         public string? ActiveStderrPath
         {
             get => _activeStderrPath;
-            set => SetProperty(ref _activeStderrPath, value);
+            set => Set(ref _activeStderrPath, value);
         }
-
-        #region INotifyPropertyChanged
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        /// <summary>
-        /// Raises PropertyChanged event for the specified property.
-        /// </summary>
-        /// <param name="propertyName">Name of the property that changed.</param>
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        /// <summary>
-        /// Helper to set property and raise PropertyChanged if value is different.
-        /// </summary>
-        private bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
-        {
-            if (Equals(field, value)) return false;
-            field = value;
-            OnPropertyChanged(propertyName);
-            return true;
-        }
-
-        #endregion
-
     }
 }

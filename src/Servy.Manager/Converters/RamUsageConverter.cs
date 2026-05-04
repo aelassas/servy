@@ -1,7 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Servy.Core.Helpers;
 using Servy.UI.Constants;
+using Servy.UI.Design;
+using System.ComponentModel;
 using System.Globalization;
+using System.Windows;
 using System.Windows.Data;
 
 namespace Servy.Manager.Converters
@@ -24,11 +27,12 @@ namespace Servy.Manager.Converters
         /// </summary>
         public RamUsageConverter()
         {
-            if (App.Services == null)
+            if (DesignerProperties.GetIsInDesignMode(new DependencyObject()))
             {
-                throw new InvalidOperationException("App.Services is not initialized. Ensure that the application is configured for dependency injection.");
+                _processHelper = new DesignTimeProcessHelper();
+                return;
             }
-            _processHelper = App.Services.GetRequiredService<IProcessHelper>();
+            _processHelper = App.Services!.GetRequiredService<IProcessHelper>();
         }
 
         /// <summary>
@@ -57,7 +61,7 @@ namespace Servy.Manager.Converters
         /// </summary>
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            return Binding.DoNothing;
         }
     }
 }

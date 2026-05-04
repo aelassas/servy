@@ -2,7 +2,6 @@
 using Servy.Core.Data;
 using Servy.Core.Logging;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Servy.Core.Helpers
@@ -11,7 +10,6 @@ namespace Servy.Core.Helpers
     /// Provides helper methods for managing and extracting embedded resources
     /// from the assembly, such as the Servy service executable and related files.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public class ResourceHelper
     {
         private readonly ServiceHelper _serviceHelper;
@@ -48,14 +46,20 @@ namespace Servy.Core.Helpers
             bool stopServices = true,
             bool isCli = false)
         {
+            bool copyDone = false; // Tracks if the physical file copy succeeded
+            string? currentResourceName = null;
+            string? currentTargetPath = null;
+
             try
             {
                 if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, out var targetPath, out var targetFileName, out var resourceName))
                     return true;
 
-                // Get running services
-                var runningServices = new List<string>();
+                currentResourceName = resourceName;
+                currentTargetPath = targetPath;
 
+                // Get running services before the inner try block
+                var runningServices = new List<string>();
                 if (stopServices)
                 {
                     runningServices = isCli
@@ -85,18 +89,34 @@ namespace Servy.Core.Helpers
                     {
                         await Helper.WriteFileAtomicAsync(targetPath, resourceStream.CopyToAsync);
                     }
+
+                    copyDone = true; // File write succeeded
                 }
                 finally
                 {
                     if (stopServices && runningServices.Count > 0)
                     {
-                        Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
-                        await _serviceHelper.StartServices(runningServices);
+                        try
+                        {
+                            Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
+                            await _serviceHelper.StartServices(runningServices);
+                        }
+                        catch (Exception startEx)
+                        {
+                            // Differentiate restart failure from copy failure
+                            Logger.Error(
+                                $"Embedded resource '{resourceName}' was successfully copied to '{targetPath}', but {runningServices.Count} previously-running services failed to restart.",
+                                startEx);
+                        }
                     }
                 }
 
-                Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
-                return true;
+                if (copyDone)
+                {
+                    Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
+                }
+
+                return copyDone;
             }
             catch (Exception ex)
             {
