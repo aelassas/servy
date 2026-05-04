@@ -2368,17 +2368,10 @@ namespace Servy.Core.UnitTests.Services
         [Theory]
         [InlineData("")]
         [InlineData("   ")]
-        public void GetDependencies_InvalidServiceName_ShouldReturnNull(string serviceName)
+        public void GetDependencies_InvalidServiceName_ShouldThrowArgumentException(string serviceName)
         {
-            // Act
-            var result = _serviceManager.GetDependencies(serviceName);
-
             // Assert
-            Assert.Null(result);
-
-            _mockController.Verify(
-                c => c.GetDependencies(),
-                Times.Never);
+            Assert.Throws<ArgumentException>(() => _serviceManager.GetDependencies(serviceName));
         }
 
         [Fact]
@@ -2395,11 +2388,8 @@ namespace Servy.Core.UnitTests.Services
                     new WindowsServiceInfo { ServiceName = "TestService", DisplayName = "TestServiceDisplayName" }
                  });
 
-            // Act
-            var result = _serviceManager.GetDependencies("TestService");
-
             // Assert
-            Assert.Null(result);
+            Assert.Throws<InvalidOperationException>(() => _serviceManager.GetDependencies("TestService"));
 
             _mockController.Verify(c => c.GetDependencies(), Times.Once);
         }

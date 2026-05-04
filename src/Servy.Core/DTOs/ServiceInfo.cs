@@ -1,4 +1,5 @@
-﻿using Servy.Core.Enums;
+﻿using Servy.Core.Config;
+using Servy.Core.Enums;
 
 namespace Servy.Core.DTOs
 {
@@ -43,7 +44,7 @@ namespace Servy.Core.DTOs
         {
             Status = ServiceStatus.None;
             StartupType = ServiceStartType.Automatic;
-            LogOnAs = "LocalSystem";
+            LogOnAs = ServiceAccounts.LocalSystem;
             Description = string.Empty;
         }
     }

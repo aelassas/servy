@@ -139,33 +139,57 @@ namespace Servy.Core.Services
 
                     // 3. Add to path before diving deeper
                     currentPath.Add(serviceName);
+                    ServiceController[] deps = null;
 
-                    // Collect children in a temporary list to sort them before adding to the TreeView
-                    var childNodes = new List<ServiceDependencyNode>();
-
-                    var deps = service.ServicesDependedOn;
-                    foreach (var dep in deps)
+                    try
                     {
+                        // Collect children in a temporary list to sort them before adding to the TreeView
+                        var childNodes = new List<ServiceDependencyNode>();
+
+                        // Accessing this property can throw Win32Exception (Access Denied)
+                        deps = service.ServicesDependedOn;
+
                         try
                         {
-                            childNodes.Add(BuildDependencyTree(dep.ServiceName, currentPath, fullyExpanded));
+                            foreach (var dep in deps)
+                            {
+                                try
+                                {
+                                    childNodes.Add(BuildDependencyTree(dep.ServiceName, currentPath, fullyExpanded));
+                                }
+                                finally
+                                {
+                                    // Individual disposal for the "happy path" and failed recursion
+                                    dep.Dispose();
+                                }
+                            }
                         }
                         finally
                         {
-                            dep.Dispose();
+                            // ROBUSTNESS: Dispose all remaining handles if the foreach exited early due to an exception.
+                            // ServiceController.Dispose() is idempotent, making this safe for previously disposed items.
+                            foreach (var dep in deps)
+                            {
+                                try { dep.Dispose(); } catch { }
+                            }
                         }
-                    }
 
-                    // 4. SORT and ADD: Order alphabetically by DisplayName
-                    var sortedChildren = childNodes.OrderBy(n => n.DisplayName, StringComparer.OrdinalIgnoreCase);
-                    foreach (var child in sortedChildren)
+                        // 4. SORT and ADD: Order alphabetically by DisplayName
+                        var sortedChildren = childNodes.OrderBy(n => n.DisplayName, StringComparer.OrdinalIgnoreCase);
+                        foreach (var child in sortedChildren)
+                        {
+                            node.Dependencies.Add(child);
+                        }
+
+                        // Mark globally as fully expanded only after successful processing
+                        fullyExpanded.Add(serviceName);
+                    }
+                    finally
                     {
-                        node.Dependencies.Add(child);
+                        // 5. BACKTRACK: Ensure the service is always removed from the current path,
+                        // preventing path corruption for sibling nodes if an exception occurred.
+                        currentPath.RemoveAt(currentPath.Count - 1);
                     }
-
-                    // 5. BACKTRACK: Remove from current path, but mark globally as fully expanded
-                    currentPath.RemoveAt(currentPath.Count - 1);
-                    fullyExpanded.Add(serviceName);
 
                     return node;
                 }

@@ -4,6 +4,7 @@ using Servy.Core.Services;
 using Servy.Manager.Config;
 using Servy.Manager.Design;
 using Servy.Manager.Models;
+using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
 using Servy.UI.Constants;
@@ -32,6 +33,7 @@ namespace Servy.Manager.ViewModels
         private bool _hadSelectedService;
         private bool _disposedValue;
         private readonly IAppConfiguration _appConfig;
+        private readonly IMessageBoxService _messageBoxService;
 
         #endregion
 
@@ -134,12 +136,14 @@ namespace Servy.Manager.ViewModels
             IServiceCommands serviceCommands,
             IAppConfiguration appConfig,
             ICursorService cursorService,
-            IUiDispatcher uiDispatcher) : base(cursorService, uiDispatcher)
+            IUiDispatcher uiDispatcher,
+            IMessageBoxService messageBoxService) : base(cursorService, uiDispatcher)
         {
-            _serviceRepository = serviceRepository;
-            _serviceManager = serviceManager;
-            ServiceCommands = serviceCommands;
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
+            ServiceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
+            _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
 
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
             RefreshCommand = new AsyncCommand(LoadDependencyTreeAsync);
@@ -158,7 +162,8 @@ namespace Servy.Manager.ViewModels
             new DesignTimeServiceCommands(),
             new DesignTimeAppConfig(),
             new UI.Design.DesignTimeCursorService(),
-            new UI.Design.DesignTimeUiDispatcher()
+            new UI.Design.DesignTimeUiDispatcher(),
+            new UI.Design.DesignTimeMessageBoxService()
             )
         { }
 
@@ -361,6 +366,7 @@ namespace Servy.Manager.ViewModels
             catch (Exception ex)
             {
                 Logger.Error($"Failed to load dependency tree for {SelectedService?.Name}", ex);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_FailedToLoadDependencyTree, AppConfig.Caption);
             }
             finally
             {

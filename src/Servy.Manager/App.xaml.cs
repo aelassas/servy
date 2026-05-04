@@ -248,7 +248,7 @@ namespace Servy.Manager
                         messageBoxService,
                         new PerformanceViewModel(ServiceRepository, serviceCommands, this, cursorService, processHelper, uiDispatcher),
                         new ConsoleViewModel(ServiceRepository, serviceCommands, this, cursorService, uiDispatcher),
-                        new DependenciesViewModel(ServiceRepository, serviceManager, serviceCommands, this, cursorService, uiDispatcher),
+                        new DependenciesViewModel(ServiceRepository, serviceManager, serviceCommands, this, cursorService, uiDispatcher, messageBoxService),
                         this,
                         cursorService,
                         processHelper

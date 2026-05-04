@@ -562,7 +562,13 @@ namespace Servy.Core.Services
                         sc.Refresh();
                         var sw = Stopwatch.StartNew();
 
-                        while (sc.Status != ServiceControllerStatus.Stopped && sw.Elapsed.TotalSeconds < AppConfig.DefaultServiceStopTimeoutSeconds)
+                        var service = await _serviceRepository.GetByNameAsync(serviceName);
+                        int waitTimeout = ServiceHelper.CalculateStopTimeout(
+                            service?.StopTimeout,
+                            service?.PreviousStopTimeout,
+                            service?.PreStopTimeoutSeconds ?? 0);
+
+                        while (sc.Status != ServiceControllerStatus.Stopped && sw.Elapsed.TotalSeconds < waitTimeout)
                         {
                             // Passing the token to Task.Delay makes the loop immediately responsive to cancellation
                             await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
@@ -933,30 +939,18 @@ namespace Servy.Core.Services
         /// <inheritdoc/>
         public ServiceDependencyNode GetDependencies(string serviceName)
         {
-            try
+            if (string.IsNullOrWhiteSpace(serviceName))
+                throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
+
+            if (!IsServiceInstalled(serviceName))
             {
-                if (string.IsNullOrWhiteSpace(serviceName))
-                    throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
-
-                if (!IsServiceInstalled(serviceName))
-                {
-                    return null;
-                }
-
-                using (var sc = _controllerFactory(serviceName))
-                {
-                    return sc.GetDependencies();
-                }
-
-            }
-            catch (Exception ex)
-            {
-                // Error is intentionally swallowed to keep the API safe
-                // for UI and monitoring scenarios.
-                Logger.Error($"Error getting service dependencies for '{serviceName}'.", ex);
+                return null; // legitimate: not installed
             }
 
-            return null;
+            using (var sc = _controllerFactory(serviceName))
+            {
+                return sc.GetDependencies(); // let exceptions propagate; UI can show "Failed to query: ..."
+            }
         }
 
         #endregion

@@ -46,17 +46,17 @@ namespace Servy.Manager.Validators
             // Delegate core validation logic to the centralized rules engine
             var result = _serviceValidationRules.Validate(dto);
 
-            // Display warnings first to match the legacy validation sequence
-            if (result.Warnings.Any())
-            {
-                await _messageBoxService.ShowWarningAsync(result.Warnings.First(), AppConfig.Caption);
-                return false;
-            }
-
             // Display critical errors
             if (result.Errors.Any())
             {
                 await _messageBoxService.ShowErrorAsync(result.Errors.First(), AppConfig.Caption);
+                return false;
+            }
+
+            // Display warnings first to match the legacy validation sequence
+            if (result.Warnings.Any())
+            {
+                await _messageBoxService.ShowWarningAsync(result.Warnings.First(), AppConfig.Caption);
                 return false;
             }
 
