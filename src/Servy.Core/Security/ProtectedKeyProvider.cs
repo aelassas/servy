@@ -329,7 +329,6 @@ namespace Servy.Core.Security
                         }
                         else
                         {
-                            // Fix for #850: Actually emit the 3002 Warning to the Windows Event Log
                             string warningMsg = $"{baseMsg} (Attempt {failCount}/{MigrationFailureEscalationThreshold}): {ex.Message}";
 
                             try
@@ -337,7 +336,6 @@ namespace Servy.Core.Security
                                 using (var eventLog = new EventLog(AppConfig.EventLogName))
                                 {
                                     eventLog.Source = AppConfig.EventSource;
-                                    // Option (a): Mirror the escalated pattern with a Warning type and ID 3002
                                     eventLog.WriteEntry($"[{AppConfig.EventSource}] {warningMsg}", EventLogEntryType.Warning, EventIds.TransientMigrationWarning);
                                 }
                             }
