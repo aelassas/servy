@@ -109,6 +109,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ProcessManagement\ProcessExtensionsIntegrationTests.cs" />
+    <Compile Include="ProcessManagement\ProcessLauncherIntegrationTests.cs" />
+    <Compile Include="ProcessManagement\ProcessWrapperIntegrationTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -116,6 +118,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Servy.Core\Servy.Core.csproj">
+      <Project>{4d92fa0d-47bb-4658-91cd-774a25adeb87}</Project>
+      <Name>Servy.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\Servy.Service\Servy.Service.csproj">
       <Project>{c41e0e90-cff6-4dfa-a042-59e4b31198a2}</Project>
       <Name>Servy.Service</Name>
