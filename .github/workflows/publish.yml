@@ -200,21 +200,13 @@ jobs:
           & $env:SEVEN_ZIP | Select-String "7-Zip"
 
       # -----------------------------------------------------
-      # Build projects
+      # Run unit tests
       # -----------------------------------------------------
       - name: Restore dependencies
         shell: pwsh
         run: |
           dotnet restore Servy.sln
 
-      - name: Build Servy projects
-        shell: pwsh
-        run: |
-          dotnet build Servy.sln --no-restore
-
-      # -----------------------------------------------------
-      # Run unit tests
-      # -----------------------------------------------------
       - name: Run unit tests
         shell: pwsh
         run: dotnet test Servy.sln --configuration $env:CONFIGURATION

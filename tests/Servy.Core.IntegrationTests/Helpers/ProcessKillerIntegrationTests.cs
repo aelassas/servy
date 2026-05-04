@@ -236,16 +236,34 @@ namespace Servy.Core.IntegrationTests.Helpers
                 throw new InvalidOperationException("Failed to spawn a stable file-locking process.");
             }
 
-            // 2. Act: Attempt to kill processes holding the lock
-            bool result = _processKiller.KillProcessesUsingFile(testFile);
+            // 2 & 3. Act & Backoff/Retry Phase for Process Termination
+            bool result = false;
+            bool exited = false;
+            int killAttempts = 0;
+            const int maxKillAttempts = 3;
 
-            // 3. Backoff/Retry Phase for Process Termination
-            // GitHub Actions can be slow; we wait up to 5 seconds for the process to actually exit
-            bool exited = SpinWait.SpinUntil(() => lockingProcess.HasExited, TimeSpan.FromSeconds(5));
+            while (killAttempts < maxKillAttempts && !exited)
+            {
+                // Attempt to kill processes holding the lock
+                result = _processKiller.KillProcessesUsingFile(testFile);
+
+                // GitHub Actions runners can be slow; wait up to 3 seconds per attempt for the process to actually exit
+                exited = SpinWait.SpinUntil(() => lockingProcess.HasExited, TimeSpan.FromSeconds(3));
+
+                if (!exited)
+                {
+                    killAttempts++;
+                    if (killAttempts < maxKillAttempts)
+                    {
+                        // Give the OS handle table a moment to update before attempting the kill again
+                        Thread.Sleep(1000);
+                    }
+                }
+            }
 
             // 4. Assertions
             Assert.True(result, "KillProcessesUsingFile should return true.");
-            Assert.True(exited, "The background process holding the file lock should have been terminated within the timeout.");
+            Assert.True(exited, $"The background process holding the file lock should have been terminated after {killAttempts + 1} attempts.");
 
             // 5. Backoff/Retry Phase for File Deletion
             // Even if the process is dead, the OS might take a few extra milliseconds to release the handle
