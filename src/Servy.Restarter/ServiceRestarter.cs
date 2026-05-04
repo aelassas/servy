@@ -116,7 +116,11 @@ namespace Servy.Restarter
                     else if (targetStatus == ServiceControllerStatus.Running)
                         controller.Start();
 
-                    controller.WaitForStatus(targetStatus, timeout - stopwatch.Elapsed);
+                    var remaining = timeout - stopwatch.Elapsed;
+                    if (remaining <= TimeSpan.Zero)
+                        throw new System.TimeoutException($"Failed to reach {targetStatus} within the timeout period.");
+
+                    controller.WaitForStatus(targetStatus, remaining);
                     return;
                 }
                 catch (InvalidOperationException)

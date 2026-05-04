@@ -63,9 +63,13 @@ namespace Servy.Service.ProcessManagement
                 RedirectStandardError = redirectOutput && !string.IsNullOrWhiteSpace(options.StdErrPath),
             };
 
-            if (redirectOutput)
+            if (psi.RedirectStandardOutput)
             {
                 psi.StandardOutputEncoding = Encoding.UTF8;
+            }
+
+            if (psi.RedirectStandardError)
+            {
                 psi.StandardErrorEncoding = Encoding.UTF8;
             }
 

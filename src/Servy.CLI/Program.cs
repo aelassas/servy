@@ -93,6 +93,7 @@ namespace Servy.CLI
             }
 
             IAppDbContext dbContext = null;
+            ProtectedKeyProvider protectedKeyProvider = null;
             try
             {
                 var verbs = GetVerbs();
@@ -160,7 +161,7 @@ namespace Servy.CLI
                 // Initialize shared dependencies
                 dbContext = new AppDbContext(connectionString);
                 var dapperExecutor = new DapperExecutor(dbContext);
-                var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
+                protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
                 _secureData = new SecureData(protectedKeyProvider);
                 var xmlSerializer = new XmlServiceSerializer();
                 var jsonSerializer = new JsonServiceSerializer();
@@ -310,6 +311,7 @@ namespace Servy.CLI
             finally
             {
                 _secureData?.Dispose();
+                protectedKeyProvider?.Dispose();
                 dbContext?.Dispose();
                 Logger.Shutdown();
             }

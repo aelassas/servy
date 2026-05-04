@@ -61,6 +61,7 @@ namespace Servy.Restarter
             IServyLogger scopedLogger = null;
             AppDbContext dbContext = null;
             SecureData secureData = null;
+            ProtectedKeyProvider protectedKeyProvider = null;
 
             try
             {
@@ -127,7 +128,7 @@ namespace Servy.Restarter
                 dbContext = new AppDbContext(connectionString);
 
                 var dapperExecutor = new DapperExecutor(dbContext);
-                var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
+                protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
                 secureData = new SecureData(protectedKeyProvider);
                 var xmlSerializer = new XmlServiceSerializer();
                 var jsonSerializer = new JsonServiceSerializer();
@@ -166,6 +167,7 @@ namespace Servy.Restarter
             finally
             {
                 // Standard teardown
+                protectedKeyProvider?.Dispose();
                 secureData?.Dispose();
 
                 // ScopedLogger (proxy) disposal is a no-op, but included for pattern consistency.

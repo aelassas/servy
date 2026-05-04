@@ -862,26 +862,30 @@ namespace Servy.Core.Services
         public List<ServiceInfo> GetAllServices(CancellationToken cancellationToken = default(CancellationToken))
         {
             var results = new ConcurrentBag<ServiceInfo>();
-            var services = _serviceControllerProvider.GetServices();
 
-            SafeScmHandle scmHandle = null;
+            // Materialize the list so we can guarantee deterministic disposal of all items
+            var services = _serviceControllerProvider.GetServices().ToList();
+
             try
             {
-                scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ENUMERATE_SERVICE);
-                if (scmHandle == null || scmHandle.IsInvalid)
+                SafeScmHandle scmHandle = null;
+                try
                 {
-                    throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
-                }
-
-                Parallel.ForEach(services, new ParallelOptions
-                {
-                    CancellationToken = cancellationToken,
-                    MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, AppConfig.MaxParallelScmQueries),
-                },
-                service =>
-                {
-                    try
+                    scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ENUMERATE_SERVICE);
+                    if (scmHandle == null || scmHandle.IsInvalid)
                     {
+                        throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
+                    }
+
+                    Parallel.ForEach(services, new ParallelOptions
+                    {
+                        CancellationToken = cancellationToken,
+                        MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, AppConfig.MaxParallelScmQueries),
+                    },
+                    service =>
+                    {
+                        // We do not wrap this body in a try/finally for service.Dispose() anymore,
+                        // as it is handled by the outer block to prevent cancellation leaks.
                         if (cancellationToken.IsCancellationRequested) return;
 
                         ServiceInfo info = new ServiceInfo
@@ -919,20 +923,25 @@ namespace Servy.Core.Services
                         }
 
                         results.Add(info);
-                    }
-                    finally
-                    {
-                        service.Dispose();
-                    }
-                });
+                    });
 
-                return results.OrderBy(s => s.Name).ToList();
+                    return results.OrderBy(s => s.Name).ToList();
+                }
+                finally
+                {
+                    // Handle is disposed directly. The dead task-tracking logic is removed 
+                    // to reflect the synchronous nature of the native SCM queries.
+                    scmHandle?.Dispose();
+                }
             }
             finally
             {
-                // Handle is disposed directly. The dead task-tracking logic is removed 
-                // to reflect the synchronous nature of the native SCM queries.
-                scmHandle?.Dispose();
+                // Guarantee disposal of all service controller wrappers, 
+                // including those left unprocessed due to Parallel loop cancellation.
+                foreach (var service in services)
+                {
+                    service?.Dispose();
+                }
             }
         }
 
