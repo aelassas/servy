@@ -299,10 +299,10 @@ namespace Servy.Service.ProcessManagement
 
             if (isPython)
             {
-                psi.Environment["PYTHONLEGACYWINDOWSSTDIO"] = "0";
-                psi.Environment["PYTHONIOENCODING"] = "utf-8";
-                psi.Environment["PYTHONUTF8"] = "1";
-                psi.Environment["PYTHONUNBUFFERED"] = "1";
+                SetIfMissing(psi, "PYTHONLEGACYWINDOWSSTDIO", "0");
+                SetIfMissing(psi, "PYTHONIOENCODING", "utf-8");
+                SetIfMissing(psi, "PYTHONUTF8", "1");
+                SetIfMissing(psi, "PYTHONUNBUFFERED", "1");
             }
 
             // Java Logic: 
@@ -323,5 +323,26 @@ namespace Servy.Service.ProcessManagement
                 }
             }
         }
+
+        /// <summary>
+        /// Sets an environment variable in the specified <see cref="ProcessStartInfo"/> only if 
+        /// the key does not already exist in the current environment block.
+        /// </summary>
+        /// <remarks>
+        /// This utility ensures that default runtime settings do not overwrite 
+        /// explicit user-defined environment configurations.
+        /// </remarks>
+        /// <param name="psi">The process start information containing the environment block to modify.</param>
+        /// <param name="key">The name of the environment variable key.</param>
+        /// <param name="value">The value to assign to the key if missing.</param>
+        private static void SetIfMissing(ProcessStartInfo psi, string key, string value)
+        {
+            // Perform a safe check against the existing environment dictionary
+            if (!psi.Environment.ContainsKey(key))
+            {
+                psi.Environment[key] = value;
+            }
+        }
+
     }
 }

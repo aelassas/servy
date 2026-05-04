@@ -72,6 +72,45 @@ namespace Servy.Infrastructure.Data
 
             // --- FUTURE MIGRATIONS GO HERE ---
             // if (currentVersion < 5) { ... }
+
+            // 5. Reconciliation safety net
+            // Ensures that any columns added to SqlConstants but missed in migrations are applied.
+            ReconcileSchema(connection, currentVersion);
+        }
+
+        /// <summary>
+        /// Final reconciliation step that ensures the database schema matches the 
+        /// Single Source of Truth (SqlConstants), even if explicit migrations were missed.
+        /// </summary>
+        /// <param name="connection">The active database connection.</param>
+        /// <param name="currentVersion">The schema version detected after migrations.</param>
+        private static void ReconcileSchema(DbConnection connection, int currentVersion)
+        {
+            var existingColumns = new HashSet<string>(
+                connection.Query("PRAGMA table_info(Services);").Select(row => (string)row.name),
+                StringComparer.OrdinalIgnoreCase);
+
+            var expectedColumns = GetExpectedColumns();
+            var missing = expectedColumns.Where(c => !existingColumns.Contains(c)).ToList();
+
+            if (missing.Count > 0)
+            {
+                // Convert silent failure into a logged self-healing event
+                Logger.Warn($"Single-Source-of-Truth drift detected at SchemaVersion={currentVersion}. Adding missing columns: {string.Join(", ", missing)}");
+
+                foreach (var col in missing)
+                {
+                    try
+                    {
+                        connection.Execute($"ALTER TABLE Services ADD COLUMN {col} {GetSqlType(col)};");
+                        Logger.Info($"Self-healed column: {col}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Failed to self-heal column '{col}' during reconciliation.", ex);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -388,6 +427,5 @@ namespace Servy.Infrastructure.Data
 
             return "TEXT";
         }
-
     }
 }
