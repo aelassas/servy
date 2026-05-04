@@ -100,7 +100,8 @@ jobs:
                   --targetargs $targetArgs `
                   --output $outPath `
                   --format "cobertura" `
-                  --include-directory "$env:GITHUB_WORKSPACE"
+                  --include-directory "$env:GITHUB_WORKSPACE" `
+                  --exclude "[Servy.Testing]*"
                   
               if ($LASTEXITCODE -ne 0) { 
                   $failed = $true 
@@ -130,7 +131,8 @@ jobs:
           reportgenerator `
               "-reports:$reportPaths" `
               "-targetdir:CoverageMerged" `
-              "-reporttypes:Cobertura"
+              "-reporttypes:Cobertura" `
+              "-assemblyfilters:-Servy.Testing"
 
       - name: Normalize coverage paths (PowerShell)
         if: always()
