@@ -36,7 +36,6 @@ namespace Servy.Manager.ViewModels
         private readonly double _ramDisplayMax = 10; // Minimum RAM scale (MB) to avoid flat graphs for small processes
 
         private bool _hadSelectedService;
-        private bool _disposedValue;
         private readonly IAppConfiguration _appConfig;
         private readonly IProcessHelper _processHelper;
 

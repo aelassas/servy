@@ -67,20 +67,32 @@ namespace Servy.Core.Logging
         /// <param name="isEnabled">True to enable, false to disable.</param>
         public void SetIsEventLogEnabled(bool isEnabled)
         {
-            if (isEnabled && _eventLog == null)
+            if (isEnabled)
             {
-                InitializeEventLog();
+                if (_eventLog == null)
+                {
+                    InitializeEventLog();
+                    // InitializeEventLog sets _isEventLogEnabled to false on failure.
+                }
+                else
+                {
+                    _isEventLogEnabled = true;
+                }
             }
-            _isEventLogEnabled = isEnabled;
+            else
+            {
+                _isEventLogEnabled = false;
+
+                // CLEANUP: Dispose and null the handle when logging is explicitly turned off.
+                _eventLog?.Dispose();
+                _eventLog = null;
+            }
         }
 
         /// <inheritdoc/>
         public IServyLogger CreateScoped(string prefix)
         {
             // Inherit the parent's settings but apply the new immutable prefix.
-            // If we want nested prefixes (e.g., [Parent][Child]), use:
-            // var newPrefix = string.IsNullOrEmpty(Prefix) ? prefix : $"{Prefix}][{prefix}";
-
             return new ScopedEventLogLogger(this, prefix);
         }
 
@@ -173,6 +185,7 @@ namespace Servy.Core.Logging
             if (disposing)
             {
                 _eventLog?.Dispose();
+                _eventLog = null;
             }
 
             _disposed = true;
@@ -222,6 +235,8 @@ namespace Servy.Core.Logging
                     Log = AppConfig.EventLogName,
                     Source = _source,
                 };
+
+                _isEventLogEnabled = true; // Ensure flag matches successful initialization
             }
             catch (Exception ex)
             {

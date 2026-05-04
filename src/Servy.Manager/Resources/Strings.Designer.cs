@@ -790,6 +790,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Failed to load service dependency tree..
+        /// </summary>
+        public static string Msg_FailedToLoadDependencyTree {
+            get {
+                return ResourceManager.GetString("Msg_FailedToLoadDependencyTree", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Failed to load JSON service configuration..
         /// </summary>
         public static string Msg_FailedToLoadJson {

@@ -18,19 +18,19 @@ namespace Servy.Core.Logging
             {
                 int processedCount = 0;
 
-                for (EventRecord evt = reader.ReadEvent(); evt != null; evt = reader.ReadEvent())
+                // Use a nullable EventRecord and wrap the entire loop body in 'using'
+                for (EventRecord? evt = reader.ReadEvent(); evt != null; evt = reader.ReadEvent())
                 {
-                    // Hard stop: Stop reading from the Windows SCM cursor immediately
-                    if (processedCount >= maxReadCount) yield break;
-
-                    ServyEventLogEntry dto;
                     using (evt)
                     {
-                        dto = MapToDto(evt);
-                    }
+                        // Check the limit inside the using block so 'evt' is disposed on break
+                        if (processedCount >= maxReadCount) yield break;
 
-                    processedCount++;
-                    yield return dto;
+                        ServyEventLogEntry dto = MapToDto(evt);
+
+                        processedCount++;
+                        yield return dto;
+                    }
                 }
             }
         }
@@ -71,7 +71,7 @@ namespace Servy.Core.Logging
         {
             switch (level)
             {
-                case 1: 
+                case 1:
                     return EventLogLevel.Error;  // Critical -> map to Error (closest match)
                 case 2:
                     return EventLogLevel.Error;

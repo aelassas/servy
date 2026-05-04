@@ -463,4 +463,8 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Found {0} logs in {1}</value>
   </data>
 
+  <data name="Msg_FailedToLoadDependencyTree" xml:space="preserve">
+    <value>Failed to load service dependency tree.</value>
+  </data>
+  
 </root>

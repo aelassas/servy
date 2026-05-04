@@ -10,7 +10,9 @@ namespace Servy.UI.Commands
     {
         private readonly Func<object?, Task> _execute;
         private readonly Predicate<object?>? _canExecute;
-        private volatile bool _isExecuting;
+
+        // Use an integer for atomic Interlocked operations (0 = idle, 1 = executing)
+        private int _isExecuting;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncCommand"/> class.
@@ -31,7 +33,8 @@ namespace Servy.UI.Commands
         /// <returns><see langword="true"/> if the command is not currently executing and the predicate allows it; otherwise, <see langword="false"/>.</returns>
         public bool CanExecute(object? parameter)
         {
-            return !_isExecuting && (_canExecute?.Invoke(parameter) ?? true);
+            // Thread-safe read of the execution state
+            return Volatile.Read(ref _isExecuting) == 0 && (_canExecute?.Invoke(parameter) ?? true);
         }
 
         /// <summary>
@@ -60,17 +63,22 @@ namespace Servy.UI.Commands
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task ExecuteAsync(object? parameter)
         {
-            if (!CanExecute(parameter)) return;
+            // Atomic check-and-set: Attempt to transition from 0 (idle) to 1 (executing).
+            // If the original value was not 0, another execution is already in progress.
+            if (Interlocked.CompareExchange(ref _isExecuting, 1, 0) != 0) return;
 
             try
             {
-                _isExecuting = true;
+                // Secondary check: ensure the custom predicate still allows execution
+                if (_canExecute != null && !_canExecute(parameter)) return;
+
                 RaiseCanExecuteChanged();
                 await _execute(parameter);
             }
             finally
             {
-                _isExecuting = false;
+                // Atomic reset to idle
+                Interlocked.Exchange(ref _isExecuting, 0);
                 RaiseCanExecuteChanged();
             }
         }
