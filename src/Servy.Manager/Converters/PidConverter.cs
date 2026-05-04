@@ -25,10 +25,7 @@ namespace Servy.Manager.Converters
         /// <returns>The PID as string.</returns>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value == null)
-                return UnknownPid;
-
-            return value.ToString();
+            return value?.ToString() ?? UnknownPid;
         }
 
         /// <summary>

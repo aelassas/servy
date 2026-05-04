@@ -25,6 +25,27 @@ using static Servy.CLI.Helpers.Helper;
 namespace Servy.CLI
 {
     /// <summary>
+    /// Defines exit codes for the Servy command-line interface.
+    /// </summary>
+    public enum CliExitCode
+    {
+        /// <summary>
+        /// The operation completed successfully.
+        /// </summary>
+        Success = 0,
+
+        /// <summary>
+        /// A generic error occurred during execution.
+        /// </summary>
+        Error = 1,
+
+        /// <summary>
+        /// The environment is incompatible with the application (e.g., vulnerable SQLite version).
+        /// </summary>
+        IncompatibleEnvironment = 2
+    }
+
+    /// <summary>
     /// The main entry point for the Servy command-line interface application.
     /// Responsible for parsing command-line arguments and executing
     /// corresponding service management commands.
@@ -67,8 +88,8 @@ namespace Servy.CLI
                 Console.WriteLine($"This version of Servy requires SQLite {AppConfig.MinRequiredSqliteVersion}+.");
                 Console.ResetColor();
 
-                // Exit with a specific error code to inform the OS/Admin of a security incompatibility
-                Environment.Exit(1064);
+                // Exit with a CLI-specific sentinel instead of a SCM Win32 error code
+                Environment.Exit((int)CliExitCode.IncompatibleEnvironment);
             }
 
             IAppDbContext dbContext = null;
@@ -271,13 +292,10 @@ namespace Servy.CLI
                         // Wrap synchronous error result in Task
                         errs =>
                         {
-                            if (errs.IsHelp())
-                                return Task.FromResult(0);
+                            if (errs.IsHelp() || errs.IsVersion())
+                                return Task.FromResult((int)CliExitCode.Success);
 
-                            if (errs.IsVersion())
-                                return Task.FromResult(0);
-
-                            return Task.FromResult(1);
+                            return Task.FromResult((int)CliExitCode.Error);
                         }
                     );
 
@@ -287,7 +305,7 @@ namespace Servy.CLI
             {
                 Logger.Error("An unexpected error occurred in the main execution flow.", ex);
                 Console.WriteLine($"An unexpected error occurred: {ex.Message}");
-                return 1;
+                return (int)CliExitCode.Error;
             }
             finally
             {

@@ -388,7 +388,7 @@ namespace Servy.Service
                 // (like 13 from ProtectedKeyProvider), preserve it. Otherwise, set a generic service failure code.
                 if (Environment.ExitCode == 0)
                 {
-                    Environment.ExitCode = 1064; // ERROR_EXCEPTION_IN_SERVICE
+                    Environment.ExitCode = 1066; // ERROR_EXCEPTION_IN_SERVICE
                 }
 
                 // By explicitly calling Environment.Exit here, we guarantee the SCM registers 
@@ -429,7 +429,7 @@ namespace Servy.Service
                 if (options == null)
                 {
                     // Set a non-zero exit code so Windows knows it failed
-                    ExitCode = 1064; // ERROR_SERVICE_SPECIFIC_ERROR
+                    ExitCode = 1066; // ERROR_SERVICE_SPECIFIC_ERROR
                     throw new InvalidOperationException("Failed to initialize service options.");
                 }
 
