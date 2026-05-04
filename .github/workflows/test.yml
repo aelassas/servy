@@ -62,13 +62,26 @@ jobs:
 
           foreach ($proj in $testProjects) {
               Write-Host "Running tests for $($proj.Dir)..." -ForegroundColor Cyan
-              
+    
+              # Common arguments for all test runs
+              $testArgs = @(
+                  "test", $proj.Path,
+                  "--configuration", "Debug",
+                  "--no-build",
+                  "--collect:`"XPlat Code Coverage`"",
+                  "--results-directory", "./TestResults/$($proj.Dir)",
+                  "--",
+                  "DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura",
+                  "DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=`"[Servy.Testing]*`"" # <-- ADD THIS
+              )
+
               if ($proj.Filter) {
-                  & dotnet test $proj.Path --configuration Debug --no-build --filter $proj.Filter --collect:"XPlat Code Coverage" --results-directory "./TestResults/$($proj.Dir)" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
-              } else {
-                  & dotnet test $proj.Path --configuration Debug --no-build --collect:"XPlat Code Coverage" --results-directory "./TestResults/$($proj.Dir)" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+                  $testArgs.Insert(4, "--filter")
+                  $testArgs.Insert(5, $proj.Filter)
               }
-              
+
+              & dotnet @testArgs
+    
               if ($LASTEXITCODE -ne 0) { 
                   $failed = $true 
                   Write-Error "Tests failed for project: $($proj.Dir)"
@@ -107,7 +120,11 @@ jobs:
           & $dotnet tool install dotnet-reportgenerator-globaltool --version 5.*
 
           # Run reportgenerator via dotnet CLI from local manifest
-          & $dotnet tool run reportgenerator -reports:$($coverageFiles -join ";") -targetdir:$fixedDir -reporttypes:Cobertura
+          & $dotnet tool run reportgenerator `
+              -reports:$($coverageFiles -join ";") `
+              -targetdir:$fixedDir `
+              -reporttypes:Cobertura `
+              -assemblyfilters:-Servy.Testing
           Pop-Location
 
           # Normalize filename paths dynamically for ALL Servy projects
