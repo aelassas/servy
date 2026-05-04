@@ -5,19 +5,15 @@
 # runs all tests, collects coverage for all components,
 # normalizes paths, and uploads coverage to Codecov and Coveralls.
 # ===========================================
-
 name: test
-
 on:
   push:
     branches:
       - net48
   workflow_dispatch:
-
 permissions:
   contents: read
   issues: write
-
 jobs:
   test:
     runs-on: windows-2022
@@ -26,7 +22,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # important, otherwise commit message won't be available
+          fetch-depth: 0   # important, otherwise commit message won't be available          
           
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -93,14 +89,18 @@ jobs:
                   $targetArgs += " /TestCaseFilter:`"$($proj.Filter)`""
               }
               
-              $outPath = "$($proj.Dir)\coverage.cobertura.xml"
+              # FIX: Include the project name in the file so integration tests don't overwrite unit tests
+              $outPath = "$($proj.Dir)\$($proj.Name).coverage.cobertura.xml"
               
+              # FIX: Exclude all Unit, Integration, and Testing assemblies from instrumentation
               & coverlet.exe $dllPath `
                   --target "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
                   --targetargs $targetArgs `
                   --output $outPath `
                   --format "cobertura" `
                   --include-directory "$env:GITHUB_WORKSPACE" `
+                  --exclude "[*.UnitTests]*" `
+                  --exclude "[*.IntegrationTests]*" `
                   --exclude "[Servy.Testing]*"
                   
               if ($LASTEXITCODE -ne 0) { 
@@ -123,16 +123,18 @@ jobs:
         shell: pwsh
         run: |
           # Find all newly generated cobertura files dynamically
-          $reports = Get-ChildItem -Path . -Recurse -Filter "coverage.cobertura.xml" | Where-Object { $_.FullName -notmatch "CoverageMerged" }
+          # FIX: Updated the filter to match the new unique filenames
+          $reports = Get-ChildItem -Path . -Recurse -Filter "*coverage.cobertura.xml" | Where-Object { $_.FullName -notmatch "CoverageMerged" }
           if ($reports.Count -eq 0) { Write-Error "No coverage files found!"; exit 1 }
           
           $reportPaths = $reports.FullName -join ";"
           
+          # FIX: Add wildcard assembly filters to physically strip test assemblies from the merged XML
           reportgenerator `
               "-reports:$reportPaths" `
               "-targetdir:CoverageMerged" `
               "-reporttypes:Cobertura" `
-              "-assemblyfilters:-Servy.Testing"
+              "-assemblyfilters:-*.UnitTests;-*.IntegrationTests;-Servy.Testing"
 
       - name: Normalize coverage paths (PowerShell)
         if: always()
