@@ -112,13 +112,14 @@ jobs:
           Push-Location $localTools
           & $dotnet tool install dotnet-reportgenerator-globaltool --version 5.*
 
-          # Run reportgenerator via dotnet CLI from local manifest          
-          # FIX: Strip test assemblies from the final merged XML
+          # Run reportgenerator via dotnet CLI from local manifest
+          # FIX: Wrapped arguments containing semicolons (;) in double-quotes so PowerShell parses them correctly
+          $joinedReports = $coverageFiles.FullName -join ';'
           & $dotnet tool run reportgenerator `
-              -reports:$($coverageFiles -join ";") `
-              -targetdir:$fixedDir `
-              -reporttypes:Cobertura `
-              -assemblyfilters:-*.UnitTests;-*.IntegrationTests;-Servy.Testing
+              "-reports:$joinedReports" `
+              "-targetdir:$fixedDir" `
+              "-reporttypes:Cobertura" `
+              "-assemblyfilters:-*.UnitTests;-*.IntegrationTests;-Servy.Testing"
           Pop-Location
 
           # Normalize filename paths dynamically for ALL Servy projects          
