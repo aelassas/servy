@@ -89,9 +89,39 @@ jobs:
           "HASH=$LOWER" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Remove-Item $InstallerPath
 
+      - name: Create PowerShell utility
+        shell: pwsh
+        run: |
+          $script = @'
+          function Write-ScoopManifest {
+              param($jsonObj, $jsonPath)
+              if ($null -eq $jsonObj) { throw "jsonObj cannot be null" }
+              
+              $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
+              
+              # Split lines correctly using regex
+              $lines = [regex]::Split($jsonString, "\r?\n")
+              
+              # Modify each line (expand 2-space indentation to 4-space)
+              $lines = $lines | ForEach-Object {
+                  [regex]::Replace($_, '^( +)', { param($m) " " * ($m.Value.Length * 2) })
+              }
+              
+              # Join lines back together with trailing newline
+              $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
+              
+              # Write to file using UTF8
+              [System.IO.File]::WriteAllText($jsonPath, $jsonString, [System.Text.Encoding]::UTF8)
+              Write-Host "Successfully wrote manifest to $jsonPath"
+          }
+          '@
+          # Write to temp directory to ensure accessibility across subfolders
+          $script | Out-File -FilePath "$env:TEMP\ScoopUtils.ps1" -Encoding utf8
+
       - name: Update servy.json in current repository
         shell: pwsh
         run: |
+          . "$env:TEMP\ScoopUtils.ps1"
           $manifestPath = "setup/scoop/servy.json"
           if (-Not (Test-Path $manifestPath)) {
               Write-Error "Manifest not found at $manifestPath"
@@ -104,16 +134,7 @@ jobs:
           $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-x64-installer.exe"
           $jsonObj.architecture.'64bit'.hash = $env:HASH
 
-          # Format JSON with 2-space indentation
-          $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
-          $lines = [regex]::Split($jsonString, "\r?\n")
-          $lines = $lines | ForEach-Object {
-              [regex]::Replace($_, '^( +)', { param($m) " " * ($m.Value.Length * 2) })
-          }
-          $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
-
-          # Write back to file
-          [System.IO.File]::WriteAllText($manifestPath, $jsonString, [System.Text.Encoding]::UTF8)
+          Write-ScoopManifest -jsonObj $jsonObj -jsonPath (Resolve-Path $manifestPath)
 
           # Commit and push back to aelassas/servy
           git config user.name "github-actions[bot]"
@@ -132,48 +153,22 @@ jobs:
         env:
           HASH: ${{ env.HASH }}
           VERSION: ${{ env.VERSION }}
-          GH_PAT: ${{ secrets.PAT }} # Pass secret as an ENV variable
+          GH_PAT: ${{ secrets.PAT }}
         run: |
-          # Clone the repository first without injecting PAT globally
+          . "$env:TEMP\ScoopUtils.ps1"
           git clone https://github.com/aelassas/scoop-bucket.git scoop-bucket
-          
-          # Change to the folder where servy.json is
           Set-Location scoop-bucket
           
-          # Scope the PAT securely to this repository's local git config only
           git config url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
           
-          # Path to the manifest inside the cloned repo
-          $manifestPath = "servy.json"   # adjust if servy.json is elsewhere
-          
-          $jsonPath = Join-Path (Get-Location) "servy.json"
-
-          # Load and update JSON
+          $manifestPath = "servy.json"
           $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
           $jsonObj.version = $env:VERSION
           $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-x64-installer.exe"
           $jsonObj.architecture.'64bit'.hash = $env:HASH
           
-          # Save formatted JSON
-          # $jsonObj | ConvertTo-Json -Depth 10 | Out-File $manifestPath -Encoding UTF8
+          Write-ScoopManifest -jsonObj $jsonObj -jsonPath (Join-Path (Get-Location) $manifestPath)
 
-          $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
-
-          # Split lines correctly using regex
-          $lines = [regex]::Split($jsonString, "\r?\n")
-          
-          # Modify each line
-          $lines = $lines | ForEach-Object {
-              [regex]::Replace($_, '^( +)', { param($m) " " * ($m.Value.Length * 2) })
-          }
-          
-          # Join lines back together
-          $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
-          
-          # Write to file
-          [System.IO.File]::WriteAllText($jsonPath, $jsonString, [System.Text.Encoding]::UTF8)
-
-          # Commit and push
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if ((git status --porcelain) -ne '') {
@@ -192,48 +187,40 @@ jobs:
           GH_PAT: ${{ secrets.PAT }}    # Used for Git URL injection
           GH_TOKEN: ${{ secrets.PAT }}  # Used for GH CLI authentication
         run: |
-          # Clone the repository first
+          . "$env:TEMP\ScoopUtils.ps1"
           git clone https://github.com/aelassas/Extras.git extras
           Set-Location extras
 
-          # Scope the PAT securely to this repository's local git config only
           git config url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
-
-          # Define the target branch name
           $branchName = "update-servy-$env:VERSION"
 
-          # CHECK IF PR IS ALREADY MERGED
-          # We check the upstream repo for any merged PRs coming from our specific branch
           $mergedPR = gh pr list --repo ScoopInstaller/Extras --head "aelassas:$branchName" --state merged --json number --limit 1 | ConvertFrom-Json
-          
           if ($mergedPR.Count -gt 0) {
-              Write-Host "A PR for version $env:VERSION has already been merged. Skipping push and PR creation."
+              Write-Host "A PR for version $env:VERSION has already been merged. Skipping."
               return 
           }
 
-          # Make sure master fork is up-to-date
           git remote add upstream https://github.com/ScoopInstaller/Extras.git
           git fetch upstream master
           git checkout -B master upstream/master
           
-          # Create or reset PR branch
-          if (git show-ref --verify --quiet "refs/heads/update-servy-$env:VERSION") {
-              git branch -D "update-servy-$env:VERSION"
+          if (git show-ref --verify --quiet "refs/heads/$branchName") {
+              git branch -D $branchName
           }
-          git checkout -b "update-servy-$env:VERSION"
+          git checkout -b $branchName
           
           $manifestPath = "bucket/servy.json"
-          
+          $fullPath = Join-Path (Get-Location) $manifestPath
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           if (-Not (Test-Path $manifestPath)) {
               # Create new manifest
               $jsonObj = [PSCustomObject]@{
-                  version     = $env:VERSION
-                  description = "Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, pre-launch scripts and parameters."
-                  homepage    = "https://servy-win.github.io"
-                  license     = "MIT"
+                  version      = $env:VERSION
+                  description  = "Servy lets you run any app as a native Windows service with full control."
+                  homepage     = "https://servy-win.github.io"
+                  license      = "MIT"
                   architecture = @{
                       '64bit' = @{
                           url  = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-x64-installer.exe"
@@ -242,13 +229,8 @@ jobs:
                   }
                   innosetup  = $true
                   bin        = "servy-cli.exe"
-                  shortcuts  = @(
-                      @('Servy.exe', 'Servy'),
-                      @('Servy.Manager.exe', 'Servy Manager')
-                  )
-                  checkver   = @{
-                      github = "https://github.com/aelassas/servy"
-                  }
+                  shortcuts  = @(@('Servy.exe', 'Servy'), @('Servy.Manager.exe', 'Servy Manager'))
+                  checkver   = @{ github = "https://github.com/aelassas/servy" }
                   autoupdate = @{
                       architecture = @{
                           '64bit' = @{
@@ -257,67 +239,23 @@ jobs:
                       }
                   }
               }
-
-              $jsonPath = Join-Path (Get-Location) "bucket/servy.json"
-          
-              # Convert object to JSON (2-space indent)
-              $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
-          
-              # Only process if conversion succeeded
-              if (-not [string]::IsNullOrEmpty($jsonString)) {
-          
-                  # Split lines correctly using regex
-                  $lines = [regex]::Split($jsonString, "\r?\n")
-          
-                  # Modify each line
-                  $lines = $lines | ForEach-Object {
-                      [regex]::Replace($_, '^( +)', { param($m) " " * ($m.Value.Length * 2) })
-                  }
-          
-                  # Join lines back together
-                  $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
-          
-                  # Write to file
-                  [System.IO.File]::WriteAllText($jsonPath, $jsonString, [System.Text.Encoding]::UTF8)
-              } else {
-                  throw "`$jsonObj is null or empty; cannot write JSON"
-              }
-
-
+              Write-ScoopManifest -jsonObj $jsonObj -jsonPath $fullPath
               git add $manifestPath
               git commit -m "servy: Update to version $env:VERSION"
           } else {
-              $jsonPath = Join-Path (Get-Location) "bucket/servy.json"
-
               # Update existing manifest
               $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
               $jsonObj.version = $env:VERSION
               $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-x64-installer.exe"
               $jsonObj.architecture.'64bit'.hash = $env:HASH
 
-              $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
-
-              # Split lines correctly using regex
-              $lines = [regex]::Split($jsonString, "\r?\n")
-          
-              # Modify each line
-              $lines = $lines | ForEach-Object {
-                  [regex]::Replace($_, '^( +)', { param($m) " " * ($m.Value.Length * 2) })
-              }
-          
-              # Join lines back together
-              $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
-          
-              # Write to file
-              [System.IO.File]::WriteAllText($jsonPath, $jsonString, [System.Text.Encoding]::UTF8)
+              Write-ScoopManifest -jsonObj $jsonObj -jsonPath $fullPath
           
               if ((git status --porcelain) -ne '') {
                   git add $manifestPath
                   git commit -m "servy: Update to version $env:VERSION"
               }
           }
-          
-          # Only push if we didn't return early due to a merged PR
           git push origin $branchName --force
         
       - name: Open Pull Request in ScoopInstaller/Extras
@@ -327,12 +265,8 @@ jobs:
           GH_TOKEN: ${{ secrets.PAT }}
         run: |
           Set-Location extras
-          
-          # Check if the branch exists on remote
           $branchExists = git ls-remote --heads origin "update-servy-$env:VERSION"
-          
           if ($branchExists) {
-              # Create PR
               gh pr create `
                 --title "servy: Update to version $env:VERSION" `
                 --body "Update Servy to version $env:VERSION." `
@@ -340,6 +274,4 @@ jobs:
                 --head "aelassas:update-servy-$env:VERSION" `
                 --repo ScoopInstaller/Extras `
                 --fill
-          } else {
-              Write-Host "PR branch does not exist on remote, skipping PR creation."
           }

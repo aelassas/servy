@@ -12,7 +12,7 @@ namespace Servy.Manager.Validators
     public class ServiceConfigurationValidator : IServiceConfigurationValidator
     {
         private readonly IMessageBoxService _messageBoxService;
-        private readonly ServiceValidationRules _serviceValidationRules;
+        private readonly IServiceValidationRules _serviceValidationRules;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceConfigurationValidator"/> class.
@@ -20,7 +20,7 @@ namespace Servy.Manager.Validators
         /// <param name="messageBoxService">The service used to display error and warning messages to the user.</param>
         /// <param name="serviceValidationRules">Shared validation rules for service installation.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="messageBoxService"/> or <paramref name="serviceValidationRules"/> is null.</exception>
-        public ServiceConfigurationValidator(IMessageBoxService messageBoxService, ServiceValidationRules serviceValidationRules)
+        public ServiceConfigurationValidator(IMessageBoxService messageBoxService, IServiceValidationRules serviceValidationRules)
         {
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
             _serviceValidationRules = serviceValidationRules ?? throw new ArgumentNullException(nameof(serviceValidationRules));
