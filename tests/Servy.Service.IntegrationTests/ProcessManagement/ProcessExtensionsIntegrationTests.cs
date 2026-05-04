@@ -1,10 +1,5 @@
 ﻿using Servy.Service.ProcessManagement;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using Xunit;
 
 namespace Servy.Service.IntegrationTests.ProcessManagement
 {
@@ -12,6 +7,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
     /// Integration tests for ProcessExtensions.
     /// These tests execute real OS processes and evaluate native Toolhelp32 enumerations.
     /// </summary>
+    [CollectionDefinition("ProcessExtensionsIntegrationTests", DisableParallelization = true)]
     public class ProcessExtensionsIntegrationTests : IDisposable
     {
         private readonly List<Process> _processesToCleanup = new List<Process>();
@@ -19,14 +15,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Format_ActiveProcess_ReturnsProcessNameAndId()
         {
-            // Arrange
             using (var currentProcess = Process.GetCurrentProcess())
             {
-
-                // Act
                 string formatted = currentProcess.Format();
-
-                // Assert
                 Assert.Contains(currentProcess.ProcessName, formatted);
                 Assert.Contains(currentProcess.Id.ToString(), formatted);
             }
@@ -37,161 +28,126 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [InlineData(0)]
         public void GetChildren_InvalidPid_ReturnsEmptyList(int invalidPid)
         {
-            // Act
             var children = ProcessExtensions.GetChildren(invalidPid, DateTime.Now);
-
-            // Assert
             Assert.Empty(children);
         }
 
         [Fact]
         public void GetChildren_ValidParent_ReturnsOnlyImmediateChildren()
         {
-            // Arrange: Spawn cmd -> timeout
+            // Arrange: Spawn powershell -> powershell
             var root = SpawnProcessTree(1);
             List<Process> children = new List<Process>();
 
             try
             {
-                // FIX: Poll until "timeout" specifically appears in the children list.
-                // We use a timeout of 1 (any child) but filter inside our wait loop.
-                children = WaitForProcessName(root, "timeout", ProcessExtensions.GetChildren);
+                // Poll for "powershell"
+                children = WaitForProcessName(root, "powershell", ProcessExtensions.GetChildren);
 
-                // Assert
-                var timeoutProcess = children.FirstOrDefault(p =>
-                    p.ProcessName.Equals("timeout", StringComparison.OrdinalIgnoreCase));
+                var targetProcess = children.FirstOrDefault(p =>
+                    p.ProcessName.Equals("powershell", StringComparison.OrdinalIgnoreCase));
 
-                Assert.NotNull(timeoutProcess);
-
-                // Verify the child belongs strictly to the root
-                Assert.Equal(root.Id, GetParentPidViaNative(timeoutProcess));
+                Assert.NotNull(targetProcess);
+                Assert.Equal(root.Id, GetParentPidViaNative(targetProcess));
             }
             finally
             {
-                // Ensure all captured handles are disposed
                 foreach (var child in children) child.Dispose();
             }
-        }
-
-        /// <summary>
-        /// Polls the extension method until a specific process name appears in the result set.
-        /// This prevents the "conhost.exe" race condition.
-        /// </summary>
-        private List<Process> WaitForProcessName(Process root, string targetName, Func<int, DateTime, List<Process>> fetchMethod)
-        {
-            int retries = 0;
-            while (retries < 20) // Wait up to ~4 seconds
-            {
-                var results = fetchMethod(root.Id, root.StartTime);
-
-                if (results.Any(p => p.ProcessName.Equals(targetName, StringComparison.OrdinalIgnoreCase)))
-                {
-                    return results;
-                }
-
-                // Dispose handles before the next poll to prevent leak during the loop
-                foreach (var r in results) r.Dispose();
-
-                Thread.Sleep(200);
-                retries++;
-            }
-
-            return fetchMethod(root.Id, root.StartTime);
         }
 
         [Fact]
         public void GetAllDescendants_ValidParent_ReturnsEntireTree()
         {
-            // Arrange: Spawn cmd -> cmd -> ping (Tree depth of 3, meaning 2 descendants)
-            // We use ping -n 30 as it is more stable in headless CI than 'timeout'
+            // Arrange: Spawn powershell -> powershell -> powershell (Depth 2 = 2 nested descendants)
             var root = SpawnProcessTree(2);
             List<Process> descendants = new List<Process>();
 
             try
             {
-                // Act: Single robust backoff loop with a 20s timeout for GitHub Actions
                 bool treeStabilized = SpinWait.SpinUntil(() =>
                 {
-                    // Clear handles from the previous attempt to avoid leaks
-                    foreach (var d in descendants) d.Dispose();
+                    if (root.HasExited) return true;
 
-                    // Fetch descendants using the PID and StartTime to prevent PID reuse issues
+                    foreach (var d in descendants) d.Dispose();
                     descendants = ProcessExtensions.GetAllDescendants(root.Id, root.StartTime);
 
-                    // The tree is "ready" only when we have at least 2 descendants 
-                    // AND the leaf 'ping' process has actually materialized
-                    bool hasLeaf = descendants.Any(d => d.ProcessName.IndexOf("ping", StringComparison.OrdinalIgnoreCase) > -1 ||
-                                                       d.ProcessName.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) > -1);
+                    // At depth 2, we expect exactly 2 nested powershell instances
+                    int psCount = descendants.Count(d => d.ProcessName.Equals("powershell", StringComparison.OrdinalIgnoreCase));
+                    return descendants.Count >= 2 && psCount >= 2;
 
-                    return descendants.Count >= 2 && hasLeaf;
                 }, TimeSpan.FromSeconds(20));
 
-                // Assert
-                string foundNames = string.Join(", ", descendants.Select(d => d.ProcessName));
-                Assert.True(treeStabilized, $"Tree failed to stabilize within 20s. Found {descendants.Count} descendants: [{foundNames}]");
+                if (root.HasExited)
+                {
+                    Assert.Fail($"Root process exited prematurely (ExitCode: {root.ExitCode}). Found: {string.Join(", ", descendants.Select(d => d.ProcessName))}");
+                }
 
-                bool hasCmdChild = descendants.Any(d => d.ProcessName.Equals("cmd", StringComparison.OrdinalIgnoreCase));
-                bool hasLeafGrandchild = descendants.Any(d => d.ProcessName.IndexOf("ping", StringComparison.OrdinalIgnoreCase) > -1 ||
-                                                             d.ProcessName.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) > -1);
+                Assert.True(treeStabilized, $"Tree failed to stabilize within 20s. Found {descendants.Count} descendants.");
 
-                Assert.True(hasCmdChild, $"Intermediate 'cmd' missing. Found: [{foundNames}]");
-                Assert.True(hasLeafGrandchild, $"Leaf grandchild process missing. Found: [{foundNames}]");
+                // Assert both the intermediate and the leaf are present
+                int finalPsCount = descendants.Count(d => d.ProcessName.Equals("powershell", StringComparison.OrdinalIgnoreCase));
+                Assert.True(finalPsCount >= 2, $"Expected at least 2 nested powershell processes. Found: {finalPsCount}");
             }
             finally
             {
-                // Cleanup: Kill the entire tree and dispose of all handles
                 foreach (var d in descendants) d.Dispose();
-
-                try
-                {
-                    if (root != null && !root.HasExited)
-                        root.Kill(entireProcessTree: true);
-                }
-                catch { /* Ignore race conditions during cleanup */ }
-
-                root?.Dispose();
+                CleanupRoot(root);
             }
         }
 
         [Fact]
         public void GetChildren_SimulatedPidReuse_ReturnsEmptyList()
         {
-            // Arrange
             var root = SpawnProcessTree(1);
-
-            // Act: Simulate PID reuse by passing a future StartTime that the child couldn't possibly satisfy
             var invalidStartTime = DateTime.Now.AddHours(1);
             var children = ProcessExtensions.GetChildren(root.Id, invalidStartTime);
-
-            // Assert
             Assert.Empty(children);
         }
 
         #region Integration Test Helpers
 
         /// <summary>
-        /// Spawns a nested process tree using cmd.exe and timeout.exe to simulate a complex service workload.
+        /// Orchestrates a guaranteed strict PPID native tree using PowerShell.
+        /// Uses Base64 EncodedCommands to allow infinite nesting depth without quote-escaping bugs.
         /// </summary>
-        /// <param name="depth">
-        /// Depth 1 = cmd.exe -> timeout.exe
-        /// Depth 2 = cmd.exe -> cmd.exe -> timeout.exe
-        /// </param>
         private Process SpawnProcessTree(int depth)
         {
-            // The leaf node that just waits
-            string args = "/c timeout /t 10 /nobreak";
-
-            // Wrap the leaf in intermediate cmd.exe shells based on desired depth
-            for (int i = 1; i < depth; i++)
+            // Recursive function to build nested PowerShell payloads
+            string BuildScript(int currentDepth)
             {
-                args = $"/c cmd.exe {args}";
+                // The absolute leaf node just keeps the process tree alive
+                if (currentDepth == 0)
+                    return "Start-Sleep -Seconds 15";
+
+                // Get the script for the level below us
+                string innerScript = BuildScript(currentDepth - 1);
+
+                // PowerShell requires Unicode (UTF-16LE) for EncodedCommand
+                string encodedInner = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(innerScript));
+
+                // Create a script that launches the encoded inner script and waits for it
+                return $@"
+                    $psi = New-Object System.Diagnostics.ProcessStartInfo
+                    $psi.FileName = 'powershell.exe'
+                    $psi.Arguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encodedInner}'
+                    $psi.UseShellExecute = $false
+                    $psi.CreateNoWindow = $true
+                    $p = [System.Diagnostics.Process]::Start($psi)
+                    $p.WaitForExit()
+                ";
             }
 
-            var psi = new ProcessStartInfo("cmd.exe", args)
+            // Build the script for the requested depth and encode it for the root process
+            string rootScript = BuildScript(depth);
+            string encodedRoot = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(rootScript));
+
+            var psi = new ProcessStartInfo
             {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encodedRoot}",
                 CreateNoWindow = true,
                 UseShellExecute = false,
-                WindowStyle = ProcessWindowStyle.Hidden
             };
 
             var rootProcess = Process.Start(psi);
@@ -202,38 +158,35 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             return rootProcess;
         }
 
-        /// <summary>
-        /// Native OS process creation is asynchronous. This polls the snapshot extension until the tree fully forms.
-        /// </summary>
-        private List<Process> WaitForDescendants(Process root, int expectedCount, Func<int, DateTime, List<Process>> fetchMethod)
+        private List<Process> WaitForProcessName(Process root, string targetName, Func<int, DateTime, List<Process>> fetchMethod)
         {
-            int retries = 0;
-            List<Process> results;
+            List<Process> lastResults = new List<Process>();
 
-            while (retries < 15) // Wait up to ~3 seconds
+            bool found = SpinWait.SpinUntil(() =>
             {
-                results = fetchMethod(root.Id, root.StartTime);
+                if (root.HasExited) return true;
 
-                if (results.Count >= expectedCount)
-                {
-                    return results; // Target tree formed
-                }
+                foreach (var r in lastResults) r.Dispose();
+                lastResults = fetchMethod(root.Id, root.StartTime);
 
-                // If not formed yet, dispose the partial handles and wait
-                foreach (var r in results) r.Dispose();
+                return lastResults.Any(p => p.ProcessName.Equals(targetName, StringComparison.OrdinalIgnoreCase));
 
-                Thread.Sleep(200);
-                retries++;
+            }, TimeSpan.FromSeconds(15));
+
+            if (root.HasExited)
+            {
+                throw new InvalidOperationException($"The root parent process exited prematurely (ExitCode: {root.ExitCode}). The process tree collapsed.");
             }
 
-            // Fallback: return whatever we managed to find so assertions can fail meaningfully
-            return fetchMethod(root.Id, root.StartTime);
+            if (!found)
+            {
+                string foundNames = string.Join(", ", lastResults.Select(p => p.ProcessName));
+                throw new TimeoutException($"Failed to find '{targetName}' child process within 15 seconds. Found instead: [{foundNames}]");
+            }
+
+            return lastResults;
         }
 
-        /// <summary>
-        /// Grabs the ParentId out of the PerformanceCounters or WMI safely for assertions.
-        /// (Uses a quick PerformanceCounter lookup for test assertion independence).
-        /// </summary>
         private int GetParentPidViaNative(Process process)
         {
             using (var mo = new System.Management.ManagementObject($"win32_process.handle='{process.Id}'"))
@@ -247,27 +200,22 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
         #region Cleanup
 
+        private void CleanupRoot(Process? root)
+        {
+            try
+            {
+                if (root != null && !root.HasExited)
+                    root.Kill(entireProcessTree: true);
+            }
+            catch { }
+            root?.Dispose();
+        }
+
         public void Dispose()
         {
-            // Ensure we don't leave lingering cmd.exe or timeout.exe processes on the host
             foreach (var process in _processesToCleanup)
             {
-                try
-                {
-                    if (!process.HasExited)
-                    {
-                        // Kill the entire tree
-                        process.Kill(entireProcessTree: true);
-                    }
-                }
-                catch
-                {
-                    // Ignore access denied or race condition exits during teardown
-                }
-                finally
-                {
-                    process.Dispose();
-                }
+                CleanupRoot(process);
             }
         }
 

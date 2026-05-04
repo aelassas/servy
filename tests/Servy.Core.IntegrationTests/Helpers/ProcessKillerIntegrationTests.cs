@@ -296,16 +296,27 @@ namespace Servy.Core.IntegrationTests.Helpers
         /// <returns>A tuple containing the initialized parent and child Process objects.</returns>
         private (Process? Parent, Process? Child) SpawnProcessTree()
         {
+            // 1. Locate the absolute path for PowerShell
+            // This avoids issues where the test runner might not have permissions to execute shims 
+            // or relative binaries from the bin folder.
+            string psPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),
+                @"WindowsPowerShell\v1.0\powershell.exe");
+
             // The payload for the child process to keep it alive
             string childScript = "while ($true) { Start-Sleep -Seconds 1 }";
             string encodedChildScript = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(childScript));
 
+            // Use a neutral temp path for all working directories
+            string tempPath = Path.GetTempPath();
+
+            // 2. Inject absolute paths and explicit working directories into the inner script
             string psScript = $@"
                 $psi = New-Object System.Diagnostics.ProcessStartInfo
-                $psi.FileName = 'powershell.exe'
+                $psi.FileName = '{psPath.Replace(@"\", @"\\")}'
                 $psi.Arguments = '-NoProfile -NonInteractive -EncodedCommand {encodedChildScript}'
                 $psi.UseShellExecute = $false
                 $psi.CreateNoWindow = $true
+                $psi.WorkingDirectory = '{tempPath.Replace(@"\", @"\\")}'
                 $child = [System.Diagnostics.Process]::Start($psi)
                 Write-Output ""CHILD_PID:$($child.Id)""
                 while ($true) {{ Start-Sleep -Seconds 1 }}
@@ -313,11 +324,14 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             var psi = new ProcessStartInfo
             {
-                FileName = "powershell.exe",
+                FileName = psPath,
                 Arguments = $"-NoProfile -NonInteractive -Command \"{psScript}\"",
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = true,
+
+                // 3. FIX: Move execution context to a neutral location to bypass restricted bin folders
+                WorkingDirectory = tempPath
             };
 
             var parentProcess = Process.Start(psi);

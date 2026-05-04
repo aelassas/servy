@@ -5,8 +5,9 @@ using System.Windows;
 using System.Windows.Threading;
 using Xunit;
 using Servy.UI.Services;
+using Servy.Testing;
 
-namespace Servy.UI.UnitTests.Services
+namespace Servy.UI.IntegrationTests.Services
 {
     public class MessageBoxServiceTests
     {

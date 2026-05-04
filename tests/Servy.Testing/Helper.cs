@@ -1,6 +1,6 @@
 ﻿using System.Windows.Threading;
 
-namespace Servy.UI.UnitTests
+namespace Servy.Testing
 {
     public class Helper
     {

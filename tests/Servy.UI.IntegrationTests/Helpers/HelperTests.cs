@@ -1,7 +1,8 @@
-﻿using System.Windows;
+﻿using Servy.Testing;
+using System.Windows;
 using System.Windows.Controls;
 
-namespace Servy.UI.UnitTests.Helpers
+namespace Servy.UI.IntegrationTests.Helpers
 {
     public class HelperTests
     {

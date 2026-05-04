@@ -204,8 +204,7 @@ jobs:
       # -----------------------------------------------------
       - name: Restore dependencies
         shell: pwsh
-        run: |
-          dotnet restore Servy.sln
+        run: dotnet restore Servy.sln
 
       - name: Run unit tests
         shell: pwsh

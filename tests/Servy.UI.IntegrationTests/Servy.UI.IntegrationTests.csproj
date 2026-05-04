@@ -12,21 +12,6 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <AssemblyTitle>Servy.Core.IntegrationTests</AssemblyTitle>
-    <AssemblyDescription>Servy.Core integration tests</AssemblyDescription>
-    <Company>Akram El Assas</Company>
-    <Product>Servy.Core.IntegrationTests</Product>
-    <Version>8.4.0</Version>
-    <FileVersion>8.4.0.0</FileVersion>
-    <AssemblyVersion>8.4.0.0</AssemblyVersion>
-    <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\handle64.exe" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="10.0.0">
       <PrivateAssets>all</PrivateAssets>
@@ -42,15 +27,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Servy.Core\Servy.Core.csproj" />
+    <ProjectReference Include="..\..\src\Servy.UI\Servy.UI.csproj" />
+    <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="NewFolder\" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,7 @@
 ﻿using Moq;
 using Servy.UI.Services;
 
-namespace Servy.UI.UnitTests.Services
+namespace Servy.UI.IntegrationTests.Services
 {
     public class HelpServiceTests
     {

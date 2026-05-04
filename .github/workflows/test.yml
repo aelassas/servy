@@ -52,6 +52,7 @@ jobs:
               @{ Path = "tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj"; Dir = "Service"; Filter = "Category!=ReflectionValidation" }
               @{ Path = "tests/Servy.Service.IntegrationTests/Servy.Service.IntegrationTests.csproj"; Dir = "Service"; Filter = $null }
               @{ Path = "tests/Servy.UI.UnitTests/Servy.UI.UnitTests.csproj"; Dir = "UI"; Filter = $null }
+              @{ Path = "tests/Servy.UI.IntegrationTests/Servy.UI.IntegrationTests.csproj"; Dir = "UI"; Filter = $null }
               @{ Path = "tests/Servy.UnitTests/Servy.UnitTests.csproj"; Dir = "UnitTests"; Filter = $null }
               @{ Path = "tests/Servy.Manager.UnitTests/Servy.Manager.UnitTests.csproj"; Dir = "Manager"; Filter = $null }
               @{ Path = "tests/Servy.CLI.UnitTests/Servy.CLI.UnitTests.csproj"; Dir = "CLI"; Filter = $null }
