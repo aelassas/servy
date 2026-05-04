@@ -1,8 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Servy.Core.Helpers;
 using Servy.UI.Constants;
+using Servy.UI.Design;
 using System;
+using System.ComponentModel;
 using System.Globalization;
+using System.Windows;
 using System.Windows.Data;
 
 namespace Servy.Manager.Converters
@@ -20,11 +23,18 @@ namespace Servy.Manager.Converters
         const string UnknownCpuUsage = UiConstants.NotAvailable;
 
         /// <summary>
-        /// Initializes a new instance of the CpuUsageConverter with dependency injection.
-        /// Note: If resolving via XAML, ensure a DI-aware markup extension or service locator is configured.
+        /// Initializes a new instance of the CpuUsageConverter.
+        /// Provides design-time support to prevent XAML designer crashes when DI is not initialized.
         /// </summary>
         public CpuUsageConverter()
         {
+            // Check for design mode before accessing App.Services
+            if (DesignerProperties.GetIsInDesignMode(new DependencyObject()))
+            {
+                _processHelper = new DesignTimeProcessHelper();
+                return;
+            }
+
             _processHelper = App.Services.GetRequiredService<IProcessHelper>();
         }
 
@@ -54,7 +64,7 @@ namespace Servy.Manager.Converters
         /// </summary>
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            return Binding.DoNothing;
         }
     }
 }

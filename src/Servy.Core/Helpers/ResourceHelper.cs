@@ -4,7 +4,6 @@ using Servy.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -16,7 +15,6 @@ namespace Servy.Core.Helpers
     /// Provides helper methods for managing and extracting embedded resources
     /// from the assembly, such as the Servy service executable and related files.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public class ResourceHelper
     {
         private readonly ServiceHelper _serviceHelper;
@@ -53,9 +51,13 @@ namespace Servy.Core.Helpers
             bool stopServices = true,
             string subfolder = null)
         {
+            bool copyDone = false; // Tracks if the physical file copy succeeded
+            string targetPath = null;
+            string resourceName = null;
+
             try
             {
-                if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, subfolder, out var targetPath, out var targetFileName, out var resourceName))
+                if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, subfolder, out targetPath, out var targetFileName, out resourceName))
                     return true;
 
                 // Get running services
@@ -83,18 +85,34 @@ namespace Servy.Core.Helpers
                     {
                         await Helper.WriteFileAtomicAsync(targetPath, resourceStream.CopyToAsync);
                     }
+
+                    copyDone = true; // File write succeeded
                 }
                 finally
                 {
                     if (stopServices && runningServices.Count > 0)
                     {
-                        Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
-                        await _serviceHelper.StartServices(runningServices);
+                        try
+                        {
+                            Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
+                            await _serviceHelper.StartServices(runningServices);
+                        }
+                        catch (Exception startEx)
+                        {
+                            // Log restart failure separately to avoid misattribution
+                            Logger.Error(
+                                $"Embedded resource '{resourceName}' was successfully copied to '{targetPath}', but {runningServices.Count} previously-running services failed to restart.",
+                                startEx);
+                        }
                     }
                 }
 
-                Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
-                return true;
+                if (copyDone)
+                {
+                    Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
+                }
+
+                return copyDone;
             }
             catch (Exception ex)
             {
@@ -261,8 +279,18 @@ namespace Servy.Core.Helpers
                 {
                     if (stopServices && runningServices.Count > 0)
                     {
-                        Logger.Info($"Starting stopped services after copying resources: {string.Join(", ", runningServices)}");
-                        await _serviceHelper.StartServices(runningServices);
+                        try
+                        {
+                            Logger.Info($"Starting stopped services after copying resources: {string.Join(", ", runningServices)}");
+                            await _serviceHelper.StartServices(runningServices);
+                        }
+                        catch (Exception startEx)
+                        {
+                            // Log restart failure as a distinct error
+                            Logger.Error(
+                                $"Target resources were processed, but {runningServices.Count} previously-running services failed to restart.",
+                                startEx);
+                        }
                     }
                 }
             }

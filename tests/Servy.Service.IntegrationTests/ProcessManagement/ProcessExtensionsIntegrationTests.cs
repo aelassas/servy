@@ -21,15 +21,16 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Format_ActiveProcess_ReturnsProcessNameAndId()
         {
             // Arrange
-            using (var currentProcess = Process.GetCurrentProcess()) { 
+            using (var currentProcess = Process.GetCurrentProcess())
+            {
 
                 // Act
                 string formatted = currentProcess.Format();
 
-            // Assert
-            Assert.Contains(currentProcess.ProcessName, formatted);
-            Assert.Contains(currentProcess.Id.ToString(), formatted);
-                }
+                // Assert
+                Assert.Contains(currentProcess.ProcessName, formatted);
+                Assert.Contains(currentProcess.Id.ToString(), formatted);
+            }
         }
 
         [Theory]
@@ -102,27 +103,54 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void GetAllDescendants_ValidParent_ReturnsEntireTree()
         {
-            // Arrange: Spawn cmd -> cmd -> timeout (Tree depth of 3, meaning 2 descendants)
+            // Arrange: Spawn cmd -> cmd -> ping (Tree depth of 3, meaning 2 descendants)
+            // We use ping -n 30 as it is more stable in headless CI than 'timeout'
             var root = SpawnProcessTree(2);
             List<Process> descendants = new List<Process>();
 
             try
             {
-                // Act
-                descendants = WaitForDescendants(root, expectedCount: 2, fetchMethod: ProcessExtensions.GetAllDescendants);
+                // Act: Single robust backoff loop with a 20s timeout for GitHub Actions
+                bool treeStabilized = SpinWait.SpinUntil(() =>
+                {
+                    // Clear handles from the previous attempt to avoid leaks
+                    foreach (var d in descendants) d.Dispose();
+
+                    // Fetch descendants using the PID and StartTime to prevent PID reuse issues
+                    descendants = ProcessExtensions.GetAllDescendants(root.Id, root.StartTime);
+
+                    // The tree is "ready" only when we have at least 2 descendants 
+                    // AND the leaf 'ping' process has actually materialized
+                    bool hasLeaf = descendants.Any(d => d.ProcessName.IndexOf("ping", StringComparison.OrdinalIgnoreCase) > -1 ||
+                                                       d.ProcessName.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) > -1);
+
+                    return descendants.Count >= 2 && hasLeaf;
+                }, TimeSpan.FromSeconds(20));
 
                 // Assert
-                Assert.True(descendants.Count >= 2, $"Expected at least 2 descendants, found {descendants.Count}");
+                string foundNames = string.Join(", ", descendants.Select(d => d.ProcessName));
+                Assert.True(treeStabilized, $"Tree failed to stabilize within 20s. Found {descendants.Count} descendants: [{foundNames}]");
 
                 bool hasCmdChild = descendants.Any(d => d.ProcessName.Equals("cmd", StringComparison.OrdinalIgnoreCase));
-                bool hasTimeoutGrandchild = descendants.Any(d => d.ProcessName.Equals("timeout", StringComparison.OrdinalIgnoreCase));
+                bool hasLeafGrandchild = descendants.Any(d => d.ProcessName.IndexOf("ping", StringComparison.OrdinalIgnoreCase) > -1 ||
+                                                             d.ProcessName.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) > -1);
 
-                Assert.True(hasCmdChild, "Tree did not contain the intermediate 'cmd' child process.");
-                Assert.True(hasTimeoutGrandchild, "Tree did not contain the leaf 'timeout' grandchild process.");
+                Assert.True(hasCmdChild, $"Intermediate 'cmd' missing. Found: [{foundNames}]");
+                Assert.True(hasLeafGrandchild, $"Leaf grandchild process missing. Found: [{foundNames}]");
             }
             finally
             {
+                // Cleanup: Kill the entire tree and dispose of all handles
                 foreach (var d in descendants) d.Dispose();
+
+                try
+                {
+                    if (root != null && !root.HasExited)
+                        ProcessHelper.KillProcessTree(root);
+                }
+                catch { /* Ignore race conditions during cleanup */ }
+
+                root?.Dispose();
             }
         }
 

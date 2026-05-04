@@ -234,17 +234,46 @@ namespace Servy.Core.IntegrationTests.Helpers
             File.WriteAllText(testFile, "Lock Data");
             _tempFiles.Add(testFile);
 
+            // 1. Spawn the process and give it a moment to actually acquire the lock
             var lockingProcess = SpawnFileLockingProcess(testFile);
 
+            // Stabilization: Ensure the process hasn't crashed before we try to kill it
+            if (lockingProcess == null || lockingProcess.HasExited)
+            {
+                throw new InvalidOperationException("Failed to spawn a stable file-locking process.");
+            }
+
+            // 2. Act: Attempt to kill processes holding the lock
             bool result = _processKiller.KillProcessesUsingFile(testFile);
 
-            Thread.Sleep(1000);
+            // 3. Backoff/Retry Phase for Process Termination
+            // GitHub Actions can be slow; we wait up to 5 seconds for the process to actually exit
+            bool exited = SpinWait.SpinUntil(() => lockingProcess.HasExited, TimeSpan.FromSeconds(5));
 
-            Assert.True(result);
-            Assert.True(lockingProcess.HasExited, "The background process holding the file lock should have been terminated.");
+            // 4. Assertions
+            Assert.True(result, "KillProcessesUsingFile should return true.");
+            Assert.True(exited, "The background process holding the file lock should have been terminated within the timeout.");
 
-            // Verify lock is genuinely released by attempting deletion
-            File.Delete(testFile);
+            // 5. Backoff/Retry Phase for File Deletion
+            // Even if the process is dead, the OS might take a few extra milliseconds to release the handle
+            bool deleted = false;
+            int retries = 0;
+            while (retries < 10 && !deleted)
+            {
+                try
+                {
+                    File.Delete(testFile);
+                    deleted = true;
+                }
+                catch (IOException)
+                {
+                    // Lock still held by the OS kernel; back off and try again
+                    Thread.Sleep(200);
+                    retries++;
+                }
+            }
+
+            Assert.True(deleted, $"Failed to delete '{testFile}' after process termination. The lock was not genuinely released.");
             Assert.False(File.Exists(testFile));
         }
 
