@@ -153,6 +153,7 @@ namespace Servy.Service
         private readonly IProcessHelper _processHelper;
         private readonly IProcessKiller _processKiller;
         private readonly IAppDbContext? _dbContext;
+        private readonly ProtectedKeyProvider? _protectedKeyProvider;
 
         #endregion
 
@@ -366,8 +367,8 @@ namespace Servy.Service
                 DatabaseInitializer.InitializeDatabase(_dbContext, SQLiteDbInitializer.Initialize);
 
                 var dapperExecutor = new DapperExecutor(_dbContext);
-                var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
-                _secureData = new SecureData(protectedKeyProvider);
+                _protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
+                _secureData = new SecureData(_protectedKeyProvider);
                 var xmlSerializer = new XmlServiceSerializer();
                 var jsonSerializer = new JsonServiceSerializer();
 
@@ -985,7 +986,7 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    LogIssue("Pre-launch process attempt {attempt} failed.", ex);
+                    LogIssue($"Pre-launch process attempt {attempt} failed.", ex);
                 }
             }
 
@@ -2178,6 +2179,7 @@ namespace Servy.Service
                         _cancellationSource = null;
 
                         _secureData?.Dispose();
+                        _protectedKeyProvider?.Dispose();
                         _dbContext?.Dispose();
 
                         _fileSemaphore?.Dispose();
