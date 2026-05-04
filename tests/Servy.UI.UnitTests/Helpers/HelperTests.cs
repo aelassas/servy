@@ -1,120 +1,134 @@
-﻿using Servy.UI.Helpers;
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 using Xunit;
+using Servy.UI.Helpers;
 
 namespace Servy.UI.UnitTests.Helpers
 {
     public class HelperTests
     {
-        // ---------- FormatDuration ----------
+        #region GetVisualChild Tests
 
         [Fact]
-        public void FormatDuration_Hours_ReturnsHoursMinutesSeconds()
+        public void GetVisualChild_NoChildren_ReturnsNull()
         {
-            var ts = new TimeSpan(1, 2, 3); // 1h 2m 3s
-            var result = Helper.FormatDuration(ts);
-            Assert.Equal("1h 2m 3s", result);
+            Helper.RunInSTA(() =>
+            {
+                // Branch: Loop i < GetChildrenCount (zero count)
+                var border = new Border();
+                var result = UI.Helpers.Helper.GetVisualChild<ScrollViewer>(border);
+                Assert.Null(result);
+            });
         }
 
         [Fact]
-        public void FormatDuration_Minutes_ReturnsMinutesSeconds()
+        public void GetVisualChild_ImmediateChildFound_ReturnsChild()
         {
-            var ts = new TimeSpan(0, 2, 5); // 2m 5s
-            var result = Helper.FormatDuration(ts);
-            Assert.Equal("2m 5s", result);
+            Helper.RunInSTA(() =>
+            {
+                // Branch: if (child is T t) return t;
+                var grid = new Grid();
+                var scrollViewer = new ScrollViewer();
+                grid.Children.Add(scrollViewer);
+
+                var result = UI.Helpers.Helper.GetVisualChild<ScrollViewer>(grid);
+
+                Assert.NotNull(result);
+                Assert.Same(scrollViewer, result);
+            });
         }
 
         [Fact]
-        public void FormatDuration_Seconds_ReturnsSecondsAndMilliseconds()
+        public void GetVisualChild_DeepChildFound_ReturnsChild()
         {
-            var ts = TimeSpan.FromMilliseconds(5250); // 5.25s
-            var result = Helper.FormatDuration(ts);
-            Assert.Equal("5s 250ms", result);
+            Helper.RunInSTA(() =>
+            {
+                // Branch: var res = GetVisualChild<T>(child); if (res != null) return res;
+                var grid = new Grid();
+                var border = new Border();
+                var scrollViewer = new ScrollViewer();
+
+                grid.Children.Add(border);
+                border.Child = scrollViewer;
+
+                var result = UI.Helpers.Helper.GetVisualChild<ScrollViewer>(grid);
+
+                Assert.NotNull(result);
+                Assert.Same(scrollViewer, result);
+            });
+        }
+
+        #endregion
+
+        #region FormatDuration Tests
+
+        [Theory]
+        [InlineData(0, 0, 0, 0, "0ms")]                  // Branch: parts.Count == 0
+        [InlineData(0, 0, 0, 500, "500ms")]              // Branch: Milliseconds > 0
+        [InlineData(0, 0, 30, 0, "30s")]                 // Branch: Seconds > 0
+        [InlineData(0, 45, 0, 0, "45m")]                 // Branch: Minutes > 0
+        [InlineData(5, 0, 0, 0, "5h")]                   // Branch: TotalHours > 0
+        [InlineData(26, 10, 5, 1, "26h 10m 5s 1ms")]     // Branch: All components > 0
+        public void FormatDuration_VariousTimeSpans_ReturnsExpectedFormat(
+            int hours, int minutes, int seconds, int milliseconds, string expected)
+        {
+            var duration = new TimeSpan(0, hours, minutes, seconds, milliseconds);
+            var result = UI.Helpers.Helper.FormatDuration(duration);
+            Assert.Equal(expected, result);
+        }
+
+        #endregion
+
+        #region FormatNumber Tests
+
+        [Theory]
+        [InlineData(123, "123")]
+        [InlineData(1234, "1,234")]
+        [InlineData(1000000, "1,000,000")]
+        public void FormatNumber_Integers_ReturnsInvariantCultureFormatting(int number, string expected)
+        {
+            var result = UI.Helpers.Helper.FormatNumber(number);
+            Assert.Equal(expected, result);
+        }
+
+        #endregion
+
+        #region GetRowsInfo Tests
+
+        private const string None = "None: {0}";
+        private const string One = "One: {0}";
+        private const string Many = "Many: {0} {1}";
+
+        [Fact]
+        public void GetRowsInfo_CountZero_ReturnsNoneFormat()
+        {
+            // Branch: if (count == 0)
+            var result = UI.Helpers.Helper.GetRowsInfo(0, TimeSpan.FromSeconds(1), None, One, Many);
+            Assert.Equal("None: 1s", result);
         }
 
         [Fact]
-        public void FormatDuration_OnlySecondsNoMilliseconds()
+        public void GetRowsInfo_CountOne_ReturnsOneFormat()
         {
-            var ts = TimeSpan.FromSeconds(10); // 10s exactly
-            var result = Helper.FormatDuration(ts);
-            Assert.Equal("10s", result);
+            // Branch: if (count == 1)
+            var result = UI.Helpers.Helper.GetRowsInfo(1, TimeSpan.FromSeconds(1), None, One, Many);
+            Assert.Equal("One: 1s", result);
         }
 
         [Fact]
-        public void FormatDuration_MillisecondsOnly_ReturnsMilliseconds()
+        public void GetRowsInfo_CountMany_ReturnsManyFormat()
         {
-            var ts = TimeSpan.FromMilliseconds(500);
-            var result = Helper.FormatDuration(ts);
-            Assert.Equal("500ms", result);
+            // Branch: Default/Many
+            var result = UI.Helpers.Helper.GetRowsInfo(1234, TimeSpan.FromSeconds(1), None, One, Many);
+            Assert.Equal("Many: 1,234 1s", result);
         }
 
-        [Fact]
-        public void FormatDuration_ZeroMilliseconds_Returns0ms()
-        {
-            var ts = TimeSpan.Zero;
-            var result = Helper.FormatDuration(ts);
-            Assert.Equal("0ms", result);
-        }
-
-        // ---------- FormatNumber ----------
-
-        [Fact]
-        public void FormatNumber_FormatsWithThousandsSeparator()
-        {
-            var result = Helper.FormatNumber(1234567);
-            Assert.Equal("1,234,567", result);
-        }
-
-        [Fact]
-        public void FormatNumber_FormatsSmallNumberWithoutSeparator()
-        {
-            var result = Helper.FormatNumber(42);
-            Assert.Equal("42", result);
-        }
-
-        // ---------- GetRowsInfo ----------
-
-        [Fact]
-        public void GetRowsInfo_NoRows_ReturnsCorrectMessage()
-        {
-            var ts = TimeSpan.FromSeconds(2);
-
-            // We now pass the templates explicitly to support full i18n
-            var result = Helper.GetRowsInfo(0, ts,
-                "No items found in {0}",
-                "1 item found in {0}",
-                "{0} items found in {1}");
-
-            // Note: FormatDuration likely returns "2s" or "2.0s" depending on your implementation
-            Assert.Equal("No items found in 2s", result);
-        }
-
-        [Fact]
-        public void GetRowsInfo_SingleRow_ReturnsCorrectMessage()
-        {
-            var ts = TimeSpan.FromSeconds(5.5);
-
-            var result = Helper.GetRowsInfo(1, ts,
-                "No items found in {0}",
-                "1 item found in {0}",
-                "{0} items found in {1}");
-
-            Assert.Equal("1 item found in 5s 500ms", result);
-        }
-
-        [Fact]
-        public void GetRowsInfo_MultipleRows_ReturnsCorrectMessage()
-        {
-            var ts = new TimeSpan(0, 1, 20); // 1m 20s
-
-            var result = Helper.GetRowsInfo(1234, ts,
-                "No items found in {0}",
-                "1 item found in {0}",
-                "{0} items found in {1}");
-
-            // FormatNumber(1234) produces the culture-invariant "1,234"
-            Assert.Equal("1,234 items found in 1m 20s", result);
-        }
-
+        #endregion
     }
 }

@@ -897,7 +897,7 @@ namespace Servy.ViewModels
         /// Initializes a new instance of the <see cref="MainViewModel"/> class for design-time data.
         /// </summary>
         public MainViewModel() : this(
-            new DesignTimeFileDialogService(),
+            new UI.Design.DesignTimeFileDialogService(),
             new DesignTimeServiceCommands(),
             new UI.Design.DesignTimeMessageBoxService(),
             new UI.Design.DesignTimeServiceRepository(),

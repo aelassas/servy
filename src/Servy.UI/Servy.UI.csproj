@@ -103,7 +103,6 @@
       <DesignTime>True</DesignTime>
     </Compile>
     <Compile Include="Services\CursorService.cs" />
-    <Compile Include="Services\DesignTimeFileDialogService.cs" />
     <Compile Include="Services\FileDialogService.cs" />
     <Compile Include="Services\HelpService.cs" />
     <Compile Include="Services\ICursorService.cs" />
