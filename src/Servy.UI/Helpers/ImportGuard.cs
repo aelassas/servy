@@ -1,9 +1,7 @@
 ﻿using Servy.Core.Logging;
 using Servy.Core.Resources;
 using Servy.UI.Services;
-using System;
 using System.IO;
-using System.Threading.Tasks;
 
 namespace Servy.UI.Helpers
 {

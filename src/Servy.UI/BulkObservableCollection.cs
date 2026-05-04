@@ -29,6 +29,25 @@ namespace Servy.UI
         private volatile bool _suppressNotification = false;
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="BulkObservableCollection{T}"/> class.
+        /// </summary>
+        public BulkObservableCollection() : base() { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BulkObservableCollection{T}"/> class 
+        /// that contains elements copied from the specified collection.
+        /// </summary>
+        /// <param name="collection">The collection from which the elements are copied.</param>
+        public BulkObservableCollection(IEnumerable<T> collection) : base(collection) { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BulkObservableCollection{T}"/> class 
+        /// that contains elements copied from the specified list.
+        /// </summary>
+        /// <param name="list">The list from which the elements are copied.</param>
+        public BulkObservableCollection(List<T> list) : base(list) { }
+
+        /// <summary>
         /// Adds a collection of items to the end of the <see cref="BulkObservableCollection{T}"/>.
         /// </summary>
         /// <param name="items">The collection of items to add. If null, no action is taken.</param>
