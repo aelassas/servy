@@ -283,7 +283,7 @@ namespace Servy.Service.ProcessManagement
         /// Detection is strictly scoped to the executable filename and extension to avoid false positives from directory paths.
         /// </summary>
         /// <param name="psi">The start info to modify.</param>
-        internal static void ApplyLanguageFixes(ProcessStartInfo psi)
+        public static void ApplyLanguageFixes(ProcessStartInfo psi)
         {
             if (psi == null || string.IsNullOrEmpty(psi.FileName))
             {
