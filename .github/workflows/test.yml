@@ -62,26 +62,19 @@ jobs:
 
           foreach ($proj in $testProjects) {
               Write-Host "Running tests for $($proj.Dir)..." -ForegroundColor Cyan
-    
-              # Common arguments for all test runs
-              $testArgs = @(
-                  "test", $proj.Path,
-                  "--configuration", "Debug",
-                  "--no-build",
-                  "--collect:`"XPlat Code Coverage`"",
-                  "--results-directory", "./TestResults/$($proj.Dir)",
-                  "--",
-                  "DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura",
-                  "DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=`"[Servy.Testing]*`"" # <-- ADD THIS
-              )
+              
+              # Construct the base command
+              $cmd = "dotnet test $($proj.Path) --configuration Debug --no-build --collect `"XPlat Code Coverage`" --results-directory `"./TestResults/$($proj.Dir)`""
+              
+              # Add filter if present
+              if ($proj.Filter) { $cmd += " --filter `"$($proj.Filter)`"" }
+              
+              # Add Coverage Formats and the Exclude filter for Servy.Testing
+              $cmd += " -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=`"[Servy.Testing]*`""
 
-              if ($proj.Filter) {
-                  $testArgs.Insert(4, "--filter")
-                  $testArgs.Insert(5, $proj.Filter)
-              }
-
-              & dotnet @testArgs
-    
+              # Execute the string as a command
+              Invoke-Expression $cmd
+              
               if ($LASTEXITCODE -ne 0) { 
                   $failed = $true 
                   Write-Error "Tests failed for project: $($proj.Dir)"
