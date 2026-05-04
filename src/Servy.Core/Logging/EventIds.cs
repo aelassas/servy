@@ -33,11 +33,11 @@
 
         #region Specific Security & Migration Events
 
+        /// <summary>Indicates a transient issue during an automated configuration migration.</summary>
+        public const int TransientMigrationWarning = 2002;
+
         /// <summary>Triggered when a protected key cannot be decrypted by the current provider.</summary>
         public const int KeyUnprotectFailed = 3001;
-
-        /// <summary>Indicates a transient issue during an automated configuration migration.</summary>
-        public const int TransientMigrationWarning = 3002;
 
         /// <summary>Logged when a configuration migration fails catastrophically and requires manual intervention.</summary>
         public const int PersistentMigrationFailure = 3003;
