@@ -368,5 +368,78 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(string.Empty, error);
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void NormalizePath_NullOrWhiteSpace_ReturnsNull(string? input)
+        {
+            // Act
+            var result = Helper.NormalizePath(input);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void NormalizePath_RelativePath_ReturnsFullPath()
+        {
+            // Arrange
+            var input = "logs";
+            var expected = Path.Combine(AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar), "logs");
+
+            // Act
+            var result = Helper.NormalizePath(input);
+
+            // Assert
+            // We use Path.GetFullPath in the assertion to match OS-specific drive letters/formatting
+            Assert.Equal(Path.GetFullPath(expected), result);
+        }
+
+        [Theory]
+        [InlineData(@"C:\Windows\")]
+        [InlineData(@"C:\Windows\\")]
+        public void NormalizePath_TrailingSeparators_TrimsThem(string input)
+        {
+            // Arrange
+            var expected = @"C:\Windows";
+
+            // Act
+            var result = Helper.NormalizePath(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+            Assert.False(result!.EndsWith(Path.DirectorySeparatorChar.ToString()));
+        }
+
+        [Fact]
+        public void NormalizePath_ParentDirectoryDots_ResolvesToAbsolute()
+        {
+            // Arrange
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+            var input = Path.Combine(baseDir, "subdir", "..");
+
+            // Act
+            var result = Helper.NormalizePath(input);
+
+            // Assert
+            Assert.Equal(baseDir, result);
+        }
+
+        [Fact]
+        public void NormalizePath_ForwardSlashes_ConvertsToBackslashesOnWindows()
+        {
+            // Arrange
+            // Path.GetFullPath handles cross-platform slash normalization
+            var input = "C:/Windows/System32/";
+            var expected = @"C:\Windows\System32";
+
+            // Act
+            var result = Helper.NormalizePath(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
     }
 }

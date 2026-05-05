@@ -43,7 +43,7 @@ namespace Servy.Restarter
                         controller.Stop();
                         var stopRemaining = timeout - stopwatch.Elapsed;
                         if (stopRemaining <= TimeSpan.Zero)
-                            throw new System.TimeoutException($"No time remaining to start service '{serviceName}'.");
+                            throw new System.TimeoutException($"No time remaining to stop service '{serviceName}'.");
 
                         controller.WaitForStatus(ServiceControllerStatus.Stopped, stopRemaining);
                     }

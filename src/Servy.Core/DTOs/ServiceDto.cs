@@ -358,80 +358,21 @@ namespace Servy.Core.DTOs
         #region ICloneable Implementation
 
         /// <summary>
-        /// Creates a deep copy of the current <see cref="ServiceDto"/>.
+        /// Creates a shallow copy of the current <see cref="ServiceDto"/>.
         /// </summary>
         /// <returns>A new <see cref="ServiceDto"/> object with copied property values.</returns>
         /// <remarks>
-        /// We use explicit property-by-property copying instead of <c>MemberwiseClone</c> 
-        /// to ensure that any future mutable reference types are handled safely and to 
-        /// make the cloning contract explicit for maintainers.
+        /// <para>
+        /// This method uses <c>MemberwiseClone</c> to perform a bitwise copy of the object's fields. 
+        /// For value types and strings, this effectively creates a copy of the data. 
+        /// </para>
+        /// <para>
+        /// <b>Note:</b> If this DTO is expanded to include mutable reference types (like Lists or Classes), 
+        /// those objects will not be deeply cloned; the reference itself will be copied, leading 
+        /// to shared state between the original and the clone.
+        /// </para>
         /// </remarks>
-        public object Clone()
-        {
-            var dto = new ServiceDto
-            {
-                Id = Id,
-                Pid = Pid,
-                Name = Name,
-                DisplayName = DisplayName,
-                Description = Description,
-                ExecutablePath = ExecutablePath,
-                StartupDirectory = StartupDirectory,
-                Parameters = Parameters,
-                StartupType = StartupType,
-                Priority = Priority,
-                EnableConsoleUI = EnableConsoleUI,
-                StdoutPath = StdoutPath,
-                StderrPath = StderrPath,
-                EnableSizeRotation = EnableSizeRotation,
-                RotationSize = RotationSize,
-                EnableDateRotation = EnableDateRotation,
-                DateRotationType = DateRotationType,
-                MaxRotations = MaxRotations,
-                UseLocalTimeForRotation = UseLocalTimeForRotation,
-                EnableHealthMonitoring = EnableHealthMonitoring,
-                HeartbeatInterval = HeartbeatInterval,
-                MaxFailedChecks = MaxFailedChecks,
-                RecoveryAction = RecoveryAction,
-                MaxRestartAttempts = MaxRestartAttempts,
-                FailureProgramPath = FailureProgramPath,
-                FailureProgramStartupDirectory = FailureProgramStartupDirectory,
-                FailureProgramParameters = FailureProgramParameters,
-                EnvironmentVariables = EnvironmentVariables,
-                ServiceDependencies = ServiceDependencies,
-                RunAsLocalSystem = RunAsLocalSystem,
-                UserAccount = UserAccount,
-                Password = Password,
-                PreLaunchExecutablePath = PreLaunchExecutablePath,
-                PreLaunchStartupDirectory = PreLaunchStartupDirectory,
-                PreLaunchParameters = PreLaunchParameters,
-                PreLaunchEnvironmentVariables = PreLaunchEnvironmentVariables,
-                PreLaunchStdoutPath = PreLaunchStdoutPath,
-                PreLaunchStderrPath = PreLaunchStderrPath,
-                PreLaunchTimeoutSeconds = PreLaunchTimeoutSeconds,
-                PreLaunchRetryAttempts = PreLaunchRetryAttempts,
-                PreLaunchIgnoreFailure = PreLaunchIgnoreFailure,
-                PostLaunchExecutablePath = PostLaunchExecutablePath,
-                PostLaunchStartupDirectory = PostLaunchStartupDirectory,
-                PostLaunchParameters = PostLaunchParameters,
-                EnableDebugLogs = EnableDebugLogs,
-                StartTimeout = StartTimeout,
-                StopTimeout = StopTimeout,
-                PreviousStopTimeout = PreviousStopTimeout,
-                ActiveStdoutPath = ActiveStdoutPath,
-                ActiveStderrPath = ActiveStderrPath,
-                PreStopExecutablePath = PreStopExecutablePath,
-                PreStopStartupDirectory = PreStopStartupDirectory,
-                PreStopParameters = PreStopParameters,
-                PreStopTimeoutSeconds = PreStopTimeoutSeconds,
-                PreStopLogAsError = PreStopLogAsError,
-                PostStopExecutablePath = PostStopExecutablePath,
-                PostStopStartupDirectory = PostStopStartupDirectory,
-                PostStopParameters = PostStopParameters,
-            };
-
-            return dto;
-        }
+        public object Clone() => MemberwiseClone();
 
         #endregion
 

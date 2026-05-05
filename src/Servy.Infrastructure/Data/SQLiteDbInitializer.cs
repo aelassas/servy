@@ -331,56 +331,63 @@ namespace Servy.Infrastructure.Data
             // Disable foreign keys temporarily during table rebuild
             connection.Execute("PRAGMA foreign_keys=OFF;");
 
-            using (var transaction = connection.BeginTransaction())
+            try
             {
-                try
+                using (var transaction = connection.BeginTransaction())
                 {
-                    Logger.Info("Migrating database to Version 4: Rebuilding 'Services' table to drop strict NOT NULL constraints.");
+                    try
+                    {
+                        Logger.Info("Migrating database to Version 4: Rebuilding 'Services' table to drop strict NOT NULL constraints.");
 
-                    var expectedColumns = GetExpectedColumns().ToList();
-                    var columnDefinitions = new List<string>
+                        var expectedColumns = GetExpectedColumns().ToList();
+                        var columnDefinitions = new List<string>
                     {
                         "Id INTEGER PRIMARY KEY AUTOINCREMENT"
                     };
 
-                    // Dynamically construct the v4 table schema matching the exact DTO definition
-                    foreach (var col in expectedColumns)
-                    {
-                        columnDefinitions.Add($"{col} {GetSqlType(col)}");
+                        // Dynamically construct the v4 table schema matching the exact DTO definition
+                        foreach (var col in expectedColumns)
+                        {
+                            columnDefinitions.Add($"{col} {GetSqlType(col)}");
+                        }
+
+                        var createTableSql = $"CREATE TABLE Services_v4 (\n    {string.Join(",\n    ", columnDefinitions)}\n);";
+                        connection.Execute(createTableSql, transaction: transaction);
+
+                        // Explicitly specify column names to prevent ordinal mismatch issues 
+                        // between the old appended columns (like EnableConsoleUI) and the new cleanly ordered schema.
+                        var allColumns = new List<string> { "Id" };
+                        allColumns.AddRange(expectedColumns);
+                        string columnList = string.Join(", ", allColumns);
+
+                        string copyDataSql = $"INSERT INTO Services_v4 ({columnList}) SELECT {columnList} FROM Services;";
+                        connection.Execute(copyDataSql, transaction: transaction);
+
+                        // Swap the tables
+                        connection.Execute("DROP TABLE Services;", transaction: transaction);
+                        connection.Execute("ALTER TABLE Services_v4 RENAME TO Services;", transaction: transaction);
+
+                        // Re-create the functional unique index because SQLite drops indexes when the parent table is dropped
+                        connection.Execute("CREATE UNIQUE INDEX idx_services_name_lower ON Services(LOWER(Name));", transaction: transaction);
+
+                        transaction.Commit();
+                        Logger.Info("Database successfully migrated to Version 4.");
                     }
-
-                    var createTableSql = $"CREATE TABLE Services_v4 (\n    {string.Join(",\n    ", columnDefinitions)}\n);";
-                    connection.Execute(createTableSql, transaction: transaction);
-
-                    // Explicitly specify column names to prevent ordinal mismatch issues 
-                    // between the old appended columns (like EnableConsoleUI) and the new cleanly ordered schema.
-                    var allColumns = new List<string> { "Id" };
-                    allColumns.AddRange(expectedColumns);
-                    string columnList = string.Join(", ", allColumns);
-
-                    string copyDataSql = $"INSERT INTO Services_v4 ({columnList}) SELECT {columnList} FROM Services;";
-                    connection.Execute(copyDataSql, transaction: transaction);
-
-                    // Swap the tables
-                    connection.Execute("DROP TABLE Services;", transaction: transaction);
-                    connection.Execute("ALTER TABLE Services_v4 RENAME TO Services;", transaction: transaction);
-
-                    // Re-create the functional unique index because SQLite drops indexes when the parent table is dropped
-                    connection.Execute("CREATE UNIQUE INDEX idx_services_name_lower ON Services(LOWER(Name));", transaction: transaction);
-
-                    transaction.Commit();
-                    Logger.Info("Database successfully migrated to Version 4.");
-                }
-                catch (Exception ex)
-                {
-                    transaction.Rollback();
-                    Logger.Error("CRITICAL: Version 4 database migration failed. Transaction rolled back.", ex);
-                    throw;
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        Logger.Error("CRITICAL: Version 4 database migration failed. Transaction rolled back.", ex);
+                        throw;
+                    }
                 }
             }
-
-            // Re-enable foreign keys
-            connection.Execute("PRAGMA foreign_keys=ON;");
+            finally
+            {
+                // Always re-enable FK enforcement, even on failure, so the pooled
+                // connection is returned in a known-good state.
+                try { connection.Execute("PRAGMA foreign_keys=ON;"); }
+                catch (Exception ex) { Logger.Error("Failed to restore foreign_keys=ON after migration.", ex); }
+            }
         }
 
         /// <summary>

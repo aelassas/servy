@@ -10,9 +10,8 @@
 
 namespace Servy.Core.Resources {
     using System;
-    using System.Diagnostics.CodeAnalysis;
-
-
+    
+    
     /// <summary>
     ///   Une classe de ressource fortement typée destinée, entre autres, à la consultation des chaînes localisées.
     /// </summary>
@@ -23,7 +22,6 @@ namespace Servy.Core.Resources {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "18.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [ExcludeFromCodeCoverage]
     public class Strings {
         
         private static global::System.Resources.ResourceManager resourceMan;
@@ -491,6 +489,15 @@ namespace Servy.Core.Resources {
         public static string Msg_ServiceNameLengthReached {
             get {
                 return ResourceManager.GetString("Msg_ServiceNameLengthReached", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The service name is too long. It must be 256 characters or fewer..
+        /// </summary>
+        public static string Msg_ServiceNameTooLong {
+            get {
+                return ResourceManager.GetString("Msg_ServiceNameTooLong", resourceCulture);
             }
         }
         

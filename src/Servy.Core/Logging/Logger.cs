@@ -3,6 +3,7 @@ using Servy.Core.Enums;
 using Servy.Core.IO;
 using Servy.Core.Security;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text;
 
 namespace Servy.Core.Logging
@@ -127,7 +128,7 @@ namespace Servy.Core.Logging
                     var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
 
                     File.AppendAllText(Path.Combine(LogsPath, "LoggerInitializationErrors.log"),
-                        $"[{now:yyyy-MM-dd HH:mm:ss}] Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");
+                        $"[{now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}] Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");
                 }
                 catch
                 {
@@ -333,7 +334,7 @@ namespace Servy.Core.Logging
                     // Format: [2026-03-12 22:00:00+01:00] [INFO] Message text OR [2026-03-12 22:00:00Z] [INFO] Message text
                     var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
                     string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
-                    string logEntry = $"[{now:yyyy-MM-dd HH:mm:ss}{tzMarker}] [{levelName}] {sanitizedMessage}";
+                    string logEntry = $"[{now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}{tzMarker}] [{levelName}] {sanitizedMessage}";
 
                     _writer.WriteLine(logEntry);
                 }
@@ -346,7 +347,7 @@ namespace Servy.Core.Logging
 
                     var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
                     File.AppendAllText(Path.Combine(LogsPath, "LoggerWriteErrors.log"),
-                        $"[{now:yyyy-MM-dd HH:mm:ss}] Failed to write log entry: {ex.Message}{Environment.NewLine}");
+                        $"[{now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}] Failed to write log entry: {ex.Message}{Environment.NewLine}");
                 }
                 catch { /* truly fail-silent only as last resort */ }
             }

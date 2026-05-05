@@ -23,6 +23,9 @@
   <data name="Msg_ServiceNameContainsTrailingWhitespace" xml:space="preserve">
     <value>Service name cannot have leading or trailing whitespace.</value>
   </data>
+  <data name="Msg_ServiceNameTooLong" xml:space="preserve">
+    <value>The service name is too long. It must be 256 characters or fewer.</value>
+  </data>
   <data name="Msg_InvalidServiceName" xml:space="preserve">
     <value>Service name contains invalid characters. Avoid using '\', '/', ':', '*', '?', '"', '&lt;', '&gt;', '|'.</value>
   </data>
@@ -195,7 +198,7 @@
   <data name="FileFilter_Json" xml:space="preserve">
     <value>JSON files (*.json)|*.json|All files (*.*)|*.*</value>
   </data>
-    <data name="FileFilter_AllFiles" xml:space="preserve">
+  <data name="FileFilter_AllFiles" xml:space="preserve">
     <value>All files (*.*)|*.*</value>
   </data>
   <data name="Title_SelectExecutable" xml:space="preserve">

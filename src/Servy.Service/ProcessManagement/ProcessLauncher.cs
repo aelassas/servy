@@ -89,7 +89,14 @@ namespace Servy.Service.ProcessManagement
 
             StreamWriter? stdoutWriter = null;
             StreamWriter? stderrWriter = null;
-            bool pathsMatch = string.Equals(options.StdOutPath, options.StdErrPath, StringComparison.OrdinalIgnoreCase);
+
+            string? normalizedOut = Helper.NormalizePath(options.StdOutPath);
+            string? normalizedErr = Helper.NormalizePath(options.StdErrPath);
+
+            bool pathsMatch = 
+                normalizedOut != null
+                && normalizedErr != null
+                && string.Equals(normalizedOut, normalizedErr, StringComparison.OrdinalIgnoreCase);
 
             try
             {
@@ -253,28 +260,23 @@ namespace Servy.Service.ProcessManagement
         private static void WaitForExitWithHeartbeat(IProcessWrapper process, ProcessLaunchOptions options, IServyLogger logger)
         {
             var sw = Stopwatch.StartNew();
-
-            while (!process.WaitForExit(options.WaitChunkMs))
+            while (true)
             {
-                // Pulse the SCM to indicate the service is still transitioning/active
-                options.OnScmHeartbeat?.Invoke(options.ScmAdditionalTimeMs);
-
-                if (sw.ElapsedMilliseconds >= options.TimeoutMs)
+                long remaining = options.TimeoutMs - sw.ElapsedMilliseconds;
+                if (remaining <= 0)
                 {
+                    // Final non-blocking poll
+                    if (process.WaitForExit(0)) return;
+
                     var errorMsg = $"{options.ExecutablePath} timed out after {options.TimeoutMs}ms. Terminating process tree.";
-                    if (options.LogErrorAsWarning)
-                    {
-                        logger.Warn(errorMsg);
-                    }
-                    else
-                    {
-                        logger.Error(errorMsg);
-                    }
-
+                    if (options.LogErrorAsWarning) logger.Warn(errorMsg); else logger.Error(errorMsg);
                     process.Kill(true);
-
                     throw new TimeoutException($"{options.ExecutablePath} exceeded the maximum allowed timeout of {options.TimeoutMs}ms.");
                 }
+
+                int chunk = (int)Math.Min(options.WaitChunkMs, remaining);
+                if (process.WaitForExit(chunk)) return;
+                options.OnScmHeartbeat?.Invoke(options.ScmAdditionalTimeMs);
             }
         }
 

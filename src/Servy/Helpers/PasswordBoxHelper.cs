@@ -30,7 +30,7 @@ namespace Servy.Helpers
                 typeof(string),
                 typeof(PasswordBoxHelper),
                 new FrameworkPropertyMetadata(
-                    string.Empty,
+                    null,
                     FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
                     OnBoundPasswordChanged));
 
@@ -84,13 +84,16 @@ namespace Servy.Helpers
         {
             if (d is PasswordBox passwordBox)
             {
+                // Always unsubscribe first to prevent duplicates
                 passwordBox.PasswordChanged -= PasswordBox_PasswordChanged;
 
                 if (!GetIsUpdating(passwordBox))
                 {
+                    // Update the control's password from the VM
                     passwordBox.Password = e.NewValue as string ?? string.Empty;
                 }
 
+                // The critical step: wiring the event
                 passwordBox.PasswordChanged += PasswordBox_PasswordChanged;
             }
         }

@@ -186,6 +186,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,
+                WorkingDirectory = Path.GetTempPath(),
             };
 
             var childProcess = Process.Start(childProcessInfo);

@@ -58,6 +58,10 @@ namespace Servy.UI.IntegrationTests.Services
                     _service.ResetCursor();
                 });
 
+                // Force the Dispatcher to process the Reset operation
+                // This flushes the queue up to 'Background' priority
+                await Dispatcher.Yield(DispatcherPriority.Background);
+
                 // Verification: Since we are back on the STA thread after the await,
                 // we can check the cursor state immediately.
                 Assert.Null(Mouse.OverrideCursor);

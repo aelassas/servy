@@ -138,7 +138,7 @@ namespace Servy.Core.EnvironmentVariables
         /// <param name="s">The string to examine.</param>
         /// <param name="index">The position of the character to check.</param>
         /// <returns>true if the character is escaped; otherwise, false.</returns>
-        private static bool IsEscapedAt(string s, int index)
+        internal static bool IsEscapedAt(string s, int index)
         {
             int backslashCount = 0;
             for (int j = index - 1; j >= 0 && s[j] == '\\'; j--)

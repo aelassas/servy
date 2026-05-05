@@ -14,6 +14,22 @@ namespace Servy.Core.Helpers
     public static class Helper
     {
         /// <summary>
+        /// A collection of reserved Windows device names that cannot be used as service names.
+        /// </summary>
+        /// <remarks>
+        /// These names (e.g., CON, PRN, COM1) are legacy DOS device names reserved by the Windows kernel.
+        /// Using them as service names can cause significant system conflicts, file system errors, or 
+        /// registry corruption, as Windows may attempt to map these names to hardware devices instead 
+        /// of the service controller.
+        /// </remarks>
+        public static HashSet<string> ReservedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "CON", "PRN", "AUX", "NUL",
+            "COM0","COM1","COM2","COM3","COM4","COM5","COM6","COM7","COM8","COM9",
+            "LPT0","LPT1","LPT2","LPT3","LPT4","LPT5","LPT6","LPT7","LPT8","LPT9"
+        };
+
+        /// <summary>
         /// A predefined array of characters that are forbidden in Windows Service names.
         /// </summary>
         /// <remarks>
@@ -463,16 +479,43 @@ namespace Servy.Core.Helpers
             if (serviceName != serviceName.Trim())
                 return (false, Strings.Msg_ServiceNameContainsTrailingWhitespace);
 
-            // 3. Structural Integrity Check
+            // 3. Service Name Length Check
+            if (serviceName.Length > AppConfig.MaxServiceNameLength)
+                return (false, Strings.Msg_ServiceNameTooLong);
+
+            // 4. Structural Integrity Check
             // We reject the input if it contains:
             //  a) Forbidden file system/registry characters (InvalidServiceChars).
             //  b) Control characters (e.g., \n, \t, \r) which can break console output or CLI parsers.
             if (serviceName.IndexOfAny(InvalidServiceChars) >= 0 || serviceName.Any(char.IsControl))
                 return (false, Strings.Msg_InvalidServiceName);
 
+            // 5. Reserved Windows device names (case-insensitive, with or without extension)
+            var stem = serviceName;
+            var dot = stem.IndexOf('.');
+            if (dot >= 0) stem = stem.Substring(0, dot);
+            if (ReservedNames.Contains(stem))
+                return (false, Strings.Msg_InvalidServiceName);
+
             // If all checks pass, the name is structurally sound for the Windows SCM.
             return (true, string.Empty);
         }
+
+        /// <summary>
+        /// Normalizes a file system path by converting it to an absolute path and removing trailing directory separators.
+        /// </summary>
+        /// <param name="p">The path string to normalize.</param>
+        /// <returns>
+        /// A fully qualified absolute path without trailing separators; 
+        /// or <see langword="null"/> if the input is <see langword="null"/>, empty, or consists only of white space.
+        /// </returns>
+        /// <remarks>
+        /// This method uses <see cref="Path.GetFullPath(string)"/> to resolve relative paths (e.g., "." or "..") 
+        /// based on the current working directory. It then trims any trailing <see cref="Path.DirectorySeparatorChar"/> 
+        /// to ensure consistent path comparison and storage in the database.
+        /// </remarks>
+        public static string? NormalizePath(string? p) =>
+            string.IsNullOrWhiteSpace(p) ? null : Path.GetFullPath(p).TrimEnd(Path.DirectorySeparatorChar);
 
     }
 }

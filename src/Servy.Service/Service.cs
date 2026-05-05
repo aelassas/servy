@@ -16,6 +16,7 @@ using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
@@ -626,6 +627,10 @@ namespace Servy.Service
             {
                 name = name.Replace(c, '_');
             }
+
+            if (Helper.ReservedNames.Contains(name) || Helper.ReservedNames.Contains(Path.GetFileNameWithoutExtension(name)))
+                name = "_" + name;
+
             return name;
         }
 
@@ -656,7 +661,14 @@ namespace Servy.Service
         /// </summary>
         private async Task WriteAttemptsInternalAsync(int attempts, CancellationToken ct)
         {
-            await File.WriteAllTextAsync(_restartAttemptsFile!, attempts.ToString(), ct);
+            await Helper.WriteFileAtomicAsync(
+                _restartAttemptsFile!,
+                async fs =>
+                {
+                    var bytes = Encoding.UTF8.GetBytes(attempts.ToString(CultureInfo.InvariantCulture));
+                    await fs.WriteAsync(bytes, 0, bytes.Length, ct);
+                },
+                ct);
         }
 
         /// <summary>
@@ -774,10 +786,12 @@ namespace Servy.Service
                 // If the file's last modification occurred before the current system boot, 
                 // the service is starting in a new OS session. We maintain the existing counter 
                 // to ensure recovery quotas (like RestartComputer) are respected across reboots.
-                // This also handles cases where the service has been stable for long periods.
                 if (lastWriteUtc < systemBootTimeUtc)
                 {
-                    _logger?.Info($"Maintaining restart counter from previous session. (Last Write: {lastWriteUtc:G}, System Boot: {systemBootTimeUtc:G}).");
+                    // We are running in a new OS session for the first time.
+                    // Touch the file to anchor it to the current session so future
+                    // stability checks can decide based on in-session uptime.
+                    File.SetLastWriteTimeUtc(_restartAttemptsFile, DateTime.UtcNow);
                     return;
                 }
 
@@ -1216,7 +1230,13 @@ namespace Servy.Service
             }
 
             // Fire and forget the post-launch script when process confirmed running
-            _cancellationSource?.Dispose();
+            var oldCts = Interlocked.Exchange(ref _cancellationSource, null);
+            if (oldCts != null)
+            {
+                try { oldCts.Cancel(); } catch (ObjectDisposedException) { /* already disposed */ }
+                oldCts.Dispose();
+            }
+
             var cts = new CancellationTokenSource();
             _cancellationSource = cts;
 
