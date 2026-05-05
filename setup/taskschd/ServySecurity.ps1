@@ -18,6 +18,10 @@
     $safeBody = Protect-SensitiveString -Text "API_KEY: my-secret-token"
     # Returns: "API_KEY: ********"
 
+.EXAMPLE
+    $safeBody = Protect-SensitiveString -Text "myapp.exe --password mysecret"
+    # Returns: "myapp.exe --password ********"
+
 .NOTES
     Author      : Akram El Assas
     Project     : Servy
@@ -57,12 +61,28 @@ function Protect-SensitiveString {
         "KUBE_CONFIG", "TELEGRAM_TOKEN", "DISCORD_TOKEN"
     )
 
-    $keyPattern = $sensitiveKeys -join '|'
+    $keyPattern = [string]::Join('|', ($sensitiveKeys | ForEach-Object { [regex]::Escape($_) }))
     
-    # $1: Keyword (using lookarounds to allow _, -, and . as boundaries)
-    # $2: Separator (preserves the original : or =)
-    # Matches unquoted strings (\S+) OR quoted strings ("..." / '...')
-    $maskingRegex = "(?i)(?<![a-zA-Z0-9])($keyPattern)(?![a-zA-Z0-9])(\s*[:=]\s*)(?:`"[^`"]*`"|'[^']*'|\S+)"
+    # Constructed safely using concatenation to avoid multi-line string whitespace issues
+    $regexPattern = "(?i)(?<![a-zA-Z0-9])($keyPattern)(?![a-zA-Z0-9])" +
+        "(?:" +
+            # BRANCH A: Explicit Separators (:, =, /)
+            "(\s*[:=]\s*|/)" +
+            "(?:`"[^`"]*`"|'[^']*'|(?:[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*))" +
+            "|" +
+            # BRANCH B: Space Separator
+            "(\s+)(?![\-/]+[a-zA-Z])" +
+            "(?:`"[^`"]*`"|'[^']*'|[^\s`"']+)" +
+        ")"
 
-    return $Text -replace $maskingRegex, '$1$2********'
+    $maskingRegex = [regex]::new($regexPattern)
+
+    # Use MatchEvaluator to conditionally extract the matched separator group (A or B)
+    $evaluator = [System.Text.RegularExpressions.MatchEvaluator] {
+        param($m)
+        $sep = if ($m.Groups[2].Success) { $m.Groups[2].Value } else { $m.Groups[3].Value }
+        return "$($m.Groups[1].Value)$sep********"
+    }
+
+    return $maskingRegex.Replace($Text, $evaluator)
 }

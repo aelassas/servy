@@ -534,7 +534,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Timeout in milliseconds for external handle-utility execution (e.g., handle.exe).
         /// </summary>
-        public const int HandleExeTimeoutMs = 5_000;
+        public const int HandleExeTimeoutMs = 10_000;
 
         /// <summary>
         /// The maximum character length for a Windows Service display name.

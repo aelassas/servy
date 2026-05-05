@@ -435,8 +435,24 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// The bulk of the clean-up logic is handled here.
+        /// Finalizes an instance of the <see cref="SecureData"/> class.
         /// </summary>
+        /// <remarks>
+        /// The finalizer ensures that sensitive cryptographic material is zeroed out in memory 
+        /// even if the consumer fails to call <see cref="Dispose()"/> explicitly.
+        /// </remarks>
+        ~SecureData()
+        {
+            Dispose(false);
+        }
+
+        /// <summary>
+        /// Releases the unmanaged resources used by the <see cref="SecureData"/> and optionally releases the managed resources.
+        /// </summary>
+        /// <param name="disposing">
+        /// <see langword="true"/> to release both managed and unmanaged resources; 
+        /// <see langword="false"/> to release only unmanaged resources.
+        /// </param>
         protected virtual void Dispose(bool disposing)
         {
             // 1. ATOMIC GUARD: Flip the flag BEFORE wiping memory.
@@ -444,15 +460,12 @@ namespace Servy.Core.Security
             // another thread has already initiated disposal.
             if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
 
-            if (disposing)
-            {
-                // 2. ZEROING: Because the flag is already flipped, new calls to 
-                // Encrypt/Decrypt will now fail via ThrowIfDisposed.
-                if (_v1MasterKey != null) CryptographicOperations.ZeroMemory(_v1MasterKey);
-                if (_v1StaticIv != null) CryptographicOperations.ZeroMemory(_v1StaticIv);
-                if (_v2EncryptionKey != null) CryptographicOperations.ZeroMemory(_v2EncryptionKey);
-                if (_v2HmacKey != null) CryptographicOperations.ZeroMemory(_v2HmacKey);
-            }
+            // 2. ZEROING runs in BOTH paths — managed keys are still reachable from the finalizer
+            // and zeroing them is non-allocating, finalizer-safe, and idempotent.
+            if (_v1MasterKey != null) CryptographicOperations.ZeroMemory(_v1MasterKey);
+            if (_v1StaticIv != null) CryptographicOperations.ZeroMemory(_v1StaticIv);
+            if (_v2EncryptionKey != null) CryptographicOperations.ZeroMemory(_v2EncryptionKey);
+            if (_v2HmacKey != null) CryptographicOperations.ZeroMemory(_v2HmacKey);
         }
 
         /// <summary>

@@ -409,7 +409,8 @@ function Invoke-ServyCli {
 
     # 6. Emit results
     if (-not [string]::IsNullOrEmpty($stdout)) { 
-      Write-Output $stdout.TrimEnd() 
+        $scrubbedStdout = Format-SecureLogMessage -Text $stdout.TrimEnd()
+        Write-Output $scrubbedStdout
     }
 
     if (-not [string]::IsNullOrEmpty($stderr)) {

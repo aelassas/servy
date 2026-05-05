@@ -38,6 +38,9 @@ namespace Servy.Core.Security
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("Path cannot be null or empty.", nameof(path));
 
+            // Create the directory if it doesn't exist, or reference the existing one.
+            // Note: The race window between creation and hardening is mitigated by the 
+            // explicit ACE purge inside ApplySecurityRules.
             DirectoryInfo dirInfo = !Directory.Exists(path)
                 ? Directory.CreateDirectory(path)
                 : new DirectoryInfo(path);
@@ -48,12 +51,14 @@ namespace Servy.Core.Security
                 // Default behavior fetches Owner and Group. A non-admin account cannot 
                 // persist Owner/Group back to the filesystem, causing an UnauthorizedAccessException.
                 var security = dirInfo.GetAccessControl(AccessControlSections.Access);
-                SecurityIdentifier? currentUserSid;
+
+                SecurityIdentifier? currentUserSid = null;
                 using (var identity = WindowsIdentity.GetCurrent())
                 {
                     currentUserSid = identity.User;
                 }
 
+                // Apply the hardened rules.
                 ApplySecurityRules(security, currentUserSid, breakInheritance);
 
                 dirInfo.SetAccessControl(security);
@@ -146,12 +151,11 @@ namespace Servy.Core.Security
             security.AddAccessRule(new FileSystemAccessRule(systemSid, FileSystemRights.FullControl, accessFlags, PropagationFlags.None, AccessControlType.Allow));
 
             // 5. Add current user key
-            // Skip redundant explicit ACLs if the current user already receives Full Control 
-            // via BuiltinAdministrators group membership or LocalSystem pseudo-account identity.
+            // We grant explicit Full Control to the current user unless they are the 
+            // LocalSystem account (which is already covered in Step 4). 
             bool isSystem = currentUserSid != null && currentUserSid.Equals(systemSid);
-            bool isAdminMember = IsAdministrator();
 
-            if (currentUserSid != null && !isSystem && !isAdminMember)
+            if (currentUserSid != null && !isSystem)
             {
                 security.AddAccessRule(new FileSystemAccessRule(currentUserSid, FileSystemRights.FullControl, accessFlags, PropagationFlags.None, AccessControlType.Allow));
             }

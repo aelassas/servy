@@ -123,21 +123,7 @@ namespace Servy.Core.UnitTests.Security
             var rules = acl.GetAccessRules(true, false, typeof(SecurityIdentifier))
                            .Cast<FileSystemAccessRule>();
 
-            // The Admin Group SID
-            var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
-
-            if (isAdmin)
-            {
-                // If we are an Admin, we expect the Admin Group to have access, 
-                // and the explicit User SID to be MISSING (optimized out).
-                Assert.Contains(rules, r => r.IdentityReference == adminSid && r.FileSystemRights == FileSystemRights.FullControl);
-                Assert.DoesNotContain(rules, r => r.IdentityReference == currentUserSid);
-            }
-            else
-            {
-                // If we were a standard user (non-admin), we would expect the explicit rule.
-                Assert.Contains(rules, r => r.IdentityReference == currentUserSid && r.FileSystemRights == FileSystemRights.FullControl);
-            }
+            Assert.Contains(rules, r => r.IdentityReference == currentUserSid && r.FileSystemRights == FileSystemRights.FullControl);
         }
 
         [Fact]

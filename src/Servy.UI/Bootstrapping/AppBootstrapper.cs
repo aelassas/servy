@@ -32,6 +32,7 @@ namespace Servy.UI.Bootstrapping
         private readonly BootstrapperOptions _options;
         private readonly IProcessKiller _processKiller;
         private IConfiguration? _configuration;
+        private ProtectedKeyProvider? _protectedKeyProvider;
 
         private FileSystemWatcher? _availabilityWatcher;
         private FileSystemEventHandler? _availabilityChangedHandler;
@@ -97,7 +98,8 @@ namespace Servy.UI.Bootstrapping
         /// </summary>
         /// <param name="app">The active WPF application instance.</param>
         /// <param name="e">Startup arguments.</param>
-        public void OnStartup(Application app, StartupEventArgs e)
+        /// <returns><see langword="true"/> if security and environment checks passed; otherwise <see langword="false"/>.</returns>
+        public bool OnStartup(Application app, StartupEventArgs e)
         {
             if (_options == null)
             {
@@ -127,9 +129,7 @@ namespace Servy.UI.Bootstrapping
             app.DispatcherUnhandledException += (sender, args) =>
             {
                 Logger.Error("UI Dispatcher Exception", args.Exception);
-                bool isOutOfMemory = args.Exception is OutOfMemoryException;
-
-                if (!isOutOfMemory)
+                if (!(args.Exception is OutOfMemoryException))
                 {
                     MessageBox.Show(
                         Strings.Msg_UnexpectedError_Body,
@@ -151,7 +151,7 @@ namespace Servy.UI.Bootstrapping
             {
                 MessageBox.Show(_options.SecurityWarningMessage, _options.SecurityWarningTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
                 app.Shutdown(1);
-                return;
+                return false; // ABORT STARTUP
             }
 
             // 6. Security Check: SQLite Environment
@@ -160,7 +160,7 @@ namespace Servy.UI.Bootstrapping
                 string message = string.Format(_options.SqliteVersionWarningMessageFormat!, detectedVersion, AppConfig.MinRequiredSqliteVersion);
                 MessageBox.Show(message, _options.SqliteVersionWarningTitle, MessageBoxButton.OK, MessageBoxImage.Error);
                 app.Shutdown();
-                return;
+                return false; // ABORT STARTUP
             }
 
             // 7. Rendering Detection
@@ -170,11 +170,14 @@ namespace Servy.UI.Bootstrapping
 
             Logger.Info($"Startup initialized. RenderingTier={renderingTier}, RemoteSession={isRemote}, ForceSoftwareRendering={ForceSoftwareRendering}");
 
+            // Fallback to software rendering for stability in RDP or low-tier graphics scenarios
             if (renderingTier == 0 || isRemote || ForceSoftwareRendering)
             {
                 Logger.Warn("Low rendering capabilities detected. Forcing Software Rendering Mode.");
                 RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
             }
+
+            return true; // PROCEED
         }
 
         /// <summary>
@@ -312,8 +315,8 @@ namespace Servy.UI.Bootstrapping
                     DatabaseInitializer.InitializeDatabase(DbContext, SQLiteDbInitializer.Initialize);
 
                     var dapperExecutor = new DapperExecutor(DbContext);
-                    var protectedKeyProvider = new ProtectedKeyProvider(AESKeyFilePath, AESIVFilePath);
-                    SecureData = new SecureData(protectedKeyProvider);
+                    _protectedKeyProvider = new ProtectedKeyProvider(AESKeyFilePath, AESIVFilePath);
+                    SecureData = new SecureData(_protectedKeyProvider);
 
                     var xmlSerializer = new XmlServiceSerializer();
                     var jsonSerializer = new JsonServiceSerializer();
@@ -493,6 +496,7 @@ namespace Servy.UI.Bootstrapping
 
             TryDispose(() => DbContext?.Dispose(), nameof(DbContext));
             TryDispose(() => SecureData?.Dispose(), nameof(SecureData));
+            TryDispose(() => _protectedKeyProvider?.Dispose(), nameof(_protectedKeyProvider));
         }
 
         /// <summary>
