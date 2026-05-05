@@ -679,12 +679,18 @@ namespace Servy.Service
         /// <summary>
         /// Internal unprotected write logic. Assumes _fileSemaphore is held by the caller.
         /// </summary>
+        /// <param name="attempts">The number of restart attempts to persist.</param>
         private void WriteAttemptsInternal(int attempts)
         {
-            Helper.WriteFileAtomic(_restartAttemptsFile, fs =>
+            // Use the atomic helper to ensure we don't corrupt the file on crash
+            Helper.WriteFileAtomic(_restartAttemptsFile, stream =>
             {
-                var bytes = Encoding.UTF8.GetBytes(attempts.ToString(CultureInfo.InvariantCulture));
-                fs.Write(bytes, 0, bytes.Length);
+                // Use StreamWriter for cleaner string handling.
+                // We use leaveOpen: true so the Helper can perform the final Flush() on the FileStream.
+                using (var sw = new StreamWriter(stream, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
+                {
+                    sw.Write(attempts.ToString(CultureInfo.InvariantCulture));
+                }
             });
         }
 
@@ -1500,7 +1506,7 @@ namespace Servy.Service
         /// <param name="e">Event data containing no specific exit information.</param>
         private void OnProcessExited(object sender, EventArgs e)
         {
-            if (_isTearingDown || _disposed) return;
+            if (_isTearingDown || _disposed || _isRebooting) return;
 
             _logger?.Warn("Child process exit detected via event.");
             ClearProcessState();
@@ -1659,14 +1665,16 @@ namespace Servy.Service
         /// </remarks>
         private void InitiateRecovery()
         {
-            bool shouldStop = false;
-            int currentAttempts = 0;
-
-            lock (_healthCheckLock)
+            // We use this flag to decide if the gate should reopen.
+            // For Reboot/RestartService, the gate should stay closed forever for this instance.
+            bool shouldReopenGate = true;
+            try
             {
+                bool shouldStop = false;
+                int currentAttempts = 0;
+
                 // Guard: prevent concurrent recovery attempts
-                if (_isTearingDown || _disposed)
-                    return;
+                if (_isTearingDown || _disposed || _isRebooting) return;
 
                 // _maxRestartAttempts == 0 means unlimited restart attempts
                 if (_maxRestartAttempts > 0)
@@ -1686,38 +1694,41 @@ namespace Servy.Service
                     }
                 }
 
-
                 // Set the recovery state (MANDATORY for both limited and unlimited)
                 if (!shouldStop)
                 {
                     _failedChecks = 0;
                     _isRecovering = true; // Set flag to block other health checks: GATE CLOSED
+
+                    // If the action is terminal for this process instance, don't reopen the gate.
+                    if (_recoveryAction == RecoveryAction.RestartComputer ||
+                        _recoveryAction == RecoveryAction.RestartService)
+                    {
+                        shouldReopenGate = false;
+                    }
                 }
-            }
 
-            if (shouldStop)
-            {
-                RunFailureProgram();
-                Stop();
-                return;
-            }
 
-            try
-            {
-                // The actual logic (RestartService, RestartProcess, etc.)
-                ExecuteRecoveryAction(currentAttempts);
-            }
-            catch (Exception ex)
-            {
-                _logger?.Error($"Critical error during recovery execution: {ex.Message}");
+                if (shouldStop)
+                {
+                    RunFailureProgram();
+                    Stop();
+                    return;
+                }
+
+                try
+                {
+                    // The actual logic (RestartService, RestartProcess, etc.)
+                    ExecuteRecoveryAction(currentAttempts);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Error($"Critical error during recovery execution: {ex.Message}");
+                }
             }
             finally
             {
-                // GUARANTEED EXECUTION: The gate always opens.
-                // Because _isRecovering is volatile, it is safe
-                // to toggle directly without risking a deadlock
-                // in the finally block.
-                _isRecovering = false;
+                if (shouldReopenGate) _isRecovering = false;
             }
         }
 
@@ -1784,7 +1795,7 @@ namespace Servy.Service
         /// </remarks>
         private void CheckHealth(object sender, ElapsedEventArgs e)
         {
-            if (_isTearingDown || _disposed) return;
+            if (_isTearingDown || _disposed || _isRebooting || _isRecovering) return;
 
             bool needsRecovery = false;
             bool shouldStop = false;

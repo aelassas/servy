@@ -652,19 +652,32 @@ jobs:
           
           # Remove *.pdb, *.config, *.xml files
           $exts = @("*.pdb", "*.config", "*.xml")
-
           foreach ($ext in $exts) {
               Get-ChildItem -Path $pkg -Recurse -Filter $ext -File | Remove-Item -Force
           }
 
-          # Task Scheduler setup
+          # Task Scheduler setup - Hardened Recursive Copy
           $destPath = Join-Path $pkg "taskschd"
+          $sourcePath = "setup\taskschd"
           if (-not (Test-Path $destPath)) { New-Item -Path $destPath -ItemType Directory -Force }
-          Copy-Item -Path "setup\taskschd\*" -Destination $destPath -Recurse -Force -Exclude "smtp-cred.xml", "*.dat", "*.log"
+
+          Get-ChildItem -Path $sourcePath -Recurse -File |
+              Where-Object { $_.Name -notin @('smtp-cred.xml') -and $_.Extension -notin @('.dat','.log') } |
+              ForEach-Object {
+                  # Maintain the internal folder hierarchy relative to the source path
+                  $rel = $_.FullName.Substring((Resolve-Path $sourcePath).Path.Length + 1)
+                  $target = Join-Path $destPath $rel
+                  $parent = Split-Path $target -Parent
+
+                  # Ensure the subfolder exists in the package before copying the file
+                  if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+                  
+                  Copy-Item -Path $_.FullName -Destination $target -Force
+              }
 
           $zip = "$name.7z"
 
-          # use advanced compression config
+          # Use advanced compression config
           & "$env:SEVEN_ZIP" a `
             -t7z `
             -m0=lzma2 `

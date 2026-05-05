@@ -1,11 +1,20 @@
 #requires -Version 5.0
-# Main setup bundle script for .NET Framework build of Servy
+<#
+.SYNOPSIS
+Main setup bundle script for the .NET Framework 4.8 build of Servy.
+
+.DESCRIPTION
+This script automates the full build lifecycle for the net48 platform, including:
+1. Tool resolution (Inno Setup, 7-Zip).
+2. Project compilation and publishing.
+3. Installer generation and code signing.
+4. Secure packaging of portable artifacts with credential leak protection.
+#>
 
 $ErrorActionPreference = "Stop"
 $scriptHadError = $false
 
-# PS 2.0/3.0 compatible path resolution
-$scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Definition }
+$scriptDir = $PSScriptRoot
 
 try {
     $startTime = Get-Date
@@ -16,29 +25,31 @@ try {
     $buildConfig  = "Release"
     $platform     = "x64"
     $framework    = "net48"
-
     $issFile      = "servy.iss"
 
     # === PATH RESOLUTION ===
     Set-Location $scriptDir
-    $rootDir                = (Resolve-Path (Join-Path $scriptDir "..")).Path
-    $servyDir               = Join-Path $rootDir "src\Servy"
-    $cliDir                 = Join-Path $rootDir "src\Servy.CLI"
-    $managerDir             = Join-Path $rootDir "src\Servy.Manager"
+    $rootDir               = (Resolve-Path (Join-Path $scriptDir "..")).Path
+    $servyDir              = Join-Path $rootDir "src\Servy"
+    $cliDir                = Join-Path $rootDir "src\Servy.CLI"
+    $managerDir            = Join-Path $rootDir "src\Servy.Manager"
     
-    $buildOutputDir         = Join-Path $servyDir "bin\$platform\$buildConfig"
-    $cliBuildOutputDir      = Join-Path $cliDir "bin\$platform\$buildConfig"
-    $managerBuildOutputDir  = Join-Path $managerDir "bin\$platform\$buildConfig"
+    $buildOutputDir        = Join-Path $servyDir "bin\$platform\$buildConfig"
+    $cliBuildOutputDir     = Join-Path $cliDir "bin\$platform\$buildConfig"
+    $managerBuildOutputDir = Join-Path $managerDir "bin\$platform\$buildConfig"
     
-    # Do NOT use Resolve-Path here. It returns null/errors if the file is missing.
-    $signPath               = Join-Path $scriptDir "signpath.ps1"
+    # Resolver for the code signing sub-script
+    $signPath              = Join-Path $scriptDir "signpath.ps1"
 
-    $packageFolder          = "$appName-$version-$framework-$platform-portable"
+    $packageFolder         = "$appName-$version-$framework-$platform-portable"
     $outputZip              = "$packageFolder.7z"
 
     # === Tool Discovery ===
+    <# 
+    Attempts to resolve required external binaries (Inno Setup and 7-Zip) 
+    using the tools-config helper. 
+    #>
     try {
-        # Import the resolution helper
         . (Join-Path $scriptDir "tools-config.ps1")
 
         Write-Host "Resolving build tools..." -ForegroundColor Cyan
@@ -59,7 +70,8 @@ try {
         return
     }
 
-    # === Functions ===
+    # === Internal Functions ===
+
     function Check-LastExitCode {
         param([string]$ErrorMessage)
         if ($LASTEXITCODE -ne 0) { throw "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)" }
@@ -74,10 +86,13 @@ try {
     }
 
     # === BUILD PROJECTS ===
-    Write-Host "--- Restoring & Building ---" -ForegroundColor Cyan
-    nuget restore "..\Servy.sln"
+    Write-Host "--- Restoring & Building Projects ---" -ForegroundColor Cyan
+    
+    # Restore NuGet packages for the entire solution
+    nuget restore (Join-Path $rootDir "Servy.sln")
     Check-LastExitCode "NuGet restore failed"
 
+    # Define the project list and their respective publish script paths
     $projects = @(
         @{ Name="WPF"; Path="..\src\Servy\publish.ps1" },
         @{ Name="CLI"; Path="..\src\Servy.CLI\publish.ps1" },
@@ -87,7 +102,7 @@ try {
     foreach ($p in $projects) {
         $pPath = Join-Path $scriptDir $p.Path
         if (Test-Path $pPath) {
-            Write-Host "Building $($p.Name)..."
+            Write-Host "Invoking publish for $($p.Name)..."
             & $pPath -Version $version
             Check-LastExitCode "$($p.Name) build failed"
         }
@@ -98,15 +113,17 @@ try {
 
     $installerPath = Join-Path $scriptDir "servy-$version-net48-x64-installer.exe"
 
-    # CRITICAL: Clean up the old installer first to break any existing file locks
+    # Clean existing installer to prevent file access errors during ISCC execution
     Remove-ItemSafely -Path $installerPath
 
+    # Execute Inno Setup Compiler
     & "$innoCompiler" (Join-Path $scriptDir $issFile) /DMyAppVersion=$version /DMyAppPlatform=$framework
     Check-LastExitCode "Inno Setup failed"
 
+    # Code Signing (if the signing script is available)
     if (Test-Path $installerPath) {
         if (Test-Path $signPath) {
-            Write-Host ">>> Signing Installer..." -ForegroundColor Yellow
+            Write-Host ">>> Signing Installer binary..." -ForegroundColor Yellow
             & $signPath $installerPath
             Check-LastExitCode "Signing failed"
         }
@@ -117,14 +134,14 @@ try {
     # === PREPARE PACKAGE FILES ===
     Write-Host "--- Packaging Portable ZIP ---" -ForegroundColor Cyan
 
+    # Ensure a clean staging environment
     Remove-ItemSafely -Path $packageFolder
     Remove-ItemSafely -Path $outputZip
 
-    # Atomic Packaging Block
     try {
         New-Item -ItemType Directory -Force -Path $packageFolder | Out-Null
 
-        # Copy Core Binaries
+        # 1. Copy Core Binaries
         $binMap = @{
             "Servy.exe"         = Join-Path $buildOutputDir "Servy.exe"
             "Servy.Manager.exe" = Join-Path $managerBuildOutputDir "Servy.Manager.exe"
@@ -139,7 +156,7 @@ try {
             }
         }
 
-        # Copy DLLs
+        # 2. Copy Shared DLL Dependencies
         $outDirs = @($buildOutputDir, $managerBuildOutputDir, $cliBuildOutputDir)
         foreach ($dir in $outDirs) {
             if (Test-Path $dir) {
@@ -147,15 +164,26 @@ try {
             }
         }
 
-        # Task Scheduler hooks
+        # 3. Securely include Task Scheduler hooks
+        # Using Get-ChildItem to ensure -Exclude correctly recurses through subdirectories.
         $taskSource = Join-Path $scriptDir "taskschd"
         if (Test-Path $taskSource) {
             $taskDest = Join-Path $packageFolder "taskschd"
-            New-Item -Path $taskDest -ItemType Directory -Force | Out-Null
-            Copy-Item "$taskSource\*" -Destination $taskDest -Recurse -Force -Exclude "smtp-cred.xml", "*.dat", "*.log"
+            [void](New-Item -Path $taskDest -ItemType Directory -Force)
+            
+            Get-ChildItem -Path $taskSource -Recurse -Exclude 'smtp-cred.xml','*.dat','*.log' |
+                Copy-Item -Destination {
+                    Join-Path $taskDest $_.FullName.Substring($taskSource.Length).TrimStart('\')
+                } -Force
+
+            # SECURITY AUDIT: Ensure no sensitive files leaked into the portable package
+            $leaks = Get-ChildItem -Path $taskDest -Recurse -Include 'smtp-cred.xml','*.dat','*.log'
+            if ($leaks) { 
+                throw "SECURITY ERROR: Excluded files leaked into package: $($leaks.FullName -join ', ')" 
+            }
         }
 
-        # CLI Module Artifacts
+        # 4. Include PowerShell Module Artifacts
         $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1")
         foreach ($art in $cliArtifacts) {
             $artPath = Join-Path $cliDir $art
@@ -166,11 +194,11 @@ try {
             }
         }
 
-        # Cleanup PDBs
+        # Remove PDB files to minimize package size
         Get-ChildItem $packageFolder -Filter "*.pdb" -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force
 
-        # === CREATE ZIP ===
-        
+        # === CREATE ZIP ARCHIVE ===
+        # Maximum compression settings for 7-Zip (LZMA2/Ultra)
         $zipArgs = @(
             "a",
             "-t7z",
@@ -189,22 +217,39 @@ try {
         Write-Host "Success: $outputZip" -ForegroundColor Green
     }
     finally {
-        # Always clean up the temporary staging folder
+        # Always clean up the temporary staging folder regardless of success or failure
         Remove-ItemSafely -Path $packageFolder
     }
 
     $elapsed = (Get-Date) - $startTime
     Write-Host "`n=== Build complete in $($elapsed.ToString("hh\:mm\:ss")) ==="
-
-} catch {
+}
+catch {
     $scriptHadError = $true
-    Write-Host "`nFATAL ERROR: $_" -ForegroundColor Red
-    Write-Host "Error details: $($_.ScriptStackTrace)" -ForegroundColor Gray
-} finally {
-    Write-Host "`nPress any key to exit..."
-    if ($Host.Name -eq 'ConsoleHost') {
-        [void][System.Console]::ReadKey($true)
-    } else {
-        Read-Host
+    Write-Host "`nERROR OCCURRED:" -ForegroundColor Red
+    Write-Host $_
+}
+finally {
+    # Pause by default (for double-click usage)
+    if ($scriptHadError) {
+        Write-Host "`nBuild failed. Press any key to exit..."
     }
+    else {
+        Write-Host "`nPress any key to exit..."
+    }
+
+    try {
+        if ($Host.Name -eq 'ConsoleHost' -or $Host.Name -like '*Console*') {
+            [void][System.Console]::ReadKey($true)
+        }
+        else {
+            try {
+                $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+            }
+            catch {
+                Read-Host | Out-Null
+            }
+        }
+    }
+    catch { }
 }
