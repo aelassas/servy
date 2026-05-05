@@ -86,7 +86,7 @@ namespace Servy.Core.UnitTests.Services
             var result = _validator.TryValidate(xml, out var error);
 
             Assert.False(result);
-            Assert.Contains("exceeds", error);
+            Assert.Equal(Strings.Msg_ServiceNameTooLong, error);
         }
 
         [Theory]

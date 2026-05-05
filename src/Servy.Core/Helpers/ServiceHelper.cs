@@ -68,8 +68,6 @@ namespace Servy.Core.Helpers
         /// <param name="services">A collection of service names to start.</param>
         public async Task StartServices(IEnumerable<string> services)
         {
-            const int defaultTimeoutInSeconds = 30;
-
             // Create a bucket to collect any errors that occur
             var exceptions = new List<Exception>();
 
@@ -110,8 +108,13 @@ namespace Servy.Core.Helpers
                             throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
                         }
 
-                        var startTimeout = (service.StartTimeout ?? defaultTimeoutInSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                        var waitTime = TimeSpan.FromSeconds(Math.Max(startTimeout, defaultTimeoutInSeconds));
+                        var startTimeout = (service.StartTimeout ?? AppConfig.DefaultServiceStartTimeoutSeconds)
+                                           + AppConfig.ScmTimeoutBufferSeconds;
+                        if (!string.IsNullOrEmpty(service.PreLaunchExecutablePath))
+                        {
+                            startTimeout += service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds;
+                        }
+                        var waitTime = TimeSpan.FromSeconds(Math.Max(startTimeout, AppConfig.DefaultServiceStartTimeoutSeconds));
 
                         // This blocks until the service is Started or the waitTime expires
                         await Task.Run(() => sc.WaitForStatus(ServiceControllerStatus.Running, waitTime));
@@ -176,7 +179,10 @@ namespace Servy.Core.Helpers
                             throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
                         }
 
-                        int timeout = CalculateStopTimeout(service.StopTimeout, service.PreviousStopTimeout);
+                        int timeout = CalculateStopTimeout(
+                            service.StopTimeout,
+                            service.PreviousStopTimeout,
+                            service.PreStopTimeoutSeconds ?? 0);
                         var waitTime = TimeSpan.FromSeconds(timeout);
 
                         // This blocks until the service is Stopped or the waitTime expires

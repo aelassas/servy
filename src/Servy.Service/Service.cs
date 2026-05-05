@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -599,6 +600,10 @@ namespace Servy.Service
             {
                 name = name.Replace(c, '_');
             }
+
+            if (Helper.ReservedNames.Contains(name) || Helper.ReservedNames.Contains(Path.GetFileNameWithoutExtension(name)))
+                name = "_" + name;
+
             return name;
         }
 
@@ -629,13 +634,13 @@ namespace Servy.Service
                         if (int.TryParse(content, out var attempts) && attempts >= 0)
                             return attempts;
 
-                        File.WriteAllText(_restartAttemptsFile, "0");
+                        WriteAttemptsInternal(0);
                         _logger.Warn("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
                         return 0;
                     }
                     else
                     {
-                        File.WriteAllText(_restartAttemptsFile, "0");
+                        WriteAttemptsInternal(0);
                         _logger.Warn("Restart attempts file not found. Initializing counter to 0.");
                         return 0;
                     }
@@ -662,13 +667,25 @@ namespace Servy.Service
             {
                 try
                 {
-                    File.WriteAllText(_restartAttemptsFile, attempts.ToString());
+                    WriteAttemptsInternal(attempts);
                 }
                 catch (Exception ex)
                 {
                     _logger.Error($"Failed to save restart attempts to file: {ex.Message}");
                 }
             }
+        }
+
+        /// <summary>
+        /// Internal unprotected write logic. Assumes _fileSemaphore is held by the caller.
+        /// </summary>
+        private void WriteAttemptsInternal(int attempts)
+        {
+            Helper.WriteFileAtomic(_restartAttemptsFile, fs =>
+            {
+                var bytes = Encoding.UTF8.GetBytes(attempts.ToString(CultureInfo.InvariantCulture));
+                fs.Write(bytes, 0, bytes.Length);
+            });
         }
 
         /// <summary>
@@ -723,10 +740,12 @@ namespace Servy.Service
             // If the file's last modification occurred before the current system boot, 
             // the service is starting in a new OS session. We maintain the existing counter 
             // to ensure recovery quotas (like RestartComputer) are respected across reboots.
-            // This also handles cases where the service has been stable for long periods.
             if (lastWriteUtc < systemBootTimeUtc)
             {
-                _logger.Info($"Maintaining restart counter from previous session. (Last Write: {lastWriteUtc:G}, System Boot: {systemBootTimeUtc:G}).");
+                // We are running in a new OS session for the first time.
+                // Touch the file to anchor it to the current session so future
+                // stability checks can decide based on in-session uptime.
+                File.SetLastWriteTimeUtc(_restartAttemptsFile, DateTime.UtcNow);
                 return;
             }
 
@@ -1154,7 +1173,13 @@ namespace Servy.Service
             }
 
             // Fire and forget the post-launch script when process confirmed running
-            _cancellationSource?.Dispose();
+            var oldCts = Interlocked.Exchange(ref _cancellationSource, null);
+            if (oldCts != null)
+            {
+                try { oldCts.Cancel(); } catch (ObjectDisposedException) { /* already disposed */ }
+                oldCts.Dispose();
+            }
+
             var cts = new CancellationTokenSource();
             _cancellationSource = cts;
 

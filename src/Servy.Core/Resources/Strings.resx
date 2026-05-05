@@ -23,6 +23,9 @@
   <data name="Msg_ServiceNameContainsTrailingWhitespace" xml:space="preserve">
     <value>Service name cannot have leading or trailing whitespace.</value>
   </data>
+  <data name="Msg_ServiceNameTooLong" xml:space="preserve">
+    <value>The service name is too long. It must be 256 characters or fewer.</value>
+  </data>
   <data name="Msg_InvalidServiceName" xml:space="preserve">
     <value>Service name contains invalid characters. Avoid using '\', '/', ':', '*', '?', '"', '&lt;', '&gt;', '|'.</value>
   </data>

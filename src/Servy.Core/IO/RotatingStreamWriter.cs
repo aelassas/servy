@@ -320,7 +320,7 @@ namespace Servy.Core.IO
         {
             CloseWriter();
 
-            var timestamp = now.ToString("yyyyMMdd_HHmmss");
+            var timestamp = now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
 
             var directory = Path.GetDirectoryName(_file.FullName) ?? AppFoldersHelper.GetAppDirectory();
             var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);

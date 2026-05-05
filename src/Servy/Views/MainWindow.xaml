@@ -699,27 +699,25 @@
                                    Text="{x:Static resx:Strings.Info_UserAccount}" 
                                    FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" 
-                                   Text="{x:Static resx:Strings.Label_Password}" Margin="0,5,10,5" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_Password}" Margin="0,5,10,5" VerticalAlignment="Center"/>
 
                         <PasswordBox Grid.Row="3" Grid.Column="1"
-                                     Margin="0,0,0,10"
-                                     IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
-                                     helpers:PasswordBoxHelper.BoundPassword="{Binding Password, Mode=TwoWay}"
-                                     AutomationProperties.Name="{x:Static resx:Strings.Label_Password}"
-                                     AutomationProperties.AutomationId="PasswordBoxUser"
-                                     AutomationProperties.HelpText="Enter the password for the service account."/>
+                                  Margin="0,0,0,10"
+                                  IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
+                                  helpers:PasswordBoxHelper.BoundPassword="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  AutomationProperties.Name="{x:Static resx:Strings.Label_Password}"
+                                  AutomationProperties.AutomationId="PasswordBoxUser"
+                                  AutomationProperties.HelpText="Enter the password for the service account."/>
 
-                        <TextBlock Grid.Row="4" Grid.Column="0" 
-                                   Text="{x:Static resx:Strings.Label_ConfirmPassword}" Margin="0,5,10,5" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{x:Static resx:Strings.Label_ConfirmPassword}" Margin="0,5,10,5" VerticalAlignment="Center"/>
 
                         <PasswordBox Grid.Row="4" Grid.Column="1"
-                                     Margin="0,0,0,10"
-                                     IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
-                                     helpers:PasswordBoxHelper.BoundPassword="{Binding ConfirmPassword, Mode=TwoWay}"
-                                     AutomationProperties.Name="{x:Static resx:Strings.Label_ConfirmPassword}"
-                                     AutomationProperties.AutomationId="PasswordBoxConfirm"
-                                     AutomationProperties.HelpText="Confirm the password for the service account."/>
+                                 Margin="0,0,0,10"
+                                 IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
+                                 helpers:PasswordBoxHelper.BoundPassword="{Binding ConfirmPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.Name="{x:Static resx:Strings.Label_ConfirmPassword}"
+                                 AutomationProperties.AutomationId="PasswordBoxConfirm"
+                                 AutomationProperties.HelpText="Confirm the password for the service account."/>
 
                         <TextBlock Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
                                    Text="{x:Static resx:Strings.Info_UserAccountRights}" 

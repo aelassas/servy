@@ -454,6 +454,16 @@ namespace Servy.Core.Config
         #region Limits, Thresholds & Constraints
 
         /// <summary>
+        /// The maximum allowed length for a Windows service name.
+        /// </summary>
+        /// <remarks>
+        /// According to Windows API specifications, the maximum length for a service name 
+        /// is 256 characters. This limit applies to the service name itself, though 
+        /// display names may have different constraints.
+        /// </remarks>
+        public const int MaxServiceNameLength = 256;
+
+        /// <summary>
         /// Gets the maximum number of event records returned by an event log query.
         /// This prevents excessive memory consumption when querying large logs.
         /// </summary>
@@ -513,14 +523,6 @@ namespace Servy.Core.Config
         /// Timeout in milliseconds for external handle-utility execution (e.g., handle.exe).
         /// </summary>
         public const int HandleExeTimeoutMs = 5_000;
-
-        /// <summary>
-        /// The maximum character length for a Windows Service name.
-        /// </summary>
-        /// <remarks>
-        /// This is a hard limit imposed by the Windows Service Control Manager (SCM).
-        /// </remarks>
-        public const int MaxServiceNameLength = 256;
 
         /// <summary>
         /// The maximum character length for a Windows Service display name.

@@ -57,7 +57,10 @@ namespace Servy.Core.EnvironmentVariables
                 // 2. Remove surrounding quotes ONLY. By doing this BEFORE unescaping, 
                 // we allow users to pass escaped quotes (e.g., \"hello\") that bypass this 
                 // structural strip and survive into the final value.
-                if (trimmedValue.Length >= 2 && trimmedValue[0] == '"' && trimmedValue[trimmedValue.Length - 1] == '"')
+                if (trimmedValue.Length >= 2
+                   && trimmedValue[0] == '"'
+                   && trimmedValue[trimmedValue.Length - 1] == '"'
+                   && !EscapedTokenizer.IsEscapedAt(trimmedValue, trimmedValue.Length - 1))
                 {
                     trimmedValue = trimmedValue.Substring(1, trimmedValue.Length - 2);
                 }

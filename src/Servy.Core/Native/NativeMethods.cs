@@ -815,6 +815,19 @@ namespace Servy.Core.Native
                             username.StartsWith("NT SERVICE\\", StringComparison.OrdinalIgnoreCase) ||
                             username.StartsWith("IIS APPPOOL\\", StringComparison.OrdinalIgnoreCase);
 
+            // Logon Validation Guard for Built-in Accounts
+            // These accounts (NetworkService, Virtual Accounts, etc.) are managed by the OS.
+            // We short-circuit here to prevent Identity Resolution (Translate) from failing on 
+            // dot-prefixed formats like '.\NetworkService' which do not exist in the local SAM.
+            if (isBuiltIn)
+            {
+                if (!string.IsNullOrEmpty(password))
+                {
+                    throw new ArgumentException($"A password cannot be provided for the built-in passwordless identity '{username}'.");
+                }
+                return;
+            }
+
             // Skip regex validation for known built-in identities to avoid false negatives 
             // on specialized formats.
             const string invalidMsg = "Username format is invalid. Expected .\\Username, DOMAIN\\Username, or NT AUTHORITY\\ServiceAccount.";
@@ -858,25 +871,13 @@ namespace Servy.Core.Native
                 throw new SecurityException($"An error occurred while resolving the account '{username}': {ex.Message}");
             }
 
-            // 2. Logon Validation Guard
-            // Built-in service accounts (NetworkService, Virtual Accounts, etc.) are managed by the OS.
-            // They are considered 'valid' if they pass the Translate check above, but they cannot have passwords.
-            if (isBuiltIn)
-            {
-                if (!string.IsNullOrEmpty(password))
-                {
-                    throw new ArgumentException($"A password cannot be provided for the built-in passwordless identity '{username}'.");
-                }
-                return;
-            }
-
             // gMSAs are managed by Active Directory and bypass standard local LogonUser validation.
             if (isGmsa)
             {
                 return;
             }
 
-            // 3. Password Validation for standard accounts
+            // 2. Password Validation for standard accounts
             var token = IntPtr.Zero;
             try
             {

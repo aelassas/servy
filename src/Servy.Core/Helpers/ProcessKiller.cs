@@ -398,8 +398,18 @@ namespace Servy.Core.Helpers
                 return;
             }
 
-            // Move up further first via post-order traversal
-            KillParentProcesses(parentId, DateTime.MinValue, protectedPids, snapshot);
+            DateTime parentStartTime = DateTime.MinValue;
+            try
+            {
+                using (var p = Process.GetProcessById(parentId))
+                {
+                    try { parentStartTime = p.StartTime; } catch { /* keep MinValue */ }
+                }
+            }
+            catch (ArgumentException) { /* parent already dead - abort walk */ return; }
+
+            // Move up further first via post-order traversal - pass real anchor
+            KillParentProcesses(parentId, parentStartTime, protectedPids, snapshot);
 
             try
             {
