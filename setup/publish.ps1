@@ -1,3 +1,4 @@
+#requires -Version 5.0
 <#
 .SYNOPSIS
     Main build script for generating Servy installers (self-contained and optional framework-dependent).

@@ -1,6 +1,8 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Logging;
+using Servy.Core.Native;
 using Servy.Core.Resources;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -427,10 +429,35 @@ namespace Servy.Core.Helpers
                 using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     await writer(fs);
+                    await fs.FlushAsync(ct);
                 }
 
-                // On NTFS, moving within the same volume is an atomic metadata operation.
-                File.Move(tmp, path, overwrite: true);
+                // Fix: Ensure the existing file isn't Read-Only, which causes Error 5
+                if (File.Exists(path))
+                {
+                    var attributes = File.GetAttributes(path);
+                    if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                    {
+                        File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
+                    }
+                }
+
+                // Retry logic for transient locks (Antivirus/Indexing)
+                int retries = 3;
+                while (true)
+                {
+                    try
+                    {
+                        // On NTFS, moving within the same volume is an atomic metadata operation.
+                        File.Move(tmp, path, overwrite: true);
+                        break;
+                    }
+                    catch (Win32Exception ex) when (ex.NativeErrorCode == 5 && retries > 0)
+                    {
+                        retries--;
+                        await Task.Delay(100, ct); // Give AV a moment to release its grip
+                    }
+                }
             }
             finally
             {

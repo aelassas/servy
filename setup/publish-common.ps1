@@ -129,7 +129,18 @@ function Copy-CommonArtifacts {
     if (Test-Path $taskSchdSource) {
         $taskSchdDest = Join-Path $DestFolder "taskschd"
         [void](New-Item -Path $taskSchdDest -ItemType Directory -Force)
-        Copy-Item -Path (Join-Path $taskSchdSource "*") -Destination $taskSchdDest -Recurse -Force -Exclude "smtp-cred.xml", "*.dat", "*.log"
+
+        # Use Get-ChildItem -Recurse -Exclude to ensure the exclusion propagates to all levels
+        Get-ChildItem -Path $taskSchdSource -Recurse -Exclude 'smtp-cred.xml','*.dat','*.log' |
+            Copy-Item -Destination {
+                Join-Path $taskSchdDest $_.FullName.Substring($taskSchdSource.Length).TrimStart('\')
+            } -Force
+
+        # Post-copy verification to ensure no sensitive files leaked into the package
+        $leaks = Get-ChildItem -Path $taskSchdDest -Recurse -Include 'smtp-cred.xml','*.dat','*.log'
+        if ($leaks) { 
+            throw "SECURITY ERROR: Excluded files leaked into package: $($leaks.FullName -join ', ')" 
+        }
     }
 
     # 3. Include PowerShell Module artifacts with Test-Path guards

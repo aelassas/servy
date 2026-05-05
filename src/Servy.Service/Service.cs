@@ -659,14 +659,20 @@ namespace Servy.Service
         /// <summary>
         /// Internal unprotected write logic. Assumes _fileSemaphore is held by the caller.
         /// </summary>
+        /// <param name="attempts">The number of restart attempts to persist.</param>
+        /// <param name="ct">The cancellation token.</param>
         private async Task WriteAttemptsInternalAsync(int attempts, CancellationToken ct)
         {
             await Helper.WriteFileAtomicAsync(
                 _restartAttemptsFile!,
                 async fs =>
                 {
-                    var bytes = Encoding.UTF8.GetBytes(attempts.ToString(CultureInfo.InvariantCulture));
-                    await fs.WriteAsync(bytes, 0, bytes.Length, ct);
+                    // Use BOM-less UTF8 and leaveOpen to allow the atomic helper 
+                    // to manage the final FileStream lifecycle.
+                    using (var sw = new StreamWriter(fs, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
+                    {
+                        await sw.WriteAsync(attempts.ToString(CultureInfo.InvariantCulture));
+                    }
                 },
                 ct);
         }
@@ -1560,7 +1566,7 @@ namespace Servy.Service
             try
             {
                 // Initial fast-path check
-                if (_isTearingDown || _disposed) return;
+                if (_isTearingDown || _disposed || _isRebooting) return;
 
                 _logger?.Warn("Child process exit detected via event.");
                 ClearProcessState();
@@ -1742,18 +1748,19 @@ namespace Servy.Service
         /// </remarks>
         private async Task InitiateRecoveryAsync()
         {
+            // We use this flag to decide if the gate should reopen.
+            // For Reboot/RestartService, the gate should stay closed forever for this instance.
+            bool shouldReopenGate = true;
             try
             {
                 bool shouldStop = false;
                 int currentAttempts = 0;
 
-                // Asynchronously wait to enter the critical section
                 await _healthCheckSemaphore.WaitAsync();
                 try
                 {
                     // Guard: prevent concurrent recovery attempts
-                    if (_isTearingDown || _disposed)
-                        return;
+                    if (_isTearingDown || _disposed || _isRebooting) return;
 
                     // _maxRestartAttempts == 0 means unlimited restart attempts
                     if (_maxRestartAttempts > 0)
@@ -1778,6 +1785,13 @@ namespace Servy.Service
                     {
                         _failedChecks = 0;
                         _isRecovering = true; // Set flag to block other health checks: GATE CLOSED
+
+                        // If the action is terminal for this process instance, don't reopen the gate.
+                        if (_recoveryAction == RecoveryAction.RestartComputer ||
+                            _recoveryAction == RecoveryAction.RestartService)
+                        {
+                            shouldReopenGate = false;
+                        }
                     }
                 }
                 finally
@@ -1805,11 +1819,7 @@ namespace Servy.Service
             }
             finally
             {
-                // GUARANTEED EXECUTION: The gate always opens.
-                // Because _isRecovering is volatile, it is safe
-                // to toggle directly without risking a deadlock
-                // in the finally block.
-                _isRecovering = false;
+                if (shouldReopenGate) _isRecovering = false;
             }
         }
 
@@ -1878,7 +1888,7 @@ namespace Servy.Service
         {
             try
             {
-                if (_isTearingDown || _disposed) return;
+                if (_isTearingDown || _disposed || _isRebooting || _isRecovering) return;
 
                 bool needsRecovery = false;
                 bool shouldStop = false;
