@@ -54,6 +54,7 @@ $installParams = @{
     MaxFailedChecks           = 1
     MaxRestartAttempts        = 2
     RecoveryAction            = "RestartService"
+    RecoveryOnCleanExit       = $true
 
     FailureProgramPath        = "C:\Windows\System32\cmd.exe"
     FailureProgramStartupDir  = "C:\Windows\Temp"

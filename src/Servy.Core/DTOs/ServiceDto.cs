@@ -145,6 +145,11 @@ namespace Servy.Core.DTOs
         public int? RecoveryAction { get; set; }
 
         /// <summary>
+        /// Whether to run recovery action even if the process exits successfully.
+        /// </summary>
+        public bool? RecoveryOnCleanExit { get; set; }
+
+        /// <summary>
         /// Maximum number of restart attempts if the service fails.
         /// </summary>
         public int? MaxRestartAttempts { get; set; }
@@ -397,6 +402,7 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeHeartbeatInterval() => HeartbeatInterval.HasValue;
         public bool ShouldSerializeMaxFailedChecks() => MaxFailedChecks.HasValue;
         public bool ShouldSerializeRecoveryAction() => RecoveryAction.HasValue;
+        public bool ShouldSerializeRecoveryOnCleanExit() => RecoveryOnCleanExit.HasValue;
         public bool ShouldSerializeMaxRestartAttempts() => MaxRestartAttempts.HasValue;
         public bool ShouldSerializeFailureProgramPath() => !string.IsNullOrWhiteSpace(FailureProgramPath);
         public bool ShouldSerializeFailureProgramStartupDirectory() => !string.IsNullOrWhiteSpace(FailureProgramStartupDirectory);

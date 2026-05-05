@@ -34,7 +34,7 @@ namespace Servy.UnitTests.Core.Helpers
                 PreLaunchRetryAttempts = null,
                 PreLaunchIgnoreFailure = null,
                 PreStopTimeoutSeconds = null,
-                PreStopLogAsError = null
+                PreStopLogAsError = null,
             };
 
             // Act
@@ -42,12 +42,12 @@ namespace Servy.UnitTests.Core.Helpers
 
             // Assert
             Assert.Equal((int)AppConfig.DefaultStartupType, dto.StartupType);
-            Assert.Equal((int)AppConfig.DefaultPriority, dto.Priority);
+            Assert.Equal((int)AppConfig.DefaultProcessPriority, dto.Priority);
             Assert.Equal(AppConfig.DefaultRunAsLocalSystem, dto.RunAsLocalSystem);
             Assert.Equal(AppConfig.DefaultEnableDebugLogs, dto.EnableDebugLogs);
             Assert.Equal(AppConfig.DefaultStartTimeout, dto.StartTimeout);
             Assert.Equal(AppConfig.DefaultStopTimeout, dto.StopTimeout);
-            Assert.Equal(AppConfig.DefaultEnableRotation, dto.EnableSizeRotation);
+            Assert.Equal(AppConfig.DefaultEnableSizeRotation, dto.EnableSizeRotation);
             Assert.Equal(AppConfig.DefaultRotationSizeMB, dto.RotationSize);
             Assert.Equal(AppConfig.DefaultEnableDateRotation, dto.EnableDateRotation);
             Assert.Equal((int)AppConfig.DefaultDateRotationType, dto.DateRotationType);

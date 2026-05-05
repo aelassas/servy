@@ -34,13 +34,13 @@ namespace Servy.Core.Mappers
 
                 // Validate Enum ranges before mapping from DTO using shared parser
                 StartupType = ConfigParser.ParseEnum(dto.StartupType, AppConfig.DefaultStartupType),
-                Priority = ConfigParser.ParseEnum(dto.Priority, AppConfig.DefaultPriority),
+                Priority = ConfigParser.ParseEnum(dto.Priority, AppConfig.DefaultProcessPriority),
 
                 EnableConsoleUI = dto.EnableConsoleUI ?? AppConfig.DefaultEnableConsoleUI,
 
                 StdoutPath = dto.StdoutPath,
                 StderrPath = dto.StderrPath,
-                EnableSizeRotation = dto.EnableSizeRotation ?? AppConfig.DefaultEnableRotation,
+                EnableSizeRotation = dto.EnableSizeRotation ?? AppConfig.DefaultEnableSizeRotation,
                 RotationSize = dto.RotationSize ?? AppConfig.DefaultRotationSizeMB,
                 EnableDateRotation = dto.EnableDateRotation ?? AppConfig.DefaultEnableDateRotation,
 
@@ -55,6 +55,8 @@ namespace Servy.Core.Mappers
 
                 // Validate Enum ranges
                 RecoveryAction = ConfigParser.ParseEnum(dto.RecoveryAction, AppConfig.DefaultRecoveryAction),
+
+                RecoveryOnCleanExit = dto.RecoveryOnCleanExit ?? AppConfig.DefaultRecoveryOnCleanExit,
 
                 MaxRestartAttempts = dto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
                 FailureProgramPath = dto.FailureProgramPath,

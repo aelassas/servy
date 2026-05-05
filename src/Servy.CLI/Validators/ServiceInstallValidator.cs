@@ -119,6 +119,7 @@ namespace Servy.CLI.Validators
                 HeartbeatInterval = heartbeatInterval,
                 MaxFailedChecks = maxFailedChecks,
                 RecoveryAction = recoveryAction,
+                RecoveryOnCleanExit = opts.RecoveryOnCleanExit,
                 MaxRestartAttempts = maxRestartAttempts,
                 FailureProgramPath = opts.FailureProgramPath,
                 FailureProgramStartupDirectory = opts.FailureProgramStartupDir,

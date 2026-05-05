@@ -88,6 +88,11 @@ namespace Servy.Service.CommandLine
         public RecoveryAction RecoveryAction { get; set; } = RecoveryAction.None;
 
         /// <summary>
+        /// Gets or sets a flag for running recovery action even if the process exits successfully.
+        /// </summary>
+        public bool RecoveryOnCleanExit { get; set; }
+
+        /// <summary>
         /// Gets or sets the name of the Windows service.
         /// </summary>
         public string? ServiceName { get; set; }

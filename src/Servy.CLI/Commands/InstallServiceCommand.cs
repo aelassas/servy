@@ -61,7 +61,7 @@ namespace Servy.CLI.Commands
 
                 // Parse enums safely with defaults
                 var startupType = ParseEnumOption(opts.ServiceStartType, AppConfig.DefaultStartupType);
-                var processPriority = ParseEnumOption(opts.ProcessPriority, AppConfig.DefaultPriority);
+                var processPriority = ParseEnumOption(opts.ProcessPriority, AppConfig.DefaultProcessPriority);
                 var dateRotationType = ParseEnumOption(opts.DateRotationType, AppConfig.DefaultDateRotationType);
                 var recoveryAction = ParseEnumOption(opts.RecoveryAction, AppConfig.DefaultRecoveryAction);
 
@@ -97,6 +97,7 @@ namespace Servy.CLI.Commands
                     HeartbeatInterval = heartbeatInterval,
                     MaxFailedChecks = maxFailedChecks,
                     RecoveryAction = recoveryAction,
+                    RecoveryOnCleanExit = opts.RecoveryOnCleanExit,
                     MaxRestartAttempts = maxRestartAttempts,
                     EnvironmentVariables = opts.EnvironmentVariables,
                     ServiceDependencies = opts.ServiceDependencies,

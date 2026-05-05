@@ -151,6 +151,7 @@ namespace Servy.Service.Helpers
                   $"- heartbeatInterval: {options.HeartbeatInterval}\n" +
                   $"- maxFailedChecks: {options.MaxFailedChecks}\n" +
                   $"- recoveryAction: {options.RecoveryAction}\n" +
+                  $"- recoveryOnCleanExit: {options.RecoveryOnCleanExit}\n" +
                   $"- maxRestartAttempts: {options.MaxRestartAttempts}\n" +
                   $"- failureProgramPath: {options.FailureProgramPath}\n" +
                   $"- failureProgramWorkingDirectory: {options.FailureProgramWorkingDirectory}\n\n" +

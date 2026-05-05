@@ -2,7 +2,6 @@
 using Servy.Core.Common;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
-using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Models;
@@ -157,14 +156,14 @@ namespace Servy.Services
                     WorkingDirectory = dto.StartupDirectory,
                     RealArgs = dto.Parameters,
                     StartType = (ServiceStartType)(dto.StartupType ?? (int)AppConfig.DefaultStartupType),
-                    ProcessPriority = (ProcessPriority)(dto.Priority ?? (int)AppConfig.DefaultPriority),
+                    ProcessPriority = (ProcessPriority)(dto.Priority ?? (int)AppConfig.DefaultProcessPriority),
                     EnableConsoleUI = dto.EnableConsoleUI ?? AppConfig.DefaultEnableConsoleUI,
                     Username = dto.UserAccount,
                     Password = dto.Password,
 
                     StdoutPath = dto.StdoutPath,
                     StderrPath = dto.StderrPath,
-                    EnableSizeRotation = dto.EnableSizeRotation ?? AppConfig.DefaultEnableRotation,
+                    EnableSizeRotation = dto.EnableSizeRotation ?? AppConfig.DefaultEnableSizeRotation,
                     RotationSizeInBytes = rotationSizeValue,
                     MaxRotations = dto.MaxRotations,
                     EnableDateRotation = dto.EnableDateRotation ?? AppConfig.DefaultEnableDateRotation,
@@ -175,6 +174,7 @@ namespace Servy.Services
                     HeartbeatInterval = dto.HeartbeatInterval ?? AppConfig.DefaultHeartbeatInterval,
                     MaxFailedChecks = dto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks,
                     RecoveryAction = (RecoveryAction)(dto.RecoveryAction ?? (int)AppConfig.DefaultRecoveryAction),
+                    RecoveryOnCleanExit = dto.RecoveryOnCleanExit ?? AppConfig.DefaultRecoveryOnCleanExit,
                     MaxRestartAttempts = dto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
 
                     EnvironmentVariables = dto.EnvironmentVariables,

@@ -759,6 +759,9 @@ function Install-ServyService {
     .PARAMETER RecoveryAction
         Recovery action on failure. Options: None, RestartService, RestartProcess, RestartComputer. Optional.
 
+    .PARAMETER RecoveryOnCleanExit
+        Enable running recovery action even if the process exits successfully. Optional, default is false.
+
     .PARAMETER MaxRestartAttempts
         Maximum number of restart attempts after failure. Optional. Set to 0 for unlimited restart attempts.
 
@@ -980,6 +983,8 @@ function Install-ServyService {
     [ValidateSet("None", "RestartService", "RestartProcess", "RestartComputer")]
     [string] $RecoveryAction,
 
+    [switch] $RecoveryOnCleanExit,
+
     [ValidateRange(0, 2147483647)]
     [int] $MaxRestartAttempts,
 
@@ -1180,6 +1185,7 @@ function Install-ServyService {
   if ($EnableDateRotation)                     { $argsList = Add-Arg $argsList "--enableDateRotation" -Flag }
   if ($UseLocalTimeForRotation)                { $argsList = Add-Arg $argsList "--useLocalTimeForRotation" -Flag }
   if ($EnableHealth)                           { $argsList = Add-Arg $argsList "--enableHealth" -Flag }
+  if ($RecoveryOnCleanExit)                    { $argsList = Add-Arg $argsList "--recoveryOnCleanExit" -Flag }
   if ($PreLaunchIgnoreFailure)                 { $argsList = Add-Arg $argsList "--preLaunchIgnoreFailure" -Flag }
   if ($EnableDebugLogs)                        { $argsList = Add-Arg $argsList "--debug" -Flag }
   if ($PreStopLogAsError)                      { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }

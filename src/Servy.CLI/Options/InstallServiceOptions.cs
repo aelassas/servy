@@ -187,6 +187,12 @@ namespace Servy.CLI.Options
         public string? RecoveryAction { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to run recovery action even if the process exits successfully.
+        /// </summary>
+        [Option("recoveryOnCleanExit", HelpText = "Enable running recovery action even if the process exits successfully. Default is false.")]
+        public bool RecoveryOnCleanExit { get; set; } = AppConfig.DefaultRecoveryOnCleanExit;
+
+        /// <summary>
         /// Gets or sets the maximum number of restart attempts after failure.
         /// Must be >= 0 if health monitoring is enabled.
         /// </summary>
