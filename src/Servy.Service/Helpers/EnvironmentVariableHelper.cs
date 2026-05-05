@@ -44,23 +44,24 @@ namespace Servy.Service.Helpers
         {
             // --- System Integrity ---
             "PATH", "COMSPEC", "SYSTEMROOT", "WINDIR", "SYSTEMDRIVE", "TEMP", "TMP", "PATHEXT",
-    
+  
             // --- User & Profile Integrity ---
             "USERNAME", "USERPROFILE", "ALLUSERSPROFILE", "PROGRAMDATA", "PSMODULEPATH",
 
-            // --- Runtime Injection Vectors (Issue #573) ---
-            // .NET / CLR Injection
+            // --- Runtime Injection & Hijack Vectors ---
             "COR_ENABLE_PROFILING", "COR_PROFILER", "COR_PROFILER_PATH", "DOTNET_STARTUP_HOOKS",
-    
+            "DOTNET_ROOT", "DOTNET_ROOT(x86)", "DOTNET_HOST_PATH",
+            "DOTNET_BUNDLE_EXTRACT_BASE_DIR", "DOTNET_ADDITIONAL_DEPS", "DOTNET_SHARED_STORE",
+  
             // Java Injection
-            "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH",
-    
+            "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH", "JAVA_HOME",
+  
             // Node.js Injection
             "NODE_OPTIONS", "NODE_PATH",
-    
+  
             // Python Injection
             "PYTHONSTARTUP", "PYTHONPATH", "PYTHONHOME",
-    
+  
             // Global/Unix-like fallback (for MinGW/WSL contexts)
             "LD_PRELOAD", "LD_LIBRARY_PATH"
         };

@@ -311,7 +311,12 @@ namespace Servy.Manager
             }
 
             // 1. Run base bootstrapper startup (initializes configuration and logger)
-            _bootstrapper.OnStartup(this, e);
+            // If OnStartup returns false, it has already called app.Shutdown() internally.
+            if (!_bootstrapper.OnStartup(this, e))
+            {
+                return; // Short-circuit to avoid initializing DB and extracting resources
+            }
+
             base.OnStartup(e);
 
             // 2. SAFE START: Start the monitor now that _bootstrapper is guaranteed to be initialized

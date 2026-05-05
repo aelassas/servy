@@ -35,6 +35,12 @@ namespace Servy.Core.IntegrationTests.Helpers
             {
                 Debug.WriteLine($"WARNING: handle64.exe not found and extraction failed at {_handleExePath}");
             }
+            else
+            {
+                // A dummy run ensures the driver is extracted and loaded 
+                // before the actual timing-sensitive tests run.
+                HandleHelper.GetProcessesUsingFile(_handleExePath, Path.GetTempPath());
+            }
         }
 
         /// <summary>

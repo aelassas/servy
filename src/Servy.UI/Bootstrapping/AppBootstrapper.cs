@@ -36,6 +36,7 @@ namespace Servy.UI.Bootstrapping
 
         private readonly BootstrapperOptions _options;
         private readonly IProcessKiller _processKiller;
+        private ProtectedKeyProvider _protectedKeyProvider;
 
         private FileSystemWatcher _availabilityWatcher;
         private FileSystemEventHandler _availabilityChangedHandler;
@@ -98,12 +99,19 @@ namespace Servy.UI.Bootstrapping
         }
 
         /// <summary>
-        /// Handles the initial, synchronous startup logic including logging initialization, global exception subscriptions, and rendering tier detection.
+        /// Handles the synchronous portion of the application startup.
+        /// Configures logging, rendering modes, and global exception handlers.
         /// </summary>
         /// <param name="app">The active WPF application instance.</param>
-        /// <param name="e">The startup event arguments.</param>
-        public void OnStartup(Application app, StartupEventArgs e)
+        /// <param name="e">Startup arguments.</param>
+        /// <returns><see langword="true"/> if security and environment checks passed; otherwise <see langword="false"/>.</returns>
+        public bool OnStartup(Application app, StartupEventArgs e)
         {
+            if (_options == null)
+            {
+                throw new InvalidOperationException("Bootstrapper options must be provided.");
+            }
+
             // 1. Initialize Configuration and Logger settings immediately
             LoadConfiguration();
 
@@ -111,25 +119,23 @@ namespace Servy.UI.Bootstrapping
             Logger.Initialize(_options.LogFileName);
             ApplyLoggerSettings();
 
-            // 3. Global AppDomain exceptions (Fatal crashes outside the UI dispatcher)
+            // 3. Global AppDomain exceptions (Fatal)
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {
                 Exception ex = args.ExceptionObject as Exception;
                 Logger.Error("FATAL: AppDomain Unhandled Exception. Process is terminating.", ex);
                 MessageBox.Show(
-                     Strings.Msg_FatalError_Body,
-                     Strings.Msg_FatalError_Title,
-                     MessageBoxButton.OK,
-                     MessageBoxImage.Error);
+                    Strings.Msg_FatalError_Body,
+                    Strings.Msg_FatalError_Title,
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             };
 
-            // 4. UI Thread exceptions (Dispatcher errors)
+            // 4. UI Thread exceptions (Dispatcher)
             app.DispatcherUnhandledException += (sender, args) =>
             {
                 Logger.Error("UI Dispatcher Exception", args.Exception);
-                bool isOutOfMemory = args.Exception is OutOfMemoryException;
-
-                if (!isOutOfMemory)
+                if (!(args.Exception is OutOfMemoryException))
                 {
                     MessageBox.Show(
                         Strings.Msg_UnexpectedError_Body,
@@ -146,23 +152,24 @@ namespace Servy.UI.Bootstrapping
                 }
             };
 
-            // 5. Environmental Security Checks
+            // 5. Security Check: Admin Rights
             if (!SecurityHelper.IsAdministrator())
             {
                 MessageBox.Show(_options.SecurityWarningMessage, _options.SecurityWarningTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
                 app.Shutdown(1);
-                return;
+                return false; // ABORT STARTUP
             }
 
+            // 6. Security Check: SQLite Environment
             if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
             {
                 string message = string.Format(_options.SqliteVersionWarningMessageFormat, detectedVersion, AppConfig.MinRequiredSqliteVersion);
                 MessageBox.Show(message, _options.SqliteVersionWarningTitle, MessageBoxButton.OK, MessageBoxImage.Error);
                 app.Shutdown();
-                return;
+                return false; // ABORT STARTUP
             }
 
-            // 6. Hardware Acceleration Check
+            // 7. Rendering Detection
             var renderingTier = RenderCapability.Tier >> 16;
             var isRemote = SystemParameters.IsRemoteSession;
             ForceSoftwareRendering = e.Args.Any(arg => arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase));
@@ -175,6 +182,8 @@ namespace Servy.UI.Bootstrapping
                 Logger.Warn("Low rendering capabilities detected. Forcing Software Rendering Mode.");
                 RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
             }
+
+            return true; // PROCEED
         }
 
         /// <summary>
@@ -306,8 +315,8 @@ namespace Servy.UI.Bootstrapping
                     DatabaseInitializer.InitializeDatabase(DbContext, SQLiteDbInitializer.Initialize);
 
                     var dapperExecutor = new DapperExecutor(DbContext);
-                    var protectedKeyProvider = new ProtectedKeyProvider(AESKeyFilePath, AESIVFilePath);
-                    SecureData = new SecureData(protectedKeyProvider);
+                    _protectedKeyProvider = new ProtectedKeyProvider(AESKeyFilePath, AESIVFilePath);
+                    SecureData = new SecureData(_protectedKeyProvider);
                     var xmlSerializer = new XmlServiceSerializer();
                     var jsonSerializer = new JsonServiceSerializer();
 
@@ -517,6 +526,7 @@ namespace Servy.UI.Bootstrapping
 
             TryDispose(() => DbContext?.Dispose(), nameof(DbContext));
             TryDispose(() => SecureData?.Dispose(), nameof(SecureData));
+            TryDispose(() => _protectedKeyProvider?.Dispose(), nameof(_protectedKeyProvider));
         }
 
         /// <summary>

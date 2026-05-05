@@ -494,8 +494,24 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Performs strict memory-zeroing of all sensitive cryptographic key material.
+        /// Finalizes an instance of the <see cref="SecureData"/> class.
         /// </summary>
+        /// <remarks>
+        /// The finalizer ensures that sensitive cryptographic material is zeroed out in memory 
+        /// even if the consumer fails to call <see cref="Dispose()"/> explicitly.
+        /// </remarks>
+        ~SecureData()
+        {
+            Dispose(false);
+        }
+
+        /// <summary>
+        /// Releases the unmanaged resources used by the <see cref="SecureData"/> and optionally releases the managed resources.
+        /// </summary>
+        /// <param name="disposing">
+        /// <see langword="true"/> to release both managed and unmanaged resources; 
+        /// <see langword="false"/> to release only unmanaged resources.
+        /// </param>
         protected virtual void Dispose(bool disposing)
         {
             // 1. ATOMIC GUARD: Flip the flag BEFORE wiping memory.
@@ -503,15 +519,12 @@ namespace Servy.Core.Security
             // another thread has already initiated disposal.
             if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
 
-            if (disposing)
-            {
-                // 2. ZEROING: Because the flag is already flipped, new calls to 
-                // Encrypt/Decrypt will now fail via ThrowIfDisposed.
-                if (_v1MasterKey != null) Array.Clear(_v1MasterKey, 0, _v1MasterKey.Length);
-                if (_v1StaticIv != null) Array.Clear(_v1StaticIv, 0, _v1StaticIv.Length);
-                if (_v2EncryptionKey != null) Array.Clear(_v2EncryptionKey, 0, _v2EncryptionKey.Length);
-                if (_v2HmacKey != null) Array.Clear(_v2HmacKey, 0, _v2HmacKey.Length);
-            }
+            // 2. ZEROING runs in BOTH paths — managed keys are still reachable from the finalizer
+            // and zeroing them is non-allocating, finalizer-safe, and idempotent.
+            if (_v1MasterKey != null) Array.Clear(_v1MasterKey, 0, _v1MasterKey.Length);
+            if (_v1StaticIv != null) Array.Clear(_v1StaticIv, 0, _v1StaticIv.Length);
+            if (_v2EncryptionKey != null) Array.Clear(_v2EncryptionKey, 0, _v2EncryptionKey.Length);
+            if (_v2HmacKey != null) Array.Clear(_v2HmacKey, 0, _v2HmacKey.Length);
         }
 
         /// <summary>

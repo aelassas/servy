@@ -120,26 +120,37 @@ namespace Servy.Core.Security
         /// Safely retrieves the key from the cache or generates it, ensuring thread-safety
         /// and preventing callers from mutating the internal cache via array cloning.
         /// </summary>
+        /// <param name="cacheField">A reference to the backing field (e.g., _cachedKey or _cachedIv).</param>
+        /// <param name="path">The filesystem path to the protected file.</param>
+        /// <param name="length">The expected length of the key material.</param>
+        /// <returns>A clone of the decrypted key material.</returns>
         private byte[] GetCachedOrGenerate(ref byte[] cacheField, string path, int length)
         {
-            // Fast-path read
-            if (cacheField != null)
+            // 1. FAST-PATH: Atomic snapshot of the reference.
+            // This local variable is immune to concurrent null-outs (InvalidateCache).
+            var snapshot = cacheField;
+            if (snapshot != null)
             {
-                return (byte[])cacheField.Clone();
+                return (byte[])snapshot.Clone();
             }
 
             lock (_cacheLock)
             {
-                // Double-check lock
-                if (cacheField != null)
+                // 2. DOUBLE-CHECK: Re-read within the lock.
+                snapshot = cacheField;
+                if (snapshot != null)
                 {
-                    return (byte[])cacheField.Clone();
+                    return (byte[])snapshot.Clone();
                 }
 
+                // 3. GENERATE: Materialize and cache the keys.
+                // GetOrGenerate handles its own internal migration/rotation logic.
                 byte[] decrypted = GetOrGenerate(path, length);
 
-                // Store a clone in the cache so the return value can't be used to mutate the cache
+                // Store a clone in the cache so the return value of this method 
+                // (which the caller might eventually zero out) doesn't mutate our cache.
                 cacheField = (byte[])decrypted.Clone();
+
                 return decrypted;
             }
         }
@@ -512,6 +523,18 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
+        /// Finalizes an instance of the <see cref="ProtectedKeyProvider"/> class.
+        /// </summary>
+        /// <remarks>
+        /// The finalizer ensures that sensitive cryptographic material is zeroed out in memory 
+        /// even if the consumer fails to call <see cref="Dispose()"/> explicitly.
+        /// </remarks>
+        ~ProtectedKeyProvider()
+        {
+            Dispose(false);
+        }
+
+        /// <summary>
         /// Releases the unmanaged resources used by the <see cref="ProtectedKeyProvider"/> and optionally releases the managed resources.
         /// </summary>
         /// <param name="disposing">
@@ -524,13 +547,12 @@ namespace Servy.Core.Security
         /// </remarks>
         protected virtual void Dispose(bool disposing)
         {
-            // ATOMIC GUARD: Flip the flag BEFORE wiping memory.
+            // 1. ATOMIC GUARD: Flip the flag BEFORE wiping memory.
             if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
 
-            if (disposing)
-            {
-                InvalidateCache();
-            }
+            // 2. ZEROING runs in BOTH paths — managed keys are still reachable from the finalizer
+            // and zeroing them is non-allocating, finalizer-safe, and idempotent.
+            InvalidateCache();
         }
 
         /// <summary>
