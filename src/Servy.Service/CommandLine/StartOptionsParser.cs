@@ -55,9 +55,9 @@ namespace Servy.Service.CommandLine
 
                 // Use ConfigParser.ParseEnum to ensure the priority is a valid member of ProcessPriority.
                 // This prevents undefined enum values from entering the process mapping logic.
-                Priority = MapPriority(ConfigParser.ParseEnum(serviceDto.Priority, AppConfig.DefaultPriority)),
+                Priority = MapPriority(ConfigParser.ParseEnum(serviceDto.Priority, AppConfig.DefaultProcessPriority)),
 
-                EnableConsoleUI = serviceDto.EnableConsoleUI ?? false,
+                EnableConsoleUI = serviceDto.EnableConsoleUI ?? AppConfig.DefaultEnableConsoleUI,
 
                 // Logging
                 StdOutPath = serviceDto.StdoutPath,
@@ -66,14 +66,15 @@ namespace Servy.Service.CommandLine
                 UseLocalTimeForRotation = serviceDto.UseLocalTimeForRotation ?? AppConfig.DefaultUseLocalTimeForRotation,
 
                 // Health Monitoring
-                EnableHealthMonitoring = serviceDto.EnableHealthMonitoring ?? false,
+                EnableHealthMonitoring = serviceDto.EnableHealthMonitoring ?? AppConfig.DefaultEnableHealthMonitoring,
                 HeartbeatInterval = serviceDto.HeartbeatInterval ?? AppConfig.DefaultHeartbeatInterval,
                 MaxFailedChecks = serviceDto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks,
 
                 // Validate RecoveryAction to ensure pattern matching in health handlers behaves predictably.
-                RecoveryAction = (serviceDto.EnableHealthMonitoring ?? false)
+                RecoveryAction = (serviceDto.EnableHealthMonitoring ?? AppConfig.DefaultEnableHealthMonitoring)
                     ? ConfigParser.ParseEnum(serviceDto.RecoveryAction, AppConfig.DefaultRecoveryAction)
                     : RecoveryAction.None,
+                RecoveryOnCleanExit = serviceDto.RecoveryOnCleanExit ?? AppConfig.DefaultRecoveryOnCleanExit,
 
                 MaxRestartAttempts = serviceDto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
                 EnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.EnvironmentVariables ?? string.Empty),
@@ -87,7 +88,7 @@ namespace Servy.Service.CommandLine
                 PreLaunchStderrPath = serviceDto.PreLaunchStderrPath,
                 PreLaunchTimeout = serviceDto.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds,
                 PreLaunchRetryAttempts = serviceDto.PreLaunchRetryAttempts ?? AppConfig.DefaultPreLaunchRetryAttempts,
-                PreLaunchIgnoreFailure = serviceDto.PreLaunchIgnoreFailure ?? false,
+                PreLaunchIgnoreFailure = serviceDto.PreLaunchIgnoreFailure ?? AppConfig.DefaultPreLaunchIgnoreFailure,
 
                 // Failure program settings
                 FailureProgramPath = processHelper.ResolvePath(serviceDto.FailureProgramPath ?? string.Empty),
@@ -100,10 +101,10 @@ namespace Servy.Service.CommandLine
                 PostLaunchExecutableArgs = Helper.EscapeBackslashes(serviceDto.PostLaunchParameters ?? string.Empty),
 
                 // Operational toggles
-                EnableDebugLogs = serviceDto.EnableDebugLogs ?? false,
+                EnableDebugLogs = serviceDto.EnableDebugLogs ?? AppConfig.DefaultEnableDebugLogs,
                 MaxRotations = serviceDto.MaxRotations ?? AppConfig.DefaultMaxRotations,
-                EnableSizeRotation = serviceDto.EnableSizeRotation ?? false,
-                EnableDateRotation = serviceDto.EnableDateRotation ?? false,
+                EnableSizeRotation = serviceDto.EnableSizeRotation ?? AppConfig.DefaultEnableSizeRotation,
+                EnableDateRotation = serviceDto.EnableDateRotation ?? AppConfig.DefaultEnableDateRotation,
 
                 // Validate DateRotationType to prevent disabling rotation logic due to out-of-range integer values.
                 DateRotationType = ConfigParser.ParseEnum(serviceDto.DateRotationType, AppConfig.DefaultDateRotationType),
@@ -117,7 +118,7 @@ namespace Servy.Service.CommandLine
                 PreStopWorkingDirectory = processHelper.ResolvePath(serviceDto.PreStopStartupDirectory ?? string.Empty),
                 PreStopExecutableArgs = Helper.EscapeBackslashes(serviceDto.PreStopParameters ?? string.Empty),
                 PreStopTimeout = serviceDto.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds,
-                PreStopLogAsError = serviceDto.PreStopLogAsError ?? false,
+                PreStopLogAsError = serviceDto.PreStopLogAsError ?? AppConfig.DefaultPreStopLogAsError,
 
                 // Post-Stop settings
                 PostStopExecutablePath = processHelper.ResolvePath(serviceDto.PostStopExecutablePath ?? string.Empty),

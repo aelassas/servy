@@ -123,6 +123,11 @@ namespace Servy.Models
         public RecoveryAction RecoveryAction { get; set; }
 
         /// <summary>
+        /// Gets or sets a flag for running recovery action even if the process exits successfully.
+        /// </summary>
+        public bool RecoveryOnCleanExit { get; set; }
+
+        /// <summary>
         /// Gets or sets the maximum number of restart attempts.
         /// </summary>
         public string MaxRestartAttempts { get; set; }

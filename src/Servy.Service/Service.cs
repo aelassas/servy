@@ -1528,8 +1528,16 @@ namespace Servy.Service
 
                 if (exitCode == 0)
                 {
-                    _logger?.Info("Child process exited successfully (Code 0).");
-                    shouldStop = true;
+                    if (_options?.RecoveryOnCleanExit == true)
+                    {
+                        _logger?.Info("Child process exited successfully (Code 0). RecoveryOnCleanExit is ENABLED. Checking recovery...");
+                        needsRecovery = RegisterFailureAndCheckRecovery();
+                    }
+                    else
+                    {
+                        _logger?.Info("Child process exited successfully (Code 0). Service will stop.");
+                        shouldStop = true;
+                    }
                 }
                 else if (_recoveryActionEnabled)
                 {

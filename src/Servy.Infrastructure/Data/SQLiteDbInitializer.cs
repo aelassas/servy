@@ -73,8 +73,16 @@ namespace Servy.Infrastructure.Data
                 currentVersion = 4;
             }
 
+            // Version 5 Migration to add RecoveryOnCleanExit column to support triggering recovery on successful exits
+            if (currentVersion < 5)
+            {
+                ApplyVersion5(connection);
+                UpdateSchemaVersion(connection, 5);
+                currentVersion = 5;
+            }
+
             // --- FUTURE MIGRATIONS GO HERE ---
-            // if (currentVersion < 5) { ... }
+            // if (currentVersion < 6) { ... }
 
             // 5. Reconciliation safety net
             // Ensures that any columns added to SqlConstants but missed in migrations are applied.
@@ -344,9 +352,9 @@ namespace Servy.Infrastructure.Data
 
                         var expectedColumns = GetExpectedColumns().ToList();
                         var columnDefinitions = new List<string>
-                    {
-                        "Id INTEGER PRIMARY KEY AUTOINCREMENT"
-                    };
+                        {
+                            "Id INTEGER PRIMARY KEY AUTOINCREMENT"
+                        };
 
                         // Dynamically construct the v4 table schema matching the exact DTO definition
                         foreach (var col in expectedColumns)
@@ -394,6 +402,40 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
+        /// Applies the Version 5 schema migration, adding the 'RecoveryOnCleanExit' column 
+        /// to the 'Services' table to support triggering recovery actions even on successful exits (Code 0).
+        /// </summary>
+        private static void ApplyVersion5(DbConnection connection)
+        {
+            using (var transaction = connection.BeginTransaction())
+            {
+                try
+                {
+                    var existingColumns = new HashSet<string>(
+                        connection.Query("PRAGMA table_info(Services);", transaction: transaction)
+                                  .Select(row => (string)row.name),
+                        StringComparer.OrdinalIgnoreCase
+                    );
+
+                    if (!existingColumns.Contains("RecoveryOnCleanExit"))
+                    {
+                        Logger.Info("Migrating database to Version 5: Adding 'RecoveryOnCleanExit' column.");
+                        connection.Execute("ALTER TABLE Services ADD COLUMN RecoveryOnCleanExit INTEGER;", transaction: transaction);
+                    }
+
+                    transaction.Commit();
+                    Logger.Info("Database successfully migrated to Version 5.");
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    Logger.Error("CRITICAL: Version 5 database migration failed. Transaction rolled back.", ex);
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
         /// Infers the SQLite data type and constraints for a given column name.
         /// </summary>
         /// <param name="columnName">The name of the column.</param>
@@ -416,7 +458,7 @@ namespace Servy.Infrastructure.Data
                 "Pid", "EnableDebugLogs", "MaxRotations", "EnableDateRotation",
                 "DateRotationType", "StartTimeout", "StopTimeout", "PreviousStopTimeout",
                 "PreStopTimeoutSeconds", "PreStopLogAsError", "UseLocalTimeForRotation",
-                "EnableConsoleUI",
+                "EnableConsoleUI", "RecoveryOnCleanExit",
         
                 // Migrated from originalNotNullInts to align schema with DTO definition:
                 "StartupType", "Priority", "EnableSizeRotation", "RotationSize",

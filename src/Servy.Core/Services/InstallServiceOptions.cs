@@ -27,10 +27,10 @@ namespace Servy.Core.Services
         public string RealArgs { get; set; }
 
         /// <summary>The service startup type (Automatic, Manual, Disabled).</summary>
-        public ServiceStartType StartType { get; set; } = ServiceStartType.Automatic;
+        public ServiceStartType StartType { get; set; } = AppConfig.DefaultStartupType;
 
         /// <summary>Optional process priority for the service. Defaults to Normal.</summary>
-        public ProcessPriority ProcessPriority { get; set; } = ProcessPriority.Normal;
+        public ProcessPriority ProcessPriority { get; set; } = AppConfig.DefaultProcessPriority;
 
         /// <summary>Whether to enable the console user interface for the service.</summary>
         public bool? EnableConsoleUI { get; set; } = AppConfig.DefaultEnableConsoleUI;
@@ -42,7 +42,7 @@ namespace Servy.Core.Services
         public string StderrPath { get; set; }
 
         /// <summary>Enable size-based log rotation.</summary>
-        public bool EnableSizeRotation { get; set; } = false;
+        public bool EnableSizeRotation { get; set; } = AppConfig.DefaultEnableSizeRotation;
 
         /// <summary>Size in bytes for log rotation. If 0, no rotation is performed.</summary>
         public long RotationSizeInBytes { get; set; } = AppConfig.DefaultRotationSizeMB * 1024 * 1024;
@@ -51,10 +51,10 @@ namespace Servy.Core.Services
         /// Gets or sets a value indicating whether to use local system time for log rotation.
         /// Default is <c>false</c> (UTC).
         /// </summary>
-        public bool UseLocalTimeForRotation { get; set; } = false;
+        public bool UseLocalTimeForRotation { get; set; } = AppConfig.DefaultUseLocalTimeForRotation;
 
         /// <summary>Enable health monitoring.</summary>
-        public bool EnableHealthMonitoring { get; set; } = false;
+        public bool EnableHealthMonitoring { get; set; } = AppConfig.DefaultEnableHealthMonitoring;
 
         /// <summary>Heartbeat interval in seconds for the process. If 0, health monitoring is disabled.</summary>
         public int HeartbeatInterval { get; set; } = AppConfig.DefaultHeartbeatInterval;
@@ -63,7 +63,10 @@ namespace Servy.Core.Services
         public int MaxFailedChecks { get; set; } = AppConfig.DefaultMaxFailedChecks;
 
         /// <summary>Recovery action to take if the service fails. If None, health monitoring is disabled.</summary>
-        public RecoveryAction RecoveryAction { get; set; } = RecoveryAction.None;
+        public RecoveryAction RecoveryAction { get; set; } = AppConfig.DefaultRecoveryAction;
+
+        /// <summary>Whether to run recovery action even if the process exits successfully. </summary>
+        public bool? RecoveryOnCleanExit { get; set; } = AppConfig.DefaultRecoveryOnCleanExit;
 
         /// <summary>Maximum number of restart attempts if the service fails.</summary>
         public int MaxRestartAttempts { get; set; } = AppConfig.DefaultMaxRestartAttempts;
@@ -126,7 +129,7 @@ namespace Servy.Core.Services
         public string PostLaunchArgs { get; set; }
 
         /// <summary>Enable debug logs for the service wrapper.</summary>
-        public bool EnableDebugLogs { get; set; } = false;
+        public bool EnableDebugLogs { get; set; } = AppConfig.DefaultEnableDebugLogs;
 
         /// <summary>The Display Name of the service, shown in the Windows Services management console (<c>services.msc</c>).</summary>
         public string DisplayName { get; set; }
@@ -138,7 +141,7 @@ namespace Servy.Core.Services
         public bool EnableDateRotation { get; set; } = false;
 
         /// <summary>Defines the date-based rotation schedule (daily, weekly, or monthly).</summary>
-        public DateRotationType DateRotationType { get; set; } = DateRotationType.Daily;
+        public DateRotationType DateRotationType { get; set; } = AppConfig.DefaultDateRotationType;
 
         /// <summary>The timeout in seconds to wait for the process to start successfully before considering the startup as failed.</summary>
         public int? StartTimeout { get; set; } = AppConfig.DefaultStartTimeout;
@@ -159,7 +162,7 @@ namespace Servy.Core.Services
         public int? PreStopTimeout { get; set; } = AppConfig.DefaultPreStopTimeoutSeconds;
 
         /// <summary>A flag to log pre-stop failure as error.</summary>
-        public bool? PreStopLogAsError { get; set; } = false;
+        public bool? PreStopLogAsError { get; set; } = AppConfig.DefaultPreStopLogAsError;
 
         /// <summary>The path to an executable that runs after the service stops.</summary>
         public string PostStopExePath { get; set; }

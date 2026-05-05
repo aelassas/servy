@@ -377,6 +377,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Run recovery action even if the process exits successfully..
+        /// </summary>
+        public static string Info_RecoveryOnCleanExit {
+            get {
+                return ResourceManager.GetString("Info_RecoveryOnCleanExit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Specify one or more Windows service names (not display names) that this service depends on. Enter each service name on a new line or separate them with semicolons (;). Use service key names without spaces or special characters. Each dependency service must be installed and running before this service can start. If a dependency&apos;s start type is Automatic, Windows will try to start it automatically before this service. If a dependency fails to start or is disabled, this service will not start..
         /// </summary>
         public static string Info_ServiceDependencies {
@@ -724,6 +733,15 @@ namespace Servy.Resources {
         public static string Label_RecoveryAction {
             get {
                 return ResourceManager.GetString("Label_RecoveryAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Recovery even on successful exit.
+        /// </summary>
+        public static string Label_RecoveryOnCleanExit {
+            get {
+                return ResourceManager.GetString("Label_RecoveryOnCleanExit", resourceCulture);
             }
         }
         

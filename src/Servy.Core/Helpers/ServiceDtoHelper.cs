@@ -23,7 +23,7 @@ namespace Servy.Core.Helpers
 
             // Identity & Behavior
             dto.StartupType = dto.StartupType ?? (int)AppConfig.DefaultStartupType;
-            dto.Priority = dto.Priority ?? (int)AppConfig.DefaultPriority;
+            dto.Priority = dto.Priority ?? (int)AppConfig.DefaultProcessPriority;
 
             // POLICY: Global Identity Reset on Import
             // To maintain architectural simplicity across all interfaces (UI, CLI, PS), 
@@ -41,7 +41,7 @@ namespace Servy.Core.Helpers
             dto.StopTimeout = dto.StopTimeout ?? AppConfig.DefaultStopTimeout;
 
             // Log Rotation
-            dto.EnableSizeRotation = dto.EnableSizeRotation ?? AppConfig.DefaultEnableRotation;
+            dto.EnableSizeRotation = dto.EnableSizeRotation ?? AppConfig.DefaultEnableSizeRotation;
             dto.RotationSize = dto.RotationSize ?? AppConfig.DefaultRotationSizeMB;
             dto.EnableDateRotation = dto.EnableDateRotation ?? AppConfig.DefaultEnableDateRotation;
             dto.DateRotationType = dto.DateRotationType ?? (int)AppConfig.DefaultDateRotationType;
@@ -54,6 +54,7 @@ namespace Servy.Core.Helpers
             dto.MaxFailedChecks = dto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks;
             dto.MaxRestartAttempts = dto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts;
             dto.RecoveryAction = dto.RecoveryAction ?? (int)AppConfig.DefaultRecoveryAction;
+            dto.RecoveryOnCleanExit = dto.RecoveryOnCleanExit ?? AppConfig.DefaultRecoveryOnCleanExit;
 
             // Lifecycle Hooks (Pre-Launch)
             dto.PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds;

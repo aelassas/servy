@@ -40,6 +40,7 @@ namespace Servy.Infrastructure.Data
             "HeartbeatInterval",
             "MaxFailedChecks",
             "RecoveryAction",
+            "RecoveryOnCleanExit",
             "MaxRestartAttempts",
             "FailureProgramPath",
             "FailureProgramStartupDirectory",

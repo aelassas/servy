@@ -242,7 +242,7 @@ namespace Servy.Core.Config
         /// The default CPU priority class for the managed process.
         /// Default is <see cref="ProcessPriority.Normal"/>.
         /// </summary>
-        public const ProcessPriority DefaultPriority = ProcessPriority.Normal;
+        public const ProcessPriority DefaultProcessPriority = ProcessPriority.Normal;
 
         /// <summary>
         /// The default value for <c>EnableConsoleUI</c>. Default is <c>false</c>.
@@ -286,6 +286,11 @@ namespace Servy.Core.Config
         /// Default recovery action.
         /// </summary>
         public const RecoveryAction DefaultRecoveryAction = RecoveryAction.RestartService;
+
+        /// <summary>
+        /// Default flag for running recovery action even if the process exits successfully.
+        /// </summary>
+        public const bool DefaultRecoveryOnCleanExit = false;
 
         /// <summary>
         /// Default start timeout in seconds to wait for the process to start successfully before considering the startup as failed. Default is 10 seconds.
@@ -360,7 +365,7 @@ namespace Servy.Core.Config
         /// Gets a value indicating whether size-based log rotation is enabled by default.
         /// Default is <c>false</c>.
         /// </summary>
-        public const bool DefaultEnableRotation = false;
+        public const bool DefaultEnableSizeRotation = false;
 
         /// <summary>
         /// Gets a value indicating whether date-based log rotation is enabled by default.

@@ -313,6 +313,7 @@ namespace Servy.Core.Services
                         HeartbeatInterval = options.HeartbeatInterval,
                         MaxFailedChecks = options.MaxFailedChecks,
                         RecoveryAction = (int)options.RecoveryAction,
+                        RecoveryOnCleanExit = options.RecoveryOnCleanExit,
                         MaxRestartAttempts = options.MaxRestartAttempts,
                         FailureProgramPath = options.FailureProgramPath,
                         FailureProgramStartupDirectory = options.FailureProgramWorkingDirectory,

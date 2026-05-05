@@ -4,15 +4,12 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Core.Services;
-using Servy.Core.Validators;
 using Servy.Design;
 using Servy.Models;
 using Servy.Resources;
 using Servy.Services;
 using Servy.UI.Commands;
 using Servy.UI.Services;
-using Servy.Validators;
 using Servy.ViewModels.Items;
 using System;
 using System.Collections.Generic;
@@ -361,6 +358,15 @@ namespace Servy.ViewModels
         {
             get => _config.RecoveryAction;
             set { _config.RecoveryAction = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to run recovery action even if the process exits successfully.
+        /// </summary>
+        public bool RecoveryOnCleanExit
+        {
+            get => _config.RecoveryOnCleanExit;
+            set { _config.RecoveryOnCleanExit = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -829,7 +835,8 @@ namespace Servy.ViewModels
         /// <param name="serviceRepository">Service Repository.</param>
         /// <param name="helpService">Help service.</param>
         /// <param name="appConfig">Application configuration.</param>
-        public MainViewModel(IFileDialogService dialogService,
+        public MainViewModel(
+            IFileDialogService dialogService,
             IServiceCommands serviceCommands,
             IMessageBoxService messageBoxService,
             IServiceRepository serviceRepository,
@@ -948,7 +955,7 @@ namespace Servy.ViewModels
         /// </summary>
         private void AppConfig_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(IAppConfiguration.IsManagerAppAvailable))
+            if (e?.PropertyName == nameof(IAppConfiguration.IsManagerAppAvailable))
             {
                 IsManagerAppAvailable = ((IAppConfiguration)sender).IsManagerAppAvailable;
             }
@@ -965,18 +972,19 @@ namespace Servy.ViewModels
             ProcessPath = string.Empty;
             StartupDirectory = string.Empty;
             ProcessParameters = string.Empty;
-            SelectedStartupType = ServiceStartType.Automatic;
-            SelectedProcessPriority = ProcessPriority.Normal;
-            EnableConsoleUI = false;
-            EnableSizeRotation = false;
+            SelectedStartupType = DefaultStartupType;
+            SelectedProcessPriority = DefaultProcessPriority;
+            EnableConsoleUI = DefaultEnableConsoleUI;
+            EnableSizeRotation = DefaultEnableSizeRotation;
             RotationSize = DefaultRotationSizeMB.ToString();
             MaxRotations = DefaultMaxRotations.ToString();
-            EnableDateRotation = false;
-            SelectedDateRotationType = DateRotationType.Daily;
+            EnableDateRotation = DefaultEnableDateRotation;
+            SelectedDateRotationType = DefaultDateRotationType;
             StdoutPath = string.Empty;
             StderrPath = string.Empty;
-            EnableHealthMonitoring = false;
-            SelectedRecoveryAction = RecoveryAction.RestartService;
+            EnableHealthMonitoring = DefaultEnableHealthMonitoring;
+            SelectedRecoveryAction = DefaultRecoveryAction;
+            RecoveryOnCleanExit = DefaultRecoveryOnCleanExit;
             UseLocalTimeForRotation = DefaultUseLocalTimeForRotation;
             HeartbeatInterval = DefaultHeartbeatInterval.ToString();
             MaxFailedChecks = DefaultMaxFailedChecks.ToString();
@@ -1001,13 +1009,13 @@ namespace Servy.ViewModels
             PreLaunchStderrPath = string.Empty;
             PreLaunchTimeoutSeconds = DefaultPreLaunchTimeoutSeconds.ToString();
             PreLaunchRetryAttempts = DefaultPreLaunchRetryAttempts.ToString();
-            PreLaunchIgnoreFailure = false;
+            PreLaunchIgnoreFailure = DefaultPreLaunchIgnoreFailure;
 
             PostLaunchExecutablePath = string.Empty;
             PostLaunchStartupDirectory = string.Empty;
             PostLaunchParameters = string.Empty;
 
-            EnableDebugLogs = false;
+            EnableDebugLogs = DefaultEnableDebugLogs;
 
             StartTimeout = DefaultStartTimeout.ToString();
             StopTimeout = DefaultStopTimeout.ToString();
@@ -1341,63 +1349,64 @@ namespace Servy.ViewModels
         {
             ServiceName = dto.Name;
             ServiceDisplayName = dto.DisplayName;
-            ServiceDescription = dto.Description;
+            ServiceDescription = dto.Description ?? string.Empty;
             ProcessPath = dto.ExecutablePath;
-            StartupDirectory = dto.StartupDirectory;
-            ProcessParameters = dto.Parameters;
-            SelectedStartupType = dto.StartupType == null ? ServiceStartType.Automatic : (ServiceStartType)dto.StartupType;
-            SelectedProcessPriority = dto.Priority == null ? ProcessPriority.Normal : (ProcessPriority)dto.Priority;
-            EnableConsoleUI = dto.EnableConsoleUI ?? false;
-            StdoutPath = dto.StdoutPath;
-            StderrPath = dto.StderrPath;
-            EnableSizeRotation = dto.EnableSizeRotation ?? false;
-            RotationSize = dto.RotationSize == null ? DefaultRotationSizeMB.ToString() : dto.RotationSize.ToString();
-            EnableDateRotation = dto.EnableDateRotation ?? false;
-            SelectedDateRotationType = dto.DateRotationType == null ? DateRotationType.Daily : (DateRotationType)dto.DateRotationType;
-            MaxRotations = dto.MaxRotations == null ? DefaultMaxRotations.ToString() : dto.MaxRotations.ToString();
+            StartupDirectory = dto.StartupDirectory ?? string.Empty;
+            ProcessParameters = dto.Parameters ?? string.Empty;
+            SelectedStartupType = dto.StartupType == null ? DefaultStartupType : (ServiceStartType)dto.StartupType;
+            SelectedProcessPriority = dto.Priority == null ? DefaultProcessPriority : (ProcessPriority)dto.Priority;
+            EnableConsoleUI = dto.EnableConsoleUI ?? DefaultEnableConsoleUI;
+            StdoutPath = dto.StdoutPath ?? string.Empty;
+            StderrPath = dto.StderrPath ?? string.Empty;
+            EnableSizeRotation = dto.EnableSizeRotation ?? DefaultEnableSizeRotation;
+            RotationSize = dto.RotationSize == null ? DefaultRotationSizeMB.ToString() : dto.RotationSize.Value.ToString();
+            EnableDateRotation = dto.EnableDateRotation ?? DefaultEnableDateRotation;
+            SelectedDateRotationType = dto.DateRotationType == null ? DefaultDateRotationType : (DateRotationType)dto.DateRotationType;
+            MaxRotations = dto.MaxRotations == null ? DefaultMaxRotations.ToString() : dto.MaxRotations.Value.ToString();
             UseLocalTimeForRotation = dto.UseLocalTimeForRotation ?? DefaultUseLocalTimeForRotation;
-            EnableHealthMonitoring = dto.EnableHealthMonitoring ?? false;
-            HeartbeatInterval = dto.HeartbeatInterval == null ? DefaultHeartbeatInterval.ToString() : dto.HeartbeatInterval.ToString();
-            MaxFailedChecks = dto.MaxFailedChecks == null ? DefaultMaxFailedChecks.ToString() : dto.MaxFailedChecks.ToString();
-            SelectedRecoveryAction = dto.RecoveryAction == null ? RecoveryAction.RestartService : (RecoveryAction)dto.RecoveryAction;
-            MaxRestartAttempts = dto.MaxRestartAttempts == null ? DefaultMaxRestartAttempts.ToString() : dto.MaxRestartAttempts.ToString();
-            FailureProgramPath = dto.FailureProgramPath;
-            FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory;
-            FailureProgramParameters = dto.FailureProgramParameters;
-            EnvironmentVariables = StringHelper.FormatEnvironmentVariables(dto.EnvironmentVariables);
-            ServiceDependencies = StringHelper.FormatServiceDependencies(dto.ServiceDependencies);
-            RunAsLocalSystem = dto.RunAsLocalSystem ?? true;
-            UserAccount = dto.UserAccount;
-            Password = dto.Password;
+            EnableHealthMonitoring = dto.EnableHealthMonitoring ?? DefaultEnableHealthMonitoring;
+            HeartbeatInterval = dto.HeartbeatInterval == null ? DefaultHeartbeatInterval.ToString() : dto.HeartbeatInterval.Value.ToString();
+            MaxFailedChecks = dto.MaxFailedChecks == null ? DefaultMaxFailedChecks.ToString() : dto.MaxFailedChecks.Value.ToString();
+            SelectedRecoveryAction = dto.RecoveryAction == null ? DefaultRecoveryAction : (RecoveryAction)dto.RecoveryAction;
+            RecoveryOnCleanExit = dto.RecoveryOnCleanExit ?? DefaultRecoveryOnCleanExit;
+            MaxRestartAttempts = dto.MaxRestartAttempts == null ? DefaultMaxRestartAttempts.ToString() : dto.MaxRestartAttempts.Value.ToString();
+            FailureProgramPath = dto.FailureProgramPath ?? string.Empty;
+            FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory ?? string.Empty;
+            FailureProgramParameters = dto.FailureProgramParameters ?? string.Empty;
+            EnvironmentVariables = StringHelper.FormatEnvironmentVariables(dto.EnvironmentVariables) ?? string.Empty;
+            ServiceDependencies = StringHelper.FormatServiceDependencies(dto.ServiceDependencies) ?? string.Empty;
+            RunAsLocalSystem = dto.RunAsLocalSystem ?? DefaultRunAsLocalSystem;
+            UserAccount = dto.UserAccount ?? string.Empty;
+            Password = dto.Password ?? string.Empty;
             ConfirmPassword = string.Empty;
-            PreLaunchExecutablePath = dto.PreLaunchExecutablePath;
-            PreLaunchStartupDirectory = dto.PreLaunchStartupDirectory;
-            PreLaunchParameters = dto.PreLaunchParameters;
-            PreLaunchEnvironmentVariables = StringHelper.FormatEnvironmentVariables(dto.PreLaunchEnvironmentVariables);
-            PreLaunchStdoutPath = dto.PreLaunchStdoutPath;
-            PreLaunchStderrPath = dto.PreLaunchStderrPath;
-            PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds == null ? DefaultPreLaunchTimeoutSeconds.ToString() : dto.PreLaunchTimeoutSeconds.ToString();
-            PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts == null ? DefaultPreLaunchRetryAttempts.ToString() : dto.PreLaunchRetryAttempts.ToString();
-            PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure ?? false;
+            PreLaunchExecutablePath = dto.PreLaunchExecutablePath ?? string.Empty;
+            PreLaunchStartupDirectory = dto.PreLaunchStartupDirectory ?? string.Empty;
+            PreLaunchParameters = dto.PreLaunchParameters ?? string.Empty;
+            PreLaunchEnvironmentVariables = StringHelper.FormatEnvironmentVariables(dto.PreLaunchEnvironmentVariables) ?? string.Empty;
+            PreLaunchStdoutPath = dto.PreLaunchStdoutPath ?? string.Empty;
+            PreLaunchStderrPath = dto.PreLaunchStderrPath ?? string.Empty;
+            PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds == null ? DefaultPreLaunchTimeoutSeconds.ToString() : dto.PreLaunchTimeoutSeconds.Value.ToString();
+            PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts == null ? DefaultPreLaunchRetryAttempts.ToString() : dto.PreLaunchRetryAttempts.Value.ToString();
+            PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure ?? DefaultPreLaunchIgnoreFailure;
 
-            PostLaunchExecutablePath = dto.PostLaunchExecutablePath;
-            PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory;
-            PostLaunchParameters = dto.PostLaunchParameters;
+            PostLaunchExecutablePath = dto.PostLaunchExecutablePath ?? string.Empty;
+            PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory ?? string.Empty;
+            PostLaunchParameters = dto.PostLaunchParameters ?? string.Empty;
 
-            EnableDebugLogs = dto.EnableDebugLogs ?? false;
+            EnableDebugLogs = dto.EnableDebugLogs ?? DefaultEnableDebugLogs;
 
-            StartTimeout = dto.StartTimeout == null ? DefaultStartTimeout.ToString() : dto.StartTimeout.ToString();
-            StopTimeout = dto.StopTimeout == null ? DefaultStopTimeout.ToString() : dto.StopTimeout.ToString();
+            StartTimeout = dto.StartTimeout == null ? DefaultStartTimeout.ToString() : dto.StartTimeout.Value.ToString();
+            StopTimeout = dto.StopTimeout == null ? DefaultStopTimeout.ToString() : dto.StopTimeout.Value.ToString();
 
-            PreStopExecutablePath = dto.PreStopExecutablePath;
-            PreStopStartupDirectory = dto.PreStopStartupDirectory;
-            PreStopParameters = dto.PreStopParameters;
-            PreStopTimeoutSeconds = dto.PreStopTimeoutSeconds == null ? DefaultPreStopTimeoutSeconds.ToString() : dto.PreStopTimeoutSeconds.ToString();
-            PreStopLogAsError = dto.PreStopLogAsError ?? false;
+            PreStopExecutablePath = dto.PreStopExecutablePath ?? string.Empty;
+            PreStopStartupDirectory = dto.PreStopStartupDirectory ?? string.Empty;
+            PreStopParameters = dto.PreStopParameters ?? string.Empty;
+            PreStopTimeoutSeconds = dto.PreStopTimeoutSeconds == null ? DefaultPreStopTimeoutSeconds.ToString() : dto.PreStopTimeoutSeconds.Value.ToString();
+            PreStopLogAsError = dto.PreStopLogAsError ?? DefaultPreStopLogAsError;
 
-            PostStopExecutablePath = dto.PostStopExecutablePath;
-            PostStopStartupDirectory = dto.PostStopStartupDirectory;
-            PostStopParameters = dto.PostStopParameters;
+            PostStopExecutablePath = dto.PostStopExecutablePath ?? string.Empty;
+            PostStopStartupDirectory = dto.PostStopStartupDirectory ?? string.Empty;
+            PostStopParameters = dto.PostStopParameters ?? string.Empty;
         }
 
         /// <summary>
@@ -1442,6 +1451,7 @@ namespace Servy.ViewModels
                 HeartbeatInterval = ConfigParser.ParseInt(HeartbeatInterval, -1),
                 MaxFailedChecks = ConfigParser.ParseInt(MaxFailedChecks, -1),
                 RecoveryAction = (int)SelectedRecoveryAction,
+                RecoveryOnCleanExit = RecoveryOnCleanExit,
                 MaxRestartAttempts = ConfigParser.ParseInt(MaxRestartAttempts, -1),
 
                 // Failure Actions

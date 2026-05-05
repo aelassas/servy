@@ -113,7 +113,7 @@ namespace Servy.Core.Domain
         /// <summary>
         /// Gets or sets the process priority for the service.
         /// </summary>
-        public ProcessPriority Priority { get; set; } = AppConfig.DefaultPriority;
+        public ProcessPriority Priority { get; set; } = AppConfig.DefaultProcessPriority;
 
         /// <summary>
         /// Whether to enable the console user interface for the service.
@@ -135,7 +135,7 @@ namespace Servy.Core.Domain
         /// Gets or sets a value indicating whether size-based log rotation is enabled.
         /// Default is false.
         /// </summary>
-        public bool EnableSizeRotation { get; set; } = AppConfig.DefaultEnableRotation;
+        public bool EnableSizeRotation { get; set; } = AppConfig.DefaultEnableSizeRotation;
 
         /// <summary>
         /// Gets or sets the rotation size in Megabytes (MB) for log files.
@@ -193,6 +193,11 @@ namespace Servy.Core.Domain
         /// Gets or sets the recovery action to take when the service fails.
         /// </summary>
         public RecoveryAction RecoveryAction { get; set; } = AppConfig.DefaultRecoveryAction;
+
+        /// <summary>
+        /// Gets or sets a flag to run recovery action even if the process exits successfully.
+        /// </summary>
+        public bool RecoveryOnCleanExit { get; set; } = AppConfig.DefaultRecoveryOnCleanExit;
 
         /// <summary>
         /// Gets or sets the maximum number of automatic restart attempts.
@@ -520,6 +525,7 @@ namespace Servy.Core.Domain
                 HeartbeatInterval = HeartbeatInterval,
                 MaxFailedChecks = MaxFailedChecks,
                 RecoveryAction = RecoveryAction,
+                RecoveryOnCleanExit = RecoveryOnCleanExit,
                 MaxRestartAttempts = MaxRestartAttempts,
                 EnvironmentVariables = EnvironmentVariables,
                 ServiceDependencies = ServiceDependencies,
