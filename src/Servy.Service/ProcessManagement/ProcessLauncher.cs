@@ -93,7 +93,7 @@ namespace Servy.Service.ProcessManagement
             string? normalizedOut = Helper.NormalizePath(options.StdOutPath);
             string? normalizedErr = Helper.NormalizePath(options.StdErrPath);
 
-            bool pathsMatch = 
+            bool pathsMatch =
                 normalizedOut != null
                 && normalizedErr != null
                 && string.Equals(normalizedOut, normalizedErr, StringComparison.OrdinalIgnoreCase);
@@ -125,7 +125,9 @@ namespace Servy.Service.ProcessManagement
                 {
                     process.UnderlyingProcess.OutputDataReceived += (_, e) =>
                     {
-                        if (e.Data != null)
+                        if (e.Data == null) return;
+
+                        try
                         {
                             lock (stdoutLock)
                             {
@@ -135,7 +137,7 @@ namespace Servy.Service.ProcessManagement
                                     FileStream? stdoutFs = null;
                                     try
                                     {
-                                        stdoutFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                                        stdoutFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
                                         stdoutWriter = new StreamWriter(stdoutFs, encoding) { AutoFlush = true };
                                     }
                                     catch
@@ -147,6 +149,11 @@ namespace Servy.Service.ProcessManagement
                                 stdoutWriter.WriteLine(e.Data);
                             }
                         }
+                        catch (Exception ex)
+                        {
+                            // Log via the supervisor's logger, never propagate out of the handler
+                            try { logger.Warn($"Failed to write stdout line for '{options.ExecutablePath}': {ex.Message}"); } catch { /* Fail-silent */ }
+                        }
                     };
                 }
 
@@ -155,7 +162,9 @@ namespace Servy.Service.ProcessManagement
                 {
                     process.UnderlyingProcess.ErrorDataReceived += (_, e) =>
                     {
-                        if (e.Data != null)
+                        if (e.Data == null) return;
+
+                        try
                         {
                             lock (stderrLock)
                             {
@@ -168,7 +177,7 @@ namespace Servy.Service.ProcessManagement
                                         FileStream? sharedFs = null;
                                         try
                                         {
-                                            sharedFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                                            sharedFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
                                             stdoutWriter = new StreamWriter(sharedFs, encoding) { AutoFlush = true };
                                         }
                                         catch
@@ -188,7 +197,7 @@ namespace Servy.Service.ProcessManagement
                                         FileStream? stderrFs = null;
                                         try
                                         {
-                                            stderrFs = new FileStream(errPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                                            stderrFs = new FileStream(errPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
                                             stderrWriter = new StreamWriter(stderrFs, encoding) { AutoFlush = true };
                                         }
                                         catch
@@ -200,6 +209,11 @@ namespace Servy.Service.ProcessManagement
                                     stderrWriter.WriteLine(e.Data);
                                 }
                             }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log via the supervisor's logger, never propagate out of the handler
+                            try { logger.Warn($"Failed to write stderr line for '{options.ExecutablePath}': {ex.Message}"); } catch { /* Fail-silent */ }
                         }
                     };
                 }

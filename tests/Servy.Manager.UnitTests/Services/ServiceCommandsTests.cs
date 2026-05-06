@@ -27,10 +27,11 @@ namespace Servy.Manager.UnitTests.Services
         private readonly Mock<IJsonServiceSerializer> _jsonServiceSerializerMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
         private readonly Mock<IProcessHelper> _processHelper;
+        private readonly Mock<IUiDispatcher> _uiDispatcherMock;
 
         private bool _refreshCalled;
         private TaskCompletionSource<bool> _refreshTcs;
-        private string _removedServiceName;
+        private string? _removedServiceName;
 
         public ServiceCommandsTests()
         {
@@ -47,9 +48,10 @@ namespace Servy.Manager.UnitTests.Services
             _jsonServiceSerializerMock = new Mock<IJsonServiceSerializer>();
             _appConfigMock = new Mock<IAppConfiguration>();
             _processHelper = new Mock<IProcessHelper>();
+            _uiDispatcherMock = new Mock<IUiDispatcher>();
 
             _refreshTcs = new TaskCompletionSource<bool>();
-            _removedServiceName = null!;
+            _removedServiceName = null;
 
             // Default safe returns for ServiceManager to prevent internal NullRefs
             _serviceManagerMock.Setup(m => m.StartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
@@ -62,7 +64,7 @@ namespace Servy.Manager.UnitTests.Services
         private ServiceCommands CreateServiceCommands()
         {
             _refreshCalled = false;
-            _removedServiceName = null!;
+            _removedServiceName = null;
             _refreshTcs = new TaskCompletionSource<bool>();
 
             return new ServiceCommands(
@@ -83,7 +85,8 @@ namespace Servy.Manager.UnitTests.Services
                 _xmlServiceSerializerMock.Object,
                 _jsonServiceSerializerMock.Object,
                 _appConfigMock.Object,
-                _processHelper.Object
+                _processHelper.Object,
+                _uiDispatcherMock.Object
             );
         }
 

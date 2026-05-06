@@ -733,7 +733,7 @@ namespace Servy.Manager.ViewModels
         /// Stops and cleans up the refresh timer to release resources and prevent references
         /// from keeping the UI Dispatcher alive. Should be called when the window or view model is closing.
         /// </summary>
-        public void Cleanup()
+        public void StopRefreshTimer()
         {
             if (_appConfig != null)
             {
@@ -753,10 +753,7 @@ namespace Servy.Manager.ViewModels
                 _refreshTimer.Stop();            // Stop the timer
                 _refreshTimer.Tick -= OnTick; // Unsubscribe event
                 _refreshTimer = null;
-            }
-
-            // Dispose the command engine to clean up semaphores
-            ServiceCommands?.Dispose();
+            }   
 
             _busyCursor?.Dispose();
         }
@@ -1241,6 +1238,12 @@ namespace Servy.Manager.ViewModels
             if (disposing)
             {
                 _appConfig.PropertyChanged -= AppConfig_PropertyChanged;
+
+                // Stop and Dispose Refresh Timer
+                StopRefreshTimer();
+
+                // Dispose the command engine to clean up semaphores
+                ServiceCommands?.Dispose();
             }
 
             _disposed = true;

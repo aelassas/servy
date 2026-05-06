@@ -278,15 +278,37 @@ namespace Servy.UI.Design
     }
 
     /// <summary>
-    /// Lightweight no-op implementation of IUiDispatcher for XAML design-time support.
+    /// Lightweight no-op implementation of <see cref="IUiDispatcher"/> for XAML design-time support.
     /// </summary>
     /// <remarks>
     /// This implementation provides a safe way to bypass UI threading requirements during 
     /// layout sessions, preventing the "Design-Time Trap" where constructors fail due 
-    /// to missing dispatcher contexts.
+    /// to missing dispatcher contexts in the Visual Studio or Rider designer.
     /// </remarks>
     public class DesignTimeUiDispatcher : IUiDispatcher
     {
+        /// <summary>
+        /// No-op implementation of <see cref="IUiDispatcher.InvokeAsync(Action)"/> 
+        /// that returns a completed task without executing the action.
+        /// </summary>
+        /// <param name="action">The action to ignore during design-time.</param>
+        /// <returns>A completed <see cref="Task"/>.</returns>
+        public Task InvokeAsync(Action action) => Task.CompletedTask;
+
+        /// <summary>
+        /// No-op implementation of <see cref="IUiDispatcher.InvokeAsync{T}(Func{T})"/> 
+        /// that returns the default value of <typeparamref name="T"/>.
+        /// </summary>
+        /// <typeparam name="T">The type of the return value.</typeparam>
+        /// <param name="callback">The function to ignore during design-time.</param>
+        /// <returns>A task containing <c>default(T)</c>.</returns>
+        public Task<T> InvokeAsync<T>(Func<T> callback)
+        {
+            // FIX: Task.FromResult requires a value. 
+            // Returning default(T) allows the caller to proceed without a NullReferenceException.
+            return Task.FromResult(default(T)!);
+        }
+
         /// <summary>
         /// Immediately returns a completed task to satisfy the yielding requirement 
         /// without disrupting the design-time environment.

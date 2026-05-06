@@ -16,6 +16,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace Servy.Manager.Services
 {
@@ -50,6 +51,7 @@ namespace Servy.Manager.Services
         private readonly IJsonServiceSerializer _jsonServiceSerializer;
         private readonly IAppConfiguration _appConfig;
         private readonly IProcessHelper _processHelper;
+        private readonly IUiDispatcher _dispatcher;
 
         #endregion
 
@@ -71,6 +73,7 @@ namespace Servy.Manager.Services
         /// <param name="jsonServiceSerializer">JSON service serializer.</param>
         /// <param name="appConfig">The application configuration interface.</param>
         /// <param name="processHelper">The process helper used to format process commands.</param>
+        /// <param name="dispatcher">The UI dispatcher used for STA operations like Clipboard access.</param>
         public ServiceCommands(
             IServiceManager serviceManager,
             IServiceRepository? serviceRepository,
@@ -84,7 +87,8 @@ namespace Servy.Manager.Services
             IXmlServiceSerializer xmlServiceSerializer,
             IJsonServiceSerializer jsonServiceSerializer,
             IAppConfiguration appConfig,
-            IProcessHelper processHelper
+            IProcessHelper processHelper,
+            IUiDispatcher dispatcher
         )
         {
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
@@ -100,6 +104,7 @@ namespace Servy.Manager.Services
             _jsonServiceSerializer = jsonServiceSerializer ?? throw new ArgumentNullException(nameof(jsonServiceSerializer));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
+            _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
         }
 
         #endregion
@@ -417,26 +422,47 @@ namespace Servy.Manager.Services
                 string pidValue = service.Pid.Value.ToString();
                 string serviceName = service.Name ?? "Unknown";
 
-                // Accessing the Clipboard requires the STA thread (UI Thread)
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                const int maxRetries = 5;
+                bool success = false;
+
+                // Move the retry loop outside the Dispatcher to prevent UI freezing
+                for (int i = 0; i < maxRetries; i++)
                 {
-                    const int maxRetries = 5;
-                    for (int i = 0; i < maxRetries; i++)
+                    // Accessing the Clipboard requires the STA thread (UI Thread)
+                    // We invoke only the granular action on the dispatcher
+                    success = await _dispatcher.InvokeAsync(() =>
                     {
                         try
                         {
                             Clipboard.SetText(pidValue);
-                            return;
+                            return true;
                         }
-                        catch (COMException) when (i < maxRetries - 1)
+                        catch (COMException)
                         {
-                            Thread.Sleep(50);
+                            // Clipboard is likely locked by another process
+                            return false;
                         }
-                    }
-                });
+                    });
 
-                Logger.Info($"PID {pidValue} of service {serviceName} copied to clipboard.");
-                await _messageBoxService.ShowInfoAsync(Strings.Msg_PidCopied, AppConfig.Caption);
+                    if (success) break;
+
+                    // If we failed, wait asynchronously before trying again.
+                    // This allows the UI thread to remain responsive during the wait.
+                    if (i < maxRetries - 1)
+                    {
+                        await Task.Delay(50);
+                    }
+                }
+
+                if (success)
+                {
+                    Logger.Info($"PID {pidValue} of service {serviceName} copied to clipboard.");
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_PidCopied, AppConfig.Caption);
+                }
+                else
+                {
+                    Logger.Warn($"Failed to copy PID {pidValue} for {serviceName} after {maxRetries} attempts.");
+                }
             }
             catch (Exception ex)
             {

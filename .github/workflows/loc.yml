@@ -79,9 +79,13 @@ jobs:
           mkdir -p ./output
 
           # Use shields.io static badge generation with URL-encoded label
-          URL="https://img.shields.io/badge/LoC%20total-${TOTAL_COMMA}-3BC41C"
+          # FIX: Escape commas to ensure strict RFC 3986 compliance
+          ENCODED_TOTAL=$(echo "$TOTAL_COMMA" | sed 's/,/%2C/g')
+          URL="https://img.shields.io/badge/LoC%20total-${ENCODED_TOTAL}-3BC41C"
           echo "URL: ${URL}"
-          curl -s -o ./output/loc-total.svg "${URL}"
+
+          # FIX: Fail step on HTTP errors (-f) and show errors (-S) to prevent publishing garbage
+          curl -fsS -o ./output/loc-total.svg "${URL}"
 
       # ----------------------------
       # Summary

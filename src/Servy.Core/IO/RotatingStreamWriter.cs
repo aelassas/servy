@@ -137,7 +137,7 @@ namespace Servy.Core.IO
                 fileInfo: _file,
                 mode: FileMode.Append,
                 rights: FileSystemRights.AppendData, // The strict Win32 flag FileSystemRights.AppendData
-                share: FileShare.ReadWrite,
+                share: FileShare.ReadWrite | FileShare.Delete,
                 bufferSize: 4096,
                 options: FileOptions.None,
                 fileSecurity: null);
