@@ -81,39 +81,13 @@ namespace Servy.Restarter
                 // 3. Configure the GLOBAL logging
                 var restartTimeout = int.TryParse(config["RestartTimeoutSeconds"], out var timeout) && timeout > 0 ? timeout : DefaultRestartTimeoutSeconds;
 
-                // Set Log Level
-                if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
-                {
-                    logLevel = LogLevel.Info;
-                }
-                Logger.SetLogLevel(logLevel);
-
-                // Set Rotation Type
-                if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType))
-                {
-                    dateRotationType = DateRotationType.None;
-                }
-                Logger.SetDateRotationType(dateRotationType);
-
-                // Set Rotation Size
-                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0) Logger.SetLogRotationSize(size);
-                else Logger.SetLogRotationSize(AppConfig.DefaultRotationSizeMB);
-
-                if (int.TryParse(config["MaxBackupLogFiles"], out var maxBackupFiles) && maxBackupFiles >= 0) Logger.SetMaxBackupLogFiles(maxBackupFiles);
-                else Logger.SetMaxBackupLogFiles(Logger.DefaultMaxBackupLogFiles);
-
-                // Set Local Time preference
-                if (!bool.TryParse(config["UseLocalTimeForRotation"], out bool useLocalTimeForRotation))
-                {
-                    useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation;
-                }
-                Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
-
                 // 4. PROMOTE / SCOPE the logger
                 // Using the instance logger ensures that 'serviceName' is prepended 
                 // and events are mirrored to the Windows Event Log.
                 scopedLogger = rootLogger.CreateScoped(serviceName);
-                scopedLogger.SetLogLevel(logLevel);
+
+                // Centralized logging bootstrapper
+                LoggerConfigurator.ConfigureFromAppSettings(config, instanceLogger: scopedLogger);
 
                 // Sync Event Log enablement to the instance
                 bool isEventLogEnabled;

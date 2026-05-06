@@ -59,6 +59,17 @@ namespace Servy.Core.Config
         #region File Paths & Directories
 
         /// <summary>
+        /// The cached full filesystem path to the root of the repository.
+        /// </summary>
+        /// <remarks>
+        /// This path is resolved at runtime by traversing upward from the current 
+        /// application base directory until the solution-level anchor is found. 
+        /// It serves as the primary reference point for locating development-time assets 
+        /// and solution-relative configurations.
+        /// </remarks>
+        private static readonly string RepoRoot = FindRepoRoot(AppDomain.CurrentDomain.BaseDirectory);
+
+        /// <summary>
         /// Target framework.
         /// </summary>
         private static readonly string TargetFramework =
@@ -95,12 +106,12 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Desktop App Release Folder.
         /// </summary>
-        public static readonly string ServyDesktopAppReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @$"..\..\..\..\..\Servy\bin\Release\{TargetFramework}\win-x64\");
+        public static readonly string ServyDesktopAppReleaseFolder = Path.Combine(RepoRoot, "src", "Servy", "bin", "Release", TargetFramework, "win-x64");
 
         /// <summary>
         /// Servy Service Debug Folder (Manager).
         /// </summary>
-        public static readonly string ServyServiceManagerDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @$"..\..\..\..\..\Servy.Manager\bin\Debug\{TargetFramework}\win-x64\");
+        public static readonly string ServyServiceManagerDebugFolder = Path.Combine(RepoRoot, "src", "Servy.Manager", "bin", "Debug", TargetFramework, "win-x64");
 
         /// <summary>
         /// Servy Desktop App Publish Path.
@@ -115,7 +126,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Manager Release Folder.
         /// </summary>
-        public static readonly string ServyManagerReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @$"..\..\..\..\..\Servy.Manager\bin\Release\{TargetFramework}\win-x64\");
+        public static readonly string ServyManagerReleaseFolder = Path.Combine(RepoRoot, "src", "Servy.Manager", "bin", "Release", TargetFramework, "win-x64");
 
         /// <summary>
         /// Servy Manager App Publish Path.
@@ -859,6 +870,29 @@ namespace Servy.Core.Config
                 ProgramDataPath,
 #endif
                 $"{fileName}.exe");
+
+        /// <summary>
+        /// Traverses up the directory hierarchy from the specified starting point to locate the 
+        /// repository root, identified by the presence of the <c>Servy.sln</c> file.
+        /// </summary>
+        /// <param name="startDir">The directory path where the upward search begins.</param>
+        /// <returns>The full filesystem path to the directory containing the Servy solution file.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the root of the drive is reached without finding <c>Servy.sln</c> in any ancestor directory.
+        /// </exception>
+        /// <remarks>
+        /// This utility is primarily used by the bootstrapper and test harnesses to resolve 
+        /// relative paths to assets or configuration files within the monorepo structure.
+        /// </remarks>
+        private static string FindRepoRoot(string startDir)
+        {
+            var dir = new DirectoryInfo(startDir);
+            while (dir != null && !File.Exists(Path.Combine(dir.FullName, "Servy.sln")))
+                dir = dir.Parent;
+
+            return dir?.FullName
+                ?? throw new InvalidOperationException("Servy.sln not found in any ancestor directory.");
+        }
 
         #endregion
     }

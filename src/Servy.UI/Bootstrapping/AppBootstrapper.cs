@@ -206,21 +206,7 @@ namespace Servy.UI.Bootstrapping
         {
             if (_configuration == null) return;
 
-            if (!Enum.TryParse<LogLevel>(_configuration["LogLevel"], true, out var logLevel)) logLevel = LogLevel.Info;
-            Logger.SetLogLevel(logLevel);
-
-            if (!Enum.TryParse<DateRotationType>(_configuration["LogRollingInterval"], true, out var dateRotationType)) dateRotationType = DateRotationType.None;
-            Logger.SetDateRotationType(dateRotationType);
-
-            if (int.TryParse(_configuration["LogRotationSizeMB"], out var size) && size > 0) Logger.SetLogRotationSize(size);
-            else Logger.SetLogRotationSize(AppConfig.DefaultRotationSizeMB);
-
-            if (int.TryParse(_configuration["MaxBackupLogFiles"], out var maxBackupFiles) && maxBackupFiles >= 0) Logger.SetMaxBackupLogFiles(maxBackupFiles);
-            else Logger.SetMaxBackupLogFiles(Logger.DefaultMaxBackupLogFiles);
-
-            string rawUseLocalTime = _configuration["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
-            if (!bool.TryParse(rawUseLocalTime, out bool useLocalTime)) useLocalTime = AppConfig.DefaultUseLocalTimeForRotation;
-            Logger.SetUseLocalTimeForRotation(useLocalTime);
+            LoggerConfigurator.ConfigureFromAppSettings(_configuration);
 
             _options.CustomConfigAction?.Invoke(_configuration);
         }
