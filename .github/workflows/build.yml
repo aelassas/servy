@@ -37,6 +37,15 @@ jobs:
       - name: Restore NuGet packages
         run: nuget restore Servy.sln
 
+      - name: Build Solution (Debug)
+        run: |
+          msbuild Servy.sln `
+            /p:Configuration=Debug `
+            /p:Platform=x64 `
+            /p:AllowUnsafeBlocks=true `
+            /nodeReuse:false `
+            /m
+
       - name: Build Solution (Release)
         run: |
           msbuild Servy.sln `

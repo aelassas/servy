@@ -22,7 +22,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # important, otherwise commit message won't be available          
+          fetch-depth: 0   # important, otherwise commit message won't be available                    
           
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -54,7 +54,7 @@ jobs:
         run: echo "$env:PATH += ';$env:USERPROFILE\.dotnet\tools'"  
         shell: pwsh
 
-      - name: Run all tests with coverage
+      - name: Run all tests with coverage (Debug)
         shell: pwsh
         run: |
           $testProjects = @(
@@ -83,16 +83,16 @@ jobs:
                   continue
               }
 
-              # Build target arguments for vstest.console.exe
+              # Build target arguments for vstest.console.exe              
               $targetArgs = "`"$dllPath`""
               if ($proj.Filter) {
                   $targetArgs += " /TestCaseFilter:`"$($proj.Filter)`""
               }
               
-              # FIX: Include the project name in the file so integration tests don't overwrite unit tests
+              # FIX: Include the project name in the file so integration tests don't overwrite unit tests              
               $outPath = "$($proj.Dir)\$($proj.Name).coverage.cobertura.xml"
               
-              # FIX: Exclude all Unit, Integration, and Testing assemblies from instrumentation
+              # FIX: Exclude all Unit, Integration, and Testing assemblies from instrumentation              
               & coverlet.exe $dllPath `
                   --target "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
                   --targetargs $targetArgs `
@@ -114,6 +114,68 @@ jobs:
               exit 1 
           }
 
+      - name: Build Solution (Release)
+        run: |
+          msbuild Servy.sln `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /p:AllowUnsafeBlocks=true `
+            /nodeReuse:false `
+            /m
+
+      - name: Run all tests (Release)
+        shell: pwsh
+        run: |
+          # Common paths for vstest.console.exe
+          $possiblePaths = @(
+              'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe',
+              'C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\Extensions\TestPlatform\vstest.console.exe',
+              'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe',
+              'C:\Program Files\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\Extensions\TestPlatform\vstest.console.exe'
+          )
+
+          $vsTest = $possiblePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+          if (-not $vsTest) {
+              throw "Could not locate vstest.console.exe on the runner."
+          }
+
+          Write-Host "Using vstest.console.exe at: $vsTest" -ForegroundColor Cyan
+
+          # Find all test assemblies dynamically for the Release build
+          $testDlls = Get-ChildItem -Path "tests" -Recurse -Include "*UnitTests.dll", "*IntegrationTests.dll" | Where-Object { $_.FullName -match "\\bin\\[A-Za-z0-9_]+\\Release\\" }
+
+          if (-not $testDlls) {
+              throw "No test assemblies found for Release configuration!"
+          }
+
+          Write-Host "`nFound test assemblies:"
+          $testDlls | ForEach-Object { Write-Host " - $($_.FullName)" }
+
+          $failed = $false
+
+          foreach ($dll in $testDlls) {
+              Write-Host "`nRunning tests in $($dll.Name)..." -ForegroundColor Yellow
+              
+              $args = @($dll.FullName, '/Framework:".NETFramework,Version=v4.8"')
+              
+              # Automatically apply the required exclusion filter to the Service.UnitTests assembly
+              if ($dll.Name -eq "Servy.Service.UnitTests.dll") {
+                  $args += '/TestCaseFilter:Category!=ReflectionValidation'
+              }
+
+              & $vsTest $args
+
+              if ($LASTEXITCODE -ne 0) {
+                  Write-Error "Tests failed in $($dll.Name)"
+                  $failed = $true
+              }
+          }
+
+          if ($failed) {
+              throw "One or more Release test projects failed. Review the logs above."
+          }
+
       - name: Install ReportGenerator
         if: always()
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
@@ -122,14 +184,14 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          # Find all newly generated cobertura files dynamically
-          # FIX: Updated the filter to match the new unique filenames
+          # Find all newly generated cobertura files dynamically          
+          # FIX: Updated the filter to match the new unique filenames          
           $reports = Get-ChildItem -Path . -Recurse -Filter "*coverage.cobertura.xml" | Where-Object { $_.FullName -notmatch "CoverageMerged" }
           if ($reports.Count -eq 0) { Write-Error "No coverage files found!"; exit 1 }
           
           $reportPaths = $reports.FullName -join ";"
           
-          # FIX: Add wildcard assembly filters to physically strip test assemblies from the merged XML
+          # FIX: Add wildcard assembly filters to physically strip test assemblies from the merged XML          
           reportgenerator `
               "-reports:$reportPaths" `
               "-targetdir:CoverageMerged" `
@@ -151,7 +213,7 @@ jobs:
               param($match)
               $origPath = $match.Groups[1].Value -replace '\\', '/'
               
-              # Dynamic match for ALL Servy projects
+              # Dynamic match for ALL Servy projects              
               if ($origPath -match 'src/(Servy[^/]*)/(.*)') {
                   return "filename=`"src/$($matches[1])/$($matches[2])`""
               }

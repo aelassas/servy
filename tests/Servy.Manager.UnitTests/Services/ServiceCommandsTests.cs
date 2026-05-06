@@ -295,9 +295,10 @@ namespace Servy.Manager.UnitTests.Services
             var sut = CreateServiceCommands();
             var service = new Service { Name = "TestService" };
 
+#if DEBUG
             // CRITICAL FIX: Bypass the Directory.Exists check for DEBUG builds
             // by ensuring the expected directory actually exists in the test environment.
-            var debugDir = Path.GetFullPath(Servy.Core.Config.AppConfig.ServyServiceManagerDebugFolder);
+            var debugDir = Path.GetFullPath(Core.Config.AppConfig.ServyServiceManagerDebugFolder);
             try
             {
                 if (!Directory.Exists(debugDir))
@@ -306,7 +307,7 @@ namespace Servy.Manager.UnitTests.Services
                 }
             }
             catch { /* Ignore creation errors if running in restricted environments */ }
-
+#endif
             // 1. Bypass Service Exists check
             _serviceManagerMock.Setup(m => m.IsServiceInstalled(service.Name)).Returns(false);
 
@@ -360,6 +361,6 @@ namespace Servy.Manager.UnitTests.Services
             Assert.Equal(service.Name, _removedServiceName);
         }
 
-        #endregion
+#endregion
     }
 }

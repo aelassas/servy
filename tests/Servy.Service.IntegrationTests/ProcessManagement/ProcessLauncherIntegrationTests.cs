@@ -60,7 +60,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Start_SynchronousWithZeroTimeout_ThrowsArgumentException()
         {
-            var options = CreateOptions("cmd.exe", "", fireAndForget: false, timeoutMs: 0);
+            var options = CreateOptions("powershell.exe", "-NoProfile", fireAndForget: false, timeoutMs: 0);
             var ex = Assert.Throws<ArgumentException>(() => ProcessLauncher.Start(options, _realFactory, _logger));
             Assert.Contains("Synchronous launch requires TimeoutMs > 0", ex.Message);
         }
@@ -72,7 +72,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Start_FireAndForget_ReturnsImmediately()
         {
-            var options = CreateOptions("cmd.exe", "/c ping 127.0.0.1 -n 3", fireAndForget: true, timeoutMs: 0);
+            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 3\"", fireAndForget: true, timeoutMs: 0);
 
             var wrapper = ProcessLauncher.Start(options, _realFactory, _logger);
 
@@ -87,7 +87,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_Synchronous_WaitsForExit_And_Heartbeats()
         {
             int heartbeats = 0;
-            var options = CreateOptions("cmd.exe", "/c echo OK", fireAndForget: false, timeoutMs: 5000);
+            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'OK'\"", fireAndForget: false, timeoutMs: 5000);
             options.WaitChunkMs = 10;
             options.OnScmHeartbeat = new Action<int>((time) => Interlocked.Increment(ref heartbeats));
 
@@ -129,7 +129,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_RedirectOutput_SamePath_WritesToSingleFileMultiplexed()
         {
             string logPath = CreateTempFilePath();
-            var options = CreateOptions("cmd.exe", "/c echo STDOUT_MSG & echo STDERR_MSG 1>&2", false, 5000);
+            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'STDOUT_MSG'; [Console]::Error.WriteLine('STDERR_MSG')\"", false, 5000);
             options.EnableConsoleUI = false;
             options.RedirectToWriters = true;
             options.StdOutPath = logPath;
@@ -236,9 +236,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             public ProcessStartInfo StartInfo => new ProcessStartInfo();
             public IntPtr MainWindowHandle => IntPtr.Zero;
             public ProcessPriorityClass PriorityClass { get; set; }
-            public event DataReceivedEventHandler OutputDataReceived;
-            public event DataReceivedEventHandler ErrorDataReceived;
-            public event EventHandler Exited;
+            public event DataReceivedEventHandler OutputDataReceived { add { } remove { } }
+            public event DataReceivedEventHandler ErrorDataReceived { add { } remove { } }
+            public event EventHandler Exited { add { } remove { } }
             public void BeginErrorReadLine() { }
             public void BeginOutputReadLine() { }
             public void CancelErrorRead() { }

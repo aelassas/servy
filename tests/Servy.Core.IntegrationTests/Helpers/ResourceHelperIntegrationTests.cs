@@ -53,6 +53,9 @@ namespace Servy.Core.IntegrationTests.Helpers
             };
 
             _resourceHelper = new ResourceHelper(_mockServiceRepo.Object, _mockProcessKiller.Object);
+
+            // Point the helper to the test-controlled temp directory
+            _resourceHelper.BaseExtractionDirectory = _tempDirectory;
         }
 
         public void Dispose()
