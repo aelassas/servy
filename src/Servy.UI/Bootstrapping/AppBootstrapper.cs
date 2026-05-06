@@ -477,7 +477,8 @@ namespace Servy.UI.Bootstrapping
         {
             CleanupAvailabilityWatcher();
             TryDispose(() => _appLifetimeCts?.Cancel(), nameof(_appLifetimeCts));
-            TryDispose(() => _appLifetimeCts?.Dispose(), nameof(_appLifetimeCts));
+            // Do NOT dispose _appLifetimeCts here - the async void monitor still
+            // accesses .Token. Let the GC reclaim it after the monitor unwinds.
             TryDispose(() => _availabilityWatcher?.Dispose(), nameof(_availabilityWatcher));
 
             TryDispose(() => DbContext?.Dispose(), nameof(DbContext));

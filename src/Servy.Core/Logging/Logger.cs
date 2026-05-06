@@ -40,7 +40,10 @@ namespace Servy.Core.Logging
 
         private static readonly object _lock = new object();
         private static volatile RotatingStreamWriter? _writer;
-        private static LogLevel _currentLogLevel = LogLevel.Info;
+
+        // Volatile int backing field for LogLevel to ensure visibility across threads on hot paths
+        private static volatile int _currentLogLevel = (int)LogLevel.Info;
+
         private static string? _fileName;
         private static long _logRotationSizeMB = AppConfig.DefaultRotationSizeMB;
         private static DateRotationType _dateRotationType;
@@ -88,7 +91,7 @@ namespace Servy.Core.Logging
             lock (_lock)
             {
                 _fileName = fileName;
-                _currentLogLevel = initialLevel;
+                _currentLogLevel = (int)initialLevel;
                 _logRotationSizeMB = logRotationSizeMB;
                 _dateRotationType = dateRotationType;
                 _useLocalTimeForRotation = useLocalTimeForRotation;
@@ -259,7 +262,7 @@ namespace Servy.Core.Logging
         {
             lock (_lock)
             {
-                _currentLogLevel = level;
+                _currentLogLevel = (int)level;
             }
         }
 
@@ -270,7 +273,7 @@ namespace Servy.Core.Logging
         /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
         public static void Debug(string? message, Exception? ex = null)
         {
-            if (_currentLogLevel <= LogLevel.Debug)
+            if ((LogLevel)_currentLogLevel <= LogLevel.Debug)
             {
                 Log(LogLevel.Debug, ex != null ? $"{message} | Exception: {FormatException(ex)}" : message);
             }
@@ -283,7 +286,7 @@ namespace Servy.Core.Logging
         /// <param name="message">The operational message to log.</param>
         public static void Info(string? message)
         {
-            if (_currentLogLevel <= LogLevel.Info)
+            if ((LogLevel)_currentLogLevel <= LogLevel.Info)
             {
                 Log(LogLevel.Info, message);
             }
@@ -297,7 +300,7 @@ namespace Servy.Core.Logging
         /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
         public static void Warn(string? message, Exception? ex = null)
         {
-            if (_currentLogLevel <= LogLevel.Warn)
+            if ((LogLevel)_currentLogLevel <= LogLevel.Warn)
             {
                 Log(LogLevel.Warn, ex != null ? $"{message} | Exception: {FormatException(ex)}" : message);
             }
@@ -310,7 +313,7 @@ namespace Servy.Core.Logging
         /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
         public static void Error(string? message, Exception? ex = null)
         {
-            if (_currentLogLevel <= LogLevel.Error)
+            if ((LogLevel)_currentLogLevel <= LogLevel.Error)
             {
                 Log(LogLevel.Error, ex != null ? $"{message} | Exception: {FormatException(ex)}" : message);
             }
