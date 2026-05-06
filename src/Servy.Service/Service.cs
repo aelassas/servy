@@ -1649,16 +1649,19 @@ namespace Servy.Service
             if (_isRecovering) return false;
 
             _failedChecks++;
-            _logger?.Warn($"Health check failed ({_failedChecks}/{_maxFailedChecks}).");
 
             if (_failedChecks >= _maxFailedChecks)
             {
                 // Set this immediately to block other threads/timers from incrementing
                 // while we are waiting for the recovery task to execute.
                 _isRecovering = true;
+
+                // Log inside the threshold block to guarantee it prints exactly once per recovery cycle
+                _logger?.Warn($"Health check failed ({_failedChecks}/{_maxFailedChecks}). Initiating recovery.");
                 return true;
             }
 
+            _logger?.Warn($"Health check failed ({_failedChecks}/{_maxFailedChecks}).");
             return false;
         }
 
@@ -1854,6 +1857,7 @@ namespace Servy.Service
         {
             try
             {
+                // Preliminary fast-fail check outside the lock
                 if (_isTearingDown || _disposed || _isRebooting || _isRecovering) return;
 
                 bool needsRecovery = false;
@@ -1864,7 +1868,7 @@ namespace Servy.Service
                 await _healthCheckSemaphore.WaitAsync();
                 try
                 {
-                    // If we are already recovering, exit immediately
+                    // Double-check: If we are already recovering, exit immediately
                     if (_isTearingDown || _disposed || _isRecovering) return;
 
                     // Capture _childProcess into a local variable to ensure atomicity.
