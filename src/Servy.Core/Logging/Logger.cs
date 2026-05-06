@@ -28,6 +28,18 @@ namespace Servy.Core.Logging
         /// </summary>
         public static readonly string LogsPath = Path.Combine(AppConfig.ProgramDataPath, "logs");
 
+        /// <summary>
+        /// The maximum recursion depth for processing nested <see cref="Exception.InnerException"/> chains.
+        /// This prevents a <see cref="StackOverflowException"/> or infinite loops when formatting pathological exception structures.
+        /// </summary>
+        private const int MaxInnerExceptionDepth = 16;
+
+        /// <summary>
+        /// The maximum character length for a formatted exception string. 
+        /// Excessively large stack traces or messages are truncated to prevent application memory pressure and excessive disk usage in log files.
+        /// </summary>
+        private const int MaxFormattedExceptionLength = 16384; // 16 KB cap to prevent log bloat
+
         private static readonly object _lock = new object();
         private static volatile RotatingStreamWriter _writer;
         private static LogLevel _currentLogLevel = LogLevel.Info;
@@ -394,29 +406,56 @@ namespace Servy.Core.Logging
         }
 
         /// <summary>
-        /// Formats an exception into a scannable, single-line representation.
+        /// Formats an exception into a scannable, single-line representation with depth and length limits.
         /// </summary>
         /// <param name="ex">The exception to format.</param>
         /// <returns>A formatted string with frame separators instead of newlines.</returns>
         private static string FormatException(Exception ex)
         {
-            var sb = new StringBuilder();
-            sb.Append($"{ex.GetType().Name}: {ex.Message}");
+            if (ex == null) return string.Empty;
 
-            if (!string.IsNullOrWhiteSpace(ex.StackTrace))
+            var sb = new StringBuilder();
+            var current = ex;
+            int processedDepth = 0;
+
+            while (current != null && processedDepth < MaxInnerExceptionDepth)
             {
-                // Replace multi-line stack trace with a single-line version using a visible separator
-                var sanitizedStack = ex.StackTrace
-                    .Replace("\r", "")
-                    .Replace("\n", " ; ")
-                    .Trim();
-                sb.Append($" (at {sanitizedStack})");
+                if (processedDepth > 0)
+                {
+                    sb.Append(" [Inner -> ");
+                }
+
+                // Append the core exception details
+                sb.Append(current.GetType().Name).Append(": ").Append(current.Message);
+
+                if (!string.IsNullOrWhiteSpace(current.StackTrace))
+                {
+                    // Sanitize the stack trace for single-line output
+                    var sanitizedStack = current.StackTrace
+                        .Replace("\r", "")
+                        .Replace("\n", " ; ")
+                        .Trim();
+
+                    sb.Append(" (at ").Append(sanitizedStack).Append(')');
+                }
+
+                // Hard size limit check to prevent OOM and disk pressure
+                if (sb.Length > MaxFormattedExceptionLength)
+                {
+                    sb.Length = MaxFormattedExceptionLength;
+                    sb.Append("... [truncated]");
+                    processedDepth++; // Increment to ensure the bracket closer logic is consistent
+                    break;
+                }
+
+                current = current.InnerException;
+                processedDepth++;
             }
 
-            if (ex.InnerException != null)
+            // Append closing brackets for all opened [Inner -> tags
+            for (int i = 1; i < processedDepth; i++)
             {
-                // Recursive capture for nested issues
-                sb.Append($" [Inner -> {FormatException(ex.InnerException)}]");
+                sb.Append(']');
             }
 
             return sb.ToString();

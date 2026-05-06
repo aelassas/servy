@@ -3,6 +3,7 @@ using Servy.Core.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -166,7 +167,16 @@ namespace Servy.Core.Helpers
                         isAlive = !p.HasExited;
                     }
                 }
-                catch (ArgumentException) { isAlive = false; }
+                catch (ArgumentException) { /* Process gone */ }
+                catch (Win32Exception ex)
+                {
+                    // Access denied or query failed; treat as dead so we evict the cache entry.
+                    Logger.Debug($"MaintainCache: cannot query PID {pid} ({ex.Message}); evicting.");
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Logger.Debug($"MaintainCache: process state for PID {pid} unavailable ({ex.Message}); evicting.");
+                }
 
                 if (!isAlive)
                 {

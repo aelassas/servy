@@ -3,6 +3,8 @@ using Servy.Core.Resources;
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Helpers
@@ -368,6 +370,179 @@ namespace Servy.Core.UnitTests.Helpers
             // Assert
             Assert.Equal(expected, result);
         }
+
+        #region WriteFileAtomic (Synchronous) Tests
+
+        [Fact]
+        public void WriteFileAtomic_Success_WritesFileAndCleansUpTemp()
+        {
+            // Arrange
+            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            string targetPath = Path.Combine(tempDir, "target.txt");
+            string tempPath = targetPath + ".tmp"; // Logic uses .tmp suffix
+
+            try
+            {
+                // Act: WriteFileAtomic ensures parent directory creation
+                Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+                {
+                    using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
+                    {
+                        writer.Write("atomic-sync-test-48");
+                        // fs.Flush is called internally by WriteFileAtomic after the action
+                    }
+                });
+
+                // Assert
+                Assert.True(File.Exists(targetPath));
+                Assert.Equal("atomic-sync-test-48", File.ReadAllText(targetPath));
+                Assert.False(File.Exists(tempPath), "Temporary file should be cleaned up by the finally block");
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Fact]
+        public void WriteFileAtomic_OnException_CleansUpTempAndDoesNotCreateTarget()
+        {
+            // Arrange
+            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            string targetPath = Path.Combine(tempDir, "target.txt");
+            string tempPath = targetPath + ".tmp";
+
+            try
+            {
+                // Act & Assert
+                Assert.Throws<InvalidOperationException>(() =>
+                {
+                    Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+                    {
+                        using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8))
+                        {
+                            writer.Write("partial-data");
+                            throw new InvalidOperationException("Simulated failure");
+                        }
+                    });
+                });
+
+                // CleanupTempFile is called in finally to ensure .tmp is removed
+                Assert.False(File.Exists(targetPath), "Target should not exist if move was never reached.");
+                Assert.False(File.Exists(tempPath), "Temp file should be cleaned up even on failure");
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Fact]
+        public void WriteFileAtomic_OverwritesReadOnlyFile()
+        {
+            // Arrange
+            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+
+            try
+            {
+                File.WriteAllText(targetPath, "initial-content");
+                // Set read-only to test PrepareDestinationForMove logic
+                File.SetAttributes(targetPath, FileAttributes.ReadOnly);
+
+                // Act
+                // Act
+                Helper.WriteFileAtomic(targetPath, (Stream stream) =>
+                {
+                    // The 4th parameter is 'leaveOpen'. Set it to true.
+                    // We must also specify a buffer size (default is 1024).
+                    using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
+                    {
+                        writer.Write("new-content");
+                    }
+                    // StreamWriter is disposed here, but 'stream' remains open for Helper.WriteFileAtomic to Flush()
+                });
+
+                // Assert: Attributes should be normalized before move
+                Assert.True(File.Exists(targetPath));
+                Assert.Equal("new-content", File.ReadAllText(targetPath));
+
+                FileAttributes attributes = File.GetAttributes(targetPath);
+                Assert.False((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly);
+            }
+            finally
+            {
+                if (File.Exists(targetPath)) File.SetAttributes(targetPath, FileAttributes.Normal);
+                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+            }
+        }
+
+        #endregion
+
+        #region WriteFileAtomicAsync Tests
+
+        [Fact]
+        public async Task WriteFileAtomicAsync_Success_WritesFile()
+        {
+            // Arrange
+            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            string targetPath = Path.Combine(tempDir, "target.txt");
+
+            try
+            {
+                // Act: Uses WriteFileAtomicCore internally
+                await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream) =>
+                {
+                    byte[] data = Encoding.UTF8.GetBytes("atomic-async-test-48");
+                    await stream.WriteAsync(data, 0, data.Length);
+                });
+
+                // Assert
+                Assert.True(File.Exists(targetPath));
+
+                // .NET 4.8 workaround for lack of File.ReadAllTextAsync
+                string result;
+                using (StreamReader reader = new StreamReader(targetPath))
+                {
+                    result = await reader.ReadToEndAsync();
+                }
+                Assert.Equal("atomic-async-test-48", result);
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Fact]
+        public async Task WriteFileAtomicAsync_CreatesNestedDirectories()
+        {
+            // Arrange
+            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            string nestedPath = Path.Combine(tempDir, "deeply", "nested", "path");
+            string targetPath = Path.Combine(nestedPath, "test.log");
+
+            try
+            {
+                // Act: Core logic calls Directory.CreateDirectory
+                await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream) =>
+                {
+                    byte[] data = Encoding.UTF8.GetBytes("nesting-test");
+                    await stream.WriteAsync(data, 0, data.Length);
+                });
+
+                // Assert
+                Assert.True(Directory.Exists(nestedPath));
+                Assert.True(File.Exists(targetPath));
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+            }
+        }
+
+        #endregion
 
     }
 }

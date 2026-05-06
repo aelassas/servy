@@ -268,6 +268,7 @@ namespace Servy.Manager
                     ConsoleRefreshIntervalInMs = GetConfigInt(config, "ConsoleRefreshIntervalInMs", AppConfig.DefaultConsoleRefreshIntervalInMs, 100, 300000);
                     DependenciesRefreshIntervalInMs = GetConfigInt(config, "DependenciesRefreshIntervalInMs", AppConfig.DefaultDependenciesRefreshIntervalInMs, 100, 300000);
                     ConsoleMaxLines = GetConfigInt(config, "ConsoleMaxLines", AppConfig.DefaultConsoleMaxLines, 100, AppConfig.DefaultConsoleMaxLines * 2);
+                    MaxBulkOperationParallelism = GetConfigInt(config, "MaxBulkOperationParallelism", AppConfig.DefaultMaxBulkOperationParallelism, 1, 64);
 
                     //
                     // Extracts an integer from configuration with professional-grade bounds checking.

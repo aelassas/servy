@@ -623,6 +623,13 @@ namespace Servy.Core.Config
         /// </summary>
         public const long BytesInMegabyte = 1024 * 1024;
 
+        /// <summary>
+        /// The maximum time in milliseconds to wait for the standard output and error streams 
+        /// to drain after a process has exited. This prevents hanging the SCM thread if pipes 
+        /// are stuck or asynchronous reads do not complete.
+        /// </summary>
+        public const int OutputDrainTimeoutMs = 5_000;
+
         #endregion
 
         #region Minimum Constraints

@@ -140,14 +140,18 @@ namespace Servy.Manager.Utils
                             }
                             else
                             {
-                                // 2. Identity Check: Did the file change while we were re-opening it?
-                                if (currentIdentity.IsDifferentFrom(knownIdentity.Value))
+                                // 2. Identity Check: Did the file object on disk swap?
+                                // 3. Metadata Check: Even if the identity is the same (truncation), 
+                                //    or handle info failed, check for size/time signals of rotation.
+                                if (currentIdentity.IsDifferentFrom(knownIdentity.Value) ||
+                                    info.CreationTimeUtc != lastCreationTime ||
+                                    (lastPosition > 0 && info.Length < lastPosition))
                                 {
                                     lastPosition = 0;
                                     lastCreationTime = info.CreationTimeUtc;
-                                    Logger.Debug("[LogTailer] Rotation detected on reopen via stable file identity.");
+                                    Logger.Debug("[LogTailer] Rotation or truncation detected on reopen.");
                                 }
-                                else if (!currentIdentity.IsValidHandleInfo && currentIdentity.PrefixHash == null)
+                                else if (!currentIdentity.IsValidHandleInfo && currentIdentity.PrefixDigest == null)
                                 {
                                     // Both robust signals failed (unlikely), fallback to old heuristics
                                     if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
@@ -184,13 +188,19 @@ namespace Servy.Manager.Utils
                                                 batch.Clear(); // Optimized memory reuse
                                             }
 
-                                            // Note: StreamReader buffers, so fs.Position may jump ahead of the actual lines yielded.
-                                            lastPosition = fs.Position;
+                                            // FIX: Track the position of yielded lines instead of the read-ahead pointer.
+                                            // We accumulate the exact byte length of the line and assume a standard newline terminator.
+                                            // This ensures safe recovery if a transient I/O error drops the stream mid-buffer.
+                                            lastPosition += reader.CurrentEncoding.GetByteCount(line) + reader.CurrentEncoding.GetByteCount(Environment.NewLine);
                                         }
 
                                         if (batch.Count > 0) OnNewLines?.Invoke(batch);
 
                                         // --- EOF Reached. Verify File Integrity / Rotation ---
+                                        // Since the StreamReader buffer is now fully drained, fs.Position is completely accurate.
+                                        // Syncing it here fixes any minor byte-drift from the Environment.NewLine estimation above.
+                                        lastPosition = fs.Position;
+
                                         info.Refresh();
                                         bool rotated = false;
 

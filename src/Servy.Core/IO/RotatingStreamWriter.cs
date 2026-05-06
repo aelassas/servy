@@ -417,7 +417,20 @@ namespace Servy.Core.IO
 
             // Tighten the glob pattern to require the dot separator
             string searchPattern = $"{fileNameWithoutExt}.*{extension}";
-            var allPotentialFiles = Directory.GetFiles(directory, searchPattern);
+
+            string[] allPotentialFiles;
+            try
+            {
+                allPotentialFiles = Directory.GetFiles(directory, searchPattern);
+            }
+            catch (Exception ex)
+            {
+                _consecutiveDeletionFailures++;
+                Logger.Warn($"Failed to enumerate rotated log files in '{directory}': {ex.Message}. Consecutive failures: {_consecutiveDeletionFailures}");
+                if (_consecutiveDeletionFailures >= 10)
+                    Logger.Error($"Persistent failure to enforce log rotation limit for '{_file.Name}'. Disk space growth is no longer bounded.");
+                return;
+            }
 
             var rotatedFiles = allPotentialFiles
                 .Where(f =>

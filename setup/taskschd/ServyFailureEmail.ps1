@@ -121,8 +121,7 @@ function Send-NotificationEmail {
     .DESCRIPTION
         This function handles the low-level SMTP transport. It expects a pre-sanitised Body 
         that has already been passed through the sensitive string masker and HTML encoder. 
-        It supports configurable SSL/TLS negotiation and explicit network timeouts to prevent 
-        scheduled task stalling.
+        It returns a status string indicating Success, PermanentFailure, or TransientFailure.
 
     .PARAMETER Subject
         The masked subject line for the email.
@@ -154,7 +153,7 @@ function Send-NotificationEmail {
   $configRoot = $SmtpConfig.SmtpConfig
   if ($null -eq $configRoot) {
     Write-FallbackError -Message "ServyFailureEmail: Could not find <SmtpConfig> root element." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
-    return $false
+    return 'PermanentFailure'
   }
 
   $smtpServer = $configRoot.Server
@@ -178,40 +177,40 @@ function Send-NotificationEmail {
   $credPath = Join-Path $scriptDir "smtp-cred.xml"
   $emailRegex = '^[^@]+@[^@]+\.[^@]+$'
 
-  # --- VALIDATION GATE ---
+  # --- VALIDATION GATE (Permanent Failures) ---
   
   # Check for missing essential fields
   if ([string]::IsNullOrEmpty($smtpServer) -or [string]::IsNullOrEmpty($from) -or [string]::IsNullOrEmpty($to)) {
-    Write-FallbackError -Message "ServyFailureEmail: Incomplete configuration." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
-    return $false
+    Write-FallbackError -Message "ServyFailureEmail: Incomplete configuration. Missing Server, From, or To." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+    return 'PermanentFailure'
   }
 
   # Check for invalid port
   if ($smtpPort -le 0 -or $smtpPort -gt 65535) {
     Write-FallbackError -Message "ServyFailureEmail: Invalid or missing Port ($smtpPort) in smtp-config.xml." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
-    return $false
+    return 'PermanentFailure'
   }
 
   # Default placeholder check
   if ($smtpServer -eq "smtp.example.com") {
     Write-FallbackError -Message "ServyFailureEmail: SMTP Server is still set to default placeholder. Email skipped." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
-    return $false
+    return 'PermanentFailure'
   }
 
   # Email format checks (Prevent .NET ArgumentException/FormatException)
   if ($from -notmatch $emailRegex) {
     Write-FallbackError -Message "ServyFailureEmail: Invalid 'From' email format ($from) in smtp-config.xml." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
-    return $false
+    return 'PermanentFailure'
   }
 
   if ($to -notmatch $emailRegex) {
     Write-FallbackError -Message "ServyFailureEmail: Invalid 'To' email format ($to) in smtp-config.xml." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
-    return $false
+    return 'PermanentFailure'
   }
 
   if (-not (Test-Path $credPath)) {
     Write-FallbackError -Message "ServyFailureEmail: Credential file not found at '$credPath'. Skipping email." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
-    return $false
+    return 'PermanentFailure'
   }
 
   # --- EXECUTION ---
@@ -231,11 +230,17 @@ function Send-NotificationEmail {
     $mailMessage.IsBodyHtml = $true
 
     $smtp.Send($mailMessage)
-    return $true
+    return 'Success'
+  } catch [System.Security.Cryptography.CryptographicException] {
+      # The credential file exists but cannot be decrypted (e.g., scheduled task running as wrong user)
+      $errorMsg = "ServyFailureEmail: Failed to decrypt credentials. Ensure the task runs as the user who created smtp-cred.xml. Error: $($_.Exception.Message)"
+      Write-FallbackError -Message $errorMsg -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+      return 'PermanentFailure'
   } catch {
-    $errorMsg = "ServyFailureEmail: Failed to send notification to $to. Error: $($_.Exception.Message)"
-    Write-FallbackError -Message $errorMsg -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
-    return $false 
+      # Catch-all for transient network issues, SmtpExceptions (timeout, auth failure, bounce)
+      $errorMsg = "ServyFailureEmail: Transient failure sending notification to $to. Error: $($_.Exception.Message)"
+      Write-FallbackError -Message $errorMsg -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+      return 'TransientFailure'
   } finally {
     if ($null -ne $mailMessage) { $mailMessage.Dispose() }
     if ($null -ne $smtp) { $smtp.Dispose() }
@@ -289,14 +294,24 @@ foreach ($evt in $eventsToProcess) {
   $htmlBody = $body -replace "`r?`n", "<br>"
     
   # Attempt to send the email
-  if (Send-NotificationEmail -Subject $subject -Body $htmlBody -scriptDir $scriptDir -FallbackLogFile $fallbackLogFile) {
-    Write-Host "Email Notification sent for '$($parsed.ServiceName)'."
-  } else {
-    # We log the failure but intentionally DO NOT break the loop.
-    # The event is dropped from the email queue to prevent alert storms upon SMTP recovery.
-    Write-Host "Failed to send email for '$($parsed.ServiceName)'. Skipping to next event to prevent storms." -ForegroundColor Yellow
+  $sendStatus = Send-NotificationEmail -Subject $subject -Body $htmlBody -scriptDir $scriptDir -FallbackLogFile $fallbackLogFile
+  
+  switch ($sendStatus) {
+      'Success' {
+          Write-Host "Email Notification sent for '$($parsed.ServiceName)'."
+          # Track this timestamp as successfully processed
+          Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir
+      }
+      'PermanentFailure' {
+          # Logged internally. Advance the watermark because retrying won't fix bad config.
+          Write-Host "Permanent configuration failure for '$($parsed.ServiceName)'. Skipping to prevent endless fallback logging." -ForegroundColor Yellow
+          Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir
+      }
+      'TransientFailure' {
+          # Network drop, timeout, or SMTP temp-fail. DO NOT advance the watermark. 
+          # We break the loop immediately; if SMTP is down, subsequent events in this batch will fail too.
+          Write-Host "Transient failure sending email for '$($parsed.ServiceName)'. Halting processing to preserve event queue." -ForegroundColor Red
+          break
+      }
   }
-
-  # Track this timestamp as successfully processed
-  Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir
 }

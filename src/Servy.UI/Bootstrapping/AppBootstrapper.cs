@@ -270,14 +270,11 @@ namespace Servy.UI.Bootstrapping
             try
             {
                 // 1. Show Splash Screen if required
-                if (_options.SplashWindowFactory != null)
+                if (showSplash && _options.SplashWindowFactory != null)
                 {
                     splash = _options.SplashWindowFactory();
-                    if (showSplash && splash != null)
-                    {
-                        splash.Show();
-                        await Task.Yield(); // Allow the UI thread to pump messages and render the window
-                    }
+                    splash?.Show();
+                    await Task.Yield(); // Allow the UI thread to pump messages and render the window
                 }
 
                 Helper.EnsureEventSourceExists();
