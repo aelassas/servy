@@ -397,6 +397,7 @@ end;
 // Post-Install actions:
 //  - Add Servy to PATH if related task selected
 //  - Refresh icon cache after install
+//  - Replace XML Placeholders for Task Scheduler paths
 // -----------------------------------------------------  
 // Declare Windows API function for refreshing icon cache
 procedure SHChangeNotify(wEventId, uFlags: LongWord; dwItem1, dwItem2: LongWord); external 'SHChangeNotify@shell32.dll stdcall';
@@ -472,13 +473,17 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   InstallDir: string;
+  FileLines: TArrayOfString;
+  FilesToFix: array[0..1] of String;
+  I, J: Integer;
+  InstallPath: String;
 begin
   if CurStep = ssPostInstall then
   begin
-    // Refresh icons
+    // 1. Refresh icon cache
     RefreshIconCache();
 
-    // Add to PATH if task selected
+    // 2. Add to PATH logic (if selected)
     if WizardIsTaskSelected('addpath') and WizardIsComponentSelected('install_cli') then
     begin
       InstallDir := NormalizeFolder(ExpandConstant('{app}'));
@@ -486,6 +491,29 @@ begin
       RegWriteDWordValue(HKLM64, 'Software\Servy', 'AddedToPath', 1);
     end;
     
+    // 3. Resolve Hardcoded Paths in Task Scheduler XMLs
+    InstallPath := ExpandConstant('{app}');
+    FilesToFix[0] := InstallPath + '\taskschd\ServyFailureNotification.xml';
+    FilesToFix[1] := InstallPath + '\taskschd\ServyFailureEmail.xml';
+
+    for I := 0 to 1 do
+    begin
+      if FileExists(FilesToFix[I]) then
+      begin
+        if LoadStringsFromFile(FilesToFix[I], FileLines) then
+        begin
+          for J := 0 to GetArrayLength(FileLines) - 1 do
+          begin
+            // Perform the replacement on the decoded Unicode string
+            StringChangeEx(FileLines[J], '{SERVY_INSTALL_PATH}', InstallPath, True);
+          end;
+          
+          // SaveStringsToFile writes a standard UTF-8/ANSI file. 
+          // Because we updated the header to UTF-8, Task Scheduler will read it perfectly.
+          SaveStringsToFile(FilesToFix[I], FileLines, False);
+        end;
+      end;
+    end;
   end;
 end;
 

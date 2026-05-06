@@ -102,7 +102,7 @@ namespace Servy.UI.Services
                     var response = await _httpClient.GetAsync(AppConfig.LatestReleaseApiUrl, cts.Token);
                     response.EnsureSuccessStatusCode();
 
-                    var content = await response.Content.ReadAsStringAsync();
+                    var content = await response.Content.ReadAsStringAsync(cts.Token);
                     var json = JsonConvert.DeserializeObject<JObject>(content);
                     string? tagName = json?["tag_name"]?.ToString();
 

@@ -416,6 +416,7 @@ namespace Servy.Service
                 // Log and Validate using the new scoped _logger
                 if (!_serviceHelper.ValidateAndLog(options, _logger, _processHelper, fullArgs))
                 {
+                    ExitCode = 1066;
                     Stop();
                     return;
                 }
@@ -549,6 +550,7 @@ namespace Servy.Service
             catch (Exception ex)
             {
                 _logger?.Error("Exception in OnStart.", ex);
+                if (ExitCode == 0) ExitCode = 1066;
                 Stop();
             }
         }
