@@ -1,0 +1,78 @@
+﻿using Servy.Core.Enums;
+using Servy.Core.Logging;
+using System;
+using System.Collections.Specialized;
+
+namespace Servy.Core.Config
+{
+    /// <summary>
+    /// Centralizes the initialization and configuration of the Servy logging subsystem 
+    /// to prevent configuration drift across the CLI, Restarter, Service, and Manager entry points.
+    /// </summary>
+    public static class LoggerConfigurator
+    {
+        /// <summary>
+        /// Configures the static Logger and an optional instance logger from an IConfiguration source.
+        /// </summary>
+        /// <param name="config">The application configuration source.</param>
+        /// <param name="logFileName">Optional. If provided, initializes the static logger with this filename before applying settings.</param>
+        /// <param name="instanceLogger">Optional. An instance logger (e.g., EventLogLogger) to sync settings like LogLevel and EnableEventLog.</param>
+        public static void ConfigureFromAppSettings(NameValueCollection config, string logFileName = null, IServyLogger instanceLogger = null)
+        {
+            if (!string.IsNullOrWhiteSpace(logFileName))
+            {
+                Logger.Initialize(logFileName);
+            }
+
+            if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
+            {
+                logLevel = LogLevel.Info;
+            }
+            Logger.SetLogLevel(logLevel);
+            instanceLogger?.SetLogLevel(logLevel);
+
+            if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType))
+            {
+                dateRotationType = DateRotationType.None;
+            }
+            Logger.SetDateRotationType(dateRotationType);
+
+            bool isEventLogEnabled;
+            if (!bool.TryParse(config["EnableEventLog"], out isEventLogEnabled))
+            {
+                isEventLogEnabled = AppConfig.DefaultEnableEventLog;
+            }
+            instanceLogger?.SetIsEventLogEnabled(isEventLogEnabled);
+
+            int logRotationSizeMB;
+            if (!int.TryParse(config["LogRotationSizeMB"], out logRotationSizeMB) || logRotationSizeMB <= 0)
+            {
+                logRotationSizeMB = AppConfig.DefaultRotationSizeMB;
+            }
+            Logger.SetLogRotationSize(logRotationSizeMB);
+
+            int maxBackupFiles;
+            if (!int.TryParse(config["MaxBackupLogFiles"], out maxBackupFiles) || maxBackupFiles < 0)
+            {
+                maxBackupFiles = Logger.DefaultMaxBackupLogFiles;
+            }
+            Logger.SetMaxBackupLogFiles(maxBackupFiles);
+
+            string rawUseLocalTime = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
+            if (!bool.TryParse(rawUseLocalTime, out bool useLocalTimeForRotation))
+            {
+                useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation;
+            }
+            Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
+
+            // Centralized debug logging prevents asymmetric log outputs
+            Logger.Debug("Servy Logger Configuration Loaded:" + Environment.NewLine +
+                $"  LogLevel: {logLevel}" + Environment.NewLine +
+                $"  LogRollingInterval: {dateRotationType.ToString("D")} ({dateRotationType})" + Environment.NewLine +
+                $"  EnableEventLog: {isEventLogEnabled}" + Environment.NewLine +
+                $"  LogRotationSizeMB: {logRotationSizeMB}" + Environment.NewLine +
+                $"  MaxBackupLogFiles: {maxBackupFiles}" + Environment.NewLine +
+                $"  UseLocalTimeForRotation: {useLocalTimeForRotation}");
+        }
+    }
+}

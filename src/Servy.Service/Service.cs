@@ -299,55 +299,13 @@ namespace Servy.Service
                     _scmAdditionalTimeMs = AppConfig.DefaultScmAdditionalTimeMs;
                 }
 
-                if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
-                {
-                    logLevel = LogLevel.Info;
-                }
-                Logger.SetLogLevel(logLevel);
-                _logger.SetLogLevel(logLevel);
+                // Centralized logging bootstrapper
+                LoggerConfigurator.ConfigureFromAppSettings(config, instanceLogger: _logger);
 
-                if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType))
-                {
-                    dateRotationType = DateRotationType.None;
-                }
-                Logger.SetDateRotationType(dateRotationType);
-
-                bool isEventLogEnabled;
-                if (!bool.TryParse(config["EnableEventLog"], out isEventLogEnabled))
-                {
-                    isEventLogEnabled = AppConfig.DefaultEnableEventLog;
-                }
-                _logger.SetIsEventLogEnabled(isEventLogEnabled);
-
-                if (int.TryParse(config["LogRotationSizeMB"], out var logRotationSizeMB) && logRotationSizeMB > 0)
-                {
-                    Logger.SetLogRotationSize(logRotationSizeMB);
-                }
-                else
-                {
-                    Logger.SetLogRotationSize(AppConfig.DefaultRotationSizeMB);
-                }
-
-                if (int.TryParse(config["MaxBackupLogFiles"], out var maxBackupFiles) && maxBackupFiles >= 0) Logger.SetMaxBackupLogFiles(maxBackupFiles);
-                else Logger.SetMaxBackupLogFiles(Logger.DefaultMaxBackupLogFiles);
-
-                string rawUseLocalTimeForRotationConfig = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
-
-                if (!bool.TryParse(rawUseLocalTimeForRotationConfig, out bool useLocalTimeForRotation))
-                {
-                    useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation;
-                }
-                Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
-
-                // --- Log all configurations for debugging ---
-                Logger.Debug("Servy Configuration Loaded:" + Environment.NewLine +
+                // --- Log Service-specific timing configurations ---
+                Logger.Debug("Servy Service Context Configuration Loaded:" + Environment.NewLine +
                     $"  WaitChunkMs: {_waitChunkMs}" + Environment.NewLine +
-                    $"  ScmAdditionalTimeMs: {_scmAdditionalTimeMs}" + Environment.NewLine +
-                    $"  LogLevel: {logLevel}" + Environment.NewLine +
-                    $"  LogRollingInterval: {dateRotationType}" + Environment.NewLine +
-                    $"  EnableEventLog: {isEventLogEnabled}" + Environment.NewLine +
-                    $"  LogRotationSizeMB: {logRotationSizeMB}" + Environment.NewLine +
-                    $"  UseLocalTimeForRotation: {useLocalTimeForRotation}");
+                    $"  ScmAdditionalTimeMs: {_scmAdditionalTimeMs}");
 
                 // Initialize database and helpers
                 _dbContext = new AppDbContext(connectionString);
@@ -1821,7 +1779,7 @@ namespace Servy.Service
                 if (isFailed)
                 {
                     int? exitCode = null;
-                    try { exitCode = process?.ExitCode; } catch (Exception ex) { _logger?.Debug($"Could not read ExitCode for health check.", ex); }
+                    try { exitCode = process?.ExitCode; } catch (Exception ex) { _logger?.Warn($"Health check could not read ExitCode (treating as failure): {ex.Message}"); }
 
                     if (exitCode == 0)
                     {
@@ -2192,7 +2150,7 @@ namespace Servy.Service
                         catch (Exception ex)
                         {
                             // Log locally for debug, but don't let it stop the loop
-                            Logger.Error("Cleanup failed.", ex);
+                            _logger?.Error("Cleanup of tracked hook failed.", ex);
                         }
                     }
 

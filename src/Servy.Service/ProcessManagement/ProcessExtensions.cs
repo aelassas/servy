@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace Servy.Service.ProcessManagement
@@ -133,7 +134,10 @@ namespace Servy.Service.ProcessManagement
 
             // 2. BFS over the map, materialize Process objects only for verified descendants
             var queue = new Queue<(int Pid, DateTime StartTime)>();
+            var visited = new HashSet<int>(); // Cycle protection
+
             queue.Enqueue((parentPid, parentStartTime));
+            visited.Add(parentPid);
 
             while (queue.Count > 0)
             {
@@ -143,7 +147,8 @@ namespace Servy.Service.ProcessManagement
                 if (!byParent.TryGetValue(current.Pid, out var childrenPids))
                     continue;
 
-                foreach (int childPid in childrenPids)
+                // Only process the child if we haven't seen it before to short-circuit cycles
+                foreach (int childPid in childrenPids.Where(visited.Add))
                 {
                     try
                     {

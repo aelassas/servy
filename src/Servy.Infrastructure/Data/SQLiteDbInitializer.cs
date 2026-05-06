@@ -1,10 +1,12 @@
 ﻿using Dapper;
+using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 
 namespace Servy.Infrastructure.Data
 {
@@ -15,6 +17,30 @@ namespace Servy.Infrastructure.Data
     [ExcludeFromCodeCoverage]
     public static class SQLiteDbInitializer
     {
+        // Static Cache for O(1) lookups and zero reflection overhead during database migrations.
+        // It guarantees the DTO is the Single Source of Truth for schema data types.
+        private static readonly Dictionary<string, string> SqlTypeMap = BuildSqlTypeMap();
+
+        /// <summary>
+        /// Reflects over ServiceDto once at startup to cache the [SqlColumn] mappings.
+        /// </summary>
+        private static Dictionary<string, string> BuildSqlTypeMap()
+        {
+            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var prop in typeof(ServiceDto).GetProperties())
+            {
+                var attr = prop.GetCustomAttribute<SqlColumnAttribute>();
+                if (attr != null)
+                {
+                    // Canonicalize to Upper Case to ensure consistent DDL generation
+                    map[prop.Name] = attr.SqlType.ToUpperInvariant();
+                }
+            }
+
+            return map;
+        }
+
         /// <summary>
         /// Analyzes the current database state, applies necessary migrations, 
         /// and ensures all schema requirements match the current application version.
@@ -436,48 +462,25 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Infers the SQLite data type and constraints for a given column name.
+        /// Infers the SQLite data type and constraints for a given column name by reading the cached 
+        /// [SqlColumn] attributes from the ServiceDto class.
         /// </summary>
         /// <param name="columnName">The name of the column.</param>
         /// <returns>The SQLite type definition string (e.g., "INTEGER" or "TEXT NOT NULL").</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when a column name exists in <see cref="SqlConstants"/> but lacks an [SqlColumn] attribute on the DTO.
+        /// </exception>
         private static string GetSqlType(string columnName)
         {
-            if (columnName.Equals("Name", StringComparison.OrdinalIgnoreCase) ||
-                columnName.Equals("ExecutablePath", StringComparison.OrdinalIgnoreCase))
+            if (SqlTypeMap.TryGetValue(columnName, out var sqlType))
             {
-                return "TEXT NOT NULL";
+                return sqlType;
             }
 
-            var originalNotNullInts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                // Emptied for V4: All previously NOT NULL ints are now nullable to match ServiceDto
-            };
-
-            var nullableInts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "Pid", "EnableDebugLogs", "MaxRotations", "EnableDateRotation",
-                "DateRotationType", "StartTimeout", "StopTimeout", "PreviousStopTimeout",
-                "PreStopTimeoutSeconds", "PreStopLogAsError", "UseLocalTimeForRotation",
-                "EnableConsoleUI", "RecoveryOnCleanExit",
-        
-                // Migrated from originalNotNullInts to align schema with DTO definition:
-                "StartupType", "Priority", "EnableSizeRotation", "RotationSize",
-                "EnableHealthMonitoring", "HeartbeatInterval", "MaxFailedChecks",
-                "RecoveryAction", "MaxRestartAttempts", "RunAsLocalSystem",
-                "PreLaunchTimeoutSeconds", "PreLaunchRetryAttempts", "PreLaunchIgnoreFailure"
-            };
-
-            if (originalNotNullInts.Contains(columnName))
-            {
-                return "INTEGER NOT NULL";
-            }
-
-            if (nullableInts.Contains(columnName))
-            {
-                return "INTEGER";
-            }
-
-            return "TEXT";
+            // Fail-Fast: Prevent wrong-affinity columns in production
+            throw new InvalidOperationException(
+                $"Column '{columnName}' is defined in SqlConstants but lacks an [SqlColumn] attribute in ServiceDto. " +
+                "Add the attribute to the DTO property to prevent schema drift.");
         }
     }
 }
