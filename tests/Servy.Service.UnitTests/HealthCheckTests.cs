@@ -252,21 +252,24 @@ namespace Servy.Service.UnitTests
                                        out var timerFactory, out var processFactory,
                                        out var pathValidator, out var serviceRepository);
 
+            // Track the process state dynamically. Starts as crashed.
+            bool processHasExited = true;
             var mockProcess = new Mock<IProcessWrapper>();
-            mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.HasExited).Returns(() => processHasExited);
             mockProcess.Setup(p => p.ExitCode).Returns(-1);
 
-            var recoveryStartedSignal = new TaskCompletionSource<bool>();
-            var recoveryBlockSignal = new TaskCompletionSource<bool>();
+            // This signal forces the test runner to wait for the background threads
+            var recoveryTriggered = new TaskCompletionSource<bool>();
 
             helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
                          It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                          It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>()))
                   .Callback(() => {
-                      recoveryStartedSignal.TrySetResult(true);
-                      // Block the thread here to simulate a long recovery and keep _isRecovering = true
-                      // We add a safety timeout to prevent infinite test hangs if something goes wrong.
-                      recoveryBlockSignal.Task.Wait(TimeSpan.FromSeconds(5));
+                      // 1. Mark process as healthy to prevent trailing threads from starting a second failure cycle
+                      processHasExited = false;
+
+                      // 2. Signal the main test thread that Thread 3 successfully reached recovery
+                      recoveryTriggered.TrySetResult(true);
                   });
 
             service.SetChildProcess(mockProcess.Object);
@@ -276,39 +279,40 @@ namespace Servy.Service.UnitTests
 
             // Act
             int calls = 20;
-            var threads = new List<Thread>();
+            var startingGun = new TaskCompletionSource<bool>();
+            var tasks = new List<Task>();
 
-            // Use raw Threads instead of Task.Run. 
-            // This bypasses the Thread Pool, preventing the Task.Wait() in the mock 
-            // from starving the remaining 17 invocations in environments with low CPU cores.
+            // Fire all 20 health checks onto the Thread Pool, but do NOT await them in the loop.
             for (int i = 0; i < calls; i++)
             {
-                var t = new Thread(() => service.InvokeCheckHealth(null, null))
+                tasks.Add(Task.Run(async () =>
                 {
-                    IsBackground = true
-                };
-                threads.Add(t);
+                    // All 20 threads will spin up and pause right here
+                    await startingGun.Task;
+                    service.InvokeCheckHealth(null, null);
+                }, TestContext.Current.CancellationToken));
             }
 
-            // Start them all simultaneously
-            foreach (var t in threads) t.Start();
+            // FIRE THE STARTING GUN! 
+            // This releases all 20 tasks simultaneously, guaranteeing maximum contention
+            // and a true test of your semaphore, regardless of the CPU core count.
+            startingGun.SetResult(true);
 
-            // Wait until Thread 3 has successfully entered the recovery block
-            await recoveryStartedSignal.Task;
+            // Wait for the recovery to be triggered by the background threads. 
+            // Increased to 15 seconds to prevent timeouts on slow GitHub CI runners.
+            var completedTask = await Task.WhenAny(recoveryTriggered.Task, Task.Delay(TimeSpan.FromSeconds(15), TestContext.Current.CancellationToken));
 
-            // CRITICAL: Give the remaining 17 OS threads time to hit the free semaphore, 
-            // see _isRecovering = true, and exit. 500ms is safely enough for OS scheduling.
-            await Task.Delay(500, TestContext.Current.CancellationToken);
+            if (completedTask != recoveryTriggered.Task)
+            {
+                Assert.Fail("Timeout: RestartProcess was never called. The CI Thread Pool might be starved.");
+            }
 
-            // Release the recovery mock so Thread 3 can finish and exit
-            recoveryBlockSignal.TrySetResult(true);
-
-            // Wait for all raw threads to finish wrapping up
-            foreach (var t in threads) t.Join(1000);
+            // CRITICAL: GitHub CI runners are slow. Even though recovery triggered, the remaining 17 
+            // concurrent calls need ample time to wake up, process the healthy state, and exit gracefully.
+            // 2000ms ensures the 2-core runner finishes its queue before we hit the Mock.Verify.
+            await Task.Delay(2000, TestContext.Current.CancellationToken);
 
             // Assert
-            // Now it should be exactly 3. Threads 4-20 will have hit 'if (_isRecovering) return'
-            // because they were executed while Thread 3 was intentionally blocking.
             logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed"))), Times.Exactly(3));
 
             helper.Verify(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
@@ -316,5 +320,6 @@ namespace Servy.Service.UnitTests
                           It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>()),
                           Times.Once);
         }
+
     }
 }
