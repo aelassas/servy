@@ -26,6 +26,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Servy.Core.Validators;
 using System.Threading.Tasks;
 using System;
+using System.Configuration;
+using System.Collections.Specialized;
 
 namespace Servy.Manager
 {
@@ -218,6 +220,7 @@ namespace Servy.Manager
                     MainViewModel viewModel = null;
                     Action<string> removeServiceProxy = (name) => viewModel?.RemoveService(name);
                     Func<Task> refreshProxy = () => viewModel != null ? viewModel.Refresh() : Task.CompletedTask;
+                    var uiDispatcher = Services.GetRequiredService<IUiDispatcher>();
 
                     var serviceCommands = new ServiceCommands(
                         serviceManager,
@@ -231,12 +234,13 @@ namespace Servy.Manager
                         new JsonServiceValidator(processHelper, serviceValidationRules),
                         new XmlServiceSerializer(),
                         new JsonServiceSerializer(),
-                        this,
-                        processHelper
+                        this, // IAppConfiguration
+                        processHelper,
+                        uiDispatcher // Pass the UI Dispatcher
                     );
 
                     // 3. Initialize Main ViewModel
-                    var uiDispatcher = Services.GetRequiredService<IUiDispatcher>();
+       
                     viewModel = new MainViewModel(
                         serviceManager,
                         ServiceRepository,
@@ -259,12 +263,37 @@ namespace Servy.Manager
                 },
                 CustomConfigAction = (config) =>
                 {
-                    // Extract Manager-specific polling and refresh intervals
-                    RefreshIntervalInSeconds = int.TryParse(config["RefreshIntervalInSeconds"], out var r) ? r : AppConfig.DefaultRefreshIntervalInSeconds;
-                    PerformanceRefreshIntervalInMs = int.TryParse(config["PerformanceRefreshIntervalInMs"], out var pr) ? pr : AppConfig.DefaultPerformanceRefreshIntervalInMs;
-                    ConsoleRefreshIntervalInMs = int.TryParse(config["ConsoleRefreshIntervalInMs"], out var cr) ? cr : AppConfig.DefaultConsoleRefreshIntervalInMs;
-                    ConsoleMaxLines = int.TryParse(config["ConsoleMaxLines"], out var cml) ? cml : AppConfig.DefaultConsoleMaxLines;
-                    DependenciesRefreshIntervalInMs = int.TryParse(config["DependenciesRefreshIntervalInMs"], out var dr) ? dr : AppConfig.DefaultDependenciesRefreshIntervalInMs;
+                    // Extract Manager-specific polling and refresh intervals with strict bounds-checking
+                    RefreshIntervalInSeconds = GetConfigInt(config, "RefreshIntervalInSeconds", AppConfig.DefaultRefreshIntervalInSeconds, 1, 3600);
+                    PerformanceRefreshIntervalInMs = GetConfigInt(config, "PerformanceRefreshIntervalInMs", AppConfig.DefaultPerformanceRefreshIntervalInMs, 100, 300000);
+                    ConsoleRefreshIntervalInMs = GetConfigInt(config, "ConsoleRefreshIntervalInMs", AppConfig.DefaultConsoleRefreshIntervalInMs, 100, 300000);
+                    DependenciesRefreshIntervalInMs = GetConfigInt(config, "DependenciesRefreshIntervalInMs", AppConfig.DefaultDependenciesRefreshIntervalInMs, 100, 300000);
+                    ConsoleMaxLines = GetConfigInt(config, "ConsoleMaxLines", AppConfig.DefaultConsoleMaxLines, 100, AppConfig.DefaultConsoleMaxLines * 2);
+
+                    //
+                    // Extracts an integer from configuration with professional-grade bounds checking.
+                    // Prevents UI thread starvation and memory issues from malformed config values.
+                    //
+                    int GetConfigInt(NameValueCollection configuration, string key, int defaultValue, int min, int max)
+                    {
+                        string value = configuration[key];
+
+                        if (int.TryParse(value, out var parsedValue))
+                        {
+                            if (parsedValue >= min && parsedValue <= max)
+                            {
+                                return parsedValue;
+                            }
+
+                            Logger.Warn($"Configuration value '{parsedValue}' for '{key}' is out of the safe range [{min}-{max}]. Falling back to default: {defaultValue}.");
+                        }
+                        else if (value != null)
+                        {
+                            Logger.Warn($"Invalid configuration entry '{value}' for '{key}'. Using default: {defaultValue}.");
+                        }
+
+                        return defaultValue;
+                    }
 
                     if (Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel)) LogLevel = logLevel;
                     else LogLevel = LogLevel.Info;

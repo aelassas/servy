@@ -369,7 +369,7 @@ namespace Servy.Manager.Views
         private async Task HandlePerfTabSelected(MainViewModel vm, PerformanceViewModel perfVm, ConsoleViewModel consoleVM, DependenciesViewModel dependenciesVM, LogsViewModel logsVm)
         {
             // Cleanup all background tasks and stop timers in main tab
-            vm.Cleanup();
+            vm.StopRefreshTimer();
 
             // Stop timers in console tab
             consoleVM?.StopMonitoring(false);
@@ -407,7 +407,7 @@ namespace Servy.Manager.Views
         private async Task HandleConsoleTabSelected(MainViewModel vm, PerformanceViewModel perfVm, ConsoleViewModel consoleVM, DependenciesViewModel dependenciesVM, LogsViewModel logsVm)
         {
             // Cleanup all background tasks and stop timers in main tab
-            vm.Cleanup();
+            vm.StopRefreshTimer();
 
             // Stop timers in performance tab
             perfVm?.StopMonitoring(false);
@@ -445,7 +445,7 @@ namespace Servy.Manager.Views
         private async Task HandleDependenciesTabSelected(MainViewModel vm, PerformanceViewModel perfVm, ConsoleViewModel consoleVM, DependenciesViewModel dependenciesVM, LogsViewModel logsVm)
         {
             // Cleanup all background tasks and stop timers in main tab
-            vm.Cleanup();
+            vm.StopRefreshTimer();
 
             // Stop timers in performance tab
             perfVm?.StopMonitoring(false);
@@ -480,7 +480,7 @@ namespace Servy.Manager.Views
         private async Task HandleLogsTabSelected(MainViewModel vm, PerformanceViewModel perfVm, ConsoleViewModel consoleVM, DependenciesViewModel dependenciesVM, LogsViewModel logsVm)
         {
             // Cleanup all background tasks and stop timers in main tab
-            vm.Cleanup();
+            vm.StopRefreshTimer();
 
             // Stop timers in performance tab
             perfVm?.StopMonitoring(false);
@@ -614,7 +614,7 @@ namespace Servy.Manager.Views
             {
                 if (DataContext is MainViewModel vm)
                 {
-                    vm.Cleanup();
+                    vm.StopRefreshTimer();
                 }
 
                 GetPerformanceVm()?.Dispose();

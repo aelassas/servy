@@ -11,10 +11,7 @@ using Xunit;
 
 namespace Servy.Service.IntegrationTests.ProcessManagement
 {
-    [CollectionDefinition("ProcessLauncher_OS_Tests", DisableParallelization = true)]
-    public class ProcessLauncherCollection { }
-
-    [Collection("ProcessLauncher_OS_Tests")]
+    [CollectionDefinition("ProcessLauncherIntegrationTests", DisableParallelization = true)]
     public class ProcessLauncherIntegrationTests : IDisposable
     {
         private readonly List<string> _tempFiles = new List<string>();

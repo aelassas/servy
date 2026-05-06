@@ -137,7 +137,7 @@ namespace Servy.Service.ProcessManagement
                                     FileStream stdoutFs = null;
                                     try
                                     {
-                                        stdoutFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                                        stdoutFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
                                         stdoutWriter = new StreamWriter(stdoutFs, encoding) { AutoFlush = true };
                                     }
                                     catch
@@ -170,7 +170,7 @@ namespace Servy.Service.ProcessManagement
                                         FileStream sharedFs = null;
                                         try
                                         {
-                                            sharedFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                                            sharedFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
                                             stdoutWriter = new StreamWriter(sharedFs, encoding) { AutoFlush = true };
                                         }
                                         catch
@@ -190,7 +190,7 @@ namespace Servy.Service.ProcessManagement
                                         FileStream stderrFs = null;
                                         try
                                         {
-                                            stderrFs = new FileStream(errPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                                            stderrFs = new FileStream(errPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
                                             stderrWriter = new StreamWriter(stderrFs, encoding) { AutoFlush = true };
                                         }
                                         catch

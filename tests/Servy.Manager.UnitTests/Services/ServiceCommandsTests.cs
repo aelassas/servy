@@ -31,6 +31,7 @@ namespace Servy.Manager.UnitTests.Services
         private readonly Mock<IJsonServiceSerializer> _jsonServiceSerializerMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
         private readonly Mock<IProcessHelper> _processHelper;
+        private readonly Mock<IUiDispatcher> _uiDispatcherMock;
 
         private bool _refreshCalled;
         private TaskCompletionSource<bool> _refreshTcs;
@@ -51,6 +52,7 @@ namespace Servy.Manager.UnitTests.Services
             _jsonServiceSerializerMock = new Mock<IJsonServiceSerializer>();
             _appConfigMock = new Mock<IAppConfiguration>();
             _processHelper = new Mock<IProcessHelper>();
+            _uiDispatcherMock = new Mock<IUiDispatcher>();
 
             _refreshTcs = new TaskCompletionSource<bool>();
             _removedServiceName = null;
@@ -87,7 +89,8 @@ namespace Servy.Manager.UnitTests.Services
                 _xmlServiceSerializerMock.Object,
                 _jsonServiceSerializerMock.Object,
                 _appConfigMock.Object,
-                _processHelper.Object
+                _processHelper.Object,
+                _uiDispatcherMock.Object
             );
         }
 

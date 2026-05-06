@@ -52,7 +52,15 @@ namespace Servy.Core.Logging
         /// </returns>
         private static ServyEventLogEntry MapToDto(EventRecord evt)
         {
-            var message = evt.FormatDescription() ?? string.Empty;
+            string message;
+            try
+            {
+                message = evt.FormatDescription() ?? string.Empty;
+            }
+            catch (Exception ex) when (ex is EventLogException || ex is InvalidOperationException)
+            {
+                message = $"<unavailable: {ex.Message}>";
+            }
 
             return new ServyEventLogEntry
             {

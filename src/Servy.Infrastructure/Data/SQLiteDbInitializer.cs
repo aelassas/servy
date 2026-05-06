@@ -135,16 +135,23 @@ namespace Servy.Infrastructure.Data
                 // Convert silent failure into a logged self-healing event
                 Logger.Warn($"Single-Source-of-Truth drift detected at SchemaVersion={currentVersion}. Adding missing columns: {string.Join(", ", missing)}");
 
-                foreach (var col in missing)
+                using (var transaction = connection.BeginTransaction())
                 {
                     try
                     {
-                        connection.Execute($"ALTER TABLE Services ADD COLUMN {col} {GetSqlType(col)};");
-                        Logger.Info($"Self-healed column: {col}");
+                        foreach (var col in missing)
+                        {
+                            connection.Execute($"ALTER TABLE Services ADD COLUMN {col} {GetSqlType(col)};", transaction: transaction);
+                            Logger.Info($"Self-healed column: {col}");
+                        }
+
+                        transaction.Commit();
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error($"Failed to self-heal column '{col}' during reconciliation.", ex);
+                        transaction.Rollback();
+                        Logger.Error("Schema reconciliation failed; rolling back partial column additions.", ex);
+                        throw;
                     }
                 }
             }

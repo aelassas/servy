@@ -329,11 +329,13 @@ namespace Servy.Core.Logging
                         ? LevelStrings[(int)level]
                         : level.ToString().ToUpper(); // Fallback for safety
 
+                    // Sanitize message into a single-line representation for better scannability
                     var sanitizedMessage = message?
-                        .Replace("\r", "\\r")
-                        .Replace("\n", "\\n");
+                        .Replace("\r", "")
+                        .Replace("\n", " ; ")
+                        .Trim();
 
-                    // Format: [2026-03-12 22:00:00+01:00] [INFO] Message text OR [2026-03-12 22:00:00Z] [INFO] Message text
+                    // Format: [2026-05-06 08:58:20+01:00] [INFO] Message text OR [2026-05-06 08:58:20Z] [INFO] Message text
                     var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
                     string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
                     string logEntry = $"[{now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}{tzMarker}] [{levelName}] {sanitizedMessage}";

@@ -141,7 +141,7 @@ namespace Servy.Core.IO
                 _file.FullName,
                 FileMode.Append,
                 FileSystemRights.AppendData, // The strict Win32 flag
-                FileShare.ReadWrite,
+                FileShare.ReadWrite | FileShare.Delete,
                 4096,
                 FileOptions.None);
 
