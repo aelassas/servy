@@ -28,11 +28,11 @@ namespace Servy.CLI.Commands
             {
                 Logger.Error($"Failed to {action} (Unauthorized)", ex);
 
-                // This uses your specific resource string: 
-                // "Access Denied. Please restart your shell as Administrator to run the '{0}' command."
+                // This uses the specific resource string: 
+                // "Access Denied. Please restart the shell as Administrator to run the '{0}' command."
                 var errorMessage = string.Format(Strings.Msg_AdminPrivilegesRequired, commandName);
 
-                // We can skip the 'fallbackSuggestion' since your message is already so clear.
+                // We can skip the 'fallbackSuggestion' since the message is already so clear.
                 return CommandResult.Fail(errorMessage);
             }
             catch (Exception ex)
@@ -68,11 +68,11 @@ namespace Servy.CLI.Commands
             {
                 Logger.Error($"Failed to {action} (Unauthorized)", ex);
 
-                // This uses your specific resource string: 
-                // "Access Denied. Please restart your shell as Administrator to run the '{0}' command."
+                // This uses the specific resource string: 
+                // "Access Denied. Please restart the shell as Administrator to run the '{0}' command."
                 var errorMessage = string.Format(Strings.Msg_AdminPrivilegesRequired, commandName);
 
-                // We can skip the 'fallbackSuggestion' since your message is already so clear.
+                // We can skip the 'fallbackSuggestion' since the message is already so clear.
                 return CommandResult.Fail(errorMessage);
             }
             catch (Exception ex)

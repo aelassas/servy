@@ -94,7 +94,7 @@ function Build-Installer {
                 Write-Warning "Inno Setup failed (likely AV lock). Waiting 2s before retry..."
                 Start-Sleep -Seconds 2
             } else {
-                # This bubbles up to your global catch block at the bottom of publish.ps1
+                # This bubbles up to the global catch block at the bottom of publish.ps1
                 throw "Inno Setup failed after $maxRetry attempts. $_"
             }
         }

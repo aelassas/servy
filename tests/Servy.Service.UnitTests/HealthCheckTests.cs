@@ -295,7 +295,7 @@ namespace Servy.Service.UnitTests
 
             // FIRE THE STARTING GUN! 
             // This releases all 20 tasks simultaneously, guaranteeing maximum contention
-            // and a true test of your semaphore, regardless of the CPU core count.
+            // and a true test of the semaphore, regardless of the CPU core count.
             startingGun.SetResult(true);
 
             // Wait for the recovery to be triggered by the background threads. 

@@ -53,7 +53,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
                 var assembly = Assembly.GetExecutingAssembly();
                 // Resource names usually follow: ProjectNamespace.Folder.FileName.Extension
-                // Update "Servy.Core.IntegrationTests" to match your actual test project namespace if different.
+                // Update "Servy.Core.IntegrationTests" to match the actual test project namespace if different.
                 string resourceName = "Servy.Core.IntegrationTests.Resources.handle64.exe";
 
                 using (Stream? resourceStream = assembly.GetManifestResourceStream(resourceName))

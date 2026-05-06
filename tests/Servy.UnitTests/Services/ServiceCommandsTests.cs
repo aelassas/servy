@@ -209,7 +209,7 @@ namespace Servy.UnitTests.Services
             };
 
             // CRITICAL FIX 1: Mock the delegate to return the DTO so InstallService doesn't fail early.
-            // Replace `_modelToServiceDtoMock` with the actual name of your mock field.
+            // Replace `_modelToServiceDtoMock` with the actual name of the mock field.
             _modelToServiceDtoMock.Setup(m => m()).Returns(expectedDto);
 
             // CRITICAL FIX 2: Ensure the wrapper executable exists for the test to bypass the early exit check

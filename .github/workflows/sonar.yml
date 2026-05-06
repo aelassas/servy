@@ -22,7 +22,7 @@ jobs:
     runs-on: windows-latest
     
     steps:
-      # 1. Checkout code first so your custom local action is available
+      # 1. Checkout code first so the custom local action is available
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -35,7 +35,7 @@ jobs:
           java-version: 17
           distribution: 'zulu'
 
-      # 3. CRITICAL: Setup .NET using your custom action to satisfy global.json
+      # 3. CRITICAL: Setup .NET using the custom action to satisfy global.json
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
 

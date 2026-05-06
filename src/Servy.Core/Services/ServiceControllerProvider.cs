@@ -29,7 +29,7 @@ namespace Servy.Core.Services
         public IServiceControllerWrapper[] GetServices()
         {
             // Retrieve native ServiceController instances from the OS,
-            // then map them to your custom wrapper using the provided factory.
+            // then map them to the custom wrapper using the provided factory.
             var controllers = ServiceController.GetServices();
             try
             {
