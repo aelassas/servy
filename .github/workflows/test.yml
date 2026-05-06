@@ -157,7 +157,7 @@ jobs:
           foreach ($dll in $testDlls) {
               Write-Host "`nRunning tests in $($dll.Name)..." -ForegroundColor Yellow
               
-              $args = @($dll.FullName, '/Framework:".NETFramework,Version=v4.8"')
+              $args = @($dll.FullName, "/Framework:.NETFramework,Version=v4.8", "/logger:trx")
               
               # Automatically apply the required exclusion filter to the Service.UnitTests assembly
               if ($dll.Name -eq "Servy.Service.UnitTests.dll") {

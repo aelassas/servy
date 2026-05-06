@@ -11,6 +11,7 @@ using Servy.Service.Timers;
 using Servy.Service.Validation;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -260,7 +261,6 @@ namespace Servy.Service.UnitTests
             mockProcess.Setup(p => p.HasExited).Returns(true);
             mockProcess.Setup(p => p.ExitCode).Returns(-1);
 
-            // Use this to control when the recovery "finishes"
             var recoveryStartedSignal = new TaskCompletionSource<bool>();
             var recoveryBlockSignal = new TaskCompletionSource<bool>();
 
@@ -269,7 +269,9 @@ namespace Servy.Service.UnitTests
                          It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>()))
                   .Callback(() => {
                       recoveryStartedSignal.TrySetResult(true);
-                      recoveryBlockSignal.Task.Wait(); // HANG the thread here to keep _isRecovering = true
+                      // Block the thread here to simulate a long recovery and keep _isRecovering = true
+                      // We add a safety timeout to prevent infinite test hangs if something goes wrong.
+                      recoveryBlockSignal.Task.Wait(TimeSpan.FromSeconds(5));
                   });
 
             service.SetChildProcess(mockProcess.Object);
@@ -279,25 +281,39 @@ namespace Servy.Service.UnitTests
 
             // Act
             int calls = 20;
-            var tasks = new List<Task>();
+            var threads = new List<Thread>();
+
+            // Use raw Threads instead of Task.Run. 
+            // This bypasses the Thread Pool, preventing the Task.Wait() in the mock 
+            // from starving the remaining 17 invocations in environments with low CPU cores.
             for (int i = 0; i < calls; i++)
             {
-                tasks.Add(Task.Run(() => service.InvokeCheckHealth(null, null)));
+                var t = new Thread(() => service.InvokeCheckHealth(null, null))
+                {
+                    IsBackground = true
+                };
+                threads.Add(t);
             }
 
-            // Wait until at least one thread has entered the recovery block
+            // Start them all simultaneously
+            foreach (var t in threads) t.Start();
+
+            // Wait until Thread 3 has successfully entered the recovery block
             await recoveryStartedSignal.Task;
 
-            // Give other threads a moment to attempt to enter the lock and get blocked
-            await Task.Delay(100);
+            // CRITICAL: Give the remaining 17 OS threads time to hit the free semaphore, 
+            // see _isRecovering = true, and exit. 500ms is safely enough for OS scheduling.
+            await Task.Delay(500);
 
-            // Release the recovery mock so it can finish
-            recoveryBlockSignal.SetResult(true);
-            await Task.WhenAll(tasks);
+            // Release the recovery mock so Thread 3 can finish and exit
+            recoveryBlockSignal.TrySetResult(true);
+
+            // Wait for all raw threads to finish wrapping up
+            foreach (var t in threads) t.Join(1000);
 
             // Assert
             // Now it should be exactly 3. Threads 4-20 will have hit 'if (_isRecovering) return'
-            // because Thread 3 was stuck in the helper mock, keeping the flag true.
+            // because they were executed while Thread 3 was intentionally blocking.
             logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed"))), Times.Exactly(3));
 
             helper.Verify(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
@@ -305,5 +321,6 @@ namespace Servy.Service.UnitTests
                           It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>()),
                           Times.Once);
         }
+
     }
 }
