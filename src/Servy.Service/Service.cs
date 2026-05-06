@@ -1783,12 +1783,20 @@ namespace Servy.Service
 
                     if (exitCode == 0)
                     {
-                        _logger?.Info("Child process exited successfully. Service will stop.");
-                        shouldStop = true;
+                        if (_options.RecoveryOnCleanExit == true)
+                        {
+                            _logger?.Info("Health check detected clean exit (Code 0), but RecoveryOnCleanExit is ENABLED. Checking recovery...");
+                            needsRecovery = RegisterFailureAndCheckRecovery();
+                        }
+                        else
+                        {
+                            _logger?.Info("Health check detected child process exited successfully (Code 0). Service will stop.");
+                            shouldStop = true;
+                        }
                     }
                     else
                     {
-                        // Unified recovery check
+                        // Unified recovery check for non-zero exit codes or missing processes
                         needsRecovery = RegisterFailureAndCheckRecovery();
                     }
                 }
