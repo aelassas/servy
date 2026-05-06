@@ -314,7 +314,7 @@ namespace Servy.Core.Helpers
                             // 3. Fallback and Comparison Logic
                             if (exePath == null)
                             {
-                                // If native parsing failed, use your identity check fallback
+                                // If native parsing failed, use the identity check fallback
                                 if (expandedPath.IndexOf(wrapperExe, StringComparison.OrdinalIgnoreCase) >= 0)
                                 {
                                     result.Add(sc.ServiceName);

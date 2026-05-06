@@ -353,7 +353,7 @@ namespace Servy.Core.DTOs
         /// </summary>
         [JsonIgnore]
         [XmlIgnore]
-        [SqlColumn("TEXT")] // (Assuming these are tracked in SQLite per your existing schema logic)
+        [SqlColumn("TEXT")] // (Assuming these are tracked in SQLite per the existing schema logic)
         public string ActiveStdoutPath { get; set; }
 
         /// <summary>

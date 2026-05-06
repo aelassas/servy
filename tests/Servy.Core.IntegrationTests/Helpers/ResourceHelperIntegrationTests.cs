@@ -99,11 +99,11 @@ namespace Servy.Core.IntegrationTests.Helpers
             string extension = "dll";
             string subfolder = "Modules";
 
-            // Use a valid resource name that actually exists in your real assembly for extraction,
+            // Use a valid resource name that actually exists in the real assembly for extraction,
             // or use a dummy name if you only want to test the failure paths.
             string resourceNamespace = "Servy.Core";
 
-            // Setup the mock to match the 1-parameter signature used in your .NET 4.8 source
+            // Setup the mock to match the 1-parameter signature used in the .NET 4.8 source
             _mockProcessKiller
                 .Setup(p => p.KillProcessesUsingFile(It.IsAny<string>()))
                 .Returns(true);
@@ -221,7 +221,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Arrange: Use the Integration Test assembly which contains the resource
             var assembly = typeof(ResourceHelperIntegrationTests).Assembly;
 
-            // 1. Explicitly define resource details based on your error message
+            // 1. Explicitly define resource details based on the error message
             string detectedNamespace = "Servy.Core.IntegrationTests.Resources";
             string detectedFileName = "handle64";
             string detectedExtension = "exe";

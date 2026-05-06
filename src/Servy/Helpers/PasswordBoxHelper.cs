@@ -22,7 +22,7 @@ namespace Servy.Helpers
     {
         /// <summary>
         /// Identifies the attached <c>BoundPassword</c> dependency property.
-        /// Bind this property to your ViewModel's password property to enable two-way updates.
+        /// Bind this property to the ViewModel's password property to enable two-way updates.
         /// </summary>
         public static readonly DependencyProperty BoundPasswordProperty =
             DependencyProperty.RegisterAttached(

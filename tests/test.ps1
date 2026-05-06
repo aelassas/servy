@@ -16,7 +16,7 @@ The path to MSBuild.exe. Defaults to the Visual Studio 2022 Community Edition lo
 .NOTES
 - Requires Coverlet and ReportGenerator to be installed and available in PATH.
 - Must be run in PowerShell (x64).
-- Paths to MSBuild and vstest.console.exe may need to be adjusted for your environment.
+- Paths to MSBuild and vstest.console.exe may need to be adjusted for the environment.
 
 .EXAMPLE
 PS> .\test.ps1
