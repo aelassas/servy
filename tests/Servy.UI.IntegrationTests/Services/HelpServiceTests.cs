@@ -16,6 +16,7 @@ namespace Servy.UI.IntegrationTests.Services
         {
             _mockMessageBox = new Mock<IMessageBoxService>();
             _service = new HelpService(_mockMessageBox.Object);
+            HelpService.IsHeadlessMode = true;
         }
 
         #region Constructor Tests

@@ -18,6 +18,11 @@ namespace Servy.UI.Services
     /// </summary>
     public class HelpService : IHelpService
     {
+        /// <summary>
+        /// A hook for integration tests to prevent the browser from opening.
+        /// </summary>
+        public static bool IsHeadlessMode { get; set; }
+
         private readonly IMessageBoxService _messageBoxService;
 
         /// <summary>
@@ -57,19 +62,26 @@ namespace Servy.UI.Services
                     UseShellExecute = true
                 };
 
-                // Process.Start can return null if it hands off to an existing browser instance
-                var process = Process.Start(psi);
-                if (process != null)
+                if (!IsHeadlessMode)
                 {
-                    using (process)
+                    // Process.Start can return null if it hands off to an existing browser instance
+                    var process = Process.Start(psi);
+                    if (process != null)
                     {
-                        // Native handle is closed immediately after launch 
-                        // to prevent leaks in the Manager UI.
+                        using (process)
+                        {
+                            // Native handle is closed immediately after launch 
+                            // to prevent leaks in the Manager UI.
+                        }
+                    }
+                    else
+                    {
+                        Logger.Debug("Documentation link opened in an existing process.");
                     }
                 }
                 else
                 {
-                    Logger.Debug("Documentation link opened in an existing process.");
+                    Console.WriteLine($"[HEADLESS INFO] OpenDocumentation: opening browser URL {psi.FileName}");
                 }
             }
             catch (Exception ex)
@@ -111,15 +123,24 @@ namespace Servy.UI.Services
                         var res = await _messageBoxService.ShowConfirmAsync(Strings.Msg_UpdateAvailablePrompt, caption);
                         if (res)
                         {
-                            using (Process.Start(new ProcessStartInfo
+                            var psi = new ProcessStartInfo
                             {
                                 FileName = AppConfig.LatestReleaseLink,
                                 UseShellExecute = true
-                            }))
+                            };
+
+                            if (!IsHeadlessMode)
                             {
-                                // The using block ensures the native process handle is closed 
-                                // immediately after the process is launched, preventing a 
-                                // handle leak in the calling application.
+                                using (Process.Start(psi))
+                                {
+                                    // The using block ensures the native process handle is closed 
+                                    // immediately after the process is launched, preventing a 
+                                    // handle leak in the calling application.
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[HEADLESS INFO] CheckUpdates: opening browser at {psi.FileName}");
                             }
                         }
                     }
