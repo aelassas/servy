@@ -214,24 +214,38 @@ namespace Servy.Infrastructure.Data
         /// <param name="connection">The active database connection.</param>
         private static void ApplyVersion1(DbConnection connection)
         {
-            var expectedColumns = GetExpectedColumns();
-
-            var columnDefinitions = new List<string>
+            using (var transaction = connection.BeginTransaction())
             {
-                "Id INTEGER PRIMARY KEY AUTOINCREMENT" // PK is not in InsertColumns
-            };
+                try
+                {
+                    var expectedColumns = GetExpectedColumns();
 
-            foreach (var col in expectedColumns)
-            {
-                columnDefinitions.Add($"{col} {GetSqlType(col)}");
+                    var columnDefinitions = new List<string>
+                    {
+                        "Id INTEGER PRIMARY KEY AUTOINCREMENT" // PK is not in InsertColumns
+                    };
+
+                    foreach (var col in expectedColumns)
+                    {
+                        columnDefinitions.Add($"{col} {GetSqlType(col)}");
+                    }
+
+                    var createTableSql = $"CREATE TABLE Services (\n    {string.Join(",\n    ", columnDefinitions)}\n);";
+                    connection.Execute(createTableSql, transaction: transaction);
+
+                    // Create the UNIQUE functional index
+                    var createIndexSql = "CREATE UNIQUE INDEX idx_services_name_lower ON Services(LOWER(Name));";
+                    connection.Execute(createIndexSql, transaction: transaction);
+
+                    transaction.Commit();
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    Logger.Error("CRITICAL: Version 1 database migration failed. Transaction rolled back.", ex);
+                    throw;
+                }
             }
-
-            var createTableSql = $"CREATE TABLE Services (\n    {string.Join(",\n    ", columnDefinitions)}\n);";
-            connection.Execute(createTableSql);
-
-            // Create the UNIQUE functional index
-            var createIndexSql = "CREATE UNIQUE INDEX idx_services_name_lower ON Services(LOWER(Name));";
-            connection.Execute(createIndexSql);
         }
 
         /// <summary>

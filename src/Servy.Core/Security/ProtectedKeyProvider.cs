@@ -265,7 +265,7 @@ namespace Servy.Core.Security
                         encrypted = File.ReadAllBytes(path);
                         break; // Success: exit the loop
                     }
-                    catch (IOException ex)
+                    catch (IOException ex) when (!(ex is FileNotFoundException) && !(ex is DirectoryNotFoundException))
                     {
                         // If this was the last attempt, rethrow to be caught by BaseCommand
                         if (attempt == maxRetries - 1)
@@ -275,6 +275,11 @@ namespace Servy.Core.Security
                         }
 
                         // Exponential backoff: 100ms, 200ms, 400ms
+                        Thread.Sleep(100 * (1 << attempt));
+                    }
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        if (attempt == maxRetries - 1) { Logger.Error($"Access denied after {maxRetries} attempts: {path}", ex); throw; }
                         Thread.Sleep(100 * (1 << attempt));
                     }
                 }

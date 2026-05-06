@@ -393,10 +393,10 @@ namespace Servy.UI.Bootstrapping
 
             if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName)) return;
 
-            try
+            // Outer loop keeps the monitor alive for the lifetime of the application
+            while (!_appLifetimeCts.Token.IsCancellationRequested)
             {
-                // Outer loop keeps the monitor alive for the lifetime of the application
-                while (!_appLifetimeCts.Token.IsCancellationRequested)
+                try
                 {
                     // PHASE 1: Waiting for Installation
                     // Deferred Attachment: Wait for the directory to exist naturally on disk.
@@ -446,14 +446,17 @@ namespace Servy.UI.Bootstrapping
                         UpdateAvailabilityState(targetAppPublishPath, updateAvailabilityCallback, app);
                     });
                 }
-            }
-            catch (TaskCanceledException)
-            {
-                // Expected during app shutdown, exit gracefully
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to initialize FileSystemWatcher for {fileName}", ex);
+                catch (TaskCanceledException)
+                {
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Availability monitor cycle failed for {fileName}; restarting after delay", ex);
+                    try { CleanupAvailabilityWatcher(); } catch { /* ignore */ }
+                    try { await Task.Delay(AppConfig.AppAvailabilityPollIntervalMs, _appLifetimeCts.Token); }
+                    catch (TaskCanceledException) { return; }
+                }
             }
         }
 

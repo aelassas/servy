@@ -107,15 +107,14 @@ namespace Servy.Infrastructure.Data
         /// <param name="attempt">The zero-based attempt index.</param>
         /// <param name="initialDelayMs">The base delay for the first retry.</param>
         /// <param name="maxJitterMs">The maximum random jitter to add.</param>
-        /// <returns>The calculated delay in milliseconds.</returns>
-        private int CalculateBackoff(int attempt, int initialDelayMs, int maxJitterMs)
+        /// <param name="maxBackoffMs">The absolute maximum delay allowed for the backoff, preventing infinite growth during repeated failures.</param>
+        /// <returns>The calculated delay in milliseconds, representing the capped exponential backoff plus a random jitter component.</returns>
+        private static int CalculateBackoff(int attempt, int initialDelayMs, int maxJitterMs, int maxBackoffMs = 5000)
         {
-            // Exponential backoff: base * 2^attempt
-            int backoff = initialDelayMs * (int)Math.Pow(2, attempt);
-
-            // Add jitter to prevent "thundering herd" collisions
+            // Use long math and cap to prevent silent overflow if MaxRetries is ever raised
+            long shifted = (long)initialDelayMs << Math.Min(attempt, 30);
+            int backoff = (int)Math.Min(shifted, maxBackoffMs);
             int jitter = _random.Value.Next(0, maxJitterMs + 1);
-
             return backoff + jitter;
         }
 
