@@ -52,7 +52,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void ObjectDisposed_AccessingProperties_ThrowsObjectDisposedException()
         {
-            var wrapper = CreateWrapper("cmd.exe", "");
+            var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\"");
             wrapper.Dispose();
 
             Assert.Throws<ObjectDisposedException>(() => wrapper.Id);
@@ -90,41 +90,44 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Start_And_WaitForExit_PopulatesPropertiesCorrectly()
         {
-            using var wrapper = CreateWrapper("cmd.exe", "/c exit 42");
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 42\""))
+            {
+                bool started = wrapper.Start();
 
-            bool started = wrapper.Start();
+                Assert.True(started);
+                Assert.True(wrapper.Id > 0);
+                Assert.NotNull(wrapper.StartInfo);
+                Assert.NotNull(wrapper.UnderlyingProcess);
+                Assert.True(wrapper.EnableRaisingEvents); // Constructor default
 
-            Assert.True(started);
-            Assert.True(wrapper.Id > 0);
-            Assert.NotNull(wrapper.StartInfo);
-            Assert.NotNull(wrapper.UnderlyingProcess);
-            Assert.True(wrapper.EnableRaisingEvents); // Constructor default
+                // Wait for it to finish
+                bool exited = wrapper.WaitForExit(5000);
 
-            // Wait for it to finish
-            bool exited = wrapper.WaitForExit(5000);
-
-            Assert.True(exited);
-            Assert.True(wrapper.HasExited);
-            Assert.Equal(42, wrapper.ExitCode);
-            Assert.True(wrapper.StartTime > DateTime.MinValue);
-            Assert.Contains(wrapper.Id.ToString(), wrapper.Format());
+                Assert.True(exited);
+                Assert.True(wrapper.HasExited);
+                Assert.Equal(42, wrapper.ExitCode);
+                Assert.True(wrapper.StartTime > DateTime.MinValue);
+                Assert.Contains(wrapper.Id.ToString(), wrapper.Format());
+            }
         }
 
         [Fact]
         public void PropertySetters_UpdateUnderlyingProcess()
         {
-            using var wrapper = CreateWrapper("cmd.exe", "/c ping 127.0.0.1 -n 2");
-            wrapper.Start();
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
+            {
+                wrapper.Start();
 
-            // Act & Assert PriorityClass
-            wrapper.PriorityClass = ProcessPriorityClass.BelowNormal;
-            Assert.Equal(ProcessPriorityClass.BelowNormal, wrapper.PriorityClass);
+                // Act & Assert PriorityClass
+                wrapper.PriorityClass = ProcessPriorityClass.BelowNormal;
+                Assert.Equal(ProcessPriorityClass.BelowNormal, wrapper.PriorityClass);
 
-            // Act & Assert EnableRaisingEvents
-            wrapper.EnableRaisingEvents = false;
-            Assert.False(wrapper.EnableRaisingEvents);
+                // Act & Assert EnableRaisingEvents
+                wrapper.EnableRaisingEvents = false;
+                Assert.False(wrapper.EnableRaisingEvents);
 
-            wrapper.Kill();
+                wrapper.Kill();
+            }
         }
 
         #endregion
@@ -151,7 +154,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public async Task WaitForExitOrTimeoutAsync_ExitsEarly_ReturnsFalse()
         {
-            using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
 
@@ -187,7 +190,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Stop_AlreadyExited_ReturnsNull()
         {
-            using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
                 wrapper.WaitForExit(5000);
@@ -223,8 +226,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void StopDescendants_KillsEntireTree()
         {
-            // Construct a nested process tree: cmd -> ping
-            using (var wrapper = CreateWrapper("cmd.exe", "/c \"ping 127.0.0.1 -n 30\"", createNoWindow: true))
+            // Construct a nested process tree: powershell -> ping
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"ping 127.0.0.1 -n 30\"", createNoWindow: true))
             {
                 wrapper.Start();
 
@@ -240,7 +243,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 // Assert: The stop logic logs the cascade
                 Assert.Contains(_logger.Infos, m => m.Contains("Initiating cascaded kill"));
 
-                // Verify native handles are gone (the parent cmd usually dies too when the shell command is terminated)
+                // Verify native handles are gone (the parent powershell usually dies too when the shell command is terminated)
                 wrapper.Kill();
             }
         }
@@ -248,7 +251,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Kill_AlreadyExited_DoesNotThrow()
         {
-            using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
                 wrapper.WaitForExit(5000);
@@ -268,31 +271,56 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void RedirectStreams_EventsFireAndCanBeCanceled()
         {
-            // Note: Removed the space before the '&' to prevent cmd.exe from echoing it, 
-            // but we will also trim the output just to be absolutely safe.
-            using (var wrapper = CreateWrapper("cmd.exe", "/c echo HELLO_OUT& echo HELLO_ERR 1>&2", redirectOutput: true))
+            using (var outputFinished = new ManualResetEventSlim(false))
+            using (var errorFinished = new ManualResetEventSlim(false))
+            // 1. Use powershell.exe
+            // 2. Add -NoProfile to skip loading user scripts (prevents access denied / slow starts)
+            // 3. Use [Console]::Error.WriteLine to ensure a clean, raw string is sent to stderr
+            using (var wrapper = CreateWrapper(
+                "powershell.exe",
+                "-NoProfile -Command \"Write-Output 'HELLO_OUT'; [Console]::Error.WriteLine('HELLO_ERR')\"",
+                redirectOutput: true))
             {
                 var stdOut = new List<string>();
                 var stdErr = new List<string>();
 
-                // Hook up events via the wrapper and safely trim whitespace
-                wrapper.OutputDataReceived += (s, e) => { if (e.Data != null) stdOut.Add(e.Data.Trim()); };
-                wrapper.ErrorDataReceived += (s, e) => { if (e.Data != null) stdErr.Add(e.Data.Trim()); };
+                wrapper.OutputDataReceived += (s, e) =>
+                {
+                    if (e.Data != null)
+                    {
+                        var trimmed = e.Data.Trim();
+                        if (trimmed == "HELLO_OUT") { stdOut.Add(trimmed); outputFinished.Set(); }
+                    }
+                };
+
+                wrapper.ErrorDataReceived += (s, e) =>
+                {
+                    if (e.Data != null)
+                    {
+                        var trimmed = e.Data.Trim();
+                        if (trimmed == "HELLO_ERR") { stdErr.Add(trimmed); errorFinished.Set(); }
+                    }
+                };
 
                 wrapper.Start();
                 wrapper.BeginOutputReadLine();
                 wrapper.BeginErrorReadLine();
 
-                wrapper.WaitForExit(5000);
-
-                // Allow async stream readers to flush
+                // 4. Increased timeout from 5000ms to 10000ms to comfortably handle PowerShell's JIT warmup
+                bool processExited = wrapper.WaitForExit(10000);
                 wrapper.UnderlyingProcess.WaitForExit();
 
-                // Assert streams were captured correctly
+                // 5. Increased WaitAll timeout for the same reason
+                bool signalsReceived = WaitHandle.WaitAll(
+                    new[] { outputFinished.WaitHandle, errorFinished.WaitHandle },
+                    TimeSpan.FromSeconds(5));
+
+                // Assert
+                Assert.True(processExited, "Process should have exited within timeout.");
+                Assert.True(signalsReceived, "Did not receive expected stdout/stderr signals.");
                 Assert.Contains("HELLO_OUT", stdOut);
                 Assert.Contains("HELLO_ERR", stdErr);
 
-                // Assert cancel doesn't throw
                 var cancelException = Record.Exception(() =>
                 {
                     wrapper.CancelOutputRead();

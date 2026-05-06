@@ -58,8 +58,10 @@ namespace Servy.Core.Config
 
         #region File Paths & Directories
 
+#if DEBUG
         /// <summary>
-        /// The cached full filesystem path to the root of the repository.
+        /// The cached full filesystem path to the root of the repository. 
+        /// This property is only available in <b>DEBUG</b> builds.
         /// </summary>
         /// <remarks>
         /// This path is resolved at runtime by traversing upward from the current 
@@ -68,6 +70,7 @@ namespace Servy.Core.Config
         /// and solution-relative configurations.
         /// </remarks>
         private static readonly string RepoRoot = FindRepoRoot(AppDomain.CurrentDomain.BaseDirectory);
+#endif
 
         /// <summary>
         /// Target framework.
@@ -103,6 +106,7 @@ namespace Servy.Core.Config
         /// </summary>
         public static readonly string ServyServiceUIExe = $"{ServyServiceUIFileName}.exe";
 
+#if DEBUG
         /// <summary>
         /// Servy Desktop App Release Folder.
         /// </summary>
@@ -119,11 +123,6 @@ namespace Servy.Core.Config
         public static readonly string DesktopAppPublishReleasePath = Path.Combine(ServyDesktopAppReleaseFolder, "publish", "Servy.exe");
 
         /// <summary>
-        /// Default Servy Desktop App Publish Path (Release).
-        /// </summary>
-        public static readonly string DefaultDesktopAppPublishPath = @".\Servy.exe";
-
-        /// <summary>
         /// Servy Manager Release Folder.
         /// </summary>
         public static readonly string ServyManagerReleaseFolder = Path.Combine(RepoRoot, "src", "Servy.Manager", "bin", "Release", TargetFramework, "win-x64");
@@ -132,6 +131,12 @@ namespace Servy.Core.Config
         /// Servy Manager App Publish Path.
         /// </summary>
         public static readonly string ManagerAppPublishReleasePath = Path.Combine(ServyManagerReleaseFolder, "publish", "Servy.Manager.exe");
+#endif
+
+        /// <summary>
+        /// Default Servy Desktop App Publish Path (Release).
+        /// </summary>
+        public static readonly string DefaultDesktopAppPublishPath = @".\Servy.exe";
 
         /// <summary>
         /// Default Servy Manager App Publish Path (Release).
@@ -858,22 +863,44 @@ namespace Servy.Core.Config
         #region Private Helpers
 
         /// <summary>
-        /// Resolves the absolute path for an executable based on the current build configuration.
+        /// Resolves the absolute path for an executable based on the current environment and build configuration.
         /// </summary>
         /// <param name="fileName">The base name of the executable (without the .exe extension).</param>
         /// <returns>The fully qualified path to the executable.</returns>
-        private static string ResolveExe(string fileName) =>
-            Path.Combine(
-#if DEBUG
-                AppDomain.CurrentDomain.BaseDirectory,
-#else
-                ProgramDataPath,
-#endif
-                $"{fileName}.exe");
+        /// <exception cref="FileNotFoundException">
+        /// Thrown in RELEASE mode if the executable cannot be found in the local directory or the ProgramData vault.
+        /// </exception>
+        /// <remarks>
+        /// In <c>DEBUG</c> mode, this resolves to the resource directory within the repository root to facilitate 
+        /// development without requiring manual file copying. In <c>RELEASE</c> mode, it checks the application's 
+        /// base directory (supporting unit tests/portable use) before falling back to the hardened <c>ProgramData</c> vault.
+        /// </remarks>
+        private static string ResolveExe(string fileName)
+        {
+            string exeName = $"{fileName}.exe";
 
+#if DEBUG
+            // Development
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, exeName);
+#else
+            // 1. Check local directory first (Critical for Unit Tests in Release mode and Portable execution)
+            string localPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, exeName);
+            if (File.Exists(localPath))
+            {
+                return localPath;
+            }
+
+            // 2. Fallback to the hardened vault (Production Service mode)
+            return Path.Combine(ProgramDataPath, exeName);
+#endif
+        }
+
+
+#if DEBUG
         /// <summary>
         /// Traverses up the directory hierarchy from the specified starting point to locate the 
         /// repository root, identified by the presence of the <c>Servy.sln</c> file.
+        /// This method is only available in <b>DEBUG</b> builds.
         /// </summary>
         /// <param name="startDir">The directory path where the upward search begins.</param>
         /// <returns>The full filesystem path to the directory containing the Servy solution file.</returns>
@@ -893,6 +920,7 @@ namespace Servy.Core.Config
             return dir?.FullName
                 ?? throw new InvalidOperationException("Servy.sln not found in any ancestor directory.");
         }
+#endif
 
         #endregion
     }

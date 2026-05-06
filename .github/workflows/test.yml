@@ -23,7 +23,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # important, otherwise commit message won't be available
+          fetch-depth: 0   # important, otherwise commit message won't be available          
           
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
@@ -34,10 +34,10 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore Servy.sln
 
-      - name: Build solution
+      - name: Build solution (Debug)
         run: dotnet build Servy.sln --configuration Debug --no-restore
 
-      - name: Run all tests with coverage
+      - name: Run all tests with coverage (Debug)
         shell: pwsh
         run: |
           $testProjects = @(
@@ -57,22 +57,22 @@ jobs:
           $failed = $false
 
           foreach ($proj in $testProjects) {
-              # Extract the project name to ensure unique output folders
+              # Extract the project name to ensure unique output folders              
               $projName = [System.IO.Path]::GetFileNameWithoutExtension($proj.Path)
               Write-Host "Running tests for $projName..." -ForegroundColor Cyan
               
-              # Construct the base command
-              # FIX: Added $projName to the results-directory to completely prevent coverage overwriting collisions
+              # Construct the base command              
+              # FIX: Added $projName to the results-directory to completely prevent coverage overwriting collisions              
               $cmd = "dotnet test $($proj.Path) --configuration Debug --no-build --collect `"XPlat Code Coverage`" --results-directory `"./TestResults/$($proj.Dir)/$projName`""
               
-              # Add filter if present              
+              # Add filter if present                            
               if ($proj.Filter) { $cmd += " --filter `"$($proj.Filter)`"" }
               
-              # Add Coverage Formats and the Exclude filter for Servy.Testing
-              # FIX: Added wildcards to exclude all Unit and Integration tests from being instrumented
+              # Add Coverage Formats and the Exclude filter for Servy.Testing              
+              # FIX: Added wildcards to exclude all Unit and Integration tests from being instrumented              
               $cmd += " -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=`"[*.UnitTests]*,[*.IntegrationTests]*,[Servy.Testing]*`""
 
-              # Execute the string as a command              
+              # Execute the string as a command                            
               Invoke-Expression $cmd
               
               if ($LASTEXITCODE -ne 0) { 
@@ -86,9 +86,15 @@ jobs:
               exit 1 
           }
 
+      - name: Build solution (Release)
+        run: dotnet build Servy.sln --configuration Release --no-restore
+
+      - name: Run all tests (Release)
+        run: dotnet test Servy.sln --configuration Release --no-build --filter "Category!=ReflectionValidation"
+
       - name: Merge and normalize coverage paths (PowerShell)
         shell: pwsh
-        # We use always() here so coverage is merged and uploaded even if a test failed above.        
+        # We use always() here so coverage is merged and uploaded even if a test failed above.                
         if: always() 
         run: |
           $workspace = $env:GITHUB_WORKSPACE
@@ -98,22 +104,22 @@ jobs:
           $coverageFiles = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml"
           if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
 
-          # Path to local .NET SDK          
+          # Path to local .NET SDK                    
           $dotnet = "$env:RUNNER_TEMP\dotnet\dotnet.exe"
 
-          # Create a temp folder for local tools          
+          # Create a temp folder for local tools                    
           $localTools = "$env:RUNNER_TEMP\localtools"
           if (-Not (Test-Path $localTools)) { New-Item -ItemType Directory -Path $localTools | Out-Null }
 
-          # Initialize a temporary local tool manifest          
+          # Initialize a temporary local tool manifest                    
           & $dotnet new tool-manifest --force --output $localTools
 
-          # Install reportgenerator as a local tool          
+          # Install reportgenerator as a local tool                    
           Push-Location $localTools
           & $dotnet tool install dotnet-reportgenerator-globaltool --version 5.*
 
-          # Run reportgenerator via dotnet CLI from local manifest
-          # FIX: Wrapped arguments containing semicolons (;) in double-quotes so PowerShell parses them correctly
+          # Run reportgenerator via dotnet CLI from local manifest          
+          # FIX: Wrapped arguments containing semicolons (;) in double-quotes so PowerShell parses them correctly          
           $joinedReports = $coverageFiles.FullName -join ';'
           & $dotnet tool run reportgenerator `
               "-reports:$joinedReports" `
@@ -122,14 +128,14 @@ jobs:
               "-assemblyfilters:-*.UnitTests;-*.IntegrationTests;-Servy.Testing"
           Pop-Location
 
-          # Normalize filename paths dynamically for ALL Servy projects          
+          # Normalize filename paths dynamically for ALL Servy projects                    
           $mergedFile = Join-Path $fixedDir "Cobertura.xml"
           $content = Get-Content $mergedFile -Raw
           $content = [regex]::Replace($content, 'filename="([^"]*)"', {
               param($match)
               $origPath = $match.Groups[1].Value -replace '\\', '/'
               
-              # This regex dynamically matches any project folder starting with 'Servy'              
+              # This regex dynamically matches any project folder starting with 'Servy'                            
               if ($origPath -match 'src/(Servy[^/]*)/(.*)') {
                   return "filename=`"src/$($matches[1])/$($matches[2])`""
               }

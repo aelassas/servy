@@ -206,9 +206,13 @@ jobs:
         shell: pwsh
         run: dotnet restore Servy.sln
 
-      - name: Run unit tests
+      - name: Build solution
         shell: pwsh
-        run: dotnet test Servy.sln --configuration $env:CONFIGURATION
+        run: dotnet build Servy.sln --configuration $env:CONFIGURATION --no-restore
+
+      - name: Run all tests
+        shell: pwsh
+        run: dotnet test Servy.sln --configuration $env:CONFIGURATION --no-build --filter "Category!=ReflectionValidation"
 
       # -----------------------------------------------------
       # Build and Publish SBOM

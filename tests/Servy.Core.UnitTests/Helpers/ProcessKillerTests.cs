@@ -5,7 +5,6 @@ namespace Servy.Core.UnitTests.Helpers
 {
     /// <summary>
     /// Unit and Integration tests for the ProcessKiller utility.
-    /// Note: Integration tests require an environment where 'timeout.exe' and 'cmd.exe' are available.
     /// </summary>
     public class ProcessKillerTests : IDisposable
     {

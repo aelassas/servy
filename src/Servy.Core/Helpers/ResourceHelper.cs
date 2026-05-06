@@ -15,6 +15,17 @@ namespace Servy.Core.Helpers
         private readonly ServiceHelper _serviceHelper;
         private readonly IProcessKiller _processKiller;
 
+            /// <summary>
+            /// Gets or sets the base directory where embedded resources are extracted.
+            /// Defaults to the application base directory in DEBUG and the ProgramData vault in RELEASE.
+            /// </summary>
+            public string BaseExtractionDirectory { get; set; } =
+    #if DEBUG
+                AppDomain.CurrentDomain.BaseDirectory;
+    #else
+                AppConfig.ProgramDataPath;
+    #endif
+
         /// <summary>
         /// Initializes a new instance of the ResourceHelper class using the specified service repository.
         /// </summary>
@@ -248,12 +259,9 @@ namespace Servy.Core.Helpers
             out string resourceName)
         {
             targetFileName = fileName + "." + extension;
-#if DEBUG
-            var dir = Path.GetDirectoryName(assembly.Location);
-            targetPath = Path.Combine(dir!, targetFileName);
-#else
-            targetPath = Path.Combine(AppConfig.ProgramDataPath, targetFileName);
-#endif
+
+            // Use the explicit extraction root instead of assembly-relative logic
+            targetPath = Path.Combine(BaseExtractionDirectory, targetFileName);
 
             var targetPathDir = Path.GetDirectoryName(targetPath);
 
