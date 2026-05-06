@@ -82,7 +82,8 @@ namespace Servy.Core.Helpers
             var (_, byParent) = BuildSnapshotAndChildMapNative();
 
             // Step 2: Recursively terminate descendants using the map
-            WalkAndKillChildren(parentPid, DateTime.MinValue, selfPid, byParent);
+            var visited = new HashSet<int>();
+            WalkAndKillChildren(parentPid, DateTime.MinValue, selfPid, byParent, visited);
         }
 
         /// <summary>
@@ -138,7 +139,13 @@ namespace Servy.Core.Helpers
         /// <param name="parentStartTime">The creation time of the parent for identity verification.</param>
         /// <param name="selfPid">The PID of the current process to prevent suicide.</param>
         /// <param name="byParent">The pre-computed relationship dictionary.</param>
-        private void WalkAndKillChildren(int parentPid, DateTime parentStartTime, int selfPid, Dictionary<int, List<int>> byParent)
+        /// <param name="visited">A set of PIDs already processed in this walk to prevent infinite recursion on cycles.</param>
+        private void WalkAndKillChildren(
+            int parentPid,
+            DateTime parentStartTime,
+            int selfPid,
+            Dictionary<int, List<int>> byParent,
+            HashSet<int> visited)
         {
             if (!byParent.TryGetValue(parentPid, out var childrenPids)) return;
 
@@ -146,6 +153,14 @@ namespace Servy.Core.Helpers
             {
                 // Skip if it's the current process or the System process (PID 0-4)
                 if (childPid == selfPid || childPid <= 4) continue;
+
+                // CYCLE GUARD: If we have already visited this child in the current walk, 
+                // skip it to prevent a StackOverflowException from infinite recursion.
+                if (!visited.Add(childPid))
+                {
+                    Logger.Debug($"WalkAndKillChildren: Cycle detected or redundant PID encountered ({childPid}). Skipping.");
+                    continue;
+                }
 
                 try
                 {
@@ -158,8 +173,9 @@ namespace Servy.Core.Helpers
                         if (parentStartTime != DateTime.MinValue && child.StartTime < parentStartTime.AddSeconds(-2))
                             continue;
 
-                        // Depth-First Recursion: Kill the leaves of the tree first
-                        WalkAndKillChildren(childPid, child.StartTime, selfPid, byParent);
+                        // Depth-First Recursion: Kill the leaves of the tree first.
+                        // We pass the same visited set down the stack.
+                        WalkAndKillChildren(childPid, child.StartTime, selfPid, byParent, visited);
 
                         if (!child.HasExited)
                         {
@@ -294,7 +310,8 @@ namespace Servy.Core.Helpers
                 // SECURITY: Use IsProtected instead of a simple PID check to ensure system-critical names are never targeted.
                 if (IsProtected(process.Id, process.ProcessName, protectedPids)) return;
 
-                WalkAndKillChildren(process.Id, process.StartTime, selfPid, byParent);
+                var visited = new HashSet<int>();
+                WalkAndKillChildren(process.Id, process.StartTime, selfPid, byParent, visited);
 
                 if (!process.HasExited)
                 {

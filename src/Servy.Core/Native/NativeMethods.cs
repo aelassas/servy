@@ -99,7 +99,7 @@ namespace Servy.Core.Native
 
         #region SCM Access Rights
 
-        /// <summary>Access right to connect to the service control manager.</summary>
+        /// <summary>Access right to connect to the Service Control Manager.</summary>
         public const uint SC_MANAGER_CONNECT = 0x0001;
 
         /// <summary>Access right to create a service object and add it to the database.</summary>
@@ -486,15 +486,15 @@ namespace Servy.Core.Native
         #region Job Object Functions
 
         /// <summary>Creates or opens a job object.</summary>
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern SafeJobObjectHandle CreateJobObject(IntPtr lpJobAttributes, string lpName);
 
         /// <summary>Sets limits and configuration for a job object.</summary>
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool SetInformationJobObject(SafeJobObjectHandle hJob, JobObjectInfoClass infoClass, IntPtr lpJobObjectInfo, uint cbJobObjectInfoLength);
 
         /// <summary>Assigns a process to an existing job object.</summary>
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool AssignProcessToJobObject(SafeJobObjectHandle hJob, IntPtr hProcess);
 
         #endregion
@@ -514,7 +514,7 @@ namespace Servy.Core.Native
         public static extern bool Process32Next(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
 
         /// <summary>Opens an existing local process object.</summary>
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern SafeWinProcessHandle OpenProcess(ProcessAccess desiredAccess, bool inheritHandle, int processId);
 
         /// <summary>Low-level NT function to retrieve process information.</summary>
@@ -584,19 +584,19 @@ namespace Servy.Core.Native
         public static extern bool AllocConsole();
 
         /// <summary>Sets the output code page for the console.</summary>
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool SetConsoleOutputCP(uint codePageID);
 
         /// <summary>Adds or removes an application-defined console signal handler.</summary>
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool SetConsoleCtrlHandler(ConsoleCtrlHandlerRoutine? handlerRoutine, bool add);
 
         /// <summary>Sends a specified signal to a console process group.</summary>
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GenerateConsoleCtrlEvent(CtrlEvents ctrlEvent, uint processGroupId);
 
         /// <summary>Detaches the calling process from its console.</summary>
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool FreeConsole();
 
         /// <summary>Retrieves a handle to the specified standard device.</summary>

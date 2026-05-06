@@ -233,7 +233,8 @@ namespace Servy.Core.Helpers
                 }
             }
 
-            return DateTime.UtcNow;
+            // Use a sentinel that is older than any plausible existing extraction
+            return DateTime.MinValue;
         }
 
         #region Shared Internal Logic

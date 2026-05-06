@@ -75,27 +75,29 @@ namespace Servy.Service.ProcessManagement
                 {
                     if (pe32.th32ParentProcessID == parentPid)
                     {
+                        Process? child = null;
                         try
                         {
                             // 3. Obtain the managed wrapper only for verified children
-                            var child = Process.GetProcessById((int)pe32.th32ProcessID);
+                            child = Process.GetProcessById((int)pe32.th32ProcessID);
 
                             // Strict StartTime check to prevent PID reuse collisions
                             // We use >= and subtract 1 second to account for OS tick precision
                             if (child.StartTime >= parentStartTime.AddSeconds(-1))
                             {
                                 children.Add(child);
-                            }
-                            else
-                            {
-                                child.Dispose(); // Not our child, dispose it immediately
+                                child = null; // ownership transferred to the list
                             }
                         }
                         catch (ArgumentException) { /* PID gone, expected */ }
-                        catch (System.ComponentModel.Win32Exception) { /* Access denied, expected */ }
+                        catch (Win32Exception) { /* Access denied, expected */ }
                         catch (Exception ex)
                         {
                             Logger.Debug($"Unexpected error while resolving child PID {pe32.th32ProcessID}: {ex.Message}");
+                        }
+                        finally
+                        {
+                            child?.Dispose();
                         }
                     }
                 } while (NativeMethods.Process32Next(hSnapshot, ref pe32));
@@ -147,9 +149,10 @@ namespace Servy.Service.ProcessManagement
                 // Only process the child if we haven't seen it before to short-circuit cycles
                 foreach (int childPid in childrenPids.Where(visited.Add))
                 {
+                    Process? child = null;
                     try
                     {
-                        var child = Process.GetProcessById(childPid);
+                        child = Process.GetProcessById(childPid);
 
                         // Strict StartTime check to prevent PID reuse collisions
                         if (child.StartTime >= current.StartTime.AddSeconds(-1))
@@ -158,17 +161,18 @@ namespace Servy.Service.ProcessManagement
 
                             // Queue the validated child for the next level of BFS
                             queue.Enqueue((childPid, child.StartTime));
-                        }
-                        else
-                        {
-                            child.Dispose(); // Not our child, dispose it immediately
+                            child = null; // ownership transferred to the list
                         }
                     }
                     catch (ArgumentException) { /* PID gone, expected */ }
-                    catch (System.ComponentModel.Win32Exception) { /* Access denied, expected */ }
+                    catch (Win32Exception) { /* Access denied, expected */ }
                     catch (Exception ex)
                     {
                         Logger.Debug($"Unexpected error while resolving descendant PID {childPid}: {ex.Message}");
+                    }
+                    finally
+                    {
+                        child?.Dispose();
                     }
                 }
             }

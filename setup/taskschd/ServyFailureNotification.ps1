@@ -134,9 +134,12 @@ function Show-Notification {
 
     $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("PowerShell")
     $notifier.Show($toast)
+    
+    return $true
   } catch {
     $syncError = "ServyToast: Notification path failed. Details: $($_.Exception.Message)"
     Write-FallbackError -Message $syncError -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+    return $false
   }
 }
 
@@ -162,10 +165,16 @@ foreach ($evt in $eventsToProcess) {
     $parsed = ConvertFrom-ServyEventMessage -Message $evt.Message
 
     # Show the notification
-    Show-Notification -ServiceName $parsed.ServiceName -LogText $parsed.LogText -scriptDir $scriptDir -FallbackLogFile $fallbackLogFile
+    $delivered = Show-Notification -ServiceName $parsed.ServiceName -LogText $parsed.LogText -scriptDir $scriptDir -FallbackLogFile $fallbackLogFile
     
-    # Track this timestamp as successfully processed
-    Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir
+    if ($delivered) {
+        # Track this timestamp as successfully processed
+        Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir
+    } else {
+        # Stop processing so the next run retries from this event
+        Write-Host "Notification failed. Halting queue processing."
+        break
+    }
     
     Start-Sleep -Milliseconds 500
 }
