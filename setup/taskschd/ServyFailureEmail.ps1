@@ -311,7 +311,7 @@ foreach ($evt in $eventsToProcess) {
           # Network drop, timeout, or SMTP temp-fail. DO NOT advance the watermark. 
           # We break the loop immediately; if SMTP is down, subsequent events in this batch will fail too.
           Write-Host "Transient failure sending email for '$($parsed.ServiceName)'. Halting processing to preserve event queue." -ForegroundColor Red
-          break
       }
   }
+  if ($sendStatus -eq 'TransientFailure') { break }   # break the foreach explicitly
 }
