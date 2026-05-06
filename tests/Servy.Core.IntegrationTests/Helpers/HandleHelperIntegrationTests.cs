@@ -48,17 +48,21 @@ namespace Servy.Core.IntegrationTests.Helpers
         /// </summary>
         private void ExtractHandleExe()
         {
-            // Fast path: if already extracted in this test run, skip immediately
+            // Fast path: if already extracted in this process, skip immediately
             if (_isExtracted || File.Exists(_handleExePath)) return;
 
-            // FIX: Thread-safe lock prevents multiple tests from extracting simultaneously
+            // FIX: Static lock prevents multiple class instances from extracting simultaneously
             lock (_extractionLock)
             {
-                if (_isExtracted || File.Exists(_handleExePath)) return;
+                // Double-check pattern: the file might have been created while we waited for the lock
+                if (_isExtracted || File.Exists(_handleExePath))
+                {
+                    _isExtracted = true;
+                    return;
+                }
 
                 var assembly = Assembly.GetExecutingAssembly();
                 // Resource names usually follow: ProjectNamespace.Folder.FileName.Extension
-                // Update "Servy.Core.IntegrationTests" to match the actual test project namespace if different.
                 string resourceName = "Servy.Core.IntegrationTests.Resources.handle64.exe";
 
                 using (Stream resourceStream = assembly.GetManifestResourceStream(resourceName))
@@ -88,10 +92,24 @@ namespace Servy.Core.IntegrationTests.Helpers
 
         private void WriteResourceToDisk(Stream stream)
         {
-            // FIX: Added FileShare.ReadWrite to prevent locking crashes if Antivirus scans it during write
-            using (FileStream fileStream = new FileStream(_handleExePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+            try
             {
-                stream.CopyTo(fileStream);
+                // FIX: If the file somehow exists but _isExtracted was false, 
+                // FileMode.Create would fail if another process is even just reading it.
+                // We only write if the file isn't physically there.
+                if (File.Exists(_handleExePath)) return;
+
+                // FIX: Added FileShare.ReadWrite. On CI, Antivirus or Windows Indexer 
+                // often grab handles the millisecond a file is created.
+                using (FileStream fileStream = new FileStream(_handleExePath, FileMode.CreateNew, FileAccess.Write, FileShare.ReadWrite))
+                {
+                    stream.CopyTo(fileStream);
+                }
+            }
+            catch (IOException ex) when (ex.HResult == unchecked((int)0x80070050)) // ERROR_FILE_EXISTS
+            {
+                // If we hit a race where the file was created between our check and our open, 
+                // it's a win—the file is there.
             }
         }
 
