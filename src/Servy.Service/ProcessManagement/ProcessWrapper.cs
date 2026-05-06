@@ -17,6 +17,7 @@ namespace Servy.Service.ProcessManagement
     /// </summary>
     public class ProcessWrapper : IProcessWrapper
     {
+        private static readonly object ConsoleStateLock = new object();
         private readonly Process _process;
         private readonly IServyLogger _logger;
         private bool _disposed;
@@ -486,80 +487,86 @@ namespace Servy.Service.ProcessManagement
         /// </remarks>
         private bool? SendCtrlC(Process process)
         {
-            // FIX: ALWAYS free the console first to prevent stale locks from previous iterations
-            _ = FreeConsole();
-
-            if (!AttachConsole(process.Id))
+            // The ConsoleStateLock lock serializes graceful-shutdown signals across services.
+            // That is a feature: the SetConsoleCtrlHandler API is process-wide,
+            // so the only correct execution model is one-at-a-time.
+            lock (ConsoleStateLock)
             {
-                int error = Marshal.GetLastWin32Error();
+                // FIX: ALWAYS free the console first to prevent stale locks from previous iterations
+                _ = FreeConsole();
 
-                // ERROR_PIPE_NOT_CONNECTED (233)
-                // The child shares the parent's console. It already received the broadcasted Ctrl+C 
-                // when the parent was signaled. We return TRUE to force the wrapper to wait for 
-                // a graceful exit rather than instantly triggering process.Kill().
-                if (error == 233)
+                if (!AttachConsole(process.Id))
                 {
-                    _logger?.Info($"Process '{process.Format()}' shares a console group. Awaiting graceful shutdown...");
-                    return true;
-                }
+                    int error = Marshal.GetLastWin32Error();
 
-                // ERROR_INVALID_HANDLE (6) or ERROR_GEN_FAILURE (31)
-                if (error == Errors.ERROR_INVALID_HANDLE || error == 31)
-                {
+                    // ERROR_PIPE_NOT_CONNECTED (233)
+                    // The child shares the parent's console. It already received the broadcasted Ctrl+C 
+                    // when the parent was signaled. We return TRUE to force the wrapper to wait for 
+                    // a graceful exit rather than instantly triggering process.Kill().
+                    if (error == 233)
+                    {
+                        _logger?.Info($"Process '{process.Format()}' shares a console group. Awaiting graceful shutdown...");
+                        return true;
+                    }
+
+                    // ERROR_INVALID_HANDLE (6) or ERROR_GEN_FAILURE (31)
+                    if (error == Errors.ERROR_INVALID_HANDLE || error == 31)
+                    {
+                        return false;
+                    }
+
+                    if (error == Errors.ERROR_INVALID_PARAMETER)
+                    {
+                        return null; // Process already exited
+                    }
+
+                    _logger?.Warn($"Sending Ctrl+C: Failed to attach to '{process.Format()}': {new Win32Exception(error).Message} (Error: {error})");
                     return false;
                 }
 
-                if (error == Errors.ERROR_INVALID_PARAMETER)
-                {
-                    return null; // Process already exited
-                }
-
-                _logger?.Warn($"Sending Ctrl+C: Failed to attach to '{process.Format()}': {new Win32Exception(error).Message} (Error: {error})");
-                return false;
-            }
-
-            // CRITICAL: Temporarily ignore Ctrl+C in the calling process (the service).
-            // Passing 'null' as the handler and 'true' as the add flag tells the OS 
-            // to ignore CTRL_C_EVENT for this specific process.
-            if (!SetConsoleCtrlHandler(null, true))
-            {
-                int error = Marshal.GetLastWin32Error();
-                _logger?.Error($"Failed to suppress console control handlers in the service (Win32 Error: {error}). Aborting signal to prevent service self-termination.");
-                _ = FreeConsole();
-                return false;
-            }
-
-            try
-            {
-                // CRITICAL: Yield to the OS to allow the handler registration 
-                // and console attachment to propagate through conhost.exe before firing the event.
-                Thread.Sleep(50);
-
-                // Don't call GenerateConsoleCtrlEvent immediately after SetConsoleCtrlHandler.
-                // A delay was observed as of Windows 10, version 2004 and Windows Server 2019.
-                // The Win32 API Trap:
-                // CTRL_C_EVENT: This signal cannot be limited to a specific process group.
-                // If dwProcessGroupId is nonzero, this function will succeed, but
-                // the CTRL + C signal will not be received by processes within
-                // the specified process group.
-                // So passing the specific process group ID instead of 0 will not work.
-                _ = GenerateConsoleCtrlEvent(CtrlEvents.CTRL_C_EVENT, 0);
-                _logger?.Info($"Sent Ctrl+C to process '{process.Format()}'.");
-            }
-            finally
-            {
-                // Detach from the child's console
-                _ = FreeConsole();
-
-                // Restore default Ctrl+C handling (remove the ignore flag) for the service process
-                if (!SetConsoleCtrlHandler(null, false))
+                // CRITICAL: Temporarily ignore Ctrl+C in the calling process (the service).
+                // Passing 'null' as the handler and 'true' as the add flag tells the OS 
+                // to ignore CTRL_C_EVENT for this specific process.
+                if (!SetConsoleCtrlHandler(null, true))
                 {
                     int error = Marshal.GetLastWin32Error();
-                    _logger?.Error($"Failed to restore console control handlers in the service (Win32 Error: {error}).");
+                    _logger?.Error($"Failed to suppress console control handlers in the service (Win32 Error: {error}). Aborting signal to prevent service self-termination.");
+                    _ = FreeConsole();
+                    return false;
                 }
-            }
 
-            return true;
+                try
+                {
+                    // CRITICAL: Yield to the OS to allow the handler registration 
+                    // and console attachment to propagate through conhost.exe before firing the event.
+                    Thread.Sleep(50);
+
+                    // Don't call GenerateConsoleCtrlEvent immediately after SetConsoleCtrlHandler.
+                    // A delay was observed as of Windows 10, version 2004 and Windows Server 2019.
+                    // The Win32 API Trap:
+                    // CTRL_C_EVENT: This signal cannot be limited to a specific process group.
+                    // If dwProcessGroupId is nonzero, this function will succeed, but
+                    // the CTRL + C signal will not be received by processes within
+                    // the specified process group.
+                    // So passing the specific process group ID instead of 0 will not work.
+                    _ = GenerateConsoleCtrlEvent(CtrlEvents.CTRL_C_EVENT, 0);
+                    _logger?.Info($"Sent Ctrl+C to process '{process.Format()}'.");
+                }
+                finally
+                {
+                    // Detach from the child's console
+                    _ = FreeConsole();
+
+                    // Restore default Ctrl+C handling (remove the ignore flag) for the service process
+                    if (!SetConsoleCtrlHandler(null, false))
+                    {
+                        int error = Marshal.GetLastWin32Error();
+                        _logger?.Error($"Failed to restore console control handlers in the service (Win32 Error: {error}).");
+                    }
+                }
+
+                return true;
+            }
         }
 
     }

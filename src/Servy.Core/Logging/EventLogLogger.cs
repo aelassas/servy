@@ -18,8 +18,11 @@ namespace Servy.Core.Logging
         private const int EventLogMessageMaxChars = 31000;
 
         private EventLog _eventLog;
-        private LogLevel _currentLogLevel;
-        private bool _isEventLogEnabled;
+
+        // Volatile backing fields ensure thread visibility when updated dynamically
+        private volatile int _currentLogLevel;
+        private volatile bool _isEventLogEnabled;
+
         private readonly string _source;
 
         #endregion
@@ -53,7 +56,7 @@ namespace Servy.Core.Logging
         {
             _source = source;
             _isEventLogEnabled = isEventLogEnabled;
-            _currentLogLevel = level;
+            _currentLogLevel = (int)level;
             Prefix = prefix; // Immutable assignment
 
             if (_isEventLogEnabled)
@@ -100,13 +103,13 @@ namespace Servy.Core.Logging
         /// <inheritdoc/>
         public void SetLogLevel(LogLevel level)
         {
-            _currentLogLevel = level;
+            _currentLogLevel = (int)level;
         }
 
         /// <inheritdoc/>
         public void Debug(string message, Exception ex = null)
         {
-            if (_currentLogLevel <= LogLevel.Debug)
+            if ((LogLevel)_currentLogLevel <= LogLevel.Debug)
             {
                 var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
                 // Debug logs are traditionally skipped for Event Log to avoid clutter, 
@@ -118,7 +121,7 @@ namespace Servy.Core.Logging
         /// <inheritdoc/>
         public void Info(string message)
         {
-            if (_currentLogLevel <= LogLevel.Info)
+            if ((LogLevel)_currentLogLevel <= LogLevel.Info)
             {
                 var formattedMessage = Format(message);
                 if (_isEventLogEnabled)
@@ -132,7 +135,7 @@ namespace Servy.Core.Logging
         /// <inheritdoc/>
         public void Warn(string message)
         {
-            if (_currentLogLevel <= LogLevel.Warn)
+            if ((LogLevel)_currentLogLevel <= LogLevel.Warn)
             {
                 var formattedMessage = Format(message);
                 if (_isEventLogEnabled)
@@ -146,7 +149,7 @@ namespace Servy.Core.Logging
         /// <inheritdoc/>
         public void Error(string message, Exception ex = null)
         {
-            if (_currentLogLevel <= LogLevel.Error)
+            if ((LogLevel)_currentLogLevel <= LogLevel.Error)
             {
                 var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
                 if (_isEventLogEnabled)
