@@ -796,6 +796,7 @@ namespace Servy.Manager.ViewModels
                 noneFormat: Strings.Footer_Service_None,
                 oneFormat: Strings.Footer_Service_One,
                 manyFormat: Strings.Footer_Service_Many);
+
         /// <summary>
         /// Executes a bulk operation on all selected and installed services.
         /// </summary>
@@ -814,9 +815,9 @@ namespace Servy.Manager.ViewModels
 
                 // 1. Identify selected and installed services
                 var selectedServices = _services
-                .Where(s => s.IsInstalled && s.IsChecked)
-                .Select(s => s.Service)
-                .ToList();
+                    .Where(s => s.IsInstalled && s.IsChecked)
+                    .Select(s => s.Service)
+                    .ToList();
 
                 if (selectedServices.Count == 0)
                 {
@@ -831,42 +832,49 @@ namespace Servy.Manager.ViewModels
                 await SetBusyStateAsync(true);
 
                 // 3. Dispatch all operations concurrently: Scale based on hardware
-                int maxDegreeOfParallelism = Math.Min(Environment.ProcessorCount * 2, _appConfig.MaxBulkOperationParallelism);
+                // Guard against 0. Ensure at least 1 thread is allowed.
+                int maxDegreeOfParallelism = Math.Max(1, Math.Min(Environment.ProcessorCount * 2, _appConfig.MaxBulkOperationParallelism));
 
                 using (var throttler = new SemaphoreSlim(maxDegreeOfParallelism))
                 {
                     var operationTasks = selectedServices.Select(async service =>
                     {
-                        await throttler.WaitAsync();
+                        await throttler.WaitAsync().ConfigureAwait(false);
                         try
                         {
-                            bool success = await operation(service);
+                            // If operation() modifies UI-bound properties (like Status), it must do 
+                            // so safely. If this hangs, check what 'operation' is doing internally.
+                            bool success = await operation(service).ConfigureAwait(false);
                             return new { ServiceName = service?.Name ?? string.Empty, Success = success };
                         }
                         finally
                         {
                             throttler.Release();
                         }
-                    });
+                    }).ToList();
 
-                    var results = await Task.WhenAll(operationTasks);
+                    var results = await Task.WhenAll(operationTasks).ConfigureAwait(false);
 
                     // Filter out the failed ones
                     var failed = results.Where(r => !r.Success).Select(r => r.ServiceName).ToList();
 
                     // 4. Handle results and UI feedback
-                    if (failed.Count == 0)
+                    // Correctly await the async Dispatcher operation to prevent fire-and-forget
+                    await _dispatcher!.InvokeAsync(new Func<Task>(async () =>
                     {
-                        await _messageBoxService.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
-                    }
-                    else
-                    {
-                        var message = failed.Count == selectedServices.Count
-                            ? Strings.Msg_AllOperationsFailed
-                            : string.Format(Strings.Msg_OperationCompletedWithErrorsDetails, string.Join(", ", failed));
+                        if (failed.Count == 0)
+                        {
+                            await _messageBoxService.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
+                        }
+                        else
+                        {
+                            var message = failed.Count == selectedServices.Count
+                                ? Strings.Msg_AllOperationsFailed
+                                : string.Format(Strings.Msg_OperationCompletedWithErrorsDetails, string.Join(", ", failed));
 
-                        await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
-                    }
+                            await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
+                        }
+                    })).Task; // Await the inner Task produced by Func<Task>
                 }
             }
             catch (Exception ex)

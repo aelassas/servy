@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Security;
+using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -332,28 +333,44 @@ namespace Servy.Core.Native
         {
             /// <summary>The unique file index.</summary>
             public ulong FileIndex;
+
             /// <summary>The volume serial number.</summary>
             public uint VolumeSerialNumber;
-            /// <summary>A hash of the start of the file for secondary identification.</summary>
-            public string PrefixHash;
+
+            /// <summary>A digest of the start of the file for secondary identification.</summary>
+            /// <remarks>Renamed from PrefixHash to reflect its role as a content-based digest.</remarks>
+            public string PrefixDigest;
+
             /// <summary>Indicates if handle-based information was successfully retrieved.</summary>
             public bool IsValidHandleInfo;
 
             /// <summary>Checks if the identity is different from another file identity.</summary>
+            /// <remarks>
+            /// This method prioritizes handle-based metadata as authoritative evidence. 
+            /// If handle info is asymmetric or missing, it falls back to content-based digests.
+            /// </remarks>
             public bool IsDifferentFrom(FILE_IDENTITY other)
             {
+                // Asymmetric handle info indicates a change in accessibility or probe state;
+                // treat as different to ensure the caller (e.g., LogTailer) re-evaluates.
+                if (IsValidHandleInfo != other.IsValidHandleInfo) return true;
+
                 if (IsValidHandleInfo && other.IsValidHandleInfo)
                 {
+                    // Authoritative metadata check: Volume and Index must match for the file to be identical.
                     if (FileIndex != other.FileIndex || VolumeSerialNumber != other.VolumeSerialNumber)
                         return true;
+
+                    return false; // Strong identity match
                 }
 
-                if (PrefixHash != null && other.PrefixHash != null)
+                // Fallback to content-based identification if metadata is unavailable
+                if (PrefixDigest != null && other.PrefixDigest != null)
                 {
-                    return PrefixHash != other.PrefixHash;
+                    return PrefixDigest != other.PrefixDigest;
                 }
 
-                return false;
+                return false; // Identity is undeterminable; typically requires metadata fallback
             }
         }
 
@@ -932,7 +949,7 @@ namespace Servy.Core.Native
         }
 
         /// <summary>
-        /// Extracts the unique <see cref="FILE_IDENTITY"/> from an open <see cref="FileStream"/>.
+        /// Probes a file to capture its unique identity using OS handles and cryptographic content digests.
         /// </summary>
         /// <param name="fs">The open file stream.</param>
         /// <param name="logger">Optional logger to surface probe failures for observability.</param>
@@ -957,9 +974,9 @@ namespace Servy.Core.Native
                 logger?.Debug($"GetFileIdentity: Kernel32 handle probe failed for '{fs.Name}'. Exception: {ex.GetType().Name} - {ex.Message}");
             }
 
-            // 2. Prefix-Hash Content Probe
+            // 2. Prefix-Digest Content Probe
             // Note: We use a separate block to ensure that a handle-info failure 
-            // does not prevent a best-effort content hash check.
+            // does not prevent a best-effort content check.
             try
             {
                 if (fs.CanSeek)
@@ -967,19 +984,34 @@ namespace Servy.Core.Native
                     long origPos = fs.Position;
                     fs.Seek(0, SeekOrigin.Begin);
 
-                    byte[] buffer = new byte[64];
+                    // FIX: Increased buffer size to 4KB to get past common log headers/prologues.
+                    // Using SHA256 ensures a unique digest even for files with similar content patterns.
+                    byte[] buffer = new byte[4096];
                     int read = fs.Read(buffer, 0, buffer.Length);
 
-                    identity.PrefixHash = Convert.ToBase64String(buffer, 0, read);
+                    if (read > 0)
+                    {
+                        using (var sha256 = SHA256.Create())
+                        {
+                            byte[] hashBytes = sha256.ComputeHash(buffer, 0, read);
+                            // Store as a lowercase hex string for consistent identification across probes
+                            identity.PrefixDigest = Convert.ToHexString(hashBytes).ToLowerInvariant();
+                        }
+                    }
+                    else
+                    {
+                        // Ensure identity.PrefixDigest is never null to prevent NREs in IsDifferentFrom
+                        identity.PrefixDigest = string.Empty;
+                    }
 
-                    // Restore position to avoid side-effects for the caller
+                    // Restore position to avoid side-effects for the caller (like LogTailer)
                     fs.Seek(origPos, SeekOrigin.Begin);
                 }
             }
             catch (Exception ex)
             {
                 // Surfaces Seek/Read failures (e.g. file truncated or locked by another process)
-                logger?.Debug($"GetFileIdentity: Prefix-hash probe failed for '{fs.Name}'. Exception: {ex.GetType().Name} - {ex.Message}");
+                logger?.Debug($"GetFileIdentity: Prefix-digest probe failed for '{fs.Name}'. Exception: {ex.GetType().Name} - {ex.Message}");
             }
 
             return identity;

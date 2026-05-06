@@ -1,4 +1,5 @@
-﻿using Servy.Core.Helpers;
+﻿using Servy.Core.Config;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.Helpers;
 using System.Diagnostics;
@@ -224,8 +225,13 @@ namespace Servy.Service.ProcessManagement
                 // Synchronous mode: Wait for exit while pulsing the SCM
                 WaitForExitWithHeartbeat(process, options, logger);
 
-                // Ensure all async reads are finished before disposing streams
-                process.UnderlyingProcess.WaitForExit();
+                // Ensure all async reads are finished before disposing streams.
+                // ROBUSTNESS: Use a bounded wait to prevent hanging the SCM thread indefinitely 
+                // if pipes are stuck or the child process fails to close its handles.
+                if (!process.UnderlyingProcess.WaitForExit(AppConfig.OutputDrainTimeoutMs))
+                {
+                    logger.Warn($"Standard output/error streams for '{options.ExecutablePath}' failed to drain within {AppConfig.OutputDrainTimeoutMs}ms. Continuing to avoid stalling the service host.");
+                }
 
                 returnedOwnership = true;
                 return process;

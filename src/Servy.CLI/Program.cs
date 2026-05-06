@@ -77,24 +77,24 @@ namespace Servy.CLI
         {
             Logger.Initialize("Servy.CLI.log");
 
-            if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
-            {
-                Logger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
-                             $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
-
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"[CRITICAL] Vulnerable SQLite version detected: {detectedVersion}");
-                Console.WriteLine($"This version of Servy requires SQLite {AppConfig.MinRequiredSqliteVersion}+.");
-                Console.ResetColor();
-
-                // Exit with a CLI-specific sentinel instead of a SCM Win32 error code
-                Environment.Exit((int)CliExitCode.IncompatibleEnvironment);
-            }
-
             IAppDbContext? dbContext = null;
             ProtectedKeyProvider? protectedKeyProvider = null;
             try
             {
+                if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
+                {
+                    Logger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
+                                 $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
+
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"[CRITICAL] Vulnerable SQLite version detected: {detectedVersion}");
+                    Console.WriteLine($"This version of Servy requires SQLite {AppConfig.MinRequiredSqliteVersion}+.");
+                    Console.ResetColor();
+
+                    // Exit with a CLI-specific sentinel instead of a SCM Win32 error code
+                    return (int)CliExitCode.IncompatibleEnvironment;
+                }
+
                 var verbs = GetVerbs();
                 var firstArg = args.Length > 0 ? args[0] : null;
 

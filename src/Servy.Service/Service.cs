@@ -2486,15 +2486,15 @@ namespace Servy.Service
                 // Total timeout = (Parent + Children) * timeoutMs + 10s safety buffer
                 var totalTimeoutMs = (((long)(childCount + 1)) * timeoutMs) + 10_000L;
 
-                Task<bool> stopTask = Task.Run(() =>
+                Task<bool?> stopTask = Task.Run(() =>
                 {
                     // FIX: Send Ctrl+C to the root wrapper first. 
                     // This natively broadcasts the signal to all console-sharing children (like Python).
                     _logger?.Info("Signaling main wrapper process (broadcasts to console group)...");
-                    bool mainExitedGracefully = true;
+                    bool? mainExitedGracefully = true;
                     if (!process.HasExited)
                     {
-                        mainExitedGracefully = process.Stop(timeoutMs) ?? true;
+                        mainExitedGracefully = process.Stop(timeoutMs);
                     }
 
                     // FIX: Clean up descendants afterward. 

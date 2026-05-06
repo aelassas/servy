@@ -398,21 +398,71 @@ namespace Servy.Core.Helpers
 
         /// <summary>
         /// Writes content to a file atomically by writing to a temporary file first and then performing an atomic move.
+        /// This synchronous version is safe to call from UI threads as it avoids the sync-over-async deadlock risk 
+        /// associated with blocking on asynchronous tasks.
         /// </summary>
         /// <param name="path">The full destination path where the file should be written.</param>
         /// <param name="writeContent">An action that receives a <see cref="Stream"/> to write the actual file content.</param>
+        /// <remarks>
+        /// On NTFS volumes, the final move operation is an atomic metadata update, ensuring the destination 
+        /// file is never in a partially written state.
+        /// </remarks>
         public static void WriteFileAtomic(string path, Action<Stream> writeContent)
-            => WriteFileAtomicCore(path, fs =>
+        {
+            // Ensure the parent directory exists before attempting to create the temp file.
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir))
             {
-                writeContent(fs);
-                fs.Flush();
-                return default;
-            }).GetAwaiter().GetResult();
+                Directory.CreateDirectory(dir);
+            }
+
+            var tmp = path + ".tmp";
+            try
+            {
+                using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    writeContent(fs);
+                    // Explicitly flush to disk to ensure data integrity before the move operation.
+                    fs.Flush();
+                }
+
+                // Remove attributes that would prevent the move operation from succeeding.
+                PrepareDestinationForMove(path);
+
+                // Standard retry logic to handle transient "Access Denied" errors (Win32 Error 5).
+                // This is commonly caused by Antivirus or Indexing services locking the newly created .tmp file.
+                int retries = 3;
+                while (true)
+                {
+                    try
+                    {
+                        // On NTFS, moving within the same volume is an atomic metadata operation.
+                        File.Move(tmp, path, overwrite: true);
+                        break;
+                    }
+                    catch (Exception ex) when (retries > 0 && (ex is IOException || ex is UnauthorizedAccessException))
+                    {
+                        retries--;
+                        // Synchronous pause to allow external locks to be released.
+                        Thread.Sleep(100);
+                    }
+                }
+            }
+            finally
+            {
+                // Ensure the temporary file is removed if the move failed or an exception occurred during writing.
+                CleanupTempFile(tmp);
+            }
+        }
 
         /// <summary>
         /// Internal core logic for atomic file writes. Centralizes directory creation, 
-        /// temp file management, and atomic moves.
+        /// temp file management, and atomic moves for asynchronous callers.
         /// </summary>
+        /// <param name="path">The full destination path where the file should be written.</param>
+        /// <param name="writer">An asynchronous function that receives a <see cref="Stream"/> to write content.</param>
+        /// <param name="ct">An optional cancellation token to abort the operation.</param>
+        /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
         private static async ValueTask WriteFileAtomicCore(string path, Func<Stream, ValueTask> writer, CancellationToken ct = default)
         {
             var dir = Path.GetDirectoryName(path);
@@ -428,21 +478,14 @@ namespace Servy.Core.Helpers
             {
                 using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
-                    await writer(fs);
-                    await fs.FlushAsync(ct);
+                    // ConfigureAwait(false) is used here as we do not require the captured synchronization context.
+                    await writer(fs).ConfigureAwait(false);
+                    await fs.FlushAsync(ct).ConfigureAwait(false);
                 }
 
-                // Fix: Ensure the existing file isn't Read-Only, which causes Error 5
-                if (File.Exists(path))
-                {
-                    var attributes = File.GetAttributes(path);
-                    if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
-                    {
-                        File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
-                    }
-                }
+                // Ensure the existing file isn't Read-Only, which causes Error 5
+                PrepareDestinationForMove(path);
 
-                // Retry logic for transient locks (Antivirus/Indexing)
                 int retries = 3;
                 while (true)
                 {
@@ -452,20 +495,53 @@ namespace Servy.Core.Helpers
                         File.Move(tmp, path, overwrite: true);
                         break;
                     }
-                    catch (Win32Exception ex) when (ex.NativeErrorCode == 5 && retries > 0)
+                    catch (Exception ex) when (retries > 0 && (ex is IOException || ex is UnauthorizedAccessException))
                     {
                         retries--;
-                        await Task.Delay(100, ct); // Give AV a moment to release its grip
+                        // Asynchronous delay to keep the thread pool unblocked during retries.
+                        await Task.Delay(100, ct).ConfigureAwait(false);
                     }
                 }
             }
             finally
             {
-                // Cleanup the temporary file if the move failed or an exception occurred.
-                if (File.Exists(tmp))
+                CleanupTempFile(tmp);
+            }
+        }
+
+        /// <summary>
+        /// Prepares the destination file for an overwrite operation by removing restrictive attributes.
+        /// </summary>
+        /// <param name="path">The path to the destination file.</param>
+        private static void PrepareDestinationForMove(string path)
+        {
+            // Overwriting a file with the Read-Only attribute set results in a Win32 Error 5 (Access Denied).
+            if (File.Exists(path))
+            {
+                var attributes = File.GetAttributes(path);
+                if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
                 {
-                    try { File.Delete(tmp); }
-                    catch { /* Swallow cleanup errors to avoid masking primary exceptions */ }
+                    File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Safely attempts to delete a temporary file.
+        /// </summary>
+        /// <param name="tmp">The path to the temporary file to remove.</param>
+        private static void CleanupTempFile(string tmp)
+        {
+            if (File.Exists(tmp))
+            {
+                try
+                {
+                    File.Delete(tmp);
+                }
+                catch
+                {
+                    // Cleanup errors are swallowed to prevent masking the primary exception 
+                    // that occurred during the file write or move process.
                 }
             }
         }
