@@ -16,6 +16,7 @@ namespace Servy.UI.IntegrationTests.Services
         public MessageBoxServiceTests()
         {
             _service = new MessageBoxService();
+            MessageBoxService.IsHeadlessMode = true;
         }
 
         #region Smoke Tests (Dispatcher Verification)
