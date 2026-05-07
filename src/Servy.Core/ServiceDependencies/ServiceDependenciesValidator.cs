@@ -42,7 +42,7 @@ namespace Servy.Core.ServiceDependencies
 
                 if (!ValidServiceNameRegex.IsMatch(serviceName))
                 {
-                    errors.Add($"Invalid service name '{serviceName}'. Only letters, digits, hyphens, and underscores are allowed.");
+                    errors.Add($"[ServiceDependencies] Invalid service name '{serviceName}'. Only letters, digits, hyphens, and underscores are allowed.");
                 }
             }
 
