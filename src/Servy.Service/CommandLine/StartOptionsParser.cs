@@ -139,7 +139,7 @@ namespace Servy.Service.CommandLine
         /// This manual mapping is used instead of <see cref="Enum.TryParse{TEnum}(string, out TEnum)"/> 
         /// to eliminate string allocations and reflection overhead during service startup.
         /// </remarks>
-        private static ProcessPriorityClass MapPriority(ProcessPriority p)
+        public static ProcessPriorityClass MapPriority(ProcessPriority p)
         {
             switch (p)
             {

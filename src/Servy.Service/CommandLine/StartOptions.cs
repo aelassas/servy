@@ -30,9 +30,8 @@ namespace Servy.Service.CommandLine
 
         /// <summary>
         /// Gets or sets the process priority class.
-        /// Defaults to <see cref="ProcessPriorityClass.Normal"/>.
         /// </summary>
-        public ProcessPriorityClass Priority { get; set; } = ProcessPriorityClass.Normal;
+        public ProcessPriorityClass Priority { get; set; } = StartOptionsParser.MapPriority(AppConfig.DefaultProcessPriority);
 
         /// <summary>
         /// Whether to enable the console user interface for the service.
@@ -74,18 +73,17 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Gets or sets the heartbeat interval in seconds for health monitoring.
         /// </summary>
-        public int HeartbeatInterval { get; set; }
+        public int HeartbeatInterval { get; set; } = AppConfig.DefaultHeartbeatInterval;
 
         /// <summary>
         /// Gets or sets the maximum allowed consecutive failed health checks before recovery action is triggered.
         /// </summary>
-        public int MaxFailedChecks { get; set; }
+        public int MaxFailedChecks { get; set; } = AppConfig.DefaultMaxFailedChecks;
 
         /// <summary>
         /// Gets or sets the recovery action to perform when health checks fail.
-        /// Defaults to <see cref="RecoveryAction.None"/>.
         /// </summary>
-        public RecoveryAction RecoveryAction { get; set; } = RecoveryAction.None;
+        public RecoveryAction RecoveryAction { get; set; } = AppConfig.DefaultRecoveryAction;
 
         /// <summary>
         /// Gets or sets a flag for running recovery action even if the process exits successfully.
@@ -174,7 +172,7 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the ignore failure option of pre-launch script.
         /// Defaults to false.
         /// </summary>
-        public bool PreLaunchIgnoreFailure { get; set; } = false;
+        public bool PreLaunchIgnoreFailure { get; set; } = AppConfig.DefaultPreLaunchIgnoreFailure;
 
         /// <summary>
         /// Gets or sets the full path to the post-launch executable to run.
@@ -209,27 +207,27 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Gets or sets a value indicating whether size log rotation is enabled.
         /// </summary>
-        public bool EnableSizeRotation { get; set; } = false;
+        public bool EnableSizeRotation { get; set; } = AppConfig.DefaultEnableSizeRotation;
 
         /// <summary>
         /// Gets or sets a value indicating whether date log rotation is enabled.
         /// </summary>
-        public bool EnableDateRotation { get; set; } = false;
+        public bool EnableDateRotation { get; set; } = AppConfig.DefaultEnableDateRotation;
 
         /// <summary>
         /// Gets or sets a value indicating date rotation type (<see cref="Core.Enums.DateRotationType"/>).
         /// </summary>
-        public DateRotationType DateRotationType { get; set; } = DateRotationType.Daily;
+        public DateRotationType DateRotationType { get; set; } = AppConfig.DefaultDateRotationType;
 
         /// <summary>
         /// Gets or sets the timeout in seconds to wait for the process to start successfully before considering the startup as failed.
         /// </summary>
-        public int StartTimeout { get; set; }
+        public int StartTimeout { get; set; } = AppConfig.DefaultStartTimeout;
 
         /// <summary>
         /// Gets or sets the timeout in seconds to wait for the process to exit.
         /// </summary>
-        public int StopTimeout { get; set; }
+        public int StopTimeout { get; set; } = AppConfig.DefaultStopTimeout;
 
         /// <summary>
         /// Optional path to an executable that runs before the service stops.
