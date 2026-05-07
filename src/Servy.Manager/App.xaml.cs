@@ -297,8 +297,11 @@ namespace Servy.Manager
                         return defaultValue;
                     }
 
-                    if (Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel)) LogLevel = logLevel;
-                    else LogLevel = LogLevel.Info;
+                    if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel) || !Enum.IsDefined(typeof(LogLevel), logLevel))
+                    {
+                        logLevel = AppConfig.DefaultLogLevel;
+                    }
+                    LogLevel = logLevel;
 
 #if DEBUG
                     DesktopAppPublishPath = AppConfig.DesktopAppPublishReleasePath;

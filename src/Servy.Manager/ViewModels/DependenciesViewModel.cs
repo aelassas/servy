@@ -103,17 +103,17 @@ namespace Servy.Manager.ViewModels
         public IAsyncCommand CopyPidCommand { get; set; }
 
         /// <summary>
-        /// Command to refresh depdency tree.
+        /// Command to refresh dependency tree.
         /// </summary>
         public IAsyncCommand RefreshCommand { get; }
 
         /// <summary>
-        /// Command to expand all depdency tree.
+        /// Command to expand all dependency tree.
         /// </summary>
         public ICommand ExpandAllCommand { get; }
 
         /// <summary>
-        /// Command to collapse all depdency tree nodes.
+        /// Command to collapse all dependency tree nodes.
         /// </summary>
         public ICommand CollapseAllCommand { get; }
 
@@ -130,6 +130,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="appConfig">Application configuration settings.</param>
         /// <param name="cursorService">Service used to control the cursor state.</param>
         /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
+        /// <param name="messageBoxService">Service used to display modal dialogs (e.g. error popups).</param>
         public DependenciesViewModel(
             IServiceRepository serviceRepository,
             IServiceManager serviceManager,
@@ -145,8 +146,8 @@ namespace Servy.Manager.ViewModels
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
 
-            CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
-            RefreshCommand = new AsyncCommand(LoadDependencyTreeAsync);
+            CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null, name: nameof(CopyPidCommand));
+            RefreshCommand = new AsyncCommand(LoadDependencyTreeAsync, name: nameof(RefreshCommand));
             ExpandAllCommand = new RelayCommand<object>(_ => SetExpansion(DependencyTree, true));
             CollapseAllCommand = new RelayCommand<object>(_ => SetExpansion(DependencyTree, false));
 

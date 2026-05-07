@@ -2,7 +2,6 @@
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
-using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -12,7 +11,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static Servy.Core.Native.NativeMethods;
 
@@ -70,7 +68,10 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 
                 ConfigFileType configFileType;
-                if (string.IsNullOrWhiteSpace(opts.ConfigFileType) || !Enum.TryParse(opts.ConfigFileType, true, out configFileType))
+                if (string.IsNullOrWhiteSpace(opts.ConfigFileType)
+                    || !Enum.TryParse(opts.ConfigFileType, true, out configFileType)
+                    || !Enum.IsDefined(typeof(ConfigFileType), configFileType)
+                    || char.IsDigit(opts.ConfigFileType.Trim()[0]))
                     return CommandResult.Fail(Strings.Msg_InvalidConfigFileType);
 
                 if (string.IsNullOrWhiteSpace(opts.Path))

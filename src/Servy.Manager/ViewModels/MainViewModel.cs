@@ -345,16 +345,16 @@ namespace Servy.Manager.ViewModels
 
             ServicesView = new ListCollectionView(_services);
 
-            SearchCommand = new AsyncCommand(SearchServicesAsync);
-            ConfigureCommand = new AsyncCommand(ConfigureServiceAsync);
-            ImportXmlCommand = new AsyncCommand(ImportXmlConfigAsync);
-            ImportJsonCommand = new AsyncCommand(ImportJsonConfigAsync);
-            StartSelectedCommand = new AsyncCommand(StartSelectedAsync);
-            StopSelectedCommand = new AsyncCommand(StopSelectedAsync);
-            RestartSelectedCommand = new AsyncCommand(RestartSelectedAsync);
-            OpenDocumentationCommand = new AsyncCommand(OpenDocumentation);
-            CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync);
-            OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialog);
+            SearchCommand = new AsyncCommand(SearchServicesAsync, name: nameof(SearchCommand));
+            ConfigureCommand = new AsyncCommand(ConfigureServiceAsync, name: nameof(ConfigureCommand));
+            ImportXmlCommand = new AsyncCommand(ImportXmlConfigAsync, name: nameof(ImportXmlCommand));
+            ImportJsonCommand = new AsyncCommand(ImportJsonConfigAsync, name: nameof(ImportJsonCommand));
+            StartSelectedCommand = new AsyncCommand(StartSelectedAsync, name: nameof(StartSelectedCommand));
+            StopSelectedCommand = new AsyncCommand(StopSelectedAsync, name: nameof(StopSelectedCommand));
+            RestartSelectedCommand = new AsyncCommand(RestartSelectedAsync, name: nameof(RestartSelectedCommand));
+            OpenDocumentationCommand = new AsyncCommand(OpenDocumentation, name: nameof(OpenDocumentationCommand));
+            CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync, name: nameof(CheckUpdatesCommand));
+            OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialog, name: nameof(OpenAboutDialogCommand));
 
             IsConfiguratorEnabled = _appConfig.IsDesktopAppAvailable;
             _appConfig.PropertyChanged += AppConfig_PropertyChanged;

@@ -526,7 +526,7 @@ namespace Servy.Core.Security
             // another thread has already initiated disposal.
             if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
 
-            // 2. ZEROING runs in BOTH paths — managed keys are still reachable from the finalizer
+            // 2. ZEROING runs in BOTH paths - managed keys are still reachable from the finalizer
             // and zeroing them is non-allocating, finalizer-safe, and idempotent.
             if (_v1MasterKey != null) Array.Clear(_v1MasterKey, 0, _v1MasterKey.Length);
             if (_v1StaticIv != null) Array.Clear(_v1StaticIv, 0, _v1StaticIv.Length);

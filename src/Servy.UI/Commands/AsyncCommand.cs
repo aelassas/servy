@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.Core.Logging;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -11,6 +12,7 @@ namespace Servy.UI.Commands
     /// </summary>
     public class AsyncCommand : IAsyncCommand
     {
+        private readonly string _name;
         private readonly Func<object, Task> _execute;
         private readonly Predicate<object> _canExecute;
 
@@ -22,11 +24,13 @@ namespace Servy.UI.Commands
         /// </summary>
         /// <param name="execute">The asynchronous task to execute when the command is invoked.</param>
         /// <param name="canExecute">An optional predicate to determine if the command is allowed to execute.</param>
+        /// <param name="name">Command name.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="execute"/> is null.</exception>
-        public AsyncCommand(Func<object, Task> execute, Predicate<object> canExecute = null)
+        public AsyncCommand(Func<object, Task> execute, Predicate<object> canExecute = null, string name = null)
         {
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;
+            _name = name;
         }
 
         /// <summary>
@@ -54,7 +58,7 @@ namespace Servy.UI.Commands
             catch (Exception ex)
             {
                 // Log and surface - never let an async void exception escape into the dispatcher.
-                Core.Logging.Logger.Error("AsyncCommand execution failed.", ex);
+                Logger.Error($"AsyncCommand '{_name ?? "<unnamed>"}' execution failed.", ex);
             }
         }
 

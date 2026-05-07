@@ -23,7 +23,10 @@ if ((Test-Path $getErrorsScript) -and (Test-Path $writeLogScript)) {
     . $getErrorsScript
     . $writeLogScript
 } else {
-    Write-Warning "Servy-Watermark Module: Missing required dependencies in '$PSScriptRoot'"
+    $missing = @()
+    if (-not (Test-Path $getErrorsScript)) { $missing += 'Get-ServyLastErrors.ps1' }
+    if (-not (Test-Path $writeLogScript))  { $missing += 'Write-ServyLog.ps1' }
+    throw "Servy-Watermark Module: Required dependency missing in '$PSScriptRoot': $($missing -join ', ')"
 }
 
 # Event ID Taxonomy (Refer to src/Servy.Core/Logging/EventIds.cs for updates)

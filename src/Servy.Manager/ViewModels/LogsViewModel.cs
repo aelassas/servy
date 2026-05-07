@@ -306,7 +306,7 @@ namespace Servy.Manager.ViewModels
             ToDate = DateTime.Now; // Default to now
 
             LogsView = new ListCollectionView(_logs);
-            SearchCommand = new AsyncCommand(Search);
+            SearchCommand = new AsyncCommand(Search, name: nameof(SearchCommand));
             RowClickCommand = new RelayCommand<object>(OnRowClick);
         }
 

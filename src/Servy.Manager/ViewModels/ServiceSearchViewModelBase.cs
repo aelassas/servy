@@ -113,7 +113,7 @@ namespace Servy.Manager.ViewModels
         {
             _cursorService = cursorService;
             _uiDispatcher = uiDispatcher;
-            SearchCommand = new AsyncCommand(SearchServicesAsync);
+            SearchCommand = new AsyncCommand(SearchServicesAsync, name: nameof(SearchCommand));
         }
 
         #endregion

@@ -76,26 +76,10 @@ namespace Servy.CLI
         /// <returns>Returns 0 on success; non-zero on error.</returns>
         public static async Task<int> Main(string[] args)
         {
-            Logger.Initialize("Servy.CLI.log");
-
             IAppDbContext dbContext = null;
             ProtectedKeyProvider protectedKeyProvider = null;
             try
             {
-                if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
-                {
-                    Logger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
-                                 $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
-
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"[CRITICAL] Vulnerable SQLite version detected: {detectedVersion}");
-                    Console.WriteLine($"This version of Servy requires SQLite {AppConfig.MinRequiredSqliteVersion}+.");
-                    Console.ResetColor();
-
-                    // Exit with a CLI-specific sentinel instead of a SCM Win32 error code
-                    return (int)CliExitCode.IncompatibleEnvironment;
-                }
-
                 var verbs = GetVerbs();
                 var firstArg = args.Length > 0 ? args[0] : null;
 
@@ -126,37 +110,21 @@ namespace Servy.CLI
                 var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
                 var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
-                if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
-                {
-                    logLevel = LogLevel.Info;
-                }
-                Logger.SetLogLevel(logLevel);
+                LoggerConfigurator.ConfigureFromAppSettings(config, "Servy.CLI.log");
 
-                if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType))
+                if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
                 {
-                    dateRotationType = DateRotationType.None;
-                }
-                Logger.SetDateRotationType(dateRotationType);
+                    Logger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
+                                 $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
 
-                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
-                {
-                    Logger.SetLogRotationSize(size);
-                }
-                else
-                {
-                    Logger.SetLogRotationSize(AppConfig.DefaultRotationSizeMB);
-                }
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"[CRITICAL] Vulnerable SQLite version detected: {detectedVersion}");
+                    Console.WriteLine($"This version of Servy requires SQLite {AppConfig.MinRequiredSqliteVersion}+.");
+                    Console.ResetColor();
 
-                if (int.TryParse(config["MaxBackupLogFiles"], out var maxBackupFiles) && maxBackupFiles >= 0) Logger.SetMaxBackupLogFiles(maxBackupFiles);
-                else Logger.SetMaxBackupLogFiles(Logger.DefaultMaxBackupLogFiles);
-
-                string rawUseLocalTimeForRotationConfig = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
-
-                if (!bool.TryParse(rawUseLocalTimeForRotationConfig, out bool useLocalTimeForRotation))
-                {
-                    useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation;
+                    // Exit with a CLI-specific sentinel instead of a SCM Win32 error code
+                    return (int)CliExitCode.IncompatibleEnvironment;
                 }
-                Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
 
                 // Initialize shared dependencies
                 dbContext = new AppDbContext(connectionString);

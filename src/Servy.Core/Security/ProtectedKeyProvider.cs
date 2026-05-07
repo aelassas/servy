@@ -435,7 +435,7 @@ namespace Servy.Core.Security
                 // DataProtectionScope is usually LocalMachine for services
                 encrypted = ProtectedData.Protect(data, dynamicEntropy, DataProtectionScope);
 
-                var tempPath = path + ".tmp";
+                var tempPath = $"{path}.{Guid.NewGuid():N}.tmp";
 
                 try
                 {
@@ -549,7 +549,7 @@ namespace Servy.Core.Security
             // 1. ATOMIC GUARD: Flip the flag BEFORE wiping memory.
             if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
 
-            // 2. ZEROING runs in BOTH paths — managed keys are still reachable from the finalizer
+            // 2. ZEROING runs in BOTH paths - managed keys are still reachable from the finalizer
             // and zeroing them is non-allocating, finalizer-safe, and idempotent.
             InvalidateCache();
         }

@@ -214,7 +214,7 @@ namespace Servy.Manager.ViewModels
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
-            CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
+            CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null, name: nameof(CopyPidCommand));
             ClearSelectionCommand = new RelayCommand<object>(_ => SetSelectionActive(false));
 
             // Capture while on the UI thread during creation

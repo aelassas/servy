@@ -103,7 +103,7 @@ namespace Servy.Manager.ViewModels
             catch (Exception ex)
             {
                 Logger.Error($"Monitoring tick failed in {GetType().Name}.", ex);
-                // Do NOT rethrow — async void would terminate the dispatcher and crash the Manager UI.
+                // Do NOT rethrow - async void would terminate the dispatcher and crash the Manager UI.
             }
             finally
             {

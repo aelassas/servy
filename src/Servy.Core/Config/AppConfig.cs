@@ -1,5 +1,6 @@
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using System;
 using System.IO;
 
@@ -407,6 +408,11 @@ namespace Servy.Core.Config
         /// Default is <see cref="DateRotationType.Daily"/>.
         /// </summary>
         public const DateRotationType DefaultDateRotationType = DateRotationType.Daily;
+
+        /// <summary>
+        /// Default Log Level.
+        /// </summary>
+        public const LogLevel DefaultLogLevel = LogLevel.Info;
 
         /// <summary>
         /// The default value for <c>EnableEventLog</c>. Default is <c>true</c>.

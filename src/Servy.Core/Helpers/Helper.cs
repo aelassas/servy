@@ -414,7 +414,7 @@ namespace Servy.Core.Helpers
                 Directory.CreateDirectory(dir);
             }
 
-            var tmp = path + ".tmp";
+            var tmp = $"{path}.{Guid.NewGuid():N}.tmp";
             try
             {
                 using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
