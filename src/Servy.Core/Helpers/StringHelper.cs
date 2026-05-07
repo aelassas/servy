@@ -13,24 +13,20 @@ namespace Servy.Core.Helpers
     public static class StringHelper
     {
         /// <summary>
-        /// Normalizes multi-line input into a single semicolon-delimited string while preserving 
-        /// literal semicolons within the values.
+        /// Normalizes line breaks in a string by replacing CR, LF, or CRLF with semicolons.
         /// </summary>
-        /// <param name="str">The raw multi-line input string to normalize.</param>
+        /// <param name="str">The input string to normalize.</param>
         /// <returns>
-        /// A single-line string where lines are joined by semicolons, and any pre-existing 
-        /// unescaped semicolons within the original lines are escaped with a backslash.
+        /// A single-line string with all line breaks replaced by semicolons, or an empty string if the input is null.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// This method is specifically designed for environment variable input where a single entry 
-        /// (like a PATH segment) may contain a literal semicolon. By using a negative lookbehind 
-        /// regex <c>(?&lt;!\\);</c>, it ensures that semicolons are only escaped if they haven't 
-        /// already been escaped by the user.
+        /// This method supports strings containing CR, LF, or CRLF line endings alongside existing semicolons.
         /// </para>
         /// <para>
-        /// This prevents the "Double-Escaping" trap that would otherwise break downstream 
-        /// tokenization in the <c>EnvironmentVariableParser</c>.
+        /// <b>CRITICAL:</b> Semicolons within the input string must be manually escaped with a backslash (e.g., <c>\;</c>) 
+        /// before calling this method. If internal semicolons are not escaped, they will be treated as record 
+        /// delimiters by downstream parsers, such as the <see cref="Servy.Core.Security.EnvironmentVariableParser"/>.
         /// </para>
         /// </remarks>
         public static string NormalizeString(string str)
@@ -38,16 +34,13 @@ namespace Servy.Core.Helpers
             if (string.IsNullOrEmpty(str))
                 return string.Empty;
 
-            // 1. Split on any line break variant
-            var lines = str.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
+            // Replace line breaks with semicolons to flatten the multi-line input
+            string normalized = str
+                .Replace("\r\n", ";")
+                .Replace("\n", ";")
+                .Replace("\r", ";");
 
-            // 2. Escape only UNESCAPED semicolons within each line
-            // Pattern: (?<!\\); matches a ';' not preceded by '\'
-            var escapedLines = lines.Select(line =>
-                Regex.Replace(line, @"(?<!\\);", @"\;"));
-
-            // 3. Join with a raw semicolon as the record separator
-            return string.Join(";", escapedLines);
+            return normalized;
         }
 
         /// <summary>

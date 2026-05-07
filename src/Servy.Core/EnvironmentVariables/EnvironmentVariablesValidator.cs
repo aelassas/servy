@@ -36,7 +36,7 @@
 
                 if (idx < 0)
                 {
-                    errorMessage = "Each variable must contain an unescaped '=' character to separate the key from the value.";
+                    errorMessage = "[EnvironmentVariables] Each variable must contain an unescaped '=' character to separate the key from the value.";
                     return false;
                 }
 
@@ -45,7 +45,7 @@
 
                 if (string.IsNullOrEmpty(key))
                 {
-                    errorMessage = "Environment variable key cannot be empty.";
+                    errorMessage = "[EnvironmentVariables] Environment variable key cannot be empty.";
                     return false;
                 }
             }

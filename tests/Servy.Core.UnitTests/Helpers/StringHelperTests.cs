@@ -8,42 +8,16 @@ namespace Servy.Core.UnitTests.Helpers
     public class StringHelperTests
     {
         [Theory]
-        // --- Basic Null/Empty Handling ---
         [InlineData(null, "")]
         [InlineData("", "")]
-
-        // --- Standard Line Break Replacement ---
         [InlineData("line1", "line1")]
         [InlineData("line1\r\nline2", "line1;line2")]
         [InlineData("line1\nline2", "line1;line2")]
         [InlineData("line1\rline2", "line1;line2")]
-        [InlineData("line1\r\nline2;line3", "line1;line2\\;line3")]
-        [InlineData("line1\rline2;line3", "line1;line2\\;line3")]
-        [InlineData("line1\nline2;line3", "line1;line2\\;line3")]
+        [InlineData("line1\r\nline2;line3", "line1;line2;line3")]
+        [InlineData("line1\rline2;line3", "line1;line2;line3")]
+        [InlineData("line1\nline2;line3", "line1;line2;line3")]
         [InlineData("line1\r\nline2\nline3\rline4", "line1;line2;line3;line4")]
-
-        // --- Semicolon Escaping (The "PATH" Scenarios) ---
-        // Should escape an unescaped semicolon within a single entry
-        [InlineData("PATH=C:\\Tools;C:\\Data", "PATH=C:\\Tools\\;C:\\Data")]
-        // Should NOT double-escape an already escaped semicolon
-        [InlineData("PATH=C:\\Tools\\;C:\\Data", "PATH=C:\\Tools\\;C:\\Data")]
-        // Mixed: One unescaped, one escaped
-        [InlineData("VAR=val1;val2\\;val3", "VAR=val1\\;val2\\;val3")]
-
-        // --- Complex Multi-line + Semicolon Combinations ---
-        // Multi-line input where individual lines contain semicolons
-        [InlineData("PATH=C:\\Tools;C:\\Data\nHOME=C:\\Users", "PATH=C:\\Tools\\;C:\\Data;HOME=C:\\Users")]
-        // Multiple semicolons in one line
-        [InlineData("a;b;c", "a\\;b\\;c")]
-        // Semicolon at the very start or end of a line
-        [InlineData(";start", "\\;start")]
-        [InlineData("end;", "end\\;")]
-
-        // --- Edge Cases ---
-        // Empty lines should be removed by StringSplitOptions.RemoveEmptyEntries
-        [InlineData("line1\n\nline2", "line1;line2")]
-        // Backslash not followed by a semicolon should remain untouched
-        [InlineData("C:\\Only\\Backslashes\\", "C:\\Only\\Backslashes\\")]
         public void NormalizeString_ShouldHandleLineBreaksAndEscapeSemicolons(string input, string expected)
         {
             var result = StringHelper.NormalizeString(input);
