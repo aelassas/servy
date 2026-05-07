@@ -165,7 +165,7 @@ namespace Servy.UI.Bootstrapping
             {
                 string message = string.Format(_options.SqliteVersionWarningMessageFormat, detectedVersion, AppConfig.MinRequiredSqliteVersion);
                 MessageBox.Show(message, _options.SqliteVersionWarningTitle, MessageBoxButton.OK, MessageBoxImage.Error);
-                app.Shutdown();
+                app.Shutdown(1);
                 return false; // ABORT STARTUP
             }
 

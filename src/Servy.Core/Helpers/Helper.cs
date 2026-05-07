@@ -414,7 +414,7 @@ namespace Servy.Core.Helpers
                 Directory.CreateDirectory(dir);
             }
 
-            var tmp = $"{path}.{Guid.NewGuid():N}.tmp";
+            var tmp = GetUniqueTempPath(path);
             try
             {
                 using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -471,7 +471,7 @@ namespace Servy.Core.Helpers
                 Directory.CreateDirectory(dir);
             }
 
-            var tmp = path + ".tmp";
+            var tmp = GetUniqueTempPath(path);
             try
             {
                 using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -506,6 +506,25 @@ namespace Servy.Core.Helpers
                 CleanupTempFile(tmp);
             }
         }
+
+        /// <summary>
+        /// Generates a unique temporary file path by appending a hyphenless GUID and a .tmp extension to the specified path.
+        /// </summary>
+        /// <param name="path">The base file path (e.g., the destination file path).</param>
+        /// <returns>
+        /// A string representing a unique temporary path, such as <c>C:\Data\config.xml.b392...821.tmp</c>.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// This method uses the <c>:N</c> format specifier to generate a 32-digit hexadecimal GUID without hyphens, 
+        /// which is ideal for filesystem compatibility.
+        /// </para>
+        /// <para>
+        /// <b>Note:</b> Ensure the resulting string does not exceed the Windows <c>MAX_PATH</c> limit (260 characters), 
+        /// as appending a GUID significantly increases the path length.
+        /// </para>
+        /// </remarks>
+        public static string GetUniqueTempPath(string path) => $"{path}.{Guid.NewGuid():N}.tmp";
 
         /// <summary>
         /// Prepares the destination file for an overwrite operation by removing restrictive attributes.

@@ -43,7 +43,7 @@ namespace Servy.Infrastructure.Data
         /// Wraps a synchronous database action with a retry policy using exponential backoff and jitter.
         /// Uses SpinWait and aggressive caps to prevent thread pool exhaustion.
         /// </summary>
-        private T ExecuteWithRetry<T>(Func<T> action)
+        private T ExecuteWithRetry<T>(Func<T> action, string sql = null)
         {
             for (int i = 0; i < AppConfig.DbSyncMaxRetries; i++)
             {
@@ -53,16 +53,18 @@ namespace Servy.Infrastructure.Data
                 }
                 catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Busy || ex.ResultCode == SQLiteErrorCode.Locked)
                 {
+                    string queryContext = FormatSqlForLog(sql);
+
                     if (i == AppConfig.DbSyncMaxRetries - 1)
                     {
-                        Logger.Warn("Sync database operation exhausted bounded retry budget.");
+                        Logger.Warn($"Sync database operation exhausted bounded retry budget. Query: [{queryContext}]");
                         throw;
                     }
 
                     // Use the unified helper with Sync-specific configuration
                     int delay = CalculateBackoff(i, AppConfig.DbSyncInitialDelayMs, AppConfig.DbSyncMaxJitterMs);
 
-                    Logger.Warn($"Database busy (sync attempt {i + 1}/{AppConfig.DbSyncMaxRetries}). Spinning for {delay}ms...");
+                    Logger.Warn($"Database busy (sync attempt {i + 1}/{AppConfig.DbSyncMaxRetries}). Spinning for {delay}ms... Query: [{queryContext}]");
 
                     Thread.Sleep(delay);
                 }
@@ -74,7 +76,7 @@ namespace Servy.Infrastructure.Data
         /// <summary>
         /// Wraps an asynchronous database action with a retry policy using exponential backoff and jitter.
         /// </summary>
-        private async Task<T> ExecuteWithRetryAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken)
+        private async Task<T> ExecuteWithRetryAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken, string sql = null)
         {
             for (int i = 0; i < AppConfig.DbAsyncMaxRetries; i++)
             {
@@ -87,11 +89,17 @@ namespace Servy.Infrastructure.Data
                 }
                 catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Busy || ex.ResultCode == SQLiteErrorCode.Locked)
                 {
-                    if (i == AppConfig.DbAsyncMaxRetries - 1) throw;
+                    string queryContext = FormatSqlForLog(sql);
+
+                    if (i == AppConfig.DbAsyncMaxRetries - 1)
+                    {
+                        Logger.Warn($"Async database operation exhausted bounded retry budget. Query: [{queryContext}]");
+                        throw;
+                    }
 
                     // Use the unified helper with Async-specific configuration
                     int delay = CalculateBackoff(i, AppConfig.DbAsyncInitialDelayMs, AppConfig.DbAsyncMaxJitterMs);
-                    Logger.Warn($"Database busy (async attempt {i + 1}/{AppConfig.DbAsyncMaxRetries}). Retrying in {delay}ms...");
+                    Logger.Warn($"Database busy (async attempt {i + 1}/{AppConfig.DbAsyncMaxRetries}). Retrying in {delay}ms... Query: [{queryContext}]");
 
                     // Critical: Pass the token to Task.Delay so we don't hang if cancelled during backoff
                     await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
@@ -118,6 +126,19 @@ namespace Servy.Infrastructure.Data
             return backoff + jitter;
         }
 
+        /// <summary>
+        /// Flattens and truncates an SQL string for clean, single-line log output.
+        /// </summary>
+        private static string FormatSqlForLog(string sql, int maxLength = 60)
+        {
+            if (string.IsNullOrWhiteSpace(sql)) return "Unknown Query";
+
+            // Flatten line breaks for clean single-line logging
+            string singleLine = sql.Replace("\r", " ").Replace("\n", " ").Trim();
+
+            return singleLine.Length <= maxLength ? singleLine : singleLine.Substring(0, maxLength) + "...";
+        }
+
         #endregion
 
         #region Synchronous Methods
@@ -134,7 +155,7 @@ namespace Servy.Infrastructure.Data
                     connection.Open();
                     return connection.ExecuteScalar<T>(sql, param);
                 }
-            });
+            }, sql);
         }
 
         /// <inheritdoc/>
@@ -149,7 +170,7 @@ namespace Servy.Infrastructure.Data
                     connection.Open();
                     return connection.Execute(sql, param);
                 }
-            });
+            }, sql);
         }
 
         /// <inheritdoc/>
@@ -164,7 +185,7 @@ namespace Servy.Infrastructure.Data
                     connection.Open();
                     return connection.Query<T>(sql, param);
                 }
-            }) ?? Enumerable.Empty<T>();
+            }, sql) ?? Enumerable.Empty<T>();
         }
 
         /// <inheritdoc/>
@@ -179,7 +200,7 @@ namespace Servy.Infrastructure.Data
                     connection.Open();
                     return connection.QuerySingleOrDefault<T>(sql, param);
                 }
-            });
+            }, sql);
         }
 
         #endregion
@@ -200,7 +221,7 @@ namespace Servy.Infrastructure.Data
                     await connection.OpenAsync(ct).ConfigureAwait(false);
                     return await connection.ExecuteScalarAsync<T>(command).ConfigureAwait(false);
                 }
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken, sql).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -217,7 +238,7 @@ namespace Servy.Infrastructure.Data
                     await connection.OpenAsync(ct).ConfigureAwait(false);
                     return (int?)await connection.ExecuteAsync(command).ConfigureAwait(false);
                 }
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken, sql).ConfigureAwait(false);
 
             return result ?? 0;
         }
@@ -232,7 +253,7 @@ namespace Servy.Infrastructure.Data
                     await connection.OpenAsync(ct).ConfigureAwait(false);
                     return await connection.QueryAsync<T>(command).ConfigureAwait(false);
                 }
-            }, command.CancellationToken).ConfigureAwait(false) ?? Enumerable.Empty<T>();
+            }, command.CancellationToken, command.CommandText).ConfigureAwait(false) ?? Enumerable.Empty<T>();
         }
 
         /// <inheritdoc/>
@@ -257,7 +278,7 @@ namespace Servy.Infrastructure.Data
                     await connection.OpenAsync(ct).ConfigureAwait(false);
                     return await connection.QuerySingleOrDefaultAsync<T>(command).ConfigureAwait(false);
                 }
-            }, command.CancellationToken).ConfigureAwait(false);
+            }, command.CancellationToken, command.CommandText).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -274,7 +295,7 @@ namespace Servy.Infrastructure.Data
                     await connection.OpenAsync(ct).ConfigureAwait(false);
                     return await connection.QueryFirstOrDefaultAsync<T>(command).ConfigureAwait(false);
                 }
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken, sql).ConfigureAwait(false);
         }
 
         #endregion

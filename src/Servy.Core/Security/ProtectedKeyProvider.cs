@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using Servy.Core.Config;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Native;
 using System;
@@ -435,7 +436,7 @@ namespace Servy.Core.Security
                 // DataProtectionScope is usually LocalMachine for services
                 encrypted = ProtectedData.Protect(data, dynamicEntropy, DataProtectionScope);
 
-                var tempPath = $"{path}.{Guid.NewGuid():N}.tmp";
+                var tempPath = Helper.GetUniqueTempPath(path);
 
                 try
                 {
