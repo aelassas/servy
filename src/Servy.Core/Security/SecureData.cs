@@ -225,8 +225,10 @@ namespace Servy.Core.Security
                 {
                     if (!AppConfig.AllowLegacyV1Decryption)
                     {
-                        Logger.Warn("Security block: Attempted to decrypt a raw legacy payload, but legacy unauthenticated decryption is disabled. Returning original input to prevent downgrade attack.");
-                        return rawPayload;
+                        Logger.Warn("Security block: Raw legacy payload encountered with legacy decryption disabled.");
+                        throw new SecureDataIntegrityException(
+                            "Raw legacy ciphertext detected but AllowLegacyV1Decryption is disabled. " +
+                            "Enable migration mode briefly to upgrade legacy records to v2.");
                     }
 
                     Logger.Warn("Security audit: Raw legacy decryption invoked. Please re-save this configuration to upgrade to v2 authenticated encryption.");
