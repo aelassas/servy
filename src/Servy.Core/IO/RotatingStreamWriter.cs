@@ -49,6 +49,12 @@ namespace Servy.Core.IO
         private bool _rotationDisabled;
 
         /// <summary>
+        /// Indicates that a thread is currently moving the log file on disk. 
+        /// Other threads must wait to avoid opening a handle to a file that is about to be renamed.
+        /// </summary>
+        private bool _rotationInProgress;
+
+        /// <summary>
         /// The timestamp when the circuit breaker will auto-reset to a half-open state.
         /// </summary>
         private DateTime _disabledCooldownUntil = DateTime.MinValue;
@@ -180,6 +186,15 @@ namespace Servy.Core.IO
 
             lock (_lock)
             {
+                // Block other threads from writing or re-opening the file 
+                // while the physical File.Move is taking place.
+                while (_rotationInProgress)
+                {
+                    // Releases the lock and sleeps until Monitor.PulseAll is called
+                    Monitor.Wait(_lock);
+                }
+
+                // Check disposal *after* waking up, in case Dispose was called while we waited
                 if (_disposed) return;
 
                 // 1. Lazy Initialize if null (either first run or just rotated)
@@ -197,13 +212,28 @@ namespace Servy.Core.IO
 
                 // 2. Check if we need to rotate
                 (pathToRotate, targetRotatedPath) = CheckRotation();
+                if (pathToRotate != null && targetRotatedPath != null)
+                {
+                    _rotationInProgress = true;
+                }
             }
 
             // Perform the physical file move and retry logic completely outside the lock
             // to prevent blocking other threads during I/O-intensive rotation operations.
             if (pathToRotate != null && targetRotatedPath != null)
             {
-                PerformPhysicalRotation(pathToRotate, targetRotatedPath);
+                try
+                {
+                    PerformPhysicalRotation(pathToRotate, targetRotatedPath);
+                }
+                finally
+                {
+                    lock (_lock)
+                    {
+                        _rotationInProgress = false;
+                        Monitor.PulseAll(_lock); // Wake up waiting writers
+                    }
+                }
             }
         }
 

@@ -276,6 +276,7 @@ namespace Servy.Core.Helpers
 
             // CPU is normalized 0-100% of whole-machine capacity. The sum across a tree
             // is bounded by 100% because they share the same physical cores.
+            totalCpu = Math.Min(Math.Max(totalCpu, 0.0), 100.0);
             return new ProcessMetrics(totalCpu, totalRam);
         }
 

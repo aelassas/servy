@@ -116,7 +116,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(errorMsg);
                 }
 
-                if (fileInfo.Length > (long)AppConfig.MaxConfigFileSizeMB * 1024 * 1024)
+                if (fileInfo.Length > AppConfig.MaxConfigFileSizeBytes)
                 {
                     var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, fullPath);
                     Logger.Error(errorMsg);
