@@ -223,13 +223,30 @@ namespace Servy.Service.Helpers
         /// <inheritdoc />
         public void EnsureValidWorkingDirectory(StartOptions options, IServyLogger logger)
         {
+            // Check if the current directory is missing, malformed, or physically non-existent
             if (string.IsNullOrWhiteSpace(options.WorkingDirectory) ||
                 !Helper.IsValidPath(options.WorkingDirectory) ||
                 !Directory.Exists(options.WorkingDirectory))
             {
-                var system32 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32");
-                options.WorkingDirectory = Path.GetDirectoryName(options.ExecutablePath) ?? system32;
-                logger?.Warn($"Working directory fallback applied: {options.WorkingDirectory}");
+                // 1. Capture original value
+                string originalValue = string.IsNullOrWhiteSpace(options.WorkingDirectory)
+                    ? "[Empty/Null]"
+                    : options.WorkingDirectory;
+
+                // 2. Establish the absolute floor (System32)
+                string system32 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32");
+
+                // 3. derive fallback from ExecutablePath with explicit guards
+                // This avoids ArgumentNullException on older runtimes and handles malformed roots
+                string exeDir = string.IsNullOrEmpty(options.ExecutablePath)
+                    ? null
+                    : Path.GetDirectoryName(options.ExecutablePath);
+
+                // 4. Final safety check: if GetDirectoryName returned null or empty, use System32
+                options.WorkingDirectory = string.IsNullOrEmpty(exeDir) ? system32 : exeDir;
+
+                // 5. Diagnostic logging with full context
+                logger?.Warn($"Working directory '{originalValue}' is invalid or inaccessible. Falling back to '{options.WorkingDirectory}'.");
             }
         }
 
