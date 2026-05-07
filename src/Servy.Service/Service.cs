@@ -104,7 +104,7 @@ namespace Servy.Service
         private readonly int _scmAdditionalTimeMs;
 
         private readonly SecureData _secureData;
-        private readonly IServiceHelper _serviceHelper;
+        private readonly Helpers.IServiceHelper _serviceHelper;
         private IServyLogger _logger;
         private readonly IStreamWriterFactory _streamWriterFactory;
         private readonly ITimerFactory _timerFactory;
@@ -205,7 +205,7 @@ namespace Servy.Service
         /// </para>
         /// </remarks>
         public Service(
-            IServiceHelper serviceHelper,
+            Helpers.IServiceHelper serviceHelper,
             IServyLogger logger,
             IStreamWriterFactory streamWriterFactory,
             ITimerFactory timerFactory,
@@ -245,7 +245,7 @@ namespace Servy.Service
         /// <c>appsettings.json</c>, and initializes the <see cref="SecureData"/> and database systems.
         /// </remarks>
         public Service(
-            IServiceHelper serviceHelper,
+            Helpers.IServiceHelper serviceHelper,
             IServyLogger logger,
             IStreamWriterFactory streamWriterFactory,
             ITimerFactory timerFactory,
@@ -321,7 +321,8 @@ namespace Servy.Service
 
                 // Copy service executable from embedded resources
                 var asm = Assembly.GetExecutingAssembly();
-                var resourceHelper = new ResourceHelper(_serviceRepository, _processKiller);
+                var sh = new Core.Helpers.ServiceHelper(_serviceRepository);
+                var resourceHelper = new ResourceHelper(sh, _processKiller);
 
                 if (!resourceHelper.CopyEmbeddedResourceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe"))
                 {

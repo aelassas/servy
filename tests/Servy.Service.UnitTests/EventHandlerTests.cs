@@ -13,6 +13,7 @@ using Xunit;
 using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
+using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 
 namespace Servy.Service.UnitTests
 {

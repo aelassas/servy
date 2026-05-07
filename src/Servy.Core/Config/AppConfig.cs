@@ -529,6 +529,12 @@ namespace Servy.Core.Config
         public const int KillChildWaitMs = 2_000;
 
         /// <summary>
+        /// The absolute minimum time (in milliseconds) the system will wait for a process to 
+        /// exit after a kill command. This prevents race conditions in high-latency environments.
+        /// </summary>
+        public const int MinKillWaitMs = 1_000;
+
+        /// <summary>
         /// Timeout in milliseconds to wait for an entire process tree to terminate.
         /// </summary>
         /// <remarks>

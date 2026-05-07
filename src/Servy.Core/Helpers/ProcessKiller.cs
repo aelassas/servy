@@ -184,12 +184,15 @@ namespace Servy.Core.Helpers
                         if (!child.HasExited)
                         {
                             child.Kill();
-                            child.WaitForExit(AppConfig.KillChildWaitMs);
+                            if (!child.WaitForExit(SafeWait(AppConfig.KillChildWaitMs)))
+                            {
+                                Logger.Warn($"Child process {child.Id} did not exit within the safety window.");
+                            }
                         }
                     }
                 }
                 catch (ArgumentException) { /* Process already dead */ }
-                catch (Exception ex) { Logger.Debug($"Failed to kill descendant {childPid}: {ex.Message}"); }
+                catch (Exception ex) { Logger.Warn($"Failed to kill descendant {childPid} ({ex.GetType().Name}): {ex.Message}"); }
             }
         }
 
@@ -271,33 +274,46 @@ namespace Servy.Core.Helpers
         {
             if (pid <= 0) return false;
 
-            // Single Toolhelp32 walk populates both maps
-            var (completeSnapshot, byParent) = BuildSnapshotAndChildMapNative();
-            var protectedPids = GetAncestorPids(completeSnapshot);
-
-            // SECURITY: Resolve process handle and apply full safety check
-            Process target;
-            try { target = Process.GetProcessById(pid); }
-            catch (ArgumentException) { return true; } // Already exited
-
             try
             {
-                if (IsProtected(target.Id, target.ProcessName, protectedPids))
+                // Single Toolhelp32 walk populates both maps
+                var (completeSnapshot, byParent) = BuildSnapshotAndChildMapNative();
+                var protectedPids = GetAncestorPids(completeSnapshot);
+
+                // SECURITY: Resolve process handle and apply full safety check
+                Process target;
+                try { target = Process.GetProcessById(pid); }
+                catch (ArgumentException) { return true; } // Already exited
+
+                try
                 {
-                    Logger.Warn($"Execution blocked: Attempted to kill protected process {target.ProcessName} (PID {pid}).");
-                    return false;
+                    if (IsProtected(target.Id, target.ProcessName, protectedPids))
+                    {
+                        Logger.Warn($"Execution blocked: Attempted to kill protected process {target.ProcessName} (PID {pid}).");
+                        return false;
+                    }
+
+                    int selfPid;
+                    using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
+
+                    // ROBUSTNESS: Perform the parent kill walk BEFORE the tree kill walk.
+                    if (killParents) KillParentProcesses(target.Id, target.StartTime, protectedPids, completeSnapshot);
+                    KillProcessTree(target, selfPid, protectedPids, byParent);
+
+                    return true;
                 }
-
-                int selfPid;
-                using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
-
-                // ROBUSTNESS: Perform the parent kill walk BEFORE the tree kill walk.
-                if (killParents) KillParentProcesses(target.Id, target.StartTime, protectedPids, completeSnapshot);
-                KillProcessTree(target, selfPid, protectedPids, byParent);
-
-                return true;
+                finally { target.Dispose(); }
             }
-            finally { target.Dispose(); }
+            catch (Win32Exception ex)
+            {
+                Logger.Error($"Win32 error in KillProcessTreeAndParents(pid={pid}).", ex);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Unexpected error in KillProcessTreeAndParents(pid={pid}).", ex);
+                return false;
+            }
         }
 
         /// <summary>
@@ -320,7 +336,10 @@ namespace Servy.Core.Helpers
                 if (!process.HasExited)
                 {
                     process.Kill();
-                    process.WaitForExit(AppConfig.KillTreeWaitMs);
+                    if (!process.WaitForExit(SafeWait(AppConfig.KillTreeWaitMs)))
+                    {
+                        Logger.Warn($"Process tree head {process.Id} did not exit within the safety window.");
+                    }
                 }
             }
             catch (Exception ex) { Logger.Warn($"Error killing process tree for {process.Id}: {ex.Message}"); }
@@ -388,7 +407,7 @@ namespace Servy.Core.Helpers
 
         #endregion
 
-        #region Native Helper Methods
+        #region Helper Methods
 
         /// <summary>
         /// Recursively walks up the process tree using the pre-computed snapshot. Terminates parents only after confirming they are not protected.
@@ -448,7 +467,7 @@ namespace Servy.Core.Helpers
                 }
             }
             catch (ArgumentException) { /* Already dead */ }
-            catch (Exception ex) { Logger.Debug($"Failed to kill parent {parentId}: {ex.Message}"); }
+            catch (Exception ex) { Logger.Warn($"Failed to kill parent {parentId} ({ex.GetType().Name}): {ex.Message}"); }
         }
 
         /// <summary>
@@ -485,6 +504,14 @@ namespace Servy.Core.Helpers
             }
             return ancestors;
         }
+
+        /// <summary>
+        /// Ensures the configured timeout respects the system-wide minimum safety floor.
+        /// </summary>
+        /// <param name="configuredMs">The timeout value from the user configuration.</param>
+        /// <returns>The larger of the configured value or <see cref="AppConfig.MinKillWaitMs"/>.</returns>
+        private static int SafeWait(int configuredMs) => Math.Max(configuredMs, AppConfig.MinKillWaitMs);
+
 
         #endregion
     }

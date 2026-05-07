@@ -17,6 +17,7 @@ using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using Xunit;
 using Xunit.Abstractions;
+using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 using ITimer = Servy.Service.Timers.ITimer;
 
 namespace Servy.Service.UnitTests

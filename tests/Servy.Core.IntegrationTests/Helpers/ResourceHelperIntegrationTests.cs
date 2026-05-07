@@ -13,7 +13,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 {
     public class ResourceHelperIntegrationTests : IDisposable
     {
-        private readonly Mock<IServiceRepository> _mockServiceRepo;
+        private readonly Mock<IServiceHelper> _mockServiceHelper;
         private readonly Mock<IProcessKiller> _mockProcessKiller;
         private readonly FakeAssembly _fakeAssembly;
         private readonly string _tempDirectory;
@@ -38,7 +38,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
         public ResourceHelperIntegrationTests()
         {
-            _mockServiceRepo = new Mock<IServiceRepository>();
+            _mockServiceHelper = new Mock<IServiceHelper>();
             _mockProcessKiller = new Mock<IProcessKiller>();
 
             // Create an isolated temporary directory for safe file I/O tests
@@ -52,7 +52,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 FakeLocation = Path.Combine(_tempDirectory, "TestAssembly.dll")
             };
 
-            _resourceHelper = new ResourceHelper(_mockServiceRepo.Object, _mockProcessKiller.Object);
+            _resourceHelper = new ResourceHelper(_mockServiceHelper.Object, _mockProcessKiller.Object);
 
             // Point the helper to the test-controlled temp directory
             _resourceHelper.BaseExtractionDirectory = _tempDirectory;

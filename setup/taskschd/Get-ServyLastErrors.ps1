@@ -27,7 +27,7 @@
 
 # Event ID Taxonomy (Refer to src/Servy.Core/Logging/EventIds.cs for updates)
 # 3000-3099: Core Errors | 3100-3199: Script Errors
-$EVENT_ID_ERROR = 3103
+# NOTE: $EVENT_ID_ERROR is inherited from the parent Servy-Watermark module scope
 
 function Get-ServyLastErrors {
   param(

@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 
 namespace Servy.Service.UnitTests
 {

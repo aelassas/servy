@@ -12,6 +12,7 @@ using Servy.Service.Validation;
 using System;
 using System.Timers;
 using Xunit;
+using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 using ITimer = Servy.Service.Timers.ITimer;
 
 namespace Servy.Service.UnitTests

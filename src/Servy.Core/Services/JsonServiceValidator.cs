@@ -82,7 +82,7 @@ namespace Servy.Core.Services
 
             if (validation.Warnings.Any())
             {
-                Logger.Warn($"XML Import succeeded with warnings for service '{sanitizedName}': {string.Join("\n", validation.Warnings)}");
+                Logger.Warn($"JSON Import succeeded with warnings for service '{sanitizedName}': {string.Join("\n", validation.Warnings)}");
             }
 
             // 3. Executable Path Integrity

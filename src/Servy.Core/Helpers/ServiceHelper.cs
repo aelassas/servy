@@ -18,7 +18,7 @@ namespace Servy.Core.Helpers
     /// Provides helper methods to query, start, and stop Servy services via ServiceController.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public class ServiceHelper
+    public class ServiceHelper : IServiceHelper
     {
         private readonly IServiceRepository _serviceRepository;
 
@@ -28,15 +28,12 @@ namespace Servy.Core.Helpers
         /// <param name="serviceRepository">The service repository used to access and manage service-related resources. Cannot be null.</param>
         public ServiceHelper(IServiceRepository serviceRepository)
         {
-            _serviceRepository = serviceRepository;
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
         }
 
         #region Public Methods
 
-        /// <summary>
-        /// Gets the names of all currently running Servy UI services.
-        /// </summary>
-        /// <returns>A list of service names.</returns>
+        /// <inheritdoc />
         public List<string> GetRunningServyUIServices()
         {
             var wrapperExe = AppConfig.ServyServiceUIExe;
@@ -44,10 +41,7 @@ namespace Servy.Core.Helpers
             return services;
         }
 
-        /// <summary>
-        /// Gets the names of all currently running Servy CLI services.
-        /// </summary>
-        /// <returns>A list of service names.</returns>
+        /// <inheritdoc />
         public List<string> GetRunningServyCLIServices()
         {
             var wrapperExe = AppConfig.ServyServiceCLIExe;
@@ -55,17 +49,10 @@ namespace Servy.Core.Helpers
             return services;
         }
 
-        /// <summary>
-        /// Gets the names of all currently running Servy services (GUI and CLI).
-        /// </summary>
-        /// <returns>A list of service names.</returns>
+        /// <inheritdoc />
         public List<string> GetRunningServyServices() => GetRunningServyUIServices().Concat(GetRunningServyCLIServices()).ToList();
 
-        /// <summary>
-        /// Starts the specified services if they are not already running or pending start,
-        /// and waits until each service is fully running.
-        /// </summary>
-        /// <param name="services">A collection of service names to start.</param>
+        /// <inheritdoc />
         public async Task StartServices(IEnumerable<string> services)
         {
             // Create a bucket to collect any errors that occur
@@ -140,15 +127,7 @@ namespace Servy.Core.Helpers
 
         }
 
-        /// <summary>
-        /// Stops the specified services if they are running or pending stop,
-        /// and waits until each service is fully stopped.
-        /// </summary>
-        /// <param name="services">A collection of service names to stop.</param>
-        /// <remarks>
-        /// This method attempts to stop all provided services even if one fails. 
-        /// All encountered exceptions are collected and thrown as an AggregateException at the end.
-        /// </remarks>
+        /// <inheritdoc />
         public async Task StopServices(IEnumerable<string> services)
         {
             // Create a bucket to collect any errors that occur during the batch operation
@@ -212,10 +191,6 @@ namespace Servy.Core.Helpers
             }
         }
 
-        #endregion
-
-        #region Private Methods
-
         /// <summary>
         /// Calculates the total stop timeout by evaluating configured limits, 
         /// historical stop times, and mandatory safety buffers.
@@ -238,6 +213,10 @@ namespace Servy.Core.Helpers
             // Final safety check to ensure we never drop below the absolute floor
             return Math.Max(total, floor);
         }
+
+        #endregion
+
+        #region Private Methods
 
         /// <summary>
         /// Queries the Service Control Manager (SCM) and Windows Registry to find all active services 
@@ -332,6 +311,7 @@ namespace Servy.Core.Helpers
                                 }
                             }
                             catch (ArgumentException) { /* Handle invalid paths gracefully */ }
+
                         }
                     }
                 }

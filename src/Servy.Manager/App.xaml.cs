@@ -352,7 +352,7 @@ namespace Servy.Manager
 
             // 2. SAFE START: Start the monitor now that _bootstrapper is guaranteed to be initialized
             // and configuration has been processed by the call above.
-            _bootstrapper.StartAvailabilityMonitor(DesktopAppPublishPath, isAvailable => IsDesktopAppAvailable = isAvailable, this);
+            _ = _bootstrapper.StartAvailabilityMonitorAsync(DesktopAppPublishPath, isAvailable => IsDesktopAppAvailable = isAvailable, this);
 
             // 3. Fire-and-forget initialization
             // Use a dedicated async method instead of a chained ContinueWith 

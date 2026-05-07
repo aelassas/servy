@@ -57,7 +57,7 @@ namespace Servy.Service.UnitTests
         }
 
         public TestableService(
-            IServiceHelper serviceHelper,
+            Servy.Service.Helpers.IServiceHelper serviceHelper,
             IServyLogger logger,
             IStreamWriterFactory streamWriterFactory,
             ITimerFactory timerFactory,

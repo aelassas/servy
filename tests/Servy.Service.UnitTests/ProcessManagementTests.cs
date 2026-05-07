@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Xunit;
+using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 
 namespace Servy.Service.UnitTests
 {

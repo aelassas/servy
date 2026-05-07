@@ -60,6 +60,8 @@ foreach ($dep in $requiredDependencies) {
         
         # 1. Attempt to log to Event Log for administrator visibility
         try {
+            # NOTE: Hardcoded to 3104 (EventIds.cs -> ScriptDependencyMissing) because we cannot rely on 
+            # exported variables from a module that has fundamentally failed to load.
             Write-EventLog -LogName Application -Source "Servy" -EventId 3104 `
                 -EntryType Error -Message $errorMsg -ErrorAction Stop
         } catch {
