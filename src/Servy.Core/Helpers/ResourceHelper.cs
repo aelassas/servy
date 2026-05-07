@@ -12,30 +12,30 @@ namespace Servy.Core.Helpers
     /// </summary>
     public class ResourceHelper
     {
-        private readonly ServiceHelper _serviceHelper;
+        private readonly IServiceHelper _serviceHelper;
         private readonly IProcessKiller _processKiller;
 
-            /// <summary>
-            /// Gets or sets the base directory where embedded resources are extracted.
-            /// Defaults to the application base directory in DEBUG and the ProgramData vault in RELEASE.
-            /// </summary>
-            public string BaseExtractionDirectory { get; set; } =
-    #if DEBUG
-                AppDomain.CurrentDomain.BaseDirectory;
-    #else
+        /// <summary>
+        /// Gets or sets the base directory where embedded resources are extracted.
+        /// Defaults to the application base directory in DEBUG and the ProgramData vault in RELEASE.
+        /// </summary>
+        public string BaseExtractionDirectory { get; set; } =
+#if DEBUG
+            AppDomain.CurrentDomain.BaseDirectory;
+#else
                 AppConfig.ProgramDataPath;
-    #endif
+#endif
 
         /// <summary>
-        /// Initializes a new instance of the ResourceHelper class using the specified service repository.
+        /// Initializes a new instance of the ResourceHelper class using the specified service helper and process killer.
         /// </summary>
-        /// <param name="serviceRepository">The service repository used to access and manage service-related resources. Cannot be null.</param>
+        /// <param name="serviceHelper">The service helper used to access and manage service states. Cannot be null.</param>
         /// <param name="processKiller">The process killer used to terminate processes. Cannot be null.</param>
         public ResourceHelper(
-            IServiceRepository serviceRepository,
+            IServiceHelper serviceHelper,
             IProcessKiller processKiller)
         {
-            _serviceHelper = new ServiceHelper(serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository)));
+            _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
             _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
         }
 
@@ -185,7 +185,9 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <returns>
         /// The <see cref="DateTime"/> (UTC) when the host process (.exe) was last modified, 
-        /// or <see cref="DateTime.UtcNow"/> if the file cannot be accessed.
+        /// or <see cref="DateTime.MinValue"/> if the file cannot be accessed. The sentinel 
+        /// value causes <c>ShouldCopyResource</c> to leave any existing extraction untouched 
+        /// when the timestamp probe fails.
         /// </returns>
         /// <remarks>
         /// <para>

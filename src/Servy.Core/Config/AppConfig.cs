@@ -74,11 +74,21 @@ namespace Servy.Core.Config
 #endif
 
         /// <summary>
-        /// Target framework.
+        /// Retrieves the Target Framework Moniker (TFM) used during the build process.
+        /// This value is injected via assembly metadata and is critical for locating
+        /// binaries in DEBUG environments.
         /// </summary>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if the 'BuiltWithFramework' metadata is missing, preventing reliable path resolution.
+        /// </exception>
         private static readonly string TargetFramework =
             typeof(AppConfig).Assembly
-            .GetCustomAttributes<AssemblyMetadataAttribute>()?.FirstOrDefault(a => a.Key == "BuiltWithFramework")?.Value ?? "net10.0-windows";
+                .GetCustomAttributes<AssemblyMetadataAttribute>()
+                .FirstOrDefault(a => a.Key == "BuiltWithFramework")?.Value
+            ?? throw new InvalidOperationException(
+                "Assembly metadata 'BuiltWithFramework' is missing. " +
+                "This attribute is required to resolve application binary paths. " +
+                "Ensure the project file includes: <AssemblyMetadata Include=\"BuiltWithFramework\" Value=\"$(TargetFramework)\" />.");
 
         /// <summary>
         /// The default file name of the Sysinternals Handle executable used to detect
@@ -538,6 +548,12 @@ namespace Servy.Core.Config
         /// if one specific sub-process is non-responsive.
         /// </remarks>
         public const int KillChildWaitMs = 2_000;
+
+        /// <summary>
+        /// The absolute minimum time (in milliseconds) the system will wait for a process to 
+        /// exit after a kill command. This prevents race conditions in high-latency environments.
+        /// </summary>
+        public const int MinKillWaitMs = 1_000;
 
         /// <summary>
         /// Timeout in milliseconds to wait for an entire process tree to terminate.

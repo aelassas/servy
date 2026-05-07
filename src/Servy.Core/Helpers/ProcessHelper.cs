@@ -279,13 +279,7 @@ namespace Servy.Core.Helpers
         public string FormatCpuUsage(double cpuUsage)
         {
             double rounded = Math.Round(cpuUsage, 1, MidpointRounding.AwayFromZero);
-            const double epsilon = 0.0001;
-
-            string formatted = Math.Abs(rounded) < epsilon
-                ? "0"
-                : rounded.ToString("0.0", CultureInfo.InvariantCulture);
-
-            return $"{formatted}%";
+            return $"{rounded.ToString("0.0", CultureInfo.InvariantCulture)}%";
         }
 
         /// <inheritdoc />

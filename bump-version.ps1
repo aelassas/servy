@@ -34,6 +34,8 @@ param(
     [string]$Version
 )
 
+$ErrorActionPreference = "Stop"
+
 # -----------------------------
 # Convert short version to full versions
 # -----------------------------

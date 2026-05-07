@@ -7,7 +7,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 {
     public class ResourceHelperIntegrationTests : IDisposable
     {
-        private readonly Mock<IServiceRepository> _mockServiceRepo;
+        private readonly Mock<IServiceHelper> _mockServiceHelper;
         private readonly Mock<IProcessKiller> _mockProcessKiller;
         private readonly Mock<Assembly> _mockAssembly;
         private readonly string _tempDirectory;
@@ -15,7 +15,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
         public ResourceHelperIntegrationTests()
         {
-            _mockServiceRepo = new Mock<IServiceRepository>();
+            _mockServiceHelper = new Mock<IServiceHelper>();
             _mockProcessKiller = new Mock<IProcessKiller>();
             _mockAssembly = new Mock<Assembly>();
 
@@ -26,7 +26,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Mock Assembly Location to point to our Temp Directory (used by DEBUG preprocessor directive in ShouldCopyResource)
             _mockAssembly.Setup(a => a.Location).Returns(Path.Combine(_tempDirectory, "TestAssembly.dll"));
 
-            _resourceHelper = new ResourceHelper(_mockServiceRepo.Object, _mockProcessKiller.Object);
+            _resourceHelper = new ResourceHelper(_mockServiceHelper.Object, _mockProcessKiller.Object);
 
             // Point the helper to the test-controlled temp directory
             _resourceHelper.BaseExtractionDirectory = _tempDirectory;

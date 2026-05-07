@@ -1,5 +1,6 @@
 ﻿using Servy.Core.EnvironmentVariables;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Servy.Core.Helpers
 {
@@ -10,23 +11,41 @@ namespace Servy.Core.Helpers
     public static class StringHelper
     {
         /// <summary>
-        /// Normalizes line breaks in a string by replacing CR, LF, or CRLF with semicolons.
-        /// Returns an empty string if the input is null.
+        /// Normalizes multi-line input into a single semicolon-delimited string while preserving 
+        /// literal semicolons within the values.
         /// </summary>
-        /// <param name="str">The input string to normalize.</param>
-        /// <returns>A string with all line breaks replaced by semicolons.</returns>
+        /// <param name="str">The raw multi-line input string to normalize.</param>
+        /// <returns>
+        /// A single-line string where lines are joined by semicolons, and any pre-existing 
+        /// unescaped semicolons within the original lines are escaped with a backslash.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// This method is specifically designed for environment variable input where a single entry 
+        /// (like a PATH segment) may contain a literal semicolon. By using a negative lookbehind 
+        /// regex <c>(?&lt;!\\);</c>, it ensures that semicolons are only escaped if they haven't 
+        /// already been escaped by the user.
+        /// </para>
+        /// <para>
+        /// This prevents the "Double-Escaping" trap that would otherwise break downstream 
+        /// tokenization in the <c>EnvironmentVariableParser</c>.
+        /// </para>
+        /// </remarks>
         public static string NormalizeString(string? str)
         {
             if (string.IsNullOrEmpty(str))
                 return string.Empty;
 
-            // Replace line breaks with semicolons
-            string normalized = str
-                .Replace("\r\n", ";")
-                .Replace("\n", ";")
-                .Replace("\r", ";");
+            // 1. Split on any line break variant
+            var lines = str.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
 
-            return normalized;
+            // 2. Escape only UNESCAPED semicolons within each line
+            // Pattern: (?<!\\); matches a ';' not preceded by '\'
+            var escapedLines = lines.Select(line =>
+                Regex.Replace(line, @"(?<!\\);", @"\;"));
+
+            // 3. Join with a raw semicolon as the record separator
+            return string.Join(";", escapedLines);
         }
 
         /// <summary>

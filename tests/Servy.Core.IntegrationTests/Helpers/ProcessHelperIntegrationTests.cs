@@ -37,8 +37,8 @@ namespace Servy.Core.IntegrationTests.Helpers
         #region Formatting Tests (Pure Logic)
 
         [Theory]
-        [InlineData(0, "0%")]
-        [InlineData(0.00001, "0%")]
+        [InlineData(0, "0.0%")]
+        [InlineData(0.00001, "0.0%")]
         [InlineData(12.34, "12.3%")]
         [InlineData(12.35, "12.4%")]
         [InlineData(100.0, "100.0%")]

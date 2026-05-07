@@ -86,7 +86,7 @@ function Update-Watermark {
     #>
     param(
         [string]$TimestampFile,
-        [DateTime]$TimeCreated,
+        [System.Nullable[DateTime]]$TimeCreated,
         [string]$ScriptDir
     )
 
@@ -196,4 +196,4 @@ function ConvertFrom-ServyEventMessage {
     }
 }
 
-Export-ModuleMember -Function Write-FallbackError, Read-Watermark, Update-Watermark, Get-EventsToProcess, ConvertFrom-ServyEventMessage -Variable EVENT_ID_ERROR, EVENT_ID_ERROR_DEP
+Export-ModuleMember -Function Write-FallbackError, Read-Watermark, Update-Watermark, Get-EventsToProcess, ConvertFrom-ServyEventMessage

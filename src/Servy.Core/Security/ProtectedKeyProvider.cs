@@ -122,24 +122,18 @@ namespace Servy.Core.Security
         /// <returns>A clone of the decrypted key material.</returns>
         private byte[] GetCachedOrGenerate(ref byte[]? cacheField, string path, int length)
         {
-            // 1. FAST-PATH: Atomic snapshot of the reference.
-            // This local variable is immune to concurrent null-outs (InvalidateCache).
-            var snapshot = cacheField;
-            if (snapshot != null)
-            {
-                return (byte[])snapshot.Clone();
-            }
-
             lock (_cacheLock)
             {
-                // 2. DOUBLE-CHECK: Re-read within the lock.
-                snapshot = cacheField;
-                if (snapshot != null)
+                // 1. FAST-PATH: Synchronized Read
+                // We must hold the lock even for the fast-path read to prevent a TOCTOU race 
+                // condition with InvalidateCache, which explicitly calls CryptographicOperations.ZeroMemory 
+                // on the backing array. If we read outside the lock, we risk cloning a zeroed array.
+                if (cacheField != null)
                 {
-                    return (byte[])snapshot.Clone();
+                    return (byte[])cacheField.Clone();
                 }
 
-                // 3. GENERATE: Materialize and cache the keys.
+                // 2. GENERATE: Materialize and cache the keys.
                 // GetOrGenerate handles its own internal migration/rotation logic.
                 byte[] decrypted = GetOrGenerate(path, length);
 

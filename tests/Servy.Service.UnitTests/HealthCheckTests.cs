@@ -9,6 +9,7 @@ using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
+using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 
 namespace Servy.Service.UnitTests
 {

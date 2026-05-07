@@ -10,6 +10,7 @@ using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
 using System.Timers;
+using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 using ITimer = Servy.Service.Timers.ITimer;
 
 namespace Servy.Service.UnitTests

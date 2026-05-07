@@ -36,17 +36,17 @@ namespace Servy.Manager.Converters
         }
 
         /// <summary>
-        /// Returns the RAM usage as string.
+        /// Returns the RAM usage as a formatted string.
         /// </summary>
-        /// <param name="value">The PID.</param>
+        /// <param name="value">The RAM usage in bytes.</param>
         /// <param name="targetType"></param>
         /// <param name="parameter"></param>
         /// <param name="culture"></param>
-        /// <returns>The RAM usage as string.</returns>
+        /// <returns>A human-readable RAM usage string (e.g., "128 MB") or the unknown placeholder.</returns>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             // Pattern matching handles the null check and unboxing in one go.
-            // If the bound property is double? and is null, the pattern match fails
+            // If the bound property is long (RAM in bytes) and is null, the pattern match fails
             // and we fall through to the UnknownRamUsage placeholder.
             if (value is long ramUsage)
             {

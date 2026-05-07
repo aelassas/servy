@@ -45,7 +45,7 @@ namespace Servy.Core.Logging
         private static volatile int _currentLogLevel = (int)LogLevel.Info;
 
         private static string? _fileName;
-        private static long _logRotationSizeMB = AppConfig.DefaultRotationSizeMB;
+        private static int _logRotationSizeMB = AppConfig.DefaultRotationSizeMB;
         private static DateRotationType _dateRotationType;
         private static bool _useLocalTimeForRotation;
 

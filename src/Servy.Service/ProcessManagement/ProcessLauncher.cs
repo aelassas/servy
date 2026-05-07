@@ -4,6 +4,7 @@ using Servy.Core.Logging;
 using Servy.Service.Helpers;
 using System.Diagnostics;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Servy.Service.ProcessManagement
 {
@@ -350,8 +351,16 @@ namespace Servy.Service.ProcessManagement
             if (isJava)
             {
                 string currentArgs = psi.Arguments ?? string.Empty;
-                // Only prepend if the user hasn't already defined a file encoding
-                if (currentArgs.IndexOf("-Dfile.encoding", StringComparison.OrdinalIgnoreCase) < 0)
+
+                // Matches the flag only at the start of the string or preceded by whitespace.
+                // It also ensures the match is followed by an '=' or is the end of a token.
+                bool hasEncoding = Regex.IsMatch(
+                    currentArgs,
+                    @"(^|\s)-Dfile\.encoding([=\s]|$)",
+                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
+                );
+
+                if (!hasEncoding)
                 {
                     psi.Arguments = $"-Dfile.encoding=UTF-8 {currentArgs}".Trim();
                 }

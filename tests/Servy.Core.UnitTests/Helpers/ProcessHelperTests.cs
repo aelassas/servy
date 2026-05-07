@@ -12,8 +12,8 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData(0, "0%")]        // zero case
-        [InlineData(0.03, "0%")]     // zero case
+        [InlineData(0, "0.0%")]        // zero case
+        [InlineData(0.03, "0.0%")]     // zero case
         [InlineData(1.0, "1.0%")]    // integer case
         [InlineData(1.04, "1.0%")]   // two decimals
         [InlineData(1.05, "1.1%")]   // two decimals

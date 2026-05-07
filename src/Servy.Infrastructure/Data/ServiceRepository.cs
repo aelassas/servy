@@ -19,6 +19,23 @@ namespace Servy.Infrastructure.Data
         private readonly IJsonServiceSerializer _jsonServiceSerializer;
 
         /// <summary>
+        /// A centralized registry of sensitive fields that require encryption at rest.
+        /// Iterating this array prevents divergence between encryption and decryption paths.
+        /// </summary>
+        private static readonly (Func<ServiceDto, string?> Get, Action<ServiceDto, string?> Set)[] SensitiveFields = new (Func<ServiceDto, string?>, Action<ServiceDto, string?>)[]
+        {
+            (d => d.Parameters,                  (d, v) => d.Parameters = v),
+            (d => d.FailureProgramParameters,    (d, v) => d.FailureProgramParameters = v),
+            (d => d.PreLaunchParameters,         (d, v) => d.PreLaunchParameters = v),
+            (d => d.PostLaunchParameters,        (d, v) => d.PostLaunchParameters = v),
+            (d => d.Password,                    (d, v) => d.Password = v),
+            (d => d.EnvironmentVariables,        (d, v) => d.EnvironmentVariables = v),
+            (d => d.PreLaunchEnvironmentVariables, (d, v) => d.PreLaunchEnvironmentVariables = v),
+            (d => d.PreStopParameters,           (d, v) => d.PreStopParameters = v),
+            (d => d.PostStopParameters,          (d, v) => d.PostStopParameters = v)
+        };
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ServiceRepository"/> class.
         /// </summary>
         /// <param name="dapper">The Dapper executor used to perform database operations. Must not be null.</param>
@@ -82,7 +99,8 @@ namespace Servy.Infrastructure.Data
 
             if (!updateRuntimeState)
             {
-                PatchRuntimeState(encryptedService);
+                // Proxy the rarely-used sync call through the async implementation to maintain a single source of truth.
+                PatchRuntimeStateAsync(encryptedService, CancellationToken.None).GetAwaiter().GetResult();
             }
 
             var sql = $@"
@@ -384,29 +402,6 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Retrieves the existing runtime state from the database and applies it to the incoming DTO.
-        /// This ensures that importing a configuration over a running service does not clobber
-        /// its PID or active log paths, which would break Manager tracking.
-        /// </summary>
-        /// <param name="incoming">The DTO deserialized from an import file.</param>
-        private void PatchRuntimeState(ServiceDto incoming)
-        {
-            if (string.IsNullOrWhiteSpace(incoming.Name)) return;
-
-            // Fetch current state without decryption (performance optimization)
-            var existing = GetByName(incoming.Name, decrypt: false);
-
-            if (existing != null)
-            {
-                // These fields are not serialized in export files (ShouldSerialize*() => false).
-                // If we don't copy them here, UpsertAsync will overwrite the DB with NULL.
-                incoming.Pid = existing.Pid;
-                incoming.ActiveStdoutPath = existing.ActiveStdoutPath;
-                incoming.ActiveStderrPath = existing.ActiveStderrPath;
-            }
-        }
-
-        /// <summary>
         /// Creates a shallow clone of the ServiceDto and encrypts sensitive fields.
         /// This prevents double-encryption and unintended mutation of the input object.
         /// </summary>
@@ -414,15 +409,10 @@ namespace Servy.Infrastructure.Data
         {
             var clone = (ServiceDto)source.Clone();
 
-            clone.Parameters = EncryptIfPresent(clone.Parameters);
-            clone.FailureProgramParameters = EncryptIfPresent(clone.FailureProgramParameters);
-            clone.PreLaunchParameters = EncryptIfPresent(clone.PreLaunchParameters);
-            clone.PostLaunchParameters = EncryptIfPresent(clone.PostLaunchParameters);
-            clone.Password = EncryptIfPresent(clone.Password);
-            clone.EnvironmentVariables = EncryptIfPresent(clone.EnvironmentVariables);
-            clone.PreLaunchEnvironmentVariables = EncryptIfPresent(clone.PreLaunchEnvironmentVariables);
-            clone.PreStopParameters = EncryptIfPresent(clone.PreStopParameters);
-            clone.PostStopParameters = EncryptIfPresent(clone.PostStopParameters);
+            foreach (var (get, set) in SensitiveFields)
+            {
+                set(clone, EncryptIfPresent(get(clone)));
+            }
 
             return clone;
         }
@@ -435,15 +425,10 @@ namespace Servy.Infrastructure.Data
         {
             if (dto == null) return;
 
-            dto.Parameters = DecryptIfPresent(dto.Parameters);
-            dto.FailureProgramParameters = DecryptIfPresent(dto.FailureProgramParameters);
-            dto.PreLaunchParameters = DecryptIfPresent(dto.PreLaunchParameters);
-            dto.PostLaunchParameters = DecryptIfPresent(dto.PostLaunchParameters);
-            dto.Password = DecryptIfPresent(dto.Password);
-            dto.EnvironmentVariables = DecryptIfPresent(dto.EnvironmentVariables);
-            dto.PreLaunchEnvironmentVariables = DecryptIfPresent(dto.PreLaunchEnvironmentVariables);
-            dto.PreStopParameters = DecryptIfPresent(dto.PreStopParameters);
-            dto.PostStopParameters = DecryptIfPresent(dto.PostStopParameters);
+            foreach (var (get, set) in SensitiveFields)
+            {
+                set(dto, DecryptIfPresent(get(dto)));
+            }
         }
 
         /// <summary>

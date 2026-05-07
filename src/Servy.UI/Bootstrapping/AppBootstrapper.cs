@@ -305,7 +305,8 @@ namespace Servy.UI.Bootstrapping
                     var jsonSerializer = new JsonServiceSerializer();
 
                     ServiceRepository = new ServiceRepository(dapperExecutor, SecureData, xmlSerializer, jsonSerializer);
-                    var resourceHelper = new ResourceHelper(ServiceRepository, _processKiller);
+                    var sh = new ServiceHelper(ServiceRepository);
+                    var resourceHelper = new ResourceHelper(sh, _processKiller);
 
                     // Copy embedded files
                     await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "exe");
@@ -353,7 +354,7 @@ namespace Servy.UI.Bootstrapping
         /// <param name="targetAppPublishPath">The path to the target application executable.</param>
         /// <param name="updateAvailabilityCallback">The callback to invoke when the target application's availability state changes.</param>
         /// <param name="app">The active WPF application instance.</param>
-        public async void StartAvailabilityMonitor(string? targetAppPublishPath, Action<bool> updateAvailabilityCallback, Application app)
+        public async Task StartAvailabilityMonitorAsync(string? targetAppPublishPath, Action<bool> updateAvailabilityCallback, Application app)
         {
             if (string.IsNullOrEmpty(targetAppPublishPath)) return;
 

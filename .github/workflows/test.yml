@@ -61,19 +61,29 @@ jobs:
               $projName = [System.IO.Path]::GetFileNameWithoutExtension($proj.Path)
               Write-Host "Running tests for $projName..." -ForegroundColor Cyan
               
-              # Construct the base command              
+              # Construct the arguments array              
               # FIX: Added $projName to the results-directory to completely prevent coverage overwriting collisions              
-              $cmd = "dotnet test $($proj.Path) --configuration Debug --no-build --collect `"XPlat Code Coverage`" --results-directory `"./TestResults/$($proj.Dir)/$projName`""
+              $args = @(
+                  'test', $proj.Path,
+                  '--configuration', 'Debug',
+                  '--no-build',
+                  '--collect', 'XPlat Code Coverage',
+                  '--results-directory', "./TestResults/$($proj.Dir)/$projName"
+              )
               
               # Add filter if present                            
-              if ($proj.Filter) { $cmd += " --filter `"$($proj.Filter)`"" }
+              if ($proj.Filter) { $args += @('--filter', $proj.Filter) }
               
               # Add Coverage Formats and the Exclude filter for Servy.Testing              
               # FIX: Added wildcards to exclude all Unit and Integration tests from being instrumented              
-              $cmd += " -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=`"[*.UnitTests]*,[*.IntegrationTests]*,[Servy.Testing]*`""
+              $args += @(
+                  '--',
+                  'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura',
+                  'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=[*.UnitTests]*,[*.IntegrationTests]*,[Servy.Testing]*'
+              )
 
-              # Execute the string as a command                            
-              Invoke-Expression $cmd
+              # Execute the command securely using splatting                            
+              & dotnet @args
               
               if ($LASTEXITCODE -ne 0) { 
                   $failed = $true 

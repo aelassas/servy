@@ -865,10 +865,10 @@ namespace Servy.ViewModels
 
             ManagerCommand = new AsyncCommand(OpenManager);
 
-            ExportXmlCommand = new AsyncCommand(ExportXmlConfig);
-            ExportJsonCommand = new AsyncCommand(ExportJsonConfig);
-            ImportXmlCommand = new AsyncCommand(ImportXmlConfig);
-            ImportJsonCommand = new AsyncCommand(ImportJsonConfig);
+            ExportXmlCommand = new AsyncCommand(ExportXmlConfig, _ => !IsBusy);
+            ExportJsonCommand = new AsyncCommand(ExportJsonConfig, _ => !IsBusy);
+            ImportXmlCommand = new AsyncCommand(ImportXmlConfig, _ => !IsBusy);
+            ImportJsonCommand = new AsyncCommand(ImportJsonConfig, _ => !IsBusy);
 
             BrowseFailureProgramPathCommand = new RelayCommand<object>(_ => BrowseFailureProgramPath());
             BrowseFailureProgramStartupDirectoryCommand = new RelayCommand<object>(_ => BrowseFailureProgramStartupDirectory());
@@ -1258,7 +1258,15 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task ExportXmlConfig(object? parameter)
         {
-            await ServiceCommands.ExportXmlConfig(ConfirmPassword);
+            try
+            {
+                IsBusy = true;
+                await ServiceCommands.ExportXmlConfig(ConfirmPassword);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         /// <summary>
@@ -1266,7 +1274,15 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task ExportJsonConfig(object? parameter)
         {
-            await ServiceCommands.ExportJsonConfig(ConfirmPassword);
+            try
+            {
+                IsBusy = true;
+                await ServiceCommands.ExportJsonConfig(ConfirmPassword);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         /// <summary>
@@ -1277,7 +1293,15 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task ImportXmlConfig(object? parameter)
         {
-            await ServiceCommands.ImportXmlConfig();
+            try
+            {
+                IsBusy = true;
+                await ServiceCommands.ImportXmlConfig();
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         /// <summary>
@@ -1288,7 +1312,15 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task ImportJsonConfig(object? parameter)
         {
-            await ServiceCommands.ImportJsonConfig();
+            try
+            {
+                IsBusy = true;
+                await ServiceCommands.ImportJsonConfig();
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         #endregion
