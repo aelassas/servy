@@ -1,4 +1,5 @@
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using System.Reflection;
 
 namespace Servy.Core.Config
@@ -136,12 +137,12 @@ namespace Servy.Core.Config
         /// <summary>
         /// Default Servy Desktop App Publish Path (Release).
         /// </summary>
-        public static readonly string DefaultDesktopAppPublishPath = @".\Servy.exe";
+        public static readonly string DefaultDesktopAppPublishPath = Path.Combine(AppFoldersHelper.GetAppDirectory(), "Servy.exe");
 
         /// <summary>
         /// Default Servy Manager App Publish Path (Release).
         /// </summary>
-        public static readonly string DefaultManagerAppPublishPath = @".\Servy.Manager.exe";
+        public static readonly string DefaultManagerAppPublishPath = Path.Combine(AppFoldersHelper.GetAppDirectory(), "Servy.Manager.exe");
 
         /// <summary>
         /// The base file name (without extension) of the Servy Service CLI executable.

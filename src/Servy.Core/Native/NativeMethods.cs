@@ -724,58 +724,39 @@ namespace Servy.Core.Native
         #region Helper Methods
 
         /// <summary>
-        /// A safelist of built-in Windows service accounts and well-known identities that 
-        /// do not have passwords and cannot be validated via standard LogonUser calls.
+        /// A safelist of built-in Windows accounts that are actual service runners.
+        /// These do not have passwords and cannot be validated via LogonUser.
         /// </summary>
-        private static readonly HashSet<string> BuiltInServiceAccounts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> RunnableServiceAccounts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             // --- Core Service Identities ---
-            "System",
-            "LocalSystem",
-            "LocalService",
-            "NetworkService",
+            "System", "LocalSystem", "LocalService", "NetworkService",
 
-            // --- NT AUTHORITY Prefixed (Exhaustive Spacing) ---
-            "NT AUTHORITY\\System",
-            "NT AUTHORITY\\LocalSystem",
-            "NT AUTHORITY\\Local System",
-            "NT AUTHORITY\\LocalService",
-            "NT AUTHORITY\\Local Service",
-            "NT AUTHORITY\\NetworkService",
-            "NT AUTHORITY\\Network Service",
+            // --- NT AUTHORITY Prefixed ---
+            "NT AUTHORITY\\System", "NT AUTHORITY\\LocalSystem", "NT AUTHORITY\\Local System",
+            "NT AUTHORITY\\LocalService", "NT AUTHORITY\\Local Service",
+            "NT AUTHORITY\\NetworkService", "NT AUTHORITY\\Network Service",
 
             // --- Dot / Local Prefixed ---
-            ".\\System",
-            ".\\LocalSystem",
-            ".\\Local Service",
-            ".\\LocalService",
-            ".\\Network Service",
-            ".\\NetworkService",
+            ".\\System", ".\\LocalSystem", ".\\Local Service", ".\\LocalService",
+            ".\\Network Service", ".\\NetworkService",
 
             // --- BUILTIN Prefixed ---
-            "BUILTIN\\System",
-            "BUILTIN\\LocalSystem",
-            "BUILTIN\\LocalService",
-            "BUILTIN\\NetworkService",
+            "BUILTIN\\System", "BUILTIN\\LocalSystem", "BUILTIN\\LocalService", "BUILTIN\\NetworkService"
+        };
 
-            // --- Specialized identities (Passwordless) ---
-            "Anonymous Logon",
-            "NT AUTHORITY\\Anonymous Logon",
-            "Authenticated Users",
-            "NT AUTHORITY\\Authenticated Users",
-            "Everyone",
-            "IUSR",
-            "NT AUTHORITY\\IUSR",
-    
-            // --- Session/Context Identities ---
-            "Batch",
-            "NT AUTHORITY\\Batch",
-            "Interactive",
-            "NT AUTHORITY\\Interactive",
-            "Service",
-            "NT AUTHORITY\\Service",
-            "Network",
-            "NT AUTHORITY\\Network"
+        /// <summary>
+        /// Identifies well-known Windows groups or logon contexts that are NOT 
+        /// valid runnable service accounts, despite being passwordless.
+        /// </summary>
+        private static readonly HashSet<string> ForbiddenGroupIdentities = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Everyone", "Authenticated Users", "Anonymous Logon", "IUSR",
+            "NT AUTHORITY\\Everyone", "NT AUTHORITY\\Authenticated Users", "NT AUTHORITY\\Anonymous Logon", "NT AUTHORITY\\IUSR",
+            "Batch", "NT AUTHORITY\\Batch",
+            "Interactive", "NT AUTHORITY\\Interactive",
+            "Service", "NT AUTHORITY\\Service",
+            "Network", "NT AUTHORITY\\Network"
         };
 
         /// <summary>
@@ -788,10 +769,17 @@ namespace Servy.Core.Native
         /// <exception cref="SecurityException">Identity cannot be resolved or translation failed.</exception>
         /// <exception cref="UnauthorizedAccessException">Invalid credentials or policy restriction.</exception>
         /// <exception cref="Win32Exception">Unexpected system error during logon.</exception>
-        public static void ValidateCredentials(string username, string? password)
+        public static void ValidateCredentials(string username, string password)
         {
             if (string.IsNullOrWhiteSpace(username))
                 throw new ArgumentException("Username cannot be empty.");
+
+            // 0. FORBIDDEN GROUP CHECK
+            // Prevent groups or session contexts from passing as valid service runners.
+            if (ForbiddenGroupIdentities.Contains(username))
+            {
+                throw new ArgumentException($"The identity '{username}' is a group or logon context, not a runnable service account. Please use a specific service account (e.g., NetworkService) or a standard user.");
+            }
 
             // The pattern allows for 'NT AUTHORITY\Account', 'DOMAIN\Account', or '.\Account'
             const string pattern = @"^(?:[\w\s\.\-]+|\.)\\[\w\s\.@!\-]+\$?$";
@@ -801,9 +789,9 @@ namespace Servy.Core.Native
             // 1. Check the static exhaustive list (Case-Insensitive via HashSet comparer).
             // 2. Catch Virtual Service Accounts (NT SERVICE\...)
             // 3. Catch IIS AppPool Identities (IIS APPPOOL\...)
-            var isBuiltIn = BuiltInServiceAccounts.Contains(username) ||
-                            username.StartsWith("NT SERVICE\\", StringComparison.OrdinalIgnoreCase) ||
-                            username.StartsWith("IIS APPPOOL\\", StringComparison.OrdinalIgnoreCase);
+            var isVirtualAccount = username.StartsWith("NT SERVICE\\", StringComparison.OrdinalIgnoreCase)
+                                   || username.StartsWith("IIS APPPOOL\\", StringComparison.OrdinalIgnoreCase);
+            var isBuiltIn = RunnableServiceAccounts.Contains(username) || isVirtualAccount;
 
             // Logon Validation Guard for Built-in Accounts
             // These accounts (NetworkService, Virtual Accounts, etc.) are managed by the OS.
