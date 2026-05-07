@@ -1338,9 +1338,9 @@ namespace Servy.ViewModels
         /// Some fields (such as environment variables and dependencies) are transformed into 
         /// display-friendly formats using <c>FormatEnvirnomentVariables</c> and <c>FormatServiceDependencies</c>.
         /// 
-        /// For security purposes, the <see cref="Password"/> and <see cref="ConfirmPassword"/> properties 
-        /// are both set to the same value from the DTO. This assumes that when loading an existing service 
-        /// configuration, the password is already validated and confirmed.
+        /// For security purposes, only <see cref="Password"/> is restored from the DTO.
+        /// <see cref="ConfirmPassword"/> is intentionally cleared so that any subsequent
+        /// save action requires the user to re-type and re-confirm the password.
         /// </remarks>
         public void BindServiceDtoToModel(ServiceDto dto)
         {

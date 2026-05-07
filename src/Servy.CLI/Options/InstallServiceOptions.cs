@@ -274,14 +274,14 @@ namespace Servy.CLI.Options
         public string? PreLaunchStartupDir { get; set; }
 
         /// <summary>
-        /// Gets or sets additional command-line parameters for the process.
+        /// Gets or sets additional parameters for the pre-launch executable.
         /// Optional.
         /// </summary>
         [Option("preLaunchParams", HelpText = "Additional parameters for the pre-launch executable.")]
         public string? PreLaunchParameters { get; set; }
 
         /// <summary>
-        /// Gets or sets environment variables for the process.
+        /// Gets or sets environment variables for the pre-launch executable.
         /// Optional.
         /// </summary>
         [Option("preLaunchEnv", HelpText = "Environment variables for the pre-launch executable. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';' and \\\\ to escape '\\'. Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin")]
@@ -303,7 +303,6 @@ namespace Servy.CLI.Options
 
         /// <summary>
         /// Gets or sets the timeout for the pre-launch executable.
-        /// Must be >= 5 seconds.
         /// Optional.
         /// </summary>
         [Option("preLaunchTimeout", HelpText = "Timeout for the pre-launch executable. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use this only for tasks that do not affect the service's ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode.")]
@@ -339,7 +338,7 @@ namespace Servy.CLI.Options
         public string? PostLaunchStartupDir { get; set; }
 
         /// <summary>
-        /// Gets or sets additional command-line parameters for the process.
+        /// Gets or sets additional parameters for the post-launch executable.
         /// Optional.
         /// </summary>
         [Option("postLaunchParams", HelpText = "Additional parameters for the post-launch executable.")]
@@ -347,7 +346,7 @@ namespace Servy.CLI.Options
 
         /// <summary>
         /// Gets or sets a value indicating whether debug logs are enabled.
-        /// When enabled, environment variables and process parameters are recorded in the Windows Event Log. 
+        /// When enabled, environment variables and process parameters are recorded in the Servy.Service.log file. 
         /// Not recommended for production environments, as these logs may contain sensitive information.
         /// </summary>
         [Option("debug", HelpText = "Whether debug logs are enabled. When enabled, environment variables and process parameters are recorded in the Servy.Service.log file. Not recommended for production environments, as these logs may contain sensitive information.")]
@@ -384,7 +383,7 @@ namespace Servy.CLI.Options
         public string? PreStopStartupDir { get; set; }
 
         /// <summary>
-        /// Gets or sets additional command-line parameters for the process.
+        /// Gets or sets additional parameters for the pre-stop executable.
         /// Optional.
         /// </summary>
         [Option("preStopParams", HelpText = "Additional parameters for the pre-stop executable.")]
@@ -392,15 +391,13 @@ namespace Servy.CLI.Options
 
         /// <summary>
         /// Gets or sets the timeout for the pre-stop executable.
-        /// Must be >= 5 seconds.
         /// Optional.
         /// </summary>
         [Option("preStopTimeout", HelpText = "Timeout for the pre-stop executable. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.")]
         public string? PreStopTimeout { get; set; }
 
         /// <summary>
-        /// Gets or sets the timeout for the pre-stop executable.
-        /// Must be >= 5 seconds.
+        /// Gets or sets a flag to log pre-stop failure as error.
         /// Optional.
         /// </summary>
         [Option("preStopLogAsError", HelpText = "Log pre-stop failure as error.")]
@@ -421,7 +418,7 @@ namespace Servy.CLI.Options
         public string? PostStopStartupDir { get; set; }
 
         /// <summary>
-        /// Gets or sets additional command-line parameters for the process.
+        /// Gets or sets additional parameters for the post-stop executable.
         /// Optional.
         /// </summary>
         [Option("postStopParams", HelpText = "Additional parameters for the post-stop executable.")]

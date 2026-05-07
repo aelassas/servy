@@ -1,4 +1,5 @@
-﻿using Servy.Core.Resources;
+﻿using Microsoft.Win32;
+using Servy.Core.Resources;
 
 namespace Servy.UI.Services
 {
@@ -58,14 +59,11 @@ namespace Servy.UI.Services
         /// <inheritdoc />
         public string? OpenFolder()
         {
-            using (var dlg = new System.Windows.Forms.FolderBrowserDialog
+            var dlg = new OpenFolderDialog
             {
-                Description = Strings.Title_SelectStartupDirectory,
-                ShowNewFolderButton = true
-            })
-            {
-                return dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK ? dlg.SelectedPath : null;
-            }
+                Title = Strings.Title_SelectStartupDirectory,
+            };
+            return dlg.ShowDialog() == true ? dlg.FolderName : null;
         }
 
         /// <inheritdoc />

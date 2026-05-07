@@ -46,7 +46,7 @@ namespace Servy.Manager.ViewModels
 
         #region Fields - Optimized Double Buffering
 
-        // Pre-allocated collections to avoid GC pressure
+        // Working buffers reused across ticks; final snapshots cloned for thread-safe property exposure
         private readonly PointCollection _cpuBuffer = new PointCollection(PerformanceHistoryCapacity);
         private readonly PointCollection _cpuFillBuffer = new PointCollection(PerformanceHistoryCapacity + 2);
         private readonly PointCollection _ramBuffer = new PointCollection(PerformanceHistoryCapacity);

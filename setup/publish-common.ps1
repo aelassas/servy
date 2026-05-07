@@ -178,7 +178,8 @@ function New-PortablePackage {
         [Parameter(Mandatory=$true)][string]$PackageFolder
     )
     
-    # Compress contents of the folder, not the folder itself
+    # Compress the folder including its top-level directory entry, so extraction
+    # preserves the staging directory name as a wrapper.
     $zipArgs = @("a", "-t7z", "-m0=lzma2", "-mx=9", "-ms=on", $OutputZip, $PackageFolder)
     $process = Start-Process -FilePath $SevenZipExe -ArgumentList $zipArgs -Wait -NoNewWindow -PassThru
 

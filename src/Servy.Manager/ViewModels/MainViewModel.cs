@@ -529,7 +529,7 @@ namespace Servy.Manager.ViewModels
 
                 // Step 3: fetch data off UI thread
                 var sw = Stopwatch.StartNew();
-                var results = await Task.Run(() => ServiceCommands?.SearchServicesAsync(SearchText, true, token), token);
+                var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, true, token), token);
                 sw.Stop();
                 Debug.WriteLine($"Created {results.Count} SearchServicesAsync in {sw.ElapsedMilliseconds} ms");
 

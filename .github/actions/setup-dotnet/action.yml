@@ -7,19 +7,12 @@
 # ==============================================================================
 name: 'Setup Custom .NET'
 description: 'Installs a specific .NET SDK version using the dotnet-install script'
-inputs:
-  version:
-    description: '.NET SDK version to install (e.g., 10.0.102). Pinning ensures reproducible builds.'
-    required: true
-    default: '10.0.202' # Pinned version to prevent silent drift
+
 runs:
   using: "composite"
   steps:
     - name: Install .NET SDK
       shell: powershell
-      # Map the input to an env variable to prevent command injection
-      env:
-        DOTNET_VERSION: ${{ inputs.version }}
       run: |
         $ErrorActionPreference = "Stop"
 

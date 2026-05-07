@@ -108,7 +108,9 @@ Update-FileContent `
 # -----------------------------
 # 3. Update all *.csproj files recursively
 # -----------------------------
-Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyContinue | ForEach-Object {
+Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -notmatch '\\(bin|obj|\.git|packages|node_modules)\\' } |
+    ForEach-Object {
     $csproj = $_.FullName
     
     # Detect encoding first to prevent corruption

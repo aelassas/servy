@@ -769,7 +769,7 @@ namespace Servy.Core.Native
         /// <exception cref="SecurityException">Identity cannot be resolved or translation failed.</exception>
         /// <exception cref="UnauthorizedAccessException">Invalid credentials or policy restriction.</exception>
         /// <exception cref="Win32Exception">Unexpected system error during logon.</exception>
-        public static void ValidateCredentials(string username, string password)
+        public static void ValidateCredentials(string username, string? password)
         {
             if (string.IsNullOrWhiteSpace(username))
                 throw new ArgumentException("Username cannot be empty.");

@@ -609,20 +609,9 @@ namespace Servy.Core.Config
         public const int MaxConfigFileSizeMB = 10;
 
         /// <summary>
-        /// The maximum allowed character count for imported configuration payloads (JSON or XML).
+        /// Authoritative byte count for configuration limits (Binary MiB: 1024 * 1024).
         /// </summary>
-        /// <remarks>
-        /// <para>
-        /// This limit is a security measure to prevent Denial of Service (DoS) attacks via 
-        /// memory exhaustion. 10,000,000 characters represent approximately 20MB of memory 
-        /// usage for the raw string in UTF-16.
-        /// </para>
-        /// <para>
-        /// This value is deliberately aligned with <see cref="MaxConfigFileSizeMB"/> to ensure 
-        /// consistency between initial file-size checks and internal buffer validation.
-        /// </para>
-        /// </remarks>
-        public const int MaxImportPayloadSizeChars = MaxConfigFileSizeMB * 1_000_000;
+        public const long MaxConfigFileSizeBytes = (long)MaxConfigFileSizeMB * 1024 * 1024;
 
         /// <summary>
         /// The maximum age in minutes an extracted resource can be before it is considered stale.
@@ -734,17 +723,17 @@ namespace Servy.Core.Config
         /// <summary>
         /// Maximum allowed failed health checks.
         /// </summary>
-        public const int MaxMaxFailedChecks = int.MaxValue;
+        public const int MaxMaxFailedChecks = 100_000;
 
         /// <summary>
         /// Maximum allowed restart attempts.
         /// </summary>
-        public const int MaxMaxRestartAttempts = int.MaxValue;
+        public const int MaxMaxRestartAttempts = 100_000;
 
         /// <summary>
-        /// Maximum pre-launch timeout in seconds (24 hours).
+        /// Maximum pre-launch timeout in seconds (1,000 seconds).
         /// </summary>
-        public const int MaxPreLaunchTimeoutSeconds = 86_400;
+        public const int MaxPreLaunchTimeoutSeconds = 1_000;
 
         /// <summary>
         /// Maximum pre-launch retry attempts.
