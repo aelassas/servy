@@ -63,7 +63,10 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 
                 ConfigFileType configFileType;
-                if (string.IsNullOrWhiteSpace(opts.ConfigFileType) || !Enum.TryParse(opts.ConfigFileType, true, out configFileType))
+                if (string.IsNullOrWhiteSpace(opts.ConfigFileType)
+                    || !Enum.TryParse(opts.ConfigFileType, true, out configFileType)
+                    || !Enum.IsDefined(typeof(ConfigFileType), configFileType)
+                    || char.IsDigit(opts.ConfigFileType.Trim()[0]))
                     return CommandResult.Fail(Strings.Msg_InvalidConfigFileType);
 
                 if (string.IsNullOrWhiteSpace(opts.Path))

@@ -1,20 +1,20 @@
 <#
-.SYNOPSIS
-Contains common functions used across all Servy publish and packaging scripts.
+    .SYNOPSIS
+    Contains common functions used across all Servy publish and packaging scripts.
 
-.DESCRIPTION
-This module centralizes error handling, cleanup, installer generation via Inno Setup, common artifact copying, and 7-Zip package creation to ensure a robust architectural foundation.
-#>
+    .DESCRIPTION
+    This module centralizes error handling, cleanup, installer generation via Inno Setup, common artifact copying, and 7-Zip package creation to ensure a robust architectural foundation.
+    #>
 
-<#
-.SYNOPSIS
-Verifies the exit code of the last executed command and terminates the script if it indicates failure.
+    <#
+    .SYNOPSIS
+    Verifies the exit code of the last executed command and terminates the script if it indicates failure.
 
-.DESCRIPTION
-Checks the global exit code variable. If the value is not zero, an error is written to the host and the script is terminated with that exit code to prevent cascading failures.
+    .DESCRIPTION
+    Checks the global exit code variable. If the value is not zero, an error is written to the host and the script is terminated with that exit code to prevent cascading failures.
 
-.PARAMETER ErrorMessage
-The contextual error message to display if the exit code is non-zero.
+    .PARAMETER ErrorMessage
+    The contextual error message to display if the exit code is non-zero.
 #>
 function Check-LastExitCode {
     param([string]$ErrorMessage)
@@ -25,14 +25,14 @@ function Check-LastExitCode {
 }
 
 <#
-.SYNOPSIS
-Safely removes a file or directory if it exists on the system.
+    .SYNOPSIS
+    Safely removes a file or directory if it exists on the system.
 
-.DESCRIPTION
-Checks for the presence of the specified path and forcefully removes it and all child items without prompting. This function is essential for ensuring a clean workspace before initiating builds.
+    .DESCRIPTION
+    Checks for the presence of the specified path and forcefully removes it and all child items without prompting. This function is essential for ensuring a clean workspace before initiating builds.
 
-.PARAMETER Path
-The absolute or relative path to the file or directory to remove.
+    .PARAMETER Path
+    The absolute or relative path to the file or directory to remove.
 #>
 function Remove-ItemSafely {
     param ([string]$Path)
@@ -42,21 +42,21 @@ function Remove-ItemSafely {
     }
 }
 
-<#
-.SYNOPSIS
-Builds an Inno Setup installer executable using the provided configuration, incorporating retry logic for file locks.
+    <#
+    .SYNOPSIS
+    Builds an Inno Setup installer executable using the provided configuration, incorporating retry logic for file locks.
 
-.DESCRIPTION
-Executes the Inno Setup compiler against the provided ISS file. This implementation features a retry loop to automatically recover from transient Anti-Virus file locks that frequently occur during compilation sequences.
+    .DESCRIPTION
+    Executes the Inno Setup compiler against the provided ISS file. This implementation features a retry loop to automatically recover from transient Anti-Virus file locks that frequently occur during compilation sequences.
 
-.PARAMETER InnoCompiler
-The resolved path to the ISCC compiler executable.
+    .PARAMETER InnoCompiler
+    The resolved path to the ISCC compiler executable.
 
-.PARAMETER IssFile
-The path to the Inno Setup script defining the installation package.
+    .PARAMETER IssFile
+    The path to the Inno Setup script defining the installation package.
 
-.PARAMETER Version
-The version string to stamp onto the installer package via the preprocessor directive.
+    .PARAMETER Version
+    The version string to stamp onto the installer package via the preprocessor directive.
 #>
 function Build-Installer {
     param (
@@ -102,20 +102,20 @@ function Build-Installer {
 }
 
 <#
-.SYNOPSIS
-Copies shared configuration and PowerShell module artifacts into the destination package folder.
+    .SYNOPSIS
+    Copies shared configuration and PowerShell module artifacts into the destination package folder.
 
-.DESCRIPTION
-Transfers the Task Scheduler XML definitions and the Servy PowerShell module files into the target directory. This process ensures all requisite foundational files exist before allowing the packaging to proceed.
+    .DESCRIPTION
+    Transfers the Task Scheduler XML definitions and the Servy PowerShell module files into the target directory. This process ensures all requisite foundational files exist before allowing the packaging to proceed.
 
-.PARAMETER ScriptDir
-The directory containing the publish scripts and the task schedule subfolder.
+    .PARAMETER ScriptDir
+    The directory containing the publish scripts and the task schedule subfolder.
 
-.PARAMETER CliDir
-The directory containing the Servy CLI project and its PowerShell module artifacts.
+    .PARAMETER CliDir
+    The directory containing the Servy CLI project and its PowerShell module artifacts.
 
-.PARAMETER DestFolder
-The target directory where the artifacts should be copied.
+    .PARAMETER DestFolder
+    The target directory where the artifacts should be copied.
 #>
 function Copy-CommonArtifacts {
     param (
@@ -156,20 +156,20 @@ function Copy-CommonArtifacts {
 }
 
 <#
-.SYNOPSIS
-Compresses a staging directory into a portable 7-Zip package.
+    .SYNOPSIS
+    Compresses a staging directory into a portable 7-Zip package.
 
-.DESCRIPTION
-Invokes the 7-Zip archiver with maximum compression settings to create a solid archive of the specified folder contents.
+    .DESCRIPTION
+    Invokes the 7-Zip archiver with maximum compression settings to create a solid archive of the specified folder contents.
 
-.PARAMETER SevenZipExe
-The resolved path to the 7-Zip executable.
+    .PARAMETER SevenZipExe
+    The resolved path to the 7-Zip executable.
 
-.PARAMETER OutputZip
-The absolute path where the final archive should be created.
+    .PARAMETER OutputZip
+    The absolute path where the final archive should be created.
 
-.PARAMETER PackageFolder
-The staging directory whose contents will be compressed.
+    .PARAMETER PackageFolder
+    The staging directory whose contents will be compressed.
 #>
 function New-PortablePackage {
     param (

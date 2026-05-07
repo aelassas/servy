@@ -857,18 +857,18 @@ namespace Servy.ViewModels
             BrowseStdoutPathCommand = new RelayCommand<object>(_ => BrowseStdoutPath());
             BrowseStderrPathCommand = new RelayCommand<object>(_ => BrowseStderrPath());
 
-            InstallCommand = new AsyncCommand(InstallService, _ => !IsBusy);
-            UninstallCommand = new AsyncCommand(UninstallService, _ => !IsBusy);
-            StartCommand = new AsyncCommand(StartService, _ => !IsBusy);
-            StopCommand = new AsyncCommand(StopService, _ => !IsBusy);
-            RestartCommand = new AsyncCommand(RestartService, _ => !IsBusy);
+            InstallCommand = new AsyncCommand(InstallService, _ => !IsBusy, name: nameof(InstallCommand));
+            UninstallCommand = new AsyncCommand(UninstallService, _ => !IsBusy, name: nameof(UninstallCommand));
+            StartCommand = new AsyncCommand(StartService, _ => !IsBusy, name: nameof(StartCommand));
+            StopCommand = new AsyncCommand(StopService, _ => !IsBusy, name: nameof(StopCommand));
+            RestartCommand = new AsyncCommand(RestartService, _ => !IsBusy, name: nameof(RestartCommand));
 
-            ManagerCommand = new AsyncCommand(OpenManager);
+            ManagerCommand = new AsyncCommand(OpenManager, name: nameof(ManagerCommand));
 
-            ExportXmlCommand = new AsyncCommand(ExportXmlConfig, _ => !IsBusy);
-            ExportJsonCommand = new AsyncCommand(ExportJsonConfig, _ => !IsBusy);
-            ImportXmlCommand = new AsyncCommand(ImportXmlConfig, _ => !IsBusy);
-            ImportJsonCommand = new AsyncCommand(ImportJsonConfig, _ => !IsBusy);
+            ExportXmlCommand = new AsyncCommand(ExportXmlConfig, _ => !IsBusy, name: nameof(ExportXmlCommand));
+            ExportJsonCommand = new AsyncCommand(ExportJsonConfig, _ => !IsBusy, name: nameof(ExportJsonCommand));
+            ImportXmlCommand = new AsyncCommand(ImportXmlConfig, _ => !IsBusy, name: nameof(ImportXmlCommand));
+            ImportJsonCommand = new AsyncCommand(ImportJsonConfig, _ => !IsBusy, name: nameof(ImportJsonCommand));
 
             BrowseFailureProgramPathCommand = new RelayCommand<object>(_ => BrowseFailureProgramPath());
             BrowseFailureProgramStartupDirectoryCommand = new RelayCommand<object>(_ => BrowseFailureProgramStartupDirectory());
@@ -887,9 +887,9 @@ namespace Servy.ViewModels
             BrowsePostStopProcessPathCommand = new RelayCommand<object>(_ => BrowsePostStopProcessPath());
             BrowsePostStopStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePostStopStartupDirectory());
 
-            OpenDocumentationCommand = new AsyncCommand(OpenDocumentation);
-            CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync);
-            OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialog);
+            OpenDocumentationCommand = new AsyncCommand(OpenDocumentation, name: nameof(OpenDocumentationCommand));
+            CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync, name: nameof(CheckUpdatesCommand));
+            OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialog, name: nameof(OpenAboutDialogCommand));
 
             ClearFormCommand = new AsyncCommand(ClearForm);
 

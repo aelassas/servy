@@ -105,7 +105,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             catch (IOException ex) when (ex.HResult == unchecked((int)0x80070050)) // ERROR_FILE_EXISTS
             {
                 // If we hit a race where the file was created between our check and our open, 
-                // it's a win—the file is there.
+                // it's a win-the file is there.
             }
         }
 

@@ -158,7 +158,10 @@ namespace Servy.CLI.Commands
         /// <returns>True if parsing succeeds; otherwise false.</returns>
         private static bool TryParseFileType(string? input, out ConfigFileType fileType, out string error)
         {
-            if (string.IsNullOrWhiteSpace(input) || !Enum.TryParse(input, true, out fileType))
+            if (string.IsNullOrWhiteSpace(input)
+                || !Enum.TryParse(input, true, out fileType)
+                || !Enum.IsDefined(typeof(ConfigFileType), fileType)
+                || char.IsDigit(input.Trim()[0]))
             {
                 fileType = default;
                 error = "Configuration input file type is required (xml or json).";

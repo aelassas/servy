@@ -4,11 +4,11 @@
 #  Purpose:
 #    This workflow provides a unified "release" badge
 #    that reflects the combined status of the following workflows:
-#      - winget.yml       → Publishes the WinGet manifest
-#      - choco.yml        → Publishes the Chocolatey package
-#      - scoop.yml        → Publishes the Scoop manifest to aelassas/scoop-bucket
-#      - bump-version.yml → Bumps version
-#      - changelog.yml    → Updates the project changelog
+#      - winget.yml       -> Publishes the WinGet manifest
+#      - choco.yml        -> Publishes the Chocolatey package
+#      - scoop.yml        -> Publishes the Scoop manifest to aelassas/scoop-bucket
+#      - bump-version.yml -> Bumps version
+#      - changelog.yml    -> Updates the project changelog
 #
 #  Behavior:
 #    • Automatically runs after any of the above workflows complete.

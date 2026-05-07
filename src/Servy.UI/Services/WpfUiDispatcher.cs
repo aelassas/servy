@@ -16,7 +16,7 @@ namespace Servy.UI.Services
         /// </summary>
         public WpfUiDispatcher()
         {
-            // Construct on the UI thread (typical at App startup) — capture that dispatcher.
+            // Construct on the UI thread (typical at App startup) - capture that dispatcher.
             _dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
         }
 

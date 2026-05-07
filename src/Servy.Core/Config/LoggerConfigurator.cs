@@ -23,14 +23,14 @@ namespace Servy.Core.Config
                 Logger.Initialize(logFileName);
             }
 
-            if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
+            if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel) || !Enum.IsDefined(typeof(LogLevel), logLevel))
             {
-                logLevel = LogLevel.Info;
+                logLevel = AppConfig.DefaultLogLevel;
             }
             Logger.SetLogLevel(logLevel);
             instanceLogger?.SetLogLevel(logLevel);
 
-            if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType))
+            if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType) || !Enum.IsDefined(typeof(DateRotationType), dateRotationType))
             {
                 dateRotationType = DateRotationType.None;
             }

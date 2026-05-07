@@ -32,17 +32,17 @@ namespace Servy.Manager.ViewModels
             // Subscribe to property changes in the Service model
             Service.PropertyChanged += Service_PropertyChanged;
 
-            StartCommand = new AsyncCommand(StartServiceAsync, CanExecuteServiceCommand);
-            StopCommand = new AsyncCommand(StopServiceAsync, CanExecuteServiceCommand);
-            RestartCommand = new AsyncCommand(RestartServiceAsync, CanExecuteServiceCommand);
-            ConfigureCommand = new AsyncCommand(ConfigureServiceAsync);
-            InstallCommand = new AsyncCommand(InstallServiceAsync, CanExecuteServiceCommand);
-            UninstallCommand = new AsyncCommand(UninstallServiceAsync, CanExecuteServiceCommand);
-            RemoveCommand = new AsyncCommand(RemoveServiceAsync, CanExecuteServiceCommand);
-            ExportXmlCommand = new AsyncCommand(ExportServiceToXmlAsync, CanExecuteServiceCommand);
-            ExportJsonCommand = new AsyncCommand(ExportServiceToJsonAsync, CanExecuteServiceCommand);
+            StartCommand = new AsyncCommand(StartServiceAsync, CanExecuteServiceCommand, name: nameof(StartCommand));
+            StopCommand = new AsyncCommand(StopServiceAsync, CanExecuteServiceCommand, name: nameof(StopCommand));
+            RestartCommand = new AsyncCommand(RestartServiceAsync, CanExecuteServiceCommand, name: nameof(RestartCommand));
+            ConfigureCommand = new AsyncCommand(ConfigureServiceAsync, name: nameof(ConfigureCommand));
+            InstallCommand = new AsyncCommand(InstallServiceAsync, CanExecuteServiceCommand, name: nameof(InstallCommand));
+            UninstallCommand = new AsyncCommand(UninstallServiceAsync, CanExecuteServiceCommand, name: nameof(UninstallCommand));
+            RemoveCommand = new AsyncCommand(RemoveServiceAsync, CanExecuteServiceCommand, name: nameof(RemoveCommand));
+            ExportXmlCommand = new AsyncCommand(ExportServiceToXmlAsync, CanExecuteServiceCommand, name: nameof(ExportXmlCommand));
+            ExportJsonCommand = new AsyncCommand(ExportServiceToJsonAsync, CanExecuteServiceCommand, name: nameof(ExportJsonCommand));
 
-            CopyPidCommand = new AsyncCommand(CopyPidAsync, CanExecuteServiceCommand);
+            CopyPidCommand = new AsyncCommand(CopyPidAsync, CanExecuteServiceCommand, name: nameof(CopyPidCommand));
         }
 
         #region Properties

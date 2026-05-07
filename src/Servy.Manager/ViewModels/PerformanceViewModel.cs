@@ -175,7 +175,7 @@ namespace Servy.Manager.ViewModels
             ServiceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
-            CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
+            CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null, name: nameof(CopyPidAsync));
 
             InitTimer();
         }
