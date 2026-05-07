@@ -154,7 +154,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public async Task WaitForExitOrTimeoutAsync_ExitsEarly_ReturnsFalse()
         {
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            // Use cmd.exe instead of powershell.exe for a guaranteed instant exit
+            using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
             {
                 wrapper.Start();
 

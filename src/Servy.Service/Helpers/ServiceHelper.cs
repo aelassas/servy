@@ -260,6 +260,8 @@ namespace Servy.Service.Helpers
             IServyLogger logger,
             int stopTimeoutMs)
         {
+            if (startProcess == null) throw new ArgumentNullException(nameof(startProcess));
+
             try
             {
                 logger?.Info("Restarting child process...");

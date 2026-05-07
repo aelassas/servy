@@ -15,6 +15,26 @@ namespace Servy.Service.ProcessManagement
     public static class ProcessLauncher
     {
         /// <summary>
+        /// A compiled regular expression used to detect an existing <c>-Dfile.encoding</c> system property in Java arguments.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The pattern <c>(^|\s)-Dfile\.encoding([=\s]|$)</c> is designed to avoid false positives by ensuring the 
+        /// flag is at the start of the string or preceded by whitespace, and followed by an assignment or a delimiter. 
+        /// This prevents matching similar substrings inside file paths or JAR names.
+        /// </para>
+        /// <para>
+        /// This regex uses <see cref="RegexOptions.Compiled"/> for performance during process startup and 
+        /// <see cref="AppConfig.InputRegexTimeout"/> to prevent potential Denial of Service (DoS) from backtracking 
+        /// on malformed user input.
+        /// </para>
+        /// </remarks>
+        private static readonly Regex JavaFileEncodingRegex = new Regex(
+            @"(^|\s)-Dfile\.encoding([=\s]|$)",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant, // Java property names are case-sensitive
+            AppConfig.InputRegexTimeout);
+
+        /// <summary>
         /// Orchestrates the initialization and startup of an external process based on the provided options.
         /// </summary>
         /// <remarks>
@@ -352,13 +372,7 @@ namespace Servy.Service.ProcessManagement
             {
                 string currentArgs = psi.Arguments ?? string.Empty;
 
-                // Matches the flag only at the start of the string or preceded by whitespace.
-                // It also ensures the match is followed by an '=' or is the end of a token.
-                bool hasEncoding = Regex.IsMatch(
-                    currentArgs,
-                    @"(^|\s)-Dfile\.encoding([=\s]|$)",
-                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
-                );
+                bool hasEncoding = JavaFileEncodingRegex.IsMatch(currentArgs);
 
                 if (!hasEncoding)
                 {

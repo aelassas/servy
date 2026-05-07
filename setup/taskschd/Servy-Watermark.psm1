@@ -146,7 +146,8 @@ function Get-EventsToProcess {
     )
 
     # LOGIC FIX: Calling the cmdlet directly since it is now dot-sourced in the module scope
-    $rawErrors = Get-ServyLastErrors -LastProcessed $LastProcessed
+    # FIX: Explicitly pass the event ID to decouple scope inheritance
+    $rawErrors = Get-ServyLastErrors -LastProcessed $LastProcessed -EventLogErrorId $EVENT_ID_ERROR
 
     # CHECK: If no errors, exit quietly
     if ($null -eq $rawErrors -or $rawErrors.Count -eq 0) {

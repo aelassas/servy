@@ -67,7 +67,7 @@ namespace Servy.Core.Validators
             // Paths
             if (!_processHelper.ValidatePath(dto.ExecutablePath))
                 result.Errors.Add(Strings.Msg_InvalidPath);
-            if (!string.IsNullOrWhiteSpace(wrapperExePath) && !File.Exists(wrapperExePath))
+            if (!string.IsNullOrWhiteSpace(wrapperExePath) && !_processHelper.ValidatePath(wrapperExePath))
                 result.Errors.Add(Strings.Msg_InvalidWrapperExePath);
             if (!string.IsNullOrWhiteSpace(dto.StartupDirectory) && !_processHelper.ValidatePath(dto.StartupDirectory, false))
                 result.Errors.Add(Strings.Msg_InvalidStartupDirectory);

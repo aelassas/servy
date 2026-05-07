@@ -11,6 +11,10 @@
     The timestamp of the last processed event. Only events strictly newer 
     than this timestamp will be returned.
 
+.PARAMETER EventLogErrorId
+    The Event ID to use when writing a fallback failure log to the Application event log.
+    Defaults to 3103.
+
 .NOTES
     Author      : Akram El Assas
     Project     : Servy
@@ -27,11 +31,11 @@
 
 # Event ID Taxonomy (Refer to src/Servy.Core/Logging/EventIds.cs for updates)
 # 3000-3099: Core Errors | 3100-3199: Script Errors
-# NOTE: $EVENT_ID_ERROR is inherited from the parent Servy-Watermark module scope
 
 function Get-ServyLastErrors {
   param(
-    $LastProcessed
+    $LastProcessed,
+    [int]$EventLogErrorId = 3103
   )
 
   # 1. Self-derive location for logging
@@ -77,7 +81,7 @@ function Get-ServyLastErrors {
     $errorMsg = "Failed to query Windows event log for Servy errors: $_"
     try {
       # Fallback A: Try the Event Log
-      Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_ERROR -EntryType Error -Message $errorMsg -ErrorAction Stop
+      Write-EventLog -LogName Application -Source "Servy" -EventId $EventLogErrorId -EntryType Error -Message $errorMsg -ErrorAction Stop
     }
     catch {
       # Fallback B: Try the local file log

@@ -280,15 +280,25 @@ namespace Servy.Core.Logging
         }
 
         /// <summary>
-        /// Logs a message at the INFO level. 
-        /// Use this for general operational milestones and state changes.
+        /// Logs an informational message, optionally including detailed exception data.
         /// </summary>
-        /// <param name="message">The operational message to log.</param>
-        public static void Info(string? message)
+        /// <param name="message">The informational message to log.</param>
+        /// <param name="ex">An optional exception to include in the log entry. If provided, the exception is formatted and appended to the message.</param>
+        /// <remarks>
+        /// <para>
+        /// This method checks the current <see cref="LogLevel"/> before proceeding. The log is only written 
+        /// if the system is configured for <see cref="LogLevel.Info"/> or more verbose output.
+        /// </para>
+        /// <para>
+        /// When an exception is provided, it is processed via <c>FormatException</c> and appended to the 
+        /// message using the format: <c>{message} | Exception: {formattedException}</c>.
+        /// </para>
+        /// </remarks>
+        public static void Info(string? message, Exception? ex = null)
         {
             if ((LogLevel)_currentLogLevel <= LogLevel.Info)
             {
-                Log(LogLevel.Info, message);
+                Log(LogLevel.Info, ex != null ? $"{message} | Exception: {FormatException(ex)}" : message);
             }
         }
 
