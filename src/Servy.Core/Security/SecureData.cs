@@ -203,7 +203,12 @@ namespace Servy.Core.Security
                         return DecryptV1(payload.Substring(3).ToString());
                     }
 
-                    throw new SecureDataIntegrityException($"Unsupported encryption version marker: '{cipherText}'");
+                    // Take just the version marker portion (up to the first ':' inside the payload, or a fixed cap)
+                    int colonIdx = payload.IndexOf(':');
+                    string markerSnippet = colonIdx > 0
+                        ? payload.Substring(0, Math.Min(colonIdx, 8))
+                        : payload.Substring(0, Math.Min(payload.Length, 8));
+                    throw new SecureDataIntegrityException($"Unsupported encryption version marker: '{markerSnippet}'");
                 }
                 catch (Exception ex) when (ex is FormatException || ex is CryptographicException)
                 {
