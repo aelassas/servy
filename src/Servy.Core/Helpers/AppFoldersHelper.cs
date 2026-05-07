@@ -117,7 +117,9 @@ namespace Servy.Core.Helpers
 
             // 5. Secure operational folders while respecting inheritance
             string[] subFolders = { dbFolder, aesKeyFolder, aesIVFolder };
-            var normalizedRoot = AppConfig.ProgramDataPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var normalizedRoot = Path.GetFullPath(AppConfig.ProgramDataPath)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) 
+                + Path.DirectorySeparatorChar;
 
             foreach (var folder in subFolders)
             {
