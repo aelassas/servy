@@ -18,23 +18,16 @@ namespace Servy.Core.Config
         /// <param name="instanceLogger">Optional. An instance logger (e.g., EventLogLogger) to sync settings like LogLevel and EnableEventLog.</param>
         public static void ConfigureFromAppSettings(IConfiguration config, string? logFileName = null, IServyLogger? instanceLogger = null)
         {
-            if (!string.IsNullOrWhiteSpace(logFileName))
-            {
-                Logger.Initialize(logFileName);
-            }
-
             if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel) || !Enum.IsDefined(typeof(LogLevel), logLevel))
             {
                 logLevel = AppConfig.DefaultLogLevel;
             }
-            Logger.SetLogLevel(logLevel);
             instanceLogger?.SetLogLevel(logLevel);
 
             if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType) || !Enum.IsDefined(typeof(DateRotationType), dateRotationType))
             {
                 dateRotationType = DateRotationType.None;
             }
-            Logger.SetDateRotationType(dateRotationType);
 
             bool isEventLogEnabled;
             if (!bool.TryParse(config["EnableEventLog"], out isEventLogEnabled))
@@ -48,21 +41,41 @@ namespace Servy.Core.Config
             {
                 logRotationSizeMB = AppConfig.DefaultRotationSizeMB;
             }
-            Logger.SetLogRotationSize(logRotationSizeMB);
 
-            int maxBackupFiles;
-            if (!int.TryParse(config["MaxBackupLogFiles"], out maxBackupFiles) || maxBackupFiles < 0)
+            int maxBackupLogFiles;
+            if (!int.TryParse(config["MaxBackupLogFiles"], out maxBackupLogFiles) || maxBackupLogFiles < 0)
             {
-                maxBackupFiles = Logger.DefaultMaxBackupLogFiles;
+                maxBackupLogFiles = Logger.DefaultMaxBackupLogFiles;
             }
-            Logger.SetMaxBackupLogFiles(maxBackupFiles);
 
             string rawUseLocalTime = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
             if (!bool.TryParse(rawUseLocalTime, out bool useLocalTimeForRotation))
             {
                 useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation;
             }
-            Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
+
+            // Apply logger settings
+            if (!string.IsNullOrWhiteSpace(logFileName))
+            {
+                Logger.Initialize(
+                    fileName: logFileName,
+                    initialLevel: logLevel,
+                    logRotationSizeMB: logRotationSizeMB,
+                    dateRotationType: dateRotationType,
+                    useLocalTimeForRotation: useLocalTimeForRotation,
+                    maxBackupLogFiles: maxBackupLogFiles
+                );
+            }
+            else
+            {
+                Logger.Initialize(
+                    logLevel: logLevel,
+                    logRotationSizeMB: logRotationSizeMB,
+                    dateRotationType: dateRotationType,
+                    useLocalTimeForRotation: useLocalTimeForRotation,
+                    maxBackupLogFiles: maxBackupLogFiles
+               );
+            }
 
             // Centralized debug logging prevents asymmetric log outputs
             Logger.Debug("Servy Logger Configuration Loaded:" + Environment.NewLine +
@@ -70,7 +83,7 @@ namespace Servy.Core.Config
                 $"  LogRollingInterval: {dateRotationType.ToString("D")} ({dateRotationType})" + Environment.NewLine +
                 $"  EnableEventLog: {isEventLogEnabled}" + Environment.NewLine +
                 $"  LogRotationSizeMB: {logRotationSizeMB}" + Environment.NewLine +
-                $"  MaxBackupLogFiles: {maxBackupFiles}" + Environment.NewLine +
+                $"  MaxBackupLogFiles: {maxBackupLogFiles}" + Environment.NewLine +
                 $"  UseLocalTimeForRotation: {useLocalTimeForRotation}");
         }
     }

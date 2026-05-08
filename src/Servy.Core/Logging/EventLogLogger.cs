@@ -269,9 +269,15 @@ namespace Servy.Core.Logging
         /// A lightweight wrapper that delegates logging to the parent <see cref="EventLogLogger"/> instance.
         /// This prevents allocating a new native <see cref="EventLog"/> handle for every scope creation.
         /// </summary>
+        /// <remarks>
+        /// Unlike the parent logger, scoped instances maintain their own independent LogLevel and enabled status 
+        /// to allow fine-grained tracing in specific sub-systems without affecting the global state.
+        /// </remarks>
         private sealed class ScopedEventLogLogger : IServyLogger
         {
             private readonly EventLogLogger _parent;
+            private volatile int _currentLogLevel;
+            private volatile bool _isEventLogEnabled;
 
             /// <inheritdoc/>
             public string? Prefix { get; }
@@ -285,27 +291,83 @@ namespace Servy.Core.Logging
             {
                 _parent = parent;
                 Prefix = prefix;
+
+                // Inherit current snapshot of settings from parent
+                _currentLogLevel = parent._currentLogLevel;
+                _isEventLogEnabled = parent._isEventLogEnabled;
             }
 
-            // Route all logging calls to the parent, but apply our own prefix formatting first
+            /// <inheritdoc/>
+            public void Debug(string message, Exception? ex = null)
+            {
+                if ((LogLevel)_currentLogLevel <= LogLevel.Debug)
+                {
+                    _parent.Debug(Format(message), ex);
+                }
+            }
 
             /// <inheritdoc/>
-            public void Debug(string message, Exception? ex = null) => _parent.Debug(Format(message), ex);
+            public void Info(string message, Exception? ex = null)
+            {
+                if ((LogLevel)_currentLogLevel <= LogLevel.Info)
+                {
+                    // Note: We check our own _isEventLogEnabled but the parent 
+                    // still performs the physical WriteEntry check.
+                    if (_isEventLogEnabled)
+                    {
+                        _parent.Info(Format(message), ex);
+                    }
+                    else
+                    {
+                        // Fallback to parent's file-only logging logic
+                        Logger.Info(_parent.Format(Format(message)));
+                    }
+                }
+            }
 
             /// <inheritdoc/>
-            public void Info(string message, Exception? ex = null) => _parent.Info(Format(message), ex);
+            public void Warn(string message, Exception? ex = null)
+            {
+                if ((LogLevel)_currentLogLevel <= LogLevel.Warn)
+                {
+                    if (_isEventLogEnabled)
+                    {
+                        _parent.Warn(Format(message), ex);
+                    }
+                    else
+                    {
+                        Logger.Warn(_parent.Format(Format(message)));
+                    }
+                }
+            }
 
             /// <inheritdoc/>
-            public void Warn(string message, Exception? ex = null) => _parent.Warn(Format(message), ex);
+            public void Error(string message, Exception? ex = null)
+            {
+                if ((LogLevel)_currentLogLevel <= LogLevel.Error)
+                {
+                    if (_isEventLogEnabled)
+                    {
+                        _parent.Error(Format(message), ex);
+                    }
+                    else
+                    {
+                        Logger.Error(_parent.Format(Format(message)));
+                    }
+                }
+            }
 
             /// <inheritdoc/>
-            public void Error(string message, Exception? ex = null) => _parent.Error(Format(message), ex);
+            public void SetLogLevel(LogLevel level)
+            {
+                _currentLogLevel = (int)level;
+            }
 
             /// <inheritdoc/>
-            public void SetLogLevel(LogLevel level) => _parent.SetLogLevel(level);
-
-            /// <inheritdoc/>
-            public void SetIsEventLogEnabled(bool isEnabled) => _parent.SetIsEventLogEnabled(isEnabled);
+            public void SetIsEventLogEnabled(bool isEnabled)
+            {
+                _isEventLogEnabled = isEnabled;
+            }
 
             /// <summary>
             /// No-op implementation. The parent <see cref="EventLogLogger"/> owns the unmanaged resources.
@@ -313,7 +375,14 @@ namespace Servy.Core.Logging
             public void Dispose() { /* no-op; parent owns the EventLog */ }
 
             /// <inheritdoc/>
-            public IServyLogger CreateScoped(string prefix) => new ScopedEventLogLogger(_parent, prefix);
+            public IServyLogger CreateScoped(string prefix)
+            {
+                // Create a new scope that inherits THIS scope's current settings
+                var scope = new ScopedEventLogLogger(_parent, prefix);
+                scope.SetLogLevel((LogLevel)_currentLogLevel);
+                scope.SetIsEventLogEnabled(_isEventLogEnabled);
+                return scope;
+            }
 
             /// <summary>
             /// Formats a log message by prepending the <see cref="Prefix"/> if it is set.

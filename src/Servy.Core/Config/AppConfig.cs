@@ -10,6 +10,29 @@ namespace Servy.Core.Config
     /// </summary>
     public static class AppConfig
     {
+        #region Static Constructor
+
+        /// <summary>
+        /// Initializes the <see cref="AppConfig"/> static members and performs 
+        /// cross-field validation for configuration consistency.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if <see cref="UpdateCheckTimeoutSeconds"/> exceeds <see cref="UpdateCheckHttpTimeoutSeconds"/>.
+        /// This ensures the total task timeout provides enough buffer for the underlying HTTP request.
+        /// </exception>
+        static AppConfig()
+        {
+            // Invariant: The overall task timeout must be less than or equal to the HTTP client timeout 
+            // to prevent orphaned requests or race conditions during update checks.
+            if (UpdateCheckTimeoutSeconds > UpdateCheckHttpTimeoutSeconds)
+            {
+                throw new InvalidOperationException(
+                    "UpdateCheckTimeoutSeconds must be <= UpdateCheckHttpTimeoutSeconds.");
+            }
+        }
+
+        #endregion
+
         #region Application Info & Links
 
         /// <summary>
@@ -459,6 +482,12 @@ namespace Servy.Core.Config
         /// Default is <see cref="DateRotationType.Daily"/>.
         /// </summary>
         public const DateRotationType DefaultDateRotationType = DateRotationType.Daily;
+
+        /// <summary>
+        /// Multiplier applied to <see cref="EventLogMaxResults"/> when prefetching raw events,
+        /// to leave headroom for post-read provider/keyword filtering.
+        /// </summary>
+        public const int EventLogPrefetchCushion = 5;
 
         /// <summary>
         /// Default Log Level.
