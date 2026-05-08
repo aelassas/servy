@@ -104,6 +104,52 @@ namespace Servy.Core.Logging
         }
 
         /// <summary>
+        /// Configures and initializes the global logging state, including severity filters and rotation policies.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This method is thread-safe and can be called at runtime to reconfigure logging parameters. 
+        /// If an active log writer already exists, it is automatically reinitialized to immediately apply 
+        /// the new rotation and retention settings.
+        /// </para>
+        /// <para>
+        /// Settings established here govern the behavior of the <c>InternalInitialize</c> process, which 
+        /// manages the physical file handles and archive logic for the <see cref="Servy.Service"/>.
+        /// </para>
+        /// </remarks>
+        /// <param name="logLevel">The minimum severity level required for an entry to be recorded. Defaults to <see cref="LogLevel.Info"/>.</param>
+        /// <param name="logRotationSizeMB">The maximum size of the log file in MB before rotation occurs. Defaults to 10MB.</param>
+        /// <param name="dateRotationType">
+        /// Specifies the interval (Daily, Weekly, Monthly) for time-based log rotation. 
+        /// Defaults to <see cref="DateRotationType.None"/>.
+        /// </param>
+        /// <param name="useLocalTimeForRotation">Indicates whether to use local system time for log rotation (Default: false (UTC)).</param>
+        /// <param name="maxBackupLogFiles">The maximum number of backup files to retain. Defaults to 10. Set to 0 for unlimited backups.</param>
+        public static void Initialize(
+            LogLevel logLevel = LogLevel.Info,
+            int logRotationSizeMB = AppConfig.DefaultRotationSizeMB,
+            DateRotationType dateRotationType = DateRotationType.None,
+            bool useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation,
+            int maxBackupLogFiles = DefaultMaxBackupLogFiles
+            )
+        {
+            lock (_lock)
+            {
+                _currentLogLevel = (int)logLevel;
+                _logRotationSizeMB = logRotationSizeMB;
+                _dateRotationType = dateRotationType;
+                _useLocalTimeForRotation = useLocalTimeForRotation;
+                _maxBackupLogFiles = maxBackupLogFiles;
+
+                // If we have an active writer, recreate it to apply the new settings
+                if (_writer != null)
+                {
+                    InternalInitialize();
+                }
+            }
+        }
+
+        /// <summary>
         /// Core initialization logic. Assumes lock is already acquired.
         /// </summary>
         private static void InternalInitialize()

@@ -109,7 +109,7 @@ namespace Servy.Core.Services
                     var eventQuery = new EventLogQuery(AppConfig.EventLogName, PathType.LogName, query);
 
                     // This is where the service handle is requested and the query is validated
-                    records = _reader.ReadEvents(eventQuery, AppConfig.EventLogMaxResults * 5); // Generous cushion
+                    records = _reader.ReadEvents(eventQuery, AppConfig.EventLogMaxResults * AppConfig.EventLogPrefetchCushion); // Generous cushion
                 }
                 catch (EventLogException ex)
                 {
@@ -129,7 +129,7 @@ namespace Servy.Core.Services
                 foreach (var evt in records)
                 {
                     //
-                    // All evt.* accesses must stay inside the using block to avoid ObjectDisposedException
+                    // records is a fully-materialized DTO sequence; no lifecycle concerns here.
                     //
                     token.ThrowIfCancellationRequested();
 
