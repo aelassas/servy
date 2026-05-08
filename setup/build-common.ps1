@@ -10,10 +10,10 @@
 
 $ErrorActionPreference = "Stop"
 
-$scriptDir = $PSScriptRoot
+$PB_ScriptDir = $PSScriptRoot
 
 # Import helpers
-. (Join-Path $scriptDir "common-helpers.ps1")
+. (Join-Path $PB_ScriptDir "common-helpers.ps1")
 
 function Invoke-StandardPublish {
     param(
