@@ -47,17 +47,17 @@ namespace Servy.Validators
             // Delegate logic to the shared Core rules engine
             var result = _serviceValidationRules.Validate(dto, wrapperExePath, confirmPassword);
 
-            // Handle Warnings first (as per legacy behavior)
-            if (result.Warnings.Any())
-            {
-                await _messageBoxService.ShowWarningAsync(result.Warnings.First(), AppConfig.Caption);
-                return false;
-            }
-
-            // Handle Critical Errors
+            // Display critical errors first
             if (result.Errors.Any())
             {
                 await _messageBoxService.ShowErrorAsync(result.Errors.First(), AppConfig.Caption);
+                return false;
+            }
+
+            // Display warnings
+            if (result.Warnings.Any())
+            {
+                await _messageBoxService.ShowWarningAsync(result.Warnings.First(), AppConfig.Caption);
                 return false;
             }
 

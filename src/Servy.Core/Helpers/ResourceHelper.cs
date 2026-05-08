@@ -230,8 +230,9 @@ namespace Servy.Core.Helpers
                 }
                 catch (Exception innerEx)
                 {
-                    // Ignore exceptions and fallback to UtcNow
-                    Logger.Debug("AppDomain fallback also failed, using UtcNow.", innerEx);
+                    // Both probes failed; return DateTime.MinValue so the caller treats the embedded
+                    // resource as 'not newer' and leaves the existing extraction in place.
+                    Logger.Debug("AppDomain fallback also failed; returning DateTime.MinValue (no re-extraction).", innerEx);
                 }
             }
 

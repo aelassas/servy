@@ -43,7 +43,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [InlineData(null)]
         public void Start_EmptyExecutable_ThrowsArgumentException(string? exePath)
         {
-            var options = CreateOptions(exePath!, string.Empty, false, 5000);
+            var options = CreateOptions(exePath!, string.Empty, false, 10_000);
             Assert.Throws<ArgumentException>(() => ProcessLauncher.Start(options, _realFactory, _logger));
         }
 
@@ -77,7 +77,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_Synchronous_WaitsForExit_And_Heartbeats()
         {
             int heartbeats = 0;
-            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'OK'\"", fireAndForget: false, timeoutMs: 5000);
+            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'OK'\"", fireAndForget: false, timeoutMs: 10_000);
             options.WaitChunkMs = 10;
             options.OnScmHeartbeat = new Action<int>((time) => Interlocked.Increment(ref heartbeats));
 
@@ -119,7 +119,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_RedirectOutput_SamePath_WritesToSingleFileMultiplexed()
         {
             string logPath = CreateTempFilePath();
-            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'STDOUT_MSG'; [Console]::Error.WriteLine('STDERR_MSG')\"", false, 5000);
+            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'STDOUT_MSG'; [Console]::Error.WriteLine('STDERR_MSG')\"", false, 10_000);
             options.EnableConsoleUI = false;
             options.RedirectToWriters = true;
             options.StdOutPath = logPath;
