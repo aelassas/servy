@@ -43,11 +43,6 @@ namespace Servy.Manager.Utils
         private const int LogBatchFlushThreshold = 500;
 
         /// <summary>
-        /// Delay in milliseconds before retrying after a file-access error (e.g. rotation).
-        /// </summary>
-        private const int FileRetryDelayMs = 500;
-
-        /// <summary>
         /// Internal token source to ensure the tailing loop stops immediately upon disposal.
         /// </summary>
         private readonly CancellationTokenSource _disposeCts = new CancellationTokenSource();
@@ -110,7 +105,7 @@ namespace Servy.Manager.Utils
                         }
                         catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
                         {
-                            await Task.Delay(FileRetryDelayMs, linkedToken);
+                            await Task.Delay(AppConfig.LogTailerFileNotFoundRetryDelayMs, linkedToken);
                             continue;
                         }
                         catch (IOException)

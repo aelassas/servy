@@ -228,7 +228,7 @@ namespace Servy.Service.UnitTests
             mockTimer.VerifySet(t => t.AutoReset = true, Times.Once);
             mockTimer.Verify(t => t.Start(), Times.Once);
 
-            mockLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Health monitoring started"))), Times.Once);
+            mockLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Health monitoring started")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Theory]
@@ -271,7 +271,7 @@ namespace Servy.Service.UnitTests
 
             // Assert
             mockTimerFactory.Verify(f => f.Create(It.IsAny<double>()), Times.Never);
-            mockLogger.Verify(l => l.Info(It.IsAny<string>()), Times.Never);
+            mockLogger.Verify(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
     }

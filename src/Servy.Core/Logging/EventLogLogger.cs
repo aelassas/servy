@@ -118,30 +118,30 @@ namespace Servy.Core.Logging
         }
 
         /// <inheritdoc/>
-        public void Info(string message)
+        public void Info(string message, Exception? ex = null)
         {
             if ((LogLevel)_currentLogLevel <= LogLevel.Info)
             {
-                var formattedMessage = Format(message);
+                var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
                 if (_isEventLogEnabled)
                 {
-                    SafeWriteToEventLog(formattedMessage, EventLogEntryType.Information, EventIds.Info);
+                    SafeWriteToEventLog(fullMessage, EventLogEntryType.Information, EventIds.Info);
                 }
-                Logger.Info(formattedMessage);
+                Logger.Info(fullMessage);
             }
         }
 
         /// <inheritdoc/>
-        public void Warn(string message)
+        public void Warn(string message, Exception? ex = null)
         {
             if ((LogLevel)_currentLogLevel <= LogLevel.Warn)
             {
-                var formattedMessage = Format(message);
+                var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
                 if (_isEventLogEnabled)
                 {
-                    SafeWriteToEventLog(formattedMessage, EventLogEntryType.Warning, EventIds.Warning);
+                    SafeWriteToEventLog(fullMessage, EventLogEntryType.Warning, EventIds.Warning);
                 }
-                Logger.Warn(formattedMessage);
+                Logger.Warn(fullMessage);
             }
         }
 
@@ -293,10 +293,10 @@ namespace Servy.Core.Logging
             public void Debug(string message, Exception? ex = null) => _parent.Debug(Format(message), ex);
 
             /// <inheritdoc/>
-            public void Info(string message) => _parent.Info(Format(message));
+            public void Info(string message, Exception? ex = null) => _parent.Info(Format(message), ex);
 
             /// <inheritdoc/>
-            public void Warn(string message) => _parent.Warn(Format(message));
+            public void Warn(string message, Exception? ex = null) => _parent.Warn(Format(message), ex);
 
             /// <inheritdoc/>
             public void Error(string message, Exception? ex = null) => _parent.Error(Format(message), ex);

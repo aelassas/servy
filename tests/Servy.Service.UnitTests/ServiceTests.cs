@@ -199,7 +199,7 @@ namespace Servy.Service.UnitTests
             _mockTimer.Verify(t => t.Start(), Times.Once);
 
             // Verify the scoped logger received the success message
-            mockScopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Health monitoring started."))), Times.Once);
+            mockScopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Health monitoring started.")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
@@ -340,7 +340,7 @@ namespace Servy.Service.UnitTests
 
             // Assert
             mockProcess.VerifySet(p => p.PriorityClass = ProcessPriorityClass.High, Times.Once);
-            mockLogger.Verify(l => l.Info(It.Is<string>(msg => msg.Contains("Set process priority to High"))), Times.Once);
+            mockLogger.Verify(l => l.Info(It.Is<string>(msg => msg.Contains("Set process priority to High")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
@@ -375,7 +375,7 @@ namespace Servy.Service.UnitTests
             service.InvokeSetProcessPriority(ProcessPriorityClass.High);
 
             // Assert
-            mockLogger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("Failed to set priority") && msg.Contains("Priority error"))), Times.Once);
+            mockLogger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("Failed to set priority") && msg.Contains("Priority error")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]

@@ -189,11 +189,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             public string LastError => Errors.LastOrDefault() ?? string.Empty;
 
             public string? Prefix => string.Empty;
-            public void Warn(string message) => Warnings.Add(message);
-            public void Error(string message) => Errors.Add(message);
+            public void Warn(string message, Exception? ex) => Warnings.Add(message);
             public void Error(string message, Exception? ex) => Errors.Add(message);
-            public void Info(string message) { }
-            public void Debug(string message) { }
+            public void Info(string message, Exception? ex) { }
             public void Debug(string message, Exception? ex) { }
             public IServyLogger CreateScoped(string prefix) => throw new NotImplementedException();
             public void SetLogLevel(LogLevel level) { }

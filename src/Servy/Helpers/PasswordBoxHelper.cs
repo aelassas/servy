@@ -107,14 +107,20 @@ namespace Servy.Helpers
             if (sender is PasswordBox passwordBox)
             {
                 SetIsUpdating(passwordBox, true);
-                SetBoundPassword(passwordBox, passwordBox.Password);
+                try
+                {
+                    SetBoundPassword(passwordBox, passwordBox.Password);
 
-                // Force the binding source to update immediately
-                BindingExpression be = BindingOperations.GetBindingExpression(passwordBox, BoundPasswordProperty);
-                be?.UpdateSource();
-
-                SetIsUpdating(passwordBox, false);
+                    // Force the binding source to update immediately
+                    BindingExpression be = BindingOperations.GetBindingExpression(passwordBox, BoundPasswordProperty);
+                    be?.UpdateSource();
+                }
+                finally
+                {
+                    SetIsUpdating(passwordBox, false);
+                }
             }
         }
+
     }
 }

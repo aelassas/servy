@@ -343,11 +343,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             public string? Prefix => string.Empty;
 
-            public void Info(string message) => Infos.Add(message);
-            public void Warn(string message) => Warnings.Add(message);
-            public void Error(string message) => Errors.Add(message);
+            public void Info(string message, Exception? ex) => Infos.Add(message);
+            public void Warn(string message, Exception? ex) => Warnings.Add(message);
             public void Error(string message, Exception? ex) => Errors.Add(message);
-            public void Debug(string message) { }
             public void Debug(string message, Exception? ex) { }
 
             public IServyLogger CreateScoped(string prefix) => throw new NotImplementedException();

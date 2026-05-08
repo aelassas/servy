@@ -179,7 +179,7 @@ namespace Servy.Service.UnitTests
 
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
-            logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Child process exited successfully (Code 0)."))), Times.Once);
+            logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Child process exited successfully (Code 0).")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
@@ -227,7 +227,7 @@ namespace Servy.Service.UnitTests
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
             // Assert
-            logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Failed to get exit code"))), Times.Once);
+            logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Failed to get exit code")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
@@ -251,7 +251,7 @@ namespace Servy.Service.UnitTests
 
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
-            logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Failed to get exit code"))), Times.Once);
+            logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Failed to get exit code")), It.IsAny<Exception>()), Times.Once);
         }
     }
 }

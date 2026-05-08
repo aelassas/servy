@@ -45,11 +45,11 @@ namespace Servy.Service.UnitTests.Helpers
             // Assert
             // 1. Verify the logger received the info message.
             mockLog.Verify(l => l.Info(It.Is<string>(s =>
-                s.IndexOf("Startup Parameters", StringComparison.OrdinalIgnoreCase) > -1)),
+                s.IndexOf("Startup Parameters", StringComparison.OrdinalIgnoreCase) > -1), It.IsAny<Exception>()),
                 Times.Once);
 
             // 2. Verify that specific public data fields exist in that log string
-            mockLog.Verify(l => l.Info(It.Is<string>(s => s.Contains("serviceName: TestService"))), Times.Once);
+            mockLog.Verify(l => l.Info(It.Is<string>(s => s.Contains("serviceName: TestService")), It.IsAny<Exception>()), Times.Once);
         }
 
         // Helper: create a temporary file
@@ -597,14 +597,14 @@ namespace Servy.Service.UnitTests.Helpers
             var mockLog = new Mock<IServyLogger>();
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
                    .Returns(mockLog.Object);
-            mockLog.Setup(l => l.Info(It.IsAny<string>()))
+            mockLog.Setup(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()))
                 .Verifiable();
 
             // Act
             _helper.LogStartupArguments(mockLog.Object, args, options);
 
             // Assert
-            mockLog.Verify(l => l.Info(It.Is<string>(s => s.Contains("[Startup Parameters]"))), Times.Once);
+            mockLog.Verify(l => l.Info(It.Is<string>(s => s.Contains("[Startup Parameters]")), It.IsAny<Exception>()), Times.Once);
         }
 
     }

@@ -102,7 +102,7 @@ namespace Servy.Service.UnitTests
 
             mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
 
-            logger.Verify(l => l.Info(It.IsAny<string>()), Times.AtLeast(1));
+            logger.Verify(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()), Times.AtLeast(1));
         }
 
         [Fact]
@@ -122,7 +122,7 @@ namespace Servy.Service.UnitTests
 
             service.InvokeSafeKillProcess(mockProcess.Object);
 
-            logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("SafeKillProcess error"))), Times.Once);
+            logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("SafeKillProcess error")), It.IsAny<Exception>()), Times.Once);
         }
     }
 }

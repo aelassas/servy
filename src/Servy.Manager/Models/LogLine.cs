@@ -55,9 +55,12 @@
             Id = Interlocked.Increment(ref _nextId);
             Text = text;
             Type = type;
-            // Use provided timestamp (for history) or current time (for live)
-            Timestamp = timestamp ?? DateTime.Now;
+
+            // Normalize at the boundary: convert to UTC if provided, otherwise use current UTC.
+            Timestamp = timestamp?.ToUniversalTime() ?? DateTime.UtcNow;
+
             IsSyntheticTime = false;
         }
+
     }
 }

@@ -236,9 +236,24 @@ namespace Servy.Core.Config
         public static readonly int DefaultConsoleRefreshIntervalInMs = 800;
 
         /// <summary>
-        /// Default maximum number of lines that can be displayed in the console output.
+        /// The default maximum number of log lines to retain in the console tab.
         /// </summary>
+        /// <remarks>
+        /// This value balances visibility of historical logs with application performance. 
+        /// Increasing this beyond the default may lead to increased memory usage and UI virtualization lag 
+        /// in the <see cref="Servy.Manager"/> views.
+        /// </remarks>
         public static readonly int DefaultConsoleMaxLines = 20_000;
+
+        /// <summary>
+        /// The absolute hard limit for the console tab.
+        /// </summary>
+        /// <remarks>
+        /// Set to twice the <see cref="DefaultConsoleMaxLines"/>, this constant prevents 
+        /// exceptionally large log retention from causing OutOfMemory exceptions or 
+        /// unresponsiveness in the WPF rendering thread.
+        /// </remarks>
+        public static readonly int MaxConsoleMaxLines = 2 * DefaultConsoleMaxLines;
 
         /// <summary>
         /// Default dependencies tab refresh interval when not set in appsettings. Default is 800 ms.

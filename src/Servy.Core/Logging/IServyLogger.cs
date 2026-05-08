@@ -47,13 +47,15 @@
         /// Logs an informational message.
         /// </summary>
         /// <param name="message">The message to log.</param>
-        void Info(string message);
+        /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
+        void Info(string message, Exception? ex = null);
 
         /// <summary>
         /// Logs a warning message.
         /// </summary>
         /// <param name="message">The warning message to log.</param>
-        void Warn(string message);
+        /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
+        void Warn(string message, Exception? ex = null);
 
         /// <summary>
         /// Logs an error message and optional exception.
