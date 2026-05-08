@@ -4,6 +4,7 @@ using System;
 using System.Data.Common;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace Servy.Core.Helpers
 {
@@ -119,7 +120,10 @@ namespace Servy.Core.Helpers
             SecurityHelper.CreateSecureDirectory(AppConfig.ProgramDataPath, breakInheritance: true);
 
             // 5. Secure operational folders while respecting inheritance
-            string[] subFolders = { dbFolder, aesKeyFolder, aesIVFolder };
+            string[] subFolders = new[] { dbFolder, aesKeyFolder, aesIVFolder }
+                .Select(Path.GetFullPath)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
             var normalizedRoot = Path.GetFullPath(AppConfig.ProgramDataPath)
                 .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                 + Path.DirectorySeparatorChar;

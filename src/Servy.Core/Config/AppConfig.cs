@@ -166,18 +166,33 @@ namespace Servy.Core.Config
         public static readonly string SecurityFolderPath = Path.Combine(ProgramDataPath, "security");
 
         /// <summary>
-        /// Default SQLite connection string pointing to Servy.db in the database folder.
+        /// The default SQLite connection string for the Servy application.
         /// </summary>
+        /// <remarks>
+        /// This string configures the connection to <c>Servy.db</c> within the <see cref="DbFolderPath"/>. 
+        /// It includes performance and resilience settings such as <c>Journal Mode=WAL</c> and a 5000ms busy timeout. 
+        /// This value serves as the hardcoded fallback if no override is provided in the <c>DefaultConnection</c> configuration of the application settings.
+        /// </remarks>
         public static readonly string DefaultConnectionString = $"Data Source={Path.Combine(DbFolderPath, "Servy.db")};Busy Timeout=5000;Journal Mode=WAL;Pooling=True;";
 
         /// <summary>
-        /// Default AES key file path.
+        /// The default file path for the AES encryption key.
         /// </summary>
+        /// <remarks>
+        /// Points to <c>aes_key.dat</c> within the <see cref="SecurityFolderPath"/>. 
+        /// This path is used by all Servy components (UI, CLI, and Service) to locate the master encryption key.
+        /// This value serves as the hardcoded fallback if no override is provided in the <c>Security:AESKeyFilePath</c> configuration of the application settings.
+        /// </remarks>
         public static readonly string DefaultAESKeyPath = Path.Combine(SecurityFolderPath, "aes_key.dat");
 
         /// <summary>
-        /// Default AES IV file path.
+        /// The default file path for the AES initialization vector (IV).
         /// </summary>
+        /// <remarks>
+        /// Points to <c>aes_iv.dat</c> within the <see cref="SecurityFolderPath"/>. 
+        /// Maintaining a single source of truth for this path prevents "split-brain" encryption issues between the configuration UI and the Windows Service.
+        /// This value serves as the hardcoded fallback if no override is provided in the <c>Security:AESIVFilePath</c> configuration of the application settings.
+        /// </remarks>
         public static readonly string DefaultAESIVPath = Path.Combine(SecurityFolderPath, "aes_iv.dat");
 
         #endregion

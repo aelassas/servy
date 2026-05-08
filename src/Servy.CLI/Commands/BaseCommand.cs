@@ -26,28 +26,9 @@ namespace Servy.CLI.Commands
             {
                 return task();
             }
-            catch (UnauthorizedAccessException ex)
-            {
-                Logger.Error($"Failed to {action} (Unauthorized)", ex);
-
-                // This uses the specific resource string: 
-                // "Access Denied. Please restart the shell as Administrator to run the '{0}' command."
-                var errorMessage = string.Format(Strings.Msg_AdminPrivilegesRequired, commandName);
-
-                // We can skip the 'fallbackSuggestion' since the message is already so clear.
-                return CommandResult.Fail(errorMessage);
-            }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to {action}", ex);
-
-                var errorMessage = $"Failed to {action}: {ex.Message}";
-                if (!string.IsNullOrEmpty(suggestion))
-                {
-                    errorMessage += $"{Environment.NewLine}Suggestion: {suggestion}";
-                }
-
-                return CommandResult.Fail(errorMessage);
+                return HandleException(ex, commandName, action, suggestion);
             }
         }
 
@@ -66,7 +47,18 @@ namespace Servy.CLI.Commands
             {
                 return await task();
             }
-            catch (UnauthorizedAccessException ex)
+            catch (Exception ex)
+            {
+                return HandleException(ex, commandName, action, suggestion);
+            }
+        }
+
+        /// <summary>
+        /// Centralizes exception logging and CommandResult formatting for both synchronous and asynchronous command executions.
+        /// </summary>
+        private CommandResult HandleException(Exception ex, string commandName, string action, string suggestion)
+        {
+            if (ex is UnauthorizedAccessException)
             {
                 Logger.Error($"Failed to {action} (Unauthorized)", ex);
 
@@ -77,7 +69,7 @@ namespace Servy.CLI.Commands
                 // We can skip the 'fallbackSuggestion' since the message is already so clear.
                 return CommandResult.Fail(errorMessage);
             }
-            catch (Exception ex)
+            else
             {
                 Logger.Error($"Failed to {action}", ex);
 
