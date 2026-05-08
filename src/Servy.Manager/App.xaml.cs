@@ -266,7 +266,7 @@ namespace Servy.Manager
                     RefreshIntervalInSeconds = GetConfigInt(config, "RefreshIntervalInSeconds", AppConfig.DefaultRefreshIntervalInSeconds, 1, 3600);
                     PerformanceRefreshIntervalInMs = GetConfigInt(config, "PerformanceRefreshIntervalInMs", AppConfig.DefaultPerformanceRefreshIntervalInMs, 100, 300000);
                     ConsoleRefreshIntervalInMs = GetConfigInt(config, "ConsoleRefreshIntervalInMs", AppConfig.DefaultConsoleRefreshIntervalInMs, 100, 300000);
-                    ConsoleMaxLines = GetConfigInt(config, "ConsoleMaxLines", AppConfig.DefaultConsoleMaxLines, 100, AppConfig.DefaultConsoleMaxLines * 2);
+                    ConsoleMaxLines = GetConfigInt(config, "ConsoleMaxLines", AppConfig.DefaultConsoleMaxLines, 100, AppConfig.MaxConsoleMaxLines);
                     DependenciesRefreshIntervalInMs = GetConfigInt(config, "DependenciesRefreshIntervalInMs", AppConfig.DefaultDependenciesRefreshIntervalInMs, 100, 300000);
                     SearchDebounceDelayMs = GetConfigInt(config, "SearchDebounceDelayMs", AppConfig.DefaultSearchDebounceDelayMs, 100, 2000);
                     MaxBulkOperationParallelism = GetConfigInt(config, "MaxBulkOperationParallelism", AppConfig.DefaultMaxBulkOperationParallelism, 1, 64);
