@@ -107,7 +107,7 @@ Get-Content $configPath | ForEach-Object {
     if ($_ -match "^\s*#") { return }
     if ($_ -match "^\s*$") { return }
     if ($_ -match "^\s*([^=]+)=(.*)$") {
-        $config[$matches[1].Trim().ToUpper()] = $matches[2].Trim()
+        $config[$matches[1].Trim().ToUpperInvariant()] = $matches[2].Trim()
     }
 }
 

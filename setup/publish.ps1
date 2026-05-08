@@ -72,7 +72,7 @@ try {
 
     # === Internal Functions ===
 
-    function Check-LastExitCode {
+    function Assert-LastExitCode {
         param([string]$ErrorMessage)
         if ($LASTEXITCODE -ne 0) { throw "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)" }
     }
@@ -90,7 +90,7 @@ try {
     
     # Restore NuGet packages for the entire solution
     nuget restore (Join-Path $rootDir "Servy.sln")
-    Check-LastExitCode "NuGet restore failed"
+    Assert-LastExitCode "NuGet restore failed"
 
     # Define the project list and their respective publish script paths
     $projects = @(
@@ -104,7 +104,7 @@ try {
         if (Test-Path $pPath) {
             Write-Host "Invoking publish for $($p.Name)..."
             & $pPath -Version $version
-            Check-LastExitCode "$($p.Name) build failed"
+            Assert-LastExitCode "$($p.Name) build failed"
         }
     }
 
@@ -118,14 +118,14 @@ try {
 
     # Execute Inno Setup Compiler
     & "$innoCompiler" (Join-Path $scriptDir $issFile) /DMyAppVersion=$version /DMyAppPlatform=$framework
-    Check-LastExitCode "Inno Setup failed"
+    Assert-LastExitCode "Inno Setup failed"
 
     # Code Signing (if the signing script is available)
     if (Test-Path $installerPath) {
         if (Test-Path $signPath) {
             Write-Host ">>> Signing Installer binary..." -ForegroundColor Yellow
             & $signPath $installerPath
-            Check-LastExitCode "Signing failed"
+            Assert-LastExitCode "Signing failed"
         }
     } else {
         throw "Installer binary not found at $installerPath"

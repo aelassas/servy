@@ -42,7 +42,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-function Check-LastExitCode {
+function Assert-LastExitCode {
     param([string]$ErrorMessage)
     if ($LASTEXITCODE -ne 0) {
         Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
@@ -73,7 +73,7 @@ if (-not (Test-Path $restarterProject)) {
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Restarter in $BuildConfiguration mode..."
 & msbuild $restarterProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$platform
-Check-LastExitCode "MSBuild failed"
+Assert-LastExitCode "MSBuild failed"
 
 # ----------------------------------------------------------------------
 # Step 2: Sign the executable only in Release mode
@@ -83,7 +83,7 @@ if ($BuildConfiguration -eq "Release") {
     if (Test-Path $exePath) {
         Write-Host "=== Signing Servy.Restarter.exe ===" -ForegroundColor Cyan
         & $signPath $exePath
-        Check-LastExitCode "Code signing failed"
+        Assert-LastExitCode "Code signing failed"
     }
     else {
         Write-Error "Published executable not found at: $exePath. Ensure TFM and Runtime variables match the project output."

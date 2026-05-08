@@ -42,7 +42,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-function Check-LastExitCode {
+function Assert-LastExitCode {
     param([string]$ErrorMessage)
     if ($LASTEXITCODE -ne 0) {
         Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
@@ -81,7 +81,7 @@ if (-not (Test-Path $publishResScript)) {
 
 Write-Host "=== Running $publishResScriptName ==="
 & $publishResScript
-Check-LastExitCode "$publishResScriptName failed"
+Assert-LastExitCode "$publishResScriptName failed"
 Write-Host "=== Completed $publishResScriptName ===`n"
 
 # ----------------------------------------------------------------------
@@ -89,7 +89,7 @@ Write-Host "=== Completed $publishResScriptName ===`n"
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Service in $BuildConfiguration mode..."
 & msbuild $serviceProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$platform
-Check-LastExitCode "MSBuild failed"
+Assert-LastExitCode "MSBuild failed"
 
 # ----------------------------------------------------------------------
 # Step 3: Sign the executable only in Release mode
@@ -99,7 +99,7 @@ if ($BuildConfiguration -eq "Release") {
     if (Test-Path $exePath) {
         Write-Host "=== Signing Servy.Service.exe ===" -ForegroundColor Cyan
         & $signPath $exePath
-        Check-LastExitCode "Code signing failed"
+        Assert-LastExitCode "Code signing failed"
     }
     else {
         Write-Error "Published executable not found at: $exePath. Ensure TFM and Runtime variables match the project output."

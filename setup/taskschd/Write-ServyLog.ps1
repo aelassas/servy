@@ -26,7 +26,6 @@ function Write-ServyLog {
                 
                 # Format: FileName_20260501-062849.log
                 $rotatedFileName = "{0}_{1}{2}" -f $baseName, $localTime, $ext
-                $rotatedFilePath = Join-Path $logDir $rotatedFileName
                 
                 Rename-Item -Path $FilePath -NewName $rotatedFileName -Force
             }
