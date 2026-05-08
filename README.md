@@ -80,7 +80,7 @@ scoop install servy
 
 You can manage services using the [desktop app (GUI)](https://github.com/aelassas/servy/wiki/Servy-Desktop-App), the [CLI](https://github.com/aelassas/servy/wiki/Servy-CLI), or [PowerShell](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module).
 
-Here's a minimal example using the CLI to turn a Node.js app into a Windows service:
+Here's a minimal example using the CLI to run a Node.js app as a Windows service:
 
 ```powershell
 servy-cli install `
@@ -96,6 +96,12 @@ Then start the service:
 
 ```powershell
 servy-cli start --name="MyService"    
+```
+
+Or from an **elevated** Command Prompt:
+
+```cmd
+sc.exe start MyService
 ```
 
 Explore more [examples and recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes) for Python, Java, Go, and other popular frameworks.
