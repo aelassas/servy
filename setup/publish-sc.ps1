@@ -89,18 +89,19 @@ foreach ($project in $projects) {
     Write-Host "--- Publishing $projectName ---" -ForegroundColor Cyan
     
     $publishScript = Join-Path $project "publish.ps1"
+    
     if (Test-Path $publishScript) {
         & $publishScript -BuildConfiguration $BuildConfiguration -Tfm $Tfm
-        Check-LastExitCode "$publishScript failed"
+        Assert-LastExitCode "$publishScript failed"
     }
     else {
         Write-Warning "Publish script not found for $projectName. Using generic dotnet publish."
         & dotnet restore $project
-        Check-LastExitCode "dotnet restore failed"
+        Assert-LastExitCode "dotnet restore failed"
         & dotnet clean $project -c $BuildConfiguration
-        Check-LastExitCode "Project clean failed"
+        Assert-LastExitCode "Project clean failed"
         & dotnet publish $project -c $BuildConfiguration -f $Tfm -r $Runtime --self-contained true
-        Check-LastExitCode "dotnet publish failed"
+        Assert-LastExitCode "dotnet publish failed"
     }
 }
 
@@ -120,7 +121,7 @@ if (Test-Path $installerPath) {
         $resolvedSigner = (Resolve-Path $signPath).Path
         Write-Host "--- Signing Artifacts ---" -ForegroundColor Cyan
         & $resolvedSigner -Path $resolvedInstaller
-        Check-LastExitCode "Signing artifacts failed"
+        Assert-LastExitCode "Signing artifacts failed"
     } else {
         Write-Warning "Signing script not found at $signPath. Installer will remain unsigned."
     }

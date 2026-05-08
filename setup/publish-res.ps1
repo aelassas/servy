@@ -48,7 +48,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-function Check-LastExitCode {
+function Assert-LastExitCode {
     param([string]$ErrorMessage)
     if ($LASTEXITCODE -ne 0) {
         Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
@@ -86,7 +86,7 @@ if (-not (Test-Path $publishScript)) {
 
 Write-Host "=== [$ProjectName] Running publish.ps1 ==="
 & $publishScript -Tfm $Tfm -Runtime $Runtime -BuildConfiguration $Configuration
-Check-LastExitCode "$publishScript failed"
+Assert-LastExitCode "$publishScript failed"
 Write-Host "=== [$ProjectName] Completed publish.ps1 ===`n"
 
 # ---------------------------------------------------------------------------------

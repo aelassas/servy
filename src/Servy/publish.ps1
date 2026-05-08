@@ -36,11 +36,16 @@ param(
     [string]$Runtime            = "win-x64"
 )
 
-$scriptDir = $PSScriptRoot
-. (Join-Path $scriptDir "..\..\setup\build-common.ps1")
+# Instead of a generic $scriptDir, use a scoped variable
+$P_PublishDir = $PSScriptRoot 
+
+# Dot-sourcing will no longer overwrite $P_PublishDir even if it sets $scriptDir
+. (Join-Path $P_PublishDir "..\..\setup\build-common.ps1")
+
+Write-Host "Publish Directory: $P_PublishDir"
 
 Invoke-StandardPublish `
-    -ProjectDir $scriptDir `
+    -ProjectDir $P_PublishDir `
     -ProjectName "Servy" `
     -Tfm $Tfm `
     -Runtime $Runtime `

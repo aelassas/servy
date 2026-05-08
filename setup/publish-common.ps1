@@ -1,28 +1,17 @@
+#requires -Version 5.0
 <#
-    .SYNOPSIS
-    Contains common functions used across all Servy publish and packaging scripts.
+.SYNOPSIS
+    Shared publish utilities for Servy projects.
 
-    .DESCRIPTION
-    This module centralizes error handling, cleanup, installer generation via Inno Setup, common artifact copying, and 7-Zip package creation to ensure a robust architectural foundation.
-    #>
-
-    <#
-    .SYNOPSIS
-    Verifies the exit code of the last executed command and terminates the script if it indicates failure.
-
-    .DESCRIPTION
-    Checks the global exit code variable. If the value is not zero, an error is written to the host and the script is terminated with that exit code to prevent cascading failures.
-
-    .PARAMETER ErrorMessage
-    The contextual error message to display if the exit code is non-zero.
+.DESCRIPTION
+    Provides standard functions to build installer, portable zip, and copy artifacts,
+    ensuring DRY compliance across all project scripts.
 #>
-function Check-LastExitCode {
-    param([string]$ErrorMessage)
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
-        exit $LASTEXITCODE
-    }
-}
+
+$scriptDir = $PSScriptRoot
+
+# Import helpers
+. (Join-Path $scriptDir "common-helpers.ps1")
 
 <#
     .SYNOPSIS
@@ -42,7 +31,7 @@ function Remove-ItemSafely {
     }
 }
 
-    <#
+<#
     .SYNOPSIS
     Builds an Inno Setup installer executable using the provided configuration, incorporating retry logic for file locks.
 

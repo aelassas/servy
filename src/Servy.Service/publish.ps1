@@ -28,11 +28,11 @@ param(
     [switch]$Pause
 )
 
-$scriptDir = $PSScriptRoot
-. (Join-Path $scriptDir "..\..\setup\build-common.ps1")
+$P_PublishDir = $PSScriptRoot
+. (Join-Path $P_PublishDir "..\..\setup\build-common.ps1")
 
 Invoke-StandardPublish `
-    -ProjectDir $scriptDir `
+    -ProjectDir $P_PublishDir `
     -ProjectName "Servy.Service" `
     -Tfm $Tfm `
     -Runtime $Runtime `

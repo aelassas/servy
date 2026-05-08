@@ -10,12 +10,10 @@
 
 $ErrorActionPreference = "Stop"
 
-function Check-LastExitCode {
-    param([string]$ErrorMessage)
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
-    }
-}
+$scriptDir = $PSScriptRoot
+
+# Import helpers
+. (Join-Path $scriptDir "common-helpers.ps1")
 
 function Invoke-StandardPublish {
     param(
@@ -34,7 +32,7 @@ function Invoke-StandardPublish {
     if (Test-Path $publishResScript) {
         Write-Host "=== Running publish-res-$resSuffix.ps1 ===" -ForegroundColor Cyan
         & $publishResScript -Tfm $Tfm
-        Check-LastExitCode "publish-res-$resSuffix.ps1 failed"
+        Assert-LastExitCode "publish-res-$resSuffix.ps1 failed"
         Write-Host "=== Completed publish-res-$resSuffix.ps1 ===`n"
     }
 
@@ -51,10 +49,10 @@ function Invoke-StandardPublish {
     Write-Host "Runtime          : $Runtime"
 
     & dotnet restore $projectPath -r $Runtime
-    Check-LastExitCode "dotnet restore failed"
+    Assert-LastExitCode "dotnet restore failed"
 
     & dotnet clean $projectPath -c $BuildConfiguration
-    Check-LastExitCode "Project clean failed"
+    Assert-LastExitCode "Project clean failed"
 
     if ($FrameworkDependent) {
         & dotnet publish $projectPath `
@@ -82,7 +80,7 @@ function Invoke-StandardPublish {
             --force `
             /p:DeleteExistingFiles=true
     }
-    Check-LastExitCode "dotnet publish failed"
+    Assert-LastExitCode "dotnet publish failed"
 
     # Step 2: Sign the published executable if signing is enabled
     if ($BuildConfiguration -eq "Release") {
@@ -94,7 +92,7 @@ function Invoke-StandardPublish {
             if (Test-Path $signPath) {
                 Write-Host "=== Signing $ProjectName.exe ===" -ForegroundColor Cyan
                 & $signPath $exePath
-                Check-LastExitCode "Code signing failed"
+                Assert-LastExitCode "Code signing failed"
             } else {
                 Write-Warning "SignPath script not found at: $signPath. Signing will be skipped."
             }

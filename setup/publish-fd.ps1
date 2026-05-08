@@ -88,15 +88,15 @@ foreach ($project in $projects) {
     $publishScript = Join-Path $project "publish-fd.ps1"
     if (Test-Path $publishScript) {
         & $publishScript -BuildConfiguration $BuildConfiguration -Tfm $Tfm
-        Check-LastExitCode "$publishScript failed"
+        Assert-LastExitCode "$publishScript failed"
     }
     else {
         Write-Warning "Specific FD script missing for $projectName. Using dotnet publish."
         & dotnet restore $project
-        Check-LastExitCode "dotnet restore failed"
+        Assert-LastExitCode "dotnet restore failed"
 
         & dotnet clean $project -c $BuildConfiguration
-        Check-LastExitCode "Project clean failed"
+        Assert-LastExitCode "Project clean failed"
         
         & dotnet publish $project `
             -c $BuildConfiguration `
@@ -104,7 +104,7 @@ foreach ($project in $projects) {
             --no-self-contained `
             -p:CopyOutputSymbolsToPublishDirectory=false `
             -p:DebugType=none
-        Check-LastExitCode "dotnet publish failed"
+        Assert-LastExitCode "dotnet publish failed"
     }
 }
 

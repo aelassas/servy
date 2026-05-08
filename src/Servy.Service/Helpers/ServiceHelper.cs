@@ -225,7 +225,7 @@ namespace Servy.Service.Helpers
             {
                 // 1. Capture original value
                 string originalValue = string.IsNullOrWhiteSpace(options.WorkingDirectory)
-                    ? "[Empty/Null]"
+                    ? "[Empty]"
                     : options.WorkingDirectory;
 
                 // 2. Establish the absolute floor (System32)
