@@ -98,6 +98,12 @@ Then start the service:
 servy-cli start --name="MyService"    
 ```
 
+Or from an **elevated** Command Prompt:
+
+```cmd
+sc.exe start MyService
+```
+
 Explore more [examples and recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes) for Python, Java, Go, and other popular frameworks.
 
 ## Quick Links
