@@ -25,7 +25,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>())).Returns(ServiceControllerStatus.Running);
 
             // Act
-            var result = _command.Execute(options);
+            var result = _command.Execute(options, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Success);
@@ -39,7 +39,7 @@ namespace Servy.CLI.UnitTests.Commands
             var options = new ServiceStatusOptions { ServiceName = "" };
 
             // Act
-            var result = _command.Execute(options);
+            var result = _command.Execute(options, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Success);
@@ -54,7 +54,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>())).Throws<ArgumentException>();
 
             // Act
-            var result = _command.Execute(options);
+            var result = _command.Execute(options, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Success);

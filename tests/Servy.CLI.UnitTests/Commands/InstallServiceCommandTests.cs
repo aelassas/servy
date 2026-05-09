@@ -47,7 +47,7 @@ namespace Servy.CLI.UnitTests.Commands
             try
             {
                 // Act
-                var result = await _command.ExecuteAsync(options);
+                var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.True(result.Success);
@@ -68,7 +68,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Fail("Validation error."));
 
             // Act
-            var result = await _command.ExecuteAsync(options);
+            var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Success);
@@ -98,7 +98,7 @@ namespace Servy.CLI.UnitTests.Commands
             try
             {
                 // Act
-                var result = await _command.ExecuteAsync(options);
+                var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.False(result.Success);
@@ -133,7 +133,7 @@ namespace Servy.CLI.UnitTests.Commands
             try
             {
                 // Act
-                var result = await _command.ExecuteAsync(options);
+                var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.False(result.Success);
@@ -168,7 +168,7 @@ namespace Servy.CLI.UnitTests.Commands
             try
             {
                 // Act
-                var result = await _command.ExecuteAsync(options);
+                var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.False(result.Success);

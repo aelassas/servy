@@ -354,7 +354,7 @@ namespace Servy.Manager.UnitTests.Services
 
             _serviceRepositoryMock.Setup(r => r.DeleteAsync(service.Name, It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-            var result = await sut.RemoveServiceAsync(service);
+            var result = await sut.RemoveServiceAsync(service, TestContext.Current.CancellationToken);
 
             Assert.True(result);
             _serviceRepositoryMock.Verify(r => r.DeleteAsync(service.Name, It.IsAny<CancellationToken>()), Times.Once);

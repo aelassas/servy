@@ -55,7 +55,7 @@ namespace Servy.Manager.Views
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The event data.</param>
         private void Window_Loaded(object sender, RoutedEventArgs e)
-            => RunAsync(() => Window_LoadedAsync(sender, e));
+            => _ = RunAsync(() => Window_LoadedAsync(sender, e));
 
         /// <summary>
         /// Performs asynchronous initialization when the window is loaded.
@@ -81,7 +81,7 @@ namespace Servy.Manager.Views
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The event data containing the key that was pressed.</param>
         private void SearchTextBox_KeyDown(object sender, KeyEventArgs e)
-            => RunAsync(() => SearchTextBox_KeyDownAsync(sender, e));
+            => _ = RunAsync(() => SearchTextBox_KeyDownAsync(sender, e));
 
         /// <summary>
         /// Asynchronously processes key down events for the search text box.
@@ -142,7 +142,7 @@ namespace Servy.Manager.Views
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The event data containing the key and modifiers.</param>
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
-            => RunAsync(() => Window_PreviewKeyDownAsync(sender, e));
+            => _ = RunAsync(() => Window_PreviewKeyDownAsync(sender, e));
 
         /// <summary>
         /// Asynchronously processes global keyboard shortcuts.
@@ -188,7 +188,7 @@ namespace Servy.Manager.Views
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The event data.</param>
         private void Menu_ConfigClick(object sender, RoutedEventArgs e)
-            => RunAsync(() => Menu_ConfigClickAsync(sender, e));
+            => _ = RunAsync(() => Menu_ConfigClickAsync(sender, e));
 
         /// <summary>
         /// Asynchronously initiates the application configuration sequence.
@@ -214,7 +214,7 @@ namespace Servy.Manager.Views
         /// <param name="sender">The <see cref="TabControl"/> that raised the event.</param>
         /// <param name="e">The <see cref="SelectionChangedEventArgs"/> instance containing event data.</param>
         private void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
-            => RunAsync(() => MainTabControl_SelectionChangedAsync(sender, e));
+            => _ = RunAsync(() => MainTabControl_SelectionChangedAsync(sender, e));
 
         /// <summary>
         /// Asynchronously manages the lifecycle and state transitions when switching between application tabs.
@@ -673,7 +673,7 @@ namespace Servy.Manager.Views
         /// need to know when the operation completes.
         /// </para>
         /// </remarks>
-        private async void RunAsync(Func<Task> action)
+        private async Task RunAsync(Func<Task> action)
         {
             try
             {
