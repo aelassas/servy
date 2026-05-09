@@ -109,6 +109,7 @@ namespace Servy.CLI.Validators
                 Priority = priority,
                 StdoutPath = opts.StdoutPath,
                 StderrPath = opts.StderrPath,
+                EnableConsoleUI = opts.EnableConsoleUI,
                 EnableSizeRotation = opts.EnableSizeRotation || opts.EnableRotation,
                 RotationSize = rotationSize,
                 EnableDateRotation = opts.EnableDateRotation,

@@ -50,19 +50,31 @@ namespace Servy.Restarter
                     catch (InvalidOperationException)
                     {
                         // Fallback: If it transitioned to Pending between our check and the call
-                        HandleTransitionalError(controller, ServiceControllerStatus.Stopped, timeout - stopwatch.Elapsed);
+                        HandleTransitionalError(serviceName, controller, ServiceControllerStatus.Stopped, timeout - stopwatch.Elapsed);
                     }
                 }
 
                 // 3. Start phase
                 controller.Refresh();
-                controller.Start();
-                var remaining = timeout - stopwatch.Elapsed;
-                if (remaining <= TimeSpan.Zero)
-                    throw new System.TimeoutException(
-                        $"Timeout expired while waiting for service '{serviceName}' to reach Running. " +
-                        "The Start command was issued; the service may still complete the transition.");
-                controller.WaitForStatus(ServiceControllerStatus.Running, remaining);
+                if (controller.Status != ServiceControllerStatus.Running)
+                {
+                    try
+                    {
+                        controller.Start();
+                        var remaining = timeout - stopwatch.Elapsed;
+                        if (remaining <= TimeSpan.Zero)
+                            throw new System.TimeoutException(
+                                $"Timeout expired while waiting for service '{serviceName}' to reach Running. " +
+                                "The Start command was issued; the service may still complete the transition.");
+
+                        controller.WaitForStatus(ServiceControllerStatus.Running, remaining);
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Fallback: If it transitioned to Pending between our check and the call
+                        HandleTransitionalError(serviceName, controller, ServiceControllerStatus.Running, timeout - stopwatch.Elapsed);
+                    }
+                }
             }
         }
 
@@ -86,6 +98,7 @@ namespace Servy.Restarter
         /// Handles race conditions where a service enters a transitional state between 
         /// a status check and a command execution.
         /// </summary>
+        /// <param name="serviceName">Windows Service name.</param>
         /// <param name="controller">The <see cref="IServiceController"/> instance to manage.</param>
         /// <param name="targetStatus">The desired <see cref="ServiceControllerStatus"/> (typically Running or Stopped).</param>
         /// <param name="timeout">The maximum <see cref="TimeSpan"/> allowed for the entire recovery operation.</param>
@@ -98,7 +111,7 @@ namespace Servy.Restarter
         /// to wait out <see cref="InvalidOperationException"/> errors caused by the Windows SCM 
         /// locking the service during state transitions.
         /// </remarks>
-        private void HandleTransitionalError(IServiceController controller, ServiceControllerStatus targetStatus, TimeSpan timeout)
+        private void HandleTransitionalError(string serviceName, IServiceController controller, ServiceControllerStatus targetStatus, TimeSpan timeout)
         {
             var stopwatch = Stopwatch.StartNew();
             while (stopwatch.Elapsed < timeout)
@@ -116,7 +129,7 @@ namespace Servy.Restarter
 
                     var remaining = timeout - stopwatch.Elapsed;
                     if (remaining <= TimeSpan.Zero)
-                        throw new System.TimeoutException($"Failed to reach {targetStatus} within the timeout period.");
+                        throw new System.TimeoutException($"Service '{serviceName}' failed to reach {targetStatus} within the timeout period.");
 
                     controller.WaitForStatus(targetStatus, remaining);
                     return;
@@ -128,9 +141,7 @@ namespace Servy.Restarter
                 }
             }
 
-            throw new System.TimeoutException($"Failed to reach {targetStatus} within the timeout period.");
+            throw new System.TimeoutException($"Service '{serviceName}' failed to reach {targetStatus} within the timeout period.");
         }
-
     }
-
 }

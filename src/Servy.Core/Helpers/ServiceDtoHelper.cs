@@ -40,6 +40,9 @@ namespace Servy.Core.Helpers
             dto.StartTimeout = dto.StartTimeout ?? AppConfig.DefaultStartTimeout;
             dto.StopTimeout = dto.StopTimeout ?? AppConfig.DefaultStopTimeout;
 
+            // EnableConsoleUI
+            dto.EnableConsoleUI = dto.EnableConsoleUI ?? AppConfig.DefaultEnableConsoleUI;
+
             // Log Rotation
             dto.EnableSizeRotation = dto.EnableSizeRotation ?? AppConfig.DefaultEnableSizeRotation;
             dto.RotationSize = dto.RotationSize ?? AppConfig.DefaultRotationSizeMB;
