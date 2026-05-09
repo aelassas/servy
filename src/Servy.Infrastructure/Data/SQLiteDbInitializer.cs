@@ -412,11 +412,20 @@ namespace Servy.Infrastructure.Data
                         var createTableSql = $"CREATE TABLE Services_v4 (\n    {string.Join(",\n    ", columnDefinitions)}\n);";
                         connection.Execute(createTableSql, transaction: transaction);
 
-                        // Explicitly specify column names to prevent ordinal mismatch issues 
-                        // between the old appended columns (like EnableConsoleUI) and the new cleanly ordered schema.
-                        var allColumns = new List<string> { "Id" };
-                        allColumns.AddRange(expectedColumns);
-                        string columnList = string.Join(", ", allColumns);
+                        // --- Extract only the columns that actually exist in the old table ---
+                        // Because 'expectedColumns' contains future columns (like v5's RecoveryOnCleanExit),
+                        // selecting them from the old table will throw a "no such column" SQL logic error.
+                        var existingColumns = new HashSet<string>(
+                            connection.Query("PRAGMA table_info(Services);", transaction: transaction)
+                                      .Select(row => (string)row.name),
+                            StringComparer.OrdinalIgnoreCase
+                        );
+
+                        var columnsToCopy = new List<string> { "Id" };
+                        columnsToCopy.AddRange(expectedColumns.Where(existingColumns.Contains));
+
+                        string columnList = string.Join(", ", columnsToCopy);
+                        // --------------------------------------------------------------------------
 
                         string copyDataSql = $"INSERT INTO Services_v4 ({columnList}) SELECT {columnList} FROM Services;";
                         connection.Execute(copyDataSql, transaction: transaction);
