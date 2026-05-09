@@ -918,6 +918,11 @@ namespace Servy.Core.Native
         /// <exception cref="Win32Exception">Thrown when the native MoveFileEx call fails for other reasons.</exception>
         public static void AtomicSecureMove(string source, string destination)
         {
+            if (string.IsNullOrWhiteSpace(source))
+                throw new ArgumentException("Source path cannot be null or empty.", nameof(source));
+            if (string.IsNullOrWhiteSpace(destination))
+                throw new ArgumentException("Destination path cannot be null or empty.", nameof(destination));
+
             const int ERROR_NOT_SAME_DEVICE = 0x11; // 17
 
             if (!MoveFileEx(source, destination, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))

@@ -78,6 +78,7 @@ function Show-Notification {
   param (
     [string]$ServiceName,
     [string]$LogText,
+    [DateTime]$TimeCreated,
     [string]$scriptDir,
     [string]$FallbackLogFile
   )
@@ -122,7 +123,7 @@ function Show-Notification {
 
     # Initialize Notification
     $toast = New-Object Windows.UI.Notifications.ToastNotification($serializedXml)
-    $tag = "Servy-$($evt.TimeCreated.ToString('yyyyMMddHHmmssfff'))-$($ServiceName -replace '\s','')"
+    $tag = "Servy-$($TimeCreated.ToString('yyyyMMddHHmmssfff'))-$($ServiceName -replace '\s','')"
     $tag = $tag.Substring(0, [Math]::Min($tag.Length, 64)) # Max 64 chars
     $toast.Tag = $tag
     $toast.Group = "Servy" # cluster all Servy toasts together
@@ -167,7 +168,11 @@ foreach ($evt in $eventsToProcess) {
     $parsed = ConvertFrom-ServyEventMessage -Message $evt.Message
 
     # Show the notification
-    $delivered = Show-Notification -ServiceName $parsed.ServiceName -LogText $parsed.LogText -scriptDir $scriptDir -FallbackLogFile $fallbackLogFile
+    $delivered = Show-Notification -ServiceName $parsed.ServiceName `
+                                   -LogText $parsed.LogText `
+                                   -TimeCreated $evt.TimeCreated `
+                                   -scriptDir $scriptDir `
+                                   -FallbackLogFile $fallbackLogFile
     
     if ($delivered) {
         # Track this timestamp as successfully processed

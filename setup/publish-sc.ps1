@@ -76,7 +76,7 @@ try {
 }
 catch {
     Write-Error "Configuration Failed: $($_.Exception.Message)"
-    return
+    exit 1
 }
 
 # ========================
@@ -127,7 +127,7 @@ if (Test-Path $installerPath) {
     }
 } else {
     Write-Error "Installer executable not found at $installerPath after Inno Setup build."
-    return
+    exit 1
 }
 
 # ========================

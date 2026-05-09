@@ -30,3 +30,8 @@ $silentArgs     = '/VERYSILENT /NORESTART /SUPPRESSMSGBOXES'
 
 Install-ChocolateyPackage $packageName $installerType $silentArgs $installerPath
 ```
+
+## Regedit
+```powershell
+Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*, HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*, HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object { $_.DisplayName -like "Servy*" } | Select-Object DisplayName, DisplayVersion, UninstallString | ft -AutoSize
+```

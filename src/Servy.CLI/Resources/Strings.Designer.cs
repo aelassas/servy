@@ -70,6 +70,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Operation &apos;{0}&apos; was cancelled by the user..
+        /// </summary>
+        public static string Msg_CommandCancelled {
+            get {
+                return ResourceManager.GetString("Msg_CommandCancelled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Configuration file &apos;{0}&apos; exceeds maximum size (10 MB)..
         /// </summary>
         public static string Msg_ConfigSizeLimitReached {

@@ -145,6 +145,22 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Testing", "tests\Serv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.UI.IntegrationTests", "tests\Servy.UI.IntegrationTests\Servy.UI.IntegrationTests.csproj", "{3B4345FC-28F9-4016-8FB3-E87A70C78923}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "choco", "choco", "{0C916905-AFCC-4C80-85FD-7D98DF5E6DE5}"
+	ProjectSection(SolutionItems) = preProject
+		setup\choco\chocolateyuninstall.ps1 = setup\choco\chocolateyuninstall.ps1
+		setup\choco\README.md = setup\choco\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "servy", "servy", "{09CA340C-8754-4FCC-92DA-441D279C604C}"
+	ProjectSection(SolutionItems) = preProject
+		setup\choco\servy\servy.nuspec = setup\choco\servy\servy.nuspec
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{DA3B55F8-FA18-4FF3-9221-F528D0501C72}"
+	ProjectSection(SolutionItems) = preProject
+		setup\choco\servy\tools\chocolateyinstall.ps1 = setup\choco\servy\tools\chocolateyinstall.ps1
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -264,6 +280,9 @@ Global
 		{A9929DF4-5FC7-4EA0-82E7-EBDFC1E6928C} = {50795869-2933-430F-98BD-956C414ABBE4}
 		{6421523A-29C6-46E9-BCE7-D38CAAC4B94E} = {50795869-2933-430F-98BD-956C414ABBE4}
 		{3B4345FC-28F9-4016-8FB3-E87A70C78923} = {50795869-2933-430F-98BD-956C414ABBE4}
+		{0C916905-AFCC-4C80-85FD-7D98DF5E6DE5} = {11479D8F-D8B6-4AD7-BC82-A423FCC30779}
+		{09CA340C-8754-4FCC-92DA-441D279C604C} = {0C916905-AFCC-4C80-85FD-7D98DF5E6DE5}
+		{DA3B55F8-FA18-4FF3-9221-F528D0501C72} = {09CA340C-8754-4FCC-92DA-441D279C604C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {93B02B52-77CF-4BAA-AD7E-08960E6D6482}
