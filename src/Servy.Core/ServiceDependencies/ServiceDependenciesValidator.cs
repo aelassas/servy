@@ -7,7 +7,7 @@ namespace Servy.Core.ServiceDependencies
 {
     public static class ServiceDependenciesValidator
     {
-        // Allowed characters: letters, digits, hyphen, underscore
+        // Allowed characters: letters, digits, hyphen, underscore, period
         private static readonly Regex ValidServiceNameRegex = new Regex(@"^[a-zA-Z0-9_.\-]+$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace Servy.Core.ServiceDependencies
 
                 if (!ValidServiceNameRegex.IsMatch(serviceName))
                 {
-                    errors.Add($"[ServiceDependencies] Invalid service name '{serviceName}'. Only letters, digits, hyphens, and underscores are allowed.");
+                    errors.Add($"[ServiceDependencies] Invalid service name '{serviceName}'.  Only letters, digits, hyphens, underscores, and periods are allowed.");
                 }
             }
 

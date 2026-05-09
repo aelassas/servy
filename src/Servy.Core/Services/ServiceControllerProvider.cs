@@ -20,7 +20,7 @@ namespace Servy.Core.Services
         /// <param name="factory">A factory function used to create wrappers for native service controllers.</param>
         public ServiceControllerProvider(Func<string, IServiceControllerWrapper> factory)
         {
-            _factory = factory;
+            _factory = factory ?? throw new ArgumentNullException(nameof(factory));
         }
 
         /// <summary>
