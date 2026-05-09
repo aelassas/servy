@@ -3,6 +3,7 @@ using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using System;
 using System.Diagnostics;
 
@@ -62,7 +63,7 @@ namespace Servy.Service.CommandLine
                 // Logging
                 StdOutPath = serviceDto.StdoutPath,
                 StdErrPath = serviceDto.StderrPath,
-                RotationSizeInBytes = (serviceDto.RotationSize ?? AppConfig.DefaultRotationSizeMB) * 1024L * 1024L, // Convert from MB to Bytes
+                RotationSizeInBytes = AppConfig.ToBytes(serviceDto.RotationSize ?? AppConfig.DefaultRotationSizeMB), // Convert from MB to Bytes
                 UseLocalTimeForRotation = serviceDto.UseLocalTimeForRotation ?? AppConfig.DefaultUseLocalTimeForRotation,
 
                 // Health Monitoring
@@ -156,6 +157,7 @@ namespace Servy.Service.CommandLine
                     return ProcessPriorityClass.RealTime;
                 case ProcessPriority.Normal:
                 default:
+                    Logger.Warn($"Unknown ProcessPriority value '{p}' — defaulting to Normal.");
                     return ProcessPriorityClass.Normal;
             }
         }

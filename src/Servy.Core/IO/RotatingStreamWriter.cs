@@ -27,6 +27,10 @@ namespace Servy.Core.IO
         /// </summary>
         private static readonly Regex _rotatedTimestampRegex = new Regex(@"^\d{8}_\d{6}(?:\.\(\d+\))*$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
+        private const string RotationTimestampFormat = "yyyyMMdd_HHmmss";
+        // length includes the leading dot
+        private static readonly int RotationTimestampExtensionLength = RotationTimestampFormat.Length + 1;
+
         private bool _disposed;
         private readonly FileInfo _file;
         private StreamWriter _writer;
@@ -61,10 +65,6 @@ namespace Servy.Core.IO
 
         // --- Cooldown and fast-fail constraints ---
         private DateTime _rotationCooldownUntil = DateTime.MinValue;
-        private const int RotationCooldownMs = 1000;
-        private const int CriticalFailureCooldownMs = 600000; // 10 minutes before re-attempting a hard-failed rotation
-        private const int MaxSyncRotationRetries = 3;
-        private const int SyncRotationRetryDelayMs = 50;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RotatingStreamWriter"/> class.
@@ -350,7 +350,7 @@ namespace Servy.Core.IO
         {
             CloseWriter();
 
-            var timestamp = now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
+            var timestamp = now.ToString(RotationTimestampFormat, CultureInfo.InvariantCulture);
 
             var directory = Path.GetDirectoryName(_file.FullName) ?? AppFoldersHelper.GetAppDirectory();
             var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
@@ -361,7 +361,7 @@ namespace Servy.Core.IO
 
             // Set the short IO cooldown immediately inside the lock so subsequent concurrent writes 
             // don't try to rotate the detached file while the physical move is pending.
-            _rotationCooldownUntil = now.AddMilliseconds(RotationCooldownMs);
+            _rotationCooldownUntil = now.AddMilliseconds(AppConfig.LogRotationCooldownMs);
             _lastRotationDate = now;
 
             return (_file.FullName, rotatedPath);
@@ -383,7 +383,7 @@ namespace Servy.Core.IO
             string extension = Path.GetExtension(fileName);
             string namePart;
 
-            bool isTimestamp = extension.Length == 16 &&
+            bool isTimestamp = extension.Length == RotationTimestampExtensionLength &&
                                extension.StartsWith(".") &&
                                extension.Substring(1).All(c => char.IsDigit(c) || c == '_');
 
@@ -546,7 +546,7 @@ namespace Servy.Core.IO
 
             bool success = false;
 
-            for (int attempt = 0; attempt < MaxSyncRotationRetries; attempt++)
+            for (int attempt = 0; attempt < AppConfig.LogRotationMaxSyncRetries; attempt++)
             {
                 try
                 {
@@ -556,14 +556,14 @@ namespace Servy.Core.IO
                 }
                 catch (IOException ex)
                 {
-                    if (attempt < MaxSyncRotationRetries - 1)
+                    if (attempt < AppConfig.LogRotationMaxSyncRetries - 1)
                     {
                         // Unlocked sleep! Writers can proceed to generate a new file.
-                        Thread.Sleep(SyncRotationRetryDelayMs);
+                        Thread.Sleep(AppConfig.LogRotationSyncRetryDelayMs);
                     }
                     else
                     {
-                        Logger.Warn($"Log rotation deferred due to file lock on '{_file.Name}': {ex.Message}. Will retry in {RotationCooldownMs}ms.");
+                        Logger.Warn($"Log rotation deferred due to file lock on '{_file.Name}': {ex.Message}. Will retry in {AppConfig.LogRotationCooldownMs}ms.");
                         return; // IO Cooldown is already active, we just abort this attempt
                     }
                 }
@@ -594,11 +594,11 @@ namespace Servy.Core.IO
         /// </summary>
         private void TripCircuitBreaker(string message, Exception ex)
         {
-            Logger.Error($"{message}. Rotation will be disabled for {CriticalFailureCooldownMs / 60000} minutes.", ex);
+            Logger.Error($"{message}. Rotation will be disabled for {AppConfig.LogRotationCriticalFailureCooldownMs / 60000} minutes.", ex);
             lock (_lock)
             {
                 _rotationDisabled = true;
-                _disabledCooldownUntil = _timeProvider().AddMilliseconds(CriticalFailureCooldownMs);
+                _disabledCooldownUntil = _timeProvider().AddMilliseconds(AppConfig.LogRotationCriticalFailureCooldownMs);
             }
         }
 

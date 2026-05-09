@@ -1,4 +1,5 @@
-﻿using Servy.Core.Logging;
+﻿using Servy.Core.Config;
+using Servy.Core.Logging;
 using Servy.Core.Resources;
 using Servy.UI.Services;
 using System;
@@ -52,7 +53,7 @@ namespace Servy.UI.Helpers
             }
 
             // 2. Size Guard (Safety threshold)
-            if (fileInfo.Length > (long)maxFileSizeMb * 1024 * 1024)
+            if (fileInfo.Length > AppConfig.ToBytes(maxFileSizeMb))
             {
                 var errorMsg = string.Format(sizeLimitFormat, fullPath);
                 Logger.Error(errorMsg);

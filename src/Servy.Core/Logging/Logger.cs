@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Threading;
 
 namespace Servy.Core.Logging
 {
@@ -40,6 +41,12 @@ namespace Servy.Core.Logging
         /// </summary>
         private const int MaxFormattedExceptionLength = 16384; // 16 KB cap to prevent log bloat
 
+        /// <summary>
+        /// The maximum number of fallback log writes allowed per process lifetime.
+        /// Prevents unbounded growth of fallback log files if the primary logger continuously fails.
+        /// </summary>
+        private const int MaxFallbackWrites = 10;
+
         private static readonly object _lock = new object();
         private static volatile RotatingStreamWriter _writer;
 
@@ -56,6 +63,10 @@ namespace Servy.Core.Logging
         /// Set to 0 to allow an unlimited number of backup files.
         /// </summary>
         private static int _maxBackupLogFiles = DefaultMaxBackupLogFiles;
+
+        // Counters to limit fallback file growth
+        private static int _initFallbackWriteCount = 0;
+        private static int _logFallbackWriteCount = 0;
 
         /// <summary>
         /// Pre-computed, uppercase string representations of LogLevels.
@@ -170,7 +181,7 @@ namespace Servy.Core.Logging
                 oldWriter?.Dispose();
 
                 // Convert MB to Bytes for the underlying writer
-                long rotationSizeInBytes = _logRotationSizeMB * 1024L * 1024;
+                long rotationSizeInBytes = AppConfig.ToBytes(_logRotationSizeMB);
 
                 _writer = new RotatingStreamWriter(
                     path: logPath,
@@ -186,12 +197,14 @@ namespace Servy.Core.Logging
             {
                 try
                 {
-                    EnsureLogsDir();
-
-                    var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
-
-                    File.AppendAllText(Path.Combine(LogsPath, "LoggerInitializationErrors.log"),
-                        $"[{now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}] Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");
+                    // Fail-silent, but limit writes to prevent disk exhaustion
+                    if (Interlocked.Increment(ref _initFallbackWriteCount) <= MaxFallbackWrites)
+                    {
+                        EnsureLogsDir();
+                        var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+                        File.AppendAllText(Path.Combine(LogsPath, "LoggerInitializationErrors.log"),
+                            $"[{now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}] Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");
+                    }
                 }
                 catch
                 {
@@ -418,11 +431,15 @@ namespace Servy.Core.Logging
             {
                 try
                 {
-                    EnsureLogsDir();
-
-                    var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
-                    File.AppendAllText(Path.Combine(LogsPath, "LoggerWriteErrors.log"),
-                        $"[{now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}] Failed to write log entry: {ex.Message}{Environment.NewLine}");
+                    // Fail-silent, but limit writes to prevent disk exhaustion.
+                    // Interlocked is critical here as Log() can be called concurrently from multiple threads.
+                    if (Interlocked.Increment(ref _logFallbackWriteCount) <= MaxFallbackWrites)
+                    {
+                        EnsureLogsDir();
+                        var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+                        File.AppendAllText(Path.Combine(LogsPath, "LoggerWriteErrors.log"),
+                            $"[{now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}] Failed to write log entry: {ex.Message}{Environment.NewLine}");
+                    }
                 }
                 catch { /* truly fail-silent only as last resort */ }
             }

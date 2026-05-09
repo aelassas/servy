@@ -35,18 +35,6 @@ namespace Servy.Manager.Utils
 #endif
 
         /// <summary>
-        /// The maximum number of log lines allowed to be loaded into memory at once.
-        /// This constant prevents application instability or "Out of Memory" exceptions 
-        /// when processing exceptionally large log files.
-        /// </summary>
-        private const int MaxSafeLines = 10_000;
-
-        /// <summary>
-        /// Number of lines to accumulate before flushing a batch to the UI.
-        /// </summary>
-        private const int LogBatchFlushThreshold = 500;
-
-        /// <summary>
         /// Internal token source to ensure the tailing loop stops immediately upon disposal.
         /// </summary>
         private readonly CancellationTokenSource _disposeCts = new CancellationTokenSource();
@@ -177,7 +165,7 @@ namespace Servy.Manager.Utils
                                         while ((line = await reader.ReadLineAsync()) != null)
                                         {
                                             batch.Add(new LogLine(line, type));
-                                            if (batch.Count >= LogBatchFlushThreshold)
+                                            if (batch.Count >= AppConfig.LogTailerBatchFlushThreshold)
                                             {
                                                 OnNewLines?.Invoke(batch);
                                                 batch.Clear(); // Optimized memory reuse
@@ -257,7 +245,7 @@ namespace Servy.Manager.Utils
                     catch (Exception ex)
                     {
                         Logger.Error($"Unexpected error in log tailer for {path}.", ex);
-                        await Task.Delay(1000, linkedToken);
+                        await Task.Delay(AppConfig.LogTailerUnhandledErrorRecoveryDelayMs, linkedToken);
                     }
                 }
             }
@@ -300,7 +288,7 @@ namespace Servy.Manager.Utils
                 return lines;
             }
 
-            maxLines = Math.Min(Math.Max(maxLines, 0), MaxSafeLines);
+            maxLines = Math.Min(Math.Max(maxLines, 0), AppConfig.LogTailerMaxSafeLines);
 
             try
             {
