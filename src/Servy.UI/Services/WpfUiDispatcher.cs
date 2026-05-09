@@ -23,7 +23,7 @@ namespace Servy.UI.Services
         /// <inheritdoc/>
         public async Task InvokeAsync(Action action)
         {
-            if (action == null) return;
+            if (action == null) throw new ArgumentNullException(nameof(action));
             await _dispatcher.InvokeAsync(action);
         }
 

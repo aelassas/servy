@@ -1,24 +1,29 @@
 ﻿using Moq;
+using Servy.Core.Enums;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
+using Servy.UI.Services;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
     public class ServiceRowViewModelTests
     {
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
+        private readonly Mock<ICursorService> _cursorServiceMock;
 
         public ServiceRowViewModelTests()
         {
             _serviceCommandsMock = new Mock<IServiceCommands>();
+            _cursorServiceMock = new Mock<ICursorService>();
         }
 
         private ServiceRowViewModel CreateViewModel()
         {
             return new ServiceRowViewModel(
                 new Service { Name = "S" },
-                _serviceCommandsMock.Object
+                _serviceCommandsMock.Object,
+                _cursorServiceMock.Object
             );
         }
 
@@ -28,7 +33,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Arrange
             var vm = new ServiceRowViewModel(
                 new Service { Name = "" }, // internal service has empty name
-                _serviceCommandsMock.Object
+                _serviceCommandsMock.Object,
+                _cursorServiceMock.Object
             );
 
             // Act
@@ -49,11 +55,22 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .ReturnsAsync(true)
                 .Verifiable();
 
-            vm.StartCommand.Execute(service);
+            var isInstalled = vm.Service!.IsInstalled;
+            var status = vm.Service!.Status;
+            try
+            {
+                vm.Service!.IsInstalled = true;
+                vm.Service!.Status = ServiceStatus.Stopped;
+                vm.StartCommand.Execute(service);
+            }
+            finally
+            {
+                vm.Service!.IsInstalled = isInstalled;
+                vm.Service!.Status = status;
+            }
 
             _serviceCommandsMock.Verify();
         }
-
 
         [Fact]
         public void StopCommand_ShouldCallStopServiceAsync_OnDispatcherThread()
@@ -66,12 +83,22 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .ReturnsAsync(true)
                 .Verifiable();
 
-            // Run async command on dispatcher
-            vm.StopCommand.Execute(service);
+            var isInstalled = vm.Service!.IsInstalled;
+            var status = vm.Service!.Status;
+            try
+            {
+                vm.Service!.IsInstalled = true;
+                vm.Service!.Status = ServiceStatus.Running;
+                vm.StopCommand.Execute(service);
+            }
+            finally
+            {
+                vm.Service!.IsInstalled = isInstalled;
+                vm.Service!.Status = status;
+            }
 
             _serviceCommandsMock.Verify();
         }
-
 
         [Fact]
         public void RestartCommand_ShouldCallRestartServiceAsync()
@@ -82,7 +109,19 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .ReturnsAsync(true)
                 .Verifiable();
 
-            vm.RestartCommand.Execute(service);
+            var isInstalled = vm.Service!.IsInstalled;
+            var status = vm.Service!.Status;
+            try
+            {
+                vm.Service!.IsInstalled = true;
+                vm.Service!.Status = ServiceStatus.Running;
+                vm.RestartCommand.Execute(service);
+            }
+            finally
+            {
+                vm.Service!.IsInstalled = isInstalled;
+                vm.Service!.Status = status;
+            }
 
             _serviceCommandsMock.Verify();
         }
@@ -124,7 +163,16 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .ReturnsAsync(true)
                 .Verifiable();
 
-            vm.UninstallCommand.Execute(service);
+            var isInstalled = vm.Service!.IsInstalled;
+            try
+            {
+                vm.Service!.IsInstalled = true;
+                vm.UninstallCommand.Execute(service);
+            }
+            finally
+            {
+                vm.Service!.IsInstalled = isInstalled;
+            }
 
             _serviceCommandsMock.Verify();
         }

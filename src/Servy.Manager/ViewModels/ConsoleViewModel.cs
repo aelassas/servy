@@ -613,17 +613,14 @@ namespace Servy.Manager.ViewModels
         #region Public Methods
 
         /// <summary>
-        /// Disables the monitoring timer and optionally resets the console view.
+        /// Handles the specific logic for resetting the console view when 
+        /// monitoring is stopped with the clearView flag set to true.
         /// </summary>
-        /// <param name="clearView">If true, clears the console history and resets UI labels.</param>
-        public override void StopMonitoring(bool clearView = false)
+        protected override void OnViewCleared()
         {
-            base.StopMonitoring(clearView);
-
-            if (clearView)
-            {
-                ResetConsole(true);
-            }
+            // Resets the console history and UI labels as required by 
+            // the console-specific implementation.
+            ResetConsole(true);
         }
 
         /// <summary>
