@@ -47,7 +47,7 @@ namespace Servy.Manager.Design
             return Task.FromResult(true);
         }
 
-        public Task<bool> RemoveServiceAsync(Service? service)
+        public Task<bool> RemoveServiceAsync(Service? service, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(true);
         }

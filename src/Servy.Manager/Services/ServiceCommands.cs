@@ -116,7 +116,7 @@ namespace Servy.Manager.Services
         /// Uses a persistent ConcurrentDictionary of SemaphoreSlim instances to guarantee 
         /// absolute mutual exclusion per service name across the application lifecycle.
         /// </summary>
-        private async Task<T> ExecuteLockedAsync<T>(string serviceName, Func<Task<T>> action)
+        private async Task<T> ExecuteLockedAsync<T>(string serviceName, Func<Task<T>> action, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
@@ -128,7 +128,7 @@ namespace Servy.Manager.Services
             // semaphore instances for the same service key, violating mutual exclusion.
             var sem = _serviceLocks.GetOrAdd(serviceName, _ => new SemaphoreSlim(1, 1));
 
-            await sem.WaitAsync();
+            await sem.WaitAsync(cancellationToken);
             try
             {
                 return await action();
@@ -154,7 +154,8 @@ namespace Servy.Manager.Services
                 Core.Mappers.ServiceMapper.ToDomain(_serviceManager, r),
                 _appConfig.IsDesktopAppAvailable,
                 calculatePerf,
-                _processHelper));
+                _processHelper,
+                cancellationToken: cancellationToken));
             var services = await Task.WhenAll(tasks);
 
             // Filter out nulls resulting from malformed/orphaned DTOs 
@@ -239,7 +240,6 @@ namespace Servy.Manager.Services
 
             return await ExecuteLockedAsync(service.Name, async () =>
             {
-
                 try
                 {
                     var exists = _serviceManager.IsServiceInstalled(service.Name);
@@ -289,7 +289,7 @@ namespace Servy.Manager.Services
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                     return false;
                 }
-            });
+            }, cancellationToken: cancellationToken);
         }
 
         /// <inheritdoc />
@@ -323,11 +323,11 @@ namespace Servy.Manager.Services
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                     return false;
                 }
-            });
+            }, cancellationToken: cancellationToken);
         }
 
         /// <inheritdoc />
-        public async Task<bool> RemoveServiceAsync(Service? service)
+        public async Task<bool> RemoveServiceAsync(Service? service, CancellationToken cancellationToken = default)
         {
             if (service == null) return false;
             if (string.IsNullOrWhiteSpace(service.Name)) return false;
@@ -369,7 +369,7 @@ namespace Servy.Manager.Services
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                     return false;
                 }
-            });
+            }, cancellationToken: cancellationToken);
         }
 
         /// <inheritdoc />
@@ -536,6 +536,7 @@ namespace Servy.Manager.Services
         /// invoking the operation.</param>
         /// <param name="showMessageBox">Indicates whether to display success/error dialogs to the user 
         /// after execution.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// A task representing the asynchronous operation. The task result is <c>true</c> if the operation 
         /// completed successfully and the service state was updated; otherwise, <c>false</c>.
@@ -552,7 +553,8 @@ namespace Servy.Manager.Services
             ServiceStatus targetStatus,
             string successMessage,
             bool checkDisabled,
-            bool showMessageBox)
+            bool showMessageBox,
+            CancellationToken cancellationToken = default)
         {
             if (service == null) return false;
             if (string.IsNullOrWhiteSpace(service.Name)) return false;
@@ -606,7 +608,7 @@ namespace Servy.Manager.Services
                 }
 
                 return success;
-            });
+            }, cancellationToken: cancellationToken);
         }
 
         /// <summary>

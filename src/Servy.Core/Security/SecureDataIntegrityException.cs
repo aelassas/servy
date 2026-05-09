@@ -8,5 +8,6 @@ namespace Servy.Core.Security
     public class SecureDataIntegrityException : CryptographicException
     {
         public SecureDataIntegrityException(string message) : base(message) { }
+        public SecureDataIntegrityException(string message, Exception ex) : base(message, ex) { }
     }
 }

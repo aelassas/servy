@@ -28,8 +28,9 @@ namespace Servy.CLI.Commands
         /// Executes the stop operation for the specified service.
         /// </summary>
         /// <param name="opts">Options containing the service name to stop.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A <see cref="CommandResult"/> indicating the result of the stop operation.</returns>
-        public async Task<CommandResult> Execute(StopServiceOptions opts)
+        public async Task<CommandResult> ExecuteAsync(StopServiceOptions opts, CancellationToken cancellationToken = default)
         {
             var action = $"stop service '{opts.ServiceName}'";
             var suggestion = "Ensure you have Administrator privileges. If the service is unresponsive, you may need to terminate the process manually via Task Manager.";
@@ -48,7 +49,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceNotFound);
                 }
 
-                var res = await _serviceManager.StopServiceAsync(opts.ServiceName);
+                var res = await _serviceManager.StopServiceAsync(opts.ServiceName, cancellationToken: cancellationToken);
                 if (res.IsSuccess)
                 {
                     // Localize the message and include the service name for clarity

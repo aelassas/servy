@@ -61,9 +61,10 @@ namespace Servy.CLI.Commands
         /// Validates the file, imports it, and optionally installs the service.
         /// </summary>
         /// <param name="opts">Import service options.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
         [SuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "linker.xml")]
-        public async Task<CommandResult> Execute(ImportServiceOptions opts)
+        public async Task<CommandResult> ExecuteAsync(ImportServiceOptions opts, CancellationToken cancellationToken = default)
         {
             var action = $"import configuration from '{opts.Path}'";
             var suggestion = "Check that the file path is correct, the file format is valid JSON or XML, and you have read permissions.";
@@ -125,10 +126,10 @@ namespace Servy.CLI.Commands
                 switch (configFileType)
                 {
                     case ConfigFileType.Xml:
-                        result = await ProcessXmlAsync(opts, fullPath);
+                        result = await ProcessXmlAsync(opts, fullPath, cancellationToken: cancellationToken);
                         break;
                     case ConfigFileType.Json:
-                        result = await ProcessJsonAsync(opts, fullPath);
+                        result = await ProcessJsonAsync(opts, fullPath, cancellationToken: cancellationToken);
                         break;
                     default:
                         result = CommandResult.Fail(string.Format(Strings.Msg_UnsupportedFileType, configFileType));
@@ -176,15 +177,16 @@ namespace Servy.CLI.Commands
         /// Validates and imports an XML service configuration file.
         /// </summary>
         /// <param name="opts">Import service options.</param>
+        /// <param name="cancellationToken">Optional cancellation token</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        private Task<CommandResult> ProcessXmlAsync(ImportServiceOptions opts, string fullPath)
+        private Task<CommandResult> ProcessXmlAsync(ImportServiceOptions opts, string fullPath, CancellationToken cancellationToken = default)
         {
             return ProcessImportInternalAsync(
                 opts,
                 fullPath,
                 "XML",
                 content => _xmlServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
-                content => _serviceRepository.ImportXmlAsync(content),
+                content => _serviceRepository.ImportXmlAsync(content, cancellationToken: cancellationToken),
                 _xmlServiceSerializer.Deserialize);
         }
 
@@ -192,16 +194,17 @@ namespace Servy.CLI.Commands
         /// Validates and imports a JSON service configuration file.
         /// </summary>
         /// <param name="opts">Import service options.</param>
+        /// <param name="cancellationToken">Optional cancellation token</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
         [SuppressMessage("Trimming", "IL2026", Justification = "Awaiting full trimming support")]
-        private Task<CommandResult> ProcessJsonAsync(ImportServiceOptions opts, string fullPath)
+        private Task<CommandResult> ProcessJsonAsync(ImportServiceOptions opts, string fullPath, CancellationToken cancellationToken = default)
         {
             return ProcessImportInternalAsync(
                 opts,
                 fullPath,
                 "JSON",
                 content => _jsonServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
-                content => _serviceRepository.ImportJsonAsync(content),
+                content => _serviceRepository.ImportJsonAsync(content, cancellationToken: cancellationToken),
                 _jsonServiceSerializer.Deserialize);
         }
 

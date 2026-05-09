@@ -37,7 +37,7 @@ namespace Servy.CLI.Commands
         /// <param name="opts">Options containing the service name to uninstall.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A <see cref="Task{CommandResult}"/> indicating the success or failure of the operation.</returns>
-        public async Task<CommandResult> Execute(UninstallServiceOptions opts, CancellationToken cancellationToken = default)
+        public async Task<CommandResult> ExecuteAsync(UninstallServiceOptions opts, CancellationToken cancellationToken = default)
         {
             var action = $"uninstall service '{opts.ServiceName}'";
             var suggestion = "Ensure the service is stopped before uninstalling and that you are running this command as an Administrator.";

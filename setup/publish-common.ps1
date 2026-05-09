@@ -8,10 +8,10 @@
     ensuring DRY compliance across all project scripts.
 #>
 
-$PP_ScriptDir = $PSScriptRoot
+$PC_ScriptDir = $PSScriptRoot
 
 # Import helpers
-. (Join-Path $PP_ScriptDir "common-helpers.ps1")
+. (Join-Path $PC_ScriptDir "common-helpers.ps1")
 
 <#
     .SYNOPSIS

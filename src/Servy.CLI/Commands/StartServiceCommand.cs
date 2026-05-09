@@ -29,8 +29,9 @@ namespace Servy.CLI.Commands
         /// Executes the start of the service with the specified options.
         /// </summary>
         /// <param name="opts">Start service options.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        public async Task<CommandResult> Execute(StartServiceOptions opts)
+        public async Task<CommandResult> ExecuteAsync(StartServiceOptions opts, CancellationToken cancellationToken = default)
         {
             var action = $"start service '{opts.ServiceName}'";
             var suggestion = "Ensure the service is installed, the executable path is valid, and the service account has 'Log On As Service' rights.";
@@ -49,7 +50,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceNotFound);
                 }
 
-                var startupType = _serviceManager.GetServiceStartupType(opts.ServiceName);
+                var startupType = _serviceManager.GetServiceStartupType(opts.ServiceName, cancellationToken: cancellationToken);
                 if (startupType == ServiceStartType.Disabled)
                 {
                     return CommandResult.Fail(Strings.Msg_ServiceDisabledError);

@@ -27,7 +27,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await _command.Execute(options);
+            var result = await _command.ExecuteAsync(options);
 
             // Assert
             Assert.True(result.Success);
@@ -41,7 +41,7 @@ namespace Servy.CLI.UnitTests.Commands
             var options = new StopServiceOptions { ServiceName = "" };
 
             // Act
-            var result = await _command.Execute(options);
+            var result = await _command.ExecuteAsync(options);
 
             // Assert
             Assert.False(result.Success);
@@ -58,7 +58,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to stop service."));
 
             // Act
-            var result = await _command.Execute(options);
+            var result = await _command.ExecuteAsync(options);
 
             // Assert
             Assert.False(result.Success);
@@ -75,7 +75,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).Throws<UnauthorizedAccessException>();
 
             // Act
-            var result = await _command.Execute(options);
+            var result = await _command.ExecuteAsync(options);
 
             // Assert
             Assert.False(result.Success);
@@ -92,7 +92,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).Throws<Exception>();
 
             // Act
-            var result = await _command.Execute(options);
+            var result = await _command.ExecuteAsync(options);
 
             // Assert
             Assert.False(result.Success);

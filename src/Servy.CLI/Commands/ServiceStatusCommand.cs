@@ -26,8 +26,9 @@ namespace Servy.CLI.Commands
         /// Executes the retrieval of the status for the specified service.
         /// </summary>
         /// <param name="opts">Options for the service status command.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        public CommandResult Execute(ServiceStatusOptions opts)
+        public CommandResult Execute(ServiceStatusOptions opts, CancellationToken cancellationToken = default)
         {
             var action = $"query status for service '{opts.ServiceName}'";
             var suggestion = "Verify the service name is spelled correctly and that it is currently installed on this system.";
@@ -39,7 +40,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 
                 // 2. Direct execution
-                var status = _serviceManager.GetServiceStatus(opts.ServiceName);
+                var status = _serviceManager.GetServiceStatus(opts.ServiceName, cancellationToken: cancellationToken);
 
                 // 1. Log the detailed technical status
                 Logger.Info(string.Format(Strings.Msg_ServiceStatusResult, opts.ServiceName, status));
