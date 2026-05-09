@@ -194,7 +194,7 @@ namespace Servy.UI.Bootstrapping
 #endif
             _configuration = builder.Build();
 
-            ConnectionString = _configuration["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
+            ConnectionString = _configuration.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;
             AESKeyFilePath = _configuration["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
             AESIVFilePath = _configuration["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
         }
