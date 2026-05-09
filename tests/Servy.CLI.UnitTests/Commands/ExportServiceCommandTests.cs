@@ -37,7 +37,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_ShouldFail_WhenServiceNameIsNullOrEmpty()
         {
             var opts = new ExportServiceOptions { ServiceName = "", ConfigFileType = "xml", Path = "file.xml" };
-            var result = await _command.Execute(opts);
+            var result = await _command.ExecuteAsync(opts);
             Assert.False(result.Success);
             Assert.Equal(Strings.Msg_ServiceNameRequired, result.Message);
         }
@@ -46,7 +46,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_ShouldFail_WhenConfigFileTypeIsInvalid()
         {
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "invalid", Path = "file.xml" };
-            var result = await _command.Execute(opts);
+            var result = await _command.ExecuteAsync(opts);
             Assert.False(result.Success);
             Assert.Equal(Strings.Msg_InvalidConfigFileType, result.Message);
         }
@@ -55,7 +55,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_ShouldFail_WhenPathIsNullOrEmpty()
         {
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = "" };
-            var result = await _command.Execute(opts);
+            var result = await _command.ExecuteAsync(opts);
             Assert.False(result.Success);
             Assert.Equal(Strings.Msg_PathRequired, result.Message);
         }
@@ -65,7 +65,7 @@ namespace Servy.CLI.UnitTests.Commands
         {
             _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto)null);
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = Path.Combine(_tempDir, "out.xml") };
-            var result = await _command.Execute(opts);
+            var result = await _command.ExecuteAsync(opts);
             Assert.False(result.Success);
             Assert.Equal(Strings.Msg_ServiceNotFound, result.Message);
         }
@@ -78,7 +78,7 @@ namespace Servy.CLI.UnitTests.Commands
             _serviceRepoMock.Setup(r => r.ExportXmlAsync("svc", It.IsAny<CancellationToken>())).ReturnsAsync("<xml>data</xml>");
 
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = filePath };
-            var result = await _command.Execute(opts);
+            var result = await _command.ExecuteAsync(opts);
 
             Assert.True(result.Success);
             Assert.Equal(string.Format(Strings.Msg_ExportSuccess, "XML", opts.Path), result.Message);
@@ -94,7 +94,7 @@ namespace Servy.CLI.UnitTests.Commands
             _serviceRepoMock.Setup(r => r.ExportJsonAsync("svc", It.IsAny<CancellationToken>())).ReturnsAsync("{\"name\":\"svc\"}");
 
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "json", Path = filePath };
-            var result = await _command.Execute(opts);
+            var result = await _command.ExecuteAsync(opts);
 
             Assert.True(result.Success);
             Assert.Equal(string.Format(Strings.Msg_ExportSuccess, "JSON", opts.Path), result.Message);
@@ -108,7 +108,7 @@ namespace Servy.CLI.UnitTests.Commands
             _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("boom"));
 
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = Path.Combine(_tempDir, "out.xml") };
-            var result = await _command.Execute(opts);
+            var result = await _command.ExecuteAsync(opts);
 
             Assert.False(result.Success);
             Assert.Contains("Failed to export configuration for service 'svc'", result.Message);

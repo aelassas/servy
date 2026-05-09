@@ -350,7 +350,7 @@ namespace Servy.Core.Security
             catch (CryptographicException ex)
             {
                 // If the HMAC passed but AES fails (e.g., bad padding), it's still an integrity issue
-                throw new SecureDataIntegrityException($"AES decryption failed: {ex.Message}");
+                throw new SecureDataIntegrityException($"AES decryption failed: {ex.Message}", ex);
             }
             finally
             {

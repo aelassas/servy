@@ -7,6 +7,7 @@ using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Servy.CLI.Commands
@@ -31,8 +32,9 @@ namespace Servy.CLI.Commands
         /// Executes the start of the service with the specified options.
         /// </summary>
         /// <param name="opts">Start service options.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        public async Task<CommandResult> Execute(StartServiceOptions opts)
+        public async Task<CommandResult> ExecuteAsync(StartServiceOptions opts, CancellationToken cancellationToken = default)
         {
             var action = $"start service '{opts.ServiceName}'";
             var suggestion = "Ensure the service is installed, the executable path is valid, and the service account has 'Log On As Service' rights.";
@@ -57,7 +59,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceDisabledError);
                 }
 
-                var res = await _serviceManager.StartServiceAsync(opts.ServiceName);
+                var res = await _serviceManager.StartServiceAsync(opts.ServiceName, cancellationToken: cancellationToken);
                 if (res.IsSuccess)
                 {
                     // Use the localized resource and include the service name

@@ -5,7 +5,6 @@ using Servy.CLI.Options;
 using Servy.CLI.Validators;
 using Servy.Core.Config;
 using Servy.Core.Data;
-using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
@@ -19,6 +18,7 @@ using System.Configuration;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using static Servy.CLI.Helpers.Helper;
 
@@ -76,130 +76,139 @@ namespace Servy.CLI
         /// <returns>Returns 0 on success; non-zero on error.</returns>
         public static async Task<int> Main(string[] args)
         {
-            IAppDbContext dbContext = null;
-            ProtectedKeyProvider protectedKeyProvider = null;
-            try
+            using (var cts = new CancellationTokenSource())
             {
-                var verbs = GetVerbs();
-                var firstArg = args.Length > 0 ? args[0] : null;
-
-                if (args.Length == 0 ||
-                    (!verbs.Any(v => string.Equals(v, firstArg, StringComparison.OrdinalIgnoreCase)) && !(firstArg?.StartsWith("-") ?? false)))
+                // Hook Ctrl+C and Ctrl+Break
+                Console.CancelKeyPress += (s, e) =>
                 {
-                    // Only inject the default verb if the user didn't provide a recognized verb 
-                    // AND didn't provide a global flag like --version or --help
-                    args = (new[] { GetVerbName<HelpOptions>() }).Concat(args).ToArray();
-                }
+                    e.Cancel = true; // Prevent immediate hard-kill
+                    cts.Cancel();
+                };
 
-                args[0] = args[0].ToLowerInvariant();
-
-                var isInteractive = Environment.UserInteractive;
-                var isRedirected = Console.IsOutputRedirected;
-                bool canAccessHeight = false;
-                try { canAccessHeight = Console.WindowHeight > 0; } catch { }
-
-                var quiet = args.Any(a => a.Equals("--quiet", StringComparison.OrdinalIgnoreCase) || a.Equals("-q", StringComparison.OrdinalIgnoreCase))
-                    || !IsRealConsole();
-
-                // Ensure event source exists
-                Core.Helpers.Helper.EnsureEventSourceExists();
-
-                var config = ConfigurationManager.AppSettings;
-
-                var connectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
-                var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
-                var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
-
-                LoggerConfigurator.ConfigureFromAppSettings(config, "Servy.CLI.log");
-
-                if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
+                IAppDbContext dbContext = null;
+                ProtectedKeyProvider protectedKeyProvider = null;
+                try
                 {
-                    Logger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
-                                 $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
+                    var verbs = GetVerbs();
+                    var firstArg = args.Length > 0 ? args[0] : null;
 
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"[CRITICAL] Vulnerable SQLite version detected: {detectedVersion}");
-                    Console.WriteLine($"This version of Servy requires SQLite {AppConfig.MinRequiredSqliteVersion}+.");
-                    Console.ResetColor();
-
-                    // Exit with a CLI-specific sentinel instead of a SCM Win32 error code
-                    return (int)CliExitCode.IncompatibleEnvironment;
-                }
-
-                // Initialize shared dependencies
-                dbContext = new AppDbContext(connectionString);
-                var dapperExecutor = new DapperExecutor(dbContext);
-                protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
-                _secureData = new SecureData(protectedKeyProvider);
-                var xmlSerializer = new XmlServiceSerializer();
-                var jsonSerializer = new JsonServiceSerializer();
-                var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer, jsonSerializer);
-
-                Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
-                var serviceManager = new ServiceManager(
-                    controllerFactory,
-                    new ServiceControllerProvider(controllerFactory),
-                    new WindowsServiceApi(),
-                    new Win32ErrorProvider(),
-                    serviceRepository
-                    );
-
-                var processHelper = new ProcessHelper();
-                var processKiller = new ProcessKiller();
-                var serviceValidationRules = new ServiceValidationRules(processHelper);
-                var installValidator = new ServiceInstallValidator(serviceValidationRules);
-
-                var installCommand = new InstallServiceCommand(serviceManager, installValidator);
-                var startCommand = new StartServiceCommand(serviceManager);
-                var stopCommand = new StopServiceCommand(serviceManager);
-                var restartCommand = new RestartServiceCommand(serviceManager);
-                var uninstallCommand = new UninstallServiceCommand(serviceManager, serviceRepository);
-                var serviceStatusCommand = new ServiceStatusCommand(serviceManager);
-                var exportCommand = new ExportServiceCommand(serviceRepository);
-
-                var xmlServiceValidator = new XmlServiceValidator(processHelper, serviceValidationRules);
-                var jsonServiceValidator = new JsonServiceValidator(processHelper, serviceValidationRules);
-                var importCommand = new ImportServiceCommand(
-                    serviceRepository,
-                    xmlSerializer,
-                    jsonSerializer,
-                    serviceManager,
-                    xmlServiceValidator,
-                    jsonServiceValidator,
-                    processHelper
-                    );
-
-                async Task Run()
-                {
-                    // Ensure db and security folders exist
-                    AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
-
-                    // Initialize the database
-                    DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
-
-                    var asm = Assembly.GetExecutingAssembly();
-
-                    var sh = new ServiceHelper(serviceRepository);
-                    var resourceHelper = new ResourceHelper(sh, processKiller);
-
-                    // Copy Sysinternals from embedded resources
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
+                    if (args.Length == 0 ||
+                        (!verbs.Any(v => string.Equals(v, firstArg, StringComparison.OrdinalIgnoreCase)) && !(firstArg?.StartsWith("-") ?? false)))
                     {
-                        Console.WriteLine($"Failed copying embedded resource: {AppConfig.HandleExe}");
+                        // Only inject the default verb if the user didn't provide a recognized verb 
+                        // AND didn't provide a global flag like --version or --help
+                        args = (new[] { GetVerbName<HelpOptions>() }).Concat(args).ToArray();
                     }
 
-                    // Copy service executable from embedded resources
-                    var resourceItems = new List<ResourceItem>
+                    args[0] = args[0].ToLowerInvariant();
+
+                    var isInteractive = Environment.UserInteractive;
+                    var isRedirected = Console.IsOutputRedirected;
+                    bool canAccessHeight = false;
+                    try { canAccessHeight = Console.WindowHeight > 0; } catch { }
+
+                    var quiet = args.Any(a => a.Equals("--quiet", StringComparison.OrdinalIgnoreCase) || a.Equals("-q", StringComparison.OrdinalIgnoreCase))
+                        || !IsRealConsole();
+
+                    // Ensure event source exists
+                    Core.Helpers.Helper.EnsureEventSourceExists();
+
+                    var config = ConfigurationManager.AppSettings;
+
+                    var connectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
+                    var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
+                    var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+
+                    LoggerConfigurator.ConfigureFromAppSettings(config, "Servy.CLI.log");
+
+                    if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
+                    {
+                        Logger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
+                                     $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
+
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"[CRITICAL] Vulnerable SQLite version detected: {detectedVersion}");
+                        Console.WriteLine($"This version of Servy requires SQLite {AppConfig.MinRequiredSqliteVersion}+.");
+                        Console.ResetColor();
+
+                        // Exit with a CLI-specific sentinel instead of a SCM Win32 error code
+                        return (int)CliExitCode.IncompatibleEnvironment;
+                    }
+
+                    // Initialize shared dependencies
+                    dbContext = new AppDbContext(connectionString);
+                    var dapperExecutor = new DapperExecutor(dbContext);
+                    protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
+                    _secureData = new SecureData(protectedKeyProvider);
+                    var xmlSerializer = new XmlServiceSerializer();
+                    var jsonSerializer = new JsonServiceSerializer();
+                    var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer, jsonSerializer);
+
+                    Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
+                    var serviceManager = new ServiceManager(
+                        controllerFactory,
+                        new ServiceControllerProvider(controllerFactory),
+                        new WindowsServiceApi(),
+                        new Win32ErrorProvider(),
+                        serviceRepository
+                        );
+
+                    var processHelper = new ProcessHelper();
+                    var processKiller = new ProcessKiller();
+                    var serviceValidationRules = new ServiceValidationRules(processHelper);
+                    var installValidator = new ServiceInstallValidator(serviceValidationRules);
+
+                    var installCommand = new InstallServiceCommand(serviceManager, installValidator);
+                    var startCommand = new StartServiceCommand(serviceManager);
+                    var stopCommand = new StopServiceCommand(serviceManager);
+                    var restartCommand = new RestartServiceCommand(serviceManager);
+                    var uninstallCommand = new UninstallServiceCommand(serviceManager, serviceRepository);
+                    var serviceStatusCommand = new ServiceStatusCommand(serviceManager);
+                    var exportCommand = new ExportServiceCommand(serviceRepository);
+
+                    var xmlServiceValidator = new XmlServiceValidator(processHelper, serviceValidationRules);
+                    var jsonServiceValidator = new JsonServiceValidator(processHelper, serviceValidationRules);
+                    var importCommand = new ImportServiceCommand(
+                        serviceRepository,
+                        xmlSerializer,
+                        jsonSerializer,
+                        serviceManager,
+                        xmlServiceValidator,
+                        jsonServiceValidator,
+                        processHelper
+                        );
+
+                    async Task Run()
+                    {
+                        // Ensure db and security folders exist
+                        AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
+
+                        // Initialize the database
+                        DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+
+                        var asm = Assembly.GetExecutingAssembly();
+
+                        var sh = new ServiceHelper(serviceRepository);
+                        var resourceHelper = new ResourceHelper(sh, processKiller);
+
+                        // Copy Sysinternals from embedded resources
+                        if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
+                        {
+                            Console.WriteLine($"Failed copying embedded resource: {AppConfig.HandleExe}");
+                        }
+
+                        // Copy service executable from embedded resources
+                        var resourceItems = new List<ResourceItem>
                     {
                         new ResourceItem{ FileNameWithoutExtension = AppConfig.ServyServiceCLIFileName, Extension= "exe"},
                     };
 
 #if DEBUG
-                    // Copy debug symbols from embedded resources (only in debug builds)
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
-                    {
-                        Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
-                    }
+                        // Copy debug symbols from embedded resources (only in debug builds)
+                        if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
+                        {
+                            Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
+                        }
 #else
                     // Copy *.dll from embedded resources
                     resourceItems.AddRange(new List<ResourceItem>
@@ -216,73 +225,79 @@ namespace Servy.CLI
                     });
 #endif
 
-                    // Copy embedded resources
-                    if (!await resourceHelper.CopyResources(asm, ResourcesNamespace, resourceItems))
-                    {
-                        Console.WriteLine($"Failed copying embedded resources.");
+                        // Copy embedded resources
+                        if (!await resourceHelper.CopyResources(asm, ResourcesNamespace, resourceItems))
+                        {
+                            Console.WriteLine($"Failed copying embedded resources.");
+                        }
                     }
-                }
 
-                if (quiet)
-                {
-                    await Run();
-                }
-                else
-                {
-                    await ConsoleHelper.RunWithLoadingAnimation(async () =>
+                    if (quiet)
                     {
                         await Run();
-                    });
-                }
-
-                var parser = new Parser(with =>
-                {
-                    with.HelpWriter = Console.Out;
-                });
-
-                var exitCode = await parser.ParseArguments<
-                    Options.InstallServiceOptions,
-                    UninstallServiceOptions,
-                    StartServiceOptions,
-                    StopServiceOptions,
-                    ServiceStatusOptions,
-                    RestartServiceOptions,
-                    ExportServiceOptions,
-                    ImportServiceOptions
-                    >(args)
-                    .MapResult(
-                        async (Options.InstallServiceOptions opts) => await PrintAndReturnAsync(installCommand.Execute(opts)),
-                        async (UninstallServiceOptions opts) => await PrintAndReturnAsync(uninstallCommand.Execute(opts)),
-                        async (StartServiceOptions opts) => await PrintAndReturnAsync(startCommand.Execute(opts)),
-                        async (StopServiceOptions opts) => await PrintAndReturnAsync(stopCommand.Execute(opts)),
-                        async (RestartServiceOptions opts) => await PrintAndReturnAsync(restartCommand.Execute(opts)),
-                        async (ServiceStatusOptions opts) => await PrintAndReturnAsync(Task.FromResult(serviceStatusCommand.Execute(opts))),
-                        async (ExportServiceOptions opts) => await PrintAndReturnAsync(exportCommand.Execute(opts)),
-                        async (ImportServiceOptions opts) => await PrintAndReturnAsync(importCommand.Execute(opts)),
-                        // Wrap synchronous error result in Task
-                        errs =>
+                    }
+                    else
+                    {
+                        await ConsoleHelper.RunWithLoadingAnimation(async () =>
                         {
-                            if (errs.IsHelp() || errs.IsVersion())
-                                return Task.FromResult((int)CliExitCode.Success);
+                            await Run();
+                        });
+                    }
 
-                            return Task.FromResult((int)CliExitCode.Error);
-                        }
-                    );
+                    var parser = new Parser(with =>
+                    {
+                        with.HelpWriter = Console.Out;
+                    });
 
-                return exitCode;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("An unexpected error occurred in the main execution flow.", ex);
-                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
-                return (int)CliExitCode.Error;
-            }
-            finally
-            {
-                _secureData?.Dispose();
-                protectedKeyProvider?.Dispose();
-                dbContext?.Dispose();
-                Logger.Shutdown();
+                    var exitCode = await parser.ParseArguments<
+                        Options.InstallServiceOptions,
+                        UninstallServiceOptions,
+                        StartServiceOptions,
+                        StopServiceOptions,
+                        ServiceStatusOptions,
+                        RestartServiceOptions,
+                        ExportServiceOptions,
+                        ImportServiceOptions
+                        >(args)
+                        .MapResult(
+                            async (Options.InstallServiceOptions opts) => await PrintAndReturnAsync(installCommand.ExecuteAsync(opts, cts.Token)),
+                            async (UninstallServiceOptions opts) => await PrintAndReturnAsync(uninstallCommand.ExecuteAsync(opts, cts.Token)),
+                            async (StartServiceOptions opts) => await PrintAndReturnAsync(startCommand.ExecuteAsync(opts, cts.Token)),
+                            async (StopServiceOptions opts) => await PrintAndReturnAsync(stopCommand.ExecuteAsync(opts, cts.Token)),
+                            async (RestartServiceOptions opts) => await PrintAndReturnAsync(restartCommand.ExecuteAsync(opts, cts.Token)),
+                            async (ServiceStatusOptions opts) => await PrintAndReturnAsync(Task.FromResult(serviceStatusCommand.Execute(opts, cts.Token))),
+                            async (ExportServiceOptions opts) => await PrintAndReturnAsync(exportCommand.ExecuteAsync(opts, cts.Token)),
+                            async (ImportServiceOptions opts) => await PrintAndReturnAsync(importCommand.ExecuteAsync(opts, cts.Token)),
+                            // Wrap synchronous error result in Task
+                            errs =>
+                            {
+                                if (errs.IsHelp() || errs.IsVersion())
+                                    return Task.FromResult((int)CliExitCode.Success);
+
+                                return Task.FromResult((int)CliExitCode.Error);
+                            }
+                        );
+
+                    return exitCode;
+                }
+                catch (OperationCanceledException)
+                {
+                    Console.WriteLine("\nOperation cancelled by user.");
+                    return (int)CliExitCode.Error;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("An unexpected error occurred in the main execution flow.", ex);
+                    Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+                    return (int)CliExitCode.Error;
+                }
+                finally
+                {
+                    _secureData?.Dispose();
+                    protectedKeyProvider?.Dispose();
+                    dbContext?.Dispose();
+                    Logger.Shutdown();
+                }
             }
         }
 

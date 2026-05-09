@@ -275,14 +275,14 @@ function Invoke-ServyCli {
     # 1. Create a standalone buffer object for this specific run.
     $stdoutBuffer = @{
         Lines     = New-Object System.Collections.ArrayList
-        ByteCount = 0
+        CharCount = 0
         MaxChars  = $script:ServyMaxBufferChars
         Truncated = $false
     }
     
     $stderrBuffer = @{
         Lines     = New-Object System.Collections.ArrayList
-        ByteCount = 0
+        CharCount = 0
         MaxChars  = $script:ServyMaxBufferChars
         Truncated = $false
     }
@@ -319,9 +319,9 @@ function Invoke-ServyCli {
       -Action {
           if ($null -ne $EventArgs.Data) { 
               $buf = $Event.MessageData
-              if ($buf.ByteCount -lt $buf.MaxChars) {
+              if ($buf.CharCount -lt $buf.MaxChars) {
                   [void]$buf.Lines.Add($EventArgs.Data)
-                  $buf.ByteCount += $EventArgs.Data.Length
+                  $buf.CharCount += $EventArgs.Data.Length
               }
               elseif (-not $buf.Truncated) {
                   [void]$buf.Lines.Add("... [Output truncated to prevent memory exhaustion] ...")
@@ -336,9 +336,9 @@ function Invoke-ServyCli {
       -Action {
           if ($null -ne $EventArgs.Data) { 
               $buf = $Event.MessageData
-              if ($buf.ByteCount -lt $buf.MaxChars) {
+              if ($buf.CharCount -lt $buf.MaxChars) {
                   [void]$buf.Lines.Add($EventArgs.Data)
-                  $buf.ByteCount += $EventArgs.Data.Length
+                  $buf.CharCount += $EventArgs.Data.Length
               }
               elseif (-not $buf.Truncated) {
                   [void]$buf.Lines.Add("... [Error output truncated to prevent memory exhaustion] ...")

@@ -7,6 +7,7 @@ using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Servy.CLI.Commands
@@ -31,8 +32,9 @@ namespace Servy.CLI.Commands
         /// Executes the restart of the service with the specified options.
         /// </summary>
         /// <param name="opts">Restart service options.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        public async Task<CommandResult> Execute(RestartServiceOptions opts)
+        public async Task<CommandResult> ExecuteAsync(RestartServiceOptions opts, CancellationToken cancellationToken = default)
         {
             var action = $"restart service '{opts.ServiceName}'";
             var suggestion = "Ensure the service is currently installed and that your account has sufficient permissions to stop and start services.";
@@ -57,7 +59,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceDisabledError);
                 }
 
-                var res = await _serviceManager.RestartServiceAsync(opts.ServiceName);
+                var res = await _serviceManager.RestartServiceAsync(opts.ServiceName, cancellationToken: cancellationToken);
                 if (res.IsSuccess)
                 {
                     // Localize and include the service name for better feedback

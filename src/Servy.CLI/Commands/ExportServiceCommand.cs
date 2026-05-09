@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using static Servy.Core.Native.NativeMethods;
 
@@ -53,8 +54,9 @@ namespace Servy.CLI.Commands
         /// Executes the export of the service with the specified options.
         /// </summary>
         /// <param name="opts">Export service options.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        public async Task<CommandResult> Execute(ExportServiceOptions opts)
+        public async Task<CommandResult> ExecuteAsync(ExportServiceOptions opts, CancellationToken cancellationToken = default)
         {
             var action = $"export configuration for service '{opts.ServiceName}'";
             var suggestion = "Ensure the service exists in the database and you have write permissions to the destination path.";
@@ -89,11 +91,11 @@ namespace Servy.CLI.Commands
                 switch (configFileType)
                 {
                     case ConfigFileType.Xml:
-                        content = await _serviceRepository.ExportXmlAsync(opts.ServiceName);
+                        content = await _serviceRepository.ExportXmlAsync(opts.ServiceName, cancellationToken: cancellationToken);
                         break;
 
                     case ConfigFileType.Json:
-                        content = await _serviceRepository.ExportJsonAsync(opts.ServiceName);
+                        content = await _serviceRepository.ExportJsonAsync(opts.ServiceName, cancellationToken: cancellationToken);
                         break;
 
                     default:

@@ -33,7 +33,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await _command.Execute(options);
+            var result = await _command.ExecuteAsync(options);
 
             // Assert
             Assert.True(result.Success);
@@ -47,7 +47,7 @@ namespace Servy.CLI.UnitTests.Commands
             var options = new UninstallServiceOptions { ServiceName = "" };
 
             // Act
-            var result = await _command.Execute(options);
+            var result = await _command.ExecuteAsync(options);
 
             // Assert
             Assert.False(result.Success);
@@ -63,7 +63,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to uninstall service."));
 
             // Act
-            var result = await _command.Execute(options);
+            var result = await _command.ExecuteAsync(options);
 
             // Assert
             Assert.False(result.Success);
@@ -79,7 +79,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>())).Throws<UnauthorizedAccessException>();
 
             // Act
-            var result = await _command.Execute(options);
+            var result = await _command.ExecuteAsync(options);
 
             // Assert
             Assert.False(result.Success);
@@ -95,7 +95,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>())).Throws<Exception>();
 
             // Act
-            var result = await _command.Execute(options);
+            var result = await _command.ExecuteAsync(options);
 
             // Assert
             Assert.False(result.Success);

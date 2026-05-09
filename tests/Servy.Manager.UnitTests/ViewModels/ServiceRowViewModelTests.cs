@@ -137,7 +137,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             var vm = CreateViewModel();
             var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.RemoveServiceAsync(It.Is<Service>(srv => srv.Name == "S")))
+            _serviceCommandsMock.Setup(s => s.RemoveServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 

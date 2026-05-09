@@ -63,7 +63,7 @@ namespace Servy.CLI.UnitTests.Commands
             _serviceRepoMock.Setup(r => r.ImportXmlAsync(xmlContent, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             // Act
-            var result = await _command.Execute(opts);
+            var result = await _command.ExecuteAsync(opts);
 
             // Assert
             Assert.Equal(0, result.ExitCode);
@@ -87,7 +87,7 @@ namespace Servy.CLI.UnitTests.Commands
             MockXmlValidator(false, "error");
 
             // Act
-            var result = await _command.Execute(opts);
+            var result = await _command.ExecuteAsync(opts);
 
             // Assert
             Assert.Equal(1, result.ExitCode);
@@ -114,7 +114,7 @@ namespace Servy.CLI.UnitTests.Commands
                 .ReturnsAsync(true);
 
             // Act
-            var result = await _command.Execute(opts);
+            var result = await _command.ExecuteAsync(opts);
 
             // Assert
             try
@@ -144,7 +144,7 @@ namespace Servy.CLI.UnitTests.Commands
             MockJsonValidator(false, "Executable path is required");
 
             // Act
-            var result = await _command.Execute(opts);
+            var result = await _command.ExecuteAsync(opts);
 
             // Assert
             Assert.NotEqual(0, result.ExitCode);
@@ -158,7 +158,7 @@ namespace Servy.CLI.UnitTests.Commands
         {
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = "nonexistent.xml" };
 
-            var result = await _command.Execute(opts);
+            var result = await _command.ExecuteAsync(opts);
 
             Assert.NotEqual(0, result.ExitCode);
             Assert.Contains("File not found", result.Message);
@@ -169,7 +169,7 @@ namespace Servy.CLI.UnitTests.Commands
         {
             var opts = new ImportServiceOptions { ConfigFileType = "invalid", Path = "file.xml" };
 
-            var result = await _command.Execute(opts);
+            var result = await _command.ExecuteAsync(opts);
 
             Assert.NotEqual(0, result.ExitCode);
             Assert.Contains("Configuration input file type is required", result.Message);

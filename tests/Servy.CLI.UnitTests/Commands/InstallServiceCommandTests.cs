@@ -52,7 +52,7 @@ namespace Servy.CLI.UnitTests.Commands
             try
             {
                 // Act
-                var result = await _command.Execute(options);
+                var result = await _command.ExecuteAsync(options);
 
                 // Assert
                 Assert.True(result.Success);
@@ -73,7 +73,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Fail("Validation error."));
 
             // Act
-            var result = await _command.Execute(options);
+            var result = await _command.ExecuteAsync(options);
 
             // Assert
             Assert.False(result.Success);
@@ -103,7 +103,7 @@ namespace Servy.CLI.UnitTests.Commands
             try
             {
                 // Act
-                var result = await _command.Execute(options);
+                var result = await _command.ExecuteAsync(options);
 
                 // Assert
                 Assert.False(result.Success);
@@ -138,7 +138,7 @@ namespace Servy.CLI.UnitTests.Commands
             try
             {
                 // Act
-                var result = await _command.Execute(options);
+                var result = await _command.ExecuteAsync(options);
 
                 // Assert
                 Assert.False(result.Success);
@@ -173,7 +173,7 @@ namespace Servy.CLI.UnitTests.Commands
             try
             {
                 // Act
-                var result = await _command.Execute(options);
+                var result = await _command.ExecuteAsync(options);
 
                 // Assert
                 Assert.False(result.Success);

@@ -354,7 +354,7 @@ namespace Servy.Core.Helpers
         {
             if (!File.Exists(filePath))
             {
-                Logger.Error($"File not found: {filePath}");
+                Logger.Info($"File not found: {filePath}");
                 return true;
             }
 
@@ -462,7 +462,7 @@ namespace Servy.Core.Helpers
                     if (!parentProcess.HasExited)
                     {
                         parentProcess.Kill();
-                        parentProcess.WaitForExit(Math.Max(AppConfig.KillParentWaitMs, 1000));
+                        parentProcess.WaitForExit(SafeWait(AppConfig.KillParentWaitMs));
                     }
                 }
             }

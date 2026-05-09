@@ -9,6 +9,7 @@ using Servy.Core.Security;
 using Servy.Core.Services;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Servy.CLI.Commands
@@ -39,8 +40,9 @@ namespace Servy.CLI.Commands
         /// Executes the installation of the service with the given options.
         /// </summary>
         /// <param name="opts">Installation options.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        public async Task<CommandResult> Execute(Options.InstallServiceOptions opts)
+        public async Task<CommandResult> ExecuteAsync(Options.InstallServiceOptions opts, CancellationToken cancellationToken = default)
         {
             var action = $"install service '{opts.ServiceName}'";
             var suggestion = "Ensure the executable path is correct, the service name is not already in use, and you are running with Administrator privileges.";
@@ -163,7 +165,7 @@ namespace Servy.CLI.Commands
                 };
 
                 // Call the service manager install method
-                var res = await _serviceManager.InstallServiceAsync(options);
+                var res = await _serviceManager.InstallServiceAsync(options, cancellationToken: cancellationToken);
 
                 if (res.IsSuccess)
                 {

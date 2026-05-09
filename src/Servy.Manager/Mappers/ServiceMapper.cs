@@ -3,6 +3,7 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Manager.Models;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using AppConfig = Servy.Manager.Config.AppConfig;
 
@@ -31,16 +32,23 @@ namespace Servy.Manager
         /// <param name="isDesktopAppAvailable">Indicates whether the configuration application is available.</param>
         /// <param name="calculatePerf">Whether to calculate CPU and RAM usage.</param>
         /// <param name="processHelper">Injected process helper used to gather usage metrics.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A UI-friendly <see cref="Service"/> model.</returns>
-        public static async Task<Service> ToModelAsync(Core.Domain.Service service, bool isDesktopAppAvailable, bool calculatePerf, IProcessHelper processHelper)
+        public static async Task<Service> ToModelAsync(
+            Core.Domain.Service service,
+            bool isDesktopAppAvailable,
+            bool calculatePerf,
+            IProcessHelper processHelper,
+            CancellationToken cancellationToken = default)
         {
             if (service == null) return null;
+            cancellationToken.ThrowIfCancellationRequested();
 
             double? cpuUsage = null;
             long? ramUsage = null;
             if (calculatePerf && service.Pid.HasValue && processHelper != null)
             {
-                var processMetrics = await Task.Run(() => processHelper.GetProcessTreeMetrics(service.Pid.Value));
+                var processMetrics = await Task.Run(() => processHelper.GetProcessTreeMetrics(service.Pid.Value), cancellationToken);
                 cpuUsage = processMetrics.CpuUsage;
                 ramUsage = processMetrics.RamUsage;
             }
