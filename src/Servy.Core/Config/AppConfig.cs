@@ -1052,8 +1052,6 @@ namespace Servy.Core.Config
 #endif
         }
 
-
-#if DEBUG
         /// <summary>
         /// Traverses up the directory hierarchy from the specified starting point to locate the 
         /// repository root, identified by the presence of the <c>Servy.sln</c> file.
@@ -1077,7 +1075,6 @@ namespace Servy.Core.Config
             return dir?.FullName
                 ?? throw new InvalidOperationException("Servy.sln not found in any ancestor directory.");
         }
-#endif
 
         #endregion
     }
