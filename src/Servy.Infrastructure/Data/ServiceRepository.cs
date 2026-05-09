@@ -236,7 +236,7 @@ namespace Servy.Infrastructure.Data
             const string sql = "SELECT * FROM Services WHERE LOWER(Name) = LOWER(@Name);";
             var dto = _dapper.QuerySingleOrDefault<ServiceDto>(sql, new { Name = name.Trim() });
 
-            if (dto != null && decrypt) DecryptDto(dto);
+            if (decrypt) DecryptDto(dto);
             return dto;
         }
 

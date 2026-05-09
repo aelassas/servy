@@ -133,15 +133,26 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Copies an embedded resource from the assembly to disk.
+        /// Copies an embedded resource from the assembly to disk synchronously.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>DANGER:</b> Unlike its asynchronous counterpart, this method forcefully terminates 
+        /// any processes holding a lock on the target file WITHOUT performing a graceful service 
+        /// shutdown or restart. It completely circumvents the standard service lifecycle.
+        /// </para>
+        /// <para>
+        /// This should <b>only</b> be called by external bootstrapping utilities or during 
+        /// installation phases when it is guaranteed that no Servy services are actively running.
+        /// </para>
+        /// </remarks>
         /// <param name="assembly">The assembly containing the resource.</param>
         /// <param name="resourceNamespace">Namespace of the embedded resource.</param>
         /// <param name="fileName">The filename of the resource without extension.</param>
         /// <param name="extension">The file extension (e.g., "exe" or "dll").</param>
         /// <param name="subfolder">Optional subfolder within the target directory.</param>
         /// <returns>True if the copy succeeded or was not needed, false if it failed.</returns>
-        public bool CopyEmbeddedResourceSync(
+        public bool CopyEmbeddedResourceForceSync(
             Assembly assembly,
             string resourceNamespace,
             string fileName,

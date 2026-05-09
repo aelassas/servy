@@ -147,7 +147,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             _fakeAssembly.OnGetManifestResourceStream = _ => null; // Simulate missing resource
 
             // Act
-            bool result = _resourceHelper.CopyEmbeddedResourceSync(
+            bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
                 _fakeAssembly, "Servy.Resources", "missingapp", "exe");
 
             // Assert

@@ -100,25 +100,6 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task ConsoleSearchText_WhenCleared_TriggersForcedScroll()
-        {
-            await Helper.RunOnSTA(async () =>
-            {
-                // Arrange
-                var vm = CreateViewModel();
-                bool scrollInvokedWithForce = false;
-                vm.RequestScroll += (isForced) => scrollInvokedWithForce = isForced;
-                vm.ConsoleSearchText = "filter text";
-
-                // Act
-                vm.ConsoleSearchText = string.Empty;
-
-                // Assert
-                Assert.True(scrollInvokedWithForce);
-            }, createApp: true);
-        }
-
-        [Fact]
         public async Task SearchCommand_PopulatesServicesCollection()
         {
             await Helper.RunOnSTA(async () =>

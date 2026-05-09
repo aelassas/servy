@@ -358,7 +358,7 @@ namespace Servy.Manager.ViewModels
             lineBuffer.Clear();
             fillBuffer.Clear();
 
-            double stepX = GraphWidth / 100.0;
+            double stepX = GraphWidth / (PerformanceHistoryCapacity - 1);
             int i = 0;
 
             foreach (var val in valueHistory)

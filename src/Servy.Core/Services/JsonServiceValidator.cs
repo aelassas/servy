@@ -85,13 +85,6 @@ namespace Servy.Core.Services
                 Logger.Warn($"JSON Import succeeded with warnings for service '{sanitizedName}': {string.Join("\n", validation.Warnings)}");
             }
 
-            // 3. Executable Path Integrity
-            if (!_processHelper.ValidatePath(dto.ExecutablePath))
-            {
-                errorMessage = "The provided executable path is invalid or inaccessible.";
-                return false;
-            }
-
             return true;
         }
     }

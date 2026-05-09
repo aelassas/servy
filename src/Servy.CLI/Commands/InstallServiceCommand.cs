@@ -189,7 +189,9 @@ namespace Servy.CLI.Commands
         private static T ParseEnumOption<T>(string option, T defaultValue) where T : struct, Enum
         {
             if (string.IsNullOrWhiteSpace(option)) return defaultValue;
-            return Enum.TryParse(option, ignoreCase: true, out T result) ? result : defaultValue;
+            if (Enum.TryParse(option, ignoreCase: true, out T result) && Enum.IsDefined(typeof(T), result))
+                return result;
+            return defaultValue;
         }
     }
 }

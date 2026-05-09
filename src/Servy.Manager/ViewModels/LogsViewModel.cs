@@ -299,7 +299,7 @@ namespace Servy.Manager.ViewModels
         public LogsViewModel(IAppConfiguration appConfig, IEventLogService eventLogService, ICursorService cursorService)
         {
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
-            _eventLogService = eventLogService;
+            _eventLogService = eventLogService ?? throw new ArgumentNullException(nameof(eventLogService));
             _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
 
             FromDate = DateTime.Now.AddDays(-_appConfig.LogsWindowDays);

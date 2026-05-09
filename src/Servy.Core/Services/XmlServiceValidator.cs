@@ -96,13 +96,6 @@ namespace Servy.Core.Services
                 Logger.Warn($"XML Import succeeded with warnings for service '{sanitizedName}': {string.Join("\n", validation.Warnings)}");
             }
 
-            // 3. Path Validation
-            if (!_processHelper.ValidatePath(dto.ExecutablePath))
-            {
-                errorMessage = "The executable path in the XML is invalid or inaccessible.";
-                return false;
-            }
-
             return true;
         }
     }

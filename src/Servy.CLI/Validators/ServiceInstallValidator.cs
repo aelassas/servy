@@ -191,7 +191,7 @@ namespace Servy.CLI.Validators
         {
             if (error != null || string.IsNullOrWhiteSpace(val)) return null;
 
-            if (Enum.TryParse<T>(val, true, out T result))
+            if (Enum.TryParse<T>(val, true, out T result) && Enum.IsDefined(typeof(T), result))
             {
                 // Use Convert.ToInt32 to avoid InvalidCastException during unboxing
                 return Convert.ToInt32(result);
