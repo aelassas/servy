@@ -961,6 +961,15 @@ namespace Servy.Core.Config
         #region Security & Encryption
 
         /// <summary>
+        /// Specifies the name of the environment variable used to securely pass the user password from the CLI.
+        /// </summary>
+        /// <remarks>
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// within command-line history, logs, or system process lists.
+        /// </remarks>
+        public const string PasswordEnvVarName = "SERVY_PASSWORD";
+
+        /// <summary>
         /// Controls whether the system will process legacy v1 (unauthenticated) ciphertexts.
         /// This should be enabled only during active migration from older Servy versions.
         /// Default is false to prevent ciphertext downgrade attacks.
@@ -1059,7 +1068,7 @@ namespace Servy.Core.Config
         /// This utility is primarily used by the bootstrapper and test harnesses to resolve 
         /// relative paths to assets or configuration files within the monorepo structure.
         /// </remarks>
-        private static string FindRepoRoot(string startDir)
+        public static string FindRepoRoot(string startDir)
         {
             var dir = new DirectoryInfo(startDir);
             while (dir != null && !File.Exists(Path.Combine(dir.FullName, "Servy.sln")))

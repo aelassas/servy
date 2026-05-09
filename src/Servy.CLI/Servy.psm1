@@ -32,6 +32,11 @@ $script:ServyMaxBufferChars = 1048576
 # Uses Atomic Groups (?>...) to prevent Catastrophic Backtracking (ReDoS) on overlapping escape branches.
 $script:EnvVarValidationPattern = '^([^= ]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*))(; ?[^= ]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*))*;?$'
 
+# Specifies the name of the environment variable used to securely pass the user password from the CLI.
+# Using an environment variable prevents sensitive credentials from being exposed in plain text 
+# within command-line history, logs, or system process lists.
+$script:ServyPasswordEnvVar = 'SERVY_PASSWORD'
+
 # ----------------------------------------------------------------
 # Module Initialization
 # ----------------------------------------------------------------
@@ -1202,7 +1207,7 @@ function Install-ServyService {
           $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
           
           if ($null -ne $plainPassword -and $plainPassword.Length -gt 0) {
-              $secureEnv["SERVY_PASSWORD"] = $plainPassword
+              $secureEnv[$script:ServyPasswordEnvVar] = $plainPassword
           }
       }
       finally {
@@ -1218,8 +1223,8 @@ function Install-ServyService {
   finally {
       # Explicitly clear managed references to prevent sensitive data lingering in the heap
       $plainPassword = $null
-      if ($secureEnv.ContainsKey("SERVY_PASSWORD")) {
-          $secureEnv["SERVY_PASSWORD"] = $null
+      if ($secureEnv.ContainsKey($script:ServyPasswordEnvVar)) {
+          $secureEnv[$script:ServyPasswordEnvVar] = $null
       }
       
       # Help GC by clearing the ArrayList

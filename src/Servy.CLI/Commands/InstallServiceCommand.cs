@@ -108,7 +108,7 @@ namespace Servy.CLI.Commands
                     // but fall back to the secure environment variable.
                     Password = !string.IsNullOrEmpty(opts.Password)
                                 ? opts.Password
-                                : Environment.GetEnvironmentVariable("SERVY_PASSWORD"),
+                                : Environment.GetEnvironmentVariable(AppConfig.PasswordEnvVarName),
 
                     // Pre-Launch
                     PreLaunchExePath = opts.PreLaunchPath,
