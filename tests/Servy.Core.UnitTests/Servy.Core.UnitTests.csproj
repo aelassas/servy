@@ -124,6 +124,7 @@
   <ItemGroup>
     <Compile Include="Common\OperationResultTests.cs" />
     <Compile Include="Config\AppConfigTests.cs" />
+    <Compile Include="Config\PowerShellConfigSyncTests.cs" />
     <Compile Include="DTOs\ServiceConsoleStateDtoTests.cs" />
     <Compile Include="DTOs\ServiceDtoTests.cs" />
     <Compile Include="EnvironmentVariables\EscapedTokenizerTests.cs" />

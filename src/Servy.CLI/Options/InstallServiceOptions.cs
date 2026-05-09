@@ -253,10 +253,10 @@ namespace Servy.CLI.Options
         /// </summary>
         /// <remarks>
         /// Passing passwords via CLI flags is insecure as they are visible 
-        /// in process listings and shell history. Use the SERVY_PASSWORD environment 
+        /// in process listings and shell history. Use the <see cref="AppConfig.PasswordEnvVarName"/> environment 
         /// variable instead.
         /// </remarks>
-        [Option("password", HelpText = "The service account password. SECURITY WARNING: Use the SERVY_PASSWORD environment variable instead to avoid exposing credentials in OS process listings.")]
+        [Option("password", HelpText = "The service account password. SECURITY WARNING: Use the " + AppConfig.PasswordEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
         public string Password { get; set; }
 
         /// <summary>
