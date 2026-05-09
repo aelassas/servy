@@ -24,7 +24,7 @@ namespace Servy.Core.Helpers
         /// registry corruption, as Windows may attempt to map these names to hardware devices instead 
         /// of the service controller.
         /// </remarks>
-        public static HashSet<string> ReservedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        public static readonly IReadOnlyCollection<string> ReservedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "CON", "PRN", "AUX", "NUL",
             "COM0","COM1","COM2","COM3","COM4","COM5","COM6","COM7","COM8","COM9",

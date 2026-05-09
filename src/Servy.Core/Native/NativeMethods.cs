@@ -809,7 +809,7 @@ namespace Servy.Core.Native
             // Skip regex validation for known built-in identities to avoid false negatives 
             // on specialized formats.
             const string invalidMsg = "Username format is invalid. Expected .\\Username, DOMAIN\\Username, or NT AUTHORITY\\ServiceAccount.";
-            if (!isBuiltIn && !Regex.IsMatch(username, pattern, RegexOptions.IgnoreCase, AppConfig.InputRegexTimeout))
+            if (!Regex.IsMatch(username, pattern, RegexOptions.IgnoreCase, AppConfig.InputRegexTimeout))
             {
                 throw new ArgumentException(invalidMsg);
             }

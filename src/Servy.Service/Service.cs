@@ -1675,9 +1675,15 @@ namespace Servy.Service
         /// <param name="priority">The process priority to set.</param>
         public void SetProcessPriority(ProcessPriorityClass priority)
         {
+            if (_childProcess == null)
+            {
+                _logger?.Warn("SetProcessPriority called before child process was started; ignoring.");
+                return;
+            }
+
             try
             {
-                _childProcess!.PriorityClass = priority;
+                _childProcess.PriorityClass = priority;
                 _logger?.Info($"Set process priority to {_childProcess.PriorityClass}.");
             }
             catch (Exception ex)
