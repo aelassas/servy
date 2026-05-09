@@ -238,14 +238,29 @@ function Send-NotificationEmail {
       $errorMsg = "ServyFailureEmail: Failed to decrypt credentials. Ensure the task runs as the user who created smtp-cred.xml. Error: $($_.Exception.Message)"
       Write-FallbackError -Message $errorMsg -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
       return 'PermanentFailure'
+  } catch [System.Net.Mail.SmtpException] {
+      # SMTP-level error: classify by status code.
+      # 4xx (deferred) = transient; 5xx (rejected) = permanent.
+      $status = [int]$_.Exception.StatusCode
+      $isPermanent = $status -ge 500 -and $status -lt 600
+
+      $errorMsg = "ServyFailureEmail: SMTP $status sending to $to. Error: $($_.Exception.Message)"
+      Write-FallbackError -Message $errorMsg -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+
+      if ($isPermanent) { return 'PermanentFailure' }
+      return 'TransientFailure'
+  } catch [System.FormatException] {
+      # Malformed e-mail address slipped past validation — never going to succeed.
+      Write-FallbackError -Message "ServyFailureEmail: Permanent format failure: $($_.Exception.Message)" -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+      return 'PermanentFailure'
   } catch {
-      # Catch-all for transient network issues, SmtpExceptions (timeout, auth failure, bounce)
-      $errorMsg = "ServyFailureEmail: Transient failure sending notification to $to. Error: $($_.Exception.Message)"
+      # Network drops, timeouts, etc. — try again next run.
+      $errorMsg = "ServyFailureEmail: Transient failure to $to. Error: $($_.Exception.Message)"
       Write-FallbackError -Message $errorMsg -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
       return 'TransientFailure'
   } finally {
-    if ($null -ne $mailMessage) { $mailMessage.Dispose() }
-    if ($null -ne $smtp) { $smtp.Dispose() }
+      if ($null -ne $mailMessage) { $mailMessage.Dispose() }
+      if ($null -ne $smtp) { $smtp.Dispose() }
   }
 }
 

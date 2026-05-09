@@ -30,18 +30,6 @@ namespace Servy.Core.Logging
         public static readonly string LogsPath = Path.Combine(AppConfig.ProgramDataPath, "logs");
 
         /// <summary>
-        /// The maximum recursion depth for processing nested <see cref="Exception.InnerException"/> chains.
-        /// This prevents a <see cref="StackOverflowException"/> or infinite loops when formatting pathological exception structures.
-        /// </summary>
-        private const int MaxInnerExceptionDepth = 16;
-
-        /// <summary>
-        /// The maximum character length for a formatted exception string. 
-        /// Excessively large stack traces or messages are truncated to prevent application memory pressure and excessive disk usage in log files.
-        /// </summary>
-        private const int MaxFormattedExceptionLength = 16384; // 16 KB cap to prevent log bloat
-
-        /// <summary>
         /// The maximum number of fallback log writes allowed per process lifetime.
         /// Prevents unbounded growth of fallback log files if the primary logger continuously fails.
         /// </summary>
@@ -494,7 +482,7 @@ namespace Servy.Core.Logging
             var current = ex;
             int processedDepth = 0;
 
-            while (current != null && processedDepth < MaxInnerExceptionDepth)
+            while (current != null && processedDepth < AppConfig.LoggerMaxInnerExceptionDepth)
             {
                 if (processedDepth > 0)
                 {
@@ -516,9 +504,9 @@ namespace Servy.Core.Logging
                 }
 
                 // Hard size limit check to prevent OOM and disk pressure
-                if (sb.Length > MaxFormattedExceptionLength)
+                if (sb.Length > AppConfig.LoggerMaxFormattedExceptionLength)
                 {
-                    sb.Length = MaxFormattedExceptionLength;
+                    sb.Length = AppConfig.LoggerMaxFormattedExceptionLength;
                     sb.Append("... [truncated]");
                     processedDepth++; // Increment to ensure the bracket closer logic is consistent
                     break;

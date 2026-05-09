@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Servy.Core.Helpers
@@ -53,13 +54,16 @@ namespace Servy.Core.Helpers
         public List<string> GetRunningServyServices() => GetRunningServyUIServices().Concat(GetRunningServyCLIServices()).ToList();
 
         /// <inheritdoc />
-        public async Task StartServices(IEnumerable<string> services)
+        public async Task StartServices(IEnumerable<string> services, CancellationToken cancellationToken = default)
         {
             // Create a bucket to collect any errors that occur
             var exceptions = new List<Exception>();
 
             foreach (var serviceName in services)
             {
+                // Abort the batch operation immediately if cancellation is requested
+                cancellationToken.ThrowIfCancellationRequested();
+
                 try
                 {
                     using (var sc = new ServiceController(serviceName))
@@ -89,7 +93,7 @@ namespace Servy.Core.Helpers
                             }
                         }
 
-                        var service = await _serviceRepository.GetByNameAsync(serviceName);
+                        var service = await _serviceRepository.GetByNameAsync(serviceName, cancellationToken: cancellationToken);
                         if (service == null)
                         {
                             throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
@@ -104,8 +108,16 @@ namespace Servy.Core.Helpers
                         var waitTime = TimeSpan.FromSeconds(Math.Max(startTimeout, AppConfig.DefaultServiceStartTimeoutSeconds));
 
                         // This blocks until the service is Started or the waitTime expires
-                        await Task.Run(() => sc.WaitForStatus(ServiceControllerStatus.Running, waitTime));
+                        await Task.Run(() => sc.WaitForStatus(ServiceControllerStatus.Running, waitTime), cancellationToken);
                     }
+                }
+                catch (System.ServiceProcess.TimeoutException)
+                {
+                    // Log the warning and add to the collection instead of throwing immediately
+                    // This aligns severity and log shape with the StopServices behavior.
+                    var msg = $"Timed out waiting for service '{serviceName}' to start.";
+                    Logger.Warn(msg);
+                    exceptions.Add(new InvalidOperationException(msg));
                 }
                 catch (Exception ex)
                 {
@@ -124,17 +136,19 @@ namespace Servy.Core.Helpers
             {
                 throw new AggregateException("One or more services failed to start.", exceptions);
             }
-
         }
 
         /// <inheritdoc />
-        public async Task StopServices(IEnumerable<string> services)
+        public async Task StopServices(IEnumerable<string> services, CancellationToken cancellationToken = default)
         {
             // Create a bucket to collect any errors that occur during the batch operation
             var exceptions = new List<Exception>();
 
             foreach (var serviceName in services)
             {
+                // Abort the batch operation immediately if cancellation is requested
+                cancellationToken.ThrowIfCancellationRequested();
+
                 try
                 {
                     using (var sc = new ServiceController(serviceName))
@@ -152,7 +166,7 @@ namespace Servy.Core.Helpers
                             sc.Stop();
                         }
 
-                        var service = await _serviceRepository.GetByNameAsync(serviceName);
+                        var service = await _serviceRepository.GetByNameAsync(serviceName, cancellationToken: cancellationToken);
                         if (service == null)
                         {
                             throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
@@ -165,7 +179,7 @@ namespace Servy.Core.Helpers
                         var waitTime = TimeSpan.FromSeconds(timeout);
 
                         // This blocks until the service is Stopped or the waitTime expires
-                        await Task.Run(() => sc.WaitForStatus(ServiceControllerStatus.Stopped, waitTime));
+                        await Task.Run(() => sc.WaitForStatus(ServiceControllerStatus.Stopped, waitTime), cancellationToken);
                     }
                 }
                 catch (System.ServiceProcess.TimeoutException)
