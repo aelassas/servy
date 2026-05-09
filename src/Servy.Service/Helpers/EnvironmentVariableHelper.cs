@@ -219,6 +219,7 @@ namespace Servy.Service.Helpers
                     // Inline length guard to prevent memory exhaustion
                     if (expanded.Length > AppConfig.MaxEnvVarExpandedLength)
                     {
+                        Logger.Warn($"Inline expansion exceeded {AppConfig.MaxEnvVarExpandedLength} characters during token replacement. Truncating to prevent memory exhaustion. Source value started with: '{value.Substring(0, Math.Min(40, value.Length))}'");
                         return expanded.Substring(0, AppConfig.MaxEnvVarExpandedLength);
                     }
                 }

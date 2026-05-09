@@ -447,6 +447,12 @@ namespace Servy.Manager.Services
                             // Clipboard is likely locked by another process
                             return false;
                         }
+                        catch (ExternalException)
+                        {
+                            // Generic Win32 failure or clipboard access denied by the OS. 
+                            // We treat this as a non-fatal UI error to prevent crashing the Manager.
+                            return false;
+                        }
                     });
 
                     if (success) break;
@@ -661,7 +667,7 @@ namespace Servy.Manager.Services
         {
             try
             {
-                if (service == null) throw new ArgumentException("Service cannot be null.", nameof(service));
+                if (service == null) throw new ArgumentNullException(nameof(service));
 
                 var path = getFilePath();
                 if (string.IsNullOrEmpty(path)) return;
@@ -767,7 +773,7 @@ namespace Servy.Manager.Services
         /// <param name="service">The service to remove.</param>
         private void RemoveService(Service service)
         {
-            if (service == null) throw new ArgumentException("Service cannot be null.", nameof(service));
+            if (service == null) throw new ArgumentNullException(nameof(service));
             _removeServiceCallback?.Invoke(service.Name);
         }
 

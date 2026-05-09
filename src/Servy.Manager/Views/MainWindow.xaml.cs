@@ -366,7 +366,7 @@ namespace Servy.Manager.Views
         /// <param name="logsVm">
         /// The <see cref="LogsViewModel"/> instance for the logs tab, or <c>null</c> if unavailable.
         /// </param>
-        private async Task HandlePerfTabSelected(MainViewModel vm, PerformanceViewModel perfVm, ConsoleViewModel consoleVM, DependenciesViewModel dependenciesVM, LogsViewModel logsVm)
+        private Task HandlePerfTabSelected(MainViewModel vm, PerformanceViewModel perfVm, ConsoleViewModel consoleVM, DependenciesViewModel dependenciesVM, LogsViewModel logsVm)
         {
             // Cleanup all background tasks and stop timers in main tab
             vm.StopRefreshTimer();
@@ -382,6 +382,8 @@ namespace Servy.Manager.Views
 
             // Stop ongoing search in Logs tab
             logsVm?.Cleanup();
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -404,7 +406,7 @@ namespace Servy.Manager.Views
         /// <param name="logsVm">
         /// The <see cref="LogsViewModel"/> instance for the logs tab, or <c>null</c> if unavailable.
         /// </param>
-        private async Task HandleConsoleTabSelected(MainViewModel vm, PerformanceViewModel perfVm, ConsoleViewModel consoleVM, DependenciesViewModel dependenciesVM, LogsViewModel logsVm)
+        private Task HandleConsoleTabSelected(MainViewModel vm, PerformanceViewModel perfVm, ConsoleViewModel consoleVM, DependenciesViewModel dependenciesVM, LogsViewModel logsVm)
         {
             // Cleanup all background tasks and stop timers in main tab
             vm.StopRefreshTimer();
@@ -420,6 +422,8 @@ namespace Servy.Manager.Views
 
             // Stop ongoing search in Logs tab
             logsVm?.Cleanup();
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -442,7 +446,7 @@ namespace Servy.Manager.Views
         /// <param name="logsVm">
         /// The <see cref="LogsViewModel"/> instance for the logs tab, or <c>null</c> if unavailable.
         /// </param>
-        private async Task HandleDependenciesTabSelected(MainViewModel vm, PerformanceViewModel perfVm, ConsoleViewModel consoleVM, DependenciesViewModel dependenciesVM, LogsViewModel logsVm)
+        private Task HandleDependenciesTabSelected(MainViewModel vm, PerformanceViewModel perfVm, ConsoleViewModel consoleVM, DependenciesViewModel dependenciesVM, LogsViewModel logsVm)
         {
             // Cleanup all background tasks and stop timers in main tab
             vm.StopRefreshTimer();
@@ -458,6 +462,8 @@ namespace Servy.Manager.Views
 
             // Stop ongoing search in Logs tab
             logsVm?.Cleanup();
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
