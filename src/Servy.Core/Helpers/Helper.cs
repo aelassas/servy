@@ -601,18 +601,14 @@ namespace Servy.Core.Helpers
             if (serviceName != serviceName.Trim())
                 return (false, Strings.Msg_ServiceNameContainsTrailingWhitespace);
 
-            // 3. Service Name Length Check
-            if (serviceName.Length > AppConfig.MaxServiceNameLength)
-                return (false, Strings.Msg_ServiceNameTooLong);
-
-            // 4. Structural Integrity Check
+            // 3. Structural Integrity Check
             // We reject the input if it contains:
             //  a) Forbidden file system/registry characters (InvalidServiceChars).
             //  b) Control characters (e.g., \n, \t, \r) which can break console output or CLI parsers.
             if (serviceName.IndexOfAny(InvalidServiceChars) >= 0 || serviceName.Any(char.IsControl))
                 return (false, Strings.Msg_InvalidServiceName);
 
-            // 5. Reserved Windows device names (case-insensitive, with or without extension)
+            // 4. Reserved Windows device names (case-insensitive, with or without extension)
             var stem = serviceName;
             var dot = stem.IndexOf('.');
             if (dot >= 0) stem = stem.Substring(0, dot);
