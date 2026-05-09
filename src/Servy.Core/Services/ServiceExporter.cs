@@ -18,16 +18,32 @@ namespace Servy.Core.Services
         private static readonly XmlSerializer Serializer = new XmlSerializer(typeof(ServiceDto));
 
         /// <summary>
+        /// Centralized XML settings to guarantee identical encoding (UTF-8 without BOM) 
+        /// and formatting across both in-memory strings and file streams.
+        /// </summary>
+        private static readonly XmlWriterSettings StandardXmlSettings = new XmlWriterSettings
+        {
+            Indent = true,
+            Encoding = new UTF8Encoding(false), // UTF-8 without BOM
+            CloseOutput = false // Explicitly prevent closing the underlying atomic stream or writer
+        };
+
+        /// <summary>
         /// Serializes a <see cref="ServiceDto"/> instance to an XML string.
-        /// Uses a custom StringWriter to ensure the declaration specifies UTF-8.
+        /// Uses a custom StringWriter to ensure the declaration specifies UTF-8 without BOM.
         /// </summary>
         /// <param name="service">The service DTO to serialize.</param>
-        /// <returns>An XML-formatted string representing the service.</returns>
-        public static string ExportXml(ServiceDto service)
+        /// <returns>An XML-formatted string representing the service, or null if the service is null.</returns>
+        public static string? ExportXml(ServiceDto? service)
         {
-            var settings = new XmlWriterSettings { Indent = true, Encoding = Encoding.UTF8 };
+            if (service == null)
+            {
+                Logger.Warn("Attempted to export a null ServiceDto to an XML string. Operation aborted.");
+                return null;
+            }
+
             using (var stringWriter = new Utf8StringWriter())
-            using (var xmlWriter = XmlWriter.Create(stringWriter, settings))
+            using (var xmlWriter = XmlWriter.Create(stringWriter, StandardXmlSettings))
             {
                 Serializer.Serialize(xmlWriter, service);
                 return stringWriter.ToString();
@@ -43,22 +59,15 @@ namespace Servy.Core.Services
         /// <param name="filePath">The full path to the file to write.</param>
         public static void ExportXml(ServiceDto? service, string filePath)
         {
-            if(service == null)
+            if (service == null)
             {
                 Logger.Warn($"Attempted to export a null ServiceDto to XML at '{filePath}'. Operation aborted.");
                 return;
             }
 
-            var settings = new XmlWriterSettings
-            {
-                Indent = true,
-                Encoding = new UTF8Encoding(false), // UTF-8 without BOM
-                CloseOutput = false // Explicitly prevent the XmlWriter from closing the underlying atomic stream
-            };
-
             Helper.WriteFileAtomic(filePath, stream =>
             {
-                using (var writer = XmlWriter.Create(stream, settings))
+                using (var writer = XmlWriter.Create(stream, StandardXmlSettings))
                 {
                     Serializer.Serialize(writer, service);
                 }
@@ -68,8 +77,16 @@ namespace Servy.Core.Services
         /// <summary>
         /// Serializes a <see cref="ServiceDto"/> instance to a JSON string.
         /// </summary>
-        public static string ExportJson(ServiceDto service)
+        /// <param name="service">The service DTO to serialize.</param>
+        /// <returns>A JSON-formatted string representing the service, or null if the service is null.</returns>
+        public static string? ExportJson(ServiceDto? service)
         {
+            if (service == null)
+            {
+                Logger.Warn("Attempted to export a null ServiceDto to a JSON string. Operation aborted.");
+                return null;
+            }
+
             // ROBUSTNESS: Switched to centralized UntrustedDataSettings to resolve asymmetry with IJsonServiceSerializer.
             return JsonConvert.SerializeObject(service, Newtonsoft.Json.Formatting.Indented, JsonSecurity.UntrustedDataSettings);
         }
@@ -82,11 +99,12 @@ namespace Servy.Core.Services
         /// <param name="filePath">The full path to the file to write.</param>
         public static void ExportJson(ServiceDto? service, string filePath)
         {
-            if(service == null)
+            if (service == null)
             {
                 Logger.Warn($"Attempted to export a null ServiceDto to JSON at '{filePath}'. Operation aborted.");
                 return;
             }
+
             var jsonContent = ExportJson(service);
 
             Helper.WriteFileAtomic(filePath, stream =>

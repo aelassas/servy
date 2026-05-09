@@ -338,14 +338,14 @@ namespace Servy.Service
                 var sh = new Core.Helpers.ServiceHelper(_serviceRepository);
                 var resourceHelper = new ResourceHelper(sh, _processKiller);
 
-                if (!resourceHelper.CopyEmbeddedResourceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe"))
+                if (!resourceHelper.CopyEmbeddedResourceForceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe"))
                 {
                     _logger?.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.exe");
                 }
 
 #if DEBUG
                 // Copy debug symbols from embedded resources (only in debug builds)
-                if (!resourceHelper.CopyEmbeddedResourceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb"))
+                if (!resourceHelper.CopyEmbeddedResourceForceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb"))
                 {
                     _logger?.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.pdb");
                 }

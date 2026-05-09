@@ -22,7 +22,7 @@ namespace Servy.Manager.ViewModels
         #region Constants
 
         /// <summary>
-        /// The number of data points maintained in the performance history buffers.
+        /// The number of data points maintained in the performance history buffdouble stepX ers.
         /// A value of 101 ensures the graph line spans the entire horizontal width 
         /// of the UI control (0 to 100 on the X-axis) immediately upon initialization.
         /// </summary>
@@ -354,7 +354,7 @@ namespace Servy.Manager.ViewModels
             lineBuffer.Clear();
             fillBuffer.Clear();
 
-            double stepX = GraphWidth / 100.0;
+            double stepX = GraphWidth / (PerformanceHistoryCapacity - 1);
             int i = 0;
 
             foreach (var val in valueHistory)

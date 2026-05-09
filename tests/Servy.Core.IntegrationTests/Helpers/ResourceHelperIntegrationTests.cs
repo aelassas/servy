@@ -147,7 +147,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>())).Returns(memoryStream);
 
             // Act
-            bool result = _resourceHelper.CopyEmbeddedResourceSync(
+            bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
                 _mockAssembly.Object, "Servy.Resources", fileName, extension);
 
             // Assert
@@ -162,7 +162,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assembly nullAssembly = null!;
 
             // Act
-            bool result = _resourceHelper.CopyEmbeddedResourceSync(
+            bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
                 nullAssembly, "Servy.Resources", "crashapp", "exe");
 
             // Assert

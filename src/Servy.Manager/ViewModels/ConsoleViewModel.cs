@@ -1,4 +1,5 @@
-﻿using Servy.Core.Data;
+﻿using Newtonsoft.Json.Linq;
+using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Manager.Config;
@@ -11,7 +12,6 @@ using Servy.UI.Commands;
 using Servy.UI.Constants;
 using Servy.UI.Services;
 using System.ComponentModel;
-using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -95,12 +95,6 @@ namespace Servy.Manager.ViewModels
 
                 // Trigger debounced refresh instead of immediate refresh
                 _ = ApplyFilterWithDebounceAsync();
-
-                // If the search is cleared, trigger a scroll to the bottom
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    RequestScroll?.Invoke(true);
-                }
             }
         }
 
@@ -350,17 +344,22 @@ namespace Servy.Manager.ViewModels
                 // Wait for the user to stop typing
                 await Task.Delay(_appConfig.SearchDebounceDelayMs, token);
 
-                // Return to the UI thread to refresh the View safely
-                if (Application.Current?.Dispatcher is Dispatcher dispatcher)
+                // Return to the UI thread to refresh the View safely via the injected abstraction.
+                // The abstraction inherently protects against null dispatchers during shutdown.
+                await _uiDispatcher.InvokeAsync(() =>
                 {
-                    await dispatcher.InvokeAsync(() =>
+                    if (!token.IsCancellationRequested)
                     {
-                        if (!token.IsCancellationRequested)
+                        VisibleLines.Refresh();
+
+                        // If the search is cleared, trigger a scroll to the bottom
+                        // Request the scroll AFTER the refresh is processed by the CollectionView
+                        if (string.IsNullOrWhiteSpace(ConsoleSearchText))
                         {
-                            VisibleLines.Refresh();
+                            RequestScroll?.Invoke(true);
                         }
-                    }, DispatcherPriority.Background);
-                }
+                    }
+                }, DispatcherPriority.Background);
             }
             catch (OperationCanceledException)
             {
@@ -532,10 +531,9 @@ namespace Servy.Manager.ViewModels
             // Store the lambda in a local variable so we can safely register and track it
             NewLinesHandler handler = (lines) =>
             {
-                // Guard against null dispatcher during shutdown background ticks
-                if (!(Application.Current?.Dispatcher is Dispatcher dispatcher)) return;
-
-                dispatcher.InvokeAsync(() =>
+                // Rely on the injected IUiDispatcher instead of Application.Current.
+                // The abstraction provides internal defensiveness against null dispatchers during background ticks.
+                _uiDispatcher.InvokeAsync(() =>
                 {
                     // ONLY add the lines if this tailer still belongs to the ACTIVE session
                     if (sessionId != _currentSessionId) return;

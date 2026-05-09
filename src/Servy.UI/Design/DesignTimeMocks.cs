@@ -6,6 +6,7 @@ using Servy.Core.Helpers;
 using Servy.Core.Services;
 using Servy.UI.Services;
 using System.ServiceProcess;
+using System.Windows.Threading;
 
 namespace Servy.UI.Design
 {
@@ -294,6 +295,15 @@ namespace Servy.UI.Design
         /// <param name="action">The action to ignore during design-time.</param>
         /// <returns>A completed <see cref="Task"/>.</returns>
         public Task InvokeAsync(Action action) => Task.CompletedTask;
+
+        /// <summary>
+        /// No-op implementation of <see cref="IUiDispatcher.InvokeAsync(Action, DispatcherPriority)"/> 
+        /// that returns a completed task without executing the action.
+        /// </summary>
+        /// <param name="action">The action to ignore during design-time.</param>
+        /// <param name="priority">The priority that determines the order in which the action is executed relative to other pending operations in the dispatcher queue.</param>
+        /// <returns>A completed <see cref="Task"/>.</returns>
+        public Task InvokeAsync(Action action, DispatcherPriority priority) => Task.CompletedTask;
 
         /// <summary>
         /// No-op implementation of <see cref="IUiDispatcher.InvokeAsync{T}(Func{T})"/> 

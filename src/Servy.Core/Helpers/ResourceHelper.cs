@@ -63,7 +63,7 @@ namespace Servy.Core.Helpers
 
             try
             {
-                if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, out var targetPath, out var targetFileName, out var resourceName))
+                if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
                     return true;
 
                 currentResourceName = resourceName;
@@ -137,14 +137,25 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Copies an embedded resource from the assembly to disk.
+        /// Copies an embedded resource from the assembly to disk synchronously.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>DANGER:</b> Unlike its asynchronous counterpart, this method forcefully terminates 
+        /// any processes holding a lock on the target file WITHOUT performing a graceful service 
+        /// shutdown or restart. It completely circumvents the standard service lifecycle.
+        /// </para>
+        /// <para>
+        /// This should <b>only</b> be called by external bootstrapping utilities or during 
+        /// installation phases when it is guaranteed that no Servy services are actively running.
+        /// </para>
+        /// </remarks>
         /// <param name="assembly">The assembly containing the resource.</param>
         /// <param name="resourceNamespace">Namespace of the embedded resource.</param>
         /// <param name="fileName">The filename of the resource without extension.</param>
         /// <param name="extension">The file extension (e.g., "exe" or "dll").</param>
         /// <returns>True if the copy succeeded or was not needed, false if it failed.</returns>
-        public bool CopyEmbeddedResourceSync(
+        public bool CopyEmbeddedResourceForceSync(
             Assembly assembly,
             string resourceNamespace,
             string fileName,
@@ -152,8 +163,11 @@ namespace Servy.Core.Helpers
         {
             try
             {
-                if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, out var targetPath, out var targetFileName, out var resourceName))
+                if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
                     return true;
+
+                // Log a warning so operators auditing the logs know a brute-force termination might occur
+                Logger.Warn($"Executing synchronous force-copy for '{resourceName}'. Any processes locking this file will be killed without graceful shutdown.");
 
                 if (!TerminateBlockingProcesses(targetPath))
                     return false;
@@ -170,12 +184,12 @@ namespace Servy.Core.Helpers
                     Helper.WriteFileAtomic(targetPath, resourceStream.CopyTo);
                 }
 
-                Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
+                Logger.Info($"Successfully forcefully copied embedded resource '{resourceName}' to '{targetPath}'.");
                 return true;
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to copy embedded resource '{fileName}'.", ex);
+                Logger.Error($"Failed to forcefully copy embedded resource '{fileName}'.", ex);
                 return false;
             }
         }
@@ -259,10 +273,9 @@ namespace Servy.Core.Helpers
             string fileName,
             string extension,
             out string targetPath,
-            out string targetFileName,
             out string resourceName)
         {
-            targetFileName = fileName + "." + extension;
+            var targetFileName = fileName + "." + extension;
 
             // Use the explicit extraction root instead of assembly-relative logic
             targetPath = Path.Combine(BaseExtractionDirectory, targetFileName);

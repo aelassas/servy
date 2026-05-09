@@ -28,6 +28,17 @@ namespace Servy.UI.Services
         }
 
         /// <inheritdoc/>
+        public async Task InvokeAsync(Action action, DispatcherPriority priority)
+        {
+            if (action == null) throw new ArgumentNullException(nameof(action));
+
+            // Check if the dispatcher is available (e.g., during shutdown)
+            if (_dispatcher == null) return;
+
+            await _dispatcher.InvokeAsync(action, priority);
+        }
+
+        /// <inheritdoc/>
         public async Task<T> InvokeAsync<T>(Func<T> callback)
         {
             if (callback == null) throw new ArgumentNullException(nameof(callback));
