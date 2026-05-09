@@ -515,7 +515,7 @@ namespace Servy.Core.Domain
                 StdoutPath = StdoutPath,
                 StderrPath = StderrPath,
                 EnableSizeRotation = EnableSizeRotation,
-                RotationSizeInBytes = (long)Math.Max(1, RotationSize) * 1024L * 1024L,
+                RotationSizeInBytes = AppConfig.ToBytes(Math.Max(1, RotationSize)),
                 EnableHealthMonitoring = EnableHealthMonitoring,
                 UseLocalTimeForRotation = UseLocalTimeForRotation,
                 HeartbeatInterval = HeartbeatInterval,

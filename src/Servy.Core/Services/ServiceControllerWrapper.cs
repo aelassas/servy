@@ -31,6 +31,7 @@ namespace Servy.Core.Services
                 return _serviceName;
             }
         }
+
         /// <inheritdoc/>
         public ServiceControllerStatus Status
         {
@@ -86,7 +87,7 @@ namespace Servy.Core.Services
             var currentPath = new List<string>();
 
             // Tracks services that have already been fully resolved across ANY branch
-            var fullyExpanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var fullyExpanded = new Dictionary<string, ServiceDependencyNode>(StringComparer.OrdinalIgnoreCase);
 
             return BuildDependencyTree(_serviceName, currentPath, fullyExpanded);
         }
@@ -102,21 +103,26 @@ namespace Servy.Core.Services
         /// A list tracking the specific path from root to leaf to detect and prevent cyclic dependencies.
         /// </param>
         /// <param name="fullyExpanded">
-        /// A set of service names already fully expanded across all paths, used to prevent 
-        /// redundant SCM queries and O(n²) overhead in diamond dependency patterns.
+        /// A dictionary of service names to already fully expanded nodes, used to prevent 
+        /// redundant SCM queries and properly populate shared/diamond dependency paths.
         /// </param>
         /// <returns>
         /// A <see cref="ServiceDependencyNode"/> representing the service
         /// and its dependencies. If a cycle is detected, a placeholder
         /// node is returned.
         /// </returns>
-        private static ServiceDependencyNode BuildDependencyTree(string serviceName, List<string> currentPath, HashSet<string> fullyExpanded)
+        private static ServiceDependencyNode BuildDependencyTree(string serviceName, List<string> currentPath, Dictionary<string, ServiceDependencyNode> fullyExpanded)
         {
             // 1. Detect Cycle in the CURRENT branch
             var isCycle = currentPath.Contains(serviceName, StringComparer.OrdinalIgnoreCase);
 
             // 2. Check if we've already built the subtree for this service elsewhere
-            var isAlreadyExpanded = fullyExpanded.Contains(serviceName);
+            // We only return the cached subtree if this isn't a cycle in the current path.
+            if (!isCycle && fullyExpanded.TryGetValue(serviceName, out var cachedNode))
+            {
+                // Re-use the existing populated node reference for diamond dependencies.
+                return cachedNode;
+            }
 
             try
             {
@@ -131,8 +137,8 @@ namespace Servy.Core.Services
                         isCycle
                     );
 
-                    // Stop recursing if it's a cycle OR if we've already done the heavy lifting for this node
-                    if (isCycle || isAlreadyExpanded) return node;
+                    // Stop recursing if it's a cycle
+                    if (isCycle) return node;
 
                     // 3. Add to path before diving deeper
                     currentPath.Add(serviceName);
@@ -165,9 +171,12 @@ namespace Servy.Core.Services
                         {
                             // ROBUSTNESS: Dispose all remaining handles if the foreach exited early due to an exception.
                             // ServiceController.Dispose() is idempotent, making this safe for previously disposed items.
-                            foreach (var dep in deps)
+                            if (deps != null)
                             {
-                                try { dep.Dispose(); } catch { }
+                                foreach (var dep in deps)
+                                {
+                                    try { dep.Dispose(); } catch { }
+                                }
                             }
                         }
 
@@ -178,8 +187,8 @@ namespace Servy.Core.Services
                             node.Dependencies.Add(child);
                         }
 
-                        // Mark globally as fully expanded only after successful processing
-                        fullyExpanded.Add(serviceName);
+                        // Mark globally as fully expanded by caching the completed node
+                        fullyExpanded[serviceName] = node;
                     }
                     finally
                     {

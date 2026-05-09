@@ -460,6 +460,7 @@ namespace Servy.Service.Helpers
         private static string MaskSensitiveValue(string key, string value)
         {
             if (string.IsNullOrWhiteSpace(value)) return value;
+            if (string.IsNullOrWhiteSpace(key)) return value;
 
             bool isSensitive;
             try

@@ -2028,7 +2028,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             // Verify it hit the catch block and defaulted to Manual (as per the implementation logic)
-            Assert.Equal(ServiceStartType.Manual, result[0].StartupType);
+            Assert.Equal(ServiceStartType.Unknown, result[0].StartupType);
         }
 
         [Fact]

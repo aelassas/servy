@@ -32,7 +32,6 @@ if ((Test-Path $getErrorsScript) -and (Test-Path $writeLogScript)) {
 # Event ID Taxonomy (Refer to src/Servy.Core/Logging/EventIds.cs for updates)
 # 3000-3099: Core Errors | 3100-3199: Script Errors
 $EVENT_ID_ERROR = 3103
-$EVENT_ID_ERROR_DEP = 3104
 
 # -------------------------------
 # Helper: Fallback Logging

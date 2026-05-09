@@ -558,6 +558,24 @@ namespace Servy.Core.Config
         /// </remarks>
         public const int DefaultMaxBulkOperationParallelism = 8;
 
+        /// <summary>
+        /// The maximum number of log lines allowed to be loaded into Console tab at once during history loading.
+        /// Prevents "Out of Memory" exceptions when opening consoles for services with massive log files.
+        /// </summary>
+        public const int LogTailerMaxSafeLines = 10_000;
+
+        /// <summary>
+        /// Number of lines to accumulate in the background tailer before flushing a batch to the UI dispatcher.
+        /// Tuning this balances UI responsiveness against Garbage Collection (GC) pressure.
+        /// </summary>
+        public const int LogTailerBatchFlushThreshold = 500;
+
+        /// <summary>
+        /// The sleep duration in milliseconds before the tailing loop restarts after encountering 
+        /// an unexpected, unhandled exception.
+        /// </summary>
+        public const int LogTailerUnhandledErrorRecoveryDelayMs = 1000;
+
         #endregion
 
         #region Limits, Thresholds & Constraints
@@ -711,6 +729,30 @@ namespace Servy.Core.Config
         /// are stuck or asynchronous reads do not complete.
         /// </summary>
         public const int OutputDrainTimeoutMs = 5_000;
+
+        /// <summary>
+        /// The minimum duration to wait after a non-critical rotation failure (e.g., transient IO contention) 
+        /// before attempting another rotation.
+        /// </summary>
+        public const int LogRotationCooldownMs = 1000;
+
+        /// <summary>
+        /// The duration the rotation circuit breaker remains tripped after a critical failure. 
+        /// Defaults to 10 minutes to prevent log-storming and excessive CPU usage during persistent 
+        /// infrastructure issues (e.g., unmounted drives or roaming profile sync locks).
+        /// </summary>
+        public const int LogRotationCriticalFailureCooldownMs = 600000; // 10 Minutes
+
+        /// <summary>
+        /// The maximum number of synchronous retries for the low-level <c>File.Move</c> operation 
+        /// during a rotation event.
+        /// </summary>
+        public const int LogRotationMaxSyncRetries = 3;
+
+        /// <summary>
+        /// The delay between synchronous <c>File.Move</c> retry attempts.
+        /// </summary>
+        public const int LogRotationSyncRetryDelayMs = 50;
 
         #endregion
 

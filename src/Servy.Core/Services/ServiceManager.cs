@@ -299,7 +299,7 @@ namespace Servy.Core.Services
                         StdoutPath = options.StdoutPath,
                         StderrPath = options.StderrPath,
                         EnableSizeRotation = options.EnableSizeRotation,
-                        RotationSize = (int)(options.RotationSizeInBytes / (1024 * 1024)),
+                        RotationSize = (int)(options.RotationSizeInBytes / AppConfig.BytesInMegabyte),
                         EnableDateRotation = options.EnableDateRotation,
                         DateRotationType = (int)options.DateRotationType,
                         MaxRotations = options.MaxRotations,
@@ -1068,14 +1068,14 @@ namespace Servy.Core.Services
                 // We use Debug level to avoid bloating logs with expected protected service errors.
                 Logger.Debug($"Access denied or Win32 error reading StartType for '{service.ServiceName}'. Falling back to Manual.", ex);
 
-                return ServiceStartType.Manual;
+                return ServiceStartType.Unknown;
             }
             catch (Exception ex)
             {
                 // Catch-all for unexpected failures (e.g. ObjectDisposedException)
                 Logger.Error($"Unexpected error mapping startup type for '{service.ServiceName}'.", ex);
 
-                return ServiceStartType.Manual;
+                return ServiceStartType.Unknown;
             }
         }
 
