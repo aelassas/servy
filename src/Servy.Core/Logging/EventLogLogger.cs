@@ -12,10 +12,6 @@ namespace Servy.Core.Logging
     {
         #region Private Fields
 
-        // The Windows Event Log has a strict per-entry size limit (approx 31,839 chars).
-        // We truncate at 31,000 to leave a comfortable safety margin for Unicode bytes.
-        private const int EventLogMessageMaxChars = 31000;
-
         private EventLog? _eventLog;
 
         // Volatile backing fields ensure thread visibility when updated dynamically
@@ -209,8 +205,8 @@ namespace Servy.Core.Logging
         {
             try
             {
-                var safeMessage = message.Length > EventLogMessageMaxChars
-                    ? message.Substring(0, EventLogMessageMaxChars) + "...[truncated]"
+                var safeMessage = message.Length > AppConfig.EventLogMessageMaxChars
+                    ? message.Substring(0, AppConfig.EventLogMessageMaxChars) + "...[truncated]"
                     : message;
 
                 _eventLog?.WriteEntry(safeMessage, type, eventId);

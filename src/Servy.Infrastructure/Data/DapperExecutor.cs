@@ -33,7 +33,7 @@ namespace Servy.Infrastructure.Data
 
         /// <summary>
         /// Wraps a synchronous database action with a retry policy using exponential backoff and jitter.
-        /// Uses SpinWait and aggressive caps to prevent thread pool exhaustion.
+        /// Uses Uses Thread.Sleep with bounded retry budget to prevent thread pool exhaustion.
         /// </summary>
         private T? ExecuteWithRetry<T>(Func<T> action, string? sql = null)
         {

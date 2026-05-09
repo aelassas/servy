@@ -754,6 +754,34 @@ namespace Servy.Core.Config
         /// </summary>
         public const int LogRotationSyncRetryDelayMs = 50;
 
+        /// <summary>
+        /// The maximum recursion depth for processing nested <see cref="Exception.InnerException"/> chains.
+        /// This prevents a <see cref="StackOverflowException"/> or infinite loops when formatting pathological exception structures.
+        /// </summary>
+        public const int LoggerMaxInnerExceptionDepth = 16;
+
+        /// <summary>
+        /// The maximum character length for a formatted exception string. 
+        /// Excessively large stack traces or messages are truncated to prevent application memory pressure and excessive disk usage in log files.
+        /// </summary>
+        public const int LoggerMaxFormattedExceptionLength = 16384; // 16 KB cap to prevent log bloat
+
+        /// <summary>
+        /// The maximum character length permitted for a single Windows Event Log entry.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The underlying Windows Event Log API has a strict per-entry size limit of approximately 31,839 characters.
+        /// This constant enforces a truncation limit of 31,000 characters to provide a safety margin for multi-byte Unicode 
+        /// characters and header metadata, ensuring that log writes do not fail due to message bloat.
+        /// </para>
+        /// <para>
+        /// When a log message exceeds this limit, the <see cref="SafeWriteToEventLog"/> method will truncate the string 
+        /// and append a "[truncated]" suffix to maintain forensic visibility while ensuring the write operation succeeds.
+        /// </para>
+        /// </remarks>
+        public const int EventLogMessageMaxChars = 31_000;
+
         #endregion
 
         #region Minimum Constraints

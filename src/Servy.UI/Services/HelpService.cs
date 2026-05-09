@@ -128,11 +128,19 @@ namespace Servy.UI.Services
 
                             if (!IsHeadlessMode)
                             {
-                                using (Process.Start(psi))
+                                // Process.Start can return null if it hands off to an existing browser instance
+                                var process = Process.Start(psi);
+                                if (process != null)
                                 {
-                                    // The using block ensures the native process handle is closed 
-                                    // immediately after the process is launched, preventing a 
-                                    // handle leak in the calling application.
+                                    using (process)
+                                    {
+                                        // Native handle is closed immediately after launch 
+                                        // to prevent leaks in the Manager UI.
+                                    }
+                                }
+                                else
+                                {
+                                    Logger.Debug("Release link opened in an existing process.");
                                 }
                             }
                             else

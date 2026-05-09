@@ -28,13 +28,15 @@
         /// and waits until each service is fully running.
         /// </summary>
         /// <param name="services">A collection of service names to start.</param>
-        Task StartServices(IEnumerable<string> services);
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        Task StartServices(IEnumerable<string> services, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Stops the specified services if they are running or pending stop,
         /// and waits until each service is fully stopped.
         /// </summary>
         /// <param name="services">A collection of service names to stop.</param>
-        Task StopServices(IEnumerable<string> services);
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        Task StopServices(IEnumerable<string> services, CancellationToken cancellationToken = default);
     }
 }
