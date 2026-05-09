@@ -394,9 +394,6 @@ namespace Servy.Core.Security
 
                 Logger.Error(msg, ex);
 
-                // FIX 4 (#712): Set distinct Service Exit Code (13 = ERROR_INVALID_DATA)
-                Environment.ExitCode = 13;
-
                 throw new InvalidOperationException(msg, ex);
             }
             finally

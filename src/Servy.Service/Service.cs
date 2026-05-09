@@ -20,6 +20,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
@@ -1592,6 +1593,12 @@ namespace Servy.Service
         /// <param name="priority">The process priority to set.</param>
         public void SetProcessPriority(ProcessPriorityClass priority)
         {
+            if (_childProcess == null)
+            {
+                _logger?.Warn("SetProcessPriority called before child process was started; ignoring.");
+                return;
+            }
+
             try
             {
                 _childProcess.PriorityClass = priority;

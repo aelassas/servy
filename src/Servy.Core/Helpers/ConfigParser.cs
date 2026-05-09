@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Logging;
 using System;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 
 namespace Servy.Core.Helpers
@@ -34,7 +35,7 @@ namespace Servy.Core.Helpers
                 return defaultValue; // Normal empty state, no warning needed
             }
 
-            if (int.TryParse(rawValue, out var result))
+            if (int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result))
             {
                 return result;
             }
