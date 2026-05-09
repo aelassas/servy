@@ -47,6 +47,12 @@ namespace Servy.CLI.Commands
             {
                 return await task();
             }
+            catch (OperationCanceledException)
+            {
+                // Return a clean failure result for user-initiated cancellations.
+                // This avoids logging a full stack trace for an expected event.
+                return CommandResult.Fail(string.Format(Strings.Msg_CommandCancelled, commandName));
+            }
             catch (Exception ex)
             {
                 return HandleException(ex, commandName, action, suggestion);

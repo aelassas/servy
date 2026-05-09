@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Logging;
+using Servy.Core.Native;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -101,7 +102,7 @@ namespace Servy.Core.Helpers
             var byParent = new Dictionary<int, List<int>>();
             IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
-            if (snapshot == IntPtr.Zero || snapshot == new IntPtr(-1)) return (snapshotMap, byParent);
+            if (snapshot == IntPtr.Zero || snapshot == INVALID_HANDLE_VALUE) return (snapshotMap, byParent);
 
             try
             {

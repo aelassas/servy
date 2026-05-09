@@ -399,7 +399,7 @@ namespace Servy.Core.Logging
 
                     string levelName = (int)level >= 0 && (int)level < LevelStrings.Length
                         ? LevelStrings[(int)level]
-                        : level.ToString().ToUpper(); // Fallback for safety
+                        : level.ToString().ToUpperInvariant(); // Fallback for safety
 
                     // Sanitize message into a single-line representation for better scannability
                     var sanitizedMessage = message?

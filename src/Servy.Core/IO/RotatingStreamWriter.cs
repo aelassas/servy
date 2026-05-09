@@ -458,7 +458,7 @@ namespace Servy.Core.IO
                 _consecutiveDeletionFailures++;
                 Logger.Warn($"Failed to enumerate rotated log files in '{directory}': {ex.Message}. Consecutive failures: {_consecutiveDeletionFailures}");
                 if (_consecutiveDeletionFailures >= 10)
-                    Logger.Error($"Persistent failure to enforce log rotation limit for '{_file.Name}'. Disk space growth is no longer bounded.");
+                    Logger.Error($"Persistent failure to enforce log rotation limit for '{_file.FullName}' (consecutive failures: {_consecutiveDeletionFailures}, max retained: {_maxRotations}). Disk space growth is no longer bounded.");
                 return;
             }
 
@@ -521,7 +521,7 @@ namespace Servy.Core.IO
                     // If we hit a threshold (e.g., 10), we log a more severe error to alert operators.
                     if (_consecutiveDeletionFailures >= 10)
                     {
-                        Logger.Error($"Persistent failure to enforce log rotation limit for '{_file.Name}'. Disk space growth is no longer bounded.");
+                        Logger.Error($"Persistent failure to enforce log rotation limit for '{_file.FullName}' (consecutive failures: {_consecutiveDeletionFailures}, max retained: {_maxRotations}). Disk space growth is no longer bounded.");
                     }
                 }
             }
