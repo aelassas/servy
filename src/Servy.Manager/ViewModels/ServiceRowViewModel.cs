@@ -3,6 +3,7 @@ using Servy.Core.Logging;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
+using Servy.UI.Services;
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -17,6 +18,7 @@ namespace Servy.Manager.ViewModels
     public class ServiceRowViewModel : INotifyPropertyChanged, IDisposable
     {
         private readonly IServiceCommands _serviceCommands;
+        private readonly ICursorService _cursorService;
         private bool _isSelected;
         private bool _isChecked;
         private bool _disposed;
@@ -26,25 +28,46 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="service">The service model for this row.</param>
         /// <param name="serviceCommands">Service commands for row operations.</param>
-        public ServiceRowViewModel(Service service, IServiceCommands serviceCommands)
+        /// <param name="cursorService">Cursor service.</param>
+        public ServiceRowViewModel(Service service, IServiceCommands serviceCommands, ICursorService cursorService)
         {
-            Service = service;
-            _serviceCommands = serviceCommands;
+            Service = service ?? throw new ArgumentNullException(nameof(service));
+            _serviceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
+            _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
 
             // Subscribe to property changes in the Service model
             Service.PropertyChanged += Service_PropertyChanged;
 
-            StartCommand = new AsyncCommand(StartServiceAsync, CanExecuteServiceCommand, name: nameof(StartCommand));
-            StopCommand = new AsyncCommand(StopServiceAsync, CanExecuteServiceCommand, name: nameof(StopCommand));
-            RestartCommand = new AsyncCommand(RestartServiceAsync, CanExecuteServiceCommand, name: nameof(RestartCommand));
-            ConfigureCommand = new AsyncCommand(ConfigureServiceAsync, name: nameof(ConfigureCommand));
-            InstallCommand = new AsyncCommand(InstallServiceAsync, CanExecuteServiceCommand, name: nameof(InstallCommand));
-            UninstallCommand = new AsyncCommand(UninstallServiceAsync, CanExecuteServiceCommand, name: nameof(UninstallCommand));
-            RemoveCommand = new AsyncCommand(RemoveServiceAsync, CanExecuteServiceCommand, name: nameof(RemoveCommand));
-            ExportXmlCommand = new AsyncCommand(ExportServiceToXmlAsync, CanExecuteServiceCommand, name: nameof(ExportXmlCommand));
-            ExportJsonCommand = new AsyncCommand(ExportServiceToJsonAsync, CanExecuteServiceCommand, name: nameof(ExportJsonCommand));
+            StartCommand = new AsyncCommand(
+                StartServiceAsync,
+                _ => CanExecuteServiceCommand(_) && Service?.IsInstalled == true && Service?.Status != ServiceStatus.Running,
+                name: nameof(StartCommand));
+            StopCommand = new AsyncCommand(StopServiceAsync,
+                _ => CanExecuteServiceCommand(_) && Service?.IsInstalled == true && Service?.Status == ServiceStatus.Running,
+                name: nameof(StopCommand));
+            RestartCommand = new AsyncCommand(RestartServiceAsync,
+                _ => CanExecuteServiceCommand(_) && Service?.IsInstalled == true && Service?.Status == ServiceStatus.Running,
+                name: nameof(RestartCommand));
+            ConfigureCommand = new AsyncCommand(ConfigureServiceAsync,
+                name: nameof(ConfigureCommand));
+            InstallCommand = new AsyncCommand(InstallServiceAsync,
+                CanExecuteServiceCommand, // We don't check Service?.IsInstalled != true to allow re-installing an installed service to update its configuration in DB and SCM
+                name: nameof(InstallCommand));
+            UninstallCommand = new AsyncCommand(UninstallServiceAsync,
+                _ => CanExecuteServiceCommand(_) && Service?.IsInstalled == true,
+                name: nameof(UninstallCommand));
+            RemoveCommand = new AsyncCommand(RemoveServiceAsync,
+                CanExecuteServiceCommand,
+                name: nameof(RemoveCommand));
+            ExportXmlCommand = new AsyncCommand(ExportServiceToXmlAsync,
+                CanExecuteServiceCommand,
+                name: nameof(ExportXmlCommand));
+            ExportJsonCommand = new AsyncCommand(ExportServiceToJsonAsync,
+                CanExecuteServiceCommand, name: nameof(ExportJsonCommand));
 
-            CopyPidCommand = new AsyncCommand(CopyPidAsync, CanExecuteServiceCommand, name: nameof(CopyPidCommand));
+            CopyPidCommand = new AsyncCommand(CopyPidAsync,
+                CanExecuteServiceCommand,
+                name: nameof(CopyPidCommand));
         }
 
         #region Properties
@@ -255,11 +278,16 @@ namespace Servy.Manager.ViewModels
         {
             try
             {
+                _cursorService.SetWaitCursor();
                 await action();
             }
             catch (Exception ex)
             {
                 Logger.Error($"Service command failed for {Service?.Name}.", ex);
+            }
+            finally
+            {
+                _cursorService.ResetCursor();
             }
         }
 

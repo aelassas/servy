@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -109,6 +110,8 @@ namespace Servy.UI
         /// </remarks>
         public void TrimToSize(int maxItems)
         {
+            if (maxItems < 0) throw new ArgumentOutOfRangeException(nameof(maxItems), "maxItems must be non-negative.");
+
             int removeCount = Items.Count - maxItems;
             if (removeCount <= 0) return;
 

@@ -419,25 +419,19 @@ namespace Servy.Manager.ViewModels
         #region Public Methods - Control
 
         /// <summary>
-        /// Stops the performance monitoring timer and optionally clears existing graph data.
+        /// Handles the specific logic for clearing graph visualizations when 
+        /// monitoring is stopped with the clearView flag set to true.
         /// </summary>
-        /// <param name="clearView">True to reset the graph visualizations.</param>
-        public override void StopMonitoring(bool clearView = false)
+        protected override void OnViewCleared()
         {
-            base.StopMonitoring(clearView);
+            // Clear graph collections to reset the UI visualizations
+            CpuPointCollection = new PointCollection();
+            CpuFillPoints = new PointCollection();
+            RamPointCollection = new PointCollection();
+            RamFillPoints = new PointCollection();
 
-
-            // Clear points
-            if (clearView)
-            {
-                CpuPointCollection = new PointCollection();
-                CpuFillPoints = new PointCollection();
-                RamPointCollection = new PointCollection();
-                RamFillPoints = new PointCollection();
-
-                _cpuValues.Clear();
-                _ramValues.Clear();
-            }
+            _cpuValues.Clear();
+            _ramValues.Clear();
         }
 
         #endregion

@@ -535,7 +535,7 @@ namespace Servy.Manager.ViewModels
                 // Step 4: fetch data & build VMs off UI thread
                 sw = Stopwatch.StartNew();
                 var vms = await Task.Run(() =>
-                    results.Select(s => new ServiceRowViewModel(s, ServiceCommands)).ToList()
+                    results.Select(s => new ServiceRowViewModel(s, ServiceCommands, _cursorService)).ToList()
                 , token);
                 sw.Stop();
                 Debug.WriteLine($"Created {vms.Count} ServiceRowViewModels in {sw.ElapsedMilliseconds} ms");

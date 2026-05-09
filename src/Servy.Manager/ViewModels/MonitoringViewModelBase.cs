@@ -155,11 +155,26 @@ namespace Servy.Manager.ViewModels
         /// and atomically sets the monitoring flag to stopped.
         /// </summary>
         /// <param name="clearView">If <see langword="true"/>, clears the view model's data to reflect a stopped state.</param>
-        public virtual void StopMonitoring(bool clearView = false)
+        public void StopMonitoring(bool clearView = false)
         {
             _monitoringCts?.Cancel();
             Interlocked.Exchange(ref _isMonitoringFlag, 0);
             _timer?.Stop();
+
+            if (clearView)
+            {
+                OnViewCleared();
+            }
+        }
+
+        /// <summary>
+        /// Invoked by <see cref="StopMonitoring"/> when the view requires clearing. 
+        /// When overridden in a derived class, clears the view model's specific data collections to reflect a stopped state.
+        /// </summary>
+        protected virtual void OnViewCleared()
+        {
+            // Base implementation is empty. Derived view models (e.g., PerformanceViewModel)
+            // should override this to clear their observable collections or reset states.
         }
 
         /// <summary>

@@ -337,8 +337,8 @@ namespace Servy.Core.Helpers
             }
             catch (Exception ex)
             {
-                // Fail-safe: log locally or return empty list. 
-                // Do not let a query failure block deployment.
+                // Wrap any SCM/registry failure in a deterministic exception type so callers
+                // can distinguish a query failure from a successful empty result.
                 throw new InvalidOperationException(
                     $"Failed to query services for {wrapperExe} via SCM/Registry.", ex);
             }

@@ -171,8 +171,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var service1 = new Service { Name = "S1" };
                 var service2 = new Service { Name = "S2" };
 
-                var srvm1 = new ServiceRowViewModel(service1, _serviceCommandsMock.Object);
-                var srvm2 = new ServiceRowViewModel(service2, _serviceCommandsMock.Object);
+                var srvm1 = new ServiceRowViewModel(service1, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+                var srvm2 = new ServiceRowViewModel(service2, _serviceCommandsMock.Object, _cursorServiceMock.Object);
 
                 // Use reflection to access the private _services collection for setup
                 var servicesField = typeof(MainViewModel).GetField("_services", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
