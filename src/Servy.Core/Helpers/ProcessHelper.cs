@@ -383,8 +383,9 @@ namespace Servy.Core.Helpers
                     return Directory.Exists(expandedPath);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Debug($"ValidatePath: could not resolve '{path}': {ex.Message}");
                 return false; // ResolvePath failed (unexpanded vars or relative path)
             }
         }
