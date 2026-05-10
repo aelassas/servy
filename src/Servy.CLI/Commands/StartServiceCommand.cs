@@ -53,7 +53,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceNotFound);
                 }
 
-                var startupType = _serviceManager.GetServiceStartupType(opts.ServiceName);
+                var startupType = _serviceManager.GetServiceStartupType(opts.ServiceName, cancellationToken: cancellationToken);
                 if (startupType == ServiceStartType.Disabled)
                 {
                     return CommandResult.Fail(Strings.Msg_ServiceDisabledError);

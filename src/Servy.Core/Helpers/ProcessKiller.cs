@@ -102,7 +102,12 @@ namespace Servy.Core.Helpers
             var byParent = new Dictionary<int, List<int>>();
             IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
-            if (snapshot == IntPtr.Zero || snapshot == INVALID_HANDLE_VALUE) return (snapshotMap, byParent);
+            if (snapshot == IntPtr.Zero || snapshot == INVALID_HANDLE_VALUE)
+            {
+                int err = Marshal.GetLastWin32Error();
+                Logger.Warn($"CreateToolhelp32Snapshot failed (Win32 error {err}). Process kill walk will be a no-op for this invocation.");
+                return (snapshotMap, byParent);
+            }
 
             try
             {

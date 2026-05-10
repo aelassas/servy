@@ -1,6 +1,8 @@
-﻿using Servy.Core.Enums;
+﻿using Servy.Core.Config;
+using Servy.Core.Enums;
 using Servy.Core.IO;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -1107,52 +1109,47 @@ namespace Servy.Core.UnitTests.IO
             Directory.CreateDirectory(subDir);
             var filePath = Path.Combine(subDir, "breaker_test.log");
 
-            // 1. Initialize DirectoryInfo to access ACL extension methods
-            var dirInfo = new DirectoryInfo(subDir);
+            // 1. Fix the time so we know exactly what the rotated filename will be
+            var fixedTime = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+            Func<DateTime> mockTimeProvider = () => fixedTime;
 
             // Arrange: Use a small rotation size (10 bytes) so the next write triggers rotation.
-            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 10))
+            // We instantiate RotatingStreamWriter directly to inject our specific mock time provider.
+            using (var writer = new RotatingStreamWriter(
+                path: filePath,
+                enableSizeRotation: true,
+                rotationSizeInBytes: 10,
+                enableDateRotation: false,
+                dateRotationType: DateRotationType.None,
+                maxRotations: 0,
+                useLocalTimeForRotation: false,
+                timeProvider: mockTimeProvider))
             {
                 writer.Write("init");
                 writer.Flush();
 
-                // 2. Get the ACL from the DirectoryInfo instance
-                var acl = dirInfo.GetAccessControl();
+                // 2. EXHAUSTION SETUP: Create the exact rotated file and ALL possible collision suffixes.
+                // This forces GenerateUniqueFileName to throw an IOException. Because this specific
+                // method call is outside the IO/Unauthorized retry loop, its exception is caught by 
+                // the outer block and correctly treated as a permanent critical failure.
+                var timestamp = fixedTime.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
+                var baseRotatedPath = Path.Combine(subDir, $"breaker_test.{timestamp}.log");
 
-                var rule = new FileSystemAccessRule(
-                    Environment.UserName,
-                    FileSystemRights.Delete | FileSystemRights.Write,
-                    AccessControlType.Deny);
-
-                acl.AddAccessRule(rule);
-
-                try
+                File.WriteAllText(baseRotatedPath, "collision");
+                for (int i = 1; i <= AppConfig.RotatingStreamWriterMaxUniqueFilenameRetries; i++)
                 {
-                    // 3. Apply the rule back to the DirectoryInfo instance
-                    // This causes PerformPhysicalRotation -> File.Move to fail with UnauthorizedAccessException.
-                    dirInfo.SetAccessControl(acl);
-
-                    // 4. Act: This write pushes the file over the 10-byte limit.
-                    // This invokes the internal flow: CheckRotation -> PerformPhysicalRotation.
-                    writer.Write("trigger_rotation_failure");
-                    writer.Flush();
-                }
-                finally
-                {
-                    // 5. CLEANUP: Re-fetch and remove the rule via the instance
-                    var cleanupAcl = dirInfo.GetAccessControl();
-                    cleanupAcl.RemoveAccessRule(rule);
-                    dirInfo.SetAccessControl(cleanupAcl);
-
-                    if (File.Exists(filePath))
-                    {
-                        File.SetAttributes(filePath, FileAttributes.Normal);
-                    }
+                    var collisionPath = Path.Combine(subDir, $"breaker_test.{timestamp}.({i}).log");
+                    File.WriteAllText(collisionPath, "collision");
                 }
 
-                // 6. Assert: Verify the circuit breaker tripped due to the Exception.
+                // 3. Act: This write pushes the file over the 10-byte limit.
+                // GenerateUniqueFileName will exhaust all retries and throw, permanently tripping the breaker.
+                writer.Write("trigger_rotation_failure");
+                writer.Flush();
+
+                // 4. Assert: Verify the circuit breaker tripped due to the Exception.
                 bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled");
-                Assert.True(isDisabled, "Circuit breaker should trip on permanent failure (UnauthorizedAccessException).");
+                Assert.True(isDisabled, "Circuit breaker should trip on permanent failure (Unique filename exhaustion).");
             }
         }
 

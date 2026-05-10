@@ -72,7 +72,14 @@ namespace Servy.Core.Helpers
             var parentToChildren = new Dictionary<int, List<int>>();
 
             IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-            if (snapshot == INVALID_HANDLE_VALUE) return tree;
+
+            // Defensiveness: Handle both known failure returns for CreateToolhelp32Snapshot
+            if (snapshot == INVALID_HANDLE_VALUE || snapshot == IntPtr.Zero)
+            {
+                int err = Marshal.GetLastWin32Error();
+                Logger.Warn($"GetProcessTree: CreateToolhelp32Snapshot failed (Win32 {err}) — returning root PID only; descendant metrics will be missing.");
+                return tree;
+            }
 
             try
             {
