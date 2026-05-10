@@ -2,7 +2,6 @@
 using Servy.Core.Enums;
 using Servy.Core.IO;
 using Servy.Core.Security;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 
@@ -13,7 +12,6 @@ namespace Servy.Core.Logging
     /// Uses <see cref="RotatingStreamWriter"/> to ensure logs are rotated based on size 
     /// while preventing unbounded file growth.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public static class Logger
     {
         /// <summary>

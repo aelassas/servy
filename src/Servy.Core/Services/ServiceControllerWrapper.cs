@@ -1,11 +1,9 @@
 ﻿using Servy.Core.Logging;
-using System.Diagnostics.CodeAnalysis;
 using System.ServiceProcess;
 
 namespace Servy.Core.Services
 {
     /// <inheritdoc cref="IServiceControllerWrapper"/>
-    [ExcludeFromCodeCoverage]
     public class ServiceControllerWrapper : IServiceControllerWrapper
     {
         private readonly string _serviceName;
