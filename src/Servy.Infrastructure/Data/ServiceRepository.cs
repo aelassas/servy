@@ -337,6 +337,10 @@ namespace Servy.Infrastructure.Data
                 await UpsertAsync(service, updateRuntimeState: false, cancellationToken);
                 return true;
             }
+            catch (OperationCanceledException)
+            {
+                throw;   // let the caller observe cancellation
+            }
             catch (Exception ex)
             {
                 Logger.Error("Failed to import service from XML.", ex);
@@ -366,6 +370,10 @@ namespace Servy.Infrastructure.Data
 
                 await UpsertAsync(service, updateRuntimeState: false, cancellationToken);
                 return true;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;   // let the caller observe cancellation
             }
             catch (Exception ex)
             {

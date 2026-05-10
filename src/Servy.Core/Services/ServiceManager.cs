@@ -661,6 +661,11 @@ namespace Servy.Core.Services
                     return OperationResult.Success();
                 }
             }
+            catch (OperationCanceledException)
+            {
+                Logger.Info($"Start of '{serviceName}' was cancelled by the user.");
+                throw;
+            }
             catch (System.ServiceProcess.TimeoutException)
             {
                 // LOG AS WARN: The service might still be starting, just taking longer than the configured window.
@@ -722,6 +727,11 @@ namespace Servy.Core.Services
 
                     return OperationResult.Success();
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Info($"Stop of '{serviceName}' was cancelled by the user.");
+                throw;
             }
             catch (System.ServiceProcess.TimeoutException)
             {

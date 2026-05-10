@@ -552,7 +552,7 @@ namespace Servy.Core.IO
                     success = true;
                     break;
                 }
-                catch (IOException ex)
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
                 {
                     if (attempt < AppConfig.LogRotationMaxSyncRetries - 1)
                     {

@@ -246,12 +246,22 @@ namespace Servy.Service.ProcessManagement
                 // Synchronous mode: Wait for exit while pulsing the SCM
                 WaitForExitWithHeartbeat(process, options, logger);
 
+                // Bounded wait for exit (already passed in WaitForExitWithHeartbeat, but defensive)
                 // Ensure all async reads are finished before disposing streams.
                 // ROBUSTNESS: Use a bounded wait to prevent hanging the SCM thread indefinitely 
                 // if pipes are stuck or the child process fails to close its handles.
                 if (!process.UnderlyingProcess.WaitForExit(AppConfig.OutputDrainTimeoutMs))
                 {
                     logger.Warn($"Standard output/error streams for '{options.ExecutablePath}' failed to drain within {AppConfig.OutputDrainTimeoutMs}ms. Continuing to avoid stalling the service host.");
+                }
+                else
+                {
+                    // Parameterless wait actually drains OutputDataReceived/ErrorDataReceived
+                    try
+                    {
+                        Task.Run(process.UnderlyingProcess.WaitForExit).Wait(AppConfig.OutputDrainTimeoutMs);
+                    }
+                    catch { /* fail-silent */ }
                 }
 
                 returnedOwnership = true;

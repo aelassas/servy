@@ -56,7 +56,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceDisabledError);
                 }
 
-                var res = await _serviceManager.StartServiceAsync(opts.ServiceName);
+                var res = await _serviceManager.StartServiceAsync(opts.ServiceName, cancellationToken: cancellationToken);
                 if (res.IsSuccess)
                 {
                     // Use the localized resource and include the service name

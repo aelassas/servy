@@ -219,7 +219,7 @@ namespace Servy.CLI.Commands
              Func<string, (bool Valid, string? Error)> validator,
              Func<string, Task<bool>> repoImporter,
              Func<string, ServiceDto?> deserializer,
-            CancellationToken cancellationToken = default)
+             CancellationToken cancellationToken = default)
         {
             var content = await File.ReadAllTextAsync(fullPath, cancellationToken);
 
@@ -246,7 +246,7 @@ namespace Servy.CLI.Commands
                 return CommandResult.Ok(string.Format(Strings.Msg_ImportSuccessNoInstall, formatName));
 
             // 5. Installation
-            return await TryInstallServiceAsync(dto.Name, formatName);
+            return await TryInstallServiceAsync(dto.Name, formatName, cancellationToken);
         }
 
         /// <summary>
@@ -303,11 +303,12 @@ namespace Servy.CLI.Commands
         /// </summary>
         /// <param name="serviceName">The name of the service to install.</param>
         /// <param name="format">The configuration file format (XML or JSON).</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure of installation.</returns>
-        private async Task<CommandResult> TryInstallServiceAsync(string serviceName, string format)
+        private async Task<CommandResult> TryInstallServiceAsync(string serviceName, string format, CancellationToken cancellationToken = default)
         {
             // 1. Retrieve the service domain object
-            var serviceDto = await _serviceRepository.GetByNameAsync(serviceName);
+            var serviceDto = await _serviceRepository.GetByNameAsync(serviceName, cancellationToken: cancellationToken);
 
             if (serviceDto == null)
             {
@@ -318,7 +319,7 @@ namespace Servy.CLI.Commands
             var serviceDomain = ServiceMapper.ToDomain(_serviceManager, serviceDto);
 
             // 2. Attempt service installation
-            var res = await serviceDomain.Install(isCLI: true);
+            var res = await serviceDomain.Install(isCLI: true, cancellationToken: cancellationToken);
 
             if (res.IsSuccess)
             {
