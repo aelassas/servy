@@ -59,7 +59,7 @@ namespace Servy.Core.Config
             {
                 Logger.Initialize(
                     fileName: logFileName,
-                    initialLevel: logLevel,
+                    logLevel: logLevel,
                     logRotationSizeMB: logRotationSizeMB,
                     dateRotationType: dateRotationType,
                     useLocalTimeForRotation: useLocalTimeForRotation,
