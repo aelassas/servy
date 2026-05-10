@@ -50,7 +50,7 @@ $ErrorActionPreference = "Stop"
 # -----------------------------
 # Variables
 # -----------------------------
-$currentVersionRegex = '(?<![A-Za-z0-9])net\d+\.\d+(?![A-Za-z0-9])'
+$currentVersionRegex = '(?<![A-Za-z0-9])net\d+\.\d+(?![A-Za-z0-9.])'
 $netVersion = "net$Version"
 $baseDir = $PSScriptRoot
 
