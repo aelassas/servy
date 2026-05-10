@@ -299,8 +299,14 @@ namespace Servy.Manager.Utils
                     finalPos = fs.Length;
                     if (fs.Length == 0) return lines;
 
+                    // FIX: Pre-increment the line count if the file does not end with a trailing newline.
+                    // This ensures the backward scanner accurately bounds the "last N lines" even when
+                    // catching a live log file mid-flush.
+                    fs.Seek(-1, SeekOrigin.End);
+                    int lastByte = fs.ReadByte();
+                    int count = (lastByte == (byte)'\n') ? 0 : 1;
+
                     long pos = fs.Length;
-                    int count = 0;
                     byte[] buffer = new byte[4096];
 
                     // Backwards scan for newline characters to locate the start of the last 'maxLines'
