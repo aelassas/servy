@@ -231,22 +231,22 @@ namespace Servy.CLI.Commands
             if (!isValid)
                 return CommandResult.Fail(string.Format(Strings.Msg_ImportFormatInvalid, formatName, error));
 
-            // 2. Repository Import
+            // 2. Deserialization
+            var dto = deserializer(content);
+            if (dto == null)
+                return CommandResult.Fail(Strings.Msg_ImportDeserializationFailure);
+
+            // 3. Path validation
+            var pathValidation = ValidateServicePaths(dto);
+            if (!pathValidation.Success)
+                return pathValidation;
+
+            // 4. Repository Import (only after validation passes)
             if (!await repoImporter(content))
                 return CommandResult.Fail(string.Format(Strings.Msg_ImportRepoFailure, formatName));
 
             if (!opts.InstallService)
                 return CommandResult.Ok(string.Format(Strings.Msg_ImportSuccessNoInstall, formatName));
-
-            // 3. Deserialization
-            var dto = deserializer(content);
-            if (dto == null)
-                return CommandResult.Fail(Strings.Msg_ImportDeserializationFailure);
-
-            // 4. Exhaustive Path Validation
-            var pathValidation = ValidateServicePaths(dto);
-            if (!pathValidation.Success)
-                return pathValidation;
 
             // 5. Installation
             return await TryInstallServiceAsync(dto.Name, formatName);

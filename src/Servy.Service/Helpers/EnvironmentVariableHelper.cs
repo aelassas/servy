@@ -194,10 +194,11 @@ namespace Servy.Service.Helpers
 
             foreach (var kvp in variables)
             {
-                if (string.IsNullOrEmpty(kvp.Key) || string.IsNullOrEmpty(kvp.Value)) continue;
+                if (string.IsNullOrEmpty(kvp.Key)) continue;
+                if (kvp.Value == null) continue;   // null means "no override" - skip
 
                 string token = "%" + kvp.Key + "%";
-                string replacement = kvp.Value;
+                string replacement = kvp.Value; // empty string is a valid replacement
 
                 // SELF-REFERENCE GUARD:
                 // If the replacement value contains the token itself (e.g., PATH=%PATH%;bin), 

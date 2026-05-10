@@ -299,7 +299,9 @@ namespace Servy.Core.Logging
             {
                 if ((LogLevel)_currentLogLevel <= LogLevel.Debug)
                 {
-                    _parent.Debug(Format(message), ex);
+                    // Bypass _parent.Debug() to avoid the parent's level filter.
+                    var fullMessage = _parent.Format(Format(ex != null ? $"{message}\n{ex}" : message));
+                    Logger.Debug(fullMessage);
                 }
             }
 
@@ -308,17 +310,15 @@ namespace Servy.Core.Logging
             {
                 if ((LogLevel)_currentLogLevel <= LogLevel.Info)
                 {
-                    // Note: We check our own _isEventLogEnabled but the parent 
-                    // still performs the physical WriteEntry check.
+                    var fullMessage = _parent.Format(Format(ex != null ? $"{message}\n{ex}" : message));
+
                     if (_isEventLogEnabled)
                     {
-                        _parent.Info(Format(message), ex);
+                        // Call the parent's private helper directly, bypassing the parent's log-level check
+                        _parent.SafeWriteToEventLog(fullMessage, EventLogEntryType.Information, EventIds.Info);
                     }
-                    else
-                    {
-                        // Fallback to parent's file-only logging logic
-                        Logger.Info(_parent.Format(Format(message)));
-                    }
+
+                    Logger.Info(fullMessage);
                 }
             }
 
@@ -327,14 +327,14 @@ namespace Servy.Core.Logging
             {
                 if ((LogLevel)_currentLogLevel <= LogLevel.Warn)
                 {
+                    var fullMessage = _parent.Format(Format(ex != null ? $"{message}\n{ex}" : message));
+
                     if (_isEventLogEnabled)
                     {
-                        _parent.Warn(Format(message), ex);
+                        _parent.SafeWriteToEventLog(fullMessage, EventLogEntryType.Warning, EventIds.Warning);
                     }
-                    else
-                    {
-                        Logger.Warn(_parent.Format(Format(message)));
-                    }
+
+                    Logger.Warn(fullMessage);
                 }
             }
 
@@ -343,14 +343,14 @@ namespace Servy.Core.Logging
             {
                 if ((LogLevel)_currentLogLevel <= LogLevel.Error)
                 {
+                    var fullMessage = _parent.Format(Format(ex != null ? $"{message}\n{ex}" : message));
+
                     if (_isEventLogEnabled)
                     {
-                        _parent.Error(Format(message), ex);
+                        _parent.SafeWriteToEventLog(fullMessage, EventLogEntryType.Error, EventIds.Error);
                     }
-                    else
-                    {
-                        Logger.Error(_parent.Format(Format(message)));
-                    }
+
+                    Logger.Error(fullMessage);
                 }
             }
 
