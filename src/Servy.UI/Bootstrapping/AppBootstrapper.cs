@@ -392,7 +392,6 @@ namespace Servy.UI.Bootstrapping
                     _availabilityWatcher = new FileSystemWatcher(directory, fileName)
                     {
                         NotifyFilter = NotifyFilters.FileName | NotifyFilters.CreationTime | NotifyFilters.LastWrite,
-                        EnableRaisingEvents = true
                     };
 
                     _availabilityChangedHandler = (s, e) => UpdateAvailabilityState(targetAppPublishPath, updateAvailabilityCallback, app);
@@ -406,6 +405,8 @@ namespace Servy.UI.Bootstrapping
                     // Log unexpected buffer overflows, but we no longer rely on this for directory renames
                     _availabilityWatcher.Error += (s, e) =>
                         Logger.Warn($"FileSystemWatcher for {fileName} entered an error state.");
+
+                    _availabilityWatcher.EnableRaisingEvents = true;   // arm last
 
                     // Perform an initial check immediately upon attachment
                     UpdateAvailabilityState(targetAppPublishPath, updateAvailabilityCallback, app);
