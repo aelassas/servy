@@ -623,7 +623,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task ImportXmlConfigAsync(object parameter)
         {
-            await ServiceCommands.ImportXmlConfigAsync();
+            await ServiceCommands.ImportXmlConfigAsync(cancellationToken: _cts?.Token ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -631,7 +631,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task ImportJsonConfigAsync(object parameter)
         {
-            await ServiceCommands.ImportJsonConfigAsync();
+            await ServiceCommands.ImportJsonConfigAsync(cancellationToken: _cts?.Token ?? CancellationToken.None);
         }
 
         /// <summary>

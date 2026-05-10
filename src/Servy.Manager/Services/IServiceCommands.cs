@@ -94,12 +94,14 @@ namespace Servy.Manager.Services
         /// <summary>
         /// Imports service configurations from an XML file.
         /// </summary>
-        Task ImportXmlConfigAsync();
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        Task ImportXmlConfigAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Imports service configurations from a JSON file.
         /// </summary>
-        Task ImportJsonConfigAsync();
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        Task ImportJsonConfigAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Copies the PID of the specified service to the clipboard.

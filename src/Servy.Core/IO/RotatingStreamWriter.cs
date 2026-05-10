@@ -41,6 +41,7 @@ namespace Servy.Core.IO
         private readonly DateRotationType _dateRotationType;
         private readonly bool _useLocalTimeForRotation;
         private DateTime _lastRotationDate;
+        private DateTime _pendingRotationDate; // Tracks the uncommitted date of an in-flight rotation
         private readonly int _maxRotations; // 0 = unlimited
         private int _consecutiveDeletionFailures;
         private readonly object _lock = new object();
@@ -362,7 +363,9 @@ namespace Servy.Core.IO
             // Set the short IO cooldown immediately inside the lock so subsequent concurrent writes 
             // don't try to rotate the detached file while the physical move is pending.
             _rotationCooldownUntil = now.AddMilliseconds(AppConfig.LogRotationCooldownMs);
-            _lastRotationDate = now;
+
+            // Store the rotation date as pending. It will only be committed upon physical success.
+            _pendingRotationDate = now;
 
             return (_file.FullName, rotatedPath);
         }
@@ -582,6 +585,9 @@ namespace Servy.Core.IO
                     _rotationCooldownUntil = DateTime.MinValue;
                     _rotationDisabled = false;
                     _disabledCooldownUntil = DateTime.MinValue;
+
+                    // COMMIT the pending rotation date now that the file move actually succeeded
+                    _lastRotationDate = _pendingRotationDate;
                 }
 
                 // File management processes are safe to run unlocked

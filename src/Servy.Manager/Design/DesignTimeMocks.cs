@@ -59,9 +59,9 @@ namespace Servy.Manager.Design
 
         public Task ExportServiceToJsonAsync(Service service) => Task.CompletedTask;
 
-        public Task ImportXmlConfigAsync() => Task.CompletedTask;
+        public Task ImportXmlConfigAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-        public Task ImportJsonConfigAsync() => Task.CompletedTask;
+        public Task ImportJsonConfigAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
         public Task CopyPid(Service service) => Task.CompletedTask;
 

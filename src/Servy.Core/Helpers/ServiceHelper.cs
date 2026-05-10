@@ -5,6 +5,7 @@ using Servy.Core.Logging;
 using Servy.Core.Native;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -108,7 +109,16 @@ namespace Servy.Core.Helpers
                         var waitTime = TimeSpan.FromSeconds(Math.Max(startTimeout, AppConfig.DefaultServiceStartTimeoutSeconds));
 
                         // This blocks until the service is Started or the waitTime expires
-                        await Task.Run(() => sc.WaitForStatus(ServiceControllerStatus.Running, waitTime), cancellationToken);
+                        var stopwatch = Stopwatch.StartNew();
+                        while (sc.Status != ServiceControllerStatus.Running)
+                        {
+                            if (stopwatch.Elapsed > waitTime)
+                                throw new System.ServiceProcess.TimeoutException();
+
+                            cancellationToken.ThrowIfCancellationRequested();
+                            await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
+                            sc.Refresh();
+                        }
                     }
                 }
                 catch (System.ServiceProcess.TimeoutException)
@@ -179,7 +189,16 @@ namespace Servy.Core.Helpers
                         var waitTime = TimeSpan.FromSeconds(timeout);
 
                         // This blocks until the service is Stopped or the waitTime expires
-                        await Task.Run(() => sc.WaitForStatus(ServiceControllerStatus.Stopped, waitTime), cancellationToken);
+                        var stopwatch = Stopwatch.StartNew();
+                        while (sc.Status != ServiceControllerStatus.Stopped)
+                        {
+                            if (stopwatch.Elapsed > waitTime)
+                                throw new System.ServiceProcess.TimeoutException();
+
+                            cancellationToken.ThrowIfCancellationRequested();
+                            await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
+                            sc.Refresh();
+                        }
                     }
                 }
                 catch (System.ServiceProcess.TimeoutException)

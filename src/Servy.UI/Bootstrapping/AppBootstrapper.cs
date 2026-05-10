@@ -123,12 +123,24 @@ namespace Servy.UI.Bootstrapping
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {
                 Exception ex = args.ExceptionObject as Exception;
-                Logger.Error("FATAL: AppDomain Unhandled Exception. Process is terminating.", ex);
-                MessageBox.Show(
-                    Strings.Msg_FatalError_Body,
-                    Strings.Msg_FatalError_Title,
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                Logger.Error("FATAL: AppDomain Unhandled Exception.Process is terminating.", ex);
+
+                var dispatcher = Application.Current?.Dispatcher;
+                if (dispatcher != null && !dispatcher.HasShutdownStarted)
+                {
+                    try
+                    {
+                        dispatcher.Invoke(() => MessageBox.Show(
+                            Strings.Msg_FatalError_Body,
+                            Strings.Msg_FatalError_Title,
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error));
+                        return;
+                    }
+                    catch { /* fall through */ }
+                }
+                // No safe UI surface available; the Logger.Error line above is the user's
+                // only signal. Avoid MessageBox.Show on a non-UI thread.
             };
 
             // 4. UI Thread exceptions (Dispatcher)

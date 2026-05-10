@@ -115,6 +115,10 @@ namespace Servy.Service.ProcessManagement
             StreamWriter stdoutWriter = null;
             StreamWriter stderrWriter = null;
 
+            // Failure latches to prevent log-spam if file access is denied
+            bool stdoutWriterFailed = false;
+            bool stderrWriterFailed = false;
+
             string normalizedOut = Helper.NormalizePath(options.StdOutPath);
             string normalizedErr = Helper.NormalizePath(options.StdErrPath);
 
@@ -150,10 +154,14 @@ namespace Servy.Service.ProcessManagement
                 {
                     process.UnderlyingProcess.OutputDataReceived += (_, e) =>
                     {
-                        if (e.Data != null)
+                        if (e.Data == null) return;
+
+                        try
                         {
                             lock (stdoutLock)
                             {
+                                if (stdoutWriterFailed) return;
+
                                 if (stdoutWriter == null)
                                 {
                                     Helper.EnsureDirectoryExists(outPath);
@@ -163,14 +171,21 @@ namespace Servy.Service.ProcessManagement
                                         stdoutFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
                                         stdoutWriter = new StreamWriter(stdoutFs, encoding) { AutoFlush = true };
                                     }
-                                    catch
+                                    catch (Exception ex)
                                     {
                                         stdoutFs?.Dispose();
-                                        throw;
+                                        stdoutWriterFailed = true;
+                                        logger.Error($"Disabling stdout capture for '{options.ExecutablePath}' after open failure: {ex.Message}", ex);
+                                        return;
                                     }
                                 }
                                 stdoutWriter.WriteLine(e.Data);
                             }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log via the supervisor's logger, never propagate out of the handler
+                            try { logger.Warn($"Failed to write stdout line for '{options.ExecutablePath}': {ex.Message}"); } catch { /* Fail-silent */ }
                         }
                     };
                 }
@@ -180,13 +195,17 @@ namespace Servy.Service.ProcessManagement
                 {
                     process.UnderlyingProcess.ErrorDataReceived += (_, e) =>
                     {
-                        if (e.Data != null)
+                        if (e.Data == null) return;
+
+                        try
                         {
                             lock (stderrLock)
                             {
                                 if (pathsMatch && !string.IsNullOrWhiteSpace(outPath))
                                 {
-                                    // Multiplexing into the same file: initialize stdoutWriter if it hasn't been yet
+                                    // Multiplexing into the same file
+                                    if (stdoutWriterFailed) return;
+
                                     if (stdoutWriter == null)
                                     {
                                         Helper.EnsureDirectoryExists(outPath);
@@ -196,10 +215,12 @@ namespace Servy.Service.ProcessManagement
                                             sharedFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
                                             stdoutWriter = new StreamWriter(sharedFs, encoding) { AutoFlush = true };
                                         }
-                                        catch
+                                        catch (Exception ex)
                                         {
                                             sharedFs?.Dispose();
-                                            throw;
+                                            stdoutWriterFailed = true;
+                                            logger.Error($"Disabling multiplexed stdout/stderr capture for '{options.ExecutablePath}' after open failure: {ex.Message}", ex);
+                                            return;
                                         }
                                     }
                                     stdoutWriter.WriteLine(e.Data);
@@ -207,6 +228,8 @@ namespace Servy.Service.ProcessManagement
                                 else
                                 {
                                     // Independent file
+                                    if (stderrWriterFailed) return;
+
                                     if (stderrWriter == null)
                                     {
                                         Helper.EnsureDirectoryExists(errPath);
@@ -216,15 +239,22 @@ namespace Servy.Service.ProcessManagement
                                             stderrFs = new FileStream(errPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
                                             stderrWriter = new StreamWriter(stderrFs, encoding) { AutoFlush = true };
                                         }
-                                        catch
+                                        catch (Exception ex)
                                         {
                                             stderrFs?.Dispose();
-                                            throw;
+                                            stderrWriterFailed = true;
+                                            logger.Error($"Disabling stderr capture for '{options.ExecutablePath}' after open failure: {ex.Message}", ex);
+                                            return;
                                         }
                                     }
                                     stderrWriter.WriteLine(e.Data);
                                 }
                             }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log via the supervisor's logger, never propagate out of the handler
+                            try { logger.Warn($"Failed to write stderr line for '{options.ExecutablePath}': {ex.Message}"); } catch { /* Fail-silent */ }
                         }
                     };
                 }

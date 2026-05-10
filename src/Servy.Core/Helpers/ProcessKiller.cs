@@ -247,7 +247,7 @@ namespace Servy.Core.Helpers
                     {
                         foreach (var proc in targetProcesses)
                         {
-                            KillParentProcesses(proc.Id, proc.StartTime, protectedPids, completeSnapshot);
+                            KillParentProcesses(proc.Id, proc.StartTime, protectedPids, completeSnapshot, new HashSet<int>());
                         }
                     }
 
@@ -303,7 +303,7 @@ namespace Servy.Core.Helpers
                     using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
 
                     // ROBUSTNESS: Perform the parent kill walk BEFORE the tree kill walk.
-                    if (killParents) KillParentProcesses(target.Id, target.StartTime, protectedPids, completeSnapshot);
+                    if (killParents) KillParentProcesses(target.Id, target.StartTime, protectedPids, completeSnapshot, new HashSet<int>());
                     KillProcessTree(target, selfPid, protectedPids, byParent);
 
                     return true;
@@ -422,8 +422,16 @@ namespace Servy.Core.Helpers
         /// <param name="childStartTime">The creation time of the child process for identity verification.</param>
         /// <param name="protectedPids">A set of protected numerical identifiers corresponding to the executing platform infrastructure.</param>
         /// <param name="snapshot">A pre-computed native map establishing hierarchical relationships and names across the system.</param>
-        private void KillParentProcesses(int childPid, DateTime childStartTime, HashSet<int> protectedPids, Dictionary<int, ProcessInfoNode> snapshot)
+        /// <param name="visited">A tracking set of PIDs already evaluated in this walk to prevent StackOverflow exceptions from PID-reuse cycles.</param>
+        private void KillParentProcesses(int childPid, DateTime childStartTime, HashSet<int> protectedPids, Dictionary<int, ProcessInfoNode> snapshot, HashSet<int> visited)
         {
+            // CYCLE GUARD: Prevent infinite recursion if Windows PID reuse creates a cycle in the snapshot.
+            if (!visited.Add(childPid))
+            {
+                Logger.Debug($"KillParentProcesses: cycle detected at PID {childPid}. Aborting upward walk.");
+                return;
+            }
+
             if (!snapshot.TryGetValue(childPid, out var node)) return;
 
             int parentId = node.ParentId;
@@ -450,8 +458,8 @@ namespace Servy.Core.Helpers
             }
             catch (ArgumentException) { /* parent already dead - abort walk */ return; }
 
-            // Move up further first via post-order traversal - pass real anchor
-            KillParentProcesses(parentId, parentStartTime, protectedPids, snapshot);
+            // Move up further first via post-order traversal - pass real anchor and the visited set
+            KillParentProcesses(parentId, parentStartTime, protectedPids, snapshot, visited);
 
             try
             {
