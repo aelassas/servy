@@ -30,7 +30,7 @@ namespace Servy.Core.Services
         private readonly IServiceControllerProvider _serviceControllerProvider;
         private readonly IWindowsServiceApi _windowsServiceApi;
         private readonly IWin32ErrorProvider _win32ErrorProvider;
-        private readonly IServiceRepository? _serviceRepository;
+        private readonly IServiceRepository _serviceRepository;
 
         #endregion
 
@@ -49,7 +49,7 @@ namespace Servy.Core.Services
             IServiceControllerProvider serviceControllerProvider,
             IWindowsServiceApi windowsServiceApi,
             IWin32ErrorProvider win32ErrorProvider,
-            IServiceRepository? serviceRepository
+            IServiceRepository serviceRepository
             )
         {
             _controllerFactory = controllerFactory ?? throw new ArgumentNullException(nameof(controllerFactory));

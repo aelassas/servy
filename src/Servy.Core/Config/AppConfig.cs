@@ -782,6 +782,89 @@ namespace Servy.Core.Config
         /// </remarks>
         public const int EventLogMessageMaxChars = 31_000;
 
+        /// <summary>
+        /// Specifies the default duration in milliseconds to wait for the operating system 
+        /// to finalize the cleanup of a process and its descendant tree after a forced kill is issued.
+        /// </summary>
+        /// <remarks>
+        /// This delay helps prevent race conditions where subsequent file system operations 
+        /// (like re-extracting resources) fail because the OS hasn't fully released file 
+        /// handles held by the terminated process tree.
+        /// </remarks>
+        public const int DefaultDescendantPostKillWaitMs = 3000;
+
+        /// <summary>
+        /// Specifies the delay in milliseconds to wait after registering the PRESHUTDOWN notification 
+        /// with the Service Control Manager (SCM) to ensure the registration is fully processed.
+        /// </summary>
+        public const int PreShutdownRegistrationDelayMs = 500;
+
+        /// <summary>
+        /// Specifies the maximum duration in milliseconds to wait for the internal logger 
+        /// to flush its final buffers to disk during service shutdown.
+        /// </summary>
+        public const int LoggerFlushTimeoutMs = 1500;
+
+        /// <summary>
+        /// Specifies the minimum safety buffer in seconds used to determine if a service 
+        /// has reached a stable "Running" state after a recovery reset.
+        /// </summary>
+        public const int ConditionalResetStabilityBufferSeconds = 30;
+
+        /// <summary>
+        /// Specifies the fixed delay in milliseconds applied when scheduling service recovery 
+        /// actions to prevent rapid restart loops.
+        /// </summary>
+        public const int RecoverySchedulingDelay = 5000;
+
+        /// <summary>
+        /// Specifies the absolute maximum duration in milliseconds added to the cumulative 
+        /// process-tree timeout to protect the SCM from kernel-level hangs during termination.
+        /// </summary>
+        public const int SafeKillProcessSafetyBufferMs = 10_000;
+
+        /// <summary>
+        /// Specifies the interval in milliseconds between pulses during a safe-kill operation 
+        /// where the service requests additional "Wait Hint" time from the SCM.
+        /// </summary>
+        public const int SafeKillProcessPulseIntervalMs = 5_000;
+
+        /// <summary>
+        /// Specifies the polling interval in milliseconds when asynchronously waiting for 
+        /// a process to exit or reach a timeout threshold.
+        /// </summary>
+        public const int WaitForExitOrTimeoutDelayMs = 500;
+
+        /// <summary>
+        /// Specifies the thread yield duration in milliseconds required for the operating system 
+        /// to finalize console attachment or control-handler registration.
+        /// </summary>
+        public const int ConsoleAttachYieldMs = 50;
+
+        /// <summary>
+        /// Specifies the polling interval in milliseconds used by the service restarter 
+        /// when waiting for a service to transition out of a pending or transitional state.
+        /// </summary>
+        public const int ServiceRestarterPollIntervalMs = 500;
+
+        /// <summary>
+        /// Specifies the polling interval in milliseconds used to check if a managed process 
+        /// has successfully exited during a teardown sequence.
+        /// </summary>
+        public const int ProcessExitPollIntervalMs = 500;
+
+        /// <summary>
+        /// Specifies the refresh interval in milliseconds for the CLI progress spinner 
+        /// to maintain a smooth visual frame rate during long-running commands.
+        /// </summary>
+        public const int ConsoleSpinnerDelayMs = 100;
+
+        /// <summary>
+        /// Specifies the retry delay in milliseconds applied when a clipboard operation fails 
+        /// due to a temporary COM locking exception.
+        /// </summary>
+        public const int ClipboardComRetryDelayMs = 50;
+
         #endregion
 
         #region Minimum Constraints

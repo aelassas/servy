@@ -363,7 +363,7 @@ namespace Servy.Service
                 // (like 13 from ProtectedKeyProvider), preserve it. Otherwise, set a generic service failure code.
                 if (Environment.ExitCode == 0)
                 {
-                    Environment.ExitCode = 1066; // ERROR_EXCEPTION_IN_SERVICE
+                    Environment.ExitCode = 1066; // ERROR_SERVICE_SPECIFIC_ERROR
                 }
 
                 // By explicitly calling Environment.Exit here, we guarantee the SCM registers 
@@ -417,7 +417,7 @@ namespace Servy.Service
                 // Log and Validate using the new scoped _logger
                 if (!_serviceHelper.ValidateAndLog(options, _logger, _processHelper, fullArgs))
                 {
-                    ExitCode = 1066;
+                    ExitCode = 1066; // ERROR_SERVICE_SPECIFIC_ERROR
                     Stop();
                     return;
                 }
@@ -505,7 +505,7 @@ namespace Servy.Service
                         try
                         {
                             // 1. Wait, but respect cancellation if Stop() races us
-                            await Task.Delay(500, token);
+                            await Task.Delay(AppConfig.PreShutdownRegistrationDelayMs, token);
 
                             // 2. Validate state before touching the native handle
                             if (token.IsCancellationRequested || _isTearingDown || _disposed || _serviceHandle == nint.Zero)
@@ -551,7 +551,7 @@ namespace Servy.Service
             catch (Exception ex)
             {
                 _logger?.Error("Exception in OnStart.", ex);
-                if (ExitCode == 0) ExitCode = 1066;
+                if (ExitCode == 0) ExitCode = 1066; // ERROR_SERVICE_SPECIFIC_ERROR
                 Stop();
             }
         }
@@ -745,8 +745,8 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Warn($"Failed to calculate system boot time: {ex.Message}");
-                    systemBootTimeUtc = DateTime.UtcNow;
+                    _logger?.Warn($"Could not derive boot time: {ex.Message}. Treating session as new boot.");
+                    systemBootTimeUtc = DateTime.MaxValue; // forces lastWriteUtc < systemBootTimeUtc => maintain counter
                 }
 
                 // 2. Session Persistence Check
@@ -767,7 +767,7 @@ namespace Servy.Service
                 int detectionWindowSeconds = product > int.MaxValue ? int.MaxValue : (int)product;
 
                 // Base threshold: detection window + buffer (min 30s or the detection window itself)
-                int bufferSeconds = Math.Max(detectionWindowSeconds, 30);
+                int bufferSeconds = Math.Max(detectionWindowSeconds, AppConfig.ConditionalResetStabilityBufferSeconds);
                 int resetThresholdSeconds = detectionWindowSeconds + bufferSeconds;
 
                 // Cap at 1 hour, but ensure we always wait at least one full detection cycle
@@ -1597,7 +1597,7 @@ namespace Servy.Service
                 else if (needsRecovery)
                 {
                     // Calculate delay: Heartbeat interval minus a 5s buffer, minimum 5s.
-                    var delayMs = Math.Max(ClampTimeout(_options!.HeartbeatInterval) - 5000, 5000);
+                    var delayMs = Math.Max(ClampTimeout(_options!.HeartbeatInterval) - AppConfig.RecoverySchedulingDelay, AppConfig.RecoverySchedulingDelay);
                     _logger?.Info($"[OnProcessExited] Failure threshold reached. Scheduling recovery in {delayMs / 1000}s...");
 
                     // Fire-and-forget the recovery task safely
@@ -2059,7 +2059,7 @@ namespace Servy.Service
                         _logger = null;
                     }
 
-                }).Wait(1500); // 1.5 seconds max for local disk I/O
+                }).Wait(AppConfig.LoggerFlushTimeoutMs); // 1.5 seconds max for local disk I/O
             }
             catch
             {
@@ -2494,7 +2494,7 @@ namespace Servy.Service
                 // ---------------------
 
                 // Total timeout = (Parent + Children) * timeoutMs + 10s safety buffer
-                var totalTimeoutMs = (((long)(childCount + 1)) * timeoutMs) + 10_000L;
+                var totalTimeoutMs = (((long)(childCount + 1)) * timeoutMs) + AppConfig.SafeKillProcessSafetyBufferMs;
 
                 Task<bool?> stopTask = Task.Run(() =>
                 {
@@ -2521,7 +2521,7 @@ namespace Servy.Service
                 var maxWaitTime = TimeSpan.FromMilliseconds(totalTimeoutMs);
                 var sw = Stopwatch.StartNew();
 
-                while (!stopTask.Wait(5000))
+                while (!stopTask.Wait(AppConfig.SafeKillProcessPulseIntervalMs))
                 {
                     if (sw.Elapsed > maxWaitTime)
                     {

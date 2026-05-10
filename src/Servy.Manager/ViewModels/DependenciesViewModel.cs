@@ -128,7 +128,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
         /// <param name="messageBoxService">Service used to display modal dialogs (e.g. error popups).</param>
         public DependenciesViewModel(
-            IServiceRepository? serviceRepository,
+            IServiceRepository serviceRepository,
             IServiceManager serviceManager,
             IServiceCommands serviceCommands,
             IAppConfiguration appConfig,

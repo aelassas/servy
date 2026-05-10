@@ -834,11 +834,11 @@ namespace Servy.ViewModels
         /// <param name="appConfig">Application configuration.</param>
         public MainViewModel(
             IFileDialogService dialogService,
-            IServiceCommands? serviceCommands,
-            IMessageBoxService? messageBoxService,
-            IServiceRepository? serviceRepository,
-            IHelpService? helpService,
-            IAppConfiguration? appConfig
+            IServiceCommands serviceCommands,
+            IMessageBoxService messageBoxService,
+            IServiceRepository serviceRepository,
+            IHelpService helpService,
+            IAppConfiguration appConfig
             )
         {
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));

@@ -30,11 +30,11 @@ namespace Servy.Manager.ViewModels
         #region Private Fields
 
         private readonly Dispatcher? _dispatcher;
-        private readonly IServiceManager? _serviceManager;
-        private readonly IServiceRepository? _serviceRepository;
-        private readonly IMessageBoxService? _messageBoxService;
-        private readonly IHelpService? _helpService;
-        private readonly ICursorService? _cursorService;
+        private readonly IServiceManager _serviceManager;
+        private readonly IServiceRepository _serviceRepository;
+        private readonly IMessageBoxService _messageBoxService;
+        private readonly IHelpService _helpService;
+        private readonly ICursorService _cursorService;
 
         private CancellationTokenSource? _cts;
 
@@ -306,11 +306,11 @@ namespace Servy.Manager.ViewModels
         /// Initializes a new instance of <see cref="MainViewModel"/>.
         /// </summary>
         public MainViewModel(
-            IServiceManager? serviceManager,
-            IServiceRepository? serviceRepository,
+            IServiceManager serviceManager,
+            IServiceRepository serviceRepository,
             IServiceCommands serviceCommands,
-            IHelpService? helpService,
-            IMessageBoxService? messageBoxService,
+            IHelpService helpService,
+            IMessageBoxService messageBoxService,
             PerformanceViewModel? performanceVM,
             ConsoleViewModel? consoleVM,
             DependenciesViewModel? dependenciesVM,

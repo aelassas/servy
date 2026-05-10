@@ -111,7 +111,7 @@ function Add-Arg {
   #>
   [CmdletBinding()]
   param(
-    [System.Collections.ArrayList] $list, # Performance: Use ArrayList to avoid O(n^2) array copying
+    [array] $list,  # Existing array of arguments
     [string] $key,  # Argument key
     [string] $value,# Argument value
     [switch] $Flag  # Indicates a flag without a value
@@ -120,7 +120,7 @@ function Add-Arg {
   $key = $key.Trim()
 
   if ($Flag) {
-    [void]$list.Add($key)
+    $list += $key
     return $list # CRITICAL: Exit immediately to prevent fall-through
   }
 
@@ -128,7 +128,7 @@ function Add-Arg {
   elseif ($null -ne $value -and $value.Trim() -ne "") {
     # Fast path: no escaping needed if no special characters
     if ($value.IndexOf('"') -lt 0 -and $value.IndexOf('\') -lt 0) {
-      [void]$list.Add("$($key)=`"$value`"")
+      $list += "$($key)=`"$value`""
       return $list
     }
 
@@ -139,7 +139,7 @@ function Add-Arg {
     # Double trailing backslashes
     $escapedValue = $escapedValue -replace '(\\+)$', '$1$1'
 
-    [void]$list.Add("$($key)=`"$escapedValue`"")
+    $list += "$($key)=`"$escapedValue`""
   }
 
   return $list
