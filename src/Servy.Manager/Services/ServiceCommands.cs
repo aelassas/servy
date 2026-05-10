@@ -391,7 +391,7 @@ namespace Servy.Manager.Services
                 Strings.ExportJson_Success);
 
         /// <inheritdoc />
-        public Task ImportXmlConfigAsync() =>
+        public Task ImportXmlConfigAsync(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
                 _fileDialogService.OpenXml,
                 (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
@@ -399,10 +399,11 @@ namespace Servy.Manager.Services
                 "XML",
                 Strings.Msg_FailedToLoadXml,
                 Strings.ImportXml_Success,
-                Strings.ImportXml_Error);
+                Strings.ImportXml_Error,
+                cancellationToken: cancellationToken);
 
         /// <inheritdoc />
-        public Task ImportJsonConfigAsync() =>
+        public Task ImportJsonConfigAsync(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
                 _fileDialogService.OpenJson,
                 (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
@@ -410,7 +411,8 @@ namespace Servy.Manager.Services
                 "JSON",
                 Strings.Msg_FailedToLoadJson,
                 Strings.ImportJson_Success,
-                Strings.ImportJson_Error);
+                Strings.ImportJson_Error,
+                cancellationToken: cancellationToken);
 
         ///<inheritdoc/>
         public async Task CopyPid(Service? service)
@@ -697,6 +699,7 @@ namespace Servy.Manager.Services
         /// <param name="loadErrorMessage">The message to display if the file content is incompatible with the DTO structure.</param>
         /// <param name="successMessage">The message to display upon successful repository persistence.</param>
         /// <param name="errorMessage">The message to display if the repository upsert operation fails.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task representing the asynchronous import operation.</returns>
         /// <remarks>
         /// The import follows a strict "Gatekeeper" pattern:
@@ -715,7 +718,8 @@ namespace Servy.Manager.Services
             string formatName,
             string loadErrorMessage,
             string successMessage,
-            string errorMessage)
+            string errorMessage,
+            CancellationToken cancellationToken = default)
         {
             var path = getFilePath();
             if (string.IsNullOrEmpty(path)) return;
@@ -725,7 +729,7 @@ namespace Servy.Manager.Services
                 if (!await ImportGuard.ValidateFileSizeAsync(path, _messageBoxService, AppConfig.Caption, Core.Config.AppConfig.MaxConfigFileSizeMB, Strings.Msg_ConfigSizeLimitReached))
                     return;
 
-                var content = await File.ReadAllTextAsync(path);
+                var content = await File.ReadAllTextAsync(path, cancellationToken);
                 var validation = validateContent(content);
                 if (!validation.IsValid)
                 {
@@ -742,7 +746,7 @@ namespace Servy.Manager.Services
 
                 if (!await _serviceConfigurationValidator.Validate(dto)) return;
 
-                var res = await _serviceRepository.UpsertAsync(dto, updateRuntimeState: false);
+                var res = await _serviceRepository.UpsertAsync(dto, updateRuntimeState: false, cancellationToken: cancellationToken);
                 if (res > 0)
                 {
                     Logger.Info($"Service configuration imported from {formatName} at: {path}");

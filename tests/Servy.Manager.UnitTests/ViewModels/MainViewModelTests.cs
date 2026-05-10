@@ -210,7 +210,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(async () =>
             {
                 var vm = CreateViewModel();
-                _serviceCommandsMock.Setup(s => s.ImportXmlConfigAsync())
+                _serviceCommandsMock.Setup(s => s.ImportXmlConfigAsync(It.IsAny<CancellationToken>()))
                     .Returns(Task.CompletedTask)
                     .Verifiable();
 
@@ -226,7 +226,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(async () =>
             {
                 var vm = CreateViewModel();
-                _serviceCommandsMock.Setup(s => s.ImportJsonConfigAsync())
+                _serviceCommandsMock.Setup(s => s.ImportJsonConfigAsync(It.IsAny<CancellationToken>()))
                     .Returns(Task.CompletedTask)
                     .Verifiable();
 

@@ -626,7 +626,7 @@ namespace Servy.Manager.ViewModels
         private async Task ImportXmlConfigAsync(object? parameter)
         {
             if (ServiceCommands == null) throw new InvalidOperationException("ServiceCommands is not initialized.");
-            await ServiceCommands.ImportXmlConfigAsync();
+            await ServiceCommands.ImportXmlConfigAsync(cancellationToken: _cts?.Token ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -635,7 +635,7 @@ namespace Servy.Manager.ViewModels
         private async Task ImportJsonConfigAsync(object? parameter)
         {
             if (ServiceCommands == null) throw new InvalidOperationException("ServiceCommands is not initialized.");
-            await ServiceCommands.ImportJsonConfigAsync();
+            await ServiceCommands.ImportJsonConfigAsync(cancellationToken: _cts?.Token ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -753,7 +753,7 @@ namespace Servy.Manager.ViewModels
                 _refreshTimer.Stop();            // Stop the timer
                 _refreshTimer.Tick -= OnTick; // Unsubscribe event
                 _refreshTimer = null;
-            }   
+            }
 
             _busyCursor?.Dispose();
         }

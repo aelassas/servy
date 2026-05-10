@@ -458,18 +458,12 @@ namespace Servy.Service
                 // Reset restart attempts on service start to avoid blocking recovery
                 if (_recoveryActionEnabled)
                 {
-                    _ = Task.Run(() => ConditionalResetRestartAttemptsAsync(options, _cancellationSource?.Token ?? CancellationToken.None))
+                    _ = Task.Run(() => ConditionalResetRestartAttemptsAsync(options, CancellationToken.None))
                             .ContinueWith(t =>
                             {
                                 if (t.IsFaulted)
                                 {
                                     _logger?.Error($"Background reset failed: {t.Exception?.Flatten().InnerException?.Message}");
-                                }
-                                else if (t.IsCanceled)
-                                {
-                                    // Logging this as Info or Debug helps distinguish between 
-                                    // a crash and a graceful shutdown/interruption.
-                                    _logger?.Info("Background reset was canceled (Service is likely stopping).");
                                 }
                             }); // Note: No TaskContinuationOptions here, so it runs for all outcomes.
                 }
