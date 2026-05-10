@@ -1,4 +1,5 @@
-﻿using Servy.Core.Logging;
+﻿using Servy.Core.Config;
+using Servy.Core.Logging;
 using Servy.Core.Native;
 using Servy.Service.Helpers;
 using System;
@@ -209,7 +210,7 @@ namespace Servy.Service.ProcessManagement
                 if (_process.HasExited)
                     return false; // process exited before becoming healthy
 
-                await Task.Delay(500, cancellationToken);
+                await Task.Delay(AppConfig.WaitForExitOrTimeoutDelayMs, cancellationToken);
             }
 
             return !_process.HasExited;
@@ -315,7 +316,7 @@ namespace Servy.Service.ProcessManagement
             // 2. TERMINATION: Kill the current node now that its children are dead
             _logger?.Info($"Terminating node: {process.ProcessName} (PID: {process.Id})");
 
-            bool? result = TryStopGracefullyOrKill(process, timeoutMs, 3000);
+            bool? result = TryStopGracefullyOrKill(process, timeoutMs, AppConfig.DefaultDescendantPostKillWaitMs);
 
             if (result == null)
             {
@@ -539,7 +540,7 @@ namespace Servy.Service.ProcessManagement
                 {
                     // CRITICAL: Yield to the OS to allow the handler registration 
                     // and console attachment to propagate through conhost.exe before firing the event.
-                    Thread.Sleep(50);
+                    Thread.Sleep(AppConfig.ConsoleAttachYieldMs);
 
                     // Don't call GenerateConsoleCtrlEvent immediately after SetConsoleCtrlHandler.
                     // A delay was observed as of Windows 10, version 2004 and Windows Server 2019.

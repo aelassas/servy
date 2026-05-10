@@ -461,7 +461,7 @@ namespace Servy.Manager.Services
                     // This allows the UI thread to remain responsive during the wait.
                     if (i < maxRetries - 1)
                     {
-                        await Task.Delay(50);
+                        await Task.Delay(Core.Config.AppConfig.ClipboardComRetryDelayMs);
                     }
                 }
 

@@ -138,8 +138,8 @@ namespace Servy.Restarter
             finally
             {
                 // Standard teardown
-                protectedKeyProvider?.Dispose();
-                secureData?.Dispose();
+                secureData?.Dispose();              // dispose consumer first
+                protectedKeyProvider?.Dispose();    // then the provider it built on
 
                 // ScopedLogger (proxy) disposal is a no-op, but included for pattern consistency.
                 scopedLogger?.Dispose();

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.Core.Config;
+using System;
 using System.Diagnostics;
 using System.ServiceProcess;
 using System.Threading;
@@ -33,7 +34,7 @@ namespace Servy.Restarter
                     if (stopwatch.Elapsed > timeout)
                         throw new System.TimeoutException($"Service '{serviceName}' stuck in {controller.Status} state.");
 
-                    Thread.Sleep(500);
+                    Thread.Sleep(AppConfig.ServiceRestarterPollIntervalMs);
                     controller.Refresh();
                 }
 
@@ -139,7 +140,7 @@ namespace Servy.Restarter
                 catch (InvalidOperationException)
                 {
                     // Still transitional, wait a bit before the next poll
-                    Thread.Sleep(500);
+                    Thread.Sleep(AppConfig.ServiceRestarterPollIntervalMs);
                 }
             }
 
