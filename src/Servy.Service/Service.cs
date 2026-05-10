@@ -763,7 +763,8 @@ namespace Servy.Service
                 }
 
                 // 3. Evaluate Thresholds
-                int detectionWindowSeconds = options.HeartbeatInterval * options.MaxFailedChecks;
+                long product = (long)options.HeartbeatInterval * options.MaxFailedChecks;
+                int detectionWindowSeconds = product > int.MaxValue ? int.MaxValue : (int)product;
 
                 // Base threshold: detection window + buffer (min 30s or the detection window itself)
                 int bufferSeconds = Math.Max(detectionWindowSeconds, 30);

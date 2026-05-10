@@ -205,7 +205,8 @@ namespace Servy.CLI.Commands
                 "JSON",
                 content => _jsonServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
                 content => _serviceRepository.ImportJsonAsync(content, cancellationToken: cancellationToken),
-                _jsonServiceSerializer.Deserialize);
+                _jsonServiceSerializer.Deserialize,
+                cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -217,9 +218,10 @@ namespace Servy.CLI.Commands
              string formatName,
              Func<string, (bool Valid, string? Error)> validator,
              Func<string, Task<bool>> repoImporter,
-             Func<string, ServiceDto?> deserializer)
+             Func<string, ServiceDto?> deserializer,
+            CancellationToken cancellationToken = default)
         {
-            var content = await File.ReadAllTextAsync(fullPath);
+            var content = await File.ReadAllTextAsync(fullPath, cancellationToken);
 
             // 1. Format Validation
             var (isValid, error) = validator(content);

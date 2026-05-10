@@ -144,17 +144,12 @@ namespace Servy.Service.CommandLine
         {
             switch (p)
             {
-                case ProcessPriority.Idle:
-                    return ProcessPriorityClass.Idle;
-                case ProcessPriority.BelowNormal:
-                    return ProcessPriorityClass.BelowNormal;
-                case ProcessPriority.AboveNormal:
-                    return ProcessPriorityClass.AboveNormal;
-                case ProcessPriority.High:
-                    return ProcessPriorityClass.High;
-                case ProcessPriority.RealTime:
-                    return ProcessPriorityClass.RealTime;
-                case ProcessPriority.Normal:
+                case ProcessPriority.Idle: return ProcessPriorityClass.Idle;
+                case ProcessPriority.BelowNormal: return ProcessPriorityClass.BelowNormal;
+                case ProcessPriority.Normal: return ProcessPriorityClass.Normal;
+                case ProcessPriority.AboveNormal: return ProcessPriorityClass.AboveNormal;
+                case ProcessPriority.High: return ProcessPriorityClass.High;
+                case ProcessPriority.RealTime: return ProcessPriorityClass.RealTime;
                 default:
                     Logger.Warn($"Unknown ProcessPriority value '{p}' — defaulting to Normal.");
                     return ProcessPriorityClass.Normal;
