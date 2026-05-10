@@ -167,17 +167,19 @@ namespace Servy.Manager.Utils
                                                 batch.Clear(); // Optimized memory reuse
                                             }
 
-                                            // FIX: Track the position of yielded lines instead of the read-ahead pointer.
-                                            // We accumulate the exact byte length of the line and assume a standard newline terminator.
-                                            // This ensures safe recovery if a transient I/O error drops the stream mid-buffer.
-                                            lastPosition += reader.CurrentEncoding.GetByteCount(line) + reader.CurrentEncoding.GetByteCount(Environment.NewLine);
+                                            // FIX: Track the position of yielded lines using a 1-byte LF ('\n') assumption.
+                                            // Environment.NewLine overcounts on Windows when tailing Unix-style LF-only log files, 
+                                            // which causes the pointer to advance past valid data if a transient error occurs mid-buffer.
+                                            // Undercounting CRLF by 1 byte is safer (might re-read a byte on crash, but won't skip data) 
+                                            // until the EOF block perfectly resyncs the pointer.
+                                            lastPosition += reader.CurrentEncoding.GetByteCount(line) + 1;
                                         }
 
                                         if (batch.Count > 0) OnNewLines?.Invoke(batch);
 
                                         // --- EOF Reached. Verify File Integrity / Rotation ---
                                         // Since the StreamReader buffer is now fully drained, fs.Position is completely accurate.
-                                        // Syncing it here fixes any minor byte-drift from the Environment.NewLine estimation above.
+                                        // Syncing it here fixes any minor byte-drift from the 1-byte LF estimation above.
                                         lastPosition = fs.Position;
 
                                         info.Refresh();

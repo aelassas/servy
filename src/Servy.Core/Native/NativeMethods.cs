@@ -344,33 +344,45 @@ namespace Servy.Core.Native
             /// <summary>Indicates if handle-based information was successfully retrieved.</summary>
             public bool IsValidHandleInfo;
 
-            /// <summary>Checks if the identity is different from another file identity.</summary>
-            /// <remarks>
-            /// This method prioritizes handle-based metadata as authoritative evidence. 
-            /// If handle info is asymmetric or missing, it falls back to content-based digests.
-            /// </remarks>
+            /// <summary>
+            /// Compares the current file identity against another to determine if the underlying 
+            /// file object on disk has been replaced (rotated) or truncated.
+            /// </summary>
+            /// <param name="other">The previously known file identity to compare against.</param>
+            /// <returns>
+            /// <c>true</c> if the files are proven different or if identity is undeterminable; 
+            /// <c>false</c> only if they are proven to be the same file object.
+            /// </returns>
             public bool IsDifferentFrom(FILE_IDENTITY other)
             {
-                // Asymmetric handle info indicates a change in accessibility or probe state;
-                // treat as different to ensure the caller (e.g., LogTailer) re-evaluates.
+                // If one probe succeeded and the other failed, they are fundamentally different states.
                 if (IsValidHandleInfo != other.IsValidHandleInfo) return true;
 
+                // 1. Primary Probe: Win32 File Index and Volume Serial Number (Most reliable)
                 if (IsValidHandleInfo && other.IsValidHandleInfo)
                 {
-                    // Authoritative metadata check: Volume and Index must match for the file to be identical.
                     if (FileIndex != other.FileIndex || VolumeSerialNumber != other.VolumeSerialNumber)
                         return true;
-
-                    return false; // Strong identity match
+                    return false;
                 }
 
-                // Fallback to content-based identification if metadata is unavailable
+                // 2. Secondary Probe: Content Prefix Digest (Used when handle info is unavailable, e.g., FAT32)
                 if (PrefixDigest != null && other.PrefixDigest != null)
                 {
+                    // If content digests differ, the file has definitely changed.
+                    // If both are empty strings (empty files), we treat them as same content-wise.
                     return PrefixDigest != other.PrefixDigest;
                 }
 
-                return false; // Identity is undeterminable; typically requires metadata fallback
+                // 3. Fallback: Identity Undeterminable
+                // If we reach this point, both robust probes failed or yielded null data (e.g., due to 
+                // exclusive file locks, antivirus interference, or I/O errors).
+                //
+                // SAFE DEFAULT: We return 'true' to signal a potential difference. This forces the 
+                // caller (like LogTailer) to break its inner loop and perform a "soft refresh" via 
+                // metadata-guarded re-opening. This prevents masking rotations on hostile file 
+                // systems where tunneling hides metadata changes.
+                return true;
             }
         }
 
@@ -975,30 +987,35 @@ namespace Servy.Core.Native
                 if (fs.CanSeek)
                 {
                     long origPos = fs.Position;
-                    fs.Seek(0, SeekOrigin.Begin);
-
-                    // FIX: Increased buffer size to 4KB to get past common log headers/prologues.
-                    // Using SHA256 ensures a unique digest even for files with similar content patterns.
-                    byte[] buffer = new byte[4096];
-                    int read = fs.Read(buffer, 0, buffer.Length);
-
-                    if (read > 0)
+                    try
                     {
-                        using (var sha256 = SHA256.Create())
+                        fs.Seek(0, SeekOrigin.Begin);
+
+                        // FIX: Increased buffer size to 4KB to get past common log headers/prologues.
+                        // Using SHA256 ensures a unique digest even for files with similar content patterns.
+                        byte[] buffer = new byte[4096];
+                        int read = fs.Read(buffer, 0, buffer.Length);
+
+                        if (read > 0)
                         {
-                            byte[] hashBytes = sha256.ComputeHash(buffer, 0, read);
-                            // Store as a lowercase hex string for consistent identification across probes
-                            identity.PrefixDigest = Convert.ToHexString(hashBytes).ToLowerInvariant();
+                            using (var sha256 = SHA256.Create())
+                            {
+                                byte[] hashBytes = sha256.ComputeHash(buffer, 0, read);
+                                // Store as a lowercase hex string for consistent identification across probes
+                                identity.PrefixDigest = Convert.ToHexString(hashBytes).ToLowerInvariant();
+                            }
+                        }
+                        else
+                        {
+                            // Ensure identity.PrefixDigest is never null to prevent NREs in IsDifferentFrom
+                            identity.PrefixDigest = string.Empty;
                         }
                     }
-                    else
+                    finally
                     {
-                        // Ensure identity.PrefixDigest is never null to prevent NREs in IsDifferentFrom
-                        identity.PrefixDigest = string.Empty;
+                        // Best-effort restore even if Read/Seek threw, so the caller's stream position is preserved.
+                        try { fs.Seek(origPos, SeekOrigin.Begin); } catch { /* stream may be dead */ }
                     }
-
-                    // Restore position to avoid side-effects for the caller (like LogTailer)
-                    fs.Seek(origPos, SeekOrigin.Begin);
                 }
             }
             catch (Exception ex)

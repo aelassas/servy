@@ -14,7 +14,8 @@
         /// <b>Quote Handling:</b> Unescaped double quotes surrounding a value are automatically stripped to support 
         /// common configuration conventions (e.g., <c>KEY="value"</c> becomes <c>value</c>). 
         /// To enforce a value that literally begins and ends with double quotes, escape the quotes 
-        /// (e.g., <c>KEY=\"value\"</c> or <c>KEY="\"value\""</c>).
+        /// (e.g., <c>KEY=\"value\"</c>).
+        /// The <c>KEY="\"value\""</c> form is impossible with the current escape rules.
         /// </para>
         /// </remarks>
         /// <param name="input">The normalized environment variables string containing semicolon or newline separators with optional escapes.</param>

@@ -5,6 +5,7 @@ using Servy.CLI.Resources;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Services;
+using System.Net.Http.Json;
 
 namespace Servy.CLI.UnitTests.Commands
 {
@@ -43,11 +44,12 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_XmlFile_Valid_CallsImportAndReturnsOk()
         {
             // Arrange
+            var realPath = @"C:\Windows\System32\notepad.exe";
             var path = "test.xml";
-            var xmlContent = @"
+            var xmlContent = $@"
             <ServiceDto>
-              <Name>MyTestService</Name>
-              <ExecutablePath>%NODE_EXE%</ExecutablePath>
+              <Name>TestService</Name>
+              <ExecutablePath>{realPath}</ExecutablePath>
             </ServiceDto>";
 
             File.WriteAllText(path, xmlContent);
@@ -56,6 +58,9 @@ namespace Servy.CLI.UnitTests.Commands
 
             MockXmlValidator(true);
 
+            _xmlServiceSerializer.Setup(s => s.Deserialize(xmlContent))
+                   .Returns(new Core.DTOs.ServiceDto { Name = "TestService", ExecutablePath = realPath });
+            _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
             _serviceRepoMock.Setup(r => r.ImportXmlAsync(xmlContent, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             // Act
@@ -106,6 +111,9 @@ namespace Servy.CLI.UnitTests.Commands
 
             MockJsonValidator(true);
 
+            _jsonServiceSerializer.Setup(s => s.Deserialize(jsonContent))
+                .Returns(new Core.DTOs.ServiceDto { Name = "TestService", ExecutablePath = realPath });
+            _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
             _serviceRepoMock.Setup(r => r.ImportJsonAsync(jsonContent, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 

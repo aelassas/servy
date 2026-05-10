@@ -301,13 +301,7 @@ namespace Servy.Core.Helpers
                             // 3. Fallback and Comparison Logic
                             if (exePath == null)
                             {
-                                // If native parsing failed, use the identity check fallback
-                                if (expandedPath.IndexOf(wrapperExe, StringComparison.OrdinalIgnoreCase) >= 0)
-                                {
-                                    result.Add(sc.ServiceName);
-                                    continue; // Move to the next service in the loop
-                                }
-                                exePath = expandedPath;
+                                exePath = expandedPath; // best-effort; Path.GetFileName below handles unquoted paths
                             }
 
                             try
