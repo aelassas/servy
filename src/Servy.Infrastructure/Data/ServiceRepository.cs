@@ -104,8 +104,7 @@ namespace Servy.Infrastructure.Data
 
             if (!updateRuntimeState)
             {
-                // Proxy the rarely-used sync call through the async implementation to maintain a single source of truth.
-                PatchRuntimeStateAsync(encryptedService, CancellationToken.None).GetAwaiter().GetResult();
+                PatchRuntimeState(encryptedService);
             }
 
             var sql = $@"
@@ -178,6 +177,8 @@ namespace Servy.Infrastructure.Data
                 // Update the original DTO references
                 foreach (var service in currentChunk)
                 {
+                    if (string.IsNullOrEmpty(service.Name)) continue;
+
                     // OrdinalIgnoreCase here handles the mapping between the 
                     // user's input (MyService) and the DB's stored casing (myservice).
                     if (idMap.TryGetValue(service.Name, out var id))
@@ -395,6 +396,29 @@ namespace Servy.Infrastructure.Data
 
             // Fetch current state without decryption (performance optimization)
             var existing = await GetByNameAsync(incoming.Name, decrypt: false, cancellationToken: cancellationToken);
+
+            if (existing != null)
+            {
+                // These fields are not serialized in export files (ShouldSerialize*() => false).
+                // If we don't copy them here, UpsertAsync will overwrite the DB with NULL.
+                incoming.Pid = existing.Pid;
+                incoming.ActiveStdoutPath = existing.ActiveStdoutPath;
+                incoming.ActiveStderrPath = existing.ActiveStderrPath;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the existing runtime state from the database and applies it to the incoming DTO.
+        /// This ensures that importing a configuration over a running service does not clobber
+        /// its PID or active log paths, which would break Manager tracking.
+        /// </summary>
+        /// <param name="incoming">The DTO deserialized from an import file.</param>
+        private void PatchRuntimeState(ServiceDto incoming)
+        {
+            if (string.IsNullOrWhiteSpace(incoming.Name)) return;
+
+            // Fetch current state without decryption (performance optimization)
+            var existing = GetByName(incoming.Name, decrypt: false);
 
             if (existing != null)
             {
