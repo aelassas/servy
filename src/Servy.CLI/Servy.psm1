@@ -1231,6 +1231,14 @@ function Install-ServyService {
       if ($secureEnv.ContainsKey($script:ServyPasswordEnvVar)) {
           $secureEnv[$script:ServyPasswordEnvVar] = $null
       }
+
+      # Purge the plaintext password from the global session environment
+      if (Test-Path "env:\$script:ServyPasswordEnvVar") {
+          # Log the reason for purging before the deletion occurs
+          Write-Host "Security: Purging '$($script:ServyPasswordEnvVar)' from the session environment to prevent credential exposure." -ForegroundColor Cyan
+          
+          Remove-Item "env:\$script:ServyPasswordEnvVar" -ErrorAction SilentlyContinue
+      }
       
       # Help GC by clearing the ArrayList
       $argsList = $null
