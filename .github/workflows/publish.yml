@@ -240,11 +240,21 @@ jobs:
 
           Write-Host "Using vstest.console.exe at: $vsTest"
 
-          # Find all test assemblies
-          $testDlls = Get-ChildItem -Path "tests/*/bin/*/$env:BUILD_CONFIG/*.{Unit,Integration}Tests.dll" -File
+          # Find all test assemblies using recursive search for resilience
+          $testDlls = Get-ChildItem -Path "tests" -Include "*.UnitTests.dll","*.IntegrationTests.dll" -Recurse | 
+            Where-Object { $_.FullName -like "*\bin\*$env:BUILD_CONFIG\*" }
+
+          # Print matched assemblies for verification
+          if ($testDlls) {
+              Write-Host "Matched test assemblies:"
+              $testDlls | ForEach-Object { Write-Host " - $($_.FullName)" }
+          }
 
           if (-not $testDlls) {
-              throw "No test assemblies with *.UnitTests.dll found!"
+              # Helpful debugging: List the tests directory so we can see the actual path in the logs
+              Write-Host "Directory listing of 'tests' for debugging:"
+              Get-ChildItem -Path "tests" -Recurse | Select-Object FullName
+              throw "No test assemblies matching *Tests.dll found in bin/$env:BUILD_CONFIG"
           }
 
           Write-Host "Found test assemblies:"
