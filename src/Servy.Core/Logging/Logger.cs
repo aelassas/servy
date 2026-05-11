@@ -2,7 +2,6 @@
 using Servy.Core.Enums;
 using Servy.Core.IO;
 using Servy.Core.Security;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 
@@ -13,7 +12,6 @@ namespace Servy.Core.Logging
     /// Uses <see cref="RotatingStreamWriter"/> to ensure logs are rotated based on size 
     /// while preventing unbounded file growth.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public static class Logger
     {
         /// <summary>
@@ -69,7 +67,7 @@ namespace Servy.Core.Logging
         /// This should be called once at the beginning of the application lifecycle.
         /// </summary>
         /// <param name="fileName">The name of the log file (e.g., "Servy.Manager.log").</param>
-        /// <param name="initialLevel">The starting log level. Defaults to <see cref="LogLevel.Info"/>.</param>
+        /// <param name="logLevel">The starting log level. Defaults to <see cref="LogLevel.Info"/>.</param>
         /// <param name="logRotationSizeMB">The maximum size of the log file in MB before rotation. Defaults to 10MB.</param>
         /// <param name="dateRotationType">
         /// Specifies the interval (Daily, Weekly, Monthly) for time-based log rotation. 
@@ -79,7 +77,7 @@ namespace Servy.Core.Logging
         /// <param name="maxBackupLogFiles">The maximum number of backup files to retain. Defaults to 10. Set to 0 for unlimited backups.</param>
         public static void Initialize(
             string? fileName,
-            LogLevel initialLevel = LogLevel.Info,
+            LogLevel logLevel = LogLevel.Info,
             int logRotationSizeMB = AppConfig.DefaultRotationSizeMB,
             DateRotationType dateRotationType = DateRotationType.None,
             bool useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation,
@@ -89,7 +87,7 @@ namespace Servy.Core.Logging
             lock (_lock)
             {
                 _fileName = fileName;
-                _currentLogLevel = (int)initialLevel;
+                _currentLogLevel = (int)logLevel;
                 _logRotationSizeMB = logRotationSizeMB;
                 _dateRotationType = dateRotationType;
                 _useLocalTimeForRotation = useLocalTimeForRotation;

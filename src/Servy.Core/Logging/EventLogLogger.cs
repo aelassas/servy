@@ -1,13 +1,11 @@
 ﻿using Servy.Core.Config;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Servy.Core.Logging
 {
     /// <summary>
     /// Logs messages to the Windows Event Log with Event IDs.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public class EventLogLogger : IServyLogger
     {
         #region Private Fields

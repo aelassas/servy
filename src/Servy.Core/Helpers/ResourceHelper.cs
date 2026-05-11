@@ -236,10 +236,16 @@ namespace Servy.Core.Helpers
                 try
                 {
                     var exeName = AppDomain.CurrentDomain.FriendlyName;
-                    var exePath = Path.Combine(AppContext.BaseDirectory, exeName);
-                    if (File.Exists(exePath))
+                    string[] candidates =
                     {
-                        return File.GetLastWriteTimeUtc(exePath);
+                        Path.Combine(AppContext.BaseDirectory, exeName),
+                        Path.Combine(AppContext.BaseDirectory, exeName + ".exe"),
+                        Path.Combine(AppContext.BaseDirectory, exeName + ".dll"),
+                    };
+                    foreach (var path in candidates)
+                    {
+                        if (File.Exists(path))
+                            return File.GetLastWriteTimeUtc(path);
                     }
                 }
                 catch (Exception innerEx)
