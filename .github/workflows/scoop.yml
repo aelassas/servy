@@ -142,8 +142,10 @@ jobs:
           if ((git status --porcelain) -ne '') {
             git add $manifestPath
             git commit -m "chore: update setup/scoop/servy.json to version $env:VERSION"
-            git pull
-            git push origin HEAD
+            
+            # Explicitly target the main branch
+            git pull origin main
+            git push origin HEAD:main
           } else {
             Write-Host "No changes to local manifest."
           }
