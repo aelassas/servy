@@ -865,6 +865,18 @@ namespace Servy.Core.Config
         /// </summary>
         public const int ClipboardComRetryDelayMs = 50;
 
+        /// <summary>
+        /// The maximum time, in milliseconds, the service will wait for a tracked hook process tree 
+        /// (pre-launch, post-launch, or pre-stop) to exit after a kill signal has been issued.
+        /// </summary>
+        /// <remarks>
+        /// This timeout prevents the service teardown sequence from hanging indefinitely if an auxiliary 
+        /// hook is blocked by uninterruptible I/O or a kernel-mode lock. When reached, the service 
+        /// will log a warning and proceed with its own shutdown to remain responsive to the 
+        /// Windows Service Control Manager (SCM).
+        /// </remarks>
+        public const int HookCleanupTimeoutMs = 5_000;
+
         #endregion
 
         #region Minimum Constraints

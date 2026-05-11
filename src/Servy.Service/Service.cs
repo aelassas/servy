@@ -2264,12 +2264,53 @@ namespace Servy.Service
                             // Always check HasExited first
                             if (!hook.Process.HasExited)
                             {
-                                // Note: p.Id is usually safe if cached, but p.ProcessName 
-                                // can throw if the process is in a weird state.
                                 var opName = string.IsNullOrWhiteSpace(hook.OperationName) ? "unnamed" : hook.OperationName;
-                                _logger?.Info($"Cleaning up orphaned {opName} hook process tree.");
+                                int pid = 0;
 
-                                hook.Process.Kill(entireProcessTree: true);
+                                // Process.Id can throw if the process is in a weird state
+                                try { pid = hook.Process.Id; } catch { /* Ignored */ }
+
+                                _logger?.Info($"Cleaning up orphaned {opName} hook process tree (PID: {pid}).");
+
+                                // 1. Issue the kill request
+                                try
+                                {
+                                    hook.Process.Kill(entireProcessTree: true);
+                                }
+                                catch (Exception killEx)
+                                {
+                                    _logger?.Warn($"Failed to send Kill signal to {opName} hook: {killEx.Message}");
+                                }
+
+                                // 2. Bounded wait with SCM heartbeat pulses
+                                int timeoutMs = AppConfig.HookCleanupTimeoutMs;
+                                int pulseIntervalMs = AppConfig.SafeKillProcessPulseIntervalMs;
+                                int elapsedMs = 0;
+
+                                while (!hook.Process.HasExited && elapsedMs < timeoutMs)
+                                {
+                                    int waitTime = Math.Min(pulseIntervalMs, timeoutMs - elapsedMs);
+
+                                    // Request additional time to prevent SCM from terminating the service during a slow kernel teardown
+                                    _serviceHelper.RequestAdditionalTime(this, _scmAdditionalTimeMs, null);
+
+                                    if (hook.Process.WaitForExit(waitTime))
+                                    {
+                                        break;
+                                    }
+
+                                    elapsedMs += waitTime;
+                                }
+
+                                // 3. Evaluate outcome
+                                if (!hook.Process.HasExited)
+                                {
+                                    _logger?.Warn($"Tracked hook '{opName}' (PID: {pid}) did not exit within the {timeoutMs}ms budget. Proceeding with teardown to avoid SCM hang.");
+                                }
+                                else
+                                {
+                                    _logger?.Info($"Tracked hook '{opName}' cleaned up successfully.");
+                                }
                             }
                         }
                         catch (Exception ex)
