@@ -47,7 +47,7 @@ namespace Servy.Core.UnitTests.Services
             // Valid JSON syntax for a null literal
             var result = _validator.TryValidate("null", out var error);
             Assert.False(result);
-            Assert.Equal("Deserialization resulted in an empty service definition.", error);
+            Assert.Equal("JSON deserialization resulted in an empty service definition.", error);
         }
 
         [Fact]
