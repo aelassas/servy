@@ -1,26 +1,19 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <linker>
   <assembly fullname="Servy.Core">
     <type fullname="Servy.Core.DTOs.*" preserve="all" />
   </assembly>
-
   <assembly fullname="System.Security.Claims" preserve="all" />
   <assembly fullname="System.Security.Principal.Windows" preserve="all" />
   <assembly fullname="System.Security.AccessControl" preserve="all" />
-
   <assembly fullname="System.Threading.Thread" preserve="all" />
-  
   <assembly fullname="System.IO.FileSystem.AccessControl" preserve="all" />
   <assembly fullname="System.IO.FileSystem" preserve="all" />
   <assembly fullname="System.IO.FileSystem.DriveInfo" preserve="all" />
   <assembly fullname="System.IO.FileSystem.Primitives" preserve="all" />
   <assembly fullname="System.IO.FileSystem.Watcher" preserve="all" />
-
   <assembly fullname="Newtonsoft.Json" preserve="all" />
-
   <assembly fullname="System.Xml.XmlSerializer" preserve="all" />
-
   <assembly fullname="Dapper" preserve="all" />
-
   <assembly fullname="System.Data.SQLite" preserve="all" />
 </linker>

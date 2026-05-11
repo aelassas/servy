@@ -5,7 +5,7 @@ VisualStudioVersion = 18.0.11205.157
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy", "src\Servy\Servy.csproj", "{94182C28-CC25-2F20-1763-F275AEB96267}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_global", "_global", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 		bump-runtime.ps1 = bump-runtime.ps1
@@ -161,6 +161,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{DA3B55F8
 		setup\choco\servy\tools\chocolateyinstall.ps1 = setup\choco\servy\tools\chocolateyinstall.ps1
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_global", "_global", "{AF414E4C-11AC-4D83-A5CB-C9225D44F7F2}"
+	ProjectSection(SolutionItems) = preProject
+		src\linker.shared.xml = src\linker.shared.xml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -283,6 +288,7 @@ Global
 		{0C916905-AFCC-4C80-85FD-7D98DF5E6DE5} = {11479D8F-D8B6-4AD7-BC82-A423FCC30779}
 		{09CA340C-8754-4FCC-92DA-441D279C604C} = {0C916905-AFCC-4C80-85FD-7D98DF5E6DE5}
 		{DA3B55F8-FA18-4FF3-9221-F528D0501C72} = {09CA340C-8754-4FCC-92DA-441D279C604C}
+		{AF414E4C-11AC-4D83-A5CB-C9225D44F7F2} = {F56CEF5B-4A0B-4494-8BFD-F6EC660B510E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {93B02B52-77CF-4BAA-AD7E-08960E6D6482}

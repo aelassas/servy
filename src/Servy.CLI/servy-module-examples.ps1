@@ -92,6 +92,7 @@ $installParams = @{
     PostStopParams            = "/c exit 0 --param 2005"
 }
 
+# $env:SERVY_PASSWORD = "ChangeMe!"
 Install-ServyService @installParams
 
 # ----------------------------------------------------------------

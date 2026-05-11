@@ -33,7 +33,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <TrimmerRootDescriptor Include="linker.xml" />
     <TrimmerRootAssembly Include="System.Threading.Thread" />
   </ItemGroup>
 
@@ -61,5 +60,13 @@
   <!--<ItemGroup>
     <FrameworkReference Include="Microsoft.NETCore.App" />
   </ItemGroup>-->
+
+  <ItemGroup>
+    <!-- Always include the shared base preserves -->
+    <TrimmerRootDescriptor Include="..\linker.shared.xml" />
+
+    <!-- Include project-specific preserves if the file exists in the project directory -->
+    <TrimmerRootDescriptor Include="linker.xml" Condition="Exists('linker.xml')" />
+  </ItemGroup>
   
 </Project>
