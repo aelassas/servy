@@ -37,11 +37,11 @@ namespace Servy.Core.UnitTests.Services
         {
             var result = _validator.TryValidate(null, out var error);
             Assert.False(result);
-            Assert.Equal("XML cannot be empty.", error);
+            Assert.Equal("XML input cannot be null or empty.", error);
 
             result = _validator.TryValidate("   ", out error);
             Assert.False(result);
-            Assert.Equal("XML cannot be empty.", error);
+            Assert.Equal("XML input cannot be null or empty.", error);
         }
 
         [Fact]
@@ -69,7 +69,7 @@ namespace Servy.Core.UnitTests.Services
             var xml = "<ServiceDto xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:nil=\"true\" />";
             var result = _validator.TryValidate(xml, out var error);
             Assert.False(result);
-            Assert.Equal("Failed to deserialize XML.", error);
+            Assert.Equal("XML deserialization resulted in an empty service definition.", error);
         }
 
         [Fact]

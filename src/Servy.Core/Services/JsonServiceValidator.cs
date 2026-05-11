@@ -65,7 +65,7 @@ namespace Servy.Core.Services
 
             if (dto == null)
             {
-                errorMessage = "Deserialization resulted in an empty service definition.";
+                errorMessage = "JSON deserialization resulted in an empty service definition.";
                 return false;
             }
 

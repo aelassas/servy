@@ -39,7 +39,7 @@ namespace Servy.Core.Services
 
             if (string.IsNullOrWhiteSpace(xml))
             {
-                errorMessage = "XML cannot be empty.";
+                errorMessage = "XML input cannot be null or empty.";
                 return false;
             }
 
@@ -71,12 +71,13 @@ namespace Servy.Core.Services
             catch (Exception ex)
             {
                 errorMessage = $"XML structure error: {ex.Message}";
+                Logger.Error("XML parsing error during import", ex);
                 return false;
             }
 
             if (dto == null)
             {
-                errorMessage = "Failed to deserialize XML.";
+                errorMessage = "XML deserialization resulted in an empty service definition.";
                 return false;
             }
 
@@ -87,7 +88,7 @@ namespace Servy.Core.Services
             {
                 errorMessage = string.Join("\n", validation.Errors);
 
-                Logger.Warn($"Import Blocked: Crafted or invalid XML for service '{sanitizedName}'. Reason: {errorMessage}");
+                Logger.Warn($"XML Import Blocked: Logical violation for service '{sanitizedName}'. Reason: {errorMessage}");
                 return false;
             }
 
