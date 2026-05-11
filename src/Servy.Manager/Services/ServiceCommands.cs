@@ -587,7 +587,7 @@ namespace Servy.Manager.Services
                     else
                     {
                         // Execute the core logic on a background thread
-                        var res = await Task.Run(() => operation(serviceDomain));
+                        var res = await Task.Run(() => operation(serviceDomain), cancellationToken);
 
                         if (res.IsSuccess)
                         {

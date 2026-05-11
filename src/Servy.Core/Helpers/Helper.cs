@@ -390,11 +390,7 @@ namespace Servy.Core.Helpers
         /// <param name="ct">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous write operation.</returns>
         public static Task WriteFileAtomicAsync(string path, Func<Stream, Task> writeContent, CancellationToken ct = default)
-            => WriteFileAtomicCore(path, async fs =>
-            {
-                await writeContent(fs);
-                await fs.FlushAsync(ct);
-            }, ct).AsTask();
+            => WriteFileAtomicCore(path, async fs => await writeContent(fs), ct).AsTask();
 
         /// <summary>
         /// Writes content to a file atomically by writing to a temporary file first and then performing an atomic move.
@@ -403,11 +399,12 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="path">The full destination path where the file should be written.</param>
         /// <param name="writeContent">An action that receives a <see cref="Stream"/> to write the actual file content.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <remarks>
         /// On NTFS volumes, the final move operation is an atomic metadata update, ensuring the destination 
         /// file is never in a partially written state.
         /// </remarks>
-        public static void WriteFileAtomic(string path, Action<Stream> writeContent)
+        public static void WriteFileAtomic(string path, Action<Stream> writeContent, CancellationToken cancellationToken = default)
         {
             // Ensure the parent directory exists before attempting to create the temp file.
             var dir = Path.GetDirectoryName(path);
@@ -434,6 +431,7 @@ namespace Servy.Core.Helpers
                 int retries = 3;
                 while (true)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     try
                     {
                         // On NTFS, moving within the same volume is an atomic metadata operation.

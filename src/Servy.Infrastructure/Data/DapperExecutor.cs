@@ -249,12 +249,14 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc/>
         public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object? param = null, CancellationToken cancellationToken = default)
         {
+            if (sql == null) throw new ArgumentNullException(nameof(sql));
             return await QueryAsync<T>(new CommandDefinition(sql, param, cancellationToken: cancellationToken)).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
         public async Task<T?> QuerySingleOrDefaultAsync<T>(string sql, object? param = null, CancellationToken cancellationToken = default)
         {
+            if (sql == null) throw new ArgumentNullException(nameof(sql));
             return await QuerySingleOrDefaultAsync<T>(new CommandDefinition(sql, param, cancellationToken: cancellationToken)).ConfigureAwait(false);
         }
 

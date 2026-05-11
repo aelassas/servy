@@ -463,7 +463,7 @@ namespace Servy.Service
                             {
                                 if (t.IsFaulted)
                                 {
-                                    _logger?.Error($"Background reset failed: {t.Exception?.Flatten().InnerException?.Message}");
+                                    _logger?.Error("Background restart-attempts reset failed.", t.Exception);
                                 }
                             }); // Note: No TaskContinuationOptions here, so it runs for all outcomes.
                 }
@@ -1206,7 +1206,7 @@ namespace Servy.Service
             {
                 try
                 {
-                    if (await _childProcess.WaitForExitOrTimeoutAsync(TimeSpan.FromSeconds(_options!.StartTimeout), cts.Token))
+                    if (await _childProcess.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(_options!.StartTimeout), cts.Token))
                     {
                         StartPostLaunchProcess();
                     }

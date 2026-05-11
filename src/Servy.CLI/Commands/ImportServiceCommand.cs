@@ -187,7 +187,8 @@ namespace Servy.CLI.Commands
                 "XML",
                 content => _xmlServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
                 content => _serviceRepository.ImportXmlAsync(content, cancellationToken: cancellationToken),
-                _xmlServiceSerializer.Deserialize);
+                _xmlServiceSerializer.Deserialize,
+                cancellationToken: cancellationToken);
         }
 
         /// <summary>
