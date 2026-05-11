@@ -41,7 +41,7 @@
 param(
     [string]$Tfm      = "net10.0-windows", 
     [ValidatePattern("^\d+\.\d+$")]
-    [string]$Version = "8.4",
+    [string]$Version = "8.5",
     [switch]$IncludeFrameworkDependent
 )
 
