@@ -4,7 +4,6 @@ using Servy.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 
@@ -14,7 +13,6 @@ namespace Servy.Infrastructure.Data
     /// Provides helper methods to initialize the SQLite database schema for Servy.
     /// Tracks database versions and applies sequential migrations dynamically based on central constants.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public static class SQLiteDbInitializer
     {
         // Static Cache for O(1) lookups and zero reflection overhead during database migrations.

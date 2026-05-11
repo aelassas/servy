@@ -20,7 +20,6 @@ namespace Servy.Infrastructure.Data
     /// This implementation includes automatic retry logic to handle <see cref="SQLiteErrorCode.Busy"/> 
     /// and <see cref="SQLiteErrorCode.Locked"/> errors, ensuring resilience in multi-process environments.
     /// </remarks>
-    [ExcludeFromCodeCoverage]
     public class DapperExecutor : IDapperExecutor
     {
         private readonly IAppDbContext _dbContext;
