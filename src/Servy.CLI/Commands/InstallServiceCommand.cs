@@ -52,6 +52,12 @@ namespace Servy.CLI.Commands
                 // Pre-flight elevation check
                 SecurityHelper.EnsureAdministrator();
 
+                // SECURITY FIX: Prioritize command line option (for backward compatibility/testing), 
+                // but fall back to the secure environment variable.
+                opts.Password = !string.IsNullOrEmpty(opts.Password)
+                                ? opts.Password
+                                : Environment.GetEnvironmentVariable(AppConfig.PasswordEnvVarName);
+
                 // Validate options
                 var validation = _validator.Validate(opts);
                 if (!validation.Success)
@@ -105,13 +111,9 @@ namespace Servy.CLI.Commands
                     MaxRestartAttempts = maxRestartAttempts,
                     EnvironmentVariables = opts.EnvironmentVariables,
                     ServiceDependencies = opts.ServiceDependencies,
-                    Username = opts.User,
 
-                    // SECURITY FIX: Prioritize command line option (for backward compatibility/testing), 
-                    // but fall back to the secure environment variable.
-                    Password = !string.IsNullOrEmpty(opts.Password)
-                                ? opts.Password
-                                : Environment.GetEnvironmentVariable(AppConfig.PasswordEnvVarName),
+                    Username = opts.User,
+                    Password = opts.Password,
 
                     // Pre-Launch
                     PreLaunchExePath = opts.PreLaunchPath,

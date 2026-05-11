@@ -309,7 +309,7 @@ function Invoke-ServyCli {
     # SECURITY: Inject environment variables securely directly into the child process block
     if ($EnvironmentVariables) {
       foreach ($key in $EnvironmentVariables.Keys) {
-        $psi.EnvironmentVariables[$key] = $EnvironmentVariables[$key]
+        $psi.EnvironmentVariables[$key] = [string]$EnvironmentVariables[$key]
       }
     }
 
@@ -1214,6 +1214,11 @@ function Install-ServyService {
           # CRITICAL: Manual zero-out of the unmanaged memory buffer
           [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
       }
+  }
+  # Fallback: If no parameter was provided, manually grab the session's env var 
+  # to ensure it is passed into the CLI's process block.
+  elseif (Test-Path "env:\$script:ServyPasswordEnvVar") {
+      $secureEnv[$script:ServyPasswordEnvVar] = Get-Content "env:\$script:ServyPasswordEnvVar"
   }
 
   # 5. CLI Invocation with deterministic cleanup
