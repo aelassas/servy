@@ -1155,7 +1155,7 @@ namespace Servy.Service
             {
                 try
                 {
-                    if (await _childProcess.WaitForExitOrTimeoutAsync(TimeSpan.FromSeconds(_options.StartTimeout), cts.Token))
+                    if (await _childProcess.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(_options.StartTimeout), cts.Token))
                     {
                         StartPostLaunchProcess();
                     }

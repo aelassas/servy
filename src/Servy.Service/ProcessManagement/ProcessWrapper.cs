@@ -197,7 +197,7 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <inheritdoc/>
-        public async Task<bool> WaitForExitOrTimeoutAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+        public async Task<bool> WaitAndCheckStillRunningAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
 

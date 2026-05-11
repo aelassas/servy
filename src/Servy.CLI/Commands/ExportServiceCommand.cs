@@ -79,7 +79,7 @@ namespace Servy.CLI.Commands
                 if (string.IsNullOrWhiteSpace(opts.Path))
                     return CommandResult.Fail(Strings.Msg_PathRequired);
 
-                var exists = await _serviceRepository.GetByNameAsync(opts.ServiceName);
+                var exists = await _serviceRepository.GetByNameAsync(opts.ServiceName, cancellationToken: cancellationToken);
 
                 if (exists == null)
                     return CommandResult.Fail(Strings.Msg_ServiceNotFound);

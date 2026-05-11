@@ -575,6 +575,14 @@ namespace Servy.Core.Services
                             await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
                             sc.Refresh();
                         }
+
+                        sc.Refresh();
+                        if (sc.Status != ServiceControllerStatus.Stopped)
+                        {
+                            var msg = $"Service '{serviceName}' did not reach 'Stopped' within the {waitTimeout}s timeout. Aborting uninstall to avoid SCM 'marked for delete' state.";
+                            Logger.Warn(msg);
+                            return OperationResult.Failure(msg);
+                        }
                     }
 
                     // 3. Final safety check before committing the permanent 'Delete'

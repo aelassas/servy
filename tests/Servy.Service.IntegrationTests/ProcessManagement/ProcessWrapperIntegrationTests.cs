@@ -150,7 +150,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.Start();
 
                 // Act: Wait for 1 second. The process takes 10 seconds, so it will remain healthy.
-                bool isHealthy = await wrapper.WaitForExitOrTimeoutAsync(TimeSpan.FromSeconds(1));
+                bool isHealthy = await wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(1));
 
                 // Assert: Returns true because it did NOT exit before the timeout
                 Assert.True(isHealthy);
@@ -167,7 +167,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.Start();
 
                 // Act: Wait for 5 seconds. The process exits instantly.
-                bool isHealthy = await wrapper.WaitForExitOrTimeoutAsync(TimeSpan.FromSeconds(5));
+                bool isHealthy = await wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(5));
 
                 // Assert: Returns false because it exited before the timeout finished
                 Assert.False(isHealthy);
@@ -185,7 +185,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Act & Assert
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-                    wrapper.WaitForExitOrTimeoutAsync(TimeSpan.FromSeconds(10), cts.Token));
+                    wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(10), cts.Token));
 
                 wrapper.Kill();
             }
