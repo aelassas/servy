@@ -37,6 +37,10 @@ $scriptDir = $PSScriptRoot
 $timestampFile = Join-Path $scriptDir "last-processed-toast.dat"
 $fallbackLogFile = "ServyNotification.log"
 
+# Event ID Taxonomy (Refer to src/Servy.Core/Logging/EventIds.cs for updates)
+# 3000-3099: Core Errors | 3100-3199: Script Errors
+$EVENT_ID_DEPENDENCY_ERROR = 3104
+
 # -------------------------------
 # 2. Imports
 # -------------------------------
@@ -53,9 +57,8 @@ foreach ($dep in $requiredDependencies) {
         
         # 1. Attempt to log to Event Log for administrator visibility
         try {
-            # NOTE: Hardcoded to 3104 (EventIds.cs -> ScriptDependencyMissing) because we cannot rely on 
             # exported variables from a module that has fundamentally failed to load.
-            Write-EventLog -LogName Application -Source "Servy" -EventId 3104 `
+            Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_DEPENDENCY_ERROR `
                 -EntryType Error -Message $errorMsg -ErrorAction Stop
         } catch {
             # 2. Fallback to stderr if Event Log fails (or source isn't registered)

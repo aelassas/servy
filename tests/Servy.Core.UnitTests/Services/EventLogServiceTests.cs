@@ -21,7 +21,7 @@ namespace Servy.Core.UnitTests.Services
             return new ServyEventLogEntry
             {
                 EventId = id,
-                Level = Logging.EventLogReader.ParseLevel(level),
+                Level = Core.Logging.EventLogReader.ParseLevel(level),
                 Time = time ?? DateTime.MinValue,
                 ProviderName = AppConfig.EventSource,
                 Message = message
