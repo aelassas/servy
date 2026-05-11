@@ -22,27 +22,27 @@ namespace Servy.Core.Data
         /// Updates an existing <see cref="ServiceDto"/> record.
         /// </summary>
         /// <param name="service">The DTO containing updated values.</param>
-        /// <param name="updateRuntimeState">Required flag to update runtime state (PID, ActiveStdoutPath, ActiveStderrPath).</param>
+        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The number of affected records.</returns>
-        Task<int> UpdateAsync(ServiceDto service, bool updateRuntimeState, CancellationToken cancellationToken = default);
+        Task<int> UpdateAsync(ServiceDto service, bool preserveExistingRuntimeState, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Updates an existing <see cref="ServiceDto"/> record.
         /// </summary>
         /// <param name="service">The DTO containing updated values.</param>
-        /// <param name="updateRuntimeState">Required flag to update runtime state (PID, ActiveStdoutPath, ActiveStderrPath).</param>
+        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath).</param>
         /// <returns>The number of affected records.</returns>
-        int Update(ServiceDto service, bool updateRuntimeState);
+        int Update(ServiceDto service, bool preserveExistingRuntimeState);
 
         /// <summary>
         /// Adds or updates a <see cref="ServiceDto"/> record depending on whether it exists.
         /// </summary>
         /// <param name="service">The DTO to upsert.</param>
-        /// <param name="updateRuntimeState">Required flag to update runtime state (PID, ActiveStdoutPath, ActiveStderrPath).</param>
+        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The number of affected records.</returns>
-        Task<int> UpsertAsync(ServiceDto service, bool updateRuntimeState, CancellationToken cancellationToken = default);
+        Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously inserts or updates a collection of services in the database.
