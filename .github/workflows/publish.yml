@@ -214,7 +214,7 @@ jobs:
         shell: pwsh
         run: dotnet test Servy.sln --configuration $env:CONFIGURATION --no-build --filter "Category!=ReflectionValidation"
 
-# -----------------------------------------------------
+      # -----------------------------------------------------
       # Build and Publish SBOM
       # -----------------------------------------------------
       - name: Generate SBOM
