@@ -4,16 +4,7 @@
 
 **Date:** 2026-05-11 | **Tag:** [`v8.4`](https://github.com/aelassas/servy/tree/v8.4)
 
-Servy 8.4 introduces enhanced recovery orchestration, improved security protocols, and significant performance optimizations across the entire service ecosystem.
-
-### Key Highlights
-
-* **Advanced Recovery Orchestration:** New configuration options to ensure critical services maintain high availability through complex failure states.
-* **Granular Configuration:** Expanded settings for process management and lifecycle handling, offering deeper flexibility for specialized environments.
-* **Hardened Security & Stability:** Under-the-hood improvements to core security logic and stability, ensuring safer operation in production settings.
-* **System Maintenance:** Comprehensive bug fixes and optimizations for a more reliable developer and operator experience.
-
-The full changelog is available below.
+Servy 8.4 introduces enhanced recovery orchestration, improved security, significant performance optimizations, and bug fixes across the entire service ecosystem. The full changelog is available below.
 
 ### Full Changelog
 <details>
