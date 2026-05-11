@@ -128,7 +128,7 @@ function Update-Files {
 
 # 1. Bulk file updates (PowerShell, Inno, Projects)
 $bulkFiles = Get-ChildItem -Path $baseDir -Recurse -Include *.ps1, *.iss, *.csproj -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -notmatch '[\/](bin|obj|packages|node_modules|\.git|TestResults)[\/]' }
+    Where-Object { $_.FullName -notmatch '[\\/](bin|obj|packages|node_modules|\.git|TestResults)[\\/]' }
 Update-Files -Files $bulkFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
 
 # 2. Specific Config/Workflow updates (Safe Pathing)
