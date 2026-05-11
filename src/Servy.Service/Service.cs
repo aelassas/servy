@@ -502,7 +502,7 @@ namespace Servy.Service
                             await Task.Delay(AppConfig.PreShutdownRegistrationDelayMs, token);
 
                             // 2. Validate state before touching the native handle
-                            if (token.IsCancellationRequested || _isTearingDown || _disposed || _serviceHandle == nint.Zero)
+                            if (token.IsCancellationRequested || _isTearingDown || _disposed || _serviceHandle == IntPtr.Zero)
                             {
                                 _logger?.Info("Skipping PRESHUTDOWN registration: Service is already tearing down.");
                                 return;
