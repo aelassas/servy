@@ -462,7 +462,7 @@ namespace Servy.Core.UnitTests.Helpers
                         writer.Write("atomic-sync-test-48");
                         // fs.Flush is called internally by WriteFileAtomic after the action
                     }
-                });
+                }, TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.True(File.Exists(targetPath));
@@ -495,7 +495,7 @@ namespace Servy.Core.UnitTests.Helpers
                             writer.Write("partial-data");
                             throw new InvalidOperationException("Simulated failure");
                         }
-                    });
+                    }, TestContext.Current.CancellationToken);
                 });
 
                 // CleanupTempFile is called in finally to ensure .tmp is removed
@@ -533,7 +533,7 @@ namespace Servy.Core.UnitTests.Helpers
                         writer.Write("new-content");
                     }
                     // StreamWriter is disposed here, but 'stream' remains open for Helper.WriteFileAtomic to Flush()
-                });
+                }, TestContext.Current.CancellationToken);
 
                 // Assert: Attributes should be normalized before move
                 Assert.True(File.Exists(targetPath));
@@ -572,7 +572,6 @@ namespace Servy.Core.UnitTests.Helpers
                 // Assert
                 Assert.True(File.Exists(targetPath));
 
-                // .NET 4.8 workaround for lack of File.ReadAllTextAsync
                 string result;
                 using (StreamReader reader = new StreamReader(targetPath))
                 {

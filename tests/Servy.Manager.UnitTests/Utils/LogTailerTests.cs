@@ -73,7 +73,7 @@ namespace Servy.Manager.UnitTests.Utils
                 // Start tailing from the end of the "Old content"
                 var tailTask = tailer.RunFromPosition(initialPath, LogType.StdOut, fileInfo.Length, fileInfo.CreationTimeUtc, cts.Token);
 
-                // DETERMINISTIC WAIT 1: Ensure the loop has started (Compatible with .NET 4.8)
+                // DETERMINISTIC WAIT 1: Ensure the loop has started
                 var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
                 var completedTask = await Task.WhenAny(tailer.LoopStartedSignal.Task, timeoutTask);
 

@@ -69,7 +69,6 @@ namespace Servy.Manager.Models
         {
             get
             {
-                // LOG: Resolving icon path for current log level using .NET 4.8 switch syntax
                 switch (Level)
                 {
                     case EventLogLevel.Warning:
