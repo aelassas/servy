@@ -1493,7 +1493,7 @@ namespace Servy.Service
                         serviceDto.ActiveStderrPath = _options?.StdErrPath;
                     }
 
-                    _serviceRepository.Update(serviceDto, updateRuntimeState: true);
+                    _serviceRepository.Update(serviceDto, preserveExistingRuntimeState: false);
                 }
             }
             catch (Exception ex)

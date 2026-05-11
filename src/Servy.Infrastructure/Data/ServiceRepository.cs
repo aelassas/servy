@@ -75,11 +75,11 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<int> UpdateAsync(ServiceDto service, bool updateRuntimeState, CancellationToken cancellationToken = default)
+        public virtual async Task<int> UpdateAsync(ServiceDto service, bool preserveExistingRuntimeState, CancellationToken cancellationToken = default)
         {
             var encryptedService = CreateEncryptedClone(service);
 
-            if (!updateRuntimeState)
+            if (preserveExistingRuntimeState)
             {
                 await PatchRuntimeStateAsync(encryptedService, cancellationToken);
             }
@@ -93,11 +93,11 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual int Update(ServiceDto service, bool updateRuntimeState)
+        public virtual int Update(ServiceDto service, bool preserveExistingRuntimeState)
         {
             var encryptedService = CreateEncryptedClone(service);
 
-            if (!updateRuntimeState)
+            if (preserveExistingRuntimeState)
             {
                 PatchRuntimeState(encryptedService);
             }
@@ -111,11 +111,11 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<int> UpsertAsync(ServiceDto service, bool updateRuntimeState, CancellationToken cancellationToken = default)
+        public virtual async Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, CancellationToken cancellationToken = default)
         {
             var encryptedService = CreateEncryptedClone(service);
 
-            if (!updateRuntimeState)
+            if (preserveExistingRuntimeState)
             {
                 await PatchRuntimeStateAsync(encryptedService, cancellationToken);
             }
@@ -334,7 +334,7 @@ namespace Servy.Infrastructure.Data
                 if (service == null) return false;
 
                 // Preserve runtime state (PID, ActiveStdoutPath/ActiveStderrPath paths) if the service exists and is running.
-                await UpsertAsync(service, updateRuntimeState: false, cancellationToken);
+                await UpsertAsync(service, preserveExistingRuntimeState: true, cancellationToken);
                 return true;
             }
             catch (OperationCanceledException)
@@ -368,7 +368,7 @@ namespace Servy.Infrastructure.Data
                 var service = _jsonServiceSerializer.Deserialize(json);
                 if (service == null) return false;
 
-                await UpsertAsync(service, updateRuntimeState: false, cancellationToken);
+                await UpsertAsync(service, preserveExistingRuntimeState: true, cancellationToken);
                 return true;
             }
             catch (OperationCanceledException)
