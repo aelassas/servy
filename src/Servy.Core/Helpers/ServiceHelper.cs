@@ -318,7 +318,7 @@ namespace Servy.Core.Helpers
                                 }
                                 finally
                                 {
-                                    // CRITICAL: You must free the memory allocated by shell32.dll
+                                    // CRITICAL: We must free the memory allocated by shell32.dll
                                     NativeMethods.LocalFree(argsPtr);
                                 }
                             }
