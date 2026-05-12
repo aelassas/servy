@@ -84,7 +84,7 @@ namespace Servy.Manager.ViewModels
         private async void OnTick(object sender, EventArgs e)
         {
             // 1. Atomic Guard: Must be monitoring AND not already running a tick
-            if (Interlocked.CompareExchange(ref _isMonitoringFlag, 1, 1) == 0 ||
+            if (Volatile.Read(ref _isMonitoringFlag) == 0 ||
                 Interlocked.CompareExchange(ref _isTickRunningFlag, 1, 0) == 1)
             {
                 return;
@@ -111,7 +111,7 @@ namespace Servy.Manager.ViewModels
                 Interlocked.Exchange(ref _isTickRunningFlag, 0);
 
                 // 2. Safety Check: Only restart if we are STILL supposed to be monitoring
-                if (Interlocked.CompareExchange(ref _isMonitoringFlag, 1, 1) == 1)
+                if (Volatile.Read(ref _isMonitoringFlag) == 1)
                 {
                     _timer?.Start();
                 }
