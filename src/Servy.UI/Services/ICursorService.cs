@@ -9,8 +9,7 @@
         /// <summary>
         /// Sets the application cursor to the Wait (hourglass/spinner) cursor.
         /// </summary>
-        /// <returns>An IDisposable object that, when disposed, restores the cursor to its default state.</returns>
-        IDisposable SetWaitCursor();
+        void SetWaitCursor();
 
         /// <summary>
         /// Explicitly clears any active cursor overrides, returning the cursor to normal.

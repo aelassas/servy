@@ -52,7 +52,6 @@ namespace Servy.Manager.ViewModels
         private readonly IAppConfiguration _appConfig;
         private readonly IProcessHelper _processHelper;
 
-        private IDisposable? _busyCursor; // Manages the busy cursor explicitly for Sequential tasks
         private bool _disposed;
 
         #endregion
@@ -750,12 +749,10 @@ namespace Servy.Manager.ViewModels
 
             if (_refreshTimer != null)
             {
-                _refreshTimer.Stop();            // Stop the timer
+                _refreshTimer.Stop();         // Stop the timer
                 _refreshTimer.Tick -= OnTick; // Unsubscribe event
                 _refreshTimer = null;
             }
-
-            _busyCursor?.Dispose();
         }
 
         /// <summary>
@@ -1164,15 +1161,11 @@ namespace Servy.Manager.ViewModels
                 IsBusy = busy;
                 if (busy)
                 {
-                    if (_busyCursor == null)
-                    {
-                        _busyCursor = _cursorService?.SetWaitCursor();
-                    }
+                    _cursorService.SetWaitCursor();
                 }
                 else
                 {
-                    _busyCursor?.Dispose();
-                    _busyCursor = null;
+                    _cursorService.ResetCursor();
                 }
             });
         }

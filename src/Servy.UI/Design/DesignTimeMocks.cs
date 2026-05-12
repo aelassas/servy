@@ -264,10 +264,7 @@ namespace Servy.UI.Design
         /// <summary>
         /// Returns a dummy disposable to satisfy 'using' blocks in ViewModels.
         /// </summary>
-        public IDisposable SetWaitCursor()
-        {
-            return new NoOpDisposable();
-        }
+        public void SetWaitCursor() { }
 
         private class NoOpDisposable : IDisposable
         {
