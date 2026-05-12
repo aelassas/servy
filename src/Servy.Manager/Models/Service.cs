@@ -107,8 +107,8 @@ namespace Servy.Manager.Models
         }
 
         /// <summary>
-        /// Gets or sets CPU usage in percentage.
-        /// Aggregate CPU usage. Values can exceed 100.0 if the tree utilizes multiple cores.
+        /// Gets or sets the aggregate CPU usage in percentage of whole-machine capacity.
+        /// Bounded to the range [0, 100] by <see cref="Core.Helpers.IProcessHelper.GetProcessTreeMetrics"/>.
         /// </summary>
         public double? CpuUsage
         {
