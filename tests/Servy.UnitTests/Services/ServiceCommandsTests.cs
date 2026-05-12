@@ -58,9 +58,6 @@ namespace Servy.UnitTests.Services
 
             _serviceManagerMock.Setup(m => m.RestartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
-
-            // Setup CursorService to return a dummy disposable for 'using' blocks
-            _cursorServiceMock.Setup(c => c.SetWaitCursor()).Returns(Mock.Of<IDisposable>());
         }
 
         private ServiceCommands CreateSut(Action<ServiceDto> bindSpy = null)
