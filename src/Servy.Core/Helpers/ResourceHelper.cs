@@ -270,7 +270,6 @@ namespace Servy.Core.Helpers
         /// <param name="fileName">The base name of the file to extract (without extension).</param>
         /// <param name="extension">The file extension (e.g., "exe", "dll").</param>
         /// <param name="targetPath">Output parameter containing the full destination path on disk.</param>
-        /// <param name="targetFileName">Output parameter containing the combined filename and extension.</param>
         /// <param name="resourceName">Output parameter containing the full manifest resource name used for extraction.</param>
         /// <returns>True if the resource needs to be copied; false if the existing file is up to date.</returns>
         private bool ShouldCopyResource(

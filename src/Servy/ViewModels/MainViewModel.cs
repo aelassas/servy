@@ -1071,7 +1071,7 @@ namespace Servy.ViewModels
         private void BrowseStderrPath() => BrowseAndAssign(() => _dialogService.SaveFile(Strings.Dialog_SelectStderrFile), v => StderrPath = v);
 
         /// <summary>
-        /// Opens a dialog to browse for a failure program file and sets <see cref="FailureProgramExecutablePath"/>.
+        /// Opens a dialog to browse for a failure program file and sets <see cref="FailureProgramPath"/>.
         /// </summary>
         private void BrowseFailureProgramPath() => BrowseAndAssign(_dialogService.OpenExecutable, v => FailureProgramPath = v);
 

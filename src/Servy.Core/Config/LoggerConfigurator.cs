@@ -18,8 +18,11 @@ namespace Servy.Core.Config
         /// <param name="instanceLogger">Optional. An instance logger (e.g., EventLogLogger) to sync settings like LogLevel and EnableEventLog.</param>
         public static void ConfigureFromAppSettings(IConfiguration config, string? logFileName = null, IServyLogger? instanceLogger = null)
         {
-            if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel) || !Enum.IsDefined(typeof(LogLevel), logLevel))
+            var rawLogLevel = config["LogLevel"];
+            if (!Enum.TryParse<LogLevel>(rawLogLevel, true, out var logLevel) || !Enum.IsDefined(typeof(LogLevel), logLevel))
             {
+                if (!string.IsNullOrEmpty(rawLogLevel))
+                    Logger.Warn($"Invalid configuration entry '{rawLogLevel}' for 'LogLevel'. Using default: {AppConfig.DefaultLogLevel}.");
                 logLevel = AppConfig.DefaultLogLevel;
             }
             instanceLogger?.SetLogLevel(logLevel);

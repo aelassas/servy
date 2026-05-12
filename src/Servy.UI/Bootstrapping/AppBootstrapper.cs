@@ -125,9 +125,9 @@ namespace Servy.UI.Bootstrapping
                     try
                     {
                         dispatcher.Invoke(() => MessageBox.Show(
-                            Strings.Msg_FatalError_Body, 
+                            Strings.Msg_FatalError_Body,
                             Strings.Msg_FatalError_Title,
-                            MessageBoxButton.OK, 
+                            MessageBoxButton.OK,
                             MessageBoxImage.Error));
                         return;
                     }
@@ -274,7 +274,7 @@ namespace Servy.UI.Bootstrapping
             if (e.Args != null)
             {
                 var positionalArgs = e.Args.Where(arg => !arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase)).ToList();
-                if (positionalArgs.Count > 0) bool.TryParse(positionalArgs[0], out showSplash);
+                if (positionalArgs.Count > 0 && bool.TryParse(positionalArgs[0], out var parsed)) showSplash = parsed;
                 if (positionalArgs.Count > 1) serviceName = positionalArgs[1];
             }
 
