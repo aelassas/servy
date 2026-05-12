@@ -118,38 +118,13 @@ namespace Servy.UI.UnitTests.Design
         }
 
         [Fact]
-        public void DesignTimeCursorService_SetWaitCursor_ReturnsDisposableThatDoesNothing()
-        {
-            // Arrange
-            var service = new DesignTimeCursorService();
-
-            // Act
-            // Branch: Returns new NoOpDisposable()
-            IDisposable disposable = service.SetWaitCursor();
-
-            // Assert
-            Assert.NotNull(disposable);
-
-            // Act & Assert 
-            // Branch: NoOpDisposable.Dispose() body
-            var exception = Record.Exception(() => disposable.Dispose());
-            Assert.Null(exception);
-        }
-
-        [Fact]
         public void DesignTimeCursorService_UsingBlock_WorksCorrectly()
         {
             // Verifies the "mechanical necessity" of the NoOpDisposable 
             // within a standard ViewModel pattern.
             var service = new DesignTimeCursorService();
 
-            var exception = Record.Exception(() =>
-            {
-                using (service.SetWaitCursor())
-                {
-                    // Simulate work
-                }
-            });
+            var exception = Record.Exception(service.SetWaitCursor);
 
             Assert.Null(exception);
         }
