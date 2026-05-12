@@ -21,7 +21,7 @@ namespace Servy.UI.IntegrationTests.Services
 
         #region STA Thread Helper
 
-       
+
 
         #endregion
 
@@ -31,15 +31,19 @@ namespace Servy.UI.IntegrationTests.Services
         public void SetWaitCursor_WhenApplicationIsNull_DoesNotThrow()
         {
             // Branch: if (Application.Current?.Dispatcher == null) return;
-            // This is the default state in standard xUnit runners
+            // This is the default state in standard xUnit runners because Application.Current is null.
 
-            using (var cursor = _service.SetWaitCursor())
+            // Act
+            var exception = Record.Exception(() =>
             {
-                Assert.NotNull(cursor);
-            }
+                _service.SetWaitCursor();
+                _service.ResetCursor();
+            });
 
-            _service.ResetCursor();
-            // Coverage: No exception occurred, and code returned early as expected.
+            // Assert
+            Assert.Null(exception);
+            // Coverage: This confirms the guard clause effectively prevented an 
+            // ObjectDisposedException or NullReferenceException when the WPF context is missing.
         }
 
         #endregion

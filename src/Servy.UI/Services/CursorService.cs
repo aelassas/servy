@@ -11,16 +11,10 @@ namespace Servy.UI.Services
     public class CursorService : ICursorService
     {
         /// <inheritdoc/>
-        public IDisposable SetWaitCursor()
-        {
-            return new OverrideCursorDisposable(Cursors.Wait);
-        }
+        public void SetWaitCursor() => SetCursorSafe(Cursors.Wait);
 
         /// <inheritdoc/>
-        public void ResetCursor()
-        {
-            SetCursorSafe(null);
-        }
+        public void ResetCursor() => SetCursorSafe(null);
 
         /// <summary>
         /// Safely sets the cursor, marshaling to the UI thread if necessary, 
@@ -44,21 +38,5 @@ namespace Servy.UI.Services
             }
         }
 
-        /// <summary>
-        /// A nested helper class that implements IDisposable to automatically 
-        /// reset the cursor when the using block scope ends.
-        /// </summary>
-        private class OverrideCursorDisposable : IDisposable
-        {
-            public OverrideCursorDisposable(Cursor cursor)
-            {
-                SetCursorSafe(cursor);
-            }
-
-            public void Dispose()
-            {
-                SetCursorSafe(null);
-            }
-        }
     }
 }
