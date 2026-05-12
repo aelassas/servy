@@ -73,7 +73,7 @@
         /// <returns>
         /// A normalized, absolute path with environment variables expanded.
         /// </returns>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="InvalidOperationException">
         /// Thrown if the path is relative or contains environment variables that could not be expanded.
         /// </exception>
         /// <remarks>

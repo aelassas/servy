@@ -56,33 +56,9 @@ namespace Servy.UI.Services
         {
             try
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = AppConfig.DocumentationLink,
-                    UseShellExecute = true
-                };
-
-                if (!IsHeadlessMode)
-                {
-                    // Process.Start can return null if it hands off to an existing browser instance
-                    var process = Process.Start(psi);
-                    if (process != null)
-                    {
-                        using (process)
-                        {
-                            // Native handle is closed immediately after launch 
-                            // to prevent leaks in the Manager UI.
-                        }
-                    }
-                    else
-                    {
-                        Logger.Debug("Documentation link opened in an existing process.");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"[HEADLESS INFO] OpenDocumentation: opening browser URL {psi.FileName}");
-                }
+                const string headlessLabel = "OpenDocumentation";
+                const string fallbackDebug = "Documentation link opened in an existing process.";
+                OpenExternalUrl(AppConfig.DocumentationLink, headlessLabel, fallbackDebug);
             }
             catch (Exception ex)
             {
@@ -123,33 +99,9 @@ namespace Servy.UI.Services
                         var res = await _messageBoxService.ShowConfirmAsync(Strings.Msg_UpdateAvailablePrompt, caption);
                         if (res)
                         {
-                            var psi = new ProcessStartInfo
-                            {
-                                FileName = AppConfig.LatestReleaseLink,
-                                UseShellExecute = true
-                            };
-
-                            if (!IsHeadlessMode)
-                            {
-                                // Process.Start can return null if it hands off to an existing browser instance
-                                var process = Process.Start(psi);
-                                if (process != null)
-                                {
-                                    using (process)
-                                    {
-                                        // Native handle is closed immediately after launch 
-                                        // to prevent leaks in the Manager UI.
-                                    }
-                                }
-                                else
-                                {
-                                    Logger.Debug("Release link opened in an existing process.");
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine($"[HEADLESS INFO] CheckUpdates: opening browser at {psi.FileName}");
-                            }
+                            const string headlessLabel = "CheckUpdates";
+                            const string fallbackDebug = "Release link opened in an existing process.";
+                            OpenExternalUrl(AppConfig.LatestReleaseLink, headlessLabel, fallbackDebug);
                         }
                     }
                     else
@@ -178,5 +130,43 @@ namespace Servy.UI.Services
         {
             await _messageBoxService.ShowInfoAsync(about, caption);
         }
+
+        /// <summary>
+        /// Opens a URL using the system's default browser or logs the action if running in headless mode.
+        /// </summary>
+        /// <param name="url">The external web address or file path to open.</param>
+        /// <param name="headlessLabel">A descriptive label used for console output when <see cref="IsHeadlessMode"/> is true.</param>
+        /// <param name="fallbackDebug">The debug message to log if the process cannot be tracked (e.g., when handed off to an existing browser instance).</param>
+        /// <remarks>
+        /// This method handles the non-deterministic return value of <see cref="Process.Start(ProcessStartInfo)"/>. 
+        /// When a URL is handed off to an existing browser process, the method immediately logs 
+        /// the <paramref name="fallbackDebug"/> message. In UI environments, any returned process 
+        /// handle is disposed immediately to prevent resource leaks in the Manager interface.
+        /// </remarks>
+        private static void OpenExternalUrl(string url, string headlessLabel, string fallbackDebug)
+        {
+            var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
+            if (IsHeadlessMode)
+            {
+                Console.WriteLine($"[HEADLESS INFO] {headlessLabel}: opening browser URL {psi.FileName}");
+                return;
+            }
+
+            // Process.Start can return null if it hands off to an existing browser instance
+            var process = Process.Start(psi);
+            if (process != null)
+            {
+                using (process)
+                {
+                    // Native handle is closed immediately after launch 
+                    // to prevent leaks in the Manager UI.
+                }
+            }
+            else
+            {
+                Logger.Debug(fallbackDebug);
+            }
+        }
+
     }
 }

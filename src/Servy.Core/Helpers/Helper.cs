@@ -85,8 +85,9 @@ namespace Servy.Core.Helpers
 
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Debug($"IsValidPath: rejected '{path}': {ex.Message}");
                 return false;
             }
         }
@@ -118,8 +119,9 @@ namespace Servy.Core.Helpers
 
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Debug($"CreateParentDirectory: rejected '{path}': {ex.Message}");
                 return false;
             }
         }

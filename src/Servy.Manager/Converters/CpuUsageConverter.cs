@@ -39,13 +39,21 @@ namespace Servy.Manager.Converters
         }
 
         /// <summary>
-        /// Returns the CPU usage as string in percentage.
+        /// Converts a numeric CPU usage percentage into a formatted string for display in the Manager UI.
         /// </summary>
-        /// <param name="value">The PID.</param>
-        /// <param name="targetType"></param>
-        /// <param name="parameter"></param>
-        /// <param name="culture"></param>
-        /// <returns>The CPU usage as string.</returns>
+        /// <param name="value">The CPU usage value, typically a <see cref="double"/> or <see cref="Nullable{Double}"/> percentage (0–100).</param>
+        /// <param name="targetType">The type of the binding target property; typically <see cref="string"/>.</param>
+        /// <param name="parameter">Optional converter parameter; not used in this implementation.</param>
+        /// <param name="culture">The culture to use in the converter; uses the system's current UI culture.</param>
+        /// <returns>
+        /// A string representing the formatted CPU usage (e.g., "1.2%") produced by <see cref="_processHelper.FormatCpuUsage"/>, 
+        /// or the <see cref="UnknownCpuUsage"/> placeholder if the value is null or an incompatible type.
+        /// </returns>
+        /// <remarks>
+        /// This implementation utilizes C# pattern matching to provide a "fail-silent" guard.
+        /// If the bound property is a null <see cref="Nullable{Double}"/>, the pattern match fails, 
+        /// safely returning the unknown placeholder instead of throwing a <see cref="NullReferenceException"/>.
+        /// </remarks>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             // Pattern matching handles the null check and unboxing in one go.
