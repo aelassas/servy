@@ -202,10 +202,7 @@ namespace Servy.Manager.ViewModels
                 if (!currentPid.HasValue)
                 {
                     ResetPid();
-                    if (SelectedService != null)
-                    {
-                        SelectedService.Pid = null;
-                    }
+                    currentSelection.Pid = null;
                     CopyPidCommand?.RaiseCanExecuteChanged();
                     return;
                 }
