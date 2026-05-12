@@ -235,7 +235,7 @@ namespace Servy.Manager.ViewModels
                 if (!currentPid.HasValue)
                 {
                     ResetGraphs(true);
-                    SelectedService.Pid = null;
+                    currentSelection.Pid = null;
                     CopyPidCommand?.RaiseCanExecuteChanged();
                     return;
                 }
