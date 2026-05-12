@@ -275,11 +275,11 @@ namespace Servy.Manager.ViewModels
                 if (stateSnapshot?.Pid == null)
                 {
                     ResetConsole(true);
-                    if (SelectedService != null)
+                    if (currentSelection != null)
                     {
-                        SelectedService.Pid = null;
-                        SelectedService.StdoutPath = null;
-                        SelectedService.StderrPath = null;
+                        currentSelection.Pid = null;
+                        currentSelection.StdoutPath = null;
+                        currentSelection.StderrPath = null;
                     }
                     CopyPidCommand?.RaiseCanExecuteChanged();
                     return;
@@ -293,10 +293,10 @@ namespace Servy.Manager.ViewModels
                         currentSelection.Pid = stateSnapshot.Pid;
                     _stdoutPath = stateSnapshot.ActiveStdoutPath;
                     _stderrPath = stateSnapshot.ActiveStderrPath;
-                    if (SelectedService != null)
+                    if (currentSelection != null)
                     {
-                        SelectedService.StdoutPath = stateSnapshot.ActiveStdoutPath;
-                        SelectedService.StderrPath = stateSnapshot.ActiveStderrPath;
+                        currentSelection.StdoutPath = stateSnapshot.ActiveStdoutPath;
+                        currentSelection.StderrPath = stateSnapshot.ActiveStderrPath;
                     }
 
                     _ = SwitchServiceAsync(stateSnapshot.ActiveStdoutPath, stateSnapshot.ActiveStderrPath);
