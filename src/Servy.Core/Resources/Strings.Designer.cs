@@ -133,6 +133,24 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Environment variable key cannot be empty..
+        /// </summary>
+        public static string Msg_EnvironmentVariableKeyEmpty {
+            get {
+                return ResourceManager.GetString("Msg_EnvironmentVariableKeyEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Each environment variable must contain an unescaped &apos;=&apos; character to separate the key from the value..
+        /// </summary>
+        public static string Msg_EnvironmentVariableMissingEquals {
+            get {
+                return ResourceManager.GetString("Msg_EnvironmentVariableMissingEquals", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à A fatal error occurred and the application must close. Detailed diagnostics have been saved to the log file..
         /// </summary>
         public static string Msg_FatalError_Body {
@@ -381,6 +399,15 @@ namespace Servy.Core.Resources {
         public static string Msg_InvalidRotationSize {
             get {
                 return ResourceManager.GetString("Msg_InvalidRotationSize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Invalid service name &apos;{0}&apos;. Only letters, digits, hyphens, underscores, and periods are allowed..
+        /// </summary>
+        public static string Msg_InvalidServiceDependencyName {
+            get {
+                return ResourceManager.GetString("Msg_InvalidServiceDependencyName", resourceCulture);
             }
         }
         

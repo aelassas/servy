@@ -1,4 +1,6 @@
-﻿namespace Servy.Core.EnvironmentVariables
+﻿using Servy.Core.Resources;
+
+namespace Servy.Core.EnvironmentVariables
 {
     /// <summary>
     /// Provides validation methods for environment variables strings with escaping support.
@@ -36,7 +38,7 @@
 
                 if (idx < 0)
                 {
-                    errorMessage = "[EnvironmentVariables] Each variable must contain an unescaped '=' character to separate the key from the value.";
+                    errorMessage = Strings.Msg_EnvironmentVariableMissingEquals;
                     return false;
                 }
 
@@ -45,7 +47,7 @@
 
                 if (string.IsNullOrEmpty(key))
                 {
-                    errorMessage = "[EnvironmentVariables] Environment variable key cannot be empty.";
+                    errorMessage = Strings.Msg_EnvironmentVariableKeyEmpty;
                     return false;
                 }
             }

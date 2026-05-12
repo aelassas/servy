@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Config;
+using Servy.Core.Resources;
 using System.Text.RegularExpressions;
 
 namespace Servy.Core.ServiceDependencies
@@ -42,7 +43,7 @@ namespace Servy.Core.ServiceDependencies
 
                 if (!ValidServiceNameRegex.IsMatch(serviceName))
                 {
-                    errors.Add($"[ServiceDependencies] Invalid service name '{serviceName}'.  Only letters, digits, hyphens, underscores, and periods are allowed.");
+                    errors.Add(string.Format(Strings.Msg_InvalidServiceDependencyName, serviceName));
                 }
             }
 

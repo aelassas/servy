@@ -1,4 +1,5 @@
 ﻿using Servy.Core.EnvironmentVariables;
+using Servy.Core.Resources;
 using System.Reflection;
 
 namespace Servy.Core.UnitTests.EnvironmentVariables
@@ -127,7 +128,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             string error;
             var result = EnvironmentVariablesValidator.Validate("NOVALUE", out error);
             Assert.False(result);
-            Assert.Contains("Each variable must contain an unescaped '=' character to separate the key from the value.", error, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(Strings.Msg_EnvironmentVariableMissingEquals, error);
         }
 
         [Fact]
@@ -136,7 +137,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             string error;
             var result = EnvironmentVariablesValidator.Validate("=VALUE", out error);
             Assert.False(result);
-            Assert.Contains("key cannot be empty", error, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(Strings.Msg_EnvironmentVariableKeyEmpty, error);
         }
 
         [Fact]
@@ -237,7 +238,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
             Assert.False(result);
             // Updated to match the refined error message
-            Assert.Contains("must contain an unescaped '=' character", error, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(Strings.Msg_EnvironmentVariableMissingEquals, error);
         }
 
         [Fact]
@@ -249,7 +250,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             var result = EnvironmentVariablesValidator.Validate(input, out error);
 
             Assert.False(result);
-            Assert.Contains("key cannot be empty", error, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(Strings.Msg_EnvironmentVariableKeyEmpty, error, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]
