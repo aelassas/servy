@@ -174,10 +174,9 @@ namespace Servy.Manager.ViewModels
             ICursorService cursorService,
             IProcessHelper processHelper,
             IUiDispatcher uiDispatcher
-            ) : base(cursorService, uiDispatcher)
+            ) : base(cursorService, uiDispatcher, serviceCommands)
         {
-            _serviceRepository = serviceRepository;
-            ServiceCommands = serviceCommands;
+            _serviceRepository = serviceRepository;            
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null, name: nameof(CopyPidAsync)); 

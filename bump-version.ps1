@@ -68,7 +68,7 @@ function Update-FileContent {
         # Count matches before attempting replacement
         $regexMatches = [regex]::Matches($content, $Pattern)
         if ($regexMatches.Count -eq 0) {
-            Write-Error "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern"
+            Write-Warning "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern" "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern"
             return
         }
         
