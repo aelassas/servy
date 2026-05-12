@@ -886,7 +886,7 @@ namespace Servy.Service
 			void LogIssue(string message, Exception ex = null)
 			{
 				if (ignoreFailure)
-					_logger?.Warn(message);
+					_logger?.Warn(message, ex);
 				else if (ex != null)
 					_logger?.Error(message, ex);
 				else
