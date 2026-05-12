@@ -471,7 +471,10 @@ namespace Servy.Core.Helpers
                     if (!parentProcess.HasExited)
                     {
                         parentProcess.Kill();
-                        parentProcess.WaitForExit(SafeWait(AppConfig.KillParentWaitMs));
+                        if (!parentProcess.WaitForExit(SafeWait(AppConfig.KillParentWaitMs)))
+                        {
+                            Logger.Warn($"Parent process {parentProcess.Id} did not exit within the safety window.");
+                        }
                     }
                 }
             }
