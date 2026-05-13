@@ -61,7 +61,7 @@ namespace Servy.Core.Validators
             if (dto.DisplayName?.Length > AppConfig.MaxDisplayNameLength)
                 result.Errors.Add(string.Format(Strings.Msg_DisplayNameLengthReached, AppConfig.MaxDisplayNameLength));
             if (dto.Description?.Length > AppConfig.MaxDescriptionLength)
-                result.Warnings.Add(string.Format(Strings.Msg_DescriptionLengthReached, AppConfig.MaxDescriptionLength));
+                result.Errors.Add(string.Format(Strings.Msg_DescriptionLengthReached, AppConfig.MaxDescriptionLength));
 
             var paramFields = new[] { dto.Parameters, dto.PreLaunchParameters, dto.PostLaunchParameters, dto.PreStopParameters, dto.PostStopParameters, dto.FailureProgramParameters };
             if (paramFields.Any(p => p?.Length > AppConfig.MaxArgumentLength))

@@ -74,15 +74,15 @@ namespace Servy.Core.UnitTests.Validators
         }
 
         [Fact]
-        public void Validate_ExceedingLengthLimits_ReturnsWarnings()
+        public void Validate_ExceedingLengthLimits_ReturnsErrors()
         {
             var dto = CreateValidDto();
             dto.Description = new string('C', AppConfig.MaxDescriptionLength + 1);
 
             var result = _sut.Validate(dto);
 
-            Assert.Single(result.Warnings);
-            Assert.Contains(result.Warnings, w => w.Contains("exceeds"));
+            Assert.Single(result.Errors);
+            Assert.Contains(result.Errors, w => w.Contains("exceeds"));
         }
 
         [Fact]

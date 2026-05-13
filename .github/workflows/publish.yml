@@ -224,18 +224,17 @@ jobs:
       - name: Run unit tests
         shell: pwsh
         run: |
-          # Common paths for vstest.console.exe
-          $possiblePaths = @(
-                'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe',
-                'C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\Extensions\TestPlatform\vstest.console.exe',
-                'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe',
-                'C:\Program Files\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\Extensions\TestPlatform\vstest.console.exe'
-            )
+          # Use vswhere to find the latest installed vstest.console.exe dynamically
+          $vsInstallPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
 
-          $vsTest = $possiblePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $vsInstallPath) {
+              throw "Visual Studio installation not found using vswhere."
+          }
 
-          if (-not $vsTest) {
-              throw "Could not locate vstest.console.exe on the runner."
+          $vsTest = Join-Path $vsInstallPath "Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
+
+          if (-not (Test-Path $vsTest)) {
+              throw "Could not locate vstest.console.exe at expected path: $vsTest"
           }
 
           Write-Host "Using vstest.console.exe at: $vsTest"

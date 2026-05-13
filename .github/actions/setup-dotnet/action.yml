@@ -11,7 +11,7 @@ inputs:
   version:
     description: '.NET SDK version to install (e.g., 10.0.102). Pinning ensures reproducible builds.'
     required: true
-    default: '10.0.202'
+    default: '10.0.204'
 
 runs:
   using: "composite"

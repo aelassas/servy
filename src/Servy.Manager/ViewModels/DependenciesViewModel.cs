@@ -138,11 +138,10 @@ namespace Servy.Manager.ViewModels
             IAppConfiguration appConfig,
             ICursorService cursorService,
             IUiDispatcher uiDispatcher,
-            IMessageBoxService messageBoxService) : base(cursorService, uiDispatcher)
+            IMessageBoxService messageBoxService) : base(cursorService, uiDispatcher, serviceCommands)
         {
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
-            ServiceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
 

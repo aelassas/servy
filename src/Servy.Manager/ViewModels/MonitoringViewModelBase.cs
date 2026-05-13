@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Logging;
+using Servy.Manager.Services;
 using Servy.UI.Services;
 using System;
 using System.Threading;
@@ -53,8 +54,11 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Initializes a new instance of the <see cref="MonitoringViewModelBase"/> class.
         /// </summary>
+        /// <param name="cursorService">Service to manage cursor state.</param>
         /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
-        protected MonitoringViewModelBase(ICursorService cursorService, IUiDispatcher uiDispatcher) : base(cursorService, uiDispatcher)
+        /// <param name="serviceCommands">Commands for service operations.</param>
+        protected MonitoringViewModelBase(ICursorService cursorService, IUiDispatcher uiDispatcher, IServiceCommands serviceCommands)
+            : base(cursorService, uiDispatcher, serviceCommands)
         {
         }
 

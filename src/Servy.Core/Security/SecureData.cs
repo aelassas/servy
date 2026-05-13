@@ -195,7 +195,7 @@ namespace Servy.Core.Security
                     {
                         if (!AppConfig.AllowLegacyV1Decryption)
                         {
-                            Logger.Warn("Security block: Attempted to decrypt a v1 payload, but legacy unauthenticated decryption is disabled. Returning original input to prevent downgrade attack.");
+                            Logger.Warn("Security block: Attempted to decrypt a v1 payload, but legacy unauthenticated decryption is disabled. Throwing to prevent downgrade attack.");
                             throw new SecureDataIntegrityException("Legacy v1 decryption is disabled via configuration.");
                         }
 
@@ -223,11 +223,14 @@ namespace Servy.Core.Security
             // Convert the span to a string once for use in legacy methods.
             string rawPayload = payload.ToString();
 
+            bool legacyAttempted = false;
             try
             {
                 // Version 1 Legacy Detection
                 if (IsStrictBase64(rawPayload))
                 {
+                    legacyAttempted = true;
+
                     if (!AppConfig.AllowLegacyV1Decryption)
                     {
                         Logger.Warn("Security block: Raw legacy payload encountered with legacy decryption disabled.");
@@ -245,10 +248,12 @@ namespace Servy.Core.Security
                 // For unmarked strings, we preserve the defensive fallback to avoid breaking 
                 // fields that were never meant to be encrypted.
                 Logger.Warn($"Legacy fallback decryption failed for unmarked data: {ex.Message}. Returning as plaintext.");
+                return rawPayload;
             }
 
             // Explicitly log when data is processed as plaintext.
-            Logger.Warn("Decryption bypassed: Input does not match any known encryption format. Returning as plaintext.");
+            if (!legacyAttempted)
+                Logger.Warn("Decryption bypassed: Input does not match any known encryption format. Returning as plaintext.");
             return rawPayload;
         }
 

@@ -109,10 +109,12 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="cursorService">Service to manage cursor state.</param>
         /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
-        protected ServiceSearchViewModelBase(ICursorService cursorService, IUiDispatcher uiDispatcher)
+        /// <param name="serviceCommands">Commands for service operations.</param>
+        protected ServiceSearchViewModelBase(ICursorService cursorService, IUiDispatcher uiDispatcher, IServiceCommands serviceCommands)
         {
             _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
             _uiDispatcher = uiDispatcher ?? throw new ArgumentNullException(nameof(uiDispatcher));
+            ServiceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
             SearchCommand = new AsyncCommand(SearchServicesAsync, name: nameof(SearchCommand));
         }
 
