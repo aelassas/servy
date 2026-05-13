@@ -1060,7 +1060,7 @@ function Install-ServyService {
     [ValidateRange(0, 86400)]
     [int] $PreLaunchTimeout,
 
-    [ValidateRange(0, 1000)]
+    [ValidateRange(0, 100000)]
     [int] $PreLaunchRetryAttempts,
 
     [switch] $PreLaunchIgnoreFailure,
