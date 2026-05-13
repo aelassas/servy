@@ -157,15 +157,7 @@ namespace Servy.Core.Services
                         {
                             foreach (var dep in deps)
                             {
-                                try
-                                {
-                                    childNodes.Add(BuildDependencyTree(dep.ServiceName, currentPath, fullyExpanded));
-                                }
-                                finally
-                                {
-                                    // Individual disposal for the "happy path" and failed recursion
-                                    dep.Dispose();
-                                }
+                                childNodes.Add(BuildDependencyTree(dep.ServiceName, currentPath, fullyExpanded));
                             }
                         }
                         finally
