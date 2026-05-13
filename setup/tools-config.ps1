@@ -35,8 +35,11 @@ function Resolve-Tool {
     # 1. Check dynamic Environment Variable
     # Use Get-Item because $env:SERVY_TOOL_$Name is not valid syntax.
     $envVarName = "SERVY_TOOL_$Name"
-    $envPath = (Get-Item -Path "Env:$envVarName" -ErrorAction SilentlyContinue).Value
-    if ($envPath) { return $envPath }
+    $envPath = (Get-Item -Path "env:$envVarName" -ErrorAction SilentlyContinue).Value
+    if ($envPath -and (Test-Path $envPath)) { return $envPath }
+    if ($envPath) {
+        Write-Warning "$envVarName is set to '$envPath' but the file does not exist; ignoring."
+    }
 
     # 2. Check System PATH
     $cmd = Get-Command $Name -ErrorAction SilentlyContinue

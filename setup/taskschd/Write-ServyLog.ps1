@@ -20,13 +20,19 @@ function Write-ServyLog {
             $fileInfo = Get-Item $FilePath
             if ($fileInfo.Length -gt $MaxSizeBytes) {
                 # Rotate using local time to maintain chronologic consistency
-                $localTime = Get-Date -Format "yyyyMMdd-HHmmss"
+                $localTime = Get-Date -Format "yyyyMMdd-HHmmss-fff"
                 $ext = [System.IO.Path]::GetExtension($FilePath)
                 $baseName = [System.IO.Path]::GetFileNameWithoutExtension($FilePath)
                 
-                # Format: FileName_20260501-062849.log
+                # Format: FileName_20260501-062849-301.log
                 $rotatedFileName = "{0}_{1}{2}" -f $baseName, $localTime, $ext
-                
+
+                $target = Join-Path (Split-Path $FilePath) $rotatedFileName
+                if (Test-Path $target) {
+                    $i = 1
+                    while (Test-Path "$target.$i") { $i++ }
+                    $rotatedFileName = (Split-Path $target -Leaf) + ".$i"
+                }
                 Rename-Item -Path $FilePath -NewName $rotatedFileName -Force
             }
         }
