@@ -21,17 +21,6 @@ namespace Servy.Restarter
     public static class Program
     {
         /// <summary>
-        /// The default timeout, in seconds, for service restart operations within the wrapper service.
-        /// </summary>
-        /// <remarks>
-        /// Set to 120 seconds to ensure maximum resiliency for background operations. 
-        /// This extended duration allows the restarter to wait out long 'Pending' transitions 
-        /// (e.g., heavy I/O cleanup or database flushes) without triggering a timeout 
-        /// exception in the host service.
-        /// </remarks>
-        public const int DefaultRestartTimeoutSeconds = 120;
-
-        /// <summary>
         /// Main method. Expects a single argument: the service name to restart.
         /// </summary>
         /// <param name="args">Command line arguments. args[0] must be the service name.</param>
@@ -79,7 +68,7 @@ namespace Servy.Restarter
                 var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
                 // 3. Configure the GLOBAL logging
-                var restartTimeout = int.TryParse(config["RestartTimeoutSeconds"], out var timeout) && timeout > 0 ? timeout : DefaultRestartTimeoutSeconds;
+                var restartTimeout = int.TryParse(config["RestartTimeoutSeconds"], out var timeout) && timeout > 0 ? timeout : AppConfig.DefaultRestarterTimeoutSeconds;
 
                 // 4. PROMOTE / SCOPE the logger
                 // Using the instance logger ensures that 'serviceName' is prepended 
