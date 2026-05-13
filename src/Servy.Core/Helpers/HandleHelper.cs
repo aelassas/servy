@@ -104,9 +104,7 @@ namespace Servy.Core.Helpers
                         Logger.Warn($"Failed to kill handle.exe after timeout (PID {process.Id}): {killEx.Message}");
                     }
 
-                    // FIX: Final WaitForExit() with no timeout flushes any in-flight async event handlers.
-                    // This prevents unsynchronized access to errorBuilder below.
-                    process.WaitForExit();
+                    process.WaitForExit(2000); // best-effort drain; we already have a TimeoutException coming
 
                     throw new TimeoutException($"handle.exe timed out. Stderr: {errorBuilder}");
                 }
