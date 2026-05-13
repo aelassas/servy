@@ -963,7 +963,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Maximum pre-launch retry attempts.
         /// </summary>
-        public const int MaxPreLaunchRetryAttempts = int.MaxValue;
+        public const int MaxPreLaunchRetryAttempts = 100_000;
 
         #endregion
 
