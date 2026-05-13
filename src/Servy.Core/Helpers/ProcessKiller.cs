@@ -84,11 +84,15 @@ namespace Servy.Core.Helpers
             using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
 
             // Step 1: Create a handle-less view of the entire system process table in a single pass
-            var (_, byParent) = BuildSnapshotAndChildMapNative();
+            var (snapshot, byParent) = BuildSnapshotAndChildMapNative();
+
+            // SECURITY: Get ancestor PIDs to prevent killing the Servy process chain if it happens 
+            // to be a descendant (e.g. through PID reuse or complex supervisor patterns)
+            var protectedPids = GetAncestorPids(snapshot);
 
             // Step 2: Recursively terminate descendants using the map
             var visited = new HashSet<int>();
-            WalkAndKillChildren(parentPid, DateTime.MinValue, selfPid, byParent, visited);
+            WalkAndKillChildren(parentPid, DateTime.MinValue, selfPid, protectedPids, byParent, visited);
         }
 
         /// <summary>
@@ -148,12 +152,14 @@ namespace Servy.Core.Helpers
         /// <param name="parentPid">The PID of the process whose children are being targeted.</param>
         /// <param name="parentStartTime">The creation time of the parent for identity verification.</param>
         /// <param name="selfPid">The PID of the current process to prevent suicide.</param>
+        /// <param name="protectedPids">A set of numerical identifiers corresponding to protected ancestor paths.</param>
         /// <param name="byParent">The pre-computed relationship dictionary.</param>
         /// <param name="visited">A set of PIDs already processed in this walk to prevent infinite recursion on cycles.</param>
         private void WalkAndKillChildren(
             int parentPid,
             DateTime parentStartTime,
             int selfPid,
+            HashSet<int> protectedPids,
             Dictionary<int, List<int>> byParent,
             HashSet<int> visited)
         {
@@ -161,7 +167,7 @@ namespace Servy.Core.Helpers
 
             foreach (int childPid in childrenPids)
             {
-                // Skip if it's the current process or the System process (PID 0-4)
+                // Fast-path: Skip if it's the current process or the System process (PID 0-4)
                 if (childPid == selfPid || childPid <= 4) continue;
 
                 // CYCLE GUARD: If we have already visited this child in the current walk, 
@@ -176,7 +182,9 @@ namespace Servy.Core.Helpers
                 {
                     using (var child = Process.GetProcessById(childPid))
                     {
-                        if (CriticalSystemProcesses.Contains(child.ProcessName)) continue;
+                        // SECURITY: Use centralized IsProtected as the single source of truth 
+                        // to guard against killing ancestors or system critical processes.
+                        if (IsProtected(childPid, child.ProcessName, protectedPids)) continue;
 
                         // Identity check: Ensures we don't kill a process that recycled a PID 
                         // from a target that died before this operation started.
@@ -184,8 +192,8 @@ namespace Servy.Core.Helpers
                             continue;
 
                         // Depth-First Recursion: Kill the leaves of the tree first.
-                        // We pass the same visited set down the stack.
-                        WalkAndKillChildren(childPid, child.StartTime, selfPid, byParent, visited);
+                        // We pass the same visited set and protected PIDs down the stack.
+                        WalkAndKillChildren(childPid, child.StartTime, selfPid, protectedPids, byParent, visited);
 
                         if (!child.HasExited)
                         {
@@ -337,7 +345,9 @@ namespace Servy.Core.Helpers
                 if (IsProtected(process.Id, process.ProcessName, protectedPids)) return;
 
                 var visited = new HashSet<int>();
-                WalkAndKillChildren(process.Id, process.StartTime, selfPid, byParent, visited);
+
+                // Thread protectedPids into the walk
+                WalkAndKillChildren(process.Id, process.StartTime, selfPid, protectedPids, byParent, visited);
 
                 if (!process.HasExited)
                 {

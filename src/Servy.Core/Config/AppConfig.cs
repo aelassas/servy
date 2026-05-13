@@ -856,6 +856,23 @@ namespace Servy.Core.Config
         /// </remarks>
         public const int HookCleanupTimeoutMs = 5_000;
 
+        /// <summary>
+        /// The default timeout, in seconds, for service restart operations within the wrapper service.
+        /// </summary>
+        /// <remarks>
+        /// Set to 120 seconds to ensure maximum resiliency for background operations. 
+        /// This extended duration allows the restarter to wait out long 'Pending' transitions 
+        /// (e.g., heavy I/O cleanup or database flushes) without triggering a timeout 
+        /// exception in the host service.
+        /// </remarks>
+        public const int DefaultRestarterTimeoutSeconds = 120;
+
+        /// <summary>
+        /// The number of bytes read from the beginning of a file to generate a prefix digest. 
+        /// 4096 bytes is the default to clear common application log headers and prologues.
+        /// </summary>
+        public const int FileIdentityPrefixBytes = 4096;
+
         #endregion
 
         #region Minimum Constraints
