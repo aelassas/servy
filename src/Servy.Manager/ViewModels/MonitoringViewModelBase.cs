@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Logging;
+using Servy.Manager.Services;
 using Servy.UI.Services;
 using System.Windows.Threading;
 
@@ -52,7 +53,9 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="cursorService">Service to manage cursor state.</param>
         /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
-        protected MonitoringViewModelBase(ICursorService cursorService, IUiDispatcher uiDispatcher) : base(cursorService, uiDispatcher)
+        /// <param name="serviceCommands">Commands for service operations.</param>
+        protected MonitoringViewModelBase(ICursorService cursorService, IUiDispatcher uiDispatcher, IServiceCommands serviceCommands) 
+            : base(cursorService, uiDispatcher, serviceCommands)
         {
         }
 

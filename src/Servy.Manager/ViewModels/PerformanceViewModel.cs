@@ -157,7 +157,6 @@ namespace Servy.Manager.ViewModels
         /// Initializes a new instance of the <see cref="PerformanceViewModel"/> class.
         /// </summary>
         /// <param name="serviceRepository">Repository for service data access.</param>
-        /// <param name="serviceCommands">Commands for service operations.</param>
         /// <param name="appConfig">Application configuration settings.</param>
         /// <param name="cursorService">Service used to control the cursor state.</param>
         /// <param name="processHelper">The process helper used to format process commands.</param>
@@ -169,10 +168,9 @@ namespace Servy.Manager.ViewModels
             ICursorService cursorService,
             IProcessHelper processHelper,
             IUiDispatcher uiDispatcher
-            ) : base(cursorService, uiDispatcher)
+            ) : base(cursorService, uiDispatcher, serviceCommands)
         {
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
-            ServiceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null, name: nameof(CopyPidAsync));
@@ -402,12 +400,6 @@ namespace Servy.Manager.ViewModels
         /// <returns>A task that represents the asynchronous copy operation.</returns>
         private async Task CopyPidAsync(object? parameter)
         {
-            if (ServiceCommands == null)
-            {
-                Logger.Warn("ServiceCommands is null in CopyPidAsync");
-                return;
-            }
-
             if (SelectedService?.Pid != null)
             {
                 var service = ServiceMapper.ToModel(SelectedService);

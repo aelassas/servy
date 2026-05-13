@@ -193,7 +193,7 @@ namespace Servy.Core.Helpers
                     }
                 }
                 catch (ArgumentException) { /* Process already dead */ }
-                catch (Exception ex) { Logger.Warn($"Failed to kill descendant {childPid} ({ex.GetType().Name}): {ex.Message}"); }
+                catch (Exception ex) { Logger.Warn($"Failed to kill descendant {childPid}.", ex); }
             }
         }
 
@@ -343,7 +343,7 @@ namespace Servy.Core.Helpers
                     }
                 }
             }
-            catch (Exception ex) { Logger.Warn($"Error killing process tree for {process.Id}: {ex.Message}"); }
+            catch (Exception ex) { Logger.Warn($"Error killing process tree for {process.Id}.", ex); }
         }
 
         #endregion
@@ -471,12 +471,15 @@ namespace Servy.Core.Helpers
                     if (!parentProcess.HasExited)
                     {
                         parentProcess.Kill();
-                        parentProcess.WaitForExit(SafeWait(AppConfig.KillParentWaitMs));
+                        if (!parentProcess.WaitForExit(SafeWait(AppConfig.KillParentWaitMs)))
+                        {
+                            Logger.Warn($"Parent process {parentProcess.Id} did not exit within the safety window.");
+                        }
                     }
                 }
             }
             catch (ArgumentException) { /* Already dead */ }
-            catch (Exception ex) { Logger.Warn($"Failed to kill parent {parentId} ({ex.GetType().Name}): {ex.Message}"); }
+            catch (Exception ex) { Logger.Warn($"Failed to kill parent {parentId}.", ex); }
         }
 
         /// <summary>

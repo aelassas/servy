@@ -369,7 +369,11 @@ namespace Servy.Core.Services
                         {
                             string errorMsg = $"Failed to enable pre-shutdown for service '{options.ServiceName}' during installation. Rolling back creation.";
                             Logger.Error(errorMsg);
-                            _windowsServiceApi.DeleteService(serviceHandle);
+                            if (!_windowsServiceApi.DeleteService(serviceHandle))
+                            {
+                                int rollbackErr = _win32ErrorProvider.GetLastWin32Error();
+                                Logger.Error($"Rollback failed: DeleteService returned false for '{options.ServiceName}'. Win32 error: {rollbackErr}. Manual cleanup may be required.");
+                            }
                             return OperationResult.Failure(errorMsg);
                         }
 

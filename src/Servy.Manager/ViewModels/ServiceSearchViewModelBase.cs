@@ -90,7 +90,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Gets or sets the command engine for executing service-level operations.
         /// </summary>
-        public IServiceCommands? ServiceCommands { get; set; }
+        public IServiceCommands ServiceCommands { get; set; }
 
         /// <summary>
         /// Gets the command triggered by the UI to start a new search.
@@ -106,10 +106,12 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="cursorService">Service to manage cursor state.</param>
         /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
-        protected ServiceSearchViewModelBase(ICursorService cursorService, IUiDispatcher uiDispatcher)
+        /// <param name="serviceCommands">Commands for service operations.</param>
+        protected ServiceSearchViewModelBase(ICursorService cursorService, IUiDispatcher uiDispatcher, IServiceCommands serviceCommands)
         {
             _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
             _uiDispatcher = uiDispatcher ?? throw new ArgumentNullException(nameof(uiDispatcher));
+            ServiceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
             SearchCommand = new AsyncCommand(SearchServicesAsync, name: nameof(SearchCommand));
         }
 

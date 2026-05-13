@@ -858,7 +858,7 @@ namespace Servy.Core.Native
             }
             catch (Exception ex)
             {
-                throw new SecurityException($"An error occurred while resolving the account '{username}': {ex.Message}");
+                throw new SecurityException($"An error occurred while resolving the account '{username}': {ex.Message}", ex);
             }
 
             // gMSAs are managed by Active Directory and bypass standard local LogonUser validation.

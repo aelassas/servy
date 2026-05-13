@@ -615,7 +615,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task ConfigureServiceAsync(object? parameter)
         {
-            if (ServiceCommands == null) throw new InvalidOperationException("ServiceCommands is not initialized.");
             await ServiceCommands.ConfigureServiceAsync(parameter as Service);
         }
 
@@ -624,7 +623,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task ImportXmlConfigAsync(object? parameter)
         {
-            if (ServiceCommands == null) throw new InvalidOperationException("ServiceCommands is not initialized.");
             await ServiceCommands.ImportXmlConfigAsync(cancellationToken: _cts?.Token ?? CancellationToken.None);
         }
 
@@ -633,7 +631,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task ImportJsonConfigAsync(object? parameter)
         {
-            if (ServiceCommands == null) throw new InvalidOperationException("ServiceCommands is not initialized.");
             await ServiceCommands.ImportJsonConfigAsync(cancellationToken: _cts?.Token ?? CancellationToken.None);
         }
 
@@ -644,7 +641,6 @@ namespace Servy.Manager.ViewModels
             ExecuteBulkOperationAsync(
                 s =>
                 {
-                    if (ServiceCommands == null) throw new InvalidOperationException("ServiceCommands is not initialized.");
                     return ServiceCommands.StartServiceAsync(s, showMessageBox: false);
                 },
                 Strings.Confirm_StartSelectedServices,
@@ -657,7 +653,6 @@ namespace Servy.Manager.ViewModels
             ExecuteBulkOperationAsync(
                 s =>
                 {
-                    if (ServiceCommands == null) throw new InvalidOperationException("ServiceCommands is not initialized.");
                     return ServiceCommands.StopServiceAsync(s, showMessageBox: false);
                 },
                 Strings.Confirm_StopSelectedServices,
@@ -670,7 +665,6 @@ namespace Servy.Manager.ViewModels
             ExecuteBulkOperationAsync(
                 s =>
                 {
-                    if (ServiceCommands == null) throw new InvalidOperationException("ServiceCommands is not initialized.");
                     return ServiceCommands.RestartServiceAsync(s, showMessageBox: false);
                 },
                 Strings.Confirm_RestartSelectedServices,
