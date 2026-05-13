@@ -294,14 +294,7 @@ namespace Servy.Manager
                         return defaultValue;
                     }
 
-                    var rawLogLevel = config["LogLevel"];
-                    if (!Enum.TryParse<LogLevel>(rawLogLevel, true, out var logLevel) || !Enum.IsDefined(typeof(LogLevel), logLevel))
-                    {
-                        if (!string.IsNullOrEmpty(rawLogLevel))
-                            Logger.Warn($"Invalid configuration entry '{rawLogLevel}' for 'LogLevel'. Using default: {AppConfig.DefaultLogLevel}.");
-                        logLevel = AppConfig.DefaultLogLevel;
-                    }
-                    LogLevel = logLevel;
+                    LogLevel = ConfigParser.ParseEnum(config["LogLevel"], AppConfig.DefaultLogLevel, "LogLevel");
 
 #if DEBUG
                     DesktopAppPublishPath = AppConfig.DesktopAppPublishReleasePath;
