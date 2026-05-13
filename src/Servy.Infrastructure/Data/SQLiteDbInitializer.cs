@@ -3,6 +3,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using System.Data.Common;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Servy.Infrastructure.Data
 {
@@ -53,7 +54,7 @@ namespace Servy.Infrastructure.Data
 
             // 2. Get the current database version
             int currentVersion = GetSchemaVersion(connection);
-            
+
             // 3. Backward Compatibility: Handle unversioned legacy databases
             if (currentVersion == 0 && TableExists(connection, "Services"))
             {
@@ -69,7 +70,7 @@ namespace Servy.Infrastructure.Data
                 UpdateSchemaVersion(connection, 1);
                 currentVersion = 1; // Kept for future migration logic chaining
             }
-            
+
             // Version 2 Migration to rename the ambiguous EnableRotation column
             if (currentVersion < 2)
             {
@@ -93,7 +94,7 @@ namespace Servy.Infrastructure.Data
                 UpdateSchemaVersion(connection, 4);
                 currentVersion = 4;
             }
-            
+
             // Version 5 Migration to add RecoveryOnCleanExit column to support triggering recovery on successful exits
             if (currentVersion < 5)
             {
@@ -116,18 +117,35 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         /// <param name="connection">The active database connection.</param>
         /// <param name="currentVersion">The schema version detected after migrations.</param>
+        /// <summary>
+        /// Final reconciliation step that ensures the database schema matches the 
+        /// Single Source of Truth (SqlConstants), even if explicit migrations were missed.
+        /// </summary>
+        /// <param name="connection">The active database connection.</param>
+        /// <param name="currentVersion">The schema version detected after migrations.</param>
         private static void ReconcileSchema(DbConnection connection, int currentVersion)
         {
+            // Fetch full column definitions (name and type) from PRAGMA
+            var tableInfo = connection.Query("PRAGMA table_info(Services);").ToList();
+
             var existingColumns = new HashSet<string>(
-                connection.Query("PRAGMA table_info(Services);").Select(row => (string)row.name),
+                tableInfo.Select(row => (string)row.name),
                 StringComparer.OrdinalIgnoreCase);
 
-            var expectedColumns = GetExpectedColumns();
+            // Assume GetExpectedColumns returns StandardColumns. 
+            // We explicitly add primary/special keys to our expected set to prevent them from being flagged as orphans.
+            var expectedColumns = new HashSet<string>(GetExpectedColumns(), StringComparer.OrdinalIgnoreCase);
+            var coreKeys = new[] { "Id" };
+            foreach (var key in coreKeys)
+            {
+                expectedColumns.Add(key);
+            }
+
+            // 1. Detect and Add Missing Columns (Self-Healing)
             var missing = expectedColumns.Where(c => !existingColumns.Contains(c)).ToList();
 
             if (missing.Count > 0)
             {
-                // Convert silent failure into a logged self-healing event
                 Logger.Warn($"Single-Source-of-Truth drift detected at SchemaVersion={currentVersion}. Adding missing columns: {string.Join(", ", missing)}");
 
                 using (var transaction = connection.BeginTransaction())
@@ -136,6 +154,7 @@ namespace Servy.Infrastructure.Data
                     {
                         foreach (var col in missing)
                         {
+                            // Core keys shouldn't hit this path dynamically, but we use GetSqlType for standard columns
                             connection.Execute($"ALTER TABLE Services ADD COLUMN {col} {GetSqlType(col)};", transaction: transaction);
                             Logger.Info($"Self-healed column: {col}");
                         }
@@ -147,6 +166,43 @@ namespace Servy.Infrastructure.Data
                         transaction.Rollback();
                         Logger.Error("Schema reconciliation failed; rolling back partial column additions.", ex);
                         throw;
+                    }
+                }
+            }
+
+            // 2. Detect Orphaned Columns (Removed or Renamed)
+            var orphans = existingColumns
+                .Except(expectedColumns, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (orphans.Count > 0)
+            {
+                Logger.Warn($"Schema drift: Orphan columns detected (present in DB, but not in SqlConstants). These consume disk space and may indicate a missed migration for a renamed column: {string.Join(", ", orphans)}");
+            }
+
+            // 3. Detect Type Mismatches
+            foreach (var row in tableInfo)
+            {
+                string colName = (string)row.name;
+                string dbBaseType = (string)row.type;
+
+                // SQLite returns 1 for NOT NULL and 0 for nullable
+                bool dbNotNull = Convert.ToInt64(row.notnull) == 1;
+
+                // Only check types for columns managed by GetSqlType (StandardColumns)
+                if (expectedColumns.Contains(colName) && !coreKeys.Contains(colName, StringComparer.OrdinalIgnoreCase))
+                {
+                    string expectedFullType = GetSqlType(colName); // e.g., "TEXT NOT NULL"
+
+                    // Parse the expected base type and nullability
+                    bool expectedNotNull = expectedFullType.IndexOf("NOT NULL", StringComparison.OrdinalIgnoreCase) >= 0;
+                    string expectedBaseType = Regex.Replace(expectedFullType, "NOT NULL", "", RegexOptions.IgnoreCase).Trim();
+
+                    if (!string.Equals(dbBaseType, expectedBaseType, StringComparison.OrdinalIgnoreCase) || dbNotNull != expectedNotNull)
+                    {
+                        // Reconstruct the actual DB state for a clear log message
+                        string actualDbDesc = $"{dbBaseType}{(dbNotNull ? " NOT NULL" : "")}";
+                        Logger.Warn($"Schema drift: Type mismatch for column '{colName}'. DB is '{actualDbDesc}', but SqlConstants expects '{expectedFullType}'.");
                     }
                 }
             }
