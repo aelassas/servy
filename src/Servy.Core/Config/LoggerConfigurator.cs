@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System;
 using System.Collections.Specialized;
@@ -19,44 +20,19 @@ namespace Servy.Core.Config
         /// <param name="instanceLogger">Optional. An instance logger (e.g., EventLogLogger) to sync settings like LogLevel and EnableEventLog.</param>
         public static void ConfigureFromAppSettings(NameValueCollection config, string logFileName = null, IServyLogger instanceLogger = null)
         {
-            var rawLogLevel = config["LogLevel"];
-            if (!Enum.TryParse<LogLevel>(rawLogLevel, true, out var logLevel) || !Enum.IsDefined(typeof(LogLevel), logLevel))
-            {
-                if (!string.IsNullOrEmpty(rawLogLevel))
-                    Logger.Warn($"Invalid configuration entry '{rawLogLevel}' for 'LogLevel'. Using default: {AppConfig.DefaultLogLevel}.");
-                logLevel = AppConfig.DefaultLogLevel;
-            }
+            var logLevel = ConfigParser.ParseEnum(config["LogLevel"], AppConfig.DefaultLogLevel, "LogLevel");
             instanceLogger?.SetLogLevel(logLevel);
 
-            if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType) || !Enum.IsDefined(typeof(DateRotationType), dateRotationType))
-            {
-                dateRotationType = DateRotationType.None;
-            }
+            var dateRotationType = ConfigParser.ParseEnum(config["LogRollingInterval"], DateRotationType.None, "LogRollingInterval");
 
-            bool isEventLogEnabled;
-            if (!bool.TryParse(config["EnableEventLog"], out isEventLogEnabled))
-            {
-                isEventLogEnabled = AppConfig.DefaultEnableEventLog;
-            }
+            var isEventLogEnabled = ConfigParser.ParseBool(config["EnableEventLog"], AppConfig.DefaultEnableEventLog, "EnableEventLog");
             instanceLogger?.SetIsEventLogEnabled(isEventLogEnabled);
 
-            int logRotationSizeMB;
-            if (!int.TryParse(config["LogRotationSizeMB"], out logRotationSizeMB) || logRotationSizeMB <= 0)
-            {
-                logRotationSizeMB = AppConfig.DefaultRotationSizeMB;
-            }
+            var logRotationSizeMB = ConfigParser.ParseInt(config["LogRotationSizeMB"], AppConfig.DefaultRotationSizeMB, "LogRotationSizeMB");
 
-            int maxBackupLogFiles;
-            if (!int.TryParse(config["MaxBackupLogFiles"], out maxBackupLogFiles) || maxBackupLogFiles < 0)
-            {
-                maxBackupLogFiles = Logger.DefaultMaxBackupLogFiles;
-            }
+            var maxBackupLogFiles = ConfigParser.ParseInt(config["MaxBackupLogFiles"], Logger.DefaultMaxBackupLogFiles, "MaxBackupLogFiles");
 
-            string rawUseLocalTime = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
-            if (!bool.TryParse(rawUseLocalTime, out bool useLocalTimeForRotation))
-            {
-                useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation;
-            }
+            var useLocalTimeForRotation = ConfigParser.ParseBool(config["UseLocalTimeForRotation"], AppConfig.DefaultUseLocalTimeForRotation, "UseLocalTimeForRotation");
 
             // Apply logger settings
             if (!string.IsNullOrWhiteSpace(logFileName))

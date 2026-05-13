@@ -45,6 +45,38 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
+        /// Attempts to parse a string into a boolean. 
+        /// Logs a warning and returns the default value if the input is malformed.
+        /// </summary>
+        /// <param name="rawValue">The raw string value to be parsed.</param>
+        /// <param name="defaultValue">The fallback value to return if parsing fails or the input is empty.</param>
+        /// <param name="fieldName">
+        /// The name of the field being parsed. Automatically captured via <see cref="CallerArgumentExpressionAttribute"/>.
+        /// </param>
+        /// <returns>The parsed boolean, or <paramref name="defaultValue"/> if parsing fails.</returns>
+        public static bool ParseBool(
+            string rawValue,
+            bool defaultValue,
+            [CallerArgumentExpression("rawValue")] string fieldName = "")
+        {
+            // Normal empty state for configuration DTOs; returns the default without cluttering logs.
+            if (string.IsNullOrWhiteSpace(rawValue))
+            {
+                return defaultValue;
+            }
+
+            // .NET's bool.TryParse handles common "True"/"False" strings (case-insensitive).
+            if (bool.TryParse(rawValue, out var result))
+            {
+                return result;
+            }
+
+            // Consistent with Servy's diagnostic patterns to ensure misconfigured services are easily triaged.
+            Logger.Warn($"Invalid boolean value '{rawValue}' for {fieldName}. Falling back to default: {defaultValue}.");
+            return defaultValue;
+        }
+
+        /// <summary>
         /// Validates that a numeric value exists within the defined range of a specific <see cref="Enum"/>.
         /// </summary>
         /// <typeparam name="TEnum">The target enum type to validate against.</typeparam>
@@ -87,6 +119,49 @@ namespace Servy.Core.Helpers
             }
 
             Logger.Warn($"Undefined enum value '{value}' for {typeof(TEnum).Name} ({fieldName}). Falling back to default: {defaultValue}.");
+            return defaultValue;
+        }
+
+        /// <summary>
+        /// Converts the string representation of the name or numeric value of one or more 
+        /// enumerated constants to an equivalent enumerated object.
+        /// </summary>
+        /// <typeparam name="TEnum">The target enum type to validate against.</typeparam>
+        /// <param name="value">The nullable string value to be parsed.</param>
+        /// <param name="defaultValue">The fallback enum member if the input is null, empty, or out of range.</param>
+        /// <param name="fieldName">
+        /// The name of the field being parsed. Automatically captured via <see cref="CallerArgumentExpressionAttribute"/>.
+        /// </param>
+        /// <returns>A validated member of <typeparamref name="TEnum"/>.</returns>
+        /// <remarks>
+        /// This method goes beyond a simple TryParse by using <see cref="Enum.IsDefined(Type, object)"/>. 
+        /// This is critical because TryParse will successfully return a value for any numeric string 
+        /// that fits the underlying type, even if that number is not a defined member of the enum.
+        /// </remarks>
+        public static TEnum ParseEnum<TEnum>(
+            string value,
+            TEnum defaultValue,
+            [CallerArgumentExpression("value")] string fieldName = "") where TEnum : struct, Enum
+        {
+            // 1. Guard against null or empty input by returning the default immediately
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return defaultValue;
+            }
+
+            // 2. Attempt to parse the string using the built-in Enum engine
+            if (Enum.TryParse<TEnum>(value, true, out var result))
+            {
+                // 3. Robustness check: Ensure the parsed value actually exists in the enum definition.
+                // This prevents numeric strings like "999" from being cast to an enum that only has values 1-3.
+                if (Enum.IsDefined(typeof(TEnum), result))
+                {
+                    return result;
+                }
+            }
+
+            // 4. Log the failure and return the default value to prevent service interruption
+            Logger.Warn($"Undefined or malformed enum value '{value}' for {typeof(TEnum).Name} ({fieldName}). Falling back to default: {defaultValue}.");
             return defaultValue;
         }
     }
