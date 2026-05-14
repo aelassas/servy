@@ -137,8 +137,8 @@ namespace Servy.Service.Helpers
                   $"- realExePath: {options.ExecutablePath}\n" +
                   $"- workingDir: {options.WorkingDirectory}\n" +
                   $"- priority: {options.Priority}\n" +
-                  $"- startTimeoutInSeconds: {options.StartTimeout}\n" +
-                  $"- stopTimeoutInSeconds: {options.StopTimeout}\n" +
+                  $"- startTimeoutInSeconds: {options.StartTimeoutInSeconds}\n" +
+                  $"- stopTimeoutInSeconds: {options.StopTimeoutInSeconds}\n" +
                   $"- enableConsoleUI: {options.EnableConsoleUI}\n\n" +
 
 
@@ -166,7 +166,7 @@ namespace Servy.Service.Helpers
                   $"- preLaunchWorkingDirectory: {options.PreLaunchWorkingDirectory}\n" +
                   $"- preLaunchStdOutPath: {options.PreLaunchStdoutPath}\n" +
                   $"- preLaunchStdErrPath: {options.PreLaunchStderrPath}\n" +
-                  $"- preLaunchTimeout: {options.PreLaunchTimeout}\n" +
+                  $"- preLaunchTimeout: {options.PreLaunchTimeoutInSeconds}\n" +
                   $"- preLaunchRetryAttempts: {options.PreLaunchRetryAttempts}\n" +
                   $"- preLaunchIgnoreFailure: {options.PreLaunchIgnoreFailure}\n\n" +
 
@@ -177,7 +177,7 @@ namespace Servy.Service.Helpers
                   "--------Pre-Stop-------------\n" +
                   $"- preStopExecutablePath: {options.PreStopExecutablePath}\n" +
                   $"- preStopWorkingDirectory: {options.PreStopWorkingDirectory}\n" +
-                  $"- preStopTimeout: {options.PreStopTimeout}\n" +
+                  $"- preStopTimeout: {options.PreStopTimeoutInSeconds}\n" +
                   $"- preStopLogAsError: {options.PreStopLogAsError}\n\n" +
 
                   "--------Post-Stop-------------\n" +

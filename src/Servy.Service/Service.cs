@@ -434,9 +434,9 @@ namespace Servy.Service
 				_maxRestartAttempts = options.MaxRestartAttempts;
 
 				// Request timeout for startup to accommodate slow process
-				if (_options.StartTimeout > AppConfig.ScmStartupRequestThresholdSeconds) // Use a lower threshold to be safe
+				if (_options.StartTimeoutInSeconds > AppConfig.ScmStartupRequestThresholdSeconds) // Use a lower threshold to be safe
 				{
-					_serviceHelper.RequestAdditionalTime(this, ClampTimeout(_options.StartTimeout + 10), _logger);
+					_serviceHelper.RequestAdditionalTime(this, ClampTimeout(_options.StartTimeoutInSeconds + 10), _logger);
 				}
 
 				// Set up attempts file
@@ -729,7 +729,7 @@ namespace Servy.Service
 
 			if (_preLaunchEnabled)
 			{
-				resetThresholdSeconds += options.PreLaunchTimeout;
+				resetThresholdSeconds += options.PreLaunchTimeoutInSeconds;
 			}
 
 			double secondsSinceLastAttempt = (DateTime.UtcNow - lastWriteUtc).TotalSeconds;
@@ -756,7 +756,7 @@ namespace Servy.Service
 		/// </para>
 		/// <para>
 		/// The process is allowed to run for at least <see cref="MinPreLaunchTimeoutSeconds"/> seconds or 
-		/// <see cref="StartOptions.PreLaunchTimeout"/>, whichever is greater, per attempt.  
+		/// <see cref="StartOptions.PreLaunchTimeoutInSeconds"/>, whichever is greater, per attempt.  
 		/// If the process exits with a non-zero code or times out, it is retried up to 
 		/// <see cref="StartOptions.PreLaunchRetryAttempts"/> times.
 		/// </para>
@@ -765,7 +765,7 @@ namespace Servy.Service
 		/// even if all attempts fail. Otherwise, the service startup will be aborted.
 		/// </para>
 		/// <para>
-		/// If <see cref="StartOptions.PreLaunchTimeout"/> is set to 0, the pre-launch hook runs in fire-and-forget 
+		/// If <see cref="StartOptions.PreLaunchTimeoutInSeconds"/> is set to 0, the pre-launch hook runs in fire-and-forget 
 		/// mode and stdout/stderr redirection and retries are not available.
 		/// </para>
 		/// </remarks>
@@ -785,7 +785,7 @@ namespace Servy.Service
 				? options.WorkingDirectory
 				: options.PreLaunchWorkingDirectory;
 
-			var fireAndForget = options.PreLaunchTimeout == 0;
+			var fireAndForget = options.PreLaunchTimeoutInSeconds == 0;
 
 			var launchOptions = new ProcessLaunchOptions
 			{
@@ -812,7 +812,7 @@ namespace Servy.Service
 			}
 
 			// 3. Handle Synchronous Mode with Retries
-			launchOptions.TimeoutMs = ClampTimeout(Math.Max(options.PreLaunchTimeout, AppConfig.MinPreLaunchTimeoutSeconds));
+			launchOptions.TimeoutMs = ClampTimeout(Math.Max(options.PreLaunchTimeoutInSeconds, AppConfig.MinPreLaunchTimeoutSeconds));
 			return RunSynchronousPreLaunch(launchOptions, options);
 		}
 
@@ -1155,7 +1155,7 @@ namespace Servy.Service
 			{
 				try
 				{
-					if (await _childProcess.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(_options.StartTimeout), cts.Token))
+					if (await _childProcess.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(_options.StartTimeoutInSeconds), cts.Token))
 					{
 						StartPostLaunchProcess();
 					}
@@ -1429,7 +1429,7 @@ namespace Servy.Service
 				{
 					serviceDto.Pid = pid;
 					if (setPreviousStopTimeout)
-						serviceDto.PreviousStopTimeout = _options?.StopTimeout;
+						serviceDto.PreviousStopTimeout = _options?.StopTimeoutInSeconds;
 
 					if (pid == null)
 					{
@@ -1522,7 +1522,7 @@ namespace Servy.Service
 			else if (needsRecovery)
 			{
 				// Calculate delay: Heartbeat interval minus a 5s buffer, minimum 5s.
-				var delayMs = Math.Max(ClampTimeout(_options.HeartbeatInterval) - AppConfig.RecoverySchedulingDelay, AppConfig.RecoverySchedulingDelay);
+				var delayMs = Math.Max(ClampTimeout(_options.HeartbeatInterval) - AppConfig.RecoverySchedulingDelayMs, AppConfig.RecoverySchedulingDelayMs);
 				_logger?.Info($"[OnProcessExited] Failure threshold reached. Scheduling recovery in {delayMs / 1000}s...");
 
 				// Fire-and-forget the recovery task safely
@@ -1740,7 +1740,7 @@ namespace Servy.Service
 							_workingDir,
 							_environmentVariables,
 							_logger,
-							ClampTimeout(_options?.StopTimeout ?? AppConfig.DefaultStopTimeout)
+							ClampTimeout(_options?.StopTimeoutInSeconds ?? AppConfig.DefaultStopTimeout)
 						);
 						break;
 
@@ -2133,7 +2133,7 @@ namespace Servy.Service
 				// 3. Main Kill Sequence (with SCM Heartbeats)
 				if (_childProcess != null)
 				{
-					SafeKillProcess(_childProcess, ClampTimeout(_options.StopTimeout));
+					SafeKillProcess(_childProcess, ClampTimeout(_options.StopTimeoutInSeconds));
 
 					// Only cancel if redirection was active AND the stream is actually open
 					if (_childProcess.StartInfo.RedirectStandardOutput)
@@ -2306,7 +2306,7 @@ namespace Servy.Service
 						);
 
 				// 2. Configure Launch Options
-				var effectiveTimeoutMs = ClampTimeout(_options.PreStopTimeout);
+				var effectiveTimeoutMs = ClampTimeout(_options.PreStopTimeoutInSeconds);
 				var launchOptions = new ProcessLaunchOptions
 				{
 					ExecutablePath = options.PreStopExecutablePath,

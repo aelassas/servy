@@ -87,7 +87,7 @@ namespace Servy.Service.CommandLine
                 PreLaunchEnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.PreLaunchEnvironmentVariables ?? string.Empty),
                 PreLaunchStdoutPath = serviceDto.PreLaunchStdoutPath,
                 PreLaunchStderrPath = serviceDto.PreLaunchStderrPath,
-                PreLaunchTimeout = serviceDto.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds,
+                PreLaunchTimeoutInSeconds = serviceDto.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds,
                 PreLaunchRetryAttempts = serviceDto.PreLaunchRetryAttempts ?? AppConfig.DefaultPreLaunchRetryAttempts,
                 PreLaunchIgnoreFailure = serviceDto.PreLaunchIgnoreFailure ?? AppConfig.DefaultPreLaunchIgnoreFailure,
 
@@ -111,14 +111,14 @@ namespace Servy.Service.CommandLine
                 DateRotationType = ConfigParser.ParseEnum(serviceDto.DateRotationType, AppConfig.DefaultDateRotationType),
 
                 // Lifespan timeouts
-                StartTimeout = serviceDto.StartTimeout ?? AppConfig.DefaultStartTimeout,
-                StopTimeout = serviceDto.StopTimeout ?? AppConfig.DefaultStopTimeout,
+                StartTimeoutInSeconds = serviceDto.StartTimeout ?? AppConfig.DefaultStartTimeout,
+                StopTimeoutInSeconds = serviceDto.StopTimeout ?? AppConfig.DefaultStopTimeout,
 
                 // Pre-Stop settings
                 PreStopExecutablePath = processHelper.ResolvePath(serviceDto.PreStopExecutablePath ?? string.Empty),
                 PreStopWorkingDirectory = processHelper.ResolvePath(serviceDto.PreStopStartupDirectory ?? string.Empty),
                 PreStopExecutableArgs = Helper.EscapeBackslashes(serviceDto.PreStopParameters ?? string.Empty),
-                PreStopTimeout = serviceDto.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds,
+                PreStopTimeoutInSeconds = serviceDto.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds,
                 PreStopLogAsError = serviceDto.PreStopLogAsError ?? AppConfig.DefaultPreStopLogAsError,
 
                 // Post-Stop settings

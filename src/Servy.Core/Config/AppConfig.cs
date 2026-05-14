@@ -794,7 +794,7 @@ namespace Servy.Core.Config
         /// Specifies the fixed delay in milliseconds applied when scheduling service recovery 
         /// actions to prevent rapid restart loops.
         /// </summary>
-        public const int RecoverySchedulingDelay = 5000;
+        public const int RecoverySchedulingDelayMs = 5000;
 
         /// <summary>
         /// Specifies the absolute maximum duration in milliseconds added to the cumulative 
@@ -888,6 +888,49 @@ namespace Servy.Core.Config
         /// to prevent "process suicide" or the accidental termination of system-critical infrastructure.
         /// </remarks>
         public const int PidReuseToleranceSeconds = 2;
+
+        #endregion
+
+        #region Manager Configuration Bounds
+
+        /// <summary>Minimum allowed interval for the main service list refresh.</summary>
+        public const int MinRefreshIntervalInSeconds = 1;
+        /// <summary>Maximum allowed interval for the main service list refresh (1 hour).</summary>
+        public const int MaxRefreshIntervalInSeconds = 3600;
+
+        /// <summary>Minimum allowed interval for performance metric updates.</summary>
+        public const int MinPerformanceRefreshIntervalInMs = 100;
+        /// <summary>Maximum allowed interval for performance metric updates (5 minutes).</summary>
+        public const int MaxPerformanceRefreshIntervalInMs = 300_000;
+
+        /// <summary>Minimum allowed interval for log console tailing updates.</summary>
+        public const int MinConsoleRefreshIntervalInMs = 100;
+        /// <summary>Maximum allowed interval for log console tailing updates (5 minutes).</summary>
+        public const int MaxConsoleRefreshIntervalInMs = 300_000;
+
+        /// <summary>Minimum number of lines maintained in the log console buffer.</summary>
+        public const int MinConsoleMaxLines = 100;
+        // MaxConsoleMaxLines already exists in AppConfig
+
+        /// <summary>Minimum allowed interval for refreshing service dependency trees.</summary>
+        public const int MinDependenciesRefreshIntervalInMs = 100;
+        /// <summary>Maximum allowed interval for refreshing service dependency trees (5 minutes).</summary>
+        public const int MaxDependenciesRefreshIntervalInMs = 300_000;
+
+        /// <summary>Minimum delay for search input debouncing to prevent UI flicker.</summary>
+        public const int MinSearchDebounceDelayMs = 100;
+        /// <summary>Maximum delay for search input debouncing.</summary>
+        public const int MaxSearchDebounceDelayMs = 2000;
+
+        /// <summary>Minimum number of parallel tasks allowed for bulk service operations.</summary>
+        public const int MinMaxBulkOperationParallelism = 1;
+        /// <summary>Maximum number of parallel tasks allowed for bulk service operations.</summary>
+        public const int MaxMaxBulkOperationParallelism = 64;
+
+        /// <summary>Minimum number of days to look back when fetching event logs.</summary>
+        public const int MinLogsWindowDays = 1;
+        /// <summary>Maximum number of days to look back when fetching event logs.</summary>
+        public const int MaxLogsWindowDays = 30;
 
         #endregion
 

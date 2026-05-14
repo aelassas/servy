@@ -161,7 +161,7 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the timeout of pre-launch script.
         /// Defaults to 30 seconds.
         /// </summary>
-        public int PreLaunchTimeout { get; set; } = AppConfig.DefaultPreLaunchTimeoutSeconds;
+        public int PreLaunchTimeoutInSeconds { get; set; } = AppConfig.DefaultPreLaunchTimeoutSeconds;
 
         /// <summary>
         /// Gets or sets the pre-launch script retry attempts.
@@ -223,12 +223,12 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Gets or sets the timeout in seconds to wait for the process to start successfully before considering the startup as failed.
         /// </summary>
-        public int StartTimeout { get; set; } = AppConfig.DefaultStartTimeout;
+        public int StartTimeoutInSeconds { get; set; } = AppConfig.DefaultStartTimeout;
 
         /// <summary>
         /// Gets or sets the timeout in seconds to wait for the process to exit.
         /// </summary>
-        public int StopTimeout { get; set; } = AppConfig.DefaultStopTimeout;
+        public int StopTimeoutInSeconds { get; set; } = AppConfig.DefaultStopTimeout;
 
         /// <summary>
         /// Optional path to an executable that runs before the service stops.
@@ -250,7 +250,7 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Maximum time in seconds to wait for the pre-stop executable to complete.
         /// </summary>
-        public int PreStopTimeout { get; set; } = AppConfig.DefaultPreStopTimeoutSeconds;
+        public int PreStopTimeoutInSeconds { get; set; } = AppConfig.DefaultPreStopTimeoutSeconds;
 
         /// <summary>
         /// Whether to log pre-stop failure as error.
