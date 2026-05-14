@@ -352,9 +352,9 @@ namespace Servy.Core.Services
                     var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: true, cancellationToken);
                     dto.Pid = serviceDto?.Pid;
 
-                    var totalWaitTime = (options.StopTimeout ?? AppConfig.DefaultServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                    var previousWaitTime = (serviceDto?.PreviousStopTimeout ?? AppConfig.DefaultServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                    totalWaitTime = Math.Max(Math.Max(totalWaitTime, previousWaitTime), AppConfig.DefaultServiceStopTimeoutSeconds);
+                    var totalWaitTime = (options.StopTimeout ?? AppConfig.ScmStopTimeoutFloorSeconds) + AppConfig.ScmTimeoutBufferSeconds;
+                    var previousWaitTime = (serviceDto?.PreviousStopTimeout ?? AppConfig.ScmStopTimeoutFloorSeconds) + AppConfig.ScmTimeoutBufferSeconds;
+                    totalWaitTime = Math.Max(Math.Max(totalWaitTime, previousWaitTime), AppConfig.ScmStopTimeoutFloorSeconds);
 
                     if (!string.IsNullOrEmpty(options.PreStopExePath))
                     {

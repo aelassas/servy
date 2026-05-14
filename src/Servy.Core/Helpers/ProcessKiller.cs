@@ -188,7 +188,7 @@ namespace Servy.Core.Helpers
 
                         // Identity check: Ensures we don't kill a process that recycled a PID 
                         // from a target that died before this operation started.
-                        if (parentStartTime != DateTime.MinValue && child.StartTime < parentStartTime.AddSeconds(-2))
+                        if (parentStartTime != DateTime.MinValue && child.StartTime < parentStartTime.AddSeconds(-AppConfig.PidReuseToleranceSeconds))
                             continue;
 
                         // Depth-First Recursion: Kill the leaves of the tree first.

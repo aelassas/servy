@@ -84,7 +84,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
 
             // Arrange: Use a longer-lived PowerShell command to ensure stability
-            var childProcessInfo = new ProcessStartInfo("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 5\"")
+            var childProcessInfo = new ProcessStartInfo("powershell.exe", "-NoProfile -Command \"$data = New-Object byte[] 10MB; Start-Sleep -Seconds 5\"")
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,

@@ -47,15 +47,28 @@ function Write-FallbackError {
         [string]$FallbackFileName = "ServyNotificationFallback.log"
     )
     
-    Write-Host "ERROR: $Message" -ForegroundColor Red
+    # Console visibility: Write-Warning is captured by transcripts and visible in interactive shells.
+    # Unlike Write-Host, it is not stripped in non-interactive Task Scheduler contexts.
+    Write-Warning "Servy Notification Error: $Message"
 
+    # Disk logging: Record to a physical file first. 
+    # This acts as the primary audit trail for non-interactive background tasks.
+    if ($scriptDir) {
+        $logFile = Join-Path $scriptDir $FallbackFileName
+        try {
+            Write-ServyLog -FilePath $logFile -Message $Message
+        } catch {
+            # Silence internal disk-logging errors to allow the Event Log attempt to proceed
+        }
+    }
+
+    # System visibility: Attempt to notify the Windows Application Event Log.
     try {
         # Ensure source exists before writing to event log
         Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_ERROR `
           -EntryType Error -Message $Message -ErrorAction Stop
     } catch {
-        $logFile = Join-Path $scriptDir $FallbackFileName
-        Write-ServyLog -FilePath $logFile -Message $Message
+        # If the Event Log fails, the disk log above remains the final source of truth.
     }
 }
 
@@ -117,7 +130,7 @@ function Update-Watermark {
             }
         } catch {
             # If file is locked, corrupt (e.g. previous NULL char bug), or unparseable, overwrite it
-            Write-Host "Could not parse current timestamp file during update check. Overwriting to heal file."
+            Write-Warning "Could not parse current timestamp file during update check. Overwriting to heal file."
         }
     }
     
@@ -127,7 +140,7 @@ function Update-Watermark {
         try {
             # Explicitly use UTF8 encoding to prevent PowerShell from writing UTF-16LE (which causes the NULL chars)
             [System.IO.File]::WriteAllText($TimestampFile, $timestampString, [System.Text.Encoding]::UTF8)
-            Write-Host "Timestamp updated to: $timestampString"
+            Write-Verbose "Timestamp updated to: $timestampString"
         } catch {
             Write-FallbackError -Message "Failed to update timestamp file: $($_.Exception.Message)" -scriptDir $ScriptDir
         }
