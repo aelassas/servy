@@ -142,6 +142,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("Active", TestStatus.Active)]
         [InlineData("active", TestStatus.Active)] // Case-insensitive check
         [InlineData("2", TestStatus.Paused)]      // Numeric string check
+        [InlineData("99", TestStatus.None)]       // Numeric string out of range
         public void ParseEnum_String_ValidInput_ReturnsParsedValue(string input, TestStatus expected)
         {
             // Act
@@ -149,6 +150,16 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void ParseEnum_String_InvalidNumericInput_ReturnsDefault()
+        {
+            // Act
+            var result = ConfigParser.ParseEnum("99", TestStatus.None);
+
+            // Assert
+            Assert.Equal(TestStatus.None, result);
         }
 
         [Fact]

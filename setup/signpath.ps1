@@ -59,8 +59,7 @@ while ((Get-Module -Name SignPath) -and $attempts -lt $maxAttempts) {
 }
 
 if (Get-Module -Name SignPath) {
-    Write-Error "Could not unload pre-existing SignPath module after $attempts attempts. Aborting to avoid version pollution."
-    return
+    throw  "Could not unload pre-existing SignPath module after $attempts attempts. Aborting to avoid version pollution."
 }
 
 # 2. Explicitly import the pinned version
@@ -73,8 +72,7 @@ $loadedModule = Get-Module -Name SignPath | Where-Object { $_.Version -eq $Requi
 if ($null -eq $loadedModule) {
     # If we get here, the import failed or another version is blocking it
     $currentVersions = (Get-Module -Name SignPath).Version -join ', '
-    Write-Error "Failed to load the correct SignPath module version. Expected: $RequiredSignPathVersion, Found Loaded: [$currentVersions]"
-    return
+    throw "Failed to load the correct SignPath module version. Expected: $RequiredSignPathVersion, Found Loaded: [$currentVersions]"
 }
 
 Write-Host "SignPath module v$($loadedModule.Version) loaded and verified for build provenance." -ForegroundColor Green
@@ -143,13 +141,11 @@ if ([string]::IsNullOrWhiteSpace($apiToken)) {
 }
 
 if (!$apiToken -or !$organizationId -or !$projectSlug -or !$signingPolicySlug) {
-    Write-Error "Missing required SignPath configuration values (API Token, Organization ID, Project Slug, or Signing Policy Slug)."
-    return
+    throw "Missing required SignPath configuration values (API Token, Organization ID, Project Slug, or Signing Policy Slug)."
 }
 
 if (-not (Test-Path $Path)) {
-    Write-Error "File not found: $Path"
-    return
+    throw "File not found: $Path"
 }
 
 $fileName = Split-Path $Path -Leaf
@@ -209,8 +205,7 @@ try {
     Write-Host "Signing request completed: $signingRequestId"
 }
 catch {
-    Write-Error "Failed to submit signing request: $_"
-    return
+    throw "Failed to submit signing request: $_"
 }
 
 # ----------------------------------------------------------
@@ -218,15 +213,12 @@ catch {
 # ----------------------------------------------------------
 try {
     if (-not (Test-Path $signedPath)) {
-        Write-Error "SignPath did not produce the expected output file: $signedPath"
-        return
+        throw "SignPath did not produce the expected output file: $signedPath"
     }
     Move-Item -Force -Path $signedPath -Destination $Path
     Write-Host "Signing complete: $Path"
 }
 catch {
-    Write-Error "Failed to replace the original file: $_"
-    return
+    throw "Failed to replace the original file: $_"
+    
 }
-
-return

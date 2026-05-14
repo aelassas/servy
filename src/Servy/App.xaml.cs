@@ -189,8 +189,8 @@ namespace Servy
                         messageBoxService,
                         fileDialogService,
                         configValidator,
-                        new XmlServiceValidator(processHelper, serviceValidationRules),
-                        new JsonServiceValidator(processHelper, serviceValidationRules),
+                        new XmlServiceValidator(serviceValidationRules),
+                        new JsonServiceValidator(serviceValidationRules),
                         this,
                         new CursorService()
                     );

@@ -18,7 +18,7 @@ namespace Servy.Core.UnitTests.Services
         public JsonServiceValidatorTests()
         {
             _processHelperMock = new Mock<IProcessHelper>();
-            _validator = new JsonServiceValidator(_processHelperMock.Object, new ServiceValidationRules(_processHelperMock.Object));
+            _validator = new JsonServiceValidator(new ServiceValidationRules(_processHelperMock.Object));
         }
 
         [Fact]

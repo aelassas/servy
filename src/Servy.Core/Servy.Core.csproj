@@ -148,6 +148,7 @@
     <Compile Include="Security\SecureData.cs" />
     <Compile Include="Helpers\ServiceHelper.cs" />
     <Compile Include="Helpers\StringHelper.cs" />
+    <Compile Include="Services\ServiceDtoImportValidator.cs" />
     <Compile Include="Services\XmlServiceSerializer.cs" />
     <Compile Include="Services\XmlServiceValidator.cs" />
     <Compile Include="Enums\ProcessPriority.cs" />

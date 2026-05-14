@@ -229,8 +229,8 @@ namespace Servy.Manager
                         removeServiceProxy,
                         refreshProxy,
                         serviceConfigurationValidator,
-                        new XmlServiceValidator(processHelper, serviceValidationRules),
-                        new JsonServiceValidator(processHelper, serviceValidationRules),
+                        new XmlServiceValidator(serviceValidationRules),
+                        new JsonServiceValidator(serviceValidationRules),
                         new XmlServiceSerializer(),
                         new JsonServiceSerializer(),
                         this, // IAppConfiguration
