@@ -165,7 +165,7 @@ namespace Servy
                         new ServiceControllerProvider(controllerFactory),
                         new WindowsServiceApi(),
                         new Win32ErrorProvider(),
-                        this.ServiceRepository
+                        ServiceRepository!
                     );
 
                     // 2. Initialize UI Services
@@ -189,8 +189,8 @@ namespace Servy
                         messageBoxService,
                         fileDialogService,
                         configValidator,
-                        new XmlServiceValidator(processHelper, serviceValidationRules),
-                        new JsonServiceValidator(processHelper, serviceValidationRules),
+                        new XmlServiceValidator(serviceValidationRules),
+                        new JsonServiceValidator(serviceValidationRules),
                         this,
                         new CursorService()
                     );
@@ -200,7 +200,7 @@ namespace Servy
                         fileDialogService,
                         serviceCommands,
                         messageBoxService,
-                        ServiceRepository,
+                        ServiceRepository!,
                         helperService,
                         this
                     );

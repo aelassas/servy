@@ -89,12 +89,13 @@ function Get-ServyLastErrors {
       $loggerScript = Join-Path $scriptHome "Write-ServyLog.ps1"
       
       if (Test-Path $loggerScript) {
-          . $loggerScript
-          Write-ServyLog -FilePath $logPath -Message $errorMsg
-      }else{
-          Write-Warning "Get-ServyLastErrors: Missing required dependencies in '$PSScriptRoot'"
+        . $loggerScript
+        Write-ServyLog -FilePath $logPath -Message $errorMsg
+      }
+      else {
+        Write-Warning "Get-ServyLastErrors: Missing required dependencies in '$PSScriptRoot'"
+      }
     }
-  }
 
     # Throw instead of exit to preserve caller's process/cleanup
     throw "Servy Event Query Failure: $errorMsg"

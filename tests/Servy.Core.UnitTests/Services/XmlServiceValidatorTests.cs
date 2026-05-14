@@ -17,7 +17,7 @@ namespace Servy.Core.UnitTests.Services
         public XmlServiceValidatorTests()
         {
             _processHelperMock = new Mock<IProcessHelper>();
-            _validator = new XmlServiceValidator(_processHelperMock.Object, new ServiceValidationRules(_processHelperMock.Object));
+            _validator = new XmlServiceValidator(new ServiceValidationRules(_processHelperMock.Object));
         }
 
         private string Serialize(ServiceDto dto)
@@ -48,7 +48,7 @@ namespace Servy.Core.UnitTests.Services
             // Missing closing tag
             var result = _validator.TryValidate("<ServiceDto><Name>Test</Name>", out var error);
             Assert.False(result);
-            Assert.StartsWith("XML structure error:", error);
+            Assert.StartsWith("Invalid XML structure:", error);
         }
 
         [Fact]
@@ -58,7 +58,7 @@ namespace Servy.Core.UnitTests.Services
             var xml = "<NotServiceDto><Foo>bar</Foo></NotServiceDto>";
             var result = _validator.TryValidate(xml, out var error);
             Assert.False(result);
-            Assert.Contains("XML structure error", error);
+            Assert.Contains("Invalid XML structure:", error);
         }
 
         [Fact]

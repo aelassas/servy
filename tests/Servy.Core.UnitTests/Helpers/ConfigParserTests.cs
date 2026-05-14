@@ -151,6 +151,16 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
+        public void ParseEnum_String_InvalidNumericInput_ReturnsDefault()
+        {
+            // Act
+            var result = ConfigParser.ParseEnum("99", TestStatus.None);
+
+            // Assert
+            Assert.Equal(TestStatus.None, result);
+        }
+
+        [Fact]
         public void ParseEnum_String_MalformedOrUndefined_ReturnsDefault()
         {
             // Act

@@ -22,17 +22,17 @@ namespace Servy.Infrastructure.Data
         /// A centralized registry of sensitive fields that require encryption at rest.
         /// Iterating this array prevents divergence between encryption and decryption paths.
         /// </summary>
-        private static readonly (Func<ServiceDto, string?> Get, Action<ServiceDto, string?> Set)[] SensitiveFields = new (Func<ServiceDto, string?>, Action<ServiceDto, string?>)[]
+        private static readonly (Func<ServiceDto, string?> Get, Action<ServiceDto, string?> Set, string Name)[] SensitiveFields =
         {
-            (d => d.Parameters,                  (d, v) => d.Parameters = v),
-            (d => d.FailureProgramParameters,    (d, v) => d.FailureProgramParameters = v),
-            (d => d.PreLaunchParameters,         (d, v) => d.PreLaunchParameters = v),
-            (d => d.PostLaunchParameters,        (d, v) => d.PostLaunchParameters = v),
-            (d => d.Password,                    (d, v) => d.Password = v),
-            (d => d.EnvironmentVariables,        (d, v) => d.EnvironmentVariables = v),
-            (d => d.PreLaunchEnvironmentVariables, (d, v) => d.PreLaunchEnvironmentVariables = v),
-            (d => d.PreStopParameters,           (d, v) => d.PreStopParameters = v),
-            (d => d.PostStopParameters,          (d, v) => d.PostStopParameters = v)
+            (d => d.Parameters,                    (d, v) => d.Parameters = v,                    nameof(ServiceDto.Parameters)),
+            (d => d.FailureProgramParameters,      (d, v) => d.FailureProgramParameters = v,      nameof(ServiceDto.FailureProgramParameters)),
+            (d => d.PreLaunchParameters,           (d, v) => d.PreLaunchParameters = v,           nameof(ServiceDto.PreLaunchParameters)),
+            (d => d.PostLaunchParameters,          (d, v) => d.PostLaunchParameters = v,          nameof(ServiceDto.PostLaunchParameters)),
+            (d => d.Password,                      (d, v) => d.Password = v,                      nameof(ServiceDto.Password)),
+            (d => d.EnvironmentVariables,          (d, v) => d.EnvironmentVariables = v,          nameof(ServiceDto.EnvironmentVariables)),
+            (d => d.PreLaunchEnvironmentVariables, (d, v) => d.PreLaunchEnvironmentVariables = v, nameof(ServiceDto.PreLaunchEnvironmentVariables)),
+            (d => d.PreStopParameters,             (d, v) => d.PreStopParameters = v,             nameof(ServiceDto.PreStopParameters)),
+            (d => d.PostStopParameters,            (d, v) => d.PostStopParameters = v,            nameof(ServiceDto.PostStopParameters)),
         };
 
         /// <summary>
@@ -437,13 +437,31 @@ namespace Servy.Infrastructure.Data
         /// Creates a shallow clone of the ServiceDto and encrypts sensitive fields.
         /// This prevents double-encryption and unintended mutation of the input object.
         /// </summary>
+        /// <param name="source">The original DTO to clone and encrypt.</param>
+        /// <returns>A new <see cref="ServiceDto"/> instance with sensitive fields encrypted.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when a specific field fails to encrypt.</exception>
         private ServiceDto CreateEncryptedClone(ServiceDto source)
         {
+            // 1. Perform the shallow clone to isolate mutations from the original DTO
             var clone = (ServiceDto)source.Clone();
 
-            foreach (var (get, set) in SensitiveFields)
+            // 2. Iterate using the refactored triplet to maintain parity with the decryption path
+            foreach (var (get, set, name) in SensitiveFields)
             {
-                set(clone, EncryptIfPresent(get(clone)));
+                try
+                {
+                    // EncryptIfPresent handles null/whitespace checks before invoking _secureData.Encrypt
+                    set(clone, EncryptIfPresent(get(clone)));
+                }
+                catch (Exception ex)
+                {
+                    // 3. Log granular failure details to pinpoint the exact field causing the drift
+                    Logger.Error($"Failed to encrypt field '{name}' for service '{source.Name}'.", ex);
+
+                    // 4. Rethrow a descriptive exception to prevent an unencrypted or half-encrypted 
+                    // DTO from being persisted to the database.
+                    throw new InvalidOperationException($"Encryption failed for field '{name}' on service '{source.Name}'.", ex);
+                }
             }
 
             return clone;
@@ -453,13 +471,26 @@ namespace Servy.Infrastructure.Data
         /// Decrypts sensitive fields of a <see cref="ServiceDto"/> in-place.
         /// </summary>
         /// <param name="dto">The DTO to decrypt. If null, the method returns immediately.</param>
+        /// <exception cref="InvalidOperationException">Thrown when a specific field fails to decrypt.</exception>
         private void DecryptDto(ServiceDto? dto)
         {
             if (dto == null) return;
 
-            foreach (var (get, set) in SensitiveFields)
+            foreach (var (get, set, name) in SensitiveFields)
             {
-                set(dto, DecryptIfPresent(get(dto)));
+                try
+                {
+                    // DecryptIfPresent handles the null/whitespace check internally
+                    set(dto, DecryptIfPresent(get(dto)));
+                }
+                catch (Exception ex)
+                {
+                    // Log with specific field and service context for faster triage
+                    Logger.Error($"Failed to decrypt field '{name}' for service '{dto.Name}'.", ex);
+
+                    // Rethrowing prevents the caller from operating on a DTO with mixed plaintext and ciphertext
+                    throw new InvalidOperationException($"Decryption failed for field '{name}' on service '{dto.Name}'.", ex);
+                }
             }
         }
 

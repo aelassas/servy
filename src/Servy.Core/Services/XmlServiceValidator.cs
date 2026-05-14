@@ -1,8 +1,6 @@
-﻿using Servy.Core.Config;
-using Servy.Core.DTOs;
-using Servy.Core.Helpers;
-using Servy.Core.Logging;
+﻿using Servy.Core.DTOs;
 using Servy.Core.Validators;
+using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -12,42 +10,24 @@ namespace Servy.Core.Services
     /// Validates XML input to ensure it can be deserialized into a <see cref="ServiceDto"/>
     /// and meets strict Windows SCM and security rules before database persistence.
     /// </summary>
-    public class XmlServiceValidator: IXmlServiceValidator
+    public class XmlServiceValidator : ServiceDtoImportValidator<Exception>, IXmlServiceValidator
     {
-        private readonly IProcessHelper _processHelper;
-        private readonly IServiceValidationRules _serviceValidationRules;
-
         /// <summary>
-        /// Initializes a new instance of the <see cref="XmlServiceValidator"/> class with the specified process helper.
+        /// Initializes a new instance of the <see cref="XmlServiceValidator"/> class.
         /// </summary>
-        /// <param name="processHelper">Provides methods to validate executable paths and gather process metrics.</param>
         /// <param name="serviceValidationRules">Provides rules for validating service properties.</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="processHelper"/> or <paramref name="serviceValidationRules"/> is null.</exception>
-        public XmlServiceValidator(IProcessHelper processHelper, IServiceValidationRules serviceValidationRules)
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceValidationRules"/> is null.</exception>
+        public XmlServiceValidator(IServiceValidationRules serviceValidationRules)
+            : base(serviceValidationRules)
         {
-            _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
-            _serviceValidationRules = serviceValidationRules ?? throw new ArgumentNullException(nameof(serviceValidationRules));
         }
 
         /// <inheritdoc/>
-        public bool TryValidate(string? xml, out string? errorMessage)
+        protected override string FormatName => "XML";
+
+        /// <inheritdoc/>
+        protected override ServiceDto? Parse(string content)
         {
-            errorMessage = null;
-
-            if (string.IsNullOrWhiteSpace(xml))
-            {
-                errorMessage = "XML input cannot be null or empty.";
-                return false;
-            }
-
-            // Prevent Memory Exhaustion / DoS
-            if (xml.Length > AppConfig.MaxConfigFileSizeBytes)
-            {
-                errorMessage = $"XML payload exceeds the maximum allowed size of {AppConfig.MaxConfigFileSizeMB} MB.";
-                Logger.Warn("XML Import Blocked: Payload size limit exceeded.");
-                return false;
-            }
-
             // 1. Prevent XXE Attacks
             var settings = new XmlReaderSettings
             {
@@ -55,46 +35,12 @@ namespace Servy.Core.Services
                 XmlResolver = null
             };
 
-            ServiceDto? dto;
-            try
+            var serializer = new XmlSerializer(typeof(ServiceDto));
+            using (var stringReader = new StringReader(content))
+            using (var xmlReader = XmlReader.Create(stringReader, settings))
             {
-                var serializer = new XmlSerializer(typeof(ServiceDto));
-                using (var stringReader = new StringReader(xml))
-                using (var xmlReader = XmlReader.Create(stringReader, settings))
-                {
-                    dto = serializer.Deserialize(xmlReader) as ServiceDto;
-                }
+                return serializer.Deserialize(xmlReader) as ServiceDto;
             }
-            catch (Exception ex)
-            {
-                errorMessage = $"XML structure error: {ex.Message}";
-                Logger.Error("XML parsing error during import", ex);
-                return false;
-            }
-
-            if (dto == null)
-            {
-                errorMessage = "XML deserialization resulted in an empty service definition.";
-                return false;
-            }
-
-            // 2. DEEP DOMAIN VALIDATION
-            var sanitizedName = (dto.Name ?? "Unknown").Replace("\r", "").Replace("\n", ""); // Sanitize the untrusted name to prevent log injection
-            var validation = _serviceValidationRules.Validate(dto);
-            if (validation.Errors.Any())
-            {
-                errorMessage = string.Join("\n", validation.Errors);
-
-                Logger.Warn($"XML Import Blocked: Logical violation for service '{sanitizedName}'. Reason: {errorMessage}");
-                return false;
-            }
-
-            if (validation.Warnings.Any())
-            {
-                Logger.Warn($"XML Import succeeded with warnings for service '{sanitizedName}': {string.Join("\n", validation.Warnings)}" );
-            }
-
-            return true;
         }
     }
 }

@@ -115,7 +115,7 @@ namespace Servy.Manager.UnitTests.Services
             _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string?>()))
                 .Returns(dto);
 
-            await sut.ImportJsonConfigAsync();
+            await sut.ImportJsonConfigAsync(TestContext.Current.CancellationToken);
 
             var delay = Task.Delay(2000, TestContext.Current.CancellationToken);
             var completedTask = await Task.WhenAny(_refreshTcs.Task, delay);
@@ -141,7 +141,7 @@ namespace Servy.Manager.UnitTests.Services
             string? outErr = "Invalid JSON";
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(false);
 
-            await sut.ImportJsonConfigAsync();
+            await sut.ImportJsonConfigAsync(TestContext.Current.CancellationToken);
 
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()));
             _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -175,7 +175,7 @@ namespace Servy.Manager.UnitTests.Services
             _xmlServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string?>()))
                 .Returns(dto);
 
-            await sut.ImportXmlConfigAsync();
+            await sut.ImportXmlConfigAsync(TestContext.Current.CancellationToken);
 
             var delay = Task.Delay(2000, TestContext.Current.CancellationToken);
             var completedTask = await Task.WhenAny(_refreshTcs.Task, delay);
@@ -201,7 +201,7 @@ namespace Servy.Manager.UnitTests.Services
             string? outErr = "Malformed XML";
             _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(false);
 
-            await sut.ImportXmlConfigAsync();
+            await sut.ImportXmlConfigAsync(TestContext.Current.CancellationToken);
 
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
             _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);

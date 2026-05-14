@@ -319,18 +319,7 @@ namespace Servy.Core.Security
                         {
                             string escalatedMsg = $"[EventID: {EventIds.PersistentMigrationFailure}] PERSISTENT SECURITY DEGRADATION: {baseMsg}. Failed {failCount} consecutive times. The file cannot be upgraded to modern encryption. System remains in v7.8 compatibility mode.";
 
-                            try
-                            {
-                                using (var eventLog = new EventLog(AppConfig.EventLogName))
-                                {
-                                    eventLog.Source = AppConfig.EventSource;
-                                    eventLog.WriteEntry($"[{AppConfig.EventSource}] {escalatedMsg}\n\nError: {ex.Message}", EventLogEntryType.Error, EventIds.PersistentMigrationFailure);
-                                }
-                            }
-                            catch (Exception eventLogEx)
-                            {
-                                Logger.Debug($"EventLog write failed (falling back to file logger): {eventLogEx.GetType().Name} - {eventLogEx.Message}");
-                            }
+                            TryWriteServyEventLog($"{escalatedMsg}\n\nError: {ex.Message}", EventLogEntryType.Error, EventIds.PersistentMigrationFailure);
 
                             Logger.Error(escalatedMsg, ex);
                         }
@@ -338,20 +327,9 @@ namespace Servy.Core.Security
                         {
                             string warningMsg = $"{baseMsg} (Attempt {failCount}/{MigrationFailureEscalationThreshold}): {ex.Message}";
 
-                            try
-                            {
-                                using (var eventLog = new EventLog(AppConfig.EventLogName))
-                                {
-                                    eventLog.Source = AppConfig.EventSource;
-                                    eventLog.WriteEntry($"[{AppConfig.EventSource}] {warningMsg}", EventLogEntryType.Warning, EventIds.TransientMigrationWarning);
-                                }
-                            }
-                            catch (Exception eventLogEx)
-                            {
-                                Logger.Debug($"EventLog write failed (falling back to file logger): {eventLogEx.GetType().Name} - {eventLogEx.Message}");
-                            }
+                            TryWriteServyEventLog(warningMsg, EventLogEntryType.Warning, EventIds.TransientMigrationWarning);
 
-                            Logger.Warn($"[EventID: {EventIds.TransientMigrationWarning}] {warningMsg}");
+                            Logger.Warn($"[EventID: {EventIds.Warning}] {warningMsg}");
                         }
 
                         // We still return the data so the service remains operational.
@@ -372,19 +350,8 @@ namespace Servy.Core.Security
                                     "3. Import the services via the CLI, PowerShell, or Manager.\n" +
                                     "4. You will need to re-enter usernames and passwords if your services run under specific accounts, as those secrets are not exported for security reasons.";
 
-                // FIX 1 (#712): Direct Event Log Surface
-                try
-                {
-                    using (var eventLog = new EventLog(AppConfig.EventLogName))
-                    {
-                        eventLog.Source = AppConfig.EventSource;
-                        eventLog.WriteEntry($"[{AppConfig.EventSource}] {errorMsg}\n\n{workaround}\n\nException: {ex.Message}", EventLogEntryType.Error, EventIds.KeyUnprotectFailed);
-                    }
-                }
-                catch (Exception eventLogEx)
-                {
-                    Logger.Debug($"EventLog write failed (falling back to file logger): {eventLogEx.GetType().Name} - {eventLogEx.Message}");
-                }
+                // Direct Event Log Surface
+                TryWriteServyEventLog($"{errorMsg}\n\n{workaround}\n\nError: {ex.Message}", EventLogEntryType.Error, EventIds.KeyUnprotectFailed);
 
                 var msg = $"{errorMsg}\n{workaround}";
 
@@ -492,7 +459,7 @@ namespace Servy.Core.Security
         /// </summary>
         /// <param name="length">The length of the byte array.</param>
         /// <returns>A random byte array.</returns>
-        private byte[] GenerateRandomBytes(int length)
+        private static byte[] GenerateRandomBytes(int length)
         {
             var buffer = new byte[length];
             using (var rng = RandomNumberGenerator.Create())
@@ -500,6 +467,35 @@ namespace Servy.Core.Security
                 rng.GetBytes(buffer);
             }
             return buffer;
+        }
+
+        /// <summary>
+        /// Attempts to record a diagnostic entry in the Windows Event Log using the centralized Servy configuration.
+        /// </summary>
+        /// <param name="formattedMessage">The fully prepared log message text.</param>
+        /// <param name="type">The Windows <see cref="EventLogEntryType"/> (e.g., Error, Warning, or Information).</param>
+        /// <param name="eventId">The specific numerical identifier for the event, typically derived from the Core taxonomy.</param>
+        /// <remarks>
+        /// This method encapsulates the interaction with the Windows Event Log subsystem. It is designed to be 
+        /// "fail-silent" regarding the caller; if the Event Log service is unavailable, permissions are restricted, 
+        /// or the source is not registered, the exception is caught, logged to the primary file-based 
+        /// <see cref="Logger"/> at a Debug level, and execution continues.
+        /// </remarks>
+        private static void TryWriteServyEventLog(string formattedMessage, EventLogEntryType type, int eventId)
+        {
+            try
+            {
+                using (var eventLog = new EventLog(AppConfig.EventLogName))
+                {
+                    eventLog.Source = AppConfig.EventSource;
+                    eventLog.WriteEntry($"[{AppConfig.EventSource}] {formattedMessage}", type, eventId);
+                }
+            }
+            catch (Exception eventLogEx)
+            {
+                // Fail-over: Log the failure to the primary logger so the original diagnostic isn't lost.
+                Logger.Debug($"EventLog write failed (falling back to file logger): {eventLogEx.GetType().Name} - {eventLogEx.Message}");
+            }
         }
 
         #endregion
