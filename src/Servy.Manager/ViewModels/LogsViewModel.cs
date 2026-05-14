@@ -412,6 +412,7 @@ namespace Servy.Manager.ViewModels
         /// <returns></returns>
         private static List<EventLogLevel> GetLogLevels() => Enum.GetValues(typeof(EventLogLevel))
                                                             .Cast<EventLogLevel>()
+                                                            .Where(logLevel => logLevel != EventLogLevel.Critical &&  logLevel != EventLogLevel.Verbose)
                                                             .ToList();
 
         #endregion

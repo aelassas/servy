@@ -318,7 +318,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Default timeout in seconds to wait for a Windows Service to stop. Default is 60 seconds.
         /// </summary>
-        public const int DefaultServiceStopTimeoutSeconds = 60;
+        public const int ScmStopTimeoutFloorSeconds = 60;
 
         /// <summary>
         /// Populate native service details timeout in milliseconds. This is the maximum time allowed for retrieving native service details.
@@ -391,10 +391,10 @@ namespace Servy.Core.Config
         public const int DefaultStartTimeout = 10;
 
         /// <summary>
-        /// Default stop timeout in seconds to wait for exit. Default is 5 seconds.
+        /// Default stop timeout in seconds to wait for the process to exit. Default is 5 seconds.
         /// </summary>
         /// <remarks>
-        /// <see cref="DefaultServiceStopTimeoutSeconds"/> is a separate
+        /// <see cref="ScmStopTimeoutFloorSeconds"/> is a separate
         /// constant used by ServiceManager as a wall-clock floor when the
         /// configured per-service value would be unreasonably short.
         /// </remarks>
@@ -893,6 +893,22 @@ namespace Servy.Core.Config
         /// 4096 bytes is the default to clear common application log headers and prologues.
         /// </summary>
         public const int FileIdentityPrefixBytes = 4096;
+
+        /// <summary>
+        /// The safety window, in seconds, used to detect Windows PID reuse during recursive process tree traversals.
+        /// </summary>
+        /// <remarks>
+        /// Windows recycles Process IDs (PIDs) aggressively. Without an identity check, a recursive 
+        /// operation might inadvertently target a new, unrelated process that has claimed the PID 
+        /// of a recently terminated child or parent. 
+        /// 
+        /// This constant defines the maximum allowed drift between the creation time of a parent 
+        /// and its detected children. If a "child" process has a <see cref="System.Diagnostics.Process.StartTime"/> 
+        /// that is significantly older or younger than its parent beyond this threshold (accounting for 
+        /// kernel-scheduling jitter), it is flagged as a recycled PID and excluded from the operation 
+        /// to prevent "process suicide" or the accidental termination of system-critical infrastructure.
+        /// </remarks>
+        public const int PidReuseToleranceSeconds = 2;
 
         #endregion
 

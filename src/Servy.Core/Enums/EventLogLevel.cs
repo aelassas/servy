@@ -6,6 +6,11 @@
     public enum EventLogLevel
     {
         /// <summary>
+        /// Verbose event.
+        /// </summary>
+        Verbose = 5,
+
+        /// <summary>
         /// Informational event.
         /// </summary>
         Information = 4,
@@ -19,6 +24,11 @@
         /// Error event indicating a failure or problem.
         /// </summary>
         Error = 2,
+
+        /// <summary>
+        /// Error event indicating a critical failure or problem.
+        /// </summary>
+        Critical = 1,
 
         /// <summary>
         /// Represents all levels of events (used for filtering purposes).

@@ -1,4 +1,5 @@
-﻿using Servy.Core.Logging;
+﻿using Servy.Core.Config;
+using Servy.Core.Logging;
 using Servy.Core.Native;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -83,7 +84,7 @@ namespace Servy.Service.ProcessManagement
 
                             // Strict StartTime check to prevent PID reuse collisions
                             // We use >= and subtract 1 second to account for OS tick precision
-                            if (child.StartTime >= parentStartTime.AddSeconds(-1))
+                            if (child.StartTime >= parentStartTime.AddSeconds(-AppConfig.PidReuseToleranceSeconds))
                             {
                                 children.Add(child);
                                 child = null; // ownership transferred to the list
@@ -155,7 +156,7 @@ namespace Servy.Service.ProcessManagement
                         child = Process.GetProcessById(childPid);
 
                         // Strict StartTime check to prevent PID reuse collisions
-                        if (child.StartTime >= current.StartTime.AddSeconds(-1))
+                        if (child.StartTime >= current.StartTime.AddSeconds(-AppConfig.PidReuseToleranceSeconds))
                         {
                             allDescendants.Add(child);
 

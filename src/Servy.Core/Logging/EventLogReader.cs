@@ -79,20 +79,33 @@ namespace Servy.Core.Logging
         /// Converts a raw event log level (byte) into a strongly typed <see cref="EventLogLevel"/>.
         /// </summary>
         /// <param name="level">The raw level value from the event record.</param>
-        /// <returns>The corresponding <see cref="EventLogLevel"/> value. Defaults to <see cref="EventLogLevel.Information"/> if the level is unknown.</returns>
+        /// <returns>
+        /// The corresponding <see cref="EventLogLevel"/> value. 
+        /// Defaults to <see cref="EventLogLevel.Information"/> if the level is unknown.
+        /// </returns>
+        /// <remarks>
+        /// This method preserves the fidelity of Windows Event Log levels. 
+        /// High-severity 'Critical' events and low-severity 'Verbose' events are mapped 
+        /// explicitly to prevent information loss during DTO conversion.
+        /// </remarks>
         public static EventLogLevel ParseLevel(byte level)
         {
             switch (level)
             {
                 case 1:
-                    return EventLogLevel.Error;  // Critical -> map to Error (closest match)
+                    return EventLogLevel.Critical;
                 case 2:
                     return EventLogLevel.Error;
                 case 3:
                     return EventLogLevel.Warning;
                 case 4:
                     return EventLogLevel.Information;
+                case 5:
+                    return EventLogLevel.Verbose;
                 default:
+                    // Log the unknown level at a debug level to assist in future triage 
+                    // without flooding production logs.
+                    Logger.Debug($"Unknown event log level '{level}' encountered; collapsing to Information.");
                     return EventLogLevel.Information;
             }
         }
