@@ -39,13 +39,27 @@
 # Main setup bundle script for building both self-contained and framework-dependent installers
 
 param(
-    [string]$Tfm      = "net10.0-windows", 
-    [ValidatePattern("^\d+\.\d+$")]
-    [string]$Version = "8.5",
+    [string]$Tfm     = "", 
+    [string]$Version = "",
     [switch]$IncludeFrameworkDependent
 )
 
 $ErrorActionPreference = "Stop"
+
+# Load central defaults
+$configPath = Join-Path $PSScriptRoot "build-config.ps1"
+if (Test-Path $configPath) {
+    $buildConfig = & $configPath
+    if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
+    if (-not $Version) { $Version = $buildConfig.Version }
+} else {
+    throw "Central build configuration not found at $configPath"
+}
+
+# Validate version format after defaults are applied
+if ($Version -notmatch "^\d+\.\d+$") {
+    throw "Version must match pattern '^\d+\.\d+$'. Provided: '$Version'"
+}
 
 $scriptHadError = $false
 

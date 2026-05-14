@@ -51,16 +51,17 @@ function Build-Installer {
     param (
         [Parameter(Mandatory=$true)][string]$InnoCompiler,
         [Parameter(Mandatory=$true)][string]$IssFile,
-        [Parameter(Mandatory=$true)][string]$Version
+        [Parameter(Mandatory=$true)][string]$Version,
+        [int]$MaxRetry = 3,
+        [int]$RetryDelaySeconds = 2
     )
     
     Write-Host "--- Building Installer ---" -ForegroundColor Cyan
     
-    $maxRetry = 3
     $currentAttempt = 0
     $success = $false
 
-    while (-not $success -and $currentAttempt -lt $maxRetry) {
+    while (-not $success -and $currentAttempt -lt $MaxRetry) {
         try {
             $currentAttempt++
             if ($currentAttempt -gt 1) { 
@@ -78,13 +79,13 @@ function Build-Installer {
             }
         }
         catch {
-            if ($currentAttempt -lt $maxRetry) {
+            if ($currentAttempt -lt $MaxRetry) {
                 # Now this will actually execute and wait for the AV lock to release
-                Write-Warning "Inno Setup failed (likely AV lock). Waiting 2s before retry..."
-                Start-Sleep -Seconds 2
+                Write-Warning "Inno Setup failed (likely AV lock). Waiting $($RetryDelaySeconds)s before retry..."
+                Start-Sleep -Seconds $RetryDelaySeconds
             } else {
                 # This bubbles up to the global catch block at the bottom of publish.ps1
-                throw "Inno Setup failed after $maxRetry attempts. $_"
+                throw "Inno Setup failed after $MaxRetry attempts. $_"
             }
         }
     }

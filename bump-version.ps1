@@ -5,7 +5,7 @@
 
 .DESCRIPTION
     This script updates the version of Servy in multiple locations:
-    - setup\publish.ps1
+    - setup\build-config.ps1
     - src\Servy.Core\Config\AppConfig.cs
     - All *.csproj files recursively
 
@@ -90,14 +90,12 @@ function Update-FileContent {
 }
 
 # -----------------------------
-# 1. Update setup\publish.ps1, publish-sc.ps1, publish-fd.ps1
+# 1. Update setup\build-config.ps1
 # -----------------------------
-foreach ($f in @('setup\publish.ps1', 'setup\publish-sc.ps1', 'setup\publish-fd.ps1')) {
-    Update-FileContent `
-        -Path (Join-Path $baseDir $f) `
-        -Pattern '(\[string\]\$Version\s*=\s*")[^"]*(")' `
-        -Replacement $Version
-}
+Update-FileContent `
+    -Path (Join-Path $baseDir 'setup\build-config.ps1') `
+    -Pattern '(Version\s*=\s*")[^"]*(")' `
+    -Replacement $Version
 
 # -----------------------------
 # 2. Update src\Servy.Core\Config\AppConfig.cs

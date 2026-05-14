@@ -26,14 +26,28 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$Tfm      = "net10.0-windows",
-    [ValidatePattern("^\d+\.\d+$")]
-    [string]$Version = "8.5",
+    [string]$Tfm     = "",
+    [string]$Version = "",
     [switch]$Pause
 )
 $ErrorActionPreference = "Stop"
-$BuildConfiguration = "Release"
-$Runtime = "win-x64"
+
+# Load central defaults
+$configPath = Join-Path $PSScriptRoot "build-config.ps1"
+if (Test-Path $configPath) {
+    $buildConfig = & $configPath
+    if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
+    if (-not $Version) { $Version = $buildConfig.Version }
+    $BuildConfiguration = $buildConfig.BuildConfiguration
+    $Runtime = $buildConfig.Runtime
+} else {
+    throw "Central build configuration not found at $configPath"
+}
+
+# Validate version format after defaults are applied
+if ($Version -notmatch "^\d+\.\d+$") {
+    throw "Version must match pattern '^\d+\.\d+$'. Provided: '$Version'"
+}
 
 # ========================
 # Configuration

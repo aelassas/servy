@@ -199,7 +199,7 @@ namespace Servy.Manager
                         new ServiceControllerProvider(controllerFactory),
                         new WindowsServiceApi(),
                         new Win32ErrorProvider(),
-                        ServiceRepository
+                        ServiceRepository!
                     );
 
                     var fileDialogService = new FileDialogService();
@@ -221,7 +221,7 @@ namespace Servy.Manager
 
                     var serviceCommands = new ServiceCommands(
                         serviceManager,
-                        ServiceRepository,
+                        ServiceRepository!,
                         messageBoxService,
                         fileDialogService,
                         removeServiceProxy,
@@ -239,13 +239,13 @@ namespace Servy.Manager
                     // 3. Initialize Main ViewModel
                     viewModel = new MainViewModel(
                         serviceManager,
-                        ServiceRepository,
+                        ServiceRepository!,
                         serviceCommands,
                         helpService,
                         messageBoxService,
-                        new PerformanceViewModel(ServiceRepository, serviceCommands, this, cursorService, processHelper, uiDispatcher),
-                        new ConsoleViewModel(ServiceRepository, serviceCommands, this, cursorService, uiDispatcher),
-                        new DependenciesViewModel(ServiceRepository, serviceManager, serviceCommands, this, cursorService, uiDispatcher, messageBoxService),
+                        new PerformanceViewModel(ServiceRepository!, serviceCommands, this, cursorService, processHelper, uiDispatcher),
+                        new ConsoleViewModel(ServiceRepository!, serviceCommands, this, cursorService, uiDispatcher),
+                        new DependenciesViewModel(ServiceRepository!, serviceManager, serviceCommands, this, cursorService, uiDispatcher, messageBoxService),
                         this,
                         cursorService,
                         processHelper
@@ -259,15 +259,46 @@ namespace Servy.Manager
                 },
                 CustomConfigAction = (config) =>
                 {
-                    // Extract Manager-specific polling and refresh intervals with strict bounds-checking
-                    RefreshIntervalInSeconds = GetConfigInt(config, "RefreshIntervalInSeconds", AppConfig.DefaultRefreshIntervalInSeconds, 1, 3600);
-                    PerformanceRefreshIntervalInMs = GetConfigInt(config, "PerformanceRefreshIntervalInMs", AppConfig.DefaultPerformanceRefreshIntervalInMs, 100, 300000);
-                    ConsoleRefreshIntervalInMs = GetConfigInt(config, "ConsoleRefreshIntervalInMs", AppConfig.DefaultConsoleRefreshIntervalInMs, 100, 300000);
-                    ConsoleMaxLines = GetConfigInt(config, "ConsoleMaxLines", AppConfig.DefaultConsoleMaxLines, 100, AppConfig.MaxConsoleMaxLines);
-                    DependenciesRefreshIntervalInMs = GetConfigInt(config, "DependenciesRefreshIntervalInMs", AppConfig.DefaultDependenciesRefreshIntervalInMs, 100, 300000);
-                    SearchDebounceDelayMs = GetConfigInt(config, "SearchDebounceDelayMs", AppConfig.DefaultSearchDebounceDelayMs, 100, 2000);
-                    MaxBulkOperationParallelism = GetConfigInt(config, "MaxBulkOperationParallelism", AppConfig.DefaultMaxBulkOperationParallelism, 1, 64);
-                    LogsWindowDays = GetConfigInt(config, "LogsWindowDays", AppConfig.DefaultLogsWindowDays, 1, 30);
+                    // Extract Manager-specific polling and refresh intervals with strict centralized bounds-checking
+                    RefreshIntervalInSeconds = GetConfigInt(config, "RefreshIntervalInSeconds",
+                        AppConfig.DefaultRefreshIntervalInSeconds,
+                        AppConfig.MinRefreshIntervalInSeconds,
+                        AppConfig.MaxRefreshIntervalInSeconds);
+
+                    PerformanceRefreshIntervalInMs = GetConfigInt(config, "PerformanceRefreshIntervalInMs",
+                        AppConfig.DefaultPerformanceRefreshIntervalInMs,
+                        AppConfig.MinPerformanceRefreshIntervalInMs,
+                        AppConfig.MaxPerformanceRefreshIntervalInMs);
+
+                    ConsoleRefreshIntervalInMs = GetConfigInt(config, "ConsoleRefreshIntervalInMs",
+                        AppConfig.DefaultConsoleRefreshIntervalInMs,
+                        AppConfig.MinConsoleRefreshIntervalInMs,
+                        AppConfig.MaxConsoleRefreshIntervalInMs);
+
+                    ConsoleMaxLines = GetConfigInt(config, "ConsoleMaxLines",
+                        AppConfig.DefaultConsoleMaxLines,
+                        AppConfig.MinConsoleMaxLines,
+                        AppConfig.MaxConsoleMaxLines);
+
+                    DependenciesRefreshIntervalInMs = GetConfigInt(config, "DependenciesRefreshIntervalInMs",
+                        AppConfig.DefaultDependenciesRefreshIntervalInMs,
+                        AppConfig.MinDependenciesRefreshIntervalInMs,
+                        AppConfig.MaxDependenciesRefreshIntervalInMs);
+
+                    SearchDebounceDelayMs = GetConfigInt(config, "SearchDebounceDelayMs",
+                        AppConfig.DefaultSearchDebounceDelayMs,
+                        AppConfig.MinSearchDebounceDelayMs,
+                        AppConfig.MaxSearchDebounceDelayMs);
+
+                    MaxBulkOperationParallelism = GetConfigInt(config, "MaxBulkOperationParallelism",
+                        AppConfig.DefaultMaxBulkOperationParallelism,
+                        AppConfig.MinMaxBulkOperationParallelism,
+                        AppConfig.MaxMaxBulkOperationParallelism);
+
+                    LogsWindowDays = GetConfigInt(config, "LogsWindowDays",
+                        AppConfig.DefaultLogsWindowDays,
+                        AppConfig.MinLogsWindowDays,
+                        AppConfig.MaxLogsWindowDays);
 
                     //
                     // Extracts an integer from configuration with professional-grade bounds checking.
