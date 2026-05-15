@@ -53,7 +53,10 @@ namespace Servy.Core.Helpers
         /// <param name="extension">The file extension (e.g., "exe" or "dll").</param>
         /// <param name="stopServices">Whether to stop services before copying the resource.</param>
         /// <param name="subfolder">Optional subfolder within the target directory.</param>
-        /// <returns>True if the copy succeeded or was not needed, false if it failed.</returns>
+        /// <returns>
+        /// True if the copy succeeded (or was not needed) AND all stopped services were successfully restarted; 
+        /// otherwise, false.
+        /// </returns>
         public async Task<bool> CopyEmbeddedResource(
             Assembly assembly,
             string resourceNamespace,
@@ -63,6 +66,7 @@ namespace Servy.Core.Helpers
             string subfolder = null)
         {
             bool copyDone = false; // Tracks if the physical file copy succeeded
+            bool restartFailed = false; // Tracks if the post-copy service restoration failed
             string targetPath = null;
             string resourceName = null;
 
@@ -111,6 +115,7 @@ namespace Servy.Core.Helpers
                         catch (Exception startEx)
                         {
                             // Log restart failure separately to avoid misattribution
+                            restartFailed = true;
                             Logger.Error(
                                 $"Embedded resource '{resourceName}' was successfully copied to '{targetPath}', but {runningServices.Count} previously-running services failed to restart.",
                                 startEx);
@@ -118,12 +123,13 @@ namespace Servy.Core.Helpers
                     }
                 }
 
-                if (copyDone)
+                if (copyDone && !restartFailed)
                 {
                     Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
                 }
 
-                return copyDone;
+                // ROBUSTNESS: Only return true if both the copy and the service restoration were successful.
+                return copyDone && !restartFailed;
             }
             catch (Exception ex)
             {

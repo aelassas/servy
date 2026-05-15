@@ -12,6 +12,7 @@ namespace Servy.Core.Logging
         #region Private Fields
 
         private EventLog _eventLog;
+        private readonly object _eventLogLock = new object();
 
         // Volatile backing fields ensure thread visibility when updated dynamically
         private volatile int _currentLogLevel;
@@ -65,25 +66,28 @@ namespace Servy.Core.Logging
         /// <param name="isEnabled">True to enable, false to disable.</param>
         public void SetIsEventLogEnabled(bool isEnabled)
         {
-            if (isEnabled)
+            lock (_eventLogLock)
             {
-                if (_eventLog == null)
+                if (isEnabled)
                 {
-                    InitializeEventLog();
-                    // InitializeEventLog sets _isEventLogEnabled to false on failure.
+                    if (_eventLog == null)
+                    {
+                        InitializeEventLog();
+                        // InitializeEventLog sets _isEventLogEnabled to false on failure.
+                    }
+                    else
+                    {
+                        _isEventLogEnabled = true;
+                    }
                 }
                 else
                 {
-                    _isEventLogEnabled = true;
-                }
-            }
-            else
-            {
-                _isEventLogEnabled = false;
+                    _isEventLogEnabled = false;
 
-                // CLEANUP: Dispose and null the handle when logging is explicitly turned off.
-                _eventLog?.Dispose();
-                _eventLog = null;
+                    // CLEANUP: Dispose and null the handle when logging is explicitly turned off.
+                    _eventLog?.Dispose();
+                    _eventLog = null;
+                }
             }
         }
 
@@ -182,8 +186,11 @@ namespace Servy.Core.Logging
 
             if (disposing)
             {
-                _eventLog?.Dispose();
-                _eventLog = null;
+                lock (_eventLogLock)
+                {
+                    _eventLog?.Dispose();
+                    _eventLog = null;
+                }
             }
 
             _disposed = true;
@@ -202,13 +209,21 @@ namespace Servy.Core.Logging
         /// <param name="eventId">The application-specific event identifier.</param>
         private void SafeWriteToEventLog(string message, EventLogEntryType type, int eventId)
         {
+            EventLog captured;
+            lock (_eventLogLock)
+            {
+                captured = _eventLog;
+            }
+
+            if (captured == null) return;
+
             try
             {
                 var safeMessage = message.Length > AppConfig.EventLogMessageMaxChars
                     ? message.Substring(0, AppConfig.EventLogMessageMaxChars) + "...[truncated]"
                     : message;
 
-                _eventLog?.WriteEntry(safeMessage, type, eventId);
+                captured.WriteEntry(safeMessage, type, eventId);
             }
             catch (Exception ex)
             {
