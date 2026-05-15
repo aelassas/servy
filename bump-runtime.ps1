@@ -46,6 +46,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$script:HadFailure     = $false
 
 # -----------------------------
 # Variables
@@ -117,7 +118,8 @@ function Update-Files {
             }
         }
         catch {
-            Write-Error "Failed to update file: $path. $_"
+            Write-Warning "Failed to update file: $path. $_"
+            $script:HadFailure = $true
         }
     }
 }
@@ -156,6 +158,15 @@ Write-Host "========================================="
 Write-Host "Files scanned:      $script:totalFilesScanned"
 Write-Host "Files modified:     $script:filesModified"
 Write-Host "Total replacements: $script:totalReplacements"
+
+if ($script:HadFailure) {
+    if ($DryRun) {
+        Write-Host "`nDry run complete with errors. No files were modified." -ForegroundColor Yellow
+    } else {
+        Write-Host ".NET runtime migration to v$Version completed with errors." -ForegroundColor Red
+    } 
+    exit 1
+}
 
 if ($DryRun) {
     Write-Host "`nDry run complete. No files were modified." -ForegroundColor Yellow

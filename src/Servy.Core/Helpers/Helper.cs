@@ -374,17 +374,6 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Determines whether the current process is running under xUnit test framework.
-        /// </summary>
-        /// <returns>true if a xUnit test runner is detected in the current application domain; otherwise, false.</returns>
-        [ExcludeFromCodeCoverage]
-        public static bool IsRunningUnderXunit()
-        {
-            // Checks if common test runners are loaded in the process
-            return AppDomain.CurrentDomain.GetAssemblies().Any(a => a.FullName != null && a.FullName.StartsWith("xunit"));
-        }
-
-        /// <summary>
         /// Writes content to a file atomically by writing to a temporary file first and then performing an atomic move.
         /// </summary>
         /// <param name="path">The full destination path where the file should be written.</param>

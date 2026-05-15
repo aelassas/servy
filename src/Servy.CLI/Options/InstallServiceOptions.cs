@@ -56,6 +56,7 @@ namespace Servy.CLI.Options
         /// Possible values:
         /// <list type="bullet">
         /// <item><description>Automatic - Service starts automatically during system startup.</description></item>
+        /// <item><description>AutomaticDelayedStart - Service starts automatically with a short delay after system startup.</description></item>
         /// <item><description>Manual - Service must be started manually.</description></item>
         /// <item><description>Disabled - Service is disabled and cannot be started.</description></item>
         /// </list>
@@ -131,6 +132,7 @@ namespace Servy.CLI.Options
         /// <item><description>Daily</description></item>
         /// <item><description>Weekly</description></item>
         /// <item><description>Monthly</description></item>
+        /// <item><description>None - Disables date-based rotation; use when only size rotation is desired.</description></item>
         /// </list>
         /// </summary>
         [Option("dateRotationType", HelpText = "Date rotation type. Options: Daily, Weekly, Monthly, None (None disables date-based rotation; use when only size rotation is desired).")]
