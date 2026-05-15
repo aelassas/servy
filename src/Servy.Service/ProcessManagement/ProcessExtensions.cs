@@ -133,7 +133,7 @@ namespace Servy.Service.ProcessManagement
                 return allDescendants;
 
             // 1. ONE snapshot, build parent->children map
-            var byParent = BuildParentChildMapNative();
+            var (_, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
 
             // 2. BFS over the map, materialize Process objects only for verified descendants
             var queue = new Queue<(int Pid, DateTime StartTime)>();
@@ -165,7 +165,6 @@ namespace Servy.Service.ProcessManagement
 
                             // Queue the validated child for the next level of BFS
                             queue.Enqueue((childPid, child.StartTime));
-
                             child = null; // ownership transferred to the list
                         }
                     }
@@ -183,51 +182,6 @@ namespace Servy.Service.ProcessManagement
             }
 
             return allDescendants;
-        }
-
-        /// <summary>
-        /// Performs a single-pass iteration of the OS process table using Toolhelp32 to build an in-memory parent-to-children relationship map.
-        /// </summary>
-        /// <returns>A dictionary where keys are Parent PIDs and values are lists of Child PIDs.</returns>
-        private static Dictionary<int, List<int>> BuildParentChildMapNative()
-        {
-            var byParent = new Dictionary<int, List<int>>();
-            IntPtr hSnapshot = NativeMethods.CreateToolhelp32Snapshot(NativeMethods.TH32CS_SNAPPROCESS, 0);
-
-            if (hSnapshot == NativeMethods.INVALID_HANDLE_VALUE || hSnapshot == IntPtr.Zero)
-            {
-                Logger.Error($"Failed to create Toolhelp32 snapshot. Win32 Error: {Marshal.GetLastWin32Error()}");
-                return byParent;
-            }
-
-            try
-            {
-                var pe32 = new NativeMethods.PROCESSENTRY32();
-                pe32.dwSize = (uint)Marshal.SizeOf(typeof(NativeMethods.PROCESSENTRY32));
-
-                if (NativeMethods.Process32First(hSnapshot, ref pe32))
-                {
-                    do
-                    {
-                        int ppid = (int)pe32.th32ParentProcessID;
-                        int pid = (int)pe32.th32ProcessID;
-
-                        if (!byParent.TryGetValue(ppid, out var children))
-                        {
-                            children = new List<int>();
-                            byParent[ppid] = children;
-                        }
-                        children.Add(pid);
-
-                    } while (NativeMethods.Process32Next(hSnapshot, ref pe32));
-                }
-            }
-            finally
-            {
-                NativeMethods.CloseHandle(hSnapshot);
-            }
-
-            return byParent;
         }
     }
 }

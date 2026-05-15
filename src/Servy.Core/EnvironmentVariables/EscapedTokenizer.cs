@@ -10,6 +10,15 @@ namespace Servy.Core.EnvironmentVariables
     internal static class EscapedTokenizer
     {
         /// <summary>
+        /// Defines the standard characters used to separate individual environment variable records.
+        /// </summary>
+        /// <remarks>
+        /// These delimiters include the semicolon (standard for PATH-like variables) as well as 
+        /// carriage return and newline characters to support multi-line configuration.
+        /// </remarks>
+        internal static readonly char[] EnvVarRecordDelimiters = { ';', '\r', '\n' };
+
+        /// <summary>
         /// Splits the input string by any of the specified delimiters, but only when the delimiter is not escaped by an odd number of backslashes. The backslash is preserved so later unescaping logic can handle sequences correctly.
         /// </summary>
         /// <param name="input">The input string to split.</param>

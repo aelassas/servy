@@ -7,8 +7,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Helpers
 {
@@ -35,19 +33,18 @@ namespace Servy.Core.Helpers
         };
 
         /// <summary>
-        /// A lightweight container for process metadata captured from a native snapshot to prevent redundant operating system queries.
+        /// Centralized helper to evaluate if a process name belongs to the critical system safelist.
+        /// Handles normalization of '.exe' suffixes to ensure consistent lookup regardless of the data source.
         /// </summary>
-        private struct ProcessInfoNode
+        private bool IsCriticalProcess(string processName)
         {
-            /// <summary>
-            /// The numerical identifier of the parent process.
-            /// </summary>
-            public int ParentId;
+            if (string.IsNullOrEmpty(processName)) return false;
 
-            /// <summary>
-            /// The name of the executable file.
-            /// </summary>
-            public string Name;
+            string cleanName = processName;
+            if (cleanName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                cleanName = cleanName.Substring(0, cleanName.Length - 4);
+
+            return CriticalSystemProcesses.Contains(cleanName);
         }
 
         /// <summary>
@@ -62,15 +59,7 @@ namespace Servy.Core.Helpers
             // Protection for system-level PIDs and the Servy process chain
             if (pid <= 4 || protectedPids.Contains(pid)) return true;
 
-            if (!string.IsNullOrEmpty(processName))
-            {
-                string cleanName = processName;
-                if (cleanName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                    cleanName = cleanName.Substring(0, cleanName.Length - 4);
-
-                if (CriticalSystemProcesses.Contains(cleanName)) return true;
-            }
-            return false;
+            return IsCriticalProcess(processName);
         }
 
         #endregion
@@ -84,7 +73,7 @@ namespace Servy.Core.Helpers
             using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
 
             // Step 1: Create a handle-less view of the entire system process table in a single pass
-            var (snapshot, byParent) = BuildSnapshotAndChildMapNative();
+            var (snapshot, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
 
             // SECURITY: Get ancestor PIDs to prevent killing the Servy process chain if it happens 
             // to be a descendant (e.g. through PID reuse or complex supervisor patterns)
@@ -93,57 +82,6 @@ namespace Servy.Core.Helpers
             // Step 2: Recursively terminate descendants using the map
             var visited = new HashSet<int>();
             WalkAndKillChildren(parentPid, DateTime.MinValue, selfPid, protectedPids, byParent, visited);
-        }
-
-        /// <summary>
-        /// Performs a single-pass iteration of the OS process table using Toolhelp32 to build both an in-memory 
-        /// parent-to-children relationship map and a complete snapshot map for upward traversal.
-        /// </summary>
-        /// <returns>A tuple containing the metadata snapshot map and the parent-to-child relationship map.</returns>
-        private (Dictionary<int, ProcessInfoNode> Snapshot, Dictionary<int, List<int>> ByParent) BuildSnapshotAndChildMapNative()
-        {
-            var snapshotMap = new Dictionary<int, ProcessInfoNode>();
-            var byParent = new Dictionary<int, List<int>>();
-            IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-
-            if (snapshot == IntPtr.Zero || snapshot == INVALID_HANDLE_VALUE)
-            {
-                int err = Marshal.GetLastWin32Error();
-                Logger.Warn($"CreateToolhelp32Snapshot failed (Win32 error {err}). Process kill walk will be a no-op for this invocation.");
-                return (snapshotMap, byParent);
-            }
-
-            try
-            {
-                PROCESSENTRY32 pe32 = new PROCESSENTRY32 { dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32)) };
-                if (Process32First(snapshot, ref pe32))
-                {
-                    do
-                    {
-                        int ppid = (int)pe32.th32ParentProcessID;
-                        int pid = (int)pe32.th32ProcessID;
-
-                        // 1. Populate the upward-traversal metadata map
-                        snapshotMap[pid] = new ProcessInfoNode
-                        {
-                            ParentId = ppid,
-                            Name = pe32.szExeFile
-                        };
-
-                        // 2. Populate the downward-traversal relationship map
-                        if (!byParent.TryGetValue(ppid, out var children))
-                        {
-                            children = new List<int>();
-                            byParent[ppid] = children;
-                        }
-                        children.Add(pid);
-
-                    } while (Process32Next(snapshot, ref pe32));
-                }
-            }
-            finally { CloseHandle(snapshot); }
-
-            return (snapshotMap, byParent);
         }
 
         /// <summary>
@@ -167,11 +105,8 @@ namespace Servy.Core.Helpers
 
             foreach (int childPid in childrenPids)
             {
-                // Fast-path: Skip if it's the current process or the System process (PID 0-4)
                 if (childPid == selfPid || childPid <= 4) continue;
 
-                // CYCLE GUARD: If we have already visited this child in the current walk, 
-                // skip it to prevent a StackOverflowException from infinite recursion.
                 if (!visited.Add(childPid))
                 {
                     Logger.Debug($"WalkAndKillChildren: Cycle detected or redundant PID encountered ({childPid}). Skipping.");
@@ -221,29 +156,29 @@ namespace Servy.Core.Helpers
             {
                 if (string.IsNullOrWhiteSpace(processName)) return false;
 
-                // Normalize name
-                if (processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                    processName = processName.Substring(0, processName.Length - 4);
-
-                // SECURITY: Reject critical system process names up-front
-                if (CriticalSystemProcesses.Contains(processName))
+                // SECURITY: Reject critical system process names up-front using centralized normalization
+                if (IsCriticalProcess(processName))
                 {
                     Logger.Warn($"Refused to kill critical system process by name: '{processName}'.");
                     return false;
                 }
 
+                // Internal normalization for consistent LINQ comparison (Process.ProcessName is extension-less)
+                string normalizedName = processName;
+                if (normalizedName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                    normalizedName = normalizedName.Substring(0, normalizedName.Length - 4);
+
                 int selfPid;
                 using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
 
-                // Single Toolhelp32 walk populates both maps, eliminating redundant syscalls and race conditions
-                var (completeSnapshot, byParent) = BuildSnapshotAndChildMapNative();
+                var (completeSnapshot, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
                 var protectedPids = GetAncestorPids(completeSnapshot);
 
                 var allProcesses = Process.GetProcesses();
                 try
                 {
                     var targetProcesses = allProcesses
-                        .Where(p => string.Equals(p.ProcessName, processName, StringComparison.OrdinalIgnoreCase))
+                        .Where(p => string.Equals(p.ProcessName, normalizedName, StringComparison.OrdinalIgnoreCase))
                         .Where(p => !protectedPids.Contains(p.Id))
                         .ToList();
 
@@ -291,7 +226,7 @@ namespace Servy.Core.Helpers
             try
             {
                 // Single Toolhelp32 walk populates both maps
-                var (completeSnapshot, byParent) = BuildSnapshotAndChildMapNative();
+                var (completeSnapshot, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
                 var protectedPids = GetAncestorPids(completeSnapshot);
 
                 // SECURITY: Resolve process handle and apply full safety check
@@ -391,9 +326,8 @@ namespace Servy.Core.Helpers
                 {
                     if (procInfo.ProcessId <= 0) continue;
 
-                    // Secondary Safelist Guardrail
-                    if (!string.IsNullOrEmpty(procInfo.ProcessName) &&
-                        CriticalSystemProcesses.Contains(procInfo.ProcessName))
+                    // FIX: Using IsCriticalProcess ensures handle.exe output (with .exe) is correctly validated against the safelist
+                    if (IsCriticalProcess(procInfo.ProcessName))
                     {
                         Logger.Warn($"Skipping kill request for critical system process: {procInfo.ProcessName} (PID {procInfo.ProcessId})");
                         success = false;
@@ -475,7 +409,6 @@ namespace Servy.Core.Helpers
             {
                 using (var parentProcess = Process.GetProcessById(parentId))
                 {
-                    // Identity check to prevent recycled PID accidents
                     try
                     {
                         if (childStartTime != DateTime.MinValue && parentProcess.StartTime > childStartTime.AddSeconds(2))
@@ -508,10 +441,7 @@ namespace Servy.Core.Helpers
             try
             {
                 int currentPid;
-                using (var current = Process.GetCurrentProcess())
-                {
-                    currentPid = current.Id;
-                }
+                using (var current = Process.GetCurrentProcess()) { currentPid = current.Id; }
 
                 ancestors.Add(currentPid);
                 int currentSearchPid = currentPid;
@@ -525,10 +455,7 @@ namespace Servy.Core.Helpers
                     currentSearchPid = parentId;
                 }
             }
-            catch (Exception ex)
-            {
-                Logger.Warn($"Could not fully resolve ancestor tree: {ex.Message}");
-            }
+            catch (Exception ex) { Logger.Warn($"Could not fully resolve ancestor tree: {ex.Message}"); }
             return ancestors;
         }
 
@@ -538,7 +465,6 @@ namespace Servy.Core.Helpers
         /// <param name="configuredMs">The timeout value from the user configuration.</param>
         /// <returns>The larger of the configured value or <see cref="AppConfig.MinKillWaitMs"/>.</returns>
         private static int SafeWait(int configuredMs) => Math.Max(configuredMs, AppConfig.MinKillWaitMs);
-
 
         #endregion
     }

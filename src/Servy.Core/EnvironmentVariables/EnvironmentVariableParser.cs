@@ -32,8 +32,7 @@ namespace Servy.Core.EnvironmentVariables
             var result = new List<EnvironmentVariable>();
 
             // Sync delimiters with the Validator to support multi-line input
-            char[] delimiters = new char[] { ';', '\r', '\n' };
-            var parts = EscapedTokenizer.SplitByUnescapedDelimiters(input, delimiters);
+            var parts = EscapedTokenizer.SplitByUnescapedDelimiters(input, EscapedTokenizer.EnvVarRecordDelimiters);
 
             foreach (var part in parts)
             {
