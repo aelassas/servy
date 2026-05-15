@@ -1097,6 +1097,16 @@ namespace Servy.Core.Config
         public const int DbSyncMaxJitterMs = 10;
 
         /// <summary>
+        /// The absolute maximum delay allowed for database retry operations, in milliseconds.
+        /// </summary>
+        /// <remarks>
+        /// This constant serves as the upper safety cap for the exponential backoff algorithm to 
+        /// ensure that retries remain responsive and do not grow indefinitely during sustained 
+        /// infrastructure failures.
+        /// </remarks>
+        public const int DbBackoffMaxMs = 5_000;
+
+        /// <summary>
         /// Interval at which the CPU metrics cache is pruned of dead/recycled process entries.
         /// </summary>
         public static readonly TimeSpan ProcessHelperPruneInterval = TimeSpan.FromMinutes(5);

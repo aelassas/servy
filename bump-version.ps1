@@ -26,6 +26,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$script:HadFailure     = $false
 
 # Convert short version to full versions
 $fullVersion = "$Version.0"
@@ -61,26 +62,33 @@ function Update-FileContent {
     #>
     param([string]$Path, [string]$Pattern, [string]$Replacement)
     
-    if (Test-Path $Path) {
-        $encoding = Get-FileEncoding $Path
-        $content = [System.IO.File]::ReadAllText($Path, $encoding)
+    try {
+        if (Test-Path $Path) {
+            $encoding = Get-FileEncoding $Path
+            $content = [System.IO.File]::ReadAllText($Path, $encoding)
         
-        # Count matches before attempting replacement
-        $regexMatches = [regex]::Matches($content, $Pattern)
-        if ($regexMatches.Count -eq 0) {
-            Write-Warning "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern" "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern"
-            return
+            # Count matches before attempting replacement
+            $regexMatches = [regex]::Matches($content, $Pattern)
+            if ($regexMatches.Count -eq 0) {
+                Write-Warning "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern" "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern"
+                return
+            }
+        
+            # Perform replacement
+            $newContent = [regex]::Replace($content, $Pattern, { 
+                param($m) "$($m.Groups[1].Value)$Replacement$($m.Groups[2].Value)" 
+            })
+        
+            [System.IO.File]::WriteAllText($Path, $newContent, $encoding)
+            Write-Host "Successfully updated ($($encoding.BodyName)): $Path ($($regexMatches.Count) replacements)" -ForegroundColor Green
+        } else {
+            Write-Warning "Skipping missing file: $Path"
         }
-        
-        # Perform replacement
-        $newContent = [regex]::Replace($content, $Pattern, { 
-            param($m) "$($m.Groups[1].Value)$Replacement$($m.Groups[2].Value)" 
-        })
-        
-        [System.IO.File]::WriteAllText($Path, $newContent, $encoding)
-        Write-Host "Successfully updated ($($encoding.BodyName)): $Path ($($regexMatches.Count) replacements)" -ForegroundColor Green
-    } else {
-        Write-Warning "Skipping missing file: $Path"
+    }
+    catch {
+        # Non-terminating under Stop preference: use Write-Warning, not Write-Error
+        Write-Warning "Failed to update file: $Path. $($_.Exception.Message)"
+        $script:HadFailure = $true
     }
 }
 
@@ -102,47 +110,54 @@ Update-FileContent `
 Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction SilentlyContinue | ForEach-Object {
     $path = $_.FullName
     
-    # Detect encoding first to prevent corruption
-    $encoding = Get-FileEncoding $path
-    $content = [System.IO.File]::ReadAllText($path, $encoding)
+    try {
+        # Detect encoding first to prevent corruption
+        $encoding = Get-FileEncoding $path
+        $content = [System.IO.File]::ReadAllText($path, $encoding)
 
-    # LOGIC: Track total replacements to prevent silent failures in recursive loops.
-    $totalReplacements = 0
-    $assemblyTags = @('AssemblyVersion', 'AssemblyFileVersion')
+        # LOGIC: Track total replacements to prevent silent failures in recursive loops.
+        $totalReplacements = 0
+        $assemblyTags = @('AssemblyVersion', 'AssemblyFileVersion')
 
-    foreach ($tag in $assemblyTags) {
-        $replacementValue = ""
+        foreach ($tag in $assemblyTags) {
+            $replacementValue = ""
 
-        switch ($tag) {
-            "AssemblyVersion" { 
-                $replacementValue = $fileVersion 
-                break 
+            switch ($tag) {
+                "AssemblyVersion" { 
+                    $replacementValue = $fileVersion 
+                    break 
+                }
+                "AssemblyFileVersion" { 
+                    $replacementValue = $fileVersion 
+                    break 
+                }
             }
-            "AssemblyFileVersion" { 
-                $replacementValue = $fileVersion 
-                break 
+
+            # Case-insensitive pattern for [assembly: AssemblyVersion("...")]
+            $pattern = "(\[assembly:\s*$tag\(\"")[^""]*(\""\)\])"
+            $matches = [regex]::Matches($content, $pattern, "IgnoreCase")
+
+            if ($matches.Count -gt 0) {
+                $totalReplacements += $matches.Count
+                $content = [regex]::Replace($content, $pattern, { 
+                    param($m) "$($m.Groups[1].Value)$replacementValue$($m.Groups[2].Value)" 
+                }, "IgnoreCase")
             }
         }
 
-        # Case-insensitive pattern for [assembly: AssemblyVersion("...")]
-        $pattern = "(\[assembly:\s*$tag\(\"")[^""]*(\""\)\])"
-        $matches = [regex]::Matches($content, $pattern, "IgnoreCase")
-
-        if ($matches.Count -gt 0) {
-            $totalReplacements += $matches.Count
-            $content = [regex]::Replace($content, $pattern, { 
-                param($m) "$($m.Groups[1].Value)$replacementValue$($m.Groups[2].Value)" 
-            }, "IgnoreCase")
+        if ($totalReplacements -gt 0) {
+            # Commit changes only if the file was actually modified
+            [System.IO.File]::WriteAllText($path, $content, $encoding)
+            Write-Host "Updated AssemblyInfo ($($encoding.BodyName)): $path ($totalReplacements replacements)" -ForegroundColor Green
+        } else {
+            # LOG: Alert the operator if an AssemblyInfo file exists but lacks version metadata.
+            Write-Warning "No version attributes found in: $path"
         }
     }
-
-    if ($totalReplacements -gt 0) {
-        # Commit changes only if the file was actually modified
-        [System.IO.File]::WriteAllText($path, $content, $encoding)
-        Write-Host "Updated AssemblyInfo ($($encoding.BodyName)): $path ($totalReplacements replacements)" -ForegroundColor Green
-    } else {
-        # LOG: Alert the operator if an AssemblyInfo file exists but lacks version metadata.
-        Write-Warning "No version attributes found in: $path"
+        catch {
+        # Non-terminating under Stop preference: use Write-Warning, not Write-Error
+        Write-Warning "Failed to update file: $path. $($_.Exception.Message)"
+        $script:HadFailure = $true
     }
 }
 
@@ -152,4 +167,9 @@ Update-FileContent `
     -Pattern "(ModuleVersion\s*=\s*')[^']*(')" `
     -Replacement $fullVersion
 
-Write-Host "`nAll legacy and metadata version updates complete." -ForegroundColor Green
+if ($script:HadFailure) {
+    Write-Host "Version update process completed with errors." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "All version updates completed successfully." -ForegroundColor Green

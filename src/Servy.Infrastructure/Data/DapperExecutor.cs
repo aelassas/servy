@@ -116,7 +116,7 @@ namespace Servy.Infrastructure.Data
         /// <param name="maxJitterMs">The maximum random jitter to add.</param>
         /// <param name="maxBackoffMs">The absolute maximum delay allowed for the backoff, preventing infinite growth during repeated failures.</param>
         /// <returns>The calculated delay in milliseconds, representing the capped exponential backoff plus a random jitter component.</returns>
-        private static int CalculateBackoff(int attempt, int initialDelayMs, int maxJitterMs, int maxBackoffMs = 5000)
+        private static int CalculateBackoff(int attempt, int initialDelayMs, int maxJitterMs, int maxBackoffMs = AppConfig.DbBackoffMaxMs)
         {
             // Use long math and cap to prevent silent overflow if MaxRetries is ever raised
             long shifted = (long)initialDelayMs << Math.Min(attempt, 30);
