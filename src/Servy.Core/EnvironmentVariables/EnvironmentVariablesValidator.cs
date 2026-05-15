@@ -24,7 +24,7 @@ namespace Servy.Core.EnvironmentVariables
             }
 
             // Split input by unescaped semicolons and newlines
-            var variables = EscapedTokenizer.SplitByUnescapedDelimiters(environmentVariables, new char[] { ';', '\r', '\n' });
+            var variables = EscapedTokenizer.SplitByUnescapedDelimiters(environmentVariables, EscapedTokenizer.EnvVarRecordDelimiters);
 
             foreach (var variable in variables)
             {

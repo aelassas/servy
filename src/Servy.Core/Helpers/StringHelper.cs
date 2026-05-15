@@ -1,6 +1,5 @@
 ﻿using Servy.Core.EnvironmentVariables;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Servy.Core.Helpers
 {
