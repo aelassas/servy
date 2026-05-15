@@ -425,7 +425,20 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void Cleanup()
         {
-            Dispose();
+            // Use Interlocked to ensure we only dispose the token once
+            var oldCts = Interlocked.Exchange(ref _cancellationTokenSource, null);
+            if (oldCts != null)
+            {
+                try
+                {
+                    oldCts.Cancel();
+                }
+                catch (ObjectDisposedException) { /* Already gone */ }
+                finally
+                {
+                    oldCts.Dispose();
+                }
+            }
         }
 
         /// <summary>
@@ -435,28 +448,9 @@ namespace Servy.Manager.ViewModels
         /// <param name="disposing">True if called from Dispose(), false if from a finalizer.</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (!_disposedValue)
-            {
-                if (disposing)
-                {
-                    // Use Interlocked to ensure we only dispose the token once
-                    var oldCts = Interlocked.Exchange(ref _cancellationTokenSource, null);
-                    if (oldCts != null)
-                    {
-                        try
-                        {
-                            oldCts.Cancel();
-                        }
-                        catch (ObjectDisposedException) { /* Already gone */ }
-                        finally
-                        {
-                            oldCts.Dispose();
-                        }
-                    }
-                }
-
-                _disposedValue = true;
-            }
+            if (_disposedValue) return;
+            if (disposing) Cleanup();
+            _disposedValue = true;
         }
 
         /// <inheritdoc/>

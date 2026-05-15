@@ -142,7 +142,18 @@ function Update-Watermark {
             [System.IO.File]::WriteAllText($TimestampFile, $timestampString, [System.Text.Encoding]::UTF8)
             Write-Verbose "Timestamp updated to: $timestampString"
         } catch {
-            Write-FallbackError -Message "Failed to update timestamp file: $($_.Exception.Message)" -scriptDir $ScriptDir
+            # Bypass EventLog to prevent feedback loops. Record locally only.
+            $errorMessage = "Failed to update timestamp file: $($_.Exception.Message)"
+            Write-Warning "ServyWatermark: $errorMessage"
+            
+            if ($ScriptDir) {
+                $logFile = Join-Path $ScriptDir "ServyWatermarkErrors.log"
+                try {
+                    Write-ServyLog -FilePath $logFile -Message $errorMessage
+                } catch {
+                    # Silence to prevent script termination if the disk is completely inaccessible
+                }
+            }
         }
     }
 }
