@@ -15,9 +15,11 @@ namespace Servy.Core.Helpers
     {
         /// <summary>
         /// Populates any null nullable properties with production defaults from AppConfig.
+        /// Additionally, unconditionally resets RunAsLocalSystem/UserAccount/Password to a
+        /// password-less LocalSystem baseline (Global Identity Reset on Import policy).
         /// </summary>
         /// <param name="dto">The service DTO to hydrate. If null, the method returns immediately.</param>
-        public static void ApplyDefaults(ServiceDto dto)
+        public static void ApplyDefaultsAndResetIdentity(ServiceDto dto)
         {
             if (dto == null) return;
 

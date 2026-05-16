@@ -25,7 +25,7 @@ namespace Servy.Core.Services
                 // If deserialization succeeded, apply defaults (e.g., setting missing timeouts)
                 if (dto != null)
                 {
-                    ServiceDtoHelper.ApplyDefaults(dto);
+                    ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);
                 }
 
                 return dto;

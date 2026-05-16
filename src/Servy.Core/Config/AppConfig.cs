@@ -603,6 +603,17 @@ namespace Servy.Core.Config
         public static readonly TimeSpan HandleExeRegexTimeout = TimeSpan.FromSeconds(1);
 
         /// <summary>
+        /// Specifies the maximum duration, in milliseconds, allowed for standard output and error streams 
+        /// of <c>handle.exe</c> to completely flush and drain after a termination event.
+        /// </summary>
+        /// <remarks>
+        /// This timeout provides a best-effort structural buffer to ensure that diagnostic traces are fully 
+        /// written to logs before resources are cleaned up, preventing deadlocks if the underlying stream is blocked 
+        /// during a forced <see cref="TimeoutException"/> escalation.
+        /// </remarks>
+        public const int HandleExeKillDrainTimeoutMs = 2_000;
+
+        /// <summary>
         /// Timeout in milliseconds to wait for an individual child process to exit after a termination signal.
         /// </summary>
         /// <remarks>

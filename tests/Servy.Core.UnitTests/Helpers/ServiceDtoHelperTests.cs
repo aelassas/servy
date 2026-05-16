@@ -39,7 +39,7 @@ namespace Servy.UnitTests.Core.Helpers
             };
 
             // Act
-            ServiceDtoHelper.ApplyDefaults(dto);
+            ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);
 
             // Assert
             Assert.Equal((int)AppConfig.DefaultStartupType, dto.StartupType);
@@ -82,7 +82,7 @@ namespace Servy.UnitTests.Core.Helpers
             };
 
             // Act
-            ServiceDtoHelper.ApplyDefaults(dto);
+            ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);
 
             // Assert
             Assert.Equal(customTimeout, dto.StartTimeout);
@@ -105,7 +105,7 @@ namespace Servy.UnitTests.Core.Helpers
             // This verifies the helper is null-safe (if you add a null check)
             // If you don't have a null check, this is a good reminder to add: 
             // if (dto == null) return;
-            var exception = Record.Exception(() => ServiceDtoHelper.ApplyDefaults(dto));
+            var exception = Record.Exception(() => ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto));
             Assert.Null(exception);
         }
     }

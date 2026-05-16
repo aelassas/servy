@@ -411,7 +411,7 @@ namespace Servy.Core.Helpers
                 {
                     try
                     {
-                        if (childStartTime != DateTime.MinValue && parentProcess.StartTime > childStartTime.AddSeconds(2))
+                        if (childStartTime != DateTime.MinValue && parentProcess.StartTime > childStartTime.AddSeconds(AppConfig.PidReuseToleranceSeconds))
                             return;
                     }
                     catch (Win32Exception) { /* Handle access denied on StartTime, proceed with caution */ }
