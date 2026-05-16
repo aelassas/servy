@@ -140,7 +140,7 @@ function Send-NotificationEmail {
   [CmdletBinding()]
   param (
     [string]$Subject,
-    [string][Parameter(ValueFromPipeline)]$Body,
+    [string]$Body,
     [string]$scriptDir,
     [string]$FallbackLogFile
   )
@@ -161,20 +161,21 @@ function Send-NotificationEmail {
   $smtpServer = $configRoot.Server
   $from       = $configRoot.From
   $to         = $configRoot.To
+
+  $rawPort    = ([string]$configRoot.Port).Trim()
+  $rawUseSsl  = ([string]$configRoot.UseSsl).Trim()
+  $rawTimeout = ([string]$configRoot.TimeoutMs).Trim()
   
   # 2. Safe Port Resolution (Prevents [int]$null becoming 0)
-  $rawPort = $configRoot.Port
-  $smtpPort = if ($null -ne $rawPort -and $rawPort -match '^\d+$') { [int]$rawPort } else { 0 }
+  $smtpPort = if ($rawPort    -match '^\d+$')         { [int]$rawPort }    else { 0 }
   
   # 3. Safe SSL Preference Resolution (Case-insensitive, defaults to true)
   # LOGIC: Casts to string and trims whitespace to prevent parsing errors. 
   # Uses case-insensitive regex '(?i)' to match "false", "FALSE", "False", or "0".
-  $rawUseSsl = $configRoot.UseSsl
-  $useSsl = if ($null -ne $rawUseSsl -and ([string]$rawUseSsl).Trim() -match '^(?i)(false|0)$') { $false } else { $true }
+  $useSsl = if ($rawUseSsl  -match '^(?i)(false|0)$') { $false }        else { $true }
 
   # 4. Safe Timeout Resolution (Defaults to 30000ms / 30s)
-  $rawTimeout = $configRoot.TimeoutMs
-  $timeout = if ($null -ne $rawTimeout -and $rawTimeout -match '^\d+$') { [int]$rawTimeout } else { 30000 }
+  $timeout = if ($rawTimeout -match '^\d+$')          { [int]$rawTimeout } else { 30000 }
 
   $credPath = Join-Path $scriptDir "smtp-cred.xml"
   $emailRegex = '^[^@]+@[^@]+\.[^@]+$'

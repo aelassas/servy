@@ -41,6 +41,10 @@ $fallbackLogFile = "ServyNotification.log"
 # 3000-3099: Core Errors | 3100-3199: Script Errors
 $EVENT_ID_DEPENDENCY_ERROR = 3104 # mirrors EventIds.ScheduledTaskScriptDependencyError
 
+$MaxToastTagLength       = 64    # WinRT ToastNotification.Tag limit
+$ToastExpirationMinutes  = 5
+$InterToastDelayMs       = 500   # debounce flood of toasts
+
 # -------------------------------
 # 2. Imports
 # -------------------------------
@@ -127,10 +131,10 @@ function Show-Notification {
     # Initialize Notification
     $toast = New-Object Windows.UI.Notifications.ToastNotification($serializedXml)
     $tag = "Servy-$($TimeCreated.ToString('yyyyMMddHHmmssfff'))-$($ServiceName -replace '\s','')"
-    $tag = $tag.Substring(0, [Math]::Min($tag.Length, 64)) # Max 64 chars
+    $tag = $tag.Substring(0, [Math]::Min($tag.Length, $MaxToastTagLength)) # Max $MaxToastTagLength chars
     $toast.Tag = $tag
     $toast.Group = "Servy" # cluster all Servy toasts together
-    $toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(5)
+    $toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes($ToastExpirationMinutes)
 
     # Event Handlers (Async Error Capture)
     $null = $toast.add_Failed({
@@ -186,5 +190,5 @@ foreach ($evt in $eventsToProcess) {
         break
     }
     
-    Start-Sleep -Milliseconds 500
+    Start-Sleep -Milliseconds $InterToastDelayMs
 }

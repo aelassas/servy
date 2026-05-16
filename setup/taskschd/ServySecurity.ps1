@@ -29,7 +29,7 @@
 function Protect-SensitiveString {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$false, ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$false)]
         [string]$Text
     )
     
