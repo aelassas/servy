@@ -66,7 +66,7 @@ namespace Servy.Core.Logging
             {
                 EventId = evt.Id,
                 // Avoid implicit conversion from DateTime.MinValue.
-                // We treat the event timestamp as as local on this OS and fallback directly to DateTimeOffset.MinValue 
+                // We treat the event timestamp as local on this OS and fallback directly to DateTimeOffset.MinValue 
                 // to prevent ArgumentOutOfRangeException in positive-offset time zones.
                 Time = evt.TimeCreated.HasValue
                     ? new DateTimeOffset(evt.TimeCreated.Value)

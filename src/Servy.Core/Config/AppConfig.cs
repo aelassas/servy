@@ -1133,6 +1133,7 @@ namespace Servy.Core.Config
 
         /// <summary>
         /// Specifies the name of the environment variable used to securely pass the user password from the CLI.
+        /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyPasswordEnvVar)
         /// </summary>
         /// <remarks>
         /// Using an environment variable prevents sensitive credentials from being exposed in plain text 

@@ -938,13 +938,11 @@ namespace Servy.Core.Native
             if (string.IsNullOrWhiteSpace(destination))
                 throw new ArgumentException("Destination path cannot be null or empty.", nameof(destination));
 
-            const int ERROR_NOT_SAME_DEVICE = 0x11; // 17
-
             if (!MoveFileEx(source, destination, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
             {
                 var error = Marshal.GetLastWin32Error();
 
-                if (error == ERROR_NOT_SAME_DEVICE)
+                if (error == Errors.ERROR_NOT_SAME_DEVICE)
                 {
                     // Provide a high-visibility diagnostic message for deployment troubleshooting.
                     throw new IOException(

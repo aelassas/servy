@@ -39,7 +39,7 @@ $fallbackLogFile = "ServyNotification.log"
 
 # Event ID Taxonomy (Refer to src/Servy.Core/Logging/EventIds.cs for updates)
 # 3000-3099: Core Errors | 3100-3199: Script Errors
-$EVENT_ID_DEPENDENCY_ERROR = 3104
+$EVENT_ID_DEPENDENCY_ERROR = 3104 # mirrors EventIds.ScheduledTaskScriptDependencyError
 
 # -------------------------------
 # 2. Imports
