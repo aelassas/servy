@@ -139,7 +139,7 @@ namespace Servy.Core.Helpers
         /// </remarks>
         public static string Quote(string? input)
         {
-            if (string.IsNullOrWhiteSpace(input))
+            if (string.IsNullOrEmpty(input))
                 return "\"\"";
 
             return $"\"{EscapeArgs(input)}\"";
@@ -160,7 +160,7 @@ namespace Servy.Core.Helpers
         /// </remarks>
         public static string EscapeArgs(string? input)
         {
-            if (string.IsNullOrWhiteSpace(input))
+            if (string.IsNullOrEmpty(input))
                 return string.Empty;
 
             if (input.Contains('\0'))
@@ -217,7 +217,7 @@ namespace Servy.Core.Helpers
         /// <returns>The escaped string.</returns>
         public static string EscapeBackslashes(string? input)
         {
-            if (string.IsNullOrWhiteSpace(input))
+            if (string.IsNullOrEmpty(input))
                 return string.Empty;
 
             if (input.Contains('\0'))

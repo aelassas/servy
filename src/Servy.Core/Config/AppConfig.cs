@@ -506,6 +506,18 @@ namespace Servy.Core.Config
         /// <para>Default is <c>false</c> (UTC).</para>
         /// <para>When set to <c>false</c>, log rotation intervals are calculated using Coordinated Universal Time (UTC). 
         /// This ensures a consistent, monotonic rotation schedule that is unaffected by Daylight Saving Time transitions.</para>
+        /// <para>
+        /// <b>CRITICAL SIDE EFFECT SIDE-CHANNEL:</b> Changing this value introduces a global side effect 
+        /// that extends beyond log file splitting boundaries. It directly dictates whether log entry line 
+        /// headers are written using the host system's localized time zone context (<see cref="DateTime.Now"/>) 
+        /// or Coordinated Universal Time (<see cref="DateTime.UtcNow"/>).
+        /// </para>
+        /// <para>
+        /// Flipping this configuration will cause subsequent log lines within a single file to straddle 
+        /// two distinct time-base formats (e.g., transitioning from a 'Z' suffix to a '+02:00' suffix), 
+        /// which may complicate historical time-series aggregation, text parsing, and cross-environment 
+        /// log stream diffing.
+        /// </para>
         /// </remarks>
         public const bool DefaultUseLocalTimeForRotation = false;
 
@@ -513,7 +525,10 @@ namespace Servy.Core.Config
         /// The hard timeout for the HttpClient used in update checks. 
         /// This acts as a global safety net for the request.
         /// </summary>
-        public const int UpdateCheckHttpTimeoutSeconds = 20;
+        /// <remarks>
+        /// static readonly int so the static constructor check is evaluated at runtime.
+        /// </remarks>
+        public static readonly int UpdateCheckHttpTimeoutSeconds = 20;
 
         /// <summary>
         /// The cooperative cancellation timeout for update checks.
@@ -521,7 +536,10 @@ namespace Servy.Core.Config
         /// If this is greater than the HTTP timeout, the user will see a generic 
         /// connection error instead of the friendly 'Update check timed out' message.
         /// </summary>
-        public const int UpdateCheckTimeoutSeconds = 10;
+        /// <remarks>
+        /// static readonly int so the static constructor check is evaluated at runtime.
+        /// </remarks>
+        public static readonly int UpdateCheckTimeoutSeconds = 10;
 
         /// <summary>
         /// The default log search window duration (3 days) used when no specific configuration value is found.

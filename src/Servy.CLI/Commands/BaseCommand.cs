@@ -24,6 +24,10 @@ namespace Servy.CLI.Commands
             {
                 return task();
             }
+            catch (OperationCanceledException)
+            {
+                return CommandResult.Fail(string.Format(Strings.Msg_CommandCancelled, commandName));
+            }
             catch (Exception ex)
             {
                 return HandleException(ex, commandName, action, suggestion);

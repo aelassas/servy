@@ -279,6 +279,15 @@ namespace Servy.Core.Logging
         /// in a one-time rotation delay or premature rotation if the offset between the two time 
         /// standards crosses a rotation boundary (e.g., midnight).
         /// </para>
+        /// <para>
+        /// <b>Architectural Warning:</b> This configuration couples two distinct behavioral domains: log file rotation policy 
+        /// and log line token rendering. Modifying this setting dynamically at runtime will instantly alter the time-base format 
+        /// of all subsequent entries appended to active logs. 
+        /// </para>
+        /// <para>
+        /// This format drift can negatively affect downstream log indexers, automated SIEM regex ingestion rules, and forensic 
+        /// timeline reconstruction when troubleshooting across different infrastructure nodes.
+        /// </para>
         /// </remarks>
         public static void SetUseLocalTimeForRotation(bool useLocalTimeForRotation)
         {

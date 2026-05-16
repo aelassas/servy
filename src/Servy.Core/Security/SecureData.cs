@@ -91,23 +91,26 @@ namespace Servy.Core.Security
             if (plainText == null) throw new ArgumentNullException(nameof(plainText));
             if (plainText.Length == 0) throw new ArgumentException("Cannot encrypt empty string.", nameof(plainText));
 
-            // Convert string to UTF-8 bytes for cryptographic processing
-            byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
-
-            // Initialize AES-256 with the derived V2 encryption key
-            using var aes = Aes.Create();
-            aes.Key = _v2EncryptionKey;
-
-            // 1. PRE-CALCULATION: Determine exact buffer requirements
-            // Get the exact ciphertext size (including PKCS7 padding)
-            int ciphertextLen = aes.GetCiphertextLengthCbc(plainBytes.Length, PaddingMode.PKCS7);
-
-            // Total binary payload: [IV (16 bytes)] + [Ciphertext (Variable)] + [HMAC (32 bytes)]
-            int binaryPayloadLen = IvSize + ciphertextLen + HmacSize;
-            byte[] binaryPayload = new byte[binaryPayloadLen];
+            byte[]? plainBytes = null;
+            byte[]? binaryPayload = null;
 
             try
             {
+                // Convert string to UTF-8 bytes for cryptographic processing
+                plainBytes = Encoding.UTF8.GetBytes(plainText);
+
+                // Initialize AES-256 with the derived V2 encryption key
+                using var aes = Aes.Create();
+                aes.Key = _v2EncryptionKey;
+
+                // 1. PRE-CALCULATION: Determine exact buffer requirements
+                // Get the exact ciphertext size (including PKCS7 padding)
+                int ciphertextLen = aes.GetCiphertextLengthCbc(plainBytes.Length, PaddingMode.PKCS7);
+
+                // Total binary payload: [IV (16 bytes)] + [Ciphertext (Variable)] + [HMAC (32 bytes)]
+                int binaryPayloadLen = IvSize + ciphertextLen + HmacSize;
+                binaryPayload = new byte[binaryPayloadLen];
+
                 // 2. CRYPTOGRAPHIC OPERATIONS: Direct buffer manipulation via Spans
                 Span<byte> payloadSpan = binaryPayload;
 
@@ -141,8 +144,9 @@ namespace Servy.Core.Security
             {
                 // 4. SECURITY HYGIENE: Wipe sensitive buffers from the heap immediately after use
                 // plainBytes contains sensitive text; binaryPayload contains the IV and Ciphertext
-                CryptographicOperations.ZeroMemory(plainBytes);
-                CryptographicOperations.ZeroMemory(binaryPayload);
+                if (plainBytes != null) CryptographicOperations.ZeroMemory(plainBytes);
+
+                if (binaryPayload != null) CryptographicOperations.ZeroMemory(binaryPayload);
             }
         }
 
