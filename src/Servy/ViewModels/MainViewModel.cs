@@ -1268,7 +1268,7 @@ namespace Servy.ViewModels
             }
             finally
             {
-                IsBusy = false;
+                ResetIsBusy();
             }
         }
 
@@ -1284,7 +1284,7 @@ namespace Servy.ViewModels
             }
             finally
             {
-                IsBusy = false;
+                ResetIsBusy();
             }
         }
 
@@ -1303,7 +1303,7 @@ namespace Servy.ViewModels
             }
             finally
             {
-                IsBusy = false;
+                ResetIsBusy();
             }
         }
 
@@ -1322,7 +1322,7 @@ namespace Servy.ViewModels
             }
             finally
             {
-                IsBusy = false;
+                ResetIsBusy();
             }
         }
 

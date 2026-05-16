@@ -97,58 +97,76 @@ namespace Servy.Core.Security
             if (plainText == null) throw new ArgumentNullException(nameof(plainText));
             if (plainText.Length == 0) throw new ArgumentException("Cannot encrypt empty string.", nameof(plainText));
 
-            byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
-            byte[] iv = new byte[IvSize];
-            byte[] payload = null;
-
-            using (var rng = RandomNumberGenerator.Create()) { rng.GetBytes(iv); }
+            byte[] plainBytes = null;
+            byte[] binaryPayload = null;
 
             try
             {
-                using (var aes = Aes.Create())
+                // Convert string to UTF-8 bytes for cryptographic processing
+                plainBytes = Encoding.UTF8.GetBytes(plainText);
+
+                // Initialize AES-256 with the derived V2 encryption key
+                byte[] iv = new byte[IvSize];
+                byte[] payload = null;
+
+                using (var rng = RandomNumberGenerator.Create()) { rng.GetBytes(iv); }
+
+                try
                 {
-                    aes.Key = _v2EncryptionKey;
-                    aes.IV = iv;
-                    aes.Mode = CipherMode.CBC;
-                    aes.Padding = PaddingMode.PKCS7;
-
-                    int maxCipherLen = ((plainBytes.Length / IvSize) + 1) * IvSize;
-                    payload = new byte[IvSize + maxCipherLen + HmacSize];
-                    Buffer.BlockCopy(iv, 0, payload, 0, IvSize);
-
-                    int actualCipherLen;
-                    using (var encryptor = aes.CreateEncryptor())
-                    using (var ms = new MemoryStream(payload, IvSize, maxCipherLen))
-                    using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                    using (var aes = Aes.Create())
                     {
-                        // Chunked write to prevent Large Object Heap (LOH) fragmentation for large strings
-                        int offset = 0;
-                        while (offset < plainBytes.Length)
+                        aes.Key = _v2EncryptionKey;
+                        aes.IV = iv;
+                        aes.Mode = CipherMode.CBC;
+                        aes.Padding = PaddingMode.PKCS7;
+
+                        int maxCipherLen = ((plainBytes.Length / IvSize) + 1) * IvSize;
+                        payload = new byte[IvSize + maxCipherLen + HmacSize];
+                        Buffer.BlockCopy(iv, 0, payload, 0, IvSize);
+
+                        int actualCipherLen;
+                        using (var encryptor = aes.CreateEncryptor())
+                        using (var ms = new MemoryStream(payload, IvSize, maxCipherLen))
+                        using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
                         {
-                            int count = Math.Min(BufferSize, plainBytes.Length - offset);
-                            cs.Write(plainBytes, offset, count);
-                            offset += count;
+                            // Chunked write to prevent Large Object Heap (LOH) fragmentation for large strings
+                            int offset = 0;
+                            while (offset < plainBytes.Length)
+                            {
+                                int count = Math.Min(BufferSize, plainBytes.Length - offset);
+                                cs.Write(plainBytes, offset, count);
+                                offset += count;
+                            }
+                            cs.FlushFinalBlock();
+                            actualCipherLen = (int)ms.Position;
                         }
-                        cs.FlushFinalBlock();
-                        actualCipherLen = (int)ms.Position;
-                    }
 
-                    using (var hmacSha = new HMACSHA256(_v2HmacKey))
-                    {
-                        int totalToHash = IvSize + actualCipherLen;
-                        hmacSha.TransformBlock(payload, 0, totalToHash, null, 0);
-                        hmacSha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-                        Buffer.BlockCopy(hmacSha.Hash, 0, payload, totalToHash, HmacSize);
+                        using (var hmacSha = new HMACSHA256(_v2HmacKey))
+                        {
+                            int totalToHash = IvSize + actualCipherLen;
+                            hmacSha.TransformBlock(payload, 0, totalToHash, null, 0);
+                            hmacSha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                            Buffer.BlockCopy(hmacSha.Hash, 0, payload, totalToHash, HmacSize);
 
-                        return $"{V2Marker}{Convert.ToBase64String(payload, 0, totalToHash + HmacSize)}";
+                            return $"{V2Marker}{Convert.ToBase64String(payload, 0, totalToHash + HmacSize)}";
+                        }
                     }
                 }
+                finally
+                {
+                    Array.Clear(plainBytes, 0, plainBytes.Length);
+                    Array.Clear(iv, 0, iv.Length);
+                    if (payload != null) Array.Clear(payload, 0, payload.Length);
+                }
+
             }
             finally
             {
-                Array.Clear(plainBytes, 0, plainBytes.Length);
-                Array.Clear(iv, 0, iv.Length);
-                if (payload != null) Array.Clear(payload, 0, payload.Length);
+                // SECURITY HYGIENE: Wipe sensitive buffers from the heap immediately after use
+                // plainBytes contains sensitive text; binaryPayload contains the IV and Ciphertext
+                if (plainBytes != null) Array.Clear(plainBytes, 0, plainBytes.Length);
+
+                if (binaryPayload != null) Array.Clear(binaryPayload, 0, binaryPayload.Length);
             }
         }
 

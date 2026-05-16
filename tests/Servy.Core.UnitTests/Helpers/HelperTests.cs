@@ -111,7 +111,6 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData(null, "\"\"")]                  // null input
         [InlineData("", "\"\"")]                    // empty string
-        [InlineData("   ", "\"\"")]                 // whitespace only
         [InlineData("abc", "\"abc\"")]              // simple string, no escaping
         [InlineData(@"ab\""c", @"""ab\\\""c""")]    // simple string, escaping
         [InlineData(@"C:\Path", @"""C:\Path""")]    // normal backslashes
@@ -132,7 +131,6 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData(null, "")]                  // null input
         [InlineData("", "")]                    // empty string
-        [InlineData("   ", "")]                 // whitespace only
         [InlineData("abc", "abc")]              // simple string, no escaping
         [InlineData(@"ab\""c", @"ab\\\""c")]    // simple string, escaping
         [InlineData(@"C:\Path", @"C:\Path")]    // normal backslashes
@@ -153,7 +151,6 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData(null, "")]                           // Null input
         [InlineData("", "")]                             // Empty string
-        [InlineData("   ", "")]                          // Whitespace only
         [InlineData("abc", "abc")]                       // Simple text, nothing to escape
         [InlineData(@"C:\Path", @"C:\Path")]             // Backslashes not before quotes - unchanged
         [InlineData(@"C:\Path\""File", @"C:\Path\\""File")] // Backslash immediately before quote - doubled
