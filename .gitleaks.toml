@@ -1,0 +1,5 @@
+[allowlist]
+  description = "Allowlist false positives for internal variable identifiers"
+  regexes = [
+    '''_v2EncryptionKey'''
+  ]
