@@ -297,8 +297,12 @@ function Invoke-ServyCli {
         Truncated = $false
     }
 
-    if (-not $script:ServyCliFound -and -not (Test-Path $script:ServyCliPath)) {
-      throw "Servy CLI not found at '$($script:ServyCliPath)'. The file may have been moved or deleted since the module was loaded. Try re-importing the module."
+    if (-not (Test-Path $script:ServyCliPath)) {
+        if ($script:ServyCliFound) {
+            throw "Servy CLI was located at module load time but is no longer present at '$($script:ServyCliPath)'. The file may have been moved or deleted; re-import the module to re-probe."
+        } else {
+            throw "Servy CLI was not found at any of the probed locations (local module folder, Program Files, system PATH). Install Servy or add servy-cli.exe to PATH, then re-import the module."
+        }
     }
     
     # Using .NET Process class is the most robust way in PS 2.0 to pass 
@@ -472,7 +476,7 @@ function Invoke-ServyCli {
     }
   }
 
-  if ($null -ne $exitCode -and $exitCode -ne 0) {
+  if ($exitCode -ne 0) {
     # SECURITY: Scrub stderr before pushing to the session-persistent exit code exception
     $scrubbedStderrFinal = Format-SecureLogMessage -Text $stderr
     $errorMessage = if ($null -ne $scrubbedStderrFinal -and $scrubbedStderrFinal.Trim() -ne "") { $scrubbedStderrFinal.TrimEnd() } else { "Unknown error" }
@@ -1062,7 +1066,7 @@ function Install-ServyService {
       })]
     [string] $PreLaunchStderr,
 
-    [ValidateRange(0, 86400)]
+    [ValidateRange(0, 1000)]
     [int] $PreLaunchTimeout,
 
     [ValidateRange(0, 100000)]
@@ -1209,7 +1213,7 @@ function Install-ServyService {
       $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
       try {
           # Unmanaged BSTR -> Managed String
-          $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+          $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
           
           if ($null -ne $plainPassword -and $plainPassword.Length -gt 0) {
               $secureEnv[$script:ServyPasswordEnvVar] = $plainPassword
