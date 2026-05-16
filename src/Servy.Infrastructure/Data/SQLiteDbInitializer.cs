@@ -252,6 +252,8 @@ namespace Servy.Infrastructure.Data
                 .Select(c => c.Trim());
         }
 
+        #region Migration Logic
+
         /// <summary>
         /// Creates the Version 1 schema for a brand new database. 
         /// Consolidates all columns into a single CREATE statement dynamically built from SqlConstants.
@@ -346,69 +348,13 @@ namespace Servy.Infrastructure.Data
         /// the ambiguous 'EnableRotation' column to 'EnableSizeRotation' for databases
         /// that were already cleanly tracking schema Version 1.
         /// </summary>
-        private static void ApplyVersion2(DbConnection connection)
-        {
-            using (var transaction = connection.BeginTransaction())
-            {
-                try
-                {
-                    var existingColumns = new HashSet<string>(
-                        connection.Query("PRAGMA table_info(Services);", transaction: transaction)
-                                  .Select(row => (string)row.name),
-                        StringComparer.OrdinalIgnoreCase
-                    );
-
-                    if (existingColumns.Contains("EnableRotation") && !existingColumns.Contains("EnableSizeRotation"))
-                    {
-                        Logger.Info("Migrating database to Version 2: Renaming 'EnableRotation' to 'EnableSizeRotation'.");
-                        connection.Execute("ALTER TABLE Services RENAME COLUMN EnableRotation TO EnableSizeRotation;", transaction: transaction);
-                    }
-
-                    transaction.Commit();
-                    Logger.Info("Database successfully migrated to Version 2.");
-                }
-                catch (Exception ex)
-                {
-                    transaction.Rollback();
-                    Logger.Error("CRITICAL: Version 2 database migration failed. Transaction rolled back.", ex);
-                    throw;
-                }
-            }
-        }
+        private static void ApplyVersion2(DbConnection connection) => RenameColumnIfExists(connection, 2, "EnableRotation", "EnableSizeRotation");
 
         /// <summary>
         /// Applies the Version 3 schema migration, adding the 'EnableConsoleUI' column 
         /// to the 'Services' table to support allocating a console for interactive apps.
         /// </summary>
-        private static void ApplyVersion3(DbConnection connection)
-        {
-            using (var transaction = connection.BeginTransaction())
-            {
-                try
-                {
-                    var existingColumns = new HashSet<string>(
-                        connection.Query("PRAGMA table_info(Services);", transaction: transaction)
-                                  .Select(row => (string)row.name),
-                        StringComparer.OrdinalIgnoreCase
-                    );
-
-                    if (!existingColumns.Contains("EnableConsoleUI"))
-                    {
-                        Logger.Info("Migrating database to Version 3: Adding 'EnableConsoleUI' column.");
-                        connection.Execute("ALTER TABLE Services ADD COLUMN EnableConsoleUI INTEGER;", transaction: transaction);
-                    }
-
-                    transaction.Commit();
-                    Logger.Info("Database successfully migrated to Version 3.");
-                }
-                catch (Exception ex)
-                {
-                    transaction.Rollback();
-                    Logger.Error("CRITICAL: Version 3 database migration failed. Transaction rolled back.", ex);
-                    throw;
-                }
-            }
-        }
+        private static void ApplyVersion3(DbConnection connection) => AddColumnIfMissing(connection, 3, "EnableConsoleUI", "INTEGER");
 
         /// <summary>
         /// Applies the Version 4 schema migration, removing strict NOT NULL constraints from 13 configuration 
@@ -492,35 +438,76 @@ namespace Servy.Infrastructure.Data
         /// Applies the Version 5 schema migration, adding the 'RecoveryOnCleanExit' column 
         /// to the 'Services' table to support triggering recovery actions even on successful exits (Code 0).
         /// </summary>
-        private static void ApplyVersion5(DbConnection connection)
+        private static void ApplyVersion5(DbConnection connection) => AddColumnIfMissing(connection, 5, "RecoveryOnCleanExit", "INTEGER");
+
+        #endregion
+
+        #region Migration Helpers
+
+        /// <summary>
+        /// A transactional helper to safely add a new column to the Services table if it doesn't already exist.
+        /// Eliminates boilerplate try/catch and rollback handling across incremental migrations.
+        /// </summary>
+        private static void AddColumnIfMissing(DbConnection conn, int version, string columnName, string sqlType)
         {
-            using (var transaction = connection.BeginTransaction())
+            using (var tx = conn.BeginTransaction())
             {
                 try
                 {
-                    var existingColumns = new HashSet<string>(
-                        connection.Query("PRAGMA table_info(Services);", transaction: transaction)
-                                  .Select(row => (string)row.name),
-                        StringComparer.OrdinalIgnoreCase
-                    );
+                    var existing = new HashSet<string>(
+                        conn.Query("PRAGMA table_info(Services);", transaction: tx).Select(r => (string)r.name),
+                        StringComparer.OrdinalIgnoreCase);
 
-                    if (!existingColumns.Contains("RecoveryOnCleanExit"))
+                    if (!existing.Contains(columnName))
                     {
-                        Logger.Info("Migrating database to Version 5: Adding 'RecoveryOnCleanExit' column.");
-                        connection.Execute("ALTER TABLE Services ADD COLUMN RecoveryOnCleanExit INTEGER;", transaction: transaction);
+                        Logger.Info($"Migrating database to Version {version}: Adding '{columnName}' column.");
+                        conn.Execute($"ALTER TABLE Services ADD COLUMN {columnName} {sqlType};", transaction: tx);
                     }
 
-                    transaction.Commit();
-                    Logger.Info("Database successfully migrated to Version 5.");
+                    tx.Commit();
+                    Logger.Info($"Database successfully migrated to Version {version}.");
                 }
                 catch (Exception ex)
                 {
-                    transaction.Rollback();
-                    Logger.Error("CRITICAL: Version 5 database migration failed. Transaction rolled back.", ex);
+                    tx.Rollback();
+                    Logger.Error($"CRITICAL: Version {version} database migration failed. Transaction rolled back.", ex);
                     throw;
                 }
             }
         }
+
+        /// <summary>
+        /// A transactional helper to safely rename an existing column within the Services table.
+        /// </summary>
+        private static void RenameColumnIfExists(DbConnection conn, int version, string oldName, string newName)
+        {
+            using (var tx = conn.BeginTransaction())
+            {
+                try
+                {
+                    var existing = new HashSet<string>(
+                        conn.Query("PRAGMA table_info(Services);", transaction: tx).Select(r => (string)r.name),
+                        StringComparer.OrdinalIgnoreCase);
+
+                    if (existing.Contains(oldName) && !existing.Contains(newName))
+                    {
+                        Logger.Info($"Migrating database to Version {version}: Renaming '{oldName}' to '{newName}'.");
+                        conn.Execute($"ALTER TABLE Services RENAME COLUMN {oldName} TO {newName};", transaction: tx);
+                    }
+
+                    tx.Commit();
+                    Logger.Info($"Database successfully migrated to Version {version}.");
+                }
+                catch (Exception ex)
+                {
+                    tx.Rollback();
+                    Logger.Error($"CRITICAL: Version {version} database migration failed. Transaction rolled back.", ex);
+                    throw;
+                }
+            }
+        }
+
+        #endregion
 
         /// <summary>
         /// Infers the SQLite data type and constraints for a given column name by reading the cached 

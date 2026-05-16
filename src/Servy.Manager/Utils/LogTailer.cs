@@ -38,7 +38,7 @@ namespace Servy.Manager.Utils
         /// <summary>
         /// Indicates whether the current instance has been disposed.
         /// </summary>
-        private bool _isDisposed;
+        private int _isDisposed;   // 0 = alive, 1 = disposed
 
         /// <summary>
         /// Delegate for handling a batch of new log lines.
@@ -388,8 +388,7 @@ namespace Servy.Manager.Utils
         /// </param>
         protected virtual void Dispose(bool disposing)
         {
-            if (_isDisposed)
-                return;
+            if (Interlocked.Exchange(ref _isDisposed, 1) != 0) return;
 
             if (disposing)
             {
@@ -405,8 +404,6 @@ namespace Servy.Manager.Utils
 
                 _disposeCts.Dispose();
             }
-
-            _isDisposed = true;
         }
 
     }

@@ -186,7 +186,7 @@ namespace Servy.CLI.Commands
                 fullPath,
                 "XML",
                 content => _xmlServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
-                content => _serviceRepository.ImportXmlAsync(content, cancellationToken: cancellationToken),
+                dto => _serviceRepository.UpsertAsync(dto, preserveExistingRuntimeState: true, cancellationToken: cancellationToken),
                 _xmlServiceSerializer.Deserialize,
                 cancellationToken: cancellationToken);
         }
@@ -205,7 +205,7 @@ namespace Servy.CLI.Commands
                 fullPath,
                 "JSON",
                 content => _jsonServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
-                content => _serviceRepository.ImportJsonAsync(content, cancellationToken: cancellationToken),
+                dto => _serviceRepository.UpsertAsync(dto, preserveExistingRuntimeState: true, cancellationToken: cancellationToken),
                 _jsonServiceSerializer.Deserialize,
                 cancellationToken: cancellationToken);
         }
@@ -218,7 +218,7 @@ namespace Servy.CLI.Commands
              string fullPath,
              string formatName,
              Func<string, (bool Valid, string? Error)> validator,
-             Func<string, Task<bool>> repoImporter,
+             Func<ServiceDto, Task<int>> repoImporter,
              Func<string, ServiceDto?> deserializer,
              CancellationToken cancellationToken = default)
         {
@@ -240,14 +240,13 @@ namespace Servy.CLI.Commands
                 return pathValidation;
 
             // 4. Repository Import (only after validation passes)
-            if (!await repoImporter(content))
-                return CommandResult.Fail(string.Format(Strings.Msg_ImportRepoFailure, formatName));
+            await repoImporter(dto);
 
             if (!opts.InstallService)
                 return CommandResult.Ok(string.Format(Strings.Msg_ImportSuccessNoInstall, formatName));
 
             // 5. Installation
-            return await TryInstallServiceAsync(dto.Name, formatName, cancellationToken);
+            return await TryInstallServiceAsync(dto.Name ?? string.Empty, formatName, cancellationToken);
         }
 
         /// <summary>
