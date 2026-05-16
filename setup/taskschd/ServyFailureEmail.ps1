@@ -83,10 +83,7 @@ foreach ($dep in $requiredDependencies) {
 function ConvertTo-HtmlSafe {
     <#
     .SYNOPSIS
-        Converts plain text to HTML-safe format by encoding metacharacters.
-    .DESCRIPTION
-        This helper provides a manual replacement chain for metacharacters to ensure 
-        compatibility with .NET 3.5 and PowerShell 2.0 environments.
+        Converts plain text to HTML-safe format by encoding XML/HTML metacharacters (&, <, >, ", ').
     #>
     param([string]$Text)
     if ([string]::IsNullOrEmpty($Text)) { return "" }
