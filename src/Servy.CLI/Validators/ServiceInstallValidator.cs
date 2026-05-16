@@ -50,7 +50,7 @@ namespace Servy.CLI.Validators
             {
                 // CLI reports the first issue. Errors are prioritized over warnings 
                 // to ensure blocking issues are addressed first.
-                var firstIssue = result.Errors.Concat(result.Warnings).First();
+                var firstIssue = result.Errors.First();
                 return CommandResult.Fail(firstIssue);
             }
 

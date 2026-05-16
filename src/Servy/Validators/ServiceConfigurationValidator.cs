@@ -54,13 +54,6 @@ namespace Servy.Validators
                 return false;
             }
 
-            // Display warnings
-            if (result.Warnings.Any())
-            {
-                await _messageBoxService.ShowWarningAsync(result.Warnings.First(), AppConfig.Caption);
-                return false;
-            }
-
             return true;
         }
     }

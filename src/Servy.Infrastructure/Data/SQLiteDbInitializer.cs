@@ -117,12 +117,6 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         /// <param name="connection">The active database connection.</param>
         /// <param name="currentVersion">The schema version detected after migrations.</param>
-        /// <summary>
-        /// Final reconciliation step that ensures the database schema matches the 
-        /// Single Source of Truth (SqlConstants), even if explicit migrations were missed.
-        /// </summary>
-        /// <param name="connection">The active database connection.</param>
-        /// <param name="currentVersion">The schema version detected after migrations.</param>
         private static void ReconcileSchema(DbConnection connection, int currentVersion)
         {
             // Fetch full column definitions (name and type) from PRAGMA

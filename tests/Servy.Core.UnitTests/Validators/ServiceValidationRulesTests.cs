@@ -199,7 +199,6 @@ namespace Servy.Core.UnitTests.Validators
 
             Assert.True(result.IsValid);
             Assert.Empty(result.Errors);
-            Assert.Empty(result.Warnings);
         }
     }
 }

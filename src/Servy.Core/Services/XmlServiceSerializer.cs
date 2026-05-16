@@ -38,7 +38,7 @@ namespace Servy.Core.Services
                     // 4. Apply Defaults only on success
                     if (dto != null)
                     {
-                        ServiceDtoHelper.ApplyDefaults(dto);
+                        ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);
                     }
 
                     return dto;

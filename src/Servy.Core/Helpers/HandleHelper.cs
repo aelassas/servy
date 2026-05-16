@@ -104,7 +104,7 @@ namespace Servy.Core.Helpers
                         Logger.Warn($"Failed to kill handle.exe after timeout (PID {process.Id}): {killEx.Message}");
                     }
 
-                    process.WaitForExit(2000); // best-effort drain; we already have a TimeoutException coming
+                    process.WaitForExit(AppConfig.HandleExeKillDrainTimeoutMs); // best-effort drain; we already have a TimeoutException coming
 
                     throw new TimeoutException($"handle.exe timed out. Stderr: {errorBuilder}");
                 }

@@ -62,16 +62,11 @@ namespace Servy.Core.Helpers
         {
             bool copyDone = false; // Tracks if the physical file copy succeeded
             bool restartFailed = false; // Tracks if the post-copy service restoration failed
-            string? currentResourceName = null;
-            string? currentTargetPath = null;
 
             try
             {
                 if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
                     return true;
-
-                currentResourceName = resourceName;
-                currentTargetPath = targetPath;
 
                 // Get running services before the inner try block
                 var runningServices = new List<string>();
