@@ -73,7 +73,7 @@ namespace Servy.Infrastructure.Data
                 VALUES ({SqlConstants.InsertValues});
                 SELECT last_insert_rowid();";
 
-            var id = await _dapper.ExecuteScalarAsync<int>(sql, encryptedService, cancellationToken);
+            var id = await _dapper.ExecuteScalarAsync<int>(sql, encryptedService, cancellationToken: cancellationToken);
             service.Id = id;
 
             return id;
@@ -86,7 +86,7 @@ namespace Servy.Infrastructure.Data
 
             if (preserveExistingRuntimeState)
             {
-                await PatchRuntimeStateAsync(encryptedService, cancellationToken);
+                await PatchRuntimeStateAsync(encryptedService, cancellationToken: cancellationToken);
             }
 
             var sql = $@"
@@ -94,7 +94,7 @@ namespace Servy.Infrastructure.Data
                 {SqlConstants.UpdateSet}
                 WHERE Id = @Id;";
 
-            return await _dapper.ExecuteAsync(sql, encryptedService, cancellationToken);
+            return await _dapper.ExecuteAsync(sql, encryptedService, cancellationToken: cancellationToken);
         }
 
         /// <inheritdoc />
@@ -122,7 +122,7 @@ namespace Servy.Infrastructure.Data
 
             if (preserveExistingRuntimeState)
             {
-                await PatchRuntimeStateAsync(encryptedService, cancellationToken);
+                await PatchRuntimeStateAsync(encryptedService, cancellationToken: cancellationToken);
             }
 
             var sql = $@"
@@ -132,7 +132,7 @@ namespace Servy.Infrastructure.Data
                 {SqlConstants.UpsertSet};
                 SELECT id FROM Services WHERE LOWER(Name) = LOWER(@Name);";
 
-            var id = await _dapper.ExecuteScalarAsync<int>(sql, encryptedService, cancellationToken);
+            var id = await _dapper.ExecuteScalarAsync<int>(sql, encryptedService, cancellationToken: cancellationToken);
             service.Id = id;
 
             return id;
@@ -153,49 +153,59 @@ namespace Servy.Infrastructure.Data
                 ON CONFLICT(LOWER(Name)) DO UPDATE SET
                 {SqlConstants.UpsertSet};";
 
-            // 2. Execute the batch upsert
-            var affectedRows = await _dapper.ExecuteAsync(sql, encryptedServices, cancellationToken);
-
-            // 3. Sync IDs back to the original DTOs
-            // SQLite has a default limit of 999 parameters. For larger batches, 
-            // we process the ID sync in chunks to avoid 'Too many SQL variables' errors.
-            const int chunkSize = 900;
-
-            for (int i = 0; i < serviceList.Count; i += chunkSize)
+            // Wrap the entire batch sequence in an explicit transaction to enforce snapshot isolation.
+            // This prevents concurrent mutations from creating skewed or missing ID references.
+            using (var tx = _dapper.BeginTransaction())
             {
-                var currentChunk = serviceList.Skip(i).Take(chunkSize).ToList();
+                // 2. Execute the batch upsert within the transaction scope 
+                var affectedRows = await _dapper.ExecuteAsync(sql, encryptedServices, transaction: tx, cancellationToken: cancellationToken);
 
-                // Normalize the input names to match the functional index requirement
-                var lowerNames = currentChunk.Select(s => s.Name?.ToLowerInvariant()).ToList();
+                // 3. Sync IDs back to the original DTOs
+                // SQLite has a default limit of 999 parameters. For larger batches, 
+                // we process the ID sync in chunks to avoid 'Too many SQL variables' errors.
+                const int chunkSize = 900;
 
-                // Fetch the generated IDs using LOWER(Name) to ensure index usage and case-insensitivity
-                var idMap = (await _dapper.QueryAsync<(int Id, string Name)>(
-                    "SELECT Id, Name FROM Services WHERE LOWER(Name) IN @names",
-                    new { names = lowerNames }, cancellationToken))
-                    .ToDictionary(x => x.Name, x => x.Id, StringComparer.OrdinalIgnoreCase);
-
-                // Update the original DTO references
-                foreach (var service in currentChunk)
+                for (int i = 0; i < serviceList.Count; i += chunkSize)
                 {
-                    if (string.IsNullOrEmpty(service.Name)) continue;
+                    var currentChunk = serviceList.Skip(i).Take(chunkSize).ToList();
 
-                    // OrdinalIgnoreCase here handles the mapping between the 
-                    // user's input (MyService) and the DB's stored casing (myservice).
-                    if (idMap.TryGetValue(service.Name, out var id))
+                    // Normalize the input names to match the functional index requirement
+                    var lowerNames = currentChunk.Select(s => s.Name?.ToLowerInvariant()).ToList();
+
+                    // Fetch the generated IDs using LOWER(Name) to ensure index usage and case-insensitivity within the same snapshot
+                    var idMap = (await _dapper.QueryAsync<(int Id, string Name)>(
+                        "SELECT Id, Name FROM Services WHERE LOWER(Name) IN @names",
+                        new { names = lowerNames },
+                        transaction: tx,
+                        cancellationToken: cancellationToken))
+                        .ToDictionary(x => x.Name, x => x.Id, StringComparer.OrdinalIgnoreCase);
+
+                    // Update the original DTO references
+                    foreach (var service in currentChunk)
                     {
-                        service.Id = id;
+                        if (string.IsNullOrEmpty(service.Name)) continue;
+
+                        // OrdinalIgnoreCase here handles the mapping between the 
+                        // user's input (MyService) and the DB's stored casing (myservice).
+                        if (idMap.TryGetValue(service.Name, out var id))
+                        {
+                            service.Id = id;
+                        }
                     }
                 }
-            }
 
-            return affectedRows;
+                // Commit all changes atomically only after the DTO ID fields have been successfully resolved
+                tx.Commit();
+
+                return affectedRows;
+            }
         }
 
         /// <inheritdoc />
         public virtual async Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
             var sql = "DELETE FROM Services WHERE Id = @Id;";
-            return await _dapper.ExecuteAsync(sql, new { Id = id }, cancellationToken);
+            return await _dapper.ExecuteAsync(sql, new { Id = id }, cancellationToken: cancellationToken);
         }
 
         /// <inheritdoc />
@@ -204,7 +214,7 @@ namespace Servy.Infrastructure.Data
             if (string.IsNullOrWhiteSpace(name)) return 0;
 
             var sql = "DELETE FROM Services WHERE LOWER(Name) = LOWER(@Name);";
-            return await _dapper.ExecuteAsync(sql, new { Name = name.Trim() }, cancellationToken);
+            return await _dapper.ExecuteAsync(sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
         }
 
         /// <inheritdoc />
@@ -246,7 +256,7 @@ namespace Servy.Infrastructure.Data
         {
             if (string.IsNullOrWhiteSpace(serviceName)) return null;
             const string sql = "SELECT Pid FROM Services WHERE LOWER(Name) = LOWER(@Name) LIMIT 1;";
-            return await _dapper.QueryFirstOrDefaultAsync<int?>(sql, new { Name = serviceName.Trim() }, cancellationToken);
+            return await _dapper.QueryFirstOrDefaultAsync<int?>(sql, new { Name = serviceName.Trim() }, cancellationToken: cancellationToken);
         }
 
         /// <inheritdoc />
@@ -259,7 +269,7 @@ namespace Servy.Infrastructure.Data
                 WHERE LOWER(Name) = LOWER(@Name)
                 LIMIT 1;";
 
-            return await _dapper.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(sql, new { Name = serviceName.Trim() }, cancellationToken);
+            return await _dapper.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(sql, new { Name = serviceName.Trim() }, cancellationToken: cancellationToken);
         }
 
         /// <inheritdoc />
@@ -286,7 +296,7 @@ namespace Servy.Infrastructure.Data
         {
             if (string.IsNullOrWhiteSpace(keyword))
             {
-                return await GetAllAsync(decrypt, cancellationToken);
+                return await GetAllAsync(decrypt, cancellationToken: cancellationToken);
             }
 
             var sql = @"
@@ -339,7 +349,7 @@ namespace Servy.Infrastructure.Data
                 if (service == null) return false;
 
                 // Preserve runtime state (PID, ActiveStdoutPath/ActiveStderrPath paths) if the service exists and is running.
-                await UpsertAsync(service, preserveExistingRuntimeState: true, cancellationToken);
+                await UpsertAsync(service, preserveExistingRuntimeState: true, cancellationToken: cancellationToken);
                 return true;
             }
             catch (OperationCanceledException)
@@ -373,7 +383,7 @@ namespace Servy.Infrastructure.Data
                 var service = _jsonServiceSerializer.Deserialize(json);
                 if (service == null) return false;
 
-                await UpsertAsync(service, preserveExistingRuntimeState: true, cancellationToken);
+                await UpsertAsync(service, preserveExistingRuntimeState: true, cancellationToken: cancellationToken);
                 return true;
             }
             catch (OperationCanceledException)

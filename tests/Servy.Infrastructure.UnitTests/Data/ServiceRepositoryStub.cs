@@ -6,6 +6,7 @@ using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -95,27 +96,32 @@ namespace Servy.Infrastructure.UnitTests.Data
     // Dummy stubs for the constructor dependencies
     public class DapperExecutorStub : IDapperExecutor
     {
-        public int Execute(string sql, object param = null)
+        public IDbTransaction BeginTransaction()
         {
             throw new NotImplementedException();
         }
 
-        public Task<int> ExecuteAsync(string sql, object param = null, CancellationToken cancellationToken = default)
+        public int Execute(string sql, object param = null, IDbTransaction transaction = null)
         {
             throw new NotImplementedException();
         }
 
-        public T ExecuteScalar<T>(string sql, object param = null)
+        public Task<int> ExecuteAsync(string sql, object param = null, IDbTransaction transaction = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<T> ExecuteScalarAsync<T>(string sql, object param = null, CancellationToken cancellationToken = default)
+        public T ExecuteScalar<T>(string sql, object param = null, IDbTransaction transaction = null)
         {
             throw new NotImplementedException();
         }
 
-        public IEnumerable<T> Query<T>(string sql, object param = null)
+        public Task<T> ExecuteScalarAsync<T>(string sql, object param = null, IDbTransaction transaction = null, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<T> Query<T>(string sql, object param = null, IDbTransaction transaction = null)
         {
             throw new NotImplementedException();
         }
@@ -125,22 +131,22 @@ namespace Servy.Infrastructure.UnitTests.Data
             throw new NotImplementedException();
         }
 
-        public Task<IEnumerable<T>> QueryAsync<T>(string sql, object param = null, CancellationToken cancellationToken = default)
+        public Task<IEnumerable<T>> QueryAsync<T>(string sql, object param = null, IDbTransaction transaction = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<T> QueryFirstOrDefaultAsync<T>(string sql, object param = null, CancellationToken cancellationToken = default)
+        public Task<T> QueryFirstOrDefaultAsync<T>(string sql, object param = null, IDbTransaction transaction = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public T QuerySingleOrDefault<T>(string sql, object param = null)
+        public T QuerySingleOrDefault<T>(string sql, object param = null, IDbTransaction transaction = null)
         {
             throw new NotImplementedException();
         }
 
-        public Task<T> QuerySingleOrDefaultAsync<T>(string sql, object param = null, CancellationToken cancellationToken = default)
+        public Task<T> QuerySingleOrDefaultAsync<T>(string sql, object param = null, IDbTransaction transaction = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

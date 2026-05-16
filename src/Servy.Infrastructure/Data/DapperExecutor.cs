@@ -4,8 +4,8 @@ using Servy.Core.Data;
 using Servy.Core.Logging;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SQLite;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,6 +35,84 @@ namespace Servy.Infrastructure.Data
         {
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }
+
+        #region Transaction Wrapper
+
+        /// <summary>
+        /// Wraps an <see cref="IDbTransaction"/> and its parent <see cref="IDbConnection"/> to ensure both 
+        /// are safely disposed when the transaction scope is closed by the caller.
+        /// </summary>
+        /// <remarks>
+        /// Because the enclosing executor operates statelessly by default, this nested class acts as an 
+        /// ownership container. It ties the lifestyle of the open database connection directly to the lifecycle 
+        /// of the transaction itself, allowing standard <c>using</c> block usage without resource leaks.
+        /// </remarks>
+        private sealed class WrappedDbTransaction : IDbTransaction
+        {
+            /// <summary>
+            /// Gets the underlying connection instance managed by this transaction scope.
+            /// </summary>
+            public IDbConnection Connection { get; }
+
+            /// <summary>
+            /// Gets the native inner provider transaction object.
+            /// </summary>
+            public IDbTransaction Transaction { get; }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="WrappedDbTransaction"/> class.
+            /// </summary>
+            /// <param name="connection">The opened database connection instance to be tracked.</param>
+            /// <param name="transaction">The active native transaction initialized from the <paramref name="connection"/>.</param>
+            /// <exception cref="ArgumentNullException">Thrown if <paramref name="connection"/> or <paramref name="transaction"/> is null.</exception>
+            public WrappedDbTransaction(IDbConnection connection, IDbTransaction transaction)
+            {
+                Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+                Transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
+            }
+
+            /// <inheritdoc />
+            IDbConnection IDbTransaction.Connection => Transaction.Connection;
+
+            /// <inheritdoc />
+            public IsolationLevel IsolationLevel => Transaction.IsolationLevel;
+
+            /// <inheritdoc />
+            public void Commit() => Transaction.Commit();
+
+            /// <inheritdoc />
+            public void Rollback() => Transaction.Rollback();
+
+            /// <summary>
+            /// Atomically releases all managed unmanaged resources, disposing the native transaction 
+            /// before subsequently closing and disposing the tracked database connection.
+            /// </summary>
+            public void Dispose()
+            {
+                Transaction.Dispose();
+                Connection.Dispose(); // Prevents connection leak in stateless executor
+            }
+        }
+
+        /// <summary>
+        /// Unwraps the custom transaction wrapper to provide ADO.NET and Dapper with the 
+        /// native database provider's transaction object, preventing InvalidCastExceptions.
+        /// </summary>
+        private static IDbTransaction Unwrap(IDbTransaction transaction)
+        {
+            return transaction is WrappedDbTransaction wrapper ? wrapper.Transaction : transaction;
+        }
+
+        /// <inheritdoc/>
+        public IDbTransaction BeginTransaction()
+        {
+            var connection = _dbContext.CreateConnection();
+            connection.Open();
+            var transaction = connection.BeginTransaction();
+            return new WrappedDbTransaction(connection, transaction);
+        }
+
+        #endregion
 
         #region Execution Wrappers
 
@@ -143,12 +221,18 @@ namespace Servy.Infrastructure.Data
         #region Synchronous Methods
 
         /// <inheritdoc/>
-        public T ExecuteScalar<T>(string sql, object param = null)
+        public T ExecuteScalar<T>(string sql, object param = null, IDbTransaction transaction = null)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
             return ExecuteWithRetry(() =>
             {
+                var actualTx = Unwrap(transaction);
+                if (actualTx != null)
+                {
+                    return actualTx.Connection.ExecuteScalar<T>(sql, param, actualTx);
+                }
+
                 using (var connection = _dbContext.CreateConnection())
                 {
                     connection.Open();
@@ -158,12 +242,18 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc/>
-        public int Execute(string sql, object param = null)
+        public int Execute(string sql, object param = null, IDbTransaction transaction = null)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
             return ExecuteWithRetry(() =>
             {
+                var actualTx = Unwrap(transaction);
+                if (actualTx != null)
+                {
+                    return actualTx.Connection.Execute(sql, param, actualTx);
+                }
+
                 using (var connection = _dbContext.CreateConnection())
                 {
                     connection.Open();
@@ -173,12 +263,18 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc/>
-        public IEnumerable<T> Query<T>(string sql, object param = null)
+        public IEnumerable<T> Query<T>(string sql, object param = null, IDbTransaction transaction = null)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
             return ExecuteWithRetry(() =>
             {
+                var actualTx = Unwrap(transaction);
+                if (actualTx != null)
+                {
+                    return actualTx.Connection.Query<T>(sql, param, actualTx);
+                }
+
                 using (var connection = _dbContext.CreateConnection())
                 {
                     connection.Open();
@@ -188,12 +284,18 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc/>
-        public T QuerySingleOrDefault<T>(string sql, object param = null)
+        public T QuerySingleOrDefault<T>(string sql, object param = null, IDbTransaction transaction = null)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
             return ExecuteWithRetry(() =>
             {
+                var actualTx = Unwrap(transaction);
+                if (actualTx != null)
+                {
+                    return actualTx.Connection.QuerySingleOrDefault<T>(sql, param, actualTx);
+                }
+
                 using (var connection = _dbContext.CreateConnection())
                 {
                     connection.Open();
@@ -207,14 +309,22 @@ namespace Servy.Infrastructure.Data
         #region Asynchronous Methods
 
         /// <inheritdoc/>
-        public async Task<T> ExecuteScalarAsync<T>(string sql, object param = null, CancellationToken cancellationToken = default)
+        public async Task<T> ExecuteScalarAsync<T>(string sql, object param = null, IDbTransaction transaction = null, CancellationToken cancellationToken = default)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
-            var command = new CommandDefinition(sql, param, cancellationToken: cancellationToken);
+            var actualTx = Unwrap(transaction);
 
             return await ExecuteWithRetryAsync(async (ct) =>
             {
+                // FIX: Rebuild the CommandDefinition inside the lambda so it captures the per-attempt cancellation token 'ct'
+                var command = new CommandDefinition(sql, param, actualTx, cancellationToken: ct);
+
+                if (actualTx != null)
+                {
+                    return await actualTx.Connection.ExecuteScalarAsync<T>(command).ConfigureAwait(false);
+                }
+
                 using (var connection = _dbContext.CreateConnection())
                 {
                     await connection.OpenAsync(ct).ConfigureAwait(false);
@@ -224,14 +334,22 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc/>
-        public async Task<int> ExecuteAsync(string sql, object param = null, CancellationToken cancellationToken = default)
+        public async Task<int> ExecuteAsync(string sql, object param = null, IDbTransaction transaction = null, CancellationToken cancellationToken = default)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
-            var command = new CommandDefinition(sql, param, cancellationToken: cancellationToken);
+            var actualTx = Unwrap(transaction);
 
             var result = await ExecuteWithRetryAsync(async (ct) =>
             {
+                // FIX: Rebuild the CommandDefinition inside the lambda so it captures the per-attempt cancellation token 'ct'
+                var command = new CommandDefinition(sql, param, actualTx, cancellationToken: ct);
+
+                if (actualTx != null)
+                {
+                    return (int?)await actualTx.Connection.ExecuteAsync(command).ConfigureAwait(false);
+                }
+
                 using (var connection = _dbContext.CreateConnection())
                 {
                     await connection.OpenAsync(ct).ConfigureAwait(false);
@@ -245,52 +363,98 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc/>
         public async Task<IEnumerable<T>> QueryAsync<T>(CommandDefinition command)
         {
+            var actualTx = Unwrap(command.Transaction);
+
             return await ExecuteWithRetryAsync(async (ct) =>
             {
+                // FIX: Re-bind the CommandDefinition here to ensure Dapper uses the correct local iteration token 'ct' and the unwrapped transaction
+                var cmd = new CommandDefinition(
+                    command.CommandText,
+                    command.Parameters,
+                    actualTx,
+                    command.CommandTimeout,
+                    command.CommandType,
+                    command.Flags,
+                    ct);
+
+                if (cmd.Transaction != null)
+                {
+                    return await cmd.Transaction.Connection.QueryAsync<T>(cmd).ConfigureAwait(false);
+                }
+
                 using (var connection = _dbContext.CreateConnection())
                 {
                     await connection.OpenAsync(ct).ConfigureAwait(false);
-                    return await connection.QueryAsync<T>(command).ConfigureAwait(false);
+                    return await connection.QueryAsync<T>(cmd).ConfigureAwait(false);
                 }
             }, command.CancellationToken, command.CommandText).ConfigureAwait(false) ?? Enumerable.Empty<T>();
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object param = null, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object param = null, IDbTransaction transaction = null, CancellationToken cancellationToken = default)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
-            return await QueryAsync<T>(new CommandDefinition(sql, param, cancellationToken: cancellationToken)).ConfigureAwait(false);
+
+            // Re-routes through the CommandDefinition overload, which handles the unwrapping and token-binding
+            return await QueryAsync<T>(new CommandDefinition(sql, param, transaction, cancellationToken: cancellationToken)).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        public async Task<T> QuerySingleOrDefaultAsync<T>(string sql, object param = null, CancellationToken cancellationToken = default)
+        public async Task<T> QuerySingleOrDefaultAsync<T>(string sql, object param = null, IDbTransaction transaction = null, CancellationToken cancellationToken = default)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
-            return await QuerySingleOrDefaultAsync<T>(new CommandDefinition(sql, param, cancellationToken: cancellationToken)).ConfigureAwait(false);
+
+            // Re-routes through the CommandDefinition overload, which handles the unwrapping and token-binding
+            return await QuerySingleOrDefaultAsync<T>(new CommandDefinition(sql, param, transaction, cancellationToken: cancellationToken)).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
         public async Task<T> QuerySingleOrDefaultAsync<T>(CommandDefinition command)
         {
+            var actualTx = Unwrap(command.Transaction);
+
             return await ExecuteWithRetryAsync(async (ct) =>
             {
+                // FIX: Re-bind the CommandDefinition here to ensure Dapper uses the correct local iteration token 'ct' and the unwrapped transaction
+                var cmd = new CommandDefinition(
+                    command.CommandText,
+                    command.Parameters,
+                    actualTx,
+                    command.CommandTimeout,
+                    command.CommandType,
+                    command.Flags,
+                    ct);
+
+                if (cmd.Transaction != null)
+                {
+                    return await cmd.Transaction.Connection.QuerySingleOrDefaultAsync<T>(cmd).ConfigureAwait(false);
+                }
+
                 using (var connection = _dbContext.CreateConnection())
                 {
                     await connection.OpenAsync(ct).ConfigureAwait(false);
-                    return await connection.QuerySingleOrDefaultAsync<T>(command).ConfigureAwait(false);
+                    return await connection.QuerySingleOrDefaultAsync<T>(cmd).ConfigureAwait(false);
                 }
             }, command.CancellationToken, command.CommandText).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        public async Task<T> QueryFirstOrDefaultAsync<T>(string sql, object param = null, CancellationToken cancellationToken = default)
+        public async Task<T> QueryFirstOrDefaultAsync<T>(string sql, object param = null, IDbTransaction transaction = null, CancellationToken cancellationToken = default)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
-            var command = new CommandDefinition(sql, param, cancellationToken: cancellationToken);
+            var actualTx = Unwrap(transaction);
 
             return await ExecuteWithRetryAsync(async (ct) =>
             {
+                // FIX: Rebuild the CommandDefinition inside the lambda so it captures the per-attempt cancellation token 'ct'
+                var command = new CommandDefinition(sql, param, actualTx, cancellationToken: ct);
+
+                if (actualTx != null)
+                {
+                    return await actualTx.Connection.QueryFirstOrDefaultAsync<T>(command).ConfigureAwait(false);
+                }
+
                 using (var connection = _dbContext.CreateConnection())
                 {
                     await connection.OpenAsync(ct).ConfigureAwait(false);
