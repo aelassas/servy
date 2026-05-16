@@ -22,7 +22,7 @@ namespace Servy.Manager.ViewModels
         #region Constants
 
         /// <summary>
-        /// The number of data points maintained in the performance history buffdouble stepX ers.
+        /// The number of data points maintained in the performance history buffers.
         /// A value of 101 ensures the graph line spans the entire horizontal width 
         /// of the UI control (0 to 100 on the X-axis) immediately upon initialization.
         /// </summary>

@@ -36,6 +36,10 @@ function Protect-SensitiveString {
     if ([string]::IsNullOrWhiteSpace($Text)) { return $Text }
 
     # A collection of keywords used to identify potentially sensitive information.
+    #
+    # WARNING: keep in sync with:
+    #   src/Servy.Service/Helpers/ServiceHelper.cs (SensitiveKeyWords)
+    #   src/Servy.CLI/Servy.psm1 (Format-SecureLogMessage)
     $sensitiveKeys = @(
         # --- Core Credentials ---
         "PASSWORD", "PWD", "PASSPHRASE", "PIN", "USERPWD",

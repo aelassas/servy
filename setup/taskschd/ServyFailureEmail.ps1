@@ -185,7 +185,7 @@ function Send-NotificationEmail {
   # --- VALIDATION GATE (Permanent Failures) ---
   
   # Check for missing essential fields
-  if ([string]::IsNullOrEmpty($smtpServer) -or [string]::IsNullOrEmpty($from) -or [string]::IsNullOrEmpty($to)) {
+  if ([string]::IsNullOrWhiteSpace($smtpServer) -or [string]::IsNullOrWhiteSpace($from) -or [string]::IsNullOrWhiteSpace($to)) {
     Write-FallbackError -Message "ServyFailureEmail: Incomplete configuration. Missing Server, From, or To." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
     return 'PermanentFailure'
   }

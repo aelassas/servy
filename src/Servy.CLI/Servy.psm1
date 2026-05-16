@@ -35,7 +35,12 @@ $script:EnvVarValidationPattern = '^([^= ]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*))(; ?[
 # Specifies the name of the environment variable used to securely pass the user password from the CLI.
 # Using an environment variable prevents sensitive credentials from being exposed in plain text 
 # within command-line history, logs, or system process lists.
+#
+# SYNC WITH: src/Servy.Core/Config/AppConfig.cs (PasswordEnvVarName)
 $script:ServyPasswordEnvVar = 'SERVY_PASSWORD'
+
+$script:ServyPollIntervalMs = 50
+$script:ServyDrainTimeoutMs = 5000
 
 # ----------------------------------------------------------------
 # Module Initialization
@@ -379,14 +384,14 @@ function Invoke-ServyCli {
         $hasExited = $true
         break
       }
-      Start-Sleep -Milliseconds 50
+      Start-Sleep -Milliseconds $script:ServyPollIntervalMs
     }
 
     if (-not $hasExited) {
       $killed = $false
       try {
         $process.Kill()
-        $process.WaitForExit(5000)
+        $process.WaitForExit($script:ServyDrainTimeoutMs)
         $killed = $process.HasExited
         if ($killed) { [void]$process.WaitForExit() }
       }
@@ -404,7 +409,7 @@ function Invoke-ServyCli {
       # safely blocks just long enough to guarantee all async streams are flushed entirely.
       [void]$process.WaitForExit()
       # Give the PS engine a tiny window to process the final flushed -Action events
-      Start-Sleep -Milliseconds 50
+      Start-Sleep -Milliseconds $script:ServyPollIntervalMs
     }
 
     # 5. Extract safely from the memory buffers
@@ -451,7 +456,7 @@ function Invoke-ServyCli {
     if ($null -ne $process) {
       try { $process.CancelOutputRead() } catch {}
       try { $process.CancelErrorRead() } catch {}
-      try { [void]$process.WaitForExit(5000) } catch {}  # let in-flight events drain
+      try { [void]$process.WaitForExit($script:ServyDrainTimeoutMs) } catch {}  # let in-flight events drain
     }    
 
     # CRITICAL: Clean up events gracefully

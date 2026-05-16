@@ -21,6 +21,7 @@ namespace Servy.Service.Helpers
         /// <summary>
         /// A collection of keywords used to identify potentially sensitive information 
         /// in configuration keys or environment variable names.
+        /// SYNC WITH: setup/taskschd/ServySecurity.ps1 ($sensitiveKeys)
         /// </summary>
         private static readonly HashSet<string> SensitiveKeyWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
