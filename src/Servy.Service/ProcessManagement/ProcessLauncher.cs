@@ -268,7 +268,7 @@ namespace Servy.Service.ProcessManagement
                 {
                     Task.Run(process.WaitForExit).Wait(AppConfig.OutputDrainTimeoutMs);
                 }
-                catch { /* fail-silent — drain is best-effort */ }
+                catch { /* fail-silent - drain is best-effort */ }
 
                 returnedOwnership = true;
                 return process;

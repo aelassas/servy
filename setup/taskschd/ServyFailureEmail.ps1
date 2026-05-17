@@ -251,11 +251,11 @@ function Send-NotificationEmail {
       if ($isPermanent) { return 'PermanentFailure' }
       return 'TransientFailure'
   } catch [System.FormatException] {
-      # Malformed e-mail address slipped past validation — never going to succeed.
+      # Malformed e-mail address slipped past validation - never going to succeed.
       Write-FallbackError -Message "ServyFailureEmail: Permanent format failure: $($_.Exception.Message)" -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
       return 'PermanentFailure'
   } catch {
-      # Network drops, timeouts, etc. — try again next run.
+      # Network drops, timeouts, etc. - try again next run.
       $errorMsg = "ServyFailureEmail: Transient failure to $to. Error: $($_.Exception.Message)"
       Write-FallbackError -Message $errorMsg -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
       return 'TransientFailure'

@@ -75,14 +75,15 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<int> UpdateAsync(ServiceDto service, bool preserveExistingRuntimeState, CancellationToken cancellationToken = default)
+        public virtual async Task<int> UpdateAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default)
         {
             var encryptedService = CreateEncryptedClone(service);
 
-            if (preserveExistingRuntimeState)
-            {
-                await PatchRuntimeStateAsync(encryptedService, cancellationToken: cancellationToken);
-            }
+            await PatchRuntimeStateAsync(
+                incoming: encryptedService,
+                preserveExistingRuntimeState: preserveExistingRuntimeState,
+                preserveExistingCredentials: preserveExistingCredentials,
+                cancellationToken: cancellationToken);
 
             var sql = $@"
                 UPDATE Services SET
@@ -93,14 +94,15 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual int Update(ServiceDto service, bool preserveExistingRuntimeState)
+        public virtual int Update(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials)
         {
             var encryptedService = CreateEncryptedClone(service);
 
-            if (preserveExistingRuntimeState)
-            {
-                PatchRuntimeState(encryptedService);
-            }
+            PatchRuntimeState(
+                incoming: encryptedService,
+                preserveExistingRuntimeState: preserveExistingRuntimeState,
+                preserveExistingCredentials: preserveExistingCredentials
+                );
 
             var sql = $@"
                 UPDATE Services SET
@@ -111,14 +113,15 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, CancellationToken cancellationToken = default)
+        public virtual async Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default)
         {
             var encryptedService = CreateEncryptedClone(service);
 
-            if (preserveExistingRuntimeState)
-            {
-                await PatchRuntimeStateAsync(encryptedService, cancellationToken: cancellationToken);
-            }
+            await PatchRuntimeStateAsync(
+                incoming: encryptedService,
+                preserveExistingRuntimeState: preserveExistingRuntimeState,
+                preserveExistingCredentials: preserveExistingCredentials,
+                cancellationToken: cancellationToken);
 
             var sql = $@"
                 INSERT INTO Services ({SqlConstants.InsertColumns}) 
@@ -344,7 +347,12 @@ namespace Servy.Infrastructure.Data
                 if (service == null) return false;
 
                 // Preserve runtime state (PID, ActiveStdoutPath/ActiveStderrPath paths) if the service exists and is running.
-                await UpsertAsync(service, preserveExistingRuntimeState: true, cancellationToken: cancellationToken);
+                await UpsertAsync(
+                    service,
+                    preserveExistingRuntimeState: true,
+                    preserveExistingCredentials: true,
+                    cancellationToken: cancellationToken
+                    );
                 return true;
             }
             catch (OperationCanceledException)
@@ -378,7 +386,12 @@ namespace Servy.Infrastructure.Data
                 var service = _jsonServiceSerializer.Deserialize(json);
                 if (service == null) return false;
 
-                await UpsertAsync(service, preserveExistingRuntimeState: true, cancellationToken: cancellationToken);
+                await UpsertAsync(
+                    service,
+                    preserveExistingRuntimeState: true,
+                    preserveExistingCredentials: true,
+                    cancellationToken: cancellationToken
+                    );
                 return true;
             }
             catch (OperationCanceledException)
@@ -402,15 +415,25 @@ namespace Servy.Infrastructure.Data
         /// its PID or active log paths, which would break Manager tracking.
         /// </summary>
         /// <param name="incoming">The DTO deserialized from an import file.</param>
+        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout).</param>
+        /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        private async Task PatchRuntimeStateAsync(ServiceDto incoming, CancellationToken cancellationToken)
+        private async Task PatchRuntimeStateAsync(ServiceDto incoming, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken)
         {
+            if (!preserveExistingRuntimeState && !preserveExistingCredentials) return;
+
             if (string.IsNullOrWhiteSpace(incoming.Name)) return;
 
             // Fetch current state without decryption (performance optimization)
             var existing = await GetByNameAsync(incoming.Name, decrypt: false, cancellationToken: cancellationToken);
 
-            if (existing != null) ApplyRuntimeState(incoming, existing);
+            if (existing != null)
+                ApplyRuntimeState(
+                    incoming: incoming,
+                    existing: existing,
+                    preserveExistingRuntimeState: preserveExistingRuntimeState,
+                    preserveExistingCredentials: preserveExistingCredentials
+                    );
         }
 
         /// <summary>
@@ -419,14 +442,24 @@ namespace Servy.Infrastructure.Data
         /// its PID or active log paths, which would break Manager tracking.
         /// </summary>
         /// <param name="incoming">The DTO deserialized from an import file.</param>
-        private void PatchRuntimeState(ServiceDto incoming)
+        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout).</param>
+        /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
+        private void PatchRuntimeState(ServiceDto incoming, bool preserveExistingRuntimeState, bool preserveExistingCredentials)
         {
+            if (!preserveExistingRuntimeState && !preserveExistingCredentials) return;
+
             if (string.IsNullOrWhiteSpace(incoming.Name)) return;
 
             // Fetch current state without decryption (performance optimization)
             var existing = GetByName(incoming.Name, decrypt: false);
 
-            if (existing != null) ApplyRuntimeState(incoming, existing);
+            if (existing != null)
+                ApplyRuntimeState(
+                    incoming: incoming,
+                    existing: existing,
+                    preserveExistingRuntimeState: preserveExistingRuntimeState,
+                    preserveExistingCredentials: preserveExistingCredentials
+                    );
         }
 
         /// <summary>
@@ -446,13 +479,28 @@ namespace Servy.Infrastructure.Data
         /// </remarks>
         /// <param name="incoming">The fresh configuration DTO targeted for database persistence.</param>
         /// <param name="existing">The authoritative snapshot currently stored in the database cache layer.</param>
-        private static void ApplyRuntimeState(ServiceDto incoming, ServiceDto existing)
+        /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout).</param>
+        /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
+        private static void ApplyRuntimeState(ServiceDto incoming, ServiceDto existing, bool preserveExistingRuntimeState, bool preserveExistingCredentials)
         {
-            // These fields are not serialized in export files.
-            // If we don't copy them here, UpsertAsync will overwrite the DB with NULL.
-            incoming.Pid = existing.Pid;
-            incoming.ActiveStdoutPath = existing.ActiveStdoutPath;
-            incoming.ActiveStderrPath = existing.ActiveStderrPath;
+            if (preserveExistingRuntimeState)
+            {
+                // Runtime state - never present in export files
+                incoming.Pid = existing.Pid;
+                incoming.ActiveStdoutPath = existing.ActiveStdoutPath;
+                incoming.ActiveStderrPath = existing.ActiveStderrPath;
+                incoming.PreviousStopTimeout = existing.PreviousStopTimeout;
+            }
+
+            if (preserveExistingCredentials)
+            {
+                // Credentials & account - intentionally excluded from export for security,
+                // but must be preserved on import so updates do not wipe them.
+                incoming.RunAsLocalSystem = existing.RunAsLocalSystem;
+                incoming.UserAccount = existing.UserAccount;
+                incoming.Password = existing.Password;
+            }
+
         }
 
         /// <summary>

@@ -38,15 +38,15 @@ namespace Servy.UI.Design
         public ServiceDto? GetByName(string? name, bool decrypt = true) => null;
         public void Upsert(ServiceDto service) { }
         public void Delete(string name) { }
-        public int Update(ServiceDto service, bool preserveExistingRuntimeState) => 0;
+        public int Update(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials) => 0;
 
         public Task<int> AddAsync(ServiceDto service, CancellationToken cancellationToken = default)
             => Task.FromResult(0);
 
-        public Task<int> UpdateAsync(ServiceDto service, bool preserveExistingRuntimeState, CancellationToken cancellationToken = default)
+        public Task<int> UpdateAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default)
             => Task.FromResult(0);
 
-        public Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, CancellationToken cancellationToken = default)
+        public Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default)
             => Task.FromResult(0);
 
         public Task<int> UpsertBatchAsync(IEnumerable<ServiceDto> services, CancellationToken cancellationToken = default)
