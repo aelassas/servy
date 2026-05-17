@@ -359,9 +359,9 @@ namespace Servy.UI.Bootstrapping
                     stopwatch.Stop();
 
                     // Prevent "splash screen flicker" by ensuring it stays visible for a minimum duration
-                    if (showSplash && stopwatch.ElapsedMilliseconds < 1000)
+                    if (showSplash && stopwatch.ElapsedMilliseconds < AppConfig.SplashMinDisplayThresholdMs)
                     {
-                        await Task.Delay(500);
+                        await Task.Delay(AppConfig.SplashMinDisplayPaddingMs);
                     }
                 });
 

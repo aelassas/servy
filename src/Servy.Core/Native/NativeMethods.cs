@@ -832,16 +832,13 @@ namespace Servy.Core.Native
             string domain = null;
             string user = username;
 
-            if (username.Contains("\\"))
-            {
-                var parts = username.Split('\\');
-                domain = parts[0];
-                user = parts[1]?.Trim();
+            var parts = username.Split('\\');
+            domain = parts[0];
+            user = parts[1]?.Trim();
 
-                if (string.IsNullOrWhiteSpace(user?.TrimEnd('$')))
-                {
-                    throw new ArgumentException(invalidMsg);
-                }
+            if (string.IsNullOrWhiteSpace(user?.TrimEnd('$')))
+            {
+                throw new ArgumentException(invalidMsg);
             }
 
             // 1. Identity Resolution

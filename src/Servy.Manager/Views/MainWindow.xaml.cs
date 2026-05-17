@@ -321,22 +321,22 @@ namespace Servy.Manager.Views
         /// <param name="perfVm">
         /// The <see cref="PerformanceViewModel"/> instance for the performance tab, or <c>null</c> if unavailable.
         /// </param> 
-        /// <param name="dependenciesVM">
+        /// <param name="dependenciesVm">
         /// The <see cref="DependenciesViewModel"/> instance for the dependencies tab, or <c>null</c> if unavailable.
         /// </param>
         /// <param name="logsVm">
         /// The <see cref="LogsViewModel"/> instance for the logs tab, or <c>null</c> if unavailable.
         /// </param>
-        private async Task HandleMainTabSelected(MainViewModel vm, PerformanceViewModel perfVm, ConsoleViewModel consoleVM, DependenciesViewModel dependenciesVM, LogsViewModel logsVm)
+        private async Task HandleMainTabSelected(MainViewModel vm, PerformanceViewModel perfVm, ConsoleViewModel consoleVm, DependenciesViewModel dependenciesVm, LogsViewModel logsVm)
         {
             // Stop timers in performance tab
             perfVm?.StopMonitoring(false);
 
             // Stop timers in console tab
-            consoleVM?.StopMonitoring(false);
+            consoleVm?.StopMonitoring(false);
 
             // Stop timers in dependencies tab
-            dependenciesVM?.StopMonitoring();
+            dependenciesVm?.StopMonitoring();
 
             // Stop ongoing search in Logs tab
             logsVm?.Cleanup();

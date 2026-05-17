@@ -573,6 +573,25 @@ namespace Servy.Core.Config
         /// </summary>
         public const int LogTailerUnhandledErrorRecoveryDelayMs = 1000;
 
+        /// <summary>
+        /// Defines the minimum execution duration threshold (in milliseconds) required to keep the splash screen visible.
+        /// </summary>
+        /// <remarks>
+        /// This boundary constant prevents visual stutter or jarring UI flashes on high-performance environments. 
+        /// If the core application subsystem initialization sequence completes faster than this designated time window, 
+        /// the layout engine introduces a artificial padding delay before transitioning to the primary application workspace.
+        /// </remarks>
+        public const int SplashMinDisplayThresholdMs = 1000;
+
+        /// <summary>
+        /// Specifies the artificial cooling padding duration (in milliseconds) enforced when sub-system initializations complete prematurely.
+        /// </summary>
+        /// <remarks>
+        /// This constant is injected into the sleep pipeline when a quick application boot bypasses the minimum display 
+        /// requirement threshold. It dampens the window transition, providing an intentional, smooth visual pause for the user.
+        /// </remarks>
+        public const int SplashMinDisplayPaddingMs = 500;
+
         #endregion
 
         #region Limits, Thresholds & Constraints

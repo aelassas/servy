@@ -188,8 +188,9 @@ namespace Servy.Core.Logging
                     {
                         EnsureLogsDir();
                         var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+                        string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
                         File.AppendAllText(Path.Combine(LogsPath, "LoggerInitializationErrors.log"),
-                            $"[{now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}] Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");
+                            $"[{now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}{tzMarker}] Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");
                     }
                 }
                 catch
@@ -432,8 +433,9 @@ namespace Servy.Core.Logging
                     {
                         EnsureLogsDir();
                         var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+                        string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
                         File.AppendAllText(Path.Combine(LogsPath, "LoggerWriteErrors.log"),
-                            $"[{now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}] Failed to write log entry: {ex.Message}{Environment.NewLine}");
+                            $"[{now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}{tzMarker}] Failed to write log entry: {ex.Message}{Environment.NewLine}");
                     }
                 }
                 catch { /* truly fail-silent only as last resort */ }
