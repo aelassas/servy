@@ -758,7 +758,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Authoritative byte count for configuration limits (Binary MiB: 1024 * 1024).
         /// </summary>
-        public const long MaxConfigFileSizeBytes = (long)MaxConfigFileSizeMB * 1024 * 1024;
+        public const long MaxConfigFileSizeBytes = (long)MaxConfigFileSizeMB * BytesInMegabyte;
 
         /// <summary>
         /// The maximum age in minutes an extracted resource can be before it is considered stale.
@@ -1040,7 +1040,6 @@ namespace Servy.Core.Config
 
         /// <summary>Minimum number of lines maintained in the log console buffer.</summary>
         public const int MinConsoleMaxLines = 100;
-        // MaxConsoleMaxLines already exists in AppConfig
 
         /// <summary>Minimum allowed interval for refreshing service dependency trees.</summary>
         public const int MinDependenciesRefreshIntervalInMs = 100;
