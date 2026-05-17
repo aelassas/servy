@@ -42,7 +42,7 @@ jobs:
       # Checkout repository
       # -----------------------------------------------------
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4.3.1
         with:
           fetch-depth: 0  # Required for provenance
 
@@ -77,8 +77,8 @@ jobs:
       # -----------------------------------------------------
       # Install Build dependencies
       # -----------------------------------------------------
-      - uses: microsoft/setup-msbuild@v2
-      - uses: nuget/setup-nuget@v2
+      - uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce #v2
+      - uses: nuget/setup-nuget@d105a947828025cd7a980103c35ba2bfae586d0f #v2.0.2
 
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
@@ -311,7 +311,7 @@ jobs:
           }
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
           name: sbom-${{ env.VERSION }}-${{ env.FRAMEWORK }}-sbom
           path: servy-${{ env.VERSION }}-${{ env.FRAMEWORK }}-sbom.xml
@@ -339,7 +339,7 @@ jobs:
       # -----------------------------------------------------
       - name: Upload Servy.Restarter.exe (unsigned)
         id: unsigned-restarter
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
           name: unsigned-restarter
           path: src/Servy.Restarter/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.Restarter.exe
@@ -347,7 +347,7 @@ jobs:
           retention-days: 1
 
       - name: Submit Servy.Restarter.exe for signing
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd #v2.x
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
@@ -386,7 +386,7 @@ jobs:
       # -----------------------------------------------------
       - name: Upload Servy.Service.exe (unsigned)
         id: unsigned-service
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
           name: unsigned-service
           path: src/Servy.Service/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.Service.exe
@@ -394,7 +394,7 @@ jobs:
           retention-days: 1
 
       - name: Submit Servy.Service.exe for signing
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd #v2.x
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
@@ -446,7 +446,7 @@ jobs:
       # -----------------------------------------------------
       - name: Upload Servy.exe (unsigned)
         id: unsigned-servy
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
           name: unsigned-servy
           path: src/Servy/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.exe
@@ -454,7 +454,7 @@ jobs:
           retention-days: 1
 
       - name: Submit Servy.exe for signing
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd #v2.x
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
@@ -493,7 +493,7 @@ jobs:
       # -----------------------------------------------------
       - name: Upload Servy.Manager.exe (unsigned)
         id: unsigned-manager
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
           name: unsigned-manager
           path: src/Servy.Manager/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.Manager.exe
@@ -501,7 +501,7 @@ jobs:
           retention-days: 1
 
       - name: Submit Servy.Manager.exe for signing
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd #v2.x
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
@@ -540,7 +540,7 @@ jobs:
       # -----------------------------------------------------
       - name: Upload Servy.CLI.exe (unsigned)
         id: unsigned-cli
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
           name: unsigned-cli
           path: src/Servy.CLI/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.CLI.exe
@@ -548,7 +548,7 @@ jobs:
           retention-days: 1
 
       - name: Submit Servy.CLI.exe for signing
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd #v2.x
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
@@ -600,7 +600,7 @@ jobs:
 
       - name: Upload installer (unsigned)
         id: unsigned-installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
           name: unsigned-installer
           path: ${{ env.UNSIGNED_INSTALLER_PATH }}
@@ -608,7 +608,7 @@ jobs:
           retention-days: 1
 
       - name: Submit installer for signing
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd #v2.x
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
@@ -636,7 +636,7 @@ jobs:
           echo "FINAL_INSTALLER_PATH=$targetPath" >> $env:GITHUB_ENV
 
       - name: Upload signed installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
           name: signed-installer
           path: ${{ env.FINAL_INSTALLER_PATH }}
@@ -720,7 +720,7 @@ jobs:
           Remove-Item $pkg -Recurse -Force
 
       - name: Upload portable package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
           name: portable-7z
           path: servy-${{ env.VERSION }}-${{ env.FRAMEWORK }}-x64-portable.7z
@@ -732,7 +732,7 @@ jobs:
       # -----------------------------------------------------
       - name: Scan Signed Installer with VirusTotal
         id: vt_installer
-        uses: cssnr/virustotal-action@v1
+        uses: cssnr/virustotal-action@e2d194486614b28c3cf884f4bf13e39cac959b8d #v1.7.0
         continue-on-error: true # Don't kill the whole CI if VT is down
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
@@ -751,7 +751,7 @@ jobs:
 
       - name: Scan Portable Package with VirusTotal
         id: vt_portable
-        uses: cssnr/virustotal-action@v1
+        uses: cssnr/virustotal-action@e2d194486614b28c3cf884f4bf13e39cac959b8d #v1.7.0
         continue-on-error: true # Don't kill the whole CI if VT is down
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
