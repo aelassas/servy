@@ -281,7 +281,7 @@ namespace Servy.Core.Security
                 // static analysis tools (and good practice) appreciate the explicit guard.
                 if (encrypted is null)
                 {
-                    throw new FileNotFoundException($"Failed to read {path} after {maxRetries} attempts");
+                    throw new InvalidOperationException($"Failed to read {path} after {maxRetries} attempts");
                 }
 
                 byte[] dynamicEntropy = MachineEntropy.Value;

@@ -515,10 +515,13 @@ namespace Servy.Core.Logging
                 // Hard size limit check to prevent OOM and disk pressure
                 if (sb.Length > AppConfig.LoggerMaxFormattedExceptionLength)
                 {
-                    sb.Length = AppConfig.LoggerMaxFormattedExceptionLength;
-                    sb.Append("... [truncated]");
-                    processedDepth++; // Increment to ensure the bracket closer logic is consistent
-                    break;
+                    const string truncMarker = "... [truncated]";
+                    int reserved = truncMarker.Length;          // reserve room for the marker
+                    int target = Math.Max(0, AppConfig.LoggerMaxFormattedExceptionLength - reserved);
+                    sb.Length = target;
+                    sb.Append(truncMarker);
+                    // Skip the trailing-bracket loop on the truncated path:
+                    return sb.ToString();
                 }
 
                 current = current.InnerException;
