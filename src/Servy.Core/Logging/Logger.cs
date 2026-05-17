@@ -187,7 +187,7 @@ namespace Servy.Core.Logging
                         var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
                         string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
                         File.AppendAllText(Path.Combine(LogsPath, "LoggerInitializationErrors.log"),
-                            $"[{now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}{tzMarker}] Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");
+                            $"[{now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}{tzMarker}] Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");
                     }
                 }
                 catch
@@ -415,7 +415,7 @@ namespace Servy.Core.Logging
                     // Format: [2026-05-06 08:58:20+01:00] [INFO] Message text OR [2026-05-06 08:58:20Z] [INFO] Message text
                     var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
                     string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
-                    string logEntry = $"[{now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}{tzMarker}] [{levelName}] {sanitizedMessage}";
+                    string logEntry = $"[{now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}{tzMarker}] [{levelName}] {sanitizedMessage}";
 
                     _writer.WriteLine(logEntry);
                 }
@@ -432,7 +432,7 @@ namespace Servy.Core.Logging
                         var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
                         string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
                         File.AppendAllText(Path.Combine(LogsPath, "LoggerWriteErrors.log"),
-                            $"[{now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}{tzMarker}] Failed to write log entry: {ex.Message}{Environment.NewLine}");
+                            $"[{now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}{tzMarker}] Failed to write log entry: {ex.Message}{Environment.NewLine}");
                     }
                 }
                 catch { /* truly fail-silent only as last resort */ }
