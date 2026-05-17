@@ -5,14 +5,9 @@
 
 .DESCRIPTION
     This script updates the version of Servy in multiple locations:
-    - setup\build-config.ps1
-    - src\Servy.Core\Config\AppConfig.cs
-    - All *.csproj files recursively
-
-    It updates:
-    - The script version variable in publish.ps1, publish-sc.ps1 and publish-fd.ps1
-    - The public static Version string in AppConfig.cs
-    - The <Version>, <FileVersion>, and <AssemblyVersion> XML elements in csproj files
+    - setup\build-config.ps1   ($Version variable)
+    - All *.csproj files recursively   (<Version>, <FileVersion>, <AssemblyVersion>)
+    - src\Servy.CLI\Servy.psd1   (ModuleVersion)
 
 .PARAMETER Version
     The new version to apply in 'Major.Minor' format (e.g., "8.0").
@@ -106,15 +101,7 @@ Update-FileContent `
     -Replacement $Version
 
 # -----------------------------
-# 2. Update src\Servy.Core\Config\AppConfig.cs
-# -----------------------------
-Update-FileContent `
-    -Path (Join-Path $baseDir "src\Servy.Core\Config\AppConfig.cs") `
-    -Pattern '(public static readonly string Version\s*=\s*")[^"]*(";)' `
-    -Replacement $Version
-
-# -----------------------------
-# 3. Update all *.csproj files recursively
+# 2. Update all *.csproj files recursively
 # -----------------------------
 Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyContinue |
     Where-Object { $_.FullName -notmatch '\\(bin|obj|\.git|packages|node_modules)\\' } |
@@ -178,7 +165,7 @@ Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyCont
 }
 
 # -----------------------------
-# 4. Update src\Servy.CLI\Servy.psd1
+# 3. Update src\Servy.CLI\Servy.psd1
 # -----------------------------
 $psd1Path = Join-Path $baseDir "src\Servy.CLI\Servy.psd1"
 

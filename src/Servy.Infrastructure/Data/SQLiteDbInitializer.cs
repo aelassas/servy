@@ -398,6 +398,14 @@ namespace Servy.Infrastructure.Data
                             StringComparer.OrdinalIgnoreCase
                         );
 
+                        var orphansBeforeRebuild = existingColumns
+                            .Where(c => !expectedColumns.Contains(c, StringComparer.OrdinalIgnoreCase) && !"Id".Equals(c, StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+                        if (orphansBeforeRebuild.Count > 0)
+                        {
+                            Logger.Error($"ApplyVersion4: about to drop orphan column(s) '{string.Join(", ", orphansBeforeRebuild)}'. Data in these columns will be permanently lost. If this is a renamed column, add a RenameColumnIfExists migration BEFORE v4 to preserve the data.");
+                        }
+
                         var columnsToCopy = new List<string> { "Id" };
                         columnsToCopy.AddRange(expectedColumns.Where(existingColumns.Contains));
 

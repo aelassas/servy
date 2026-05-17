@@ -38,7 +38,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy's current version.
         /// </summary>
-        public static readonly string Version = "8.5";
+        public static readonly string Version = typeof(AppConfig).Assembly.GetName().Version?.ToString(2) ?? "unknown";
 
         /// <summary>
         /// Gets the name of the Windows Event Log channel used for logging and querying.
