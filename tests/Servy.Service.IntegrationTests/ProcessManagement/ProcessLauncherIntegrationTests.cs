@@ -244,6 +244,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             public bool? Stop(int t) => true;
             public void StopDescendants(int p, DateTime s, int t) { }
             public bool WaitForExit(int ms) => true;
+            public void WaitForExit() { }
             public Task<bool> WaitAndCheckStillRunningAsync(TimeSpan t, CancellationToken c) => Task.FromResult(true);
         }
 

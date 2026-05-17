@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AppConfig = Servy.Manager.Config.AppConfig;
 
-namespace Servy.Manager
+namespace Servy.Manager.Mappers
 {
     /// <summary>
     /// Maps domain Service objects to WPF Service models for UI binding.

@@ -393,41 +393,66 @@ namespace Servy.Core.Helpers
             }
 
             DateTime parentStartTime = DateTime.MinValue;
+            Process parentProcess = null;
+
             try
             {
-                using (var p = Process.GetProcessById(parentId))
-                {
-                    try { parentStartTime = p.StartTime; } catch { /* keep MinValue */ }
-                }
+                // Open the process handle exactly once to establish an unchangeable identity context
+                parentProcess = Process.GetProcessById(parentId);
             }
-            catch (ArgumentException) { /* parent already dead - abort walk */ return; }
-
-            // Move up further first via post-order traversal - pass real anchor and the visited set
-            KillParentProcesses(parentId, parentStartTime, protectedPids, snapshot, visited);
+            catch (ArgumentException)
+            {
+                // parent already dead - abort walk
+                return;
+            }
 
             try
             {
-                using (var parentProcess = Process.GetProcessById(parentId))
+                try
                 {
-                    try
-                    {
-                        if (childStartTime != DateTime.MinValue && parentProcess.StartTime > childStartTime.AddSeconds(AppConfig.PidReuseToleranceSeconds))
-                            return;
-                    }
-                    catch (Win32Exception) { /* Handle access denied on StartTime, proceed with caution */ }
+                    parentStartTime = parentProcess.StartTime;
+                }
+                catch (Exception)
+                {
+                    // keep MinValue if reading StartTime fails due to transient access limits
+                }
 
-                    if (!parentProcess.HasExited)
+                // Move up further first via post-order traversal - pass real anchor and the visited set
+                KillParentProcesses(parentId, parentStartTime, protectedPids, snapshot, visited);
+
+                try
+                {
+                    // Verify the handle context directly using the cached or live process start time 
+                    // to completely eliminate the PID-recycling exploit window.
+                    DateTime exactStartTime = parentStartTime == DateTime.MinValue ? parentProcess.StartTime : parentStartTime;
+
+                    if (childStartTime != DateTime.MinValue && exactStartTime != DateTime.MinValue
+                        && exactStartTime > childStartTime.AddSeconds(AppConfig.PidReuseToleranceSeconds))
                     {
-                        parentProcess.Kill();
-                        if (!parentProcess.WaitForExit(SafeWait(AppConfig.KillParentWaitMs)))
-                        {
-                            Logger.Warn($"Parent process {parentProcess.Id} did not exit within the safety window.");
-                        }
+                        return;
+                    }
+                }
+                catch (Win32Exception) { /* Handle access denied on StartTime, proceed with caution */ }
+
+                if (!parentProcess.HasExited)
+                {
+                    parentProcess.Kill();
+                    if (!parentProcess.WaitForExit(SafeWait(AppConfig.KillParentWaitMs)))
+                    {
+                        Logger.Warn($"Parent process {parentProcess.Id} did not exit within the safety window.");
                     }
                 }
             }
             catch (ArgumentException) { /* Already dead */ }
-            catch (Exception ex) { Logger.Warn($"Failed to kill parent {parentId}.", ex); }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to kill parent {parentId}.", ex);
+            }
+            finally
+            {
+                // Ensure resource cleanup happens on all execution paths, regardless of sub-tree failures
+                parentProcess?.Dispose();
+            }
         }
 
         /// <summary>

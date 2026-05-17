@@ -141,6 +141,17 @@ namespace Servy.Service.ProcessManagement
         bool WaitForExit(int milliseconds);
 
         /// <summary>
+        /// Instructs the execution tracking abstraction to wait indefinitely for the associated process to exit.
+        /// </summary>
+        /// <remarks>
+        /// This blocking call should be utilized with caution inside critical synchronization blocks or 
+        /// on primary thread dispatchers. If the underlying child process encounters a deadlocked execution state, 
+        /// a corrupted resource pipeline, or an unhandled infinite loop, this thread will remain suspended 
+        /// indefinitely, which can block upstream management wrappers from reporting system lifecycle updates.
+        /// </remarks>
+        void WaitForExit();
+
+        /// <summary>
         /// Closes the main window of the associated process.
         /// </summary>
         /// <returns><c>true</c> if the main window has been successfully closed; otherwise, <c>false</c>.</returns>

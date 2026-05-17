@@ -152,7 +152,7 @@ namespace Servy.Service.ProcessManagement
                 // Setup StdOut Writer (Lazy Init)
                 if (psi.RedirectStandardOutput && !string.IsNullOrWhiteSpace(outPath))
                 {
-                    process.UnderlyingProcess.OutputDataReceived += (_, e) =>
+                    process.OutputDataReceived += (_, e) =>
                     {
                         if (e.Data == null) return;
 
@@ -193,7 +193,7 @@ namespace Servy.Service.ProcessManagement
                 // Setup StdErr Writer (Lazy Init)
                 if (psi.RedirectStandardError && !string.IsNullOrWhiteSpace(errPath))
                 {
-                    process.UnderlyingProcess.ErrorDataReceived += (_, e) =>
+                    process.ErrorDataReceived += (_, e) =>
                     {
                         if (e.Data == null) return;
 
@@ -269,7 +269,7 @@ namespace Servy.Service.ProcessManagement
                 // Process is already exited; this only flushes the event queue.
                 try
                 {
-                    Task.Run(process.UnderlyingProcess.WaitForExit).Wait(AppConfig.OutputDrainTimeoutMs);
+                    Task.Run(process.WaitForExit).Wait(AppConfig.OutputDrainTimeoutMs);
                 }
                 catch { /* fail-silent — drain is best-effort */ }
 
