@@ -65,6 +65,15 @@ namespace Servy.Core.Security
                 _v1MasterKey = (byte[])masterKey.Clone();
                 _v1StaticIv = (byte[])v1StaticIv.Clone();
             }
+            catch
+            {
+                // FIX: Symmetrical fallback cleaning for half-constructed instance field allocations
+                if (_v2EncryptionKey != null) Array.Clear(_v2EncryptionKey, 0, _v2EncryptionKey.Length);
+                if (_v2HmacKey != null) Array.Clear(_v2HmacKey, 0, _v2HmacKey.Length);
+                if (_v1MasterKey != null) Array.Clear(_v1MasterKey, 0, _v1MasterKey.Length);
+                if (_v1StaticIv != null) Array.Clear(_v1StaticIv, 0, _v1StaticIv.Length);
+                throw;
+            }
             finally
             {
                 if (masterKey != null) Array.Clear(masterKey, 0, masterKey.Length);

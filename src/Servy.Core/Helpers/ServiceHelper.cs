@@ -100,13 +100,13 @@ namespace Servy.Core.Helpers
                             throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
                         }
 
-                        var startTimeout = (service.StartTimeout ?? AppConfig.DefaultServiceStartTimeoutSeconds)
-                                           + AppConfig.ScmTimeoutBufferSeconds;
+                        var startTimeout = (service.StartTimeout.HasValue && service.StartTimeout.Value > AppConfig.DefaultServiceStartTimeoutSeconds
+                            ? service.StartTimeout.Value : AppConfig.DefaultServiceStartTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
                         if (!string.IsNullOrEmpty(service.PreLaunchExecutablePath))
                         {
                             startTimeout += service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds;
                         }
-                        var waitTime = TimeSpan.FromSeconds(Math.Max(startTimeout, AppConfig.DefaultServiceStartTimeoutSeconds));
+                        var waitTime = TimeSpan.FromSeconds(startTimeout);
 
                         // This blocks until the service is Started or the waitTime expires
                         var stopwatch = Stopwatch.StartNew();
@@ -238,13 +238,14 @@ namespace Servy.Core.Helpers
             int floor = AppConfig.DefaultStopTimeout;
 
             // Determine the baseline: highest of configured or historical duration (respecting the floor)
-            int baseline = Math.Max(configuredTimeout ?? floor, previousStopTimeout ?? floor);
+            int baseline = Math.Max(
+                configuredTimeout.HasValue && configuredTimeout.Value > floor ? configuredTimeout.Value : floor,
+                previousStopTimeout ?? floor);
 
             // Add the configurable OS/SCM buffer and the pre-stop hook duration
             int total = baseline + AppConfig.ScmTimeoutBufferSeconds + preStopTimeout;
 
-            // Final safety check to ensure we never drop below the absolute floor
-            return Math.Max(total, floor);
+            return total;
         }
 
         #endregion

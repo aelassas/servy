@@ -415,14 +415,7 @@ namespace Servy.Infrastructure.Data
             // Fetch current state without decryption (performance optimization)
             var existing = await GetByNameAsync(incoming.Name, decrypt: false, cancellationToken: cancellationToken);
 
-            if (existing != null)
-            {
-                // These fields are not serialized in export files (ShouldSerialize*() => false).
-                // If we don't copy them here, UpsertAsync will overwrite the DB with NULL.
-                incoming.Pid = existing.Pid;
-                incoming.ActiveStdoutPath = existing.ActiveStdoutPath;
-                incoming.ActiveStderrPath = existing.ActiveStderrPath;
-            }
+            if (existing != null) ApplyRuntimeState(incoming, existing);
         }
 
         /// <summary>
@@ -438,14 +431,33 @@ namespace Servy.Infrastructure.Data
             // Fetch current state without decryption (performance optimization)
             var existing = GetByName(incoming.Name, decrypt: false);
 
-            if (existing != null)
-            {
-                // These fields are not serialized in export files (ShouldSerialize*() => false).
-                // If we don't copy them here, UpsertAsync will overwrite the DB with NULL.
-                incoming.Pid = existing.Pid;
-                incoming.ActiveStdoutPath = existing.ActiveStdoutPath;
-                incoming.ActiveStderrPath = existing.ActiveStderrPath;
-            }
+            if (existing != null) ApplyRuntimeState(incoming, existing);
+        }
+
+        /// <summary>
+        /// Synchronizes transient, runtime-only operational fields from a verified database record 
+        /// into an incoming configuration instance before execution mutations.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Single Source of Truth (SSoT):</b> This utility acts as the centralized authority for tracking fields 
+        /// that are excluded from external export files (where <c>ShouldSerialize*() => false</c>). 
+        /// </para>
+        /// <para>
+        /// If these fields are omitted or unmapped during an entry import lifecycle, the persistence engine 
+        /// would inadvertently overwrite critical operational telemetry columns with <c>NULL</c> values, 
+        /// decoupling the active running background processes from system instrumentation tracking hooks.
+        /// </para>
+        /// </remarks>
+        /// <param name="incoming">The fresh configuration DTO targeted for database persistence.</param>
+        /// <param name="existing">The authoritative snapshot currently stored in the database cache layer.</param>
+        private static void ApplyRuntimeState(ServiceDto incoming, ServiceDto existing)
+        {
+            // These fields are not serialized in export files.
+            // If we don't copy them here, UpsertAsync will overwrite the DB with NULL.
+            incoming.Pid = existing.Pid;
+            incoming.ActiveStdoutPath = existing.ActiveStdoutPath;
+            incoming.ActiveStderrPath = existing.ActiveStderrPath;
         }
 
         /// <summary>

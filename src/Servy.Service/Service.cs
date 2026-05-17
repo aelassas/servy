@@ -688,20 +688,12 @@ namespace Servy.Service
 			if (!File.Exists(_restartAttemptsFile)) return;
 
 			DateTime lastWriteUtc = File.GetLastWriteTimeUtc(_restartAttemptsFile);
-			DateTime systemBootTimeUtc;
 
-			try
-			{
-				// GetTickCount64 returns milliseconds since system start as a ulong.
-				// It does not suffer from the 24.9-day rollover bug.
-				ulong uptimeMilliseconds = GetTickCount64();
-				systemBootTimeUtc = DateTime.UtcNow.AddMilliseconds(-(double)uptimeMilliseconds);
-			}
-			catch (Exception ex)
-			{
-				_logger?.Warn($"Could not derive boot time: {ex.Message}. Treating session as new boot.");
-				systemBootTimeUtc = DateTime.MaxValue; // forces lastWriteUtc < systemBootTimeUtc => maintain counter
-			}
+            // Derive system boot time context directly. Arithmetic on a 64-bit millisecond tick counter 
+            // is mathematically protected against runtime overflow exceptions for ~292 million years.
+            ulong uptimeMilliseconds = GetTickCount64();
+            DateTime systemBootTimeUtc = DateTime.UtcNow.AddMilliseconds(-(double)uptimeMilliseconds);
+
 
 			// 1. Session Persistence Check
 			// If the file's last modification occurred before the current system boot, 
