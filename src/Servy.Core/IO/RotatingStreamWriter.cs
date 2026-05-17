@@ -458,7 +458,7 @@ namespace Servy.Core.IO
             {
                 _consecutiveDeletionFailures++;
                 Logger.Warn($"Failed to enumerate rotated log files in '{directory}': {ex.Message}. Consecutive failures: {_consecutiveDeletionFailures}");
-                if (_consecutiveDeletionFailures >= 10)
+                if (_consecutiveDeletionFailures >= AppConfig.LogRotationDeletionFailureEscalationThreshold)
                     Logger.Error($"Persistent failure to enforce log rotation limit for '{_file.FullName}' (consecutive failures: {_consecutiveDeletionFailures}, max retained: {_maxRotations}). Disk space growth is no longer bounded.");
                 return;
             }
@@ -598,7 +598,7 @@ namespace Servy.Core.IO
         /// </summary>
         private void TripCircuitBreaker(string message, Exception ex)
         {
-            Logger.Error($"{message}. Rotation will be disabled for {AppConfig.LogRotationCriticalFailureCooldownMs / 60000} minutes.", ex);
+            Logger.Error($"{message}. Rotation will be disabled for {AppConfig.LogRotationCriticalFailureCooldownMs / AppConfig.MillisecondsPerMinute} minutes.", ex);
             lock (_lock)
             {
                 _rotationDisabled = true;

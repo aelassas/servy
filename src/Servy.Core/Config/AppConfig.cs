@@ -958,6 +958,36 @@ namespace Servy.Core.Config
         /// </remarks>
         public const int PidReuseToleranceSeconds = 2;
 
+        /// <summary>
+        /// Milliseconds per second.
+        /// </summary>
+        public const int MillisecondsPerSecond = 1_000;
+
+        /// <summary>
+        /// Milliseconds per minute.
+        /// </summary>
+        public const int MillisecondsPerMinute = 60_000;
+
+        /// <summary>
+        /// Defines the consecutive failure limit before a file system access error is escalated from a 
+        /// warning to a high-severity error message.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Telemetry Dampening Circuit:</b> In long-running background worker environments, transient filesystem 
+        /// friction (such as temporary file locks from antivirus sweeps, backup software indexing, or active 
+        /// remote management tailing tools) can cause intermittent deletion failures. Logging these as critical 
+        /// immediately would pollute event streams with actionable noise.
+        /// </para>
+        /// <para>
+        /// This constant establishes a threshold window. If the internal failure counter intercepts 
+        /// <value>10</value> consecutive exceptions without a successful pass, the retention lifecycle agent 
+        /// escalates the threat vector to an operational <c>Logger.Error</c> notification, warning administrators 
+        /// that disk space allocation boundaries are no longer actively contained.
+        /// </para>
+        /// </remarks>
+        public const int LogRotationDeletionFailureEscalationThreshold = 10;
+
         #endregion
 
         #region Manager Configuration Bounds
@@ -1000,6 +1030,24 @@ namespace Servy.Core.Config
         public const int MinLogsWindowDays = 1;
         /// <summary>Maximum number of days to look back when fetching event logs.</summary>
         public const int MaxLogsWindowDays = 30;
+
+        /// <summary>
+        /// Defines the maximum number of structural allocation attempts permitted when setting text into the system clipboard.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Win32 Shared Resource Architecture:</b> The Windows Clipboard is an unmanaged, session-wide shared resource. 
+        /// When another process opens the clipboard data broker loop (e.g., an active remote desktop session, a password manager 
+        /// clipboard clearing loop, or an intensive security scanning agent), subsequent allocation requests from other processes 
+        /// are rejected with an explicit <see cref="System.Runtime.InteropServices.COMException"/> or <see cref="System.Runtime.InteropServices.ExternalException"/>.
+        /// </para>
+        /// <para>
+        /// To mitigate these transient environment locks without triggering application crashes or freezing the UI dispatcher thread, 
+        /// the copying pipeline employs an asynchronous spin-retry circuit. This constant caps the execution boundary to 
+        /// <value>5</value> attempts before giving up and logging an operational warning.
+        /// </para>
+        /// </remarks>
+        public const int ClipboardComMaxRetries = 5;
 
         #endregion
 

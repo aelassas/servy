@@ -424,11 +424,10 @@ namespace Servy.Manager.Services
                 string pidValue = service.Pid.Value.ToString();
                 string serviceName = service.Name ?? "Unknown";
 
-                const int maxRetries = 5;
                 bool success = false;
 
                 // Move the retry loop outside the Dispatcher to prevent UI freezing
-                for (int i = 0; i < maxRetries; i++)
+                for (int i = 0; i < Core.Config.AppConfig.ClipboardComMaxRetries; i++)
                 {
                     // Accessing the Clipboard requires the STA thread (UI Thread)
                     // We invoke only the granular action on the dispatcher
@@ -456,7 +455,7 @@ namespace Servy.Manager.Services
 
                     // If we failed, wait asynchronously before trying again.
                     // This allows the UI thread to remain responsive during the wait.
-                    if (i < maxRetries - 1)
+                    if (i < Core.Config.AppConfig.ClipboardComMaxRetries - 1)
                     {
                         await Task.Delay(Core.Config.AppConfig.ClipboardComRetryDelayMs);
                     }
@@ -469,7 +468,7 @@ namespace Servy.Manager.Services
                 }
                 else
                 {
-                    Logger.Warn($"Failed to copy PID {pidValue} for {serviceName} after {maxRetries} attempts.");
+                    Logger.Warn($"Failed to copy PID {pidValue} for {serviceName} after {Core.Config.AppConfig.ClipboardComMaxRetries} attempts.");
                 }
             }
             catch (Exception ex)

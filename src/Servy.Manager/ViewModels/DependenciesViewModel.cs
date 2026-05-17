@@ -361,8 +361,6 @@ namespace Servy.Manager.ViewModels
                     root.IsExpanded = true;
                     DependencyTree.Add(root);
                 }
-
-                OnPropertyChanged(nameof(DependencyTree));
             }
             catch (OperationCanceledException) { /* Ignored */ }
             catch (Exception ex)
