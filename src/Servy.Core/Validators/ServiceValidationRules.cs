@@ -135,7 +135,7 @@ namespace Servy.Core.Validators
             if (!EnvironmentVariablesValidator.Validate(StringHelper.NormalizeString(dto.EnvironmentVariables), out var envErrorMsg))
                 result.Errors.Add(envErrorMsg);
             if (!ServiceDependenciesValidator.Validate(StringHelper.NormalizeString(dto.ServiceDependencies), out var depsErrors))
-                result.Errors.Add(string.Join("\n", depsErrors));
+                foreach (var msg in depsErrors) result.Errors.Add(msg);
 
             // Pre-Launch
             if (!string.IsNullOrWhiteSpace(dto.PreLaunchExecutablePath) && !_processHelper.ValidatePath(dto.PreLaunchExecutablePath))

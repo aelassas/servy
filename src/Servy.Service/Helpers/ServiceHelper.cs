@@ -364,7 +364,7 @@ namespace Servy.Service.Helpers
                     // 1. Wait for the restarter to complete the Stop/Start cycle
                     if (!process.WaitForExit(AppConfig.RestarterExeMaxWaitMs))
                     {
-                        logger?.Error($"Servy.Restarter.exe timed out after {AppConfig.RestarterExeMaxWaitMs / 60_000} minutes. Forcing termination to prevent orphan conflicts.");
+                        logger?.Error($"Servy.Restarter.exe timed out after {AppConfig.RestarterExeMaxWaitMs / AppConfig.MillisecondsPerMinute} minutes. Forcing termination to prevent orphan conflicts.");
 
                         try
                         {
@@ -374,7 +374,7 @@ namespace Servy.Service.Helpers
                             // 3. Brief wait to ensure kernel cleanup is complete before we return control
                             if (!process.WaitForExit(AppConfig.RestarterKillGracePeriodMs))
                             {
-                                logger?.Warn($"Restarter killed, but kernel cleanup is taking longer than {AppConfig.RestarterKillGracePeriodMs / 1000} seconds.");
+                                logger?.Warn($"Restarter killed, but kernel cleanup is taking longer than {AppConfig.RestarterKillGracePeriodMs / AppConfig.MillisecondsPerSecond} seconds.");
                             }
                         }
                         catch (Exception killEx)
