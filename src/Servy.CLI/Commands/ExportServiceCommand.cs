@@ -16,23 +16,6 @@ namespace Servy.CLI.Commands
     /// </summary>
     public class ExportServiceCommand : BaseCommand
     {
-        #region Export Security Constants
-
-        /// <summary>
-        /// A complete collection of legacy Windows reserved device names that cannot be used as filenames,
-        /// including COM/LPT ports (0-9) and their Unicode superscript variants (¹, ², ³).
-        /// </summary>
-        private static readonly HashSet<string> ReservedDeviceNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "CON", "PRN", "AUX", "NUL",
-            "COM0", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-            "COM¹", "COM²", "COM³",
-            "LPT0", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
-            "LPT¹", "LPT²", "LPT³"
-        };
-
-        #endregion
-
         private readonly IServiceRepository _serviceRepository;
 
         /// <summary>
@@ -175,7 +158,7 @@ namespace Servy.CLI.Commands
             int firstDotIndex = fileName.IndexOf('.');
             string firstSegment = firstDotIndex >= 0 ? fileName.Substring(0, firstDotIndex) : fileName;
 
-            if (ReservedDeviceNames.Contains(firstSegment))
+            if (SecurityHelper.ReservedDeviceNames.Contains(firstSegment))
             {
                 throw new ArgumentException($"Security Alert: '{firstSegment}' is a reserved Windows device name and cannot be used.");
             }

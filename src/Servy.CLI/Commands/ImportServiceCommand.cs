@@ -93,8 +93,78 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail($"{Strings.Msg_InvalidPath}: {ex.Message}");
                 }
 
-                // Extension Validation
-                string extension = Path.GetExtension(fullPath).ToLowerInvariant();
+                // UNC Path Block (Infiltration Guard)
+                // Prevents reading config data from potentially attacker-controlled remote shares.
+                bool isUncUri = Uri.TryCreate(fullPath, UriKind.Absolute, out var uri) && uri.IsUnc;
+                if (fullPath.StartsWith(@"\\", StringComparison.Ordinal) || isUncUri)
+                {
+                    var errorMsg = "Security Alert: Importing from UNC paths is prohibited to prevent malicious configuration injection.";
+                    Logger.Error(errorMsg);
+                    return CommandResult.Fail(errorMsg);
+                }
+
+                // Link/Junction Resolution
+                // Resolve the final path to ensure NTFS redirection isn't hiding a malicious source
+                string finalResolvedPath = fullPath;
+                string? directoryPath = Path.GetDirectoryName(fullPath);
+
+                if (!string.IsNullOrEmpty(directoryPath) && Directory.Exists(directoryPath))
+                {
+                    var dirInfo = new DirectoryInfo(directoryPath);
+
+                    // Iteratively resolve link targets to handle chained junctions
+                    while (!string.IsNullOrEmpty(dirInfo.LinkTarget))
+                    {
+                        var target = dirInfo.ResolveLinkTarget(true);
+                        if (target is DirectoryInfo resolvedDir)
+                        {
+                            dirInfo = resolvedDir;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    finalResolvedPath = Path.Combine(dirInfo.FullName, Path.GetFileName(fullPath));
+                }
+
+                // Reserved Device Name Block (DOS Guard)
+                string fileName = Path.GetFileName(finalResolvedPath);
+                int firstDotIndex = fileName.IndexOf('.');
+                string firstSegment = firstDotIndex >= 0 ? fileName.Substring(0, firstDotIndex) : fileName;
+
+                if (SecurityHelper.ReservedDeviceNames.Contains(firstSegment))
+                {
+                    var errorMsg = $"Security Alert: '{firstSegment}' is a reserved Windows device name and cannot be used.";
+                    Logger.Error(errorMsg);
+                    return CommandResult.Fail(errorMsg);
+                }
+
+                // System Protection: Block reading from critical Windows directories to prevent pulling unintended system files
+                string[] protectedFolders =
+                {
+                    Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                    Environment.GetFolderPath(Environment.SpecialFolder.System),
+                    Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                    Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+                };
+
+                var violatedFolder = protectedFolders
+                    .FirstOrDefault(folder => !string.IsNullOrEmpty(folder) &&
+                                              finalResolvedPath.StartsWith(
+                                                  folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
+                                                  StringComparison.OrdinalIgnoreCase));
+
+                if (violatedFolder != null)
+                {
+                    var errorMsg = $"Access Denied: The resolved path targets protected system directory '{violatedFolder}'. Import prohibited.";
+                    Logger.Error(errorMsg);
+                    return CommandResult.Fail(errorMsg);
+                }
+
+                // Extension Validation using the resolved path
+                string extension = Path.GetExtension(finalResolvedPath).ToLowerInvariant();
                 string[] allowedExtensions = { ".json", ".xml" };
 
                 if (!allowedExtensions.Contains(extension))
@@ -104,32 +174,32 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(errorMsg);
                 }
 
-                // Existence Check
-                var fileInfo = new FileInfo(fullPath);
+                // Existence Check using the resolved path
+                var fileInfo = new FileInfo(finalResolvedPath);
                 if (!fileInfo.Exists)
                 {
-                    var errorMsg = $"[Import{configFileType}] File not found: {fullPath}";
+                    var errorMsg = $"[Import{configFileType}] File not found: {finalResolvedPath}";
                     Logger.Error(errorMsg);
                     return CommandResult.Fail(errorMsg);
                 }
 
                 if (fileInfo.Length > AppConfig.MaxConfigFileSizeBytes)
                 {
-                    var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, fullPath);
+                    var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, finalResolvedPath);
                     Logger.Error(errorMsg);
                     return CommandResult.Fail(errorMsg);
                 }
 
-                // Process file based on its type
+                // Process file based on its type using the finalResolvedPath
                 CommandResult result;
 
                 switch (configFileType)
                 {
                     case ConfigFileType.Xml:
-                        result = await ProcessXmlAsync(opts, fullPath, cancellationToken: cancellationToken);
+                        result = await ProcessXmlAsync(opts, finalResolvedPath, cancellationToken: cancellationToken);
                         break;
                     case ConfigFileType.Json:
-                        result = await ProcessJsonAsync(opts, fullPath, cancellationToken: cancellationToken);
+                        result = await ProcessJsonAsync(opts, finalResolvedPath, cancellationToken: cancellationToken);
                         break;
                     default:
                         result = CommandResult.Fail(string.Format(Strings.Msg_UnsupportedFileType, configFileType));
@@ -139,11 +209,11 @@ namespace Servy.CLI.Commands
 
                 if (result.Success)
                 {
-                    Logger.Info($"Successfully imported {configFileType} configuration from {fullPath}.");
+                    Logger.Info($"Successfully imported {configFileType} configuration from {finalResolvedPath}.");
                 }
                 else
                 {
-                    Logger.Error($"Failed to import {configFileType} configuration from {fullPath}. Error: {result.Message}");
+                    Logger.Error($"Failed to import {configFileType} configuration from {finalResolvedPath}. Error: {result.Message}");
                 }
 
                 return result;
