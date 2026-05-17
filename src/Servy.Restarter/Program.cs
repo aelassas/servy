@@ -1,5 +1,4 @@
 ﻿using Servy.Core.Config;
-using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
@@ -130,13 +129,15 @@ namespace Servy.Restarter
                 secureData?.Dispose();              // dispose consumer first
                 protectedKeyProvider?.Dispose();    // then the provider it built on
 
+                dbContext?.Dispose();
+
                 // ScopedLogger (proxy) disposal is a no-op, but included for pattern consistency.
                 scopedLogger?.Dispose();
 
                 // rootLogger actually disposes the unmanaged EventLog handle.
                 rootLogger?.Dispose();
 
-                dbContext?.Dispose();
+
                 Logger.Shutdown();
             }
 

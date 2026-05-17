@@ -442,8 +442,6 @@ namespace Servy.Core.DTOs
 
         #region ShouldSerialize Methods
 
-        public bool ShouldSerializeId() => false;
-        public bool ShouldSerializePid() => false;
         public bool ShouldSerializeDescription() => !string.IsNullOrWhiteSpace(Description);
         public bool ShouldSerializeStartupDirectory() => !string.IsNullOrWhiteSpace(StartupDirectory);
         public bool ShouldSerializeParameters() => !string.IsNullOrWhiteSpace(Parameters);
@@ -468,9 +466,6 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeFailureProgramParameters() => !string.IsNullOrWhiteSpace(FailureProgramParameters);
         public bool ShouldSerializeEnvironmentVariables() => !string.IsNullOrWhiteSpace(EnvironmentVariables);
         public bool ShouldSerializeServiceDependencies() => !string.IsNullOrWhiteSpace(ServiceDependencies);
-        public bool ShouldSerializeRunAsLocalSystem() => false;
-        public bool ShouldSerializeUserAccount() => false;
-        public bool ShouldSerializePassword() => false;
         public bool ShouldSerializePreLaunchExecutablePath() => !string.IsNullOrWhiteSpace(PreLaunchExecutablePath);
         public bool ShouldSerializePreLaunchStartupDirectory() => !string.IsNullOrWhiteSpace(PreLaunchStartupDirectory);
         public bool ShouldSerializePreLaunchParameters() => !string.IsNullOrWhiteSpace(PreLaunchParameters);
@@ -486,9 +481,6 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeEnableDebugLogs() => EnableDebugLogs.HasValue;
         public bool ShouldSerializeStartTimeout() => StartTimeout.HasValue;
         public bool ShouldSerializeStopTimeout() => StopTimeout.HasValue;
-        public bool ShouldSerializePreviousStopTimeout() => false;
-        public bool ShouldSerializeActiveStdoutPath() => false;
-        public bool ShouldSerializeActiveStderrPath() => false;
         public bool ShouldSerializePreStopExecutablePath() => !string.IsNullOrWhiteSpace(PreStopExecutablePath);
         public bool ShouldSerializePreStopStartupDirectory() => !string.IsNullOrWhiteSpace(PreStopStartupDirectory);
         public bool ShouldSerializePreStopParameters() => !string.IsNullOrWhiteSpace(PreStopParameters);
@@ -500,6 +492,5 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeEnableConsoleUI() => EnableConsoleUI.HasValue;
 
         #endregion
-
     }
 }
