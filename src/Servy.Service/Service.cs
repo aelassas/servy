@@ -1132,15 +1132,26 @@ namespace Servy.Service
 				_childProcess.BeginErrorReadLine();
 			}
 
-			// Fire and forget the post-launch script when process confirmed running
-			var oldCts = Interlocked.Exchange(ref _cancellationSource, null);
-			if (oldCts != null)
-			{
-				try { oldCts.Cancel(); } catch (ObjectDisposedException) { /* already disposed */ }
-				oldCts.Dispose();
-			}
+            // Fire and forget the post-launch script when process confirmed running
+            var oldCts = Interlocked.Exchange(ref _cancellationSource, null);
+            if (oldCts != null)
+            {
+                try
+                {
+                    oldCts.Cancel();
+                }
+                catch (ObjectDisposedException) { /* already disposed */ }
+                catch (AggregateException ex)
+                {
+                    _logger?.Warn($"Exception(s) raised during CTS cancellation: {ex.Message}");
+                }
+                finally
+                {
+                    oldCts.Dispose();
+                }
+            }
 
-			var cts = new CancellationTokenSource();
+            var cts = new CancellationTokenSource();
 			_cancellationSource = cts;
 
 			Task.Run(async () =>
