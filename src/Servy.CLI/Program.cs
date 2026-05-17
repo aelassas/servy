@@ -106,11 +106,11 @@ namespace Servy.CLI
                     // Load configuration from appsettings.json
                     var builder = new ConfigurationBuilder();
 #if DEBUG
-                    builder.AddJsonFile("appsettings.cli.json", optional: true, reloadOnChange: true);
+                    builder.AddJsonFile("appsettings.cli.json", optional: true, reloadOnChange: false);
 #else
-                var baseDirectory = AppFoldersHelper.GetAppDirectory();
-                builder.SetBasePath(baseDirectory)
-                       .AddJsonFile("appsettings.cli.json", optional: true, reloadOnChange: true);
+                    var baseDirectory = AppFoldersHelper.GetAppDirectory();
+                    builder.SetBasePath(baseDirectory)
+                           .AddJsonFile("appsettings.cli.json", optional: true, reloadOnChange: false);
 #endif
                     var config = builder.Build();
 

@@ -288,7 +288,7 @@ namespace Servy.Service
                 // Load configuration from appsettings.json
                 var config = new ConfigurationBuilder()
                     .SetBasePath(AppFoldersHelper.GetAppDirectory())
-                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
                     .Build();
 
                 var connectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;

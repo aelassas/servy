@@ -59,7 +59,7 @@ namespace Servy.Restarter
                 // 2. Load configuration
                 var config = new ConfigurationBuilder()
                     .SetBasePath(AppFoldersHelper.GetAppDirectory())
-                    .AddJsonFile("appsettings.restarter.json", optional: true, reloadOnChange: true)
+                    .AddJsonFile("appsettings.restarter.json", optional: true, reloadOnChange: false)
                     .Build();
 
                 var connectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;

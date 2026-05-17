@@ -199,10 +199,10 @@ namespace Servy.UI.Bootstrapping
         {
             var builder = new ConfigurationBuilder();
 #if DEBUG
-            builder.AddJsonFile(_options.AppSettingsFileName!, optional: true, reloadOnChange: true);
+            builder.AddJsonFile(_options.AppSettingsFileName!, optional: true, reloadOnChange: false);
 #else
             builder.SetBasePath(AppFoldersHelper.GetAppDirectory())
-                   .AddJsonFile(_options.AppSettingsFileName!, optional: true, reloadOnChange: true);
+                   .AddJsonFile(_options.AppSettingsFileName!, optional: true, reloadOnChange: false);
 #endif
             _configuration = builder.Build();
 
@@ -329,9 +329,9 @@ namespace Servy.UI.Bootstrapping
 #endif
                     stopwatch.Stop();
 
-                    if (showSplash && stopwatch.ElapsedMilliseconds < 1000)
+                    if (showSplash && stopwatch.ElapsedMilliseconds < AppConfig.SplashMinDisplayThresholdMs)
                     {
-                        await Task.Delay(500);
+                        await Task.Delay(AppConfig.SplashMinDisplayPaddingMs);
                     }
                 });
 
