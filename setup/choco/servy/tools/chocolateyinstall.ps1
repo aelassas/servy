@@ -1,3 +1,6 @@
+# chocolateyinstall.ps1contains $url64 and $checksum64 of the latest release available on GitHub releases page.
+# URL and checksum are auto updated on each new release on GitHub by choco.yml workflow.
+
 $ErrorActionPreference = 'Stop'
 
 $packageName   = 'servy'
