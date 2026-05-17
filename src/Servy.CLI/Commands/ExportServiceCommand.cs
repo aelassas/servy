@@ -7,13 +7,12 @@ using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.CLI.Commands
 {
@@ -109,26 +108,56 @@ namespace Servy.CLI.Commands
         /// <exception cref="ArgumentException">Thrown if the path is a reserved device name or an unsupported file type.</exception>
         private void SaveFile(string userPath, string content)
         {
+            // 1. Canonicalize: Resolve ".." and relative paths to a strictly absolute path.
+            // This is the foundation for all subsequent security checks.
             string fullPath = Path.GetFullPath(userPath);
 
-            // 1. Extension & UNC Validation
+            // 2. Extension Validation
             string extension = Path.GetExtension(fullPath);
-            if (!string.Equals(extension, ".json", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(extension, ".xml", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(extension, ".json", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(extension, ".xml", StringComparison.OrdinalIgnoreCase))
             {
                 throw new ArgumentException("Security Alert: Only .json and .xml exports are permitted.");
             }
 
+            // 3. UNC Path Block (Exfiltration Guard)
+            // Prevents writing sensitive config data (including encrypted passwords) to remote shares.
             bool isUncUri = Uri.TryCreate(fullPath, UriKind.Absolute, out var uri) && uri.IsUnc;
             if (fullPath.StartsWith(@"\\", StringComparison.Ordinal) || isUncUri)
             {
-                throw new SecurityException("Security Alert: Exporting to UNC paths is prohibited.");
+                throw new SecurityException("Security Alert: Exporting to UNC paths is prohibited to prevent data exfiltration.");
             }
 
-            // 2. Resolve Final Path (Junction/Symlink Protection)
-            string finalResolvedPath = GetFinalPathName(fullPath);
+            // 4. Link/Junction Resolution
+            // We resolve the final path to ensure that NTFS redirection (junctions/symlinks) 
+            // isn't being used to hide a destination inside a protected system folder.
+            string finalResolvedPath = fullPath;
+            string directoryPath = Path.GetDirectoryName(fullPath);
 
-            // 3. Reserved Device Name Block (DOS/Data Loss Guard)
+            if (!string.IsNullOrEmpty(directoryPath) && Directory.Exists(directoryPath))
+            {
+                var dirInfo = new DirectoryInfo(directoryPath);
+
+                // Guard against junctions and symlinks
+                if ((dirInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                {
+                    throw new SecurityException("Security Alert: Importing configurations through directory junctions or symlinks is prohibited to prevent path redirection attacks.");
+                }
+
+                finalResolvedPath = Path.Combine(dirInfo.FullName, Path.GetFileName(fullPath));
+            }
+
+            // Re-apply UNC guard on the *resolved* path to defeat junction-based bypass.
+            bool resolvedIsUnc =
+                finalResolvedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
+                (Uri.TryCreate(finalResolvedPath, UriKind.Absolute, out var resolvedUri) && resolvedUri.IsUnc);
+
+            if (resolvedIsUnc)
+            {
+                throw new SecurityException("Security Alert: Exporting to UNC paths is prohibited to prevent data exfiltration.");
+            }
+
+            // 5. Reserved Device Name Block (DOS/Data Loss Guard)
             // Prevents writing to CON, NUL, COM0, COM1, etc., which can hang the process or discard data.
             // SECURITY: We check only the first segment of the filename. Windows treats any file
             // starting with a reserved name followed by an extension (e.g., NUL.config.json) as the device itself.
@@ -141,7 +170,7 @@ namespace Servy.CLI.Commands
                 throw new ArgumentException($"Security Alert: '{firstSegment}' is a reserved Windows device name and cannot be used.");
             }
 
-            // 4. System Protection Check
+            // 6. System Protection: Block writing to critical Windows directories
             string[] protectedFolders =
             {
                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),
@@ -150,24 +179,26 @@ namespace Servy.CLI.Commands
                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
             };
 
-            foreach (var folder in protectedFolders)
-            {
-                if (string.IsNullOrEmpty(folder)) continue;
-                string checkFolder = folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            // We use finalResolvedPath here to catch junction-based bypasses.
+            var violatedFolder = protectedFolders
+                .FirstOrDefault(folder => !string.IsNullOrEmpty(folder) &&
+                                          finalResolvedPath.StartsWith(
+                                              folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
+                                              StringComparison.OrdinalIgnoreCase));
 
-                if (finalResolvedPath.StartsWith(checkFolder, StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new SecurityException($"Access Denied: Path targets protected directory '{folder}'.");
-                }
+            if (violatedFolder != null)
+            {
+                throw new SecurityException($"Access Denied: The resolved path targets protected system directory '{violatedFolder}'. Export prohibited.");
             }
 
-            // 5. Directory Creation & Write
-            string directory = Path.GetDirectoryName(fullPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            // 7. Directory Creation
+            string parentDir = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrEmpty(parentDir) && !Directory.Exists(parentDir))
             {
-                Directory.CreateDirectory(directory);
+                Directory.CreateDirectory(parentDir);
             }
 
+            // 8. Final Atomic Write
             Helper.WriteFileAtomic(fullPath, stream =>
             {
                 // Use the overload: (Stream, Encoding, BufferSize, LeaveOpen)
@@ -177,46 +208,6 @@ namespace Servy.CLI.Commands
                     sw.Write(content);
                 }
             });
-        }
-
-        /// <summary>
-        /// Uses the Windows API to resolve the true physical path of a file or directory,
-        /// bypassing any NTFS junctions or symbolic links.
-        /// </summary>
-        private string GetFinalPathName(string path)
-        {
-            string directoryPath = Path.GetDirectoryName(path);
-            if (string.IsNullOrEmpty(directoryPath) || !Directory.Exists(directoryPath))
-                return path;
-
-            IntPtr hFile = CreateFile(
-                directoryPath,
-                0, // No access needed to read metadata
-                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                IntPtr.Zero,
-                OPEN_EXISTING,
-                FILE_FLAG_BACKUP_SEMANTICS,
-                IntPtr.Zero);
-
-            if (hFile == new IntPtr(-1)) return path;
-
-            try
-            {
-                StringBuilder sb = new StringBuilder(1024);
-                uint result = GetFinalPathNameByHandle(hFile, sb, (uint)sb.Capacity, VOLUME_NAME_DOS);
-
-                if (result == 0) return path;
-
-                string resolvedDir = sb.ToString();
-                // Windows often prefixes resolved paths with \\?\
-                if (resolvedDir.StartsWith(@"\\?\")) resolvedDir = resolvedDir.Substring(4);
-
-                return Path.Combine(resolvedDir, Path.GetFileName(path));
-            }
-            finally
-            {
-                CloseHandle(hFile);
-            }
         }
 
     }

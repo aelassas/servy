@@ -130,6 +130,18 @@ namespace Servy.CLI.Commands
                     finalResolvedPath = Path.Combine(dirInfo.FullName, Path.GetFileName(fullPath));
                 }
 
+                // Re-apply UNC guard on the *resolved* path to defeat junction-based bypass.
+                bool resolvedIsUnc =
+                    finalResolvedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
+                    (Uri.TryCreate(finalResolvedPath, UriKind.Absolute, out var resolvedUri) && resolvedUri.IsUnc);
+
+                if (resolvedIsUnc)
+                {
+                    var errorMsg = "Security Alert: Resolved import path targets a UNC location via NTFS junction. Import prohibited.";
+                    Logger.Error(errorMsg);
+                    return CommandResult.Fail(errorMsg);
+                }
+
                 // Reserved Device Name Block (DOS Guard)
                 string fileName = Path.GetFileName(finalResolvedPath);
                 int firstDotIndex = fileName.IndexOf('.');
