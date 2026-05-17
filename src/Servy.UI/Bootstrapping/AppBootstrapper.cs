@@ -490,29 +490,31 @@ namespace Servy.UI.Bootstrapping
         public void OnExit(ExitEventArgs e)
         {
             CleanupAvailabilityWatcher();
-            TryDispose(() => _appLifetimeCts?.Cancel(), nameof(_appLifetimeCts));
+            TryRun(() => _appLifetimeCts?.Cancel(), nameof(_appLifetimeCts));
             // Do NOT dispose _appLifetimeCts here - the async void monitor still
             // accesses .Token. Let the GC reclaim it after the monitor unwinds.
 
-            TryDispose(() => SecureData?.Dispose(), nameof(SecureData));
-            TryDispose(() => _protectedKeyProvider?.Dispose(), nameof(_protectedKeyProvider));
-            TryDispose(() => DbContext?.Dispose(), nameof(DbContext));
+            TryRun(() => SecureData?.Dispose(), nameof(SecureData));
+            TryRun(() => _protectedKeyProvider?.Dispose(), nameof(_protectedKeyProvider));
+            TryRun(() => DbContext?.Dispose(), nameof(DbContext));
         }
 
         /// <summary>
-        /// Attempts to execute a disposal action within a safety block to prevent exit-time crashes.
+        /// Attempts to execute a cleanup action within a safety block to prevent exit-time crashes.
         /// </summary>
-        /// <param name="dispose">The disposal action to execute.</param>
-        /// <param name="name">The name of the resource being disposed, used for logging.</param>
-        private static void TryDispose(Action dispose, string name)
+        /// <param name="action">The cleanup action to execute.</param>
+        /// <param name="name">The name of the resource being cleaned up, used for logging.</param>
+        private static void TryRun(Action action, string name)
         {
             try
             {
-                dispose();
+                action();
             }
             catch (Exception ex)
             {
-                Logger.Warn($"{name} disposal failed", ex);
+                // We use Warn here because failure to dispose at exit is rarely 
+                // fatal but should be noted for debugging resource leaks.
+                Logger.Warn($"{name} cleanup failed", ex);
             }
         }
     }

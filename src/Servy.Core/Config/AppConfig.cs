@@ -95,7 +95,6 @@ namespace Servy.Core.Config
         /// and solution-relative configurations.
         /// </remarks>
         private static readonly string RepoRoot = FindRepoRoot(AppDomain.CurrentDomain.BaseDirectory);
-#endif
 
         /// <summary>
         /// Retrieves the Target Framework Moniker (TFM) used during the build process.
@@ -113,6 +112,7 @@ namespace Servy.Core.Config
                 "Assembly metadata 'BuiltWithFramework' is missing. " +
                 "This attribute is required to resolve application binary paths. " +
                 "Ensure the project file includes: <AssemblyMetadata Include=\"BuiltWithFramework\" Value=\"$(TargetFramework)\" />.");
+#endif
 
         /// <summary>
         /// The default file name of the Sysinternals Handle executable used to detect
@@ -988,6 +988,37 @@ namespace Servy.Core.Config
         /// </remarks>
         public const int LogRotationDeletionFailureEscalationThreshold = 10;
 
+        /// <summary>
+        /// Defines the maximum number of structural replacement attempts allowed when performing an atomic file swap operation.
+        /// </summary>
+        /// <remarks>
+        /// This boundary value is a reliability safeguard against transient I/O conflicts during the final file replacement phase. 
+        /// Even though the file content is initially dumped into an isolated temporary file, the final transaction—which relies on 
+        /// an NTFS transactional metadata swap via <see cref="File.Move(string, string, bool)"/>—can trigger race conditions with background 
+        /// operating system filters. If a filter interceptor is actively evaluating the destination, this configuration permits up to 
+        /// <value>3</value> consecutive execution passes before propagating a failure exception up the stack.
+        /// </remarks>
+        public const int WriteFileAtomicMaxRetries = 3;
+
+        /// <summary>
+        /// Specifies the defensive cooling or backoff duration (in milliseconds) introduced between subsequent transactional file move attempts.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Win32 File Locking and Interception Dynamics:</b> When a new binary artifact or configuration profile is written to a storage volume, 
+        /// the Windows Kernel file system filter manager alerts registered background engines. Aggressive real-time security scanners, 
+        /// corporate endpoint detection agents (EDR), and local search indexing pipelines (such as Windows Search) immediately acquire short-lived, 
+        /// shared read locks on the temporary payload to verify integrity.
+        /// </para>
+        /// <para>
+        /// If these hooks are running concurrently when the application executes its atomic metadata swap, the operation is blocked with a 
+        /// transient Win32 Error 5 (<see cref="UnauthorizedAccessException"/>) or Error 32 (<see cref="IOException"/> sharing violation). This 
+        /// value establishes a <value>100</value> millisecond pause, providing an adequate operational window for automated system hooks 
+        /// to conclude their evaluation and release their handles.
+        /// </para>
+        /// </remarks>
+        public const int WriteFileAtomicRetryDelayMs = 100;
+
         #endregion
 
         #region Manager Configuration Bounds
@@ -1249,10 +1280,13 @@ namespace Servy.Core.Config
 
         /// <summary>
         /// Controls whether the system will process legacy v1 (unauthenticated) ciphertexts.
-        /// This should be enabled only during active migration from older Servy versions.
-        /// Default is false to prevent ciphertext downgrade attacks.
         /// </summary>
-        public static readonly bool AllowLegacyV1Decryption = false;
+        /// <remarks>
+        /// This flag is maintained as a hardcoded compile-time constant <c>false</c> to mitigate ciphertext 
+        /// downgrade attack vectors. Automated runtime migration windows are no longer supported. Older 
+        /// configurations must be modernized by re-saving them through the Servy Manager UI or the CLI tool.
+        /// </remarks>
+        public const bool AllowLegacyV1Decryption = false;
 
         #endregion
 
@@ -1301,10 +1335,7 @@ namespace Servy.Core.Config
         /// Resolves the absolute path for an executable based on the current environment and build configuration.
         /// </summary>
         /// <param name="fileName">The base name of the executable (without the .exe extension).</param>
-        /// <returns>The fully qualified path to the executable.</returns>
-        /// <exception cref="FileNotFoundException">
-        /// Thrown in RELEASE mode if the executable cannot be found in the local directory or the ProgramData vault.
-        /// </exception>
+        /// <returns>The fully qualified path to the executable; callers must verify with File.Exists.</returns>
         /// <remarks>
         /// In <c>DEBUG</c> mode, this resolves to the resource directory within the repository root to facilitate 
         /// development without requiring manual file copying. In <c>RELEASE</c> mode, it checks the application's 

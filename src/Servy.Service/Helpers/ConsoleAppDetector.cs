@@ -1,4 +1,6 @@
-﻿namespace Servy.Service.Helpers
+﻿using Servy.Core.Logging;
+
+namespace Servy.Service.Helpers
 {
     /// <summary>
     /// Detects if an executable requires a console based on its PE header.
@@ -87,8 +89,9 @@
                     return subsystem == 3;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Debug($"ConsoleAppDetector PE-header check failed for '{path}': {ex.Message}");
                 return false;
             }
         }
