@@ -150,6 +150,16 @@ namespace Servy.CLI.Commands
                 finalResolvedPath = Path.Combine(dirInfo.FullName, Path.GetFileName(fullPath));
             }
 
+            // Re-apply UNC guard on the *resolved* path to defeat junction-based bypass.
+            bool resolvedIsUnc =
+                finalResolvedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
+                (Uri.TryCreate(finalResolvedPath, UriKind.Absolute, out var resolvedUri) && resolvedUri.IsUnc);
+
+            if (resolvedIsUnc)
+            {
+                throw new SecurityException("Security Alert: Exporting to UNC paths is prohibited to prevent data exfiltration.");
+            }
+
             // 5. Reserved Device Name Block (DOS/Data Loss Guard)
             // Prevents writing to CON, NUL, COM0, COM1, etc., which can hang the process or discard data.
             // SECURITY: We check only the first segment of the filename. Windows treats any file
