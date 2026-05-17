@@ -117,7 +117,7 @@ namespace Servy.UI.Bootstrapping
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {
                 Exception? ex = args.ExceptionObject as Exception;
-                Logger.Error("FATAL: AppDomain Unhandled Exception.Process is terminating.", ex);
+                Logger.Error("FATAL: AppDomain Unhandled Exception. Process is terminating.", ex);
 
                 var dispatcher = Application.Current?.Dispatcher;
                 if (dispatcher != null && !dispatcher.HasShutdownStarted)
@@ -494,9 +494,9 @@ namespace Servy.UI.Bootstrapping
             // Do NOT dispose _appLifetimeCts here - the async void monitor still
             // accesses .Token. Let the GC reclaim it after the monitor unwinds.
 
-            TryDispose(() => DbContext?.Dispose(), nameof(DbContext));
             TryDispose(() => SecureData?.Dispose(), nameof(SecureData));
             TryDispose(() => _protectedKeyProvider?.Dispose(), nameof(_protectedKeyProvider));
+            TryDispose(() => DbContext?.Dispose(), nameof(DbContext));
         }
 
         /// <summary>

@@ -728,10 +728,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void StopRefreshTimer()
         {
-            if (_appConfig != null)
-            {
-                _appConfig.PropertyChanged -= AppConfig_PropertyChanged;
-            }
+            _appConfig.PropertyChanged -= AppConfig_PropertyChanged;
 
             // Thread-safe disposal pattern
             var oldCts = Interlocked.Exchange(ref _cts, null);

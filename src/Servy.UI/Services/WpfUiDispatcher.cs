@@ -32,9 +32,6 @@ namespace Servy.UI.Services
         {
             if (action == null) throw new ArgumentNullException(nameof(action));
 
-            // Check if the dispatcher is available (e.g., during shutdown)
-            if (_dispatcher == null) return;
-
             await _dispatcher.InvokeAsync(action, priority);
         }
 
