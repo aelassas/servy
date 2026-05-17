@@ -71,9 +71,12 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: pwsh
         run: |
-          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"aelassas_servy" /o:"aelassas" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
-          
-          # Using Release configuration for more accurate analysis
+          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin `
+            /k:"aelassas_servy" `
+            /o:"aelassas" `
+            /d:sonar.token="$env:SONAR_TOKEN" `
+            /d:sonar.host.url="https://sonarcloud.io"
+
           dotnet build --configuration Release
-          
-          ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+          ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="$env:SONAR_TOKEN"

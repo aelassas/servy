@@ -110,37 +110,74 @@ function Update-Watermark {
     # --- CRITICAL: Always advance the watermark ---
     # Update timestamp immediately for this specific event, regardless of email/toast success.
     $newestTimestamp = $TimeCreated.AddTicks(1)
-    $shouldWrite = $true
-    
-    # 1. Ensure the new timestamp is strictly greater than the one currently in the file
-    if (Test-Path $TimestampFile) {
+    $timestampString = $newestTimestamp.ToString("o")
+
+    # Retry loop to gracefully handle concurrent FileShare.None lock collisions
+    $maxRetries = 5
+    $retryDelayMs = 200
+
+    for ($attempt = 1; $attempt -le $maxRetries; $attempt++) {
+        $fs = $null
         try {
+            # 1. Acquire exclusive lock to make the read+compare+write atomic across all processes
+            $fs = [System.IO.File]::Open($TimestampFile, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
+            
+            $shouldWrite = $true
+
             # Read current file text to catch concurrent updates from other script instances
-            $currentFileContent = [System.IO.File]::ReadAllText($TimestampFile).Trim()
+            $reader = New-Object System.IO.StreamReader($fs, [System.Text.Encoding]::UTF8)
+            $currentFileContent = $reader.ReadToEnd().Trim()
+
             if (-not [string]::IsNullOrWhiteSpace($currentFileContent)) {
-                $fileTimestamp = [DateTime]::ParseExact(
-                    $currentFileContent,
-                    'o',
-                    [System.Globalization.CultureInfo]::InvariantCulture,
-                    [System.Globalization.DateTimeStyles]::RoundtripKind
-                )
-                if ($newestTimestamp -le $fileTimestamp) {
-                    $shouldWrite = $false
+                try {
+                    $fileTimestamp = [DateTime]::ParseExact(
+                        $currentFileContent,
+                        'o',
+                        [System.Globalization.CultureInfo]::InvariantCulture,
+                        [System.Globalization.DateTimeStyles]::RoundtripKind
+                    )
+                    if ($newestTimestamp -le $fileTimestamp) {
+                        $shouldWrite = $false
+                    }
+                } catch {
+                    # If file is locked, corrupt (e.g. previous NULL char bug), or unparseable, overwrite it
+                    Write-Warning "Could not parse current timestamp file during update check. Overwriting to heal file."
                 }
             }
-        } catch {
-            # If file is locked, corrupt (e.g. previous NULL char bug), or unparseable, overwrite it
-            Write-Warning "Could not parse current timestamp file during update check. Overwriting to heal file."
-        }
-    }
-    
-    # 2. Write to file only if necessary, explicitly forcing UTF8
-    if ($shouldWrite) {
-        $timestampString = $newestTimestamp.ToString("o")
-        try {
-            # Explicitly use UTF8 encoding to prevent PowerShell from writing UTF-16LE (which causes the NULL chars)
-            [System.IO.File]::WriteAllText($TimestampFile, $timestampString, [System.Text.Encoding]::UTF8)
-            Write-Verbose "Timestamp updated to: $timestampString"
+
+            # 2. Write to file only if necessary, explicitly forcing UTF8
+            if ($shouldWrite) {
+                $fs.Position = 0
+                $fs.SetLength(0) # Truncate the file before writing the new content
+
+                # Explicitly use UTF8 encoding to prevent PowerShell from writing UTF-16LE (which causes the NULL chars)
+                $writer = New-Object System.IO.StreamWriter($fs, [System.Text.Encoding]::UTF8)
+                $writer.Write($timestampString)
+                $writer.Flush()
+                Write-Verbose "Timestamp updated to: $timestampString"
+            }
+
+            break # Success, exit retry loop
+
+        } catch [System.IO.IOException], [System.UnauthorizedAccessException] {
+            if ($attempt -lt $maxRetries) {
+                Start-Sleep -Milliseconds $retryDelayMs
+                continue
+            }
+            
+            # If we exhausted retries, process as a normal error
+            # Bypass EventLog to prevent feedback loops. Record locally only.
+            $errorMessage = "Failed to update timestamp file (Lock timeout): $($_.Exception.Message)"
+            Write-Warning "ServyWatermark: $errorMessage"
+            
+            if ($ScriptDir) {
+                $logFile = Join-Path $ScriptDir "ServyWatermarkErrors.log"
+                try {
+                    Write-ServyLog -FilePath $logFile -Message $errorMessage
+                } catch {
+                    # Silence to prevent script termination if the disk is completely inaccessible
+                }
+            }
         } catch {
             # Bypass EventLog to prevent feedback loops. Record locally only.
             $errorMessage = "Failed to update timestamp file: $($_.Exception.Message)"
@@ -153,6 +190,12 @@ function Update-Watermark {
                 } catch {
                     # Silence to prevent script termination if the disk is completely inaccessible
                 }
+            }
+            break # Exit loop for non-IO exceptions
+        } finally {
+            # Safely release the exclusive handle
+            if ($null -ne $fs) {
+                $fs.Dispose()
             }
         }
     }

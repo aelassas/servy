@@ -586,9 +586,11 @@ function Set-ServyConfig {
   [CmdletBinding()]
   param(
     # Default: 600 seconds
+    [ValidateRange(1, 86400)]
     [int] $TimeoutSeconds = 600,
 
     # Default: 1048576 characters (1MB)
+    [ValidateRange(1024, [int]::MaxValue)]
     [int] $MaxBufferChars = 1048576
   )
 

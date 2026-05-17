@@ -36,7 +36,7 @@ function Write-ServyLog {
                 Rename-Item -Path $FilePath -NewName $rotatedFileName -Force
 
                 $keepCount = 10
-                $rotatedPattern = "$baseName_*$ext"
+                $rotatedPattern = "${baseName}_*${ext}"
                 Get-ChildItem -Path (Split-Path $FilePath) -Filter $rotatedPattern -ErrorAction SilentlyContinue |
                     Sort-Object LastWriteTime -Descending |
                     Select-Object -Skip $keepCount |

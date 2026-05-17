@@ -1188,8 +1188,19 @@ namespace Servy.Service
             var oldCts = Interlocked.Exchange(ref _cancellationSource, null);
             if (oldCts != null)
             {
-                try { oldCts.Cancel(); } catch (ObjectDisposedException) { /* already disposed */ }
-                oldCts.Dispose();
+                try
+                {
+                    oldCts.Cancel();
+                }
+                catch (ObjectDisposedException) { /* already disposed */ }
+                catch (AggregateException ex)
+                {
+                    _logger?.Warn($"Exception(s) raised during CTS cancellation: {ex.Message}");
+                }
+                finally
+                {
+                    oldCts.Dispose();
+                }
             }
 
             var cts = new CancellationTokenSource();
