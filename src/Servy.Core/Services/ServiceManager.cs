@@ -470,7 +470,11 @@ namespace Servy.Core.Services
                             }
 
                             cancellationToken.ThrowIfCancellationRequested();
-                            await _serviceRepository.UpsertAsync(dto, preserveExistingRuntimeState: true, cancellationToken);
+                            await _serviceRepository.UpsertAsync(
+                                dto, 
+                                preserveExistingRuntimeState: true,
+                                preserveExistingCredentials: false,
+                                cancellationToken);
                             Logger.Info($"Service '{options.ServiceName}' already exists. Updated its configuration.");
                             return OperationResult.Success();
                         }
@@ -482,7 +486,11 @@ namespace Servy.Core.Services
 
                     cancellationToken.ThrowIfCancellationRequested();
                     SetServiceDescription(serviceHandle, options.Description);
-                    await _serviceRepository.UpsertAsync(dto, preserveExistingRuntimeState: false, cancellationToken); // New service: update runtime state in db (PID, ActiveStdoutPath, ActiveStderrPath)
+                    await _serviceRepository.UpsertAsync(
+                        dto, 
+                        preserveExistingRuntimeState: false,
+                        preserveExistingCredentials: false,
+                        cancellationToken); // New service: update runtime state in db (PID, ActiveStdoutPath, ActiveStderrPath)
                     Logger.Info($"Service '{options.ServiceName}' installed successfully.");
 
                     return OperationResult.Success();

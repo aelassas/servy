@@ -152,7 +152,7 @@ namespace Servy.Service.CommandLine
                 case ProcessPriority.High: return ProcessPriorityClass.High;
                 case ProcessPriority.RealTime: return ProcessPriorityClass.RealTime;
                 default:
-                    Logger.Warn($"Unknown ProcessPriority value '{p}' — defaulting to Normal.");
+                    Logger.Warn($"Unknown ProcessPriority value '{p}' - defaulting to Normal.");
                     return ProcessPriorityClass.Normal;
 
             }

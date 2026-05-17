@@ -1444,7 +1444,11 @@ namespace Servy.Service
 						serviceDto.ActiveStderrPath = _options?.StdErrPath;
 					}
 
-					_serviceRepository.Update(serviceDto, preserveExistingRuntimeState: false);
+					_serviceRepository.Update(
+						serviceDto, 
+						preserveExistingRuntimeState: false,
+                        preserveExistingCredentials: false
+                        );
 				}
 			}
 			catch (Exception ex)

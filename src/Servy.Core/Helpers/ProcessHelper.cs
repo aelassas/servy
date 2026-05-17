@@ -77,7 +77,7 @@ namespace Servy.Core.Helpers
             if (snapshot == INVALID_HANDLE_VALUE || snapshot == IntPtr.Zero)
             {
                 int err = Marshal.GetLastWin32Error();
-                Logger.Warn($"GetProcessTree: CreateToolhelp32Snapshot failed (Win32 {err}) — returning root PID only; descendant metrics will be missing.");
+                Logger.Warn($"GetProcessTree: CreateToolhelp32Snapshot failed (Win32 {err}) - returning root PID only; descendant metrics will be missing.");
                 return tree;
             }
 

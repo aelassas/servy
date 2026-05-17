@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
@@ -74,7 +75,7 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Equal(0, result.ExitCode);
             Assert.Equal(string.Format(Strings.Msg_ImportSuccessNoInstall, "XML"), result.Message);
 
-            _serviceRepoMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), true, It.IsAny<CancellationToken>()), Times.Once);
+            _serviceRepoMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), true, true, It.IsAny<CancellationToken>()), Times.Once);
 
             File.Delete(path);
         }
@@ -130,7 +131,7 @@ namespace Servy.CLI.UnitTests.Commands
                 Assert.Equal(0, result.ExitCode);
                 Assert.Equal(string.Format(Strings.Msg_ImportSuccessNoInstall, "JSON"), result.Message);
 
-                _serviceRepoMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), true, It.IsAny<CancellationToken>()), Times.Once);
+                _serviceRepoMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), true, true, It.IsAny<CancellationToken>()), Times.Once);
             }
             finally
             {

@@ -191,7 +191,12 @@ namespace Servy.CLI.Commands
                 fullPath,
                 "XML",
                 content => _xmlServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
-                dto => _serviceRepository.UpsertAsync(dto, preserveExistingRuntimeState: true, cancellationToken: cancellationToken),
+                dto => _serviceRepository.UpsertAsync(
+                        dto,
+                        preserveExistingRuntimeState: true,
+                        preserveExistingCredentials: true,
+                        cancellationToken: cancellationToken
+                        ),
                 _xmlServiceSerializer.Deserialize,
                 cancellationToken: cancellationToken);
         }
@@ -210,7 +215,12 @@ namespace Servy.CLI.Commands
                 fullPath,
                 "JSON",
                 content => _jsonServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
-                dto => _serviceRepository.UpsertAsync(dto, preserveExistingRuntimeState: true, cancellationToken: cancellationToken),
+                dto => _serviceRepository.UpsertAsync(
+                        dto,
+                        preserveExistingRuntimeState: true,
+                        preserveExistingCredentials: true,
+                        cancellationToken: cancellationToken
+                        ),
                 _jsonServiceSerializer.Deserialize,
                 cancellationToken: cancellationToken);
         }

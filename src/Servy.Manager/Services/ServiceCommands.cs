@@ -750,7 +750,11 @@ namespace Servy.Manager.Services
 
                 if (!await _serviceConfigurationValidator.Validate(dto)) return;
 
-                var res = await _serviceRepository.UpsertAsync(dto, preserveExistingRuntimeState: true, cancellationToken: cancellationToken);
+                var res = await _serviceRepository.UpsertAsync(
+                    dto,
+                    preserveExistingRuntimeState: true,
+                    preserveExistingCredentials: true,
+                    cancellationToken: cancellationToken);
                 if (res > 0)
                 {
                     Logger.Info($"Service configuration imported from {formatName} at: {path}");

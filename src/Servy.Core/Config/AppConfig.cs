@@ -977,8 +977,8 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// This boundary value is a reliability safeguard against transient I/O conflicts during the final file replacement phase. 
-        /// Even though the file content is initially dumped into an isolated temporary file, the final transaction—which relies on 
-        /// an NTFS transactional metadata swap via <see cref="File.Move(string, string, bool)"/>—can trigger race conditions with background 
+        /// Even though the file content is initially dumped into an isolated temporary file, the final transaction-which relies on 
+        /// an NTFS transactional metadata swap via <see cref="File.Move(string, string, bool)"/>-can trigger race conditions with background 
         /// operating system filters. If a filter interceptor is actively evaluating the destination, this configuration permits up to 
         /// <value>3</value> consecutive execution passes before propagating a failure exception up the stack.
         /// </remarks>
