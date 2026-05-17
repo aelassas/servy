@@ -192,7 +192,9 @@ namespace Servy
                         new XmlServiceValidator(serviceValidationRules),
                         new JsonServiceValidator(serviceValidationRules),
                         this,
-                        new CursorService()
+                        new CursorService(),
+                        new XmlServiceSerializer(),
+                        new JsonServiceSerializer()
                     );
 
                     // 4. Initialize Main ViewModel

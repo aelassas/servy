@@ -213,7 +213,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets the start timeout as a string? (in seconds).
+        /// Gets or sets the start timeout in seconds.
         /// </summary>
         public string? StartTimeout
         {
@@ -222,7 +222,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets the start timeout as a string? (in seconds).
+        /// Gets or sets the stop timeout in seconds.
         /// </summary>
         public string? StopTimeout
         {

@@ -43,6 +43,8 @@ namespace Servy.Services
         private readonly IJsonServiceValidator _jsonServiceValidator;
         private readonly IAppConfiguration _appConfig;
         private readonly ICursorService _cursorService;
+        private readonly IXmlServiceSerializer _xmlServiceSerializer;
+        private readonly IJsonServiceSerializer _jsonServiceSerializer;
 
         #endregion
 
@@ -61,6 +63,8 @@ namespace Servy.Services
         /// <param name="jsonServiceValidator">JSON service validator.</param>
         /// <param name="appConfig">Application configuration.</param>
         /// <param name="cursorService">Cursor service for managing cursor state during operations.</param>
+        /// <param name="xmlServiceSerializer">XML service serializer.</param>
+        /// <param name="jsonServiceSerializer">JSON service serializer.</param>
         /// <exception cref="ArgumentNullException">Thrown when any required dependency is <c>null</c>.</exception>
         public ServiceCommands(
             Func<ServiceDto?> modelToServiceDto,
@@ -72,7 +76,9 @@ namespace Servy.Services
             IXmlServiceValidator xmlServiceValidator,
             IJsonServiceValidator jsonServiceValidator,
             IAppConfiguration? appConfig,
-            ICursorService cursorService
+            ICursorService cursorService,
+            IXmlServiceSerializer xmlServiceSerializer,
+            IJsonServiceSerializer jsonServiceSerializer
             )
         {
             _modelToServiceDto = modelToServiceDto ?? throw new ArgumentNullException(nameof(modelToServiceDto));
@@ -85,6 +91,8 @@ namespace Servy.Services
             _jsonServiceValidator = jsonServiceValidator ?? throw new ArgumentNullException(nameof(jsonServiceValidator));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
+            _xmlServiceSerializer = xmlServiceSerializer ?? throw new ArgumentNullException(nameof(xmlServiceSerializer));
+            _jsonServiceSerializer = jsonServiceSerializer ?? throw new ArgumentNullException(nameof(jsonServiceSerializer));
         }
 
         #endregion
@@ -144,7 +152,8 @@ namespace Servy.Services
 
                 // 4. Map Install Options strictly from the validated DTO
                 // Conversion logic (like MB to Bytes) is handled here just before the service call
-                var rotationSizeValue = dto.RotationSize > 0 ? AppConfig.ToBytes(dto.RotationSize ?? AppConfig.DefaultRotationSizeMB) : 0;
+                var effectiveSize = dto.RotationSize ?? AppConfig.DefaultRotationSizeMB;
+                var rotationSizeValue = effectiveSize > 0 ? AppConfig.ToBytes(effectiveSize) : 0;
 
                 var options = new InstallServiceOptions
                 {
@@ -337,7 +346,7 @@ namespace Servy.Services
             ImportConfigAsync(
                 _dialogService.OpenXml,
                 (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
-                (content) => new XmlServiceSerializer().Deserialize(content),
+                (content) => _xmlServiceSerializer.Deserialize(content),
                 "XML",
                 Strings.Msg_FailedToLoadXml,
                 cancellationToken);
@@ -347,7 +356,7 @@ namespace Servy.Services
             ImportConfigAsync(
                 _dialogService.OpenJson,
                 (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
-                (content) => new JsonServiceSerializer().Deserialize(content),
+                (content) => _jsonServiceSerializer.Deserialize(content),
                 "JSON",
                 Strings.Msg_FailedToLoadJson,
                 cancellationToken);

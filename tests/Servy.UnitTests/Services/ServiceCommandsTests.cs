@@ -24,6 +24,8 @@ namespace Servy.UnitTests.Services
         private readonly Mock<IAppConfiguration> _appConfigMock;
         private readonly Mock<ICursorService> _cursorServiceMock;
         private readonly Mock<Func<ServiceDto?>> _modelToServiceDtoMock;
+        private readonly Mock<IXmlServiceSerializer> _xmlServiceSerializerMock;
+        private readonly Mock<IJsonServiceSerializer> _jsonServiceSerializerMock;
 
         public ServiceCommandsTests()
         {
@@ -35,6 +37,8 @@ namespace Servy.UnitTests.Services
             _jsonServiceValidatorMock = new Mock<IJsonServiceValidator>();
             _appConfigMock = new Mock<IAppConfiguration>();
             _cursorServiceMock = new Mock<ICursorService>();
+            _xmlServiceSerializerMock = new Mock<IXmlServiceSerializer>();
+            _jsonServiceSerializerMock = new Mock<IJsonServiceSerializer>();
 
             _modelToServiceDtoMock = new Mock<Func<ServiceDto?>>();
 
@@ -67,7 +71,9 @@ namespace Servy.UnitTests.Services
                 xmlServiceValidator: _xmlServiceValidatorMock.Object,
                 jsonServiceValidator: _jsonServiceValidatorMock.Object,
                 appConfig: _appConfigMock.Object,
-                cursorService: _cursorServiceMock.Object
+                cursorService: _cursorServiceMock.Object,
+                xmlServiceSerializer: _xmlServiceSerializerMock.Object,
+                jsonServiceSerializer: _jsonServiceSerializerMock.Object
             );
         }
 
@@ -432,52 +438,39 @@ namespace Servy.UnitTests.Services
         [Fact]
         public async Task ImportXmlCommand_ValidFile_UpdatesModel()
         {
-            var realPath = @"C:\Windows\System32\notepad.exe";
-            var xmlContent = $@"<ServiceDto><Name>TestService</Name><ExecutablePath>{realPath}</ExecutablePath></ServiceDto>";
-            var path = Path.GetTempFileName() + ".xml";
-
-            _serviceConfigurationValidator.Setup(d => d.Validate(
-                It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            var dto = new ServiceDto { Name = "TestService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
+            var path = Path.GetTempFileName();
 
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(path);
 
-            var bindCalled = false;
-            ServiceDto? capturedDto = null;
-            Action<ServiceDto> bindSpy = dto =>
+            _serviceConfigurationValidator.Setup(v => v.Validate(
+                It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+
+            bool bindCalled = false;
+            var sut = CreateSut(d =>
             {
                 bindCalled = true;
-                capturedDto = dto;
-            };
-
-            var sut = CreateSut(bindSpy);
+                Assert.Equal("TestService", d.Name);
+            });
 
             _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny))
                 .Returns(true);
 
-            File.WriteAllText(path, xmlContent);
+            _xmlServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
 
-            var task = sut.ImportXmlConfig(TestContext.Current.CancellationToken) as Task;
+            var task = sut.ImportXmlConfig(TestContext.Current.CancellationToken);
             if (task != null) await task;
 
-            try
-            {
-                Assert.True(bindCalled, "The logic exited before binding. Likely XmlServiceValidator.TryValidate failed.");
-                Assert.NotNull(capturedDto);
-                Assert.Equal("TestService", capturedDto!.Name);
-            }
-            finally
-            {
-                if (File.Exists(path)) File.Delete(path);
-            }
+            if (File.Exists(path)) File.Delete(path);
+
+            Assert.True(bindCalled, "The logic exited before binding.");
         }
 
         [Fact]
         public async Task ImportJsonCommand_ValidFile_UpdatesModel()
         {
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
-            var jsonContent = JsonConvert.SerializeObject(dto);
             var path = Path.GetTempFileName();
-            File.WriteAllText(path, jsonContent);
 
             _dialogServiceMock.Setup(d => d.OpenJson()).Returns(path);
 
@@ -494,7 +487,9 @@ namespace Servy.UnitTests.Services
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny))
                 .Returns(true);
 
-            var task = sut.ImportJsonConfig(TestContext.Current.CancellationToken) as Task;
+            _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
+
+            var task = sut.ImportJsonConfig(TestContext.Current.CancellationToken);
             if (task != null) await task;
 
             if (File.Exists(path)) File.Delete(path);

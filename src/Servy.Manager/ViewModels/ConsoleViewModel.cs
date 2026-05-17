@@ -446,7 +446,8 @@ namespace Servy.Manager.ViewModels
                     // Wait for the necessary reads to complete
                     var results = await Task.WhenAll(stdoutTask, stderrTask);
 
-                    // 3. SECURITY CHECK: If sessionId doesn't match, user switched again while loading
+                    // 3. STALE-SESSION GUARD: a newer SelectedService was set while history was loading;
+                    // drop these results to avoid mixing logs from the previous service.
                     if (sessionId != _currentSessionId) return;
 
                     var outRes = results[0];

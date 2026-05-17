@@ -381,8 +381,7 @@ namespace Servy.Service.ProcessManagement
             bool isJava =
                 string.Equals(fileNameOnly, "java", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(fileNameOnly, "javaw", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(fileNameOnly, "javac", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(extension, ".jar", StringComparison.OrdinalIgnoreCase);
+                string.Equals(fileNameOnly, "javac", StringComparison.OrdinalIgnoreCase);
 
             if (isJava)
             {
