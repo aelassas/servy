@@ -93,7 +93,7 @@ namespace Servy.Core.Services
 
             // 2. DEEP DOMAIN VALIDATION
             var sanitizedName = (dto.Name ?? "Unknown").Replace("\r", "").Replace("\n", ""); // Sanitize the untrusted name to prevent log injection
-            var validation = _serviceValidationRules.Validate(dto);
+            var validation = _serviceValidationRules.Validate(dto, importMode: true);
             if (validation.Errors.Any())
             {
                 errorMessage = string.Join("\n", validation.Errors);

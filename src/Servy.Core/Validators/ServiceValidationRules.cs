@@ -30,7 +30,7 @@ namespace Servy.Core.Validators
         }
 
         /// <inheritdoc/>
-        public ValidationResult Validate(ServiceDto dto, string wrapperExePath = null, string confirmPassword = "")
+        public ValidationResult Validate(ServiceDto dto, string wrapperExePath = null, string confirmPassword = "", bool importMode = false)
         {
             var result = new ValidationResult();
 
@@ -115,7 +115,11 @@ namespace Servy.Core.Validators
                 result.Errors.Add(Strings.Msg_InvalidFailureProgramStartupDirectory);
 
             // Credentials
-            if ((!dto.RunAsLocalSystem.HasValue || !dto.RunAsLocalSystem.Value) && !string.IsNullOrWhiteSpace(dto.UserAccount))
+            if (
+                !importMode
+                && (!dto.RunAsLocalSystem.HasValue || !dto.RunAsLocalSystem.Value)
+                && !string.IsNullOrWhiteSpace(dto.UserAccount)
+                )
             {
                 try
                 {
