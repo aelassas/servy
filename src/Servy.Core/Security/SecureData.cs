@@ -191,8 +191,8 @@ namespace Servy.Core.Security
         /// </list>
         /// <b>Security Note on Downgrade Vectors:</b> Processing v1 or raw legacy ciphertexts introduces an attacker-controllable 
         /// downgrade vector because these formats lack an HMAC integrity check. An attacker with write access to the configuration 
-        /// could replace a v2 payload with a tampered v1 payload. To mitigate this, v1 decryption is disabled by default 
-        /// and must be explicitly enabled via <c>AppConfig.AllowLegacyV1Decryption</c> during migration periods.
+        /// could replace a v2 payload with a tampered v1 payload. To mitigate this, v1 decryption is permanently disabled 
+        /// via <c>AppConfig.AllowLegacyV1Decryption</c> to safeguard production systems.
         /// </remarks>
         /// <param name="cipherText">The versioned ciphertext (with marker) or a raw legacy string.</param>
         /// <returns>The decrypted plain text if successful; otherwise, the original <paramref name="cipherText"/>.</returns>
@@ -223,7 +223,10 @@ namespace Servy.Core.Security
                         if (!AppConfig.AllowLegacyV1Decryption)
                         {
                             Logger.Warn("Security block: Attempted to decrypt a v1 payload, but legacy unauthenticated decryption is disabled. Throwing to prevent downgrade attack.");
-                            throw new SecureDataIntegrityException("Legacy v1 decryption is disabled via configuration.");
+                            throw new SecureDataIntegrityException(
+                                "Legacy v1 decryption is disabled in this version. To migrate older records, " +
+                                "export the configuration using a v1-compatible version of Servy, then import " +
+                                "the resulting file into this version to upgrade to v2 authenticated encryption.");
                         }
 
                         Logger.Warn("Security audit: Legacy v1 decryption invoked. Please re-save this configuration to upgrade to v2 authenticated encryption.");
@@ -262,8 +265,9 @@ namespace Servy.Core.Security
                     {
                         Logger.Warn("Security block: Raw legacy payload encountered with legacy decryption disabled.");
                         throw new SecureDataIntegrityException(
-                            "Raw legacy ciphertext detected but AllowLegacyV1Decryption is disabled. " +
-                            "Enable migration mode briefly to upgrade legacy records to v2.");
+                            "Raw legacy ciphertext detected. Legacy unauthenticated decryption is permanently disabled in this version. " +
+                            "To migrate these records, export the service configuration using an older v1-compatible version of Servy, " +
+                            "then import that file into this version to generate a secure v2 authenticated ciphertext.");
                     }
 
                     Logger.Warn("Security audit: Raw legacy decryption invoked. Please re-save this configuration to upgrade to v2 authenticated encryption.");

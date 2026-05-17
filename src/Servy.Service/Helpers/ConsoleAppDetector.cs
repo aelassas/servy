@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using Servy.Core.Logging;
+using System;
+using System.IO;
 
 namespace Servy.Service.Helpers
 {
@@ -89,8 +91,9 @@ namespace Servy.Service.Helpers
                     return subsystem == 3;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Debug($"ConsoleAppDetector PE-header check failed for '{path}': {ex.Message}");
                 return false;
             }
         }

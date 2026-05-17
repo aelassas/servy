@@ -1873,7 +1873,7 @@ namespace Servy.Service
 					_logger?.Error("Service handle is null! SCM notification impossible. Falling back to synchronous teardown.");
 
 					// Log the completion intention right before the logger is destroyed
-					_logger?.Info("Pre-Shutdown handling complete. Setting SERVICE_STOPPED via Environment.Exit.");
+					_logger?.Info("Pre-Shutdown fallback path entered. Initiating synchronous teardown before Environment.Exit.");
 					try
 					{
 						ExecuteTeardown(TeardownReason.PreShutdown);
@@ -2235,27 +2235,11 @@ namespace Servy.Service
 			}
 			finally
 			{
-				try
-				{
-					if (_healthCheckTimer != null)
-					{
-						_healthCheckTimer.Elapsed -= CheckHealth;
-						_healthCheckTimer.Stop();
-						_healthCheckTimer.Dispose();
-						_healthCheckTimer = null;
-					}
-				}
-				catch (Exception ex)
-				{
-					_logger?.Warn($"Error disposing health check timer: {ex.Message}");
-				}
-
 				if (_childProcess != null)
 				{
 					_childProcess.Dispose();
 					_childProcess = null;
 				}
-
 			}
 
 		}
@@ -2507,14 +2491,14 @@ namespace Servy.Service
 		{
 			var message = string.Empty;
 
-			if (result == true)
-				message = $"Child process '{process.Format()}' canceled with code {process.ExitCode}.";
-			else if (result == false)
-				message = $"Child process '{process.Format()}' terminated.";
-			else
-				message = $"Child process '{process.Format()}' stop timed out or failed.";
+            if (result == true)
+                message = $"Child process '{process.Format()}' stopped gracefully with exit code {process.ExitCode}.";
+            else if (result == false)
+                message = $"Child process '{process.Format()}' was forcefully terminated.";
+            else // null
+                message = $"Child process '{process.Format()}' had already exited before the stop sequence ran.";
 
-			_logger?.Info(message);
+            _logger?.Info(message);
 		}
 
 		/// <summary>

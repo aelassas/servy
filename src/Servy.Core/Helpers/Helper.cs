@@ -417,7 +417,7 @@ namespace Servy.Core.Helpers
 
                 // Standard retry logic to handle transient "Access Denied" errors (Win32 Error 5).
                 // This is commonly caused by Antivirus or Indexing services locking the newly created .tmp file.
-                int retries = 3;
+                int retries = AppConfig.WriteFileAtomicMaxRetries;
                 while (true)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -431,7 +431,7 @@ namespace Servy.Core.Helpers
                     {
                         retries--;
                         // Synchronous pause to allow external locks to be released.
-                        Thread.Sleep(100);
+                        Thread.Sleep(AppConfig.WriteFileAtomicRetryDelayMs);
                     }
                 }
             }
@@ -473,7 +473,7 @@ namespace Servy.Core.Helpers
                 // Ensure the existing file isn't Read-Only, which causes Error 5
                 PrepareDestinationForMove(path);
 
-                int retries = 3;
+                int retries = AppConfig.WriteFileAtomicMaxRetries;
                 while (true)
                 {
                     try
@@ -486,7 +486,7 @@ namespace Servy.Core.Helpers
                     {
                         retries--;
                         // Asynchronous delay to keep the thread pool unblocked during retries.
-                        await Task.Delay(100, ct).ConfigureAwait(false);
+                        await Task.Delay(AppConfig.WriteFileAtomicRetryDelayMs, ct).ConfigureAwait(false);
                     }
                 }
             }
