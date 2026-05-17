@@ -258,7 +258,7 @@ jobs:
                   git commit -m "servy: Update to version $env:VERSION"
               }
           }
-          git push origin $branchName --force
+          git push origin $branchName --force-with-lease
         
       - name: Open Pull Request in ScoopInstaller/Extras
         if: env.RUN_EXTRAS_PR == 'true'
