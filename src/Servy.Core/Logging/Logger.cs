@@ -410,7 +410,7 @@ namespace Servy.Core.Logging
                         : level.ToString().ToUpperInvariant(); // Fallback for safety
 
                     // Sanitize message into a single-line representation for better scannability
-                    var sanitizedMessage = message?
+                    var sanitizedMessage = message
                         .Replace("\r", "")
                         .Replace("\n", " ; ")
                         .Trim();

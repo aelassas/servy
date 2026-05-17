@@ -320,18 +320,14 @@ namespace Servy.Core.Security
                         if (failCount >= MigrationFailureEscalationThreshold)
                         {
                             string escalatedMsg = $"[EventID: {EventIds.PersistentMigrationFailure}] PERSISTENT SECURITY DEGRADATION: {baseMsg}. Failed {failCount} consecutive times. The file cannot be upgraded to modern encryption. System remains in v7.8 compatibility mode.";
-
                             TryWriteServyEventLog($"{escalatedMsg}\n\nError: {ex.Message}", EventLogEntryType.Error, EventIds.PersistentMigrationFailure);
-
                             Logger.Error(escalatedMsg, ex);
                         }
                         else
                         {
-                            string warningMsg = $"{baseMsg} (Attempt {failCount}/{MigrationFailureEscalationThreshold}): {ex.Message}";
-
+                            string warningMsg = $"[EventID: {EventIds.TransientMigrationWarning}] {baseMsg} (Attempt {failCount}/{MigrationFailureEscalationThreshold}): {ex.Message}";
                             TryWriteServyEventLog(warningMsg, EventLogEntryType.Warning, EventIds.TransientMigrationWarning);
-
-                            Logger.Warn($"[EventID: {EventIds.Warning}] {warningMsg}");
+                            Logger.Warn(warningMsg);
                         }
 
                         // We still return the data so the service remains operational.
