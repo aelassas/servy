@@ -427,7 +427,7 @@ namespace Servy.Core.Security
                     new FileInfo(tempPath).SetAccessControl(fs);
 
                     // Atomically replace the existing file
-                    NativeMethods.AtomicSecureMove(tempPath, path);
+                    NativeMethodsHelpers.AtomicSecureMove(tempPath, path);
 
                     // Explicit invalidation on successful key rotation
                     InvalidateCache();

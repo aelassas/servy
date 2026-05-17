@@ -424,7 +424,7 @@ namespace Servy.Core.Helpers
                     try
                     {
                         // On NTFS, moving within the same volume is an atomic metadata operation.
-                        NativeMethods.AtomicSecureMove(tmp, path);
+                        NativeMethodsHelpers.AtomicSecureMove(tmp, path);
                         break;
                     }
                     catch (Win32Exception ex) when (ex.NativeErrorCode == 5 && retries > 0)
@@ -479,7 +479,7 @@ namespace Servy.Core.Helpers
                     try
                     {
                         // On NTFS, moving within the same volume is an atomic metadata operation.
-                        NativeMethods.AtomicSecureMove(tmp, path);
+                        NativeMethodsHelpers.AtomicSecureMove(tmp, path);
                         break;
                     }
                     catch (Win32Exception ex) when (ex.NativeErrorCode == 5 && retries > 0)

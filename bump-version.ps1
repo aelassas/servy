@@ -6,7 +6,7 @@
 .DESCRIPTION
     This script updates version numbers in several Servy files based on a provided
     short version (e.g. 1.4). It expands the version into full semantic versions
-    and rewrites script variables, C# configuration constants, and assembly metadata.
+    and rewrites script variables, and assembly metadata.
 
 .PARAMETER Version
     The new version to apply in 'Major.Minor' format (e.g., "8.0").
@@ -92,20 +92,16 @@ function Update-FileContent {
     }
 }
 
+# -------------------------------------------------------------
 # 1. Update setup\publish.ps1
+# -------------------------------------------------------------
 Update-FileContent `
     -Path (Join-Path $baseDir "setup\publish.ps1") `
     -Pattern '(\$version\s*=\s*")[^"]*(")' `
     -Replacement $Version
 
-# 2. Update src\Servy.Core\Config\AppConfig.cs
-Update-FileContent `
-    -Path (Join-Path $baseDir "src\Servy.Core\Config\AppConfig.cs") `
-    -Pattern '(public static readonly string Version\s*=\s*")[^"]*(";)' `
-    -Replacement $Version
-
 # -------------------------------------------------------------
-# 3. Update all AssemblyInfo.cs files (Recursive)
+# 2. Update all AssemblyInfo.cs files (Recursive)
 # -------------------------------------------------------------
 Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction SilentlyContinue | ForEach-Object {
     $path = $_.FullName
@@ -161,7 +157,9 @@ Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction Silen
     }
 }
 
-# 4. Update src\Servy.CLI\Servy.psd1
+# -------------------------------------------------------------
+# 3. Update src\Servy.CLI\Servy.psd1
+# -------------------------------------------------------------
 Update-FileContent `
     -Path (Join-Path $baseDir "src\Servy.CLI\Servy.psd1") `
     -Pattern "(ModuleVersion\s*=\s*')[^']*(')" `

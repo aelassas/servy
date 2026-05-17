@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Logging;
+using Servy.Core.Native;
 using Servy.Manager.Models;
 using System;
 using System.Collections.Generic;
@@ -108,7 +109,7 @@ namespace Servy.Manager.Utils
 
                         using (fs)
                         {
-                            var currentIdentity = GetFileIdentity(fs);
+                            var currentIdentity = NativeMethodsHelpers.GetFileIdentity(fs);
                             info.Refresh();
 
                             // 1. Initial attach or Post-Rotation setup
@@ -204,7 +205,7 @@ namespace Servy.Manager.Utils
                                             {
                                                 using (var checkFs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
                                                 {
-                                                    var pathIdentity = GetFileIdentity(checkFs);
+                                                    var pathIdentity = NativeMethodsHelpers.GetFileIdentity(checkFs);
                                                     if (pathIdentity.IsDifferentFrom(knownIdentity.Value))
                                                     {
                                                         rotated = true;
