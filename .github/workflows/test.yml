@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4.3.1
         with:
           fetch-depth: 0   # important, otherwise commit message won't be available          
           
@@ -163,7 +163,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         id: codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe #v5.5.4
         if: always()
         with:
           token: ${{ secrets.CODECOV_TOKEN }}          
@@ -176,7 +176,7 @@ jobs:
           
       - name: Notify Codecov Status in case of failure
         if: always() && steps.codecov.outcome != 'success'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b #v7.1.0
         with:
           script: |
             const issues = await github.rest.issues.listForRepo({
@@ -197,7 +197,7 @@ jobs:
 
       - name: Upload coverage to Coveralls
         id: coveralls
-        uses: coverallsapp/github-action@v2
+        uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b #v2.36
         if: always()
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -211,7 +211,7 @@ jobs:
 
       - name: Notify Coveralls Status in case of failure
         if: always() && steps.coveralls.outcome != 'success'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b #v7.1.0
         with:
           script: |
             const issues = await github.rest.issues.listForRepo({
