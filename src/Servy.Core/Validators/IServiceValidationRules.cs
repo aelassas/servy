@@ -21,6 +21,7 @@ namespace Servy.Core.Validators
         /// Optional password string used to verify that a user-entered password matches 
         /// the password stored in the <paramref name="dto"/>.
         /// </param>
+        /// <param name="importMode">Import mode flag to skip credentials validation.</param>
         /// <returns>
         /// A <see cref="ValidationResult"/> containing a collection of errors (blocking issues) 
         /// and warnings (non-blocking suggestions or length limit notifications).
@@ -44,6 +45,6 @@ namespace Servy.Core.Validators
         /// </item>
         /// </list>
         /// </remarks>
-        ValidationResult Validate(ServiceDto? dto, string? wrapperExePath = null, string? confirmPassword = "");
+        ValidationResult Validate(ServiceDto? dto, string? wrapperExePath = null, string? confirmPassword = "", bool importMode = false);
     }
 }

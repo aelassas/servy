@@ -41,7 +41,7 @@ namespace Servy.Manager.Validators
         public async Task<bool> Validate(ServiceDto dto)
         {
             // Delegate core validation logic to the centralized rules engine
-            var result = _serviceValidationRules.Validate(dto);
+            var result = _serviceValidationRules.Validate(dto, importMode: true);
 
             // Display critical errors first
             if (result.Errors.Any())
