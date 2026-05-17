@@ -30,6 +30,7 @@ jobs:
       CYCLONEDX_VERSION: "6.2.0"
       
       # Binary Version & Checksum Pins
+      CYCLONEDX_TOOL_HASH: "3473525381eee02a649b75bbf5b4f0ffa66112f62917aff798fed196e290a884" # the actual SHA256 hash of the CycloneDX nupkg
       CYCLONEDX_CLI_VERSION: "v0.31.0"
       CYCLONEDX_CLI_HASH: "da18bdb0d5b10a5f45ddfb59b7b08b11ddc050bb5c6407608d831929a1799d3f"
       INNO_SETUP_VERSION: "6.6.1"
@@ -89,7 +90,24 @@ jobs:
       - name: Install CycloneDX .NET Tool
         shell: pwsh
         run: |
-          dotnet tool install --global CycloneDX --version $env:CYCLONEDX_VERSION
+          # --- SECURITY CHECK: SHA256 PINNING FOR .NET TOOL ---
+          Write-Host "Downloading CycloneDX .NET Tool package for verification..."
+          $toolPkgUri = "https://www.nuget.org/api/v2/package/CycloneDX/$env:CYCLONEDX_VERSION"
+          $toolPkgDir = "$env:USERPROFILE\cyclonedx-tool"
+          New-Item -ItemType Directory -Force -Path $toolPkgDir | Out-Null
+          $toolPkgPath = "$toolPkgDir\CycloneDX.$env:CYCLONEDX_VERSION.nupkg"
+          Invoke-WebRequest -Uri $toolPkgUri -OutFile $toolPkgPath -ErrorAction Stop
+
+          Write-Host "Verifying SHA256 checksum of CycloneDX .NET Tool package..."
+          $actualToolHash = (Get-FileHash $toolPkgPath -Algorithm SHA256).Hash
+          if ($actualToolHash -ne $env:CYCLONEDX_TOOL_HASH) {
+              throw "Security Breach: CycloneDX .NET Tool hash mismatch! Expected: $($env:CYCLONEDX_TOOL_HASH), Got: $actualToolHash"
+          }
+          Write-Host "Tool package checksum verified successfully."
+          # ----------------------------------------------------
+
+          # Continue with the .NET tool installation using the verified local package source
+          dotnet tool install --global CycloneDX --version $env:CYCLONEDX_VERSION --add-source $toolPkgDir
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
 
       - name: Install CycloneDX CLI from GitHub
@@ -102,7 +120,11 @@ jobs:
           
           # Force a hard stop if the download fails (e.g., GitHub is down or version is wrong)
           $uri = "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe"
-          $outPath = "$env:USERPROFILE\cyclonedx.exe"
+          
+          # Isolate the binary in a dedicated subfolder to prevent broad PATH exposure
+          $cliDir = "$env:USERPROFILE\cyclonedx-cli"
+          New-Item -ItemType Directory -Force -Path $cliDir | Out-Null
+          $outPath = "$cliDir\cyclonedx.exe"
           
           Write-Host "Downloading CycloneDX CLI from $uri"
           Invoke-WebRequest -Uri $uri -OutFile $outPath -ErrorAction Stop
@@ -118,7 +140,8 @@ jobs:
           Write-Host "Checksum verified successfully."
           # --------------------------------------
           
-          Add-Content -Path $env:GITHUB_PATH -Value $env:USERPROFILE
+          # Append only the isolated subfolder to PATH
+          Add-Content -Path $env:GITHUB_PATH -Value $cliDir
 
       - name: Install Inno Setup from GitHub
         shell: pwsh
