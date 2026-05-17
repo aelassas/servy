@@ -163,8 +163,8 @@
   <data name="Msg_DescriptionLengthReached" xml:space="preserve">
     <value>Description exceeds {0} characters.</value>
   </data>
-  <data name="Msg_ArgumentsLengthReached" xml:space="preserve">
-    <value>Arguments exceed the Windows command-line limit of {0} characters.</value>
+  <data name="Msg_ArgumentsLengthReachedForField" xml:space="preserve">
+    <value>Arguments for field '{0}' exceed the Windows command-line limit of {1} characters.</value>
   </data>
   <data name="Msg_PasswordsDontMatch" xml:space="preserve">
     <value>Passwords don't match.</value>

@@ -704,7 +704,7 @@ namespace Servy.Service
         /// <item>
         /// <description>
         /// <b>Reboot Detection:</b> Compares the last write time of the restart file against the system boot time 
-        /// (calculated via <see cref="GetTickCount64"/>). If the file was modified before the current OS session, 
+        /// (calculated via <see cref="Environment.TickCount64"/>). If the file was modified before the current OS session, 
         /// the count is maintained because the service is likely starting due to a "Restart Computer" recovery action.
         /// </description>
         /// </item>
@@ -731,17 +731,10 @@ namespace Servy.Service
                 if (!File.Exists(_restartAttemptsFile)) return;
 
                 DateTime lastWriteUtc = File.GetLastWriteTimeUtc(_restartAttemptsFile);
-                DateTime systemBootTimeUtc;
 
-                try
-                {
-                    systemBootTimeUtc = DateTime.UtcNow - TimeSpan.FromMilliseconds(Environment.TickCount64);
-                }
-                catch (Exception ex)
-                {
-                    _logger?.Warn($"Could not derive boot time: {ex.Message}. Treating session as new boot.");
-                    systemBootTimeUtc = DateTime.MaxValue; // forces lastWriteUtc < systemBootTimeUtc => maintain counter
-                }
+                // Derive system boot time context directly. Arithmetic on a 64-bit millisecond tick counter 
+                // is mathematically protected against runtime overflow exceptions for ~292 million years.
+                DateTime systemBootTimeUtc = DateTime.UtcNow - TimeSpan.FromMilliseconds(Environment.TickCount64);
 
                 // 2. Session Persistence Check
                 // If the file's last modification occurred before the current system boot, 

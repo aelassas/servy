@@ -347,9 +347,11 @@ namespace Servy.Core.Services
                     var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: true, cancellationToken);
                     dto.Pid = serviceDto?.Pid;
 
-                    var totalWaitTime = (options.StopTimeout ?? AppConfig.ScmStopTimeoutFloorSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                    var previousWaitTime = (serviceDto?.PreviousStopTimeout ?? AppConfig.ScmStopTimeoutFloorSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                    totalWaitTime = Math.Max(Math.Max(totalWaitTime, previousWaitTime), AppConfig.ScmStopTimeoutFloorSeconds);
+                    var totalWaitTime = (options.StopTimeout.HasValue && options.StopTimeout.Value > AppConfig.ScmStopTimeoutFloorSeconds
+                        ? options.StopTimeout.Value : AppConfig.ScmStopTimeoutFloorSeconds) + AppConfig.ScmTimeoutBufferSeconds;
+                    var previousWaitTime = (serviceDto?.PreviousStopTimeout != null && serviceDto.PreviousStopTimeout.Value > AppConfig.ScmStopTimeoutFloorSeconds
+                        ? serviceDto.PreviousStopTimeout.Value : AppConfig.ScmStopTimeoutFloorSeconds) + AppConfig.ScmTimeoutBufferSeconds;
+                    totalWaitTime = Math.Max(totalWaitTime, previousWaitTime);
 
                     if (!string.IsNullOrEmpty(options.PreStopExePath))
                     {
@@ -643,8 +645,10 @@ namespace Servy.Core.Services
                     if (sc.Status == ServiceControllerStatus.Running)
                         return OperationResult.Success();
 
-                    timeout = (service.StartTimeout ?? AppConfig.DefaultServiceStartTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                    timeout = Math.Max(timeout, AppConfig.DefaultServiceStartTimeoutSeconds);
+                    timeout = ((service.StartTimeout.HasValue && service.StartTimeout.Value > AppConfig.DefaultServiceStartTimeoutSeconds)
+                        ? service.StartTimeout.Value : AppConfig.DefaultServiceStartTimeoutSeconds)
+                        + AppConfig.ScmTimeoutBufferSeconds;
+
                     if (!string.IsNullOrEmpty(service.PreLaunchExecutablePath))
                     {
                         timeout += service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds;

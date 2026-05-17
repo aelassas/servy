@@ -106,11 +106,11 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Arguments exceed the Windows command-line limit of {0} characters..
+        ///   Recherche une chaîne localisée semblable à Arguments for field &apos;{0}&apos; exceed the Windows command-line limit of {1} characters..
         /// </summary>
-        public static string Msg_ArgumentsLengthReached {
+        public static string Msg_ArgumentsLengthReachedForField {
             get {
-                return ResourceManager.GetString("Msg_ArgumentsLengthReached", resourceCulture);
+                return ResourceManager.GetString("Msg_ArgumentsLengthReachedForField", resourceCulture);
             }
         }
         
