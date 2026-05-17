@@ -3,6 +3,7 @@ using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Config;
 using Servy.Manager.Design;
+using Servy.Manager.Mappers;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
@@ -96,7 +97,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Command to copy the current Process ID to the clipboard.
         /// </summary>
-        public IAsyncCommand CopyPidCommand { get; set; }
+        public IAsyncCommand CopyPidCommand { get; }
 
         /// <summary>
         /// Command to refresh dependency tree.

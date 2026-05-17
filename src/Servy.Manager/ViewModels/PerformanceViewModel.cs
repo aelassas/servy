@@ -3,6 +3,7 @@ using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Manager.Config;
 using Servy.Manager.Design;
+using Servy.Manager.Mappers;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
@@ -147,7 +148,7 @@ namespace Servy.Manager.ViewModels
 
         #region Commands
 
-        public IAsyncCommand CopyPidCommand { get; set; }
+        public IAsyncCommand CopyPidCommand { get; }
 
         #endregion
 
@@ -173,7 +174,7 @@ namespace Servy.Manager.ViewModels
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
-            CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null, name: nameof(CopyPidAsync));
+            CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null, name: nameof(CopyPidCommand));
 
             InitTimer();
         }

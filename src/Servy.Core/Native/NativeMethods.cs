@@ -952,9 +952,8 @@ namespace Servy.Core.Native
         /// Probes a file to capture its unique identity using OS handles and cryptographic content digests.
         /// </summary>
         /// <param name="fs">The open file stream.</param>
-        /// <param name="logger">Optional logger to surface probe failures for observability.</param>
         /// <returns>A populated identity structure. Check <see cref="FILE_IDENTITY.IsValidHandleInfo"/> for success state.</returns>
-        public static FILE_IDENTITY GetFileIdentity(FileStream fs, IServyLogger? logger = null)
+        public static FILE_IDENTITY GetFileIdentity(FileStream fs)
         {
             var identity = new FILE_IDENTITY();
 
@@ -971,7 +970,7 @@ namespace Servy.Core.Native
             catch (Exception ex)
             {
                 // Surfaces P/Invoke failures or AccessViolation/ObjectDisposed exceptions
-                logger?.Debug($"GetFileIdentity: Kernel32 handle probe failed for '{fs.Name}'. Exception: {ex.GetType().Name} - {ex.Message}");
+                Logger.Debug($"GetFileIdentity: Kernel32 handle probe failed for '{fs.Name}'. Exception: {ex.GetType().Name} - {ex.Message}");
             }
 
             // 2. Prefix-Digest Content Probe
@@ -1017,7 +1016,7 @@ namespace Servy.Core.Native
             catch (Exception ex)
             {
                 // Surfaces Seek/Read failures (e.g. file truncated or locked by another process)
-                logger?.Debug($"GetFileIdentity: Prefix-digest probe failed for '{fs.Name}'. Exception: {ex.GetType().Name} - {ex.Message}");
+                Logger.Debug($"GetFileIdentity: Prefix-digest probe failed for '{fs.Name}'. Exception: {ex.GetType().Name} - {ex.Message}");
             }
 
             return identity;

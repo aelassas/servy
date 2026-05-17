@@ -6,6 +6,7 @@ using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Config;
+using Servy.Manager.Mappers;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Validators;
@@ -16,7 +17,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Threading;
 
 namespace Servy.Manager.Services
 {

@@ -23,7 +23,7 @@ namespace Servy.Core.Helpers
         /// <para>
         /// <b>CRITICAL:</b> Semicolons within the input string must be manually escaped with a backslash (e.g., <c>\;</c>) 
         /// before calling this method. If internal semicolons are not escaped, they will be treated as record 
-        /// delimiters by downstream parsers, such as the <see cref="Servy.Core.Security.EnvironmentVariableParser"/>.
+        /// delimiters by downstream parsers, such as the <see cref="Servy.Core.EnvironmentVariables.EnvironmentVariableParser"/>.
         /// </para>
         /// </remarks>
         public static string NormalizeString(string? str)
