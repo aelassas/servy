@@ -120,7 +120,7 @@ namespace Servy.Core.Helpers
             SecurityHelper.CreateSecureDirectory(AppConfig.ProgramDataPath, breakInheritance: true);
 
             // 5. Secure operational folders while respecting inheritance
-            string[] subFolders = new[] { dbFolder, aesKeyFolder, aesIVFolder }
+            string[] subFolders = new[] { dbFolder, aesKeyFolder, aesIVFolder, AppConfig.RecoveryFolderPath }
                 .Select(Path.GetFullPath)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();

@@ -539,11 +539,10 @@ namespace Servy.Service
 		/// <param name="options">The service startup options containing the service name.</param>
 		private void SetupAttemptsFile(StartOptions options)
 		{
-			var attemptsDir = Path.Combine(AppConfig.ProgramDataPath, "recovery");
-			SecurityHelper.CreateSecureDirectory(attemptsDir, breakInheritance: false); // ensures folder exists
+			SecurityHelper.CreateSecureDirectory(AppConfig.RecoveryFolderPath, breakInheritance: false); // ensures folder exists
 
 			string safeServiceName = MakeFilenameSafe(options.ServiceName);
-			_restartAttemptsFile = Path.Combine(attemptsDir, $"{safeServiceName}_restartAttempts.dat");
+			_restartAttemptsFile = Path.Combine(AppConfig.RecoveryFolderPath, $"{safeServiceName}_restartAttempts.dat");
 		}
 
 		/// <summary>
