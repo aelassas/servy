@@ -106,7 +106,7 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
-        public void SafeKillProcess_LogsWarningOnException()
+        public void SafeKillProcess_LogsErrorOnException()
         {
             var service = CreateService(
                 out var logger,
@@ -122,7 +122,7 @@ namespace Servy.Service.UnitTests
 
             service.InvokeSafeKillProcess(mockProcess.Object);
 
-            logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("SafeKillProcess error")), It.IsAny<Exception>()), Times.Once);
+            logger.Verify(l => l.Error(It.Is<string>(s => s.Equals("SafeKillProcess background task failed: Boom!")), It.IsAny<Exception>()), Times.Once);
         }
     }
 }

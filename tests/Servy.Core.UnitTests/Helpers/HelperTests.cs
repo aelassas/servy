@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.Core.Resources;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -644,29 +645,6 @@ namespace Servy.Core.UnitTests.Helpers
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern bool CreateDirectory(string lpPathName, IntPtr lpSecurityAttributes);
 
-        private static void CreateJunction(string junctionPath, string targetDir)
-        {
-            // DirectoryInfo doesn't expose a native link creation interface in older profiles, 
-            // so we use a safe management command or fallback wrapper for the test runner.
-            using (var process = new System.Diagnostics.Process())
-            {
-                process.StartInfo.FileName = "cmd.exe";
-                process.StartInfo.Arguments = $"/c mklink /J \"{junctionPath}\" \"{targetDir}\"";
-                process.StartInfo.CreateNoWindow = true;
-                process.StartInfo.UseShellExecute = false;
-                process.Start();
-                process.WaitForExit();
-            }
-        }
-
-        private static void DeleteJunction(string junctionPath)
-        {
-            if (Directory.Exists(junctionPath))
-            {
-                Directory.Delete(junctionPath, false);
-            }
-        }
-
         #endregion
 
         #region HasAncestorReparsePoint tests
@@ -702,6 +680,26 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.False(result);
         }
 
+        /// <summary>
+        /// Safely removes a directory symbolic link or junction point without disturbing the target directory's contents.
+        /// </summary>
+        /// <param name="linkPath">The path of the directory link to remove.</param>
+        private static void DeleteDirectoryLink(string linkPath)
+        {
+            if (!Directory.Exists(linkPath)) return;
+
+            try
+            {
+                // In modern .NET, passing recursive: false to Delete() on a reparse point
+                // safely unlinks it without deleting anything inside the targeted directory.
+                Directory.Delete(linkPath, recursive: false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to cleanly unlink directory reparse point at '{linkPath}': {ex.Message}");
+            }
+        }
+
         [Fact]
         public void HasAncestorReparsePoint_WhenImmediateParentIsJunctionOrSymlink_ReturnsTrue()
         {
@@ -709,13 +707,13 @@ namespace Servy.Core.UnitTests.Helpers
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
 
             // Arrange
-            string junctionSource = Path.Combine(_testRoot, "RealDirectory");
-            Directory.CreateDirectory(junctionSource);
+            string realDir = Path.Combine(_testRoot, "RealDirectory");
+            Directory.CreateDirectory(realDir);
 
             string junctionTarget = Path.Combine(_testRoot, "JunctionDir");
 
-            // Native helper method to establish a junction point without relying on CMD execution
-            CreateJunction(junctionTarget, junctionSource);
+            // Use native .NET link creation to guarantee stability and error visibility
+            Directory.CreateSymbolicLink(junctionTarget, realDir);
 
             try
             {
@@ -725,12 +723,22 @@ namespace Servy.Core.UnitTests.Helpers
                 bool result = Helper.HasAncestorReparsePoint(targetFilePath);
 
                 // Assert
-                // Branch Covered: (current.Attributes & FileAttributes.ReparsePoint) matches.
                 Assert.True(result);
             }
             finally
             {
-                DeleteJunction(junctionTarget);
+                // 1. Safe native unlink of the link point first to drop OS locks
+                DeleteDirectoryLink(junctionTarget);
+
+                // 2. Explicitly clean up the real directory source 
+                try
+                {
+                    if (Directory.Exists(realDir))
+                    {
+                        Directory.Delete(realDir, true);
+                    }
+                }
+                catch { /* fail silent in finally to protect test runner teardown */ }
             }
         }
 
@@ -744,11 +752,13 @@ namespace Servy.Core.UnitTests.Helpers
             Directory.CreateDirectory(realDir);
 
             string junctionDir = Path.Combine(_testRoot, "HiddenJunction");
-            CreateJunction(junctionDir, realDir);
+
+            // Establish the native directory link boundary
+            Directory.CreateSymbolicLink(junctionDir, realDir);
 
             try
             {
-                // Create nested directories inside the resolved structure to hide the junction 2 levels deep
+                // Create nested directories inside the resolved structure to hide the link 2 levels deep
                 string deepNestedPathInsideJunction = Path.Combine(junctionDir, "App_Data", "Logs");
                 Directory.CreateDirectory(deepNestedPathInsideJunction);
 
@@ -758,12 +768,22 @@ namespace Servy.Core.UnitTests.Helpers
                 bool result = Helper.HasAncestorReparsePoint(targetFilePath);
 
                 // Assert
-                // Branch Covered: current = current.Parent correctly loops upward until it strikes the reparse point.
                 Assert.True(result);
             }
             finally
             {
-                DeleteJunction(junctionDir);
+                // 1. Safe native unlink of the directory link first
+                DeleteDirectoryLink(junctionDir);
+
+                // 2. Explicitly clean up the actual data folder leftovers
+                try
+                {
+                    if (Directory.Exists(realDir))
+                    {
+                        Directory.Delete(realDir, true);
+                    }
+                }
+                catch { /* fail silent in finally */ }
             }
         }
 

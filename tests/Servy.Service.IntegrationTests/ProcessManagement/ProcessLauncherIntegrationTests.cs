@@ -141,7 +141,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
         [Theory]
         [InlineData("python.exe", true)]
-        [InlineData("script.py", true)]
+        [InlineData("python2.exe", true)]
+        [InlineData("python3.exe", true)]
+        [InlineData("python3.11.exe", true)]
         [InlineData("node.exe", false)]
         public void ApplyLanguageFixes_PythonDetection_AppliesEnvironmentVariables(string fileName, bool isPython)
         {

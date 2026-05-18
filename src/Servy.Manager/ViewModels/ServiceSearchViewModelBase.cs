@@ -170,6 +170,10 @@ namespace Servy.Manager.ViewModels
 
                 var results = await ServiceCommands.SearchServicesAsync(SearchText, false, token);
 
+                // Bail out if a newer search has superseded us, even if the inner call
+                // produced a result before noticing the cancellation.
+                if (token.IsCancellationRequested) return;
+
                 Services.Clear();
                 Services.AddRange(results.Select(CreateServiceItem));
             }

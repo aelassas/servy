@@ -229,7 +229,7 @@ namespace Servy.Core.Security
                         : payload.Slice(0, Math.Min(payload.Length, 8)).ToString();
                     throw new SecureDataIntegrityException($"Unsupported encryption version marker: '{markerSnippet}'");
                 }
-                catch (Exception ex) when (ex is FormatException || ex is CryptographicException)
+                catch (Exception ex) when (ex is FormatException || ex is CryptographicException || ex is SecureDataIntegrityException)
                 {
                     // We log the failure and re-throw. Upstream callers (UI/CLI) must handle this failure 
                     // to prevent the use of tampered or corrupted credentials.

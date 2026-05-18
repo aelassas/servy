@@ -71,6 +71,9 @@ namespace Servy.Manager.Models
             {
                 switch (Level)
                 {
+                    case EventLogLevel.Critical:
+                        return IconBase + "Error.png"; // or "Critical.png" if a dedicated asset is added
+
                     case EventLogLevel.Warning:
                         return IconBase + "Warning.png";
 
@@ -78,6 +81,7 @@ namespace Servy.Manager.Models
                         return IconBase + "Error.png";
 
                     case EventLogLevel.Information:
+                    case EventLogLevel.Verbose:
                     default:
                         // LOGIC: Fallback to Information icon for default cases
                         return IconBase + "Info.png";
