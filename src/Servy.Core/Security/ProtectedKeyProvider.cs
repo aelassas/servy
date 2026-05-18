@@ -33,12 +33,6 @@ namespace Servy.Core.Security
         private static readonly DataProtectionScope DataProtectionScope = DataProtectionScope.LocalMachine;
 
         /// <summary>
-        /// Synchronization object used to prevent race conditions during file I/O operations,
-        /// ensuring thread-safe generation and storage of key material.
-        /// </summary>
-        private static readonly object FileLock = new object();
-
-        /// <summary>
         /// Caches the machine-unique entropy to optimize performance and ensure thread-safe initialization.
         /// </summary>
         /// <remarks>
@@ -223,8 +217,8 @@ namespace Servy.Core.Security
         /// A decrypted byte array containing the raw keying material.
         /// </returns>
         /// <remarks>
-        /// This method implements a thread-safe Double-Check Locking pattern to prevent multiple threads from 
-        /// generating conflicting keys simultaneously during initial setup.
+        /// This method implements a process-safe Double-Check Locking pattern using a global system mutex 
+        /// to prevent multiple concurrent Servy executables from generating conflicting cryptographic keys.
         /// </remarks>
         /// <exception cref="InvalidOperationException">
         /// Thrown when the data cannot be unprotected. This usually occurs if the file was created 
@@ -232,16 +226,50 @@ namespace Servy.Core.Security
         /// </exception>
         private byte[] GetOrGenerate(string path, int length)
         {
-            // Double-check locking pattern to ensure only one thread generates the file
+            // Double-check locking pattern to ensure only one process or thread generates the file
             if (!File.Exists(path))
             {
-                lock (FileLock)
+                // Compute a deterministic FNV-1a stable hash of the path to avoid process-randomized string.GetHashCode() anomalies
+                uint stableHash = 2166136261;
+                foreach (char c in path.ToLowerInvariant())
                 {
-                    if (!File.Exists(path))
+                    stableHash = (stableHash ^ c) * 16777619;
+                }
+                var mutexName = $"Global\\Servy.ProtectedKeyProvider:{stableHash:X8}";
+
+                Mutex mutex;
+                try
+                {
+                    mutex = new Mutex(initiallyOwned: false, mutexName);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // Fallback to Local session isolation namespace if access to Global is restricted by local sandboxing policies
+                    var localMutexName = $"Local\\Servy.ProtectedKeyProvider:{stableHash:X8}";
+                    mutex = new Mutex(initiallyOwned: false, localMutexName);
+                }
+
+                using (mutex)
+                {
+                    bool owned = false;
+                    try
                     {
-                        var data = GenerateRandomBytes(length);
-                        SaveProtected(path, data);
-                        return data;
+                        owned = mutex.WaitOne(TimeSpan.FromSeconds(30));
+                        if (!owned)
+                        {
+                            throw new TimeoutException($"Timed out waiting for cross-process lock on {path}");
+                        }
+
+                        if (!File.Exists(path))
+                        {
+                            var data = GenerateRandomBytes(length);
+                            SaveProtected(path, data);
+                            return data;
+                        }
+                    }
+                    finally
+                    {
+                        if (owned) mutex.ReleaseMutex();
                     }
                 }
             }
