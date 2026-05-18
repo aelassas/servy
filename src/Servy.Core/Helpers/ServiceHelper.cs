@@ -38,21 +38,33 @@ namespace Servy.Core.Helpers
         /// <inheritdoc />
         public List<string> GetRunningServyUIServices()
         {
-            var wrapperExe = AppConfig.ServyServiceUIExe;
-            var services = GetRunningServices(wrapperExe);
-            return services;
+            var wrapperExes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                AppConfig.ServyServiceUIExe
+            };
+            return GetRunningServices(wrapperExes);
         }
 
         /// <inheritdoc />
         public List<string> GetRunningServyCLIServices()
         {
-            var wrapperExe = AppConfig.ServyServiceCLIExe;
-            var services = GetRunningServices(wrapperExe);
-            return services;
+            var wrapperExes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                AppConfig.ServyServiceCLIExe
+            };
+            return GetRunningServices(wrapperExes);
         }
 
         /// <inheritdoc />
-        public List<string> GetRunningServyServices() => GetRunningServyUIServices().Concat(GetRunningServyCLIServices()).ToList();
+        public List<string> GetRunningServyServices()
+        {
+            var wrapperExes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                AppConfig.ServyServiceUIExe,
+                AppConfig.ServyServiceCLIExe
+            };
+            return GetRunningServices(wrapperExes);
+        }
 
         /// <inheritdoc />
         public async Task StartServices(IEnumerable<string> services, CancellationToken cancellationToken = default)
@@ -254,21 +266,21 @@ namespace Servy.Core.Helpers
 
         /// <summary>
         /// Queries the Service Control Manager (SCM) and Windows Registry to find all active services 
-        /// associated with a specific executable.
+        /// associated with a specific set of executables.
         /// </summary>
-        /// <param name="wrapperExe">The filename of the executable to search for (e.g., "Servy.Service.exe").</param>
-        /// <returns>A list containing the names of all currently running services that match the specified executable.</returns>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="wrapperExe"/> is null, empty, or whitespace.</exception>
+        /// <param name="wrapperExes">The set of executable filenames to search for (e.g., "Servy.Service.exe").</param>
+        /// <returns>A list containing the names of all currently running services that match any of the specified executables.</returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="wrapperExes"/> is null or empty.</exception>
         /// <exception cref="InvalidOperationException">Thrown when an unexpected error occurs while querying the SCM or Registry.</exception>
         /// <remarks>
         /// This method bypasses prevents COM timeout issues in large-scale deployments. 
         /// It reads the <c>ImagePath</c> directly from the Registry, expands environment variables, 
         /// and safely parses out executable paths that contain quotes or command-line arguments.
         /// </remarks>
-        private List<string> GetRunningServices(string wrapperExe)
+        private List<string> GetRunningServices(HashSet<string> wrapperExes)
         {
-            if (string.IsNullOrWhiteSpace(wrapperExe))
-                throw new ArgumentException("Wrapper executable name must be provided.", nameof(wrapperExe));
+            if (wrapperExes == null || wrapperExes.Count == 0)
+                throw new ArgumentException("At least one wrapper executable name must be provided.", nameof(wrapperExes));
 
             var result = new List<string>();
 
@@ -333,13 +345,12 @@ namespace Servy.Core.Helpers
                             try
                             {
                                 var exeName = Path.GetFileName(exePath);
-                                if (string.Equals(exeName, wrapperExe, StringComparison.OrdinalIgnoreCase))
+                                if (wrapperExes.Contains(exeName))
                                 {
                                     result.Add(sc.ServiceName);
                                 }
                             }
                             catch (ArgumentException) { /* Handle invalid paths gracefully */ }
-
                         }
                     }
                 }
@@ -353,8 +364,9 @@ namespace Servy.Core.Helpers
             {
                 // Wrap any SCM/registry failure in a deterministic exception type so callers
                 // can distinguish a query failure from a successful empty result.
+                var exeNames = string.Join(", ", wrapperExes);
                 throw new InvalidOperationException(
-                    $"Failed to query services for {wrapperExe} via SCM/Registry.", ex);
+                    $"Failed to query services for [{exeNames}] via SCM/Registry.", ex);
             }
 
             return result;

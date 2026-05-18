@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using Servy.CLI.Commands;
 using Servy.CLI.Helpers;
+using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Validators;
 using Servy.Core.Config;
@@ -232,16 +233,13 @@ namespace Servy.CLI
                         }
                     }
 
-                    if (quiet)
+                    // Helper to defer runtime execution (DB Init, Extraction) until AFTER successful argument parsing
+                    async Task<int> ExecuteWithRuntimeAsync(Func<Task<CommandResult>> commandAction)
                     {
-                        await Run();
-                    }
-                    else
-                    {
-                        await ConsoleHelper.RunWithLoadingAnimation(async () =>
-                        {
-                            await Run();
-                        });
+                        if (quiet) await Run();
+                        else await ConsoleHelper.RunWithLoadingAnimation(async () => { await Run(); });
+
+                        return await PrintAndReturnAsync(commandAction());
                     }
 
                     var parser = new Parser(with =>
@@ -260,14 +258,14 @@ namespace Servy.CLI
                         ImportServiceOptions
                         >(args)
                         .MapResult(
-                            async (Options.InstallServiceOptions opts) => await PrintAndReturnAsync(installCommand.ExecuteAsync(opts, cts.Token)),
-                            async (UninstallServiceOptions opts) => await PrintAndReturnAsync(uninstallCommand.ExecuteAsync(opts, cts.Token)),
-                            async (StartServiceOptions opts) => await PrintAndReturnAsync(startCommand.ExecuteAsync(opts, cts.Token)),
-                            async (StopServiceOptions opts) => await PrintAndReturnAsync(stopCommand.ExecuteAsync(opts, cts.Token)),
-                            async (RestartServiceOptions opts) => await PrintAndReturnAsync(restartCommand.ExecuteAsync(opts, cts.Token)),
-                            async (ServiceStatusOptions opts) => await PrintAndReturnAsync(Task.FromResult(serviceStatusCommand.Execute(opts, cts.Token))),
-                            async (ExportServiceOptions opts) => await PrintAndReturnAsync(exportCommand.ExecuteAsync(opts, cts.Token)),
-                            async (ImportServiceOptions opts) => await PrintAndReturnAsync(importCommand.ExecuteAsync(opts, cts.Token)),
+                            async (Options.InstallServiceOptions opts) => await ExecuteWithRuntimeAsync(() => installCommand.ExecuteAsync(opts, cts.Token)),
+                            async (UninstallServiceOptions opts) => await ExecuteWithRuntimeAsync(() => uninstallCommand.ExecuteAsync(opts, cts.Token)),
+                            async (StartServiceOptions opts) => await ExecuteWithRuntimeAsync(() => startCommand.ExecuteAsync(opts, cts.Token)),
+                            async (StopServiceOptions opts) => await ExecuteWithRuntimeAsync(() => stopCommand.ExecuteAsync(opts, cts.Token)),
+                            async (RestartServiceOptions opts) => await ExecuteWithRuntimeAsync(() => restartCommand.ExecuteAsync(opts, cts.Token)),
+                            async (ServiceStatusOptions opts) => await ExecuteWithRuntimeAsync(() => Task.FromResult(serviceStatusCommand.Execute(opts, cts.Token))),
+                            async (ExportServiceOptions opts) => await ExecuteWithRuntimeAsync(() => exportCommand.ExecuteAsync(opts, cts.Token)),
+                            async (ImportServiceOptions opts) => await ExecuteWithRuntimeAsync(() => importCommand.ExecuteAsync(opts, cts.Token)),
                             // Wrap synchronous error result in Task
                             errs =>
                             {
