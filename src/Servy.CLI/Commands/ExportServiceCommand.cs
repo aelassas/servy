@@ -123,34 +123,29 @@ namespace Servy.CLI.Commands
                 throw new SecurityException("Security Alert: Exporting to UNC paths is prohibited to prevent data exfiltration.");
             }
 
-            // 4. Link/Junction Resolution
-            // We resolve the final path to ensure that NTFS redirection (junctions/symlinks) 
-            // isn't being used to hide a destination inside a protected system folder.
+            // 4. Reparse Point Guard (Directory and File Level)
+            // Hardening: We explicitly block reparse points (symlinks/junctions) at both the directory 
+            // and file level to prevent path redirection attacks and UNC bypasses.
             string finalResolvedPath = fullPath;
             string? directoryPath = Path.GetDirectoryName(fullPath);
 
             if (!string.IsNullOrEmpty(directoryPath) && Directory.Exists(directoryPath))
             {
                 var dirInfo = new DirectoryInfo(directoryPath);
-
-                // Iteratively resolve link targets to handle chained junctions
-                while (!string.IsNullOrEmpty(dirInfo.LinkTarget))
+                if (!string.IsNullOrEmpty(dirInfo.LinkTarget) || (dirInfo.Exists && (dirInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint))
                 {
-                    var target = dirInfo.ResolveLinkTarget(true);
-                    if (target is DirectoryInfo resolvedDir)
-                    {
-                        dirInfo = resolvedDir;
-                    }
-                    else
-                    {
-                        break;
-                    }
+                    throw new SecurityException("Security Alert: Exporting configurations through directory junctions or symlinks is prohibited to prevent path redirection attacks.");
                 }
+            }
 
-                finalResolvedPath = Path.Combine(dirInfo.FullName, Path.GetFileName(fullPath));
+            var fileLinkInfo = new FileInfo(fullPath);
+            if (!string.IsNullOrEmpty(fileLinkInfo.LinkTarget) || (fileLinkInfo.Exists && (fileLinkInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint))
+            {
+                throw new SecurityException("Security Alert: Exporting configurations through file symbolic links or junctions is prohibited to prevent path redirection attacks.");
             }
 
             // Re-apply UNC guard on the *resolved* path to defeat junction-based bypass.
+            // (Retained as defense-in-depth)
             bool resolvedIsUnc =
                 finalResolvedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
                 (Uri.TryCreate(finalResolvedPath, UriKind.Absolute, out var resolvedUri) && resolvedUri.IsUnc);
@@ -176,11 +171,11 @@ namespace Servy.CLI.Commands
             // 6. System Protection: Block writing to critical Windows directories
             string[] protectedFolders =
             {
-                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
-                Environment.GetFolderPath(Environment.SpecialFolder.System),
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-            };
+                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                 Environment.GetFolderPath(Environment.SpecialFolder.System),
+                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+             };
 
             // We use finalResolvedPath here to catch junction-based bypasses.
             var violatedFolder = protectedFolders
@@ -195,14 +190,14 @@ namespace Servy.CLI.Commands
             }
 
             // 7. Directory Creation
-            string? parentDir = Path.GetDirectoryName(fullPath);
+            string? parentDir = Path.GetDirectoryName(finalResolvedPath);
             if (!string.IsNullOrEmpty(parentDir) && !Directory.Exists(parentDir))
             {
                 Directory.CreateDirectory(parentDir);
             }
 
             // 8. Final Atomic Write
-            Helper.WriteFileAtomic(fullPath, stream =>
+            Helper.WriteFileAtomic(finalResolvedPath, stream =>
             {
                 // Use the overload: (Stream, Encoding, BufferSize, LeaveOpen)
                 // 1024 is the default buffer size; true keeps the FileStream alive for WriteFileAtomic.

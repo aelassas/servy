@@ -103,33 +103,33 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(errorMsg);
                 }
 
-                // Link/Junction Resolution
-                // Resolve the final path to ensure NTFS redirection isn't hiding a malicious source
+                // Reparse Point Guard (Directory and File Level)
+                // Hardening: We explicitly block reparse points (symlinks/junctions) at both the directory 
+                // and file level to prevent path redirection attacks and UNC bypasses.
                 string finalResolvedPath = fullPath;
                 string? directoryPath = Path.GetDirectoryName(fullPath);
 
                 if (!string.IsNullOrEmpty(directoryPath) && Directory.Exists(directoryPath))
                 {
                     var dirInfo = new DirectoryInfo(directoryPath);
-
-                    // Iteratively resolve link targets to handle chained junctions
-                    while (!string.IsNullOrEmpty(dirInfo.LinkTarget))
+                    if (!string.IsNullOrEmpty(dirInfo.LinkTarget) || (dirInfo.Exists && (dirInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint))
                     {
-                        var target = dirInfo.ResolveLinkTarget(true);
-                        if (target is DirectoryInfo resolvedDir)
-                        {
-                            dirInfo = resolvedDir;
-                        }
-                        else
-                        {
-                            break;
-                        }
+                        var errorMsg = "Security Alert: Importing configurations through directory junctions or symlinks is prohibited to prevent path redirection attacks.";
+                        Logger.Error(errorMsg);
+                        return CommandResult.Fail(errorMsg);
                     }
+                }
 
-                    finalResolvedPath = Path.Combine(dirInfo.FullName, Path.GetFileName(fullPath));
+                var fileLinkInfo = new FileInfo(fullPath);
+                if (!string.IsNullOrEmpty(fileLinkInfo.LinkTarget) || (fileLinkInfo.Exists && (fileLinkInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint))
+                {
+                    var errorMsg = "Security Alert: Importing configurations through file symbolic links or junctions is prohibited to prevent path redirection attacks.";
+                    Logger.Error(errorMsg);
+                    return CommandResult.Fail(errorMsg);
                 }
 
                 // Re-apply UNC guard on the *resolved* path to defeat junction-based bypass.
+                // (Retained as defense-in-depth)
                 bool resolvedIsUnc =
                     finalResolvedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
                     (Uri.TryCreate(finalResolvedPath, UriKind.Absolute, out var resolvedUri) && resolvedUri.IsUnc);
@@ -156,11 +156,11 @@ namespace Servy.CLI.Commands
                 // System Protection: Block reading from critical Windows directories to prevent pulling unintended system files
                 string[] protectedFolders =
                 {
-                    Environment.GetFolderPath(Environment.SpecialFolder.Windows),
-                    Environment.GetFolderPath(Environment.SpecialFolder.System),
-                    Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                    Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-                };
+                     Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                     Environment.GetFolderPath(Environment.SpecialFolder.System),
+                     Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                     Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+                 };
 
                 var violatedFolder = protectedFolders
                     .FirstOrDefault(folder => !string.IsNullOrEmpty(folder) &&
