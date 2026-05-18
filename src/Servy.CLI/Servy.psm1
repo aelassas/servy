@@ -315,6 +315,11 @@ function Invoke-ServyCli {
     $psi.RedirectStandardError = $true
     $psi.CreateNoWindow = $true
 
+    if ($psi.PSObject.Properties.Match('StandardOutputEncoding').Count -gt 0) {
+        $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+        $psi.StandardErrorEncoding  = [System.Text.Encoding]::UTF8
+    }
+
     # SECURITY: Inject environment variables securely directly into the child process block
     if ($EnvironmentVariables) {
       foreach ($key in $EnvironmentVariables.Keys) {
@@ -1029,7 +1034,7 @@ function Install-ServyService {
     [string] $Deps,
 
     # Identity
-    [ValidatePattern('^.+\\.+$')]
+    [ValidateNotNullOrEmpty()]
     [string] $User,
 
     [ValidateNotNullOrEmpty()]

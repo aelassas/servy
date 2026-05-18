@@ -45,6 +45,11 @@ namespace Servy.Service.Helpers
             // --- System Integrity ---
             "PATH", "COMSPEC", "SYSTEMROOT", "WINDIR", "SYSTEMDRIVE", "TEMP", "TMP", "PATHEXT",
   
+            // --- Profile / Identity Redirection ---
+            "APPDATA", "LOCALAPPDATA", "PUBLIC",
+            "HOMEDRIVE", "HOMEPATH", "HOME",
+            "USERDOMAIN", "USERDOMAIN_ROAMINGPROFILE", "LOGONSERVER",
+
             // --- User & Profile Integrity ---
             "USERNAME", "USERPROFILE", "ALLUSERSPROFILE", "PROGRAMDATA", "PSMODULEPATH",
 

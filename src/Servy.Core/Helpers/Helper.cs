@@ -450,9 +450,9 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="path">The full destination path where the file should be written.</param>
         /// <param name="writer">An asynchronous function that receives a <see cref="Stream"/> to write content.</param>
-        /// <param name="ct">An optional cancellation token to abort the operation.</param>
+        /// <param name="cancellationToken">An optional cancellation token to abort the operation.</param>
         /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
-        private static async ValueTask WriteFileAtomicCore(string path, Func<Stream, ValueTask> writer, CancellationToken ct = default)
+        private static async ValueTask WriteFileAtomicCore(string path, Func<Stream, ValueTask> writer, CancellationToken cancellationToken = default)
         {
             var dir = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(dir))
@@ -469,7 +469,7 @@ namespace Servy.Core.Helpers
                 {
                     // ConfigureAwait(false) is used here as we do not require the captured synchronization context.
                     await writer(fs).ConfigureAwait(false);
-                    await fs.FlushAsync(ct).ConfigureAwait(false);
+                    await fs.FlushAsync(cancellationToken).ConfigureAwait(false);
                 }
 
                 // Ensure the existing file isn't Read-Only, which causes Error 5
@@ -478,6 +478,7 @@ namespace Servy.Core.Helpers
                 int retries = AppConfig.WriteFileAtomicMaxRetries;
                 while (true)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     try
                     {
                         // On NTFS, moving within the same volume is an atomic metadata operation.
@@ -488,7 +489,7 @@ namespace Servy.Core.Helpers
                     {
                         retries--;
                         // Asynchronous delay to keep the thread pool unblocked during retries.
-                        await Task.Delay(AppConfig.WriteFileAtomicRetryDelayMs, ct).ConfigureAwait(false);
+                        await Task.Delay(AppConfig.WriteFileAtomicRetryDelayMs, cancellationToken).ConfigureAwait(false);
                     }
                 }
             }
@@ -625,9 +626,15 @@ namespace Servy.Core.Helpers
         /// based on the current working directory. It then trims any trailing <see cref="Path.DirectorySeparatorChar"/> 
         /// to ensure consistent path comparison and storage in the database.
         /// </remarks>
-        public static string? NormalizePath(string? p) =>
-            string.IsNullOrWhiteSpace(p) ? null : Path.GetFullPath(p).TrimEnd(Path.DirectorySeparatorChar);
-
+        public static string? NormalizePath(string? p)
+        {
+            if (string.IsNullOrWhiteSpace(p)) return null;
+            var full = Path.GetFullPath(p);
+            // Don't strip the root \ from a drive root like "C:\\" or "\\server\share\\"
+            if (Path.GetPathRoot(full)?.Equals(full, StringComparison.OrdinalIgnoreCase) == true)
+                return full;
+            return full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        }
 
         /// <summary>
         /// Recursively walks up the directory tree to determine if the specified path resides 
@@ -646,7 +653,11 @@ namespace Servy.Core.Helpers
         /// </remarks>
         public static bool HasAncestorReparsePoint(string fullPath)
         {
-            var current = new DirectoryInfo(Path.GetDirectoryName(fullPath)!);
+            var parentPath = Path.GetDirectoryName(fullPath);
+            if (string.IsNullOrEmpty(parentPath))
+                return false; // drive root or UNC share root - no ancestors to inspect
+
+            var current = new DirectoryInfo(parentPath);
             while (current != null && current.Exists)
             {
                 if (!string.IsNullOrEmpty(current.LinkTarget) ||
