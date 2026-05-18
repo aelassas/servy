@@ -100,7 +100,7 @@ namespace Servy.CLI.Commands
         /// Safely persists the exported service configuration to a user-defined file path.
         /// Validates that the target is a supported file type, not a UNC path, 
         /// not a reserved device name, and not a protected system location.
-        /// Resolves NTFS junctions and symlinks to prevent path traversal bypasses.
+        /// Blocks NTFS junctions and symlinks to prevent path traversal bypasses.
         /// </summary>
         /// <param name="userPath">The target file path provided via the CLI.</param>
         /// <param name="content">The serialized configuration string.</param>
@@ -128,9 +128,10 @@ namespace Servy.CLI.Commands
                 throw new SecurityException("Security Alert: Exporting to UNC paths is prohibited to prevent data exfiltration.");
             }
 
-            // 4. Link/Junction Resolution
-            // We resolve the final path to ensure that NTFS redirection (junctions/symlinks) 
-            // isn't being used to hide a destination inside a protected system folder.
+            // 4. Reparse Point Guard (Directory and File Level)
+            // Note: .NET Framework 4.8 lacks native LinkTarget resolution. We explicitly block 
+            // reparse points (symlinks/junctions) at both the directory and file level to prevent 
+            // path redirection attacks and UNC bypasses.
             string finalResolvedPath = fullPath;
             string directoryPath = Path.GetDirectoryName(fullPath);
 
@@ -138,16 +139,23 @@ namespace Servy.CLI.Commands
             {
                 var dirInfo = new DirectoryInfo(directoryPath);
 
-                // Guard against junctions and symlinks
+                // Guard against directory junctions and symlinks
                 if ((dirInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
                 {
-                    throw new SecurityException("Security Alert: Importing configurations through directory junctions or symlinks is prohibited to prevent path redirection attacks.");
+                    throw new SecurityException("Security Alert: Exporting configurations through directory junctions or symlinks is prohibited to prevent path redirection attacks.");
                 }
+            }
 
-                finalResolvedPath = Path.Combine(dirInfo.FullName, Path.GetFileName(fullPath));
+            var fileLinkInfo = new FileInfo(fullPath);
+
+            // Guard against file-level symbolic links
+            if (fileLinkInfo.Exists && (fileLinkInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+            {
+                throw new SecurityException("Security Alert: Exporting configurations through file symbolic links or junctions is prohibited to prevent path redirection attacks.");
             }
 
             // Re-apply UNC guard on the *resolved* path to defeat junction-based bypass.
+            // (Retained as defense-in-depth even with the reparse point block)
             bool resolvedIsUnc =
                 finalResolvedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
                 (Uri.TryCreate(finalResolvedPath, UriKind.Absolute, out var resolvedUri) && resolvedUri.IsUnc);
@@ -173,11 +181,11 @@ namespace Servy.CLI.Commands
             // 6. System Protection: Block writing to critical Windows directories
             string[] protectedFolders =
             {
-                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
-                Environment.GetFolderPath(Environment.SpecialFolder.System),
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-            };
+                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                 Environment.GetFolderPath(Environment.SpecialFolder.System),
+                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+             };
 
             // We use finalResolvedPath here to catch junction-based bypasses.
             var violatedFolder = protectedFolders
@@ -192,14 +200,14 @@ namespace Servy.CLI.Commands
             }
 
             // 7. Directory Creation
-            string parentDir = Path.GetDirectoryName(fullPath);
+            string parentDir = Path.GetDirectoryName(finalResolvedPath);
             if (!string.IsNullOrEmpty(parentDir) && !Directory.Exists(parentDir))
             {
                 Directory.CreateDirectory(parentDir);
             }
 
             // 8. Final Atomic Write
-            Helper.WriteFileAtomic(fullPath, stream =>
+            Helper.WriteFileAtomic(finalResolvedPath, stream =>
             {
                 // Use the overload: (Stream, Encoding, BufferSize, LeaveOpen)
                 // 1024 is the default buffer size; true keeps the FileStream alive for WriteFileAtomic.
