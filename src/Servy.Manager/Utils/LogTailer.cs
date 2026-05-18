@@ -165,7 +165,9 @@ namespace Servy.Manager.Utils
                                             if (batch.Count >= AppConfig.LogTailerBatchFlushThreshold)
                                             {
                                                 OnNewLines?.Invoke(batch);
-                                                batch.Clear(); // Optimized memory reuse
+                                                // FIX: Hand ownership to the async consumer and allocate a fresh buffer
+                                                // to prevent cross-thread collection modification or data loss.
+                                                batch = new List<LogLine>(AppConfig.LogTailerBatchFlushThreshold);
                                             }
 
                                             // FIX: Track the position of yielded lines using a 1-byte LF ('\n') assumption.

@@ -206,7 +206,7 @@ jobs:
           git fetch upstream master
           git checkout -B master upstream/master
           
-          if (git show-ref --verify --quiet "refs/heads/$branchName") {
+          if (git rev-parse --verify --quiet "refs/heads/$branchName" 2>$null) {
               git branch -D $branchName
           }
           git checkout -b $branchName

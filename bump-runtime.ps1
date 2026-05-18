@@ -10,6 +10,8 @@ inside:
 - Inno Setup files (*.iss)
 - .csproj project files
 - src/Servy.Core/Config/AppConfig.cs
+- .github/workflows/*.yml
+- global.json
 
 Use -DryRun to preview changes without modifying anything.
 
@@ -133,11 +135,20 @@ $bulkFiles = Get-ChildItem -Path $baseDir -Recurse -Include *.ps1, *.iss, *.cspr
     Where-Object { $_.FullName -notmatch '[\\/](bin|obj|packages|node_modules|\.git|TestResults)[\\/]' }
 Update-Files -Files $bulkFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
 
-# 2. Specific Config/Workflow updates (Safe Pathing)
+# 2. Specific Config/Workflow updates (Safe Pathing & Broadened Workflows)
 $specificFiles = @(
-    (Join-Path $baseDir "src\Servy.Core\Config\AppConfig.cs"),
-    (Join-Path $baseDir ".github\workflows\publish.yml")
+    (Join-Path $baseDir "src\Servy.Core\Config\AppConfig.cs")
 )
+
+# Defend against future workflow files by sweeping the entire .github/workflows directory
+$workflowsDir = Join-Path $baseDir ".github\workflows"
+if (Test-Path $workflowsDir) {
+    $workflowFiles = Get-ChildItem -Path $workflowsDir -Filter *.yml -ErrorAction SilentlyContinue
+    if ($workflowFiles) {
+        $specificFiles += $workflowFiles.FullName
+    }
+}
+
 Update-Files -Files $specificFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
 
 # 3. GitHub Action specific update
@@ -149,11 +160,21 @@ $actionReplacement = "`${1}$Version`${2}"
 
 Update-Files -Files @($actionFile) -Pattern $actionPattern -Replacement $actionReplacement -DryRun:$DryRun
 
+# 4. Update global.json SDK version to match the new TFM major via regex to perfectly preserve original file formatting
+$globalJsonFile = Join-Path $baseDir "global.json"
+if (Test-Path $globalJsonFile) {
+    # Captures the JSON property context and ensures we do not cross boundaries or break numerical groupings
+    $globalJsonPattern = '("version"\s*:\s*")\d+\.\d+'
+    $globalJsonReplacement = "`${1}$Version"
+    
+    Update-Files -Files @($globalJsonFile) -Pattern $globalJsonPattern -Replacement $globalJsonReplacement -DryRun:$DryRun
+}
+
 # -----------------------------
 # Summary
 # -----------------------------
 Write-Host "`n========================================="
-Write-Host "              SUMMARY"
+Write-Host "            SUMMARY"
 Write-Host "========================================="
 Write-Host "Files scanned:      $script:totalFilesScanned"
 Write-Host "Files modified:     $script:filesModified"
@@ -172,4 +193,4 @@ if ($DryRun) {
     Write-Host "`nDry run complete. No files were modified." -ForegroundColor Yellow
 } else {
     Write-Host "`n.NET runtime migration to v$Version successful." -ForegroundColor Green
-} 
+}

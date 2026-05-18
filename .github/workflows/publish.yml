@@ -54,15 +54,12 @@ jobs:
         shell: pwsh
         id: get_version
         run: |
-          $buildConfig = "setup/build-config.ps1"
-          if (-not (Test-Path $buildConfig)) { throw "Cannot find $buildConfig" }
-          $line = Get-Content $buildConfig | Where-Object { $_ -match '^\s*Version\s*=\s*"(.*)"' }
-          if (-not $line) { throw "Version line not found in $buildConfig" }
-          $v = ([regex]::Match($line, '"(.*)"')).Groups[1].Value
-          if (-not $v) { throw "Failed to extract version" }
-          Write-Host "Version found: $v"
+          $cfg = & setup/build-config.ps1
+          if (-not $cfg.Version) { throw "Version missing from setup/build-config.ps1" }
+          if ($cfg.Version -notmatch '^\d+\.\d+$') { throw "Version format invalid: $($cfg.Version)" }
+          Write-Host "Version: $($cfg.Version)"
           # proper output export
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$v"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$($cfg.Version)"
 
       - name: Set VERSION env
         shell: pwsh

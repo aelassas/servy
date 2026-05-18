@@ -105,7 +105,18 @@ Get-Content $configPath | ForEach-Object {
     if ($_ -match "^\s*#") { return }
     if ($_ -match "^\s*$") { return }
     if ($_ -match "^\s*([^=]+)=(.*)$") {
-        $config[$matches[1].Trim().ToUpperInvariant()] = $matches[2].Trim()
+        $key = $matches[1].Trim().ToUpperInvariant()
+        $val = $matches[2]
+
+        # Strip inline comments (require leading whitespace so '#' inside structural tokens is preserved)
+        $val = ($val -replace '\s+#.*$', '').Trim()
+
+        # Strip surrounding quotes if present
+        if ($val -match '^"(.*)"$' -or $val -match "^'(.*)'$") { 
+            $val = $matches[1] 
+        }
+
+        $config[$key] = $val
     }
 }
 
