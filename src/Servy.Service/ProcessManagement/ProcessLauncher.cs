@@ -364,12 +364,8 @@ namespace Servy.Service.ProcessManagement
             string fileNameOnly = Path.GetFileNameWithoutExtension(psi.FileName);
 
             // Python Logic: 
-            // Matches 'python', 'pythonw', or 'python3.x' patterns, plus .py scripts.
-            bool isPython =
-                string.Equals(fileNameOnly, "python", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(fileNameOnly, "pythonw", StringComparison.OrdinalIgnoreCase) ||
-                fileNameOnly.StartsWith("python3", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(extension, ".py", StringComparison.OrdinalIgnoreCase);
+            // Matches 'python', 'pythonw', 'python2', 'python3', or 'python3.x' patterns.
+            bool isPython = fileNameOnly.StartsWith("python", StringComparison.OrdinalIgnoreCase);
 
             if (isPython)
             {
@@ -380,7 +376,7 @@ namespace Servy.Service.ProcessManagement
             }
 
             // Java Logic: 
-            // Matches 'java', 'javaw', or 'javac', plus self-executing .jar archives.
+            // Matches 'java', 'javaw', or 'javac'.
             bool isJava =
                 string.Equals(fileNameOnly, "java", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(fileNameOnly, "javaw", StringComparison.OrdinalIgnoreCase) ||

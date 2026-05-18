@@ -63,10 +63,11 @@ namespace Servy.CLI.UnitTests.Commands
 
             MockXmlValidator(true);
 
+            var dto = new ServiceDto { Name = "TestService", ExecutablePath = realPath };
             _xmlServiceSerializer.Setup(s => s.Deserialize(xmlContent))
-                   .Returns(new Core.DTOs.ServiceDto { Name = "TestService", ExecutablePath = realPath });
+                   .Returns(dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
-            _serviceRepoMock.Setup(r => r.ImportXmlAsync(xmlContent, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             // Act
             var result = await _command.ExecuteAsync(opts);
@@ -116,11 +117,11 @@ namespace Servy.CLI.UnitTests.Commands
 
             MockJsonValidator(true);
 
+            var dto = new ServiceDto { Name = "TestService", ExecutablePath = realPath };
             _jsonServiceSerializer.Setup(s => s.Deserialize(jsonContent))
-                .Returns(new Core.DTOs.ServiceDto { Name = "TestService", ExecutablePath = realPath });
+                .Returns(dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
-            _serviceRepoMock.Setup(r => r.ImportJsonAsync(jsonContent, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
+            _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             // Act
             var result = await _command.ExecuteAsync(opts);

@@ -73,6 +73,9 @@ namespace Servy.Manager.Models
                 // LOG: Resolving icon path for current log level using .NET 4.8 switch syntax
                 switch (Level)
                 {
+                    case EventLogLevel.Critical:
+                        return IconBase + "Error.png"; // or "Critical.png" if a dedicated asset is added
+
                     case EventLogLevel.Warning:
                         return IconBase + "Warning.png";
 
@@ -80,6 +83,7 @@ namespace Servy.Manager.Models
                         return IconBase + "Error.png";
 
                     case EventLogLevel.Information:
+                    case EventLogLevel.Verbose:
                     default:
                         // LOGIC: Fallback to Information icon for default cases
                         return IconBase + "Info.png";

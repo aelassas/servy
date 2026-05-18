@@ -411,7 +411,9 @@ namespace Servy.Service
 
 				_options = options;
 
-				if (!isTestMode)
+                _preLaunchEnabled = !string.IsNullOrWhiteSpace(options.PreLaunchExecutablePath);
+
+                if (!isTestMode)
 				{
 					// NO REFLECTION NEEDED: Access the underlying Service Status Handle directly
 					_serviceHandle = ServiceHandle;
@@ -767,8 +769,6 @@ namespace Servy.Service
 				_logger?.Info("No pre-launch executable configured. Skipping.");
 				return true; // proceed with service start
 			}
-
-			_preLaunchEnabled = true;
 
 			// 1. Prepare configuration and shared options
 			var (_, args) = PreparePreLaunchEnv(options);
@@ -1915,23 +1915,25 @@ namespace Servy.Service
 				// This loop is guaranteed to terminate because the underlying teardown logic 
 				// (SafeKillProcess) enforces an absolute, stopwatch-backed timeout limit.
 				int interval = 2000;
-				while (!stopTask.Wait(interval))
-				{
-					_checkPoint++;
-					UpdateServiceStatus(SERVICE_STOP_PENDING, AppConfig.PreShutdownWaitHintMs);
-				}
 
-				// 3. Handle task completion results safely
-				if (stopTask.IsFaulted)
-				{
-					_logger?.Error($"Teardown task failed: {stopTask.Exception?.InnerException?.Message}");
-				}
+                try
+                {
+                    while (!stopTask.Wait(interval))
+                    {
+                        _checkPoint++;
+                        UpdateServiceStatus(SERVICE_STOP_PENDING, AppConfig.PreShutdownWaitHintMs);
+                    }
+                }
+                catch (AggregateException ex)
+                {
+                    _logger?.Error($"Teardown task faulted during pre-shutdown wait: {ex.Flatten().InnerException?.Message}", ex);
+                }
 
-				// 4. Final Signal: Inform the SCM that the service has successfully reached the STOPPED state.
-				_logger?.Info("Pre-Shutdown handling complete. Setting SERVICE_STOPPED.");
+                // 3. Final Signal: Inform the SCM that the service has successfully reached the STOPPED state.
+                _logger?.Info("Pre-Shutdown handling complete. Setting SERVICE_STOPPED.");
 				UpdateServiceStatus(SERVICE_STOPPED, 0);
 
-				// 5. SHUTDOWN LOGGER LAST
+				// 4. SHUTDOWN LOGGER LAST
 				FlushAndShutdownLogger();
 
 				return;
@@ -2445,23 +2447,29 @@ namespace Servy.Service
 				var maxWaitTime = TimeSpan.FromMilliseconds(totalTimeoutMs);
 				var sw = Stopwatch.StartNew();
 
-				while (!stopTask.Wait(AppConfig.SafeKillProcessPulseIntervalMs))
-				{
-					if (sw.Elapsed > maxWaitTime)
-					{
-						_logger?.Error("Stop operation exceeded safety limit. The process tree may be hung at the kernel level.");
-						break; // Exit the loop and let the service finish/crash
-					}
+                bool waitCompleted;
+                try
+                {
+                    while (true)
+                    {
+                        try { waitCompleted = stopTask.Wait(AppConfig.SafeKillProcessPulseIntervalMs); }
+                        catch (AggregateException) { waitCompleted = true; break; } // task finished with fault/cancel
+                        if (waitCompleted) break;
+                        if (sw.Elapsed > maxWaitTime)
+                        {
+                            _logger?.Error("Stop operation exceeded safety limit. The process tree may be hung at the kernel level.");
+                            break; // Exit the loop and let the service finish/crash
+                        }
 
-					// Request 15s of "Wait Hint" every 5s pulse
-					_serviceHelper.RequestAdditionalTime(this, _scmAdditionalTimeMs, null);
-				}
+                        // Request 15s of "Wait Hint" every 5s pulse
+                        _serviceHelper.RequestAdditionalTime(this, _scmAdditionalTimeMs, null);
+                    }
+                }
+                finally { sw.Stop(); }
 
-				sw.Stop();
-
-				// 3. SAFE RESULT RETRIEVAL
-				// We only access .Result if the task truly succeeded.
-				bool outcomeHandled = false;
+                // 3. SAFE RESULT RETRIEVAL
+                // We only access .Result if the task truly succeeded.
+                bool outcomeHandled = false;
 				bool? res = null;
 
 				if (stopTask.Status == TaskStatus.RanToCompletion)
@@ -2481,9 +2489,16 @@ namespace Servy.Service
 					_logger?.Warn("SafeKillProcess was canceled before the stop sequence could finish.");
 					outcomeHandled = true;
 				}
+                else
+                {
+                    // Timeout: task is still running. Don't fall through to HandleStopResult,
+                    // which would misreport "had already exited".
+                    _logger?.Warn($"Child process '{process.Format()}' stop sequence did not complete within the safety budget; the kill task is still running and will be abandoned.");
+                    outcomeHandled = true;
+                }
 
-				// 4. Handle Logging (only if we have a valid result)
-				if (!outcomeHandled)
+                // 4. Handle Logging (only if we have a valid result)
+                if (!outcomeHandled)
 				{
 					HandleStopResult(process, res);
 				}
@@ -2494,13 +2509,14 @@ namespace Servy.Service
 			}
 		}
 
-		/// <summary>
-		/// Logs the outcome of a stop operation for the specified child process.
-		/// </summary>
-		/// <param name="process">The process wrapper representing the child process whose stop result is being handled. Cannot be null.</param>
-		/// <param name="result">The result of the stop operation. <see langword="true"/> if the process was canceled; <see
-		/// langword="false"/> if the process was terminated; <see langword="null"/> if the stop operation timed out or
-		/// failed.</param>
+        /// <summary>
+        /// Logs the outcome of a stop operation for the specified child process.
+        /// </summary>
+        /// <param name="process">The process wrapper representing the child process whose stop result is being handled. Cannot be null.</param>
+        /// <param name="result">The result of the stop operation:
+        /// <see langword="true"/> if the process stopped gracefully;
+        /// <see langword="false"/> if the process was forcefully terminated;
+        /// <see langword="null"/> if the process had already exited before the stop sequence ran (or if the stop sequence timed out).</param>
 		private void HandleStopResult(IProcessWrapper process, bool? result)
 		{
 			var message = string.Empty;

@@ -319,7 +319,12 @@ namespace Servy.CLI.Commands
                 return pathValidation;
 
             // 4. Repository Import (only after validation passes)
-            await repoImporter(dto);
+            var affected = await repoImporter(dto);
+            if (affected <= 0)
+            {
+                Logger.Error($"Repository upsert for service '{dto.Name}' reported 0 affected rows.");
+                return CommandResult.Fail(string.Format(Strings.Msg_ImportRepoFailure, formatName));
+            }
 
             if (!opts.InstallService)
                 return CommandResult.Ok(string.Format(Strings.Msg_ImportSuccessNoInstall, formatName));
