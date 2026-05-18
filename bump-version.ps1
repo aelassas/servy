@@ -60,7 +60,12 @@ function Update-FileContent {
         This helper reads the file using detected encoding, verifies that the target regex pattern exists,
         and performs a capture-group aware replacement before writing back to disk.
     #>
-    param([string]$Path, [string]$Pattern, [string]$Replacement)
+    param(
+        [string]$Path,
+        [string]$Pattern,
+        [string]$Replacement,
+        [switch]$AllowNoMatch   # opt-in for callers that genuinely tolerate it
+    )
     
     try {
         if (Test-Path $Path) {
@@ -71,6 +76,7 @@ function Update-FileContent {
             $regexMatches = [regex]::Matches($content, $Pattern)
             if ($regexMatches.Count -eq 0) {
                 Write-Warning "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern" "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern"
+                if (-not $AllowNoMatch) { $script:HadFailure = $true }
                 return
             }
         
@@ -83,6 +89,7 @@ function Update-FileContent {
             Write-Host "Successfully updated ($($encoding.BodyName)): $Path ($($regexMatches.Count) replacements)" -ForegroundColor Green
         } else {
             Write-Warning "Skipping missing file: $Path"
+            if (-not $AllowNoMatch) { $script:HadFailure = $true }
         }
     }
     catch {

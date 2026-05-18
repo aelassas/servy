@@ -94,8 +94,8 @@ namespace Servy.Core.Logging
         {
             switch (level)
             {
-                case 1:
-                    return EventLogLevel.Critical;
+                case 1:  // Critical - fold into Error to match the filter contract
+                    return EventLogLevel.Error;
                 case 2:
                     return EventLogLevel.Error;
                 case 3:
