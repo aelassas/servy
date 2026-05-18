@@ -109,10 +109,8 @@ namespace Servy.CLI.Commands
                 }
 
                 // Reparse Point Guard (Directory and File Level)
-                // Note: .NET Framework 4.8 lacks native LinkTarget resolution. We explicitly block 
-                // reparse points (symlinks/junctions) at both the directory and file level to prevent 
-                // path redirection attacks and UNC bypasses.
-                string finalResolvedPath = fullPath;
+                // Hardening: We explicitly block reparse points (symlinks/junctions) at both the directory 
+                // and file level to prevent path redirection attacks and UNC bypasses.
                 string directoryPath = Path.GetDirectoryName(fullPath);
 
                 if (!string.IsNullOrEmpty(directoryPath) && Directory.Exists(directoryPath))
@@ -138,21 +136,8 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(errorMsg);
                 }
 
-                // Re-apply UNC guard on the *resolved* path to defeat junction-based bypass.
-                // (Retained as defense-in-depth even with the reparse point block)
-                bool resolvedIsUnc =
-                    finalResolvedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
-                    (Uri.TryCreate(finalResolvedPath, UriKind.Absolute, out var resolvedUri) && resolvedUri.IsUnc);
-
-                if (resolvedIsUnc)
-                {
-                    var errorMsg = "Security Alert: Resolved import path targets a UNC location via NTFS junction. Import prohibited.";
-                    Logger.Error(errorMsg);
-                    return CommandResult.Fail(errorMsg);
-                }
-
                 // Reserved Device Name Block (DOS Guard)
-                string fileName = Path.GetFileName(finalResolvedPath);
+                string fileName = Path.GetFileName(fullPath);
                 int firstDotIndex = fileName.IndexOf('.');
                 string firstSegment = firstDotIndex >= 0 ? fileName.Substring(0, firstDotIndex) : fileName;
 
@@ -170,11 +155,11 @@ namespace Servy.CLI.Commands
                      Environment.GetFolderPath(Environment.SpecialFolder.System),
                      Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
                      Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-                 };
+                };
 
                 var violatedFolder = protectedFolders
                     .FirstOrDefault(folder => !string.IsNullOrEmpty(folder) &&
-                                              finalResolvedPath.StartsWith(
+                                              fullPath.StartsWith(
                                                   folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
                                                   StringComparison.OrdinalIgnoreCase));
 
@@ -186,7 +171,7 @@ namespace Servy.CLI.Commands
                 }
 
                 // Extension Validation using the resolved path
-                string extension = Path.GetExtension(finalResolvedPath).ToLowerInvariant();
+                string extension = Path.GetExtension(fullPath).ToLowerInvariant();
                 string[] allowedExtensions = { ".json", ".xml" };
 
                 if (!allowedExtensions.Contains(extension))
@@ -197,31 +182,31 @@ namespace Servy.CLI.Commands
                 }
 
                 // Existence Check using the resolved path
-                var fileInfo = new FileInfo(finalResolvedPath);
+                var fileInfo = new FileInfo(fullPath);
                 if (!fileInfo.Exists)
                 {
-                    var errorMsg = $"[Import{configFileType}] File not found: {finalResolvedPath}";
+                    var errorMsg = $"[Import{configFileType}] File not found: {fullPath}";
                     Logger.Error(errorMsg);
                     return CommandResult.Fail(errorMsg);
                 }
 
                 if (fileInfo.Length > AppConfig.MaxConfigFileSizeBytes)
                 {
-                    var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, finalResolvedPath);
+                    var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, fullPath);
                     Logger.Error(errorMsg);
                     return CommandResult.Fail(errorMsg);
                 }
 
-                // Process file based on its type using the finalResolvedPath
+                // Process file based on its type using the fullPath
                 CommandResult result;
 
                 switch (configFileType)
                 {
                     case ConfigFileType.Xml:
-                        result = await ProcessXmlAsync(opts, finalResolvedPath, cancellationToken: cancellationToken);
+                        result = await ProcessXmlAsync(opts, fullPath, cancellationToken: cancellationToken);
                         break;
                     case ConfigFileType.Json:
-                        result = await ProcessJsonAsync(opts, finalResolvedPath, cancellationToken: cancellationToken);
+                        result = await ProcessJsonAsync(opts, fullPath, cancellationToken: cancellationToken);
                         break;
                     default:
                         result = CommandResult.Fail(string.Format(Strings.Msg_UnsupportedFileType, configFileType));
@@ -231,11 +216,11 @@ namespace Servy.CLI.Commands
 
                 if (result.Success)
                 {
-                    Logger.Info($"Successfully imported {configFileType} configuration from {finalResolvedPath}.");
+                    Logger.Info($"Successfully imported {configFileType} configuration from {fullPath}.");
                 }
                 else
                 {
-                    Logger.Error($"Failed to import {configFileType} configuration from {finalResolvedPath}. Error: {result.Message}");
+                    Logger.Error($"Failed to import {configFileType} configuration from {fullPath}. Error: {result.Message}");
                 }
 
                 return result;
