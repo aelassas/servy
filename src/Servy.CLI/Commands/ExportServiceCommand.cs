@@ -131,22 +131,14 @@ namespace Servy.CLI.Commands
             // 4. Reparse Point Guard (Directory and File Level)
             // Hardening: We explicitly block reparse points (symlinks/junctions) at both the directory 
             // and file level to prevent path redirection attacks and UNC bypasses.
-            string directoryPath = Path.GetDirectoryName(fullPath);
-
-            if (!string.IsNullOrEmpty(directoryPath) && Directory.Exists(directoryPath))
+            if (Helper.HasAncestorReparsePoint(fullPath))
             {
-                var dirInfo = new DirectoryInfo(directoryPath);
-
-                // Guard against directory junctions and symlinks
-                if ((dirInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
-                {
-                    throw new SecurityException("Security Alert: Exporting configurations through directory junctions or symlinks is prohibited to prevent path redirection attacks.");
-                }
+                throw new SecurityException("Security Alert: Exporting configurations through directory junctions or symlinks is prohibited to prevent path redirection attacks.");
             }
 
-            var fileLinkInfo = new FileInfo(fullPath);
-
             // Guard against file-level symbolic links
+            var fileLinkInfo = new FileInfo(fullPath);
+            fileLinkInfo.Refresh();
             if (fileLinkInfo.Exists && (fileLinkInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
             {
                 throw new SecurityException("Security Alert: Exporting configurations through file symbolic links or junctions is prohibited to prevent path redirection attacks.");

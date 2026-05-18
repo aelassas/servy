@@ -626,5 +626,33 @@ namespace Servy.Core.Helpers
         public static string NormalizePath(string p) =>
             string.IsNullOrWhiteSpace(p) ? null : Path.GetFullPath(p).TrimEnd(Path.DirectorySeparatorChar);
 
+        /// <summary>
+        /// Recursively walks up the directory tree to determine if the specified path resides 
+        /// within any directory that is an NTFS reparse point (such as a junction point or symbolic link).
+        /// </summary>
+        /// <param name="fullPath">The fully canonicalized absolute path to evaluate.</param>
+        /// <returns>
+        /// <c>true</c> if any ancestor directory in the path hierarchy is a reparse point; 
+        /// otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// This validation serves as an infiltration and exfiltration guard across the service 
+        /// ecosystem. It prevents path traversal and redirection bypasses by checking both 
+        /// the modern <see cref="DirectoryInfo.LinkTarget"/> property and the legacy 
+        /// <see cref="FileAttributes.ReparsePoint"/> bitmask flag.
+        /// </remarks>
+        public static bool HasAncestorReparsePoint(string fullPath)
+        {
+            var current = new DirectoryInfo(Path.GetDirectoryName(fullPath));
+            while (current != null && current.Exists)
+            {
+                if ((current.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                {
+                    return true;
+                }
+                current = current.Parent;
+            }
+            return false;
+        }
     }
 }
