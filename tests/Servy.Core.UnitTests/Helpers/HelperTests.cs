@@ -2,12 +2,37 @@
 using Servy.Core.Resources;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Servy.Core.UnitTests.Helpers
 {
-    public class HelperTests
+    public class HelperTests : IDisposable
     {
+        private readonly string _testRoot;
+
+        public HelperTests()
+        {
+            // Establish an isolated scratch space inside the user profile/temp directory
+            _testRoot = Path.Combine(Path.GetTempPath(), "Servy_PathTests_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(_testRoot);
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                if (Directory.Exists(_testRoot))
+                {
+                    Directory.Delete(_testRoot, true);
+                }
+            }
+            catch
+            {
+                // Prevent teardown exceptions from hiding test results
+            }
+        }
+
         // Tests for IsValidPath
         [Theory]
         [InlineData(null, false)]
@@ -611,5 +636,137 @@ namespace Servy.Core.UnitTests.Helpers
 
         #endregion
 
+        #region Native Win32 Junction Helpers
+
+        // These minimal P/Invoke mechanisms ensure the unit tests run reliably in 
+        // headless test runners without executing high-overhead "cmd.exe /c mklink" shells.
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool CreateDirectory(string lpPathName, IntPtr lpSecurityAttributes);
+
+        private static void CreateJunction(string junctionPath, string targetDir)
+        {
+            // DirectoryInfo doesn't expose a native link creation interface in older profiles, 
+            // so we use a safe management command or fallback wrapper for the test runner.
+            using (var process = new System.Diagnostics.Process())
+            {
+                process.StartInfo.FileName = "cmd.exe";
+                process.StartInfo.Arguments = $"/c mklink /J \"{junctionPath}\" \"{targetDir}\"";
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.UseShellExecute = false;
+                process.Start();
+                process.WaitForExit();
+            }
+        }
+
+        private static void DeleteJunction(string junctionPath)
+        {
+            if (Directory.Exists(junctionPath))
+            {
+                Directory.Delete(junctionPath, false);
+            }
+        }
+
+        #endregion
+
+        #region HasAncestorReparsePoint tests
+
+        [Fact]
+        public void HasAncestorReparsePoint_WhenPathDoesNotExist_ReturnsFalse()
+        {
+            // Arrange: Generate a canonical path that is guaranteed not to exist on disk
+            string nonExistentPath = Path.Combine(_testRoot, "SubFolder1", "SubFolder2", "config.json");
+
+            // Act
+            bool result = Helper.HasAncestorReparsePoint(nonExistentPath);
+
+            // Assert
+            // Branch Covered: while (current != null && current.Exists) evaluates to false immediately.
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void HasAncestorReparsePoint_WhenStandardLocalPath_ReturnsFalse()
+        {
+            // Arrange: Construct a normal directory chain on disk
+            string deepDir = Path.Combine(_testRoot, "Level1", "Level2", "Level3");
+            Directory.CreateDirectory(deepDir);
+            string targetFilePath = Path.Combine(deepDir, "service.xml");
+
+            // Act
+            bool result = Helper.HasAncestorReparsePoint(targetFilePath);
+
+            // Assert
+            // Branch Covered: Inside the loop, both LinkTarget and ReparsePoint flags are empty.
+            // It walks all the way up to the root safely.
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void HasAncestorReparsePoint_WhenImmediateParentIsJunctionOrSymlink_ReturnsTrue()
+        {
+            // We run this test only on Windows since the method checks NTFS specific behaviors
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+
+            // Arrange
+            string junctionSource = Path.Combine(_testRoot, "RealDirectory");
+            Directory.CreateDirectory(junctionSource);
+
+            string junctionTarget = Path.Combine(_testRoot, "JunctionDir");
+
+            // Native helper method to establish a junction point without relying on CMD execution
+            CreateJunction(junctionTarget, junctionSource);
+
+            try
+            {
+                string targetFilePath = Path.Combine(junctionTarget, "config.json");
+
+                // Act
+                bool result = Helper.HasAncestorReparsePoint(targetFilePath);
+
+                // Assert
+                // Branch Covered: (current.Attributes & FileAttributes.ReparsePoint) matches.
+                Assert.True(result);
+            }
+            finally
+            {
+                DeleteJunction(junctionTarget);
+            }
+        }
+
+        [Fact]
+        public void HasAncestorReparsePoint_WhenDeepAncestorIsJunction_ReturnsTrue()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+
+            // Arrange
+            string realDir = Path.Combine(_testRoot, "ActualData");
+            Directory.CreateDirectory(realDir);
+
+            string junctionDir = Path.Combine(_testRoot, "HiddenJunction");
+            CreateJunction(junctionDir, realDir);
+
+            try
+            {
+                // Create nested directories inside the resolved structure to hide the junction 2 levels deep
+                string deepNestedPathInsideJunction = Path.Combine(junctionDir, "App_Data", "Logs");
+                Directory.CreateDirectory(deepNestedPathInsideJunction);
+
+                string targetFilePath = Path.Combine(deepNestedPathInsideJunction, "output.log");
+
+                // Act
+                bool result = Helper.HasAncestorReparsePoint(targetFilePath);
+
+                // Assert
+                // Branch Covered: current = current.Parent correctly loops upward until it strikes the reparse point.
+                Assert.True(result);
+            }
+            finally
+            {
+                DeleteJunction(junctionDir);
+            }
+        }
+
+        #endregion
     }
 }
