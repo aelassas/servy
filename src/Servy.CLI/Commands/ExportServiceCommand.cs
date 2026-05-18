@@ -126,7 +126,6 @@ namespace Servy.CLI.Commands
             // 4. Reparse Point Guard (Directory and File Level)
             // Hardening: We explicitly block reparse points (symlinks/junctions) at both the directory 
             // and file level to prevent path redirection attacks and UNC bypasses.
-            string finalResolvedPath = fullPath;
             string? directoryPath = Path.GetDirectoryName(fullPath);
 
             if (!string.IsNullOrEmpty(directoryPath) && Directory.Exists(directoryPath))
@@ -144,22 +143,11 @@ namespace Servy.CLI.Commands
                 throw new SecurityException("Security Alert: Exporting configurations through file symbolic links or junctions is prohibited to prevent path redirection attacks.");
             }
 
-            // Re-apply UNC guard on the *resolved* path to defeat junction-based bypass.
-            // (Retained as defense-in-depth)
-            bool resolvedIsUnc =
-                finalResolvedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
-                (Uri.TryCreate(finalResolvedPath, UriKind.Absolute, out var resolvedUri) && resolvedUri.IsUnc);
-
-            if (resolvedIsUnc)
-            {
-                throw new SecurityException("Security Alert: Exporting to UNC paths is prohibited to prevent data exfiltration.");
-            }
-
             // 5. Reserved Device Name Block (DOS/Data Loss Guard)
             // Prevents writing to CON, NUL, COM0, COM1, etc., which can hang the process or discard data.
             // SECURITY: We check only the first segment of the filename. Windows treats any file
             // starting with a reserved name followed by an extension (e.g., NUL.config.json) as the device itself.
-            string fileName = Path.GetFileName(finalResolvedPath);
+            string fileName = Path.GetFileName(fullPath);
             int firstDotIndex = fileName.IndexOf('.');
             string firstSegment = firstDotIndex >= 0 ? fileName.Substring(0, firstDotIndex) : fileName;
 
@@ -175,12 +163,11 @@ namespace Servy.CLI.Commands
                  Environment.GetFolderPath(Environment.SpecialFolder.System),
                  Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
                  Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-             };
+            };
 
-            // We use finalResolvedPath here to catch junction-based bypasses.
             var violatedFolder = protectedFolders
                 .FirstOrDefault(folder => !string.IsNullOrEmpty(folder) &&
-                                          finalResolvedPath.StartsWith(
+                                          fullPath.StartsWith(
                                               folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
                                               StringComparison.OrdinalIgnoreCase));
 
@@ -190,14 +177,14 @@ namespace Servy.CLI.Commands
             }
 
             // 7. Directory Creation
-            string? parentDir = Path.GetDirectoryName(finalResolvedPath);
+            string? parentDir = Path.GetDirectoryName(fullPath);
             if (!string.IsNullOrEmpty(parentDir) && !Directory.Exists(parentDir))
             {
                 Directory.CreateDirectory(parentDir);
             }
 
             // 8. Final Atomic Write
-            Helper.WriteFileAtomic(finalResolvedPath, stream =>
+            Helper.WriteFileAtomic(fullPath, stream =>
             {
                 // Use the overload: (Stream, Encoding, BufferSize, LeaveOpen)
                 // 1024 is the default buffer size; true keeps the FileStream alive for WriteFileAtomic.
