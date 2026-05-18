@@ -170,27 +170,54 @@ namespace Servy.Core.Helpers
                 var (completeSnapshot, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
                 var protectedPids = GetAncestorPids(completeSnapshot);
 
-                var allProcesses = Process.GetProcesses();
+                // Find target PIDs directly from the snapshot - no Process.GetProcesses() needed.
+                var targetPids = new List<int>();
+                foreach (var kvp in completeSnapshot)
+                {
+                    string snapName = kvp.Value.Name ?? string.Empty;
+                    if (snapName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                        snapName = snapName.Substring(0, snapName.Length - 4);
+
+                    if (string.Equals(snapName, normalizedName, StringComparison.OrdinalIgnoreCase)
+                        && !protectedPids.Contains(kvp.Key))
+                    {
+                        targetPids.Add(kvp.Key);
+                    }
+                }
+
+                if (targetPids.Count == 0) return true;
+
+                // Open handles ONLY for the small subset we plan to act on.
+                var targets = new List<Process>();
                 try
                 {
-                    var targetProcesses = allProcesses
-                        .Where(p => string.Equals(p.ProcessName, normalizedName, StringComparison.OrdinalIgnoreCase))
-                        .Where(p => !protectedPids.Contains(p.Id))
-                        .ToList();
-
-                    if (targetProcesses.Count == 0) return true;
+                    foreach (var pid in targetPids)
+                    {
+                        try
+                        {
+                            targets.Add(Process.GetProcessById(pid));
+                        }
+                        catch (ArgumentException)
+                        {
+                            // Process exited before handle could be opened
+                        }
+                        catch (InvalidOperationException)
+                        {
+                            // Process exited before handle could be opened
+                        }
+                    }
 
                     // ROBUSTNESS: Perform the parent kill walk BEFORE the tree kill walk.
                     // This ensures that we query information while the target process handles are still valid.
                     if (killParents)
                     {
-                        foreach (var proc in targetProcesses)
+                        foreach (var proc in targets)
                         {
-                            KillParentProcesses(proc.Id, proc.StartTime, protectedPids, completeSnapshot, new HashSet<int>());
+                            KillParentProcesses(proc.Id, SafeStartTime(proc), protectedPids, completeSnapshot, new HashSet<int>());
                         }
                     }
 
-                    foreach (var proc in targetProcesses)
+                    foreach (var proc in targets)
                     {
                         KillProcessTree(proc, selfPid, protectedPids, byParent);
                     }
@@ -199,7 +226,7 @@ namespace Servy.Core.Helpers
                 }
                 finally
                 {
-                    foreach (var p in allProcesses) p.Dispose();
+                    foreach (var p in targets) p.Dispose();
                 }
             }
             catch (Win32Exception ex)
@@ -211,6 +238,25 @@ namespace Servy.Core.Helpers
             {
                 Logger.Error($"Unexpected error in KillProcessTreeAndParents('{processName}').", ex);
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Safely retrieves the start time of a process without throwing an exception if the process has already exited or access is denied.
+        /// </summary>
+        /// <param name="p">The <see cref="Process"/> instance to query.</param>
+        /// <returns>
+        /// The <see cref="DateTime"/> when the process started, or <see cref="DateTime.MinValue"/> if the start time could not be retrieved.
+        /// </returns>
+        private static DateTime SafeStartTime(Process p)
+        {
+            try
+            {
+                return p.StartTime;
+            }
+            catch
+            {
+                return DateTime.MinValue;
             }
         }
 

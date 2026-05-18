@@ -2,6 +2,7 @@
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
+using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Services;
 using Servy.UI.ViewModels;
@@ -52,7 +53,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Gets the collection of services retrieved during the last search.
         /// </summary>
-        public ObservableCollection<ServiceItemBase> Services { get; } = new ObservableCollection<ServiceItemBase>();
+        public BulkObservableCollection<ServiceItemBase> Services { get; } = new BulkObservableCollection<ServiceItemBase>();
 
         /// <summary>
         /// Gets or sets the text filter used for searching services.
@@ -170,10 +171,7 @@ namespace Servy.Manager.ViewModels
                 var results = await ServiceCommands.SearchServicesAsync(SearchText, false, token);
 
                 Services.Clear();
-                foreach (var s in results)
-                {
-                    Services.Add(CreateServiceItem(s));
-                }
+                Services.AddRange(results.Select(CreateServiceItem));
             }
             catch (OperationCanceledException)
             {
