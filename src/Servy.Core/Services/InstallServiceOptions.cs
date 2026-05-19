@@ -33,7 +33,7 @@ namespace Servy.Core.Services
         public ProcessPriority ProcessPriority { get; set; } = AppConfig.DefaultProcessPriority;
 
         /// <summary>Whether to enable the console user interface for the service.</summary>
-        public bool? EnableConsoleUI { get; set; } = AppConfig.DefaultEnableConsoleUI;
+        public bool EnableConsoleUI { get; set; } = AppConfig.DefaultEnableConsoleUI;
 
         /// <summary>Optional path for standard output redirection. If null, no redirection is performed.</summary>
         public string StdoutPath { get; set; }
@@ -66,7 +66,7 @@ namespace Servy.Core.Services
         public RecoveryAction RecoveryAction { get; set; } = AppConfig.DefaultRecoveryAction;
 
         /// <summary>Whether to run recovery action even if the process exits successfully. </summary>
-        public bool? RecoveryOnCleanExit { get; set; } = AppConfig.DefaultRecoveryOnCleanExit;
+        public bool RecoveryOnCleanExit { get; set; } = AppConfig.DefaultRecoveryOnCleanExit;
 
         /// <summary>Maximum number of restart attempts if the service fails.</summary>
         public int MaxRestartAttempts { get; set; } = AppConfig.DefaultMaxRestartAttempts;
@@ -108,7 +108,7 @@ namespace Servy.Core.Services
         public int PreLaunchRetryAttempts { get; set; } = AppConfig.DefaultPreLaunchRetryAttempts;
 
         /// <summary>Ignore failure and start service even if pre-launch script fails.</summary>
-        public bool PreLaunchIgnoreFailure { get; set; } = false;
+        public bool PreLaunchIgnoreFailure { get; set; } = AppConfig.DefaultPreLaunchIgnoreFailure;
 
         /// <summary>Failure program path.</summary>
         public string FailureProgramPath { get; set; }
@@ -138,7 +138,7 @@ namespace Servy.Core.Services
         public int? MaxRotations { get; set; } = AppConfig.DefaultMaxRotations;
 
         /// <summary>Enables rotation based on the date interval specified by <paramref name="dateRotationType"/>.</summary>
-        public bool EnableDateRotation { get; set; } = false;
+        public bool EnableDateRotation { get; set; } = AppConfig.DefaultEnableDateRotation;
 
         /// <summary>Defines the date-based rotation schedule (daily, weekly, or monthly).</summary>
         public DateRotationType DateRotationType { get; set; } = AppConfig.DefaultDateRotationType;

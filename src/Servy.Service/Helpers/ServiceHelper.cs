@@ -317,6 +317,12 @@ namespace Servy.Service.Helpers
             {
                 logger?.Error($"Failed to restart process.", ex);
             }
+            finally
+            {
+                // Ensure the old process wrapper is disposed to prevent 
+                // handle leaks during repeated recovery cycles.
+                process?.Dispose();
+            }
         }
 
         /// <inheritdoc />

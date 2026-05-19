@@ -488,16 +488,32 @@ namespace Servy.Core.Services
                         return OperationResult.Failure(creationErrorMsg);
                     }
 
-                    cancellationToken.ThrowIfCancellationRequested();
-                    SetServiceDescription(serviceHandle, options.Description);
-                    await _serviceRepository.UpsertAsync(
-                        dto, 
-                        preserveExistingRuntimeState: false,
-                        preserveExistingCredentials: false,
-                        cancellationToken); // New service: update runtime state in db (PID, ActiveStdoutPath, ActiveStderrPath)
-                    Logger.Info($"Service '{options.ServiceName}' installed successfully.");
-
-                    return OperationResult.Success();
+                    try
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        SetServiceDescription(serviceHandle, options.Description);
+                        await _serviceRepository.UpsertAsync(
+                            dto,
+                            preserveExistingRuntimeState: false,
+                            preserveExistingCredentials: false,
+                            cancellationToken); // New service: update runtime state in db (PID, ActiveStdoutPath, ActiveStderrPath)
+                        Logger.Info($"Service '{options.ServiceName}' installed successfully.");
+                        return OperationResult.Success();
+                    }
+                    catch
+                    {
+                        // Best-effort rollback: undo CreateService so the user isn't left with a half-installed orphan
+                        try
+                        {
+                            if (!_windowsServiceApi.DeleteService(serviceHandle))
+                                Logger.Error($"Rollback failed after post-create error: DeleteService returned false for '{options.ServiceName}'. Win32 error: {_win32ErrorProvider.GetLastWin32Error()}");
+                        }
+                        catch (Exception delEx)
+                        {
+                            Logger.Error($"Rollback raised an exception for '{options.ServiceName}'.", delEx);
+                        }
+                        throw;
+                    }
                 }
                 finally
                 {

@@ -92,5 +92,11 @@ function Protect-SensitiveString {
         return "$($m.Groups[1].Value)$sep********"
     }
 
-    return $maskingRegex.Replace($Text, $evaluator)
+    try {
+        return $maskingRegex.Replace($Text, $evaluator)
+    } catch [System.Text.RegularExpressions.RegexMatchTimeoutException] {
+        # Safety: a malformed/oversized payload triggered the ReDoS guard.
+        # Fail closed: redact the whole payload rather than crash the caller.
+        return '********'
+    }
 }
