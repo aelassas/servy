@@ -414,6 +414,8 @@ namespace Servy.Manager
             }
             finally
             {
+                (Services as IDisposable)?.Dispose();
+                Services = null; // clear the static reference for test hosts
                 base.OnExit(e);
             }
         }

@@ -28,22 +28,6 @@ namespace Servy.Restarter
         {
             Logger.Initialize("Servy.Restarter.log");
 
-            if (args.Length == 0)
-            {
-                Logger.Error("Missing required argument: service name.");
-                Environment.ExitCode = 1;
-                return;
-            }
-
-            var serviceName = args[0];
-
-            if (string.IsNullOrWhiteSpace(serviceName))
-            {
-                Logger.Error("Service name cannot be empty.");
-                Environment.ExitCode = 1;
-                return;
-            }
-
             IServiceRestarter restarter = new ServiceRestarter();
             IServyLogger rootLogger = null; // Declare as nullable for safe finally disposal
             IServyLogger scopedLogger = null;
@@ -53,6 +37,22 @@ namespace Servy.Restarter
 
             try
             {
+                if (args.Length == 0)
+                {
+                    Logger.Error("Missing required argument: service name.");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+
+                var serviceName = args[0];
+
+                if (string.IsNullOrWhiteSpace(serviceName))
+                {
+                    Logger.Error("Service name cannot be empty.");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+
                 // 1. Ensure event source exists before doing anything else
                 Helper.EnsureEventSourceExists();
                 rootLogger = new EventLogLogger(AppConfig.EventSource);

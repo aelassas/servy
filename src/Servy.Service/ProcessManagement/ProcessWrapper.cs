@@ -201,9 +201,9 @@ namespace Servy.Service.ProcessManagement
         {
             ThrowIfDisposed();
 
-            var start = DateTime.UtcNow;
+            var sw = Stopwatch.StartNew();
 
-            while (DateTime.UtcNow - start < timeout)
+            while (sw.Elapsed < timeout)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
