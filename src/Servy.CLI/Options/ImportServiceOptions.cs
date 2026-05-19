@@ -12,7 +12,7 @@ namespace Servy.CLI.Options
     /// and ensures that imported configuration files are validated against 
     /// path-security policies and schema constraints.
     /// </remarks>
-    [Verb("import", HelpText = "Import a Windows service configuration into the Servy database and perform optional service installation.")]
+    [Verb("import", HelpText = "Import a Windows service configuration into the Servy database and optionally install the service.")]
     public class ImportServiceOptions : GlobalOptionsBase
     {
         /// <summary>
