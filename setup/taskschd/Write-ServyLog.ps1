@@ -29,9 +29,13 @@ function Write-ServyLog {
 
                 $target = Join-Path (Split-Path $FilePath) $rotatedFileName
                 if (Test-Path $target) {
-                    $i = 1
-                    while (Test-Path "$target.$i") { $i++ }
-                    $rotatedFileName = (Split-Path $target -Leaf) + ".$i"
+                    $attempt = 0
+                    do {
+                        if ($attempt -gt 0) { Start-Sleep -Milliseconds 1; $localTime = Get-Date -Format "yyyyMMdd-HHmmss-fff" }
+                        $rotatedFileName = "{0}_{1}{2}" -f $baseName, $localTime, $ext
+                        $target = Join-Path (Split-Path $FilePath) $rotatedFileName
+                        $attempt++
+                    } while (Test-Path $target -and $attempt -lt 100)
                 }
                 Rename-Item -Path $FilePath -NewName $rotatedFileName -Force
 

@@ -66,11 +66,29 @@ namespace Servy.Core.Helpers
         /// Efficiently retrieves the process ID and all descendant process IDs for a given root process
         /// using native Windows APIs to avoid WMI overhead.
         /// </summary>
+        /// <param name="rootPid">The process ID of the root process to scan.</param>
+        /// <returns>A list of process IDs representing the validated process tree.</returns>
         private List<int> GetProcessTree(int rootPid)
         {
             var tree = new List<int> { rootPid };
-            var parentToChildren = new Dictionary<int, List<int>>();
 
+            // 1. Defensiveness against PID reuse: Capture the root process's creation time boundary.
+            // If the root process has already exited, short-circuit immediately to avoid capturing phantom children.
+            DateTime rootStartTime;
+            try
+            {
+                using (var rootProcess = Process.GetProcessById(rootPid))
+                {
+                    rootStartTime = rootProcess.StartTime;
+                }
+            }
+            catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
+            {
+                Logger.Warn($"GetProcessTree: Root process {rootPid} is no longer running. Returning empty tree boundary.");
+                return tree;
+            }
+
+            var parentToChildren = new Dictionary<int, List<int>>();
             IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
             // Defensiveness: Handle both known failure returns for CreateToolhelp32Snapshot
@@ -108,7 +126,10 @@ namespace Servy.Core.Helpers
                 CloseHandle(snapshot);
             }
 
-            // BFS traversal to find all nested descendants with cycle protection
+            // Map each validated process to its confirmed start time to ensure temporal checking down the tree
+            var processStartTimes = new Dictionary<int, DateTime> { { rootPid, rootStartTime } };
+
+            // BFS traversal to find all nested descendants with cycle and PID-reuse protection
             var queue = new Queue<int>();
             var visited = new HashSet<int>(); // 1. Create a tracking set
 
@@ -118,14 +139,43 @@ namespace Servy.Core.Helpers
             while (queue.Count > 0)
             {
                 int current = queue.Dequeue();
+
+                // Retrieve the parent's validated start time for downstream comparison
+                if (!processStartTimes.TryGetValue(current, out var currentParentStartTime))
+                {
+                    continue;
+                }
+
                 if (parentToChildren.TryGetValue(current, out var children))
                 {
                     // 3. Only process the child if we haven't seen it before
                     foreach (var child in children.Where(visited.Add))
                     {
-                        // If visited.Add returns true, the child is new and already added to the hash set
-                        tree.Add(child);
-                        queue.Enqueue(child);
+                        // Validate child creation temporal boundary to ensure it is not a recycled PID phantom
+                        try
+                        {
+                            using (var childProcess = Process.GetProcessById(child))
+                            {
+                                DateTime childStartTime = childProcess.StartTime;
+
+                                // A true descendant can never be created before its parent.
+                                // If it is older, this configuration represents a clear OS PID recycling collision.
+                                if (childStartTime >= currentParentStartTime)
+                                {
+                                    processStartTimes[child] = childStartTime;
+                                    tree.Add(child);
+                                    queue.Enqueue(child);
+                                }
+                                else
+                                {
+                                    Logger.Debug($"GetProcessTree: Pruned recycled PID descendant {child}. Creation time ({childStartTime}) predates parent ({currentParentStartTime}).");
+                                }
+                            }
+                        }
+                        catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
+                        {
+                            // Child process exited between snapshot capturing and tree evaluation; skip gracefully
+                        }
                     }
                 }
             }
