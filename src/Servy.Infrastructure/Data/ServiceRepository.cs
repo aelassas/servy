@@ -167,13 +167,13 @@ namespace Servy.Infrastructure.Data
                 {
                     var currentChunk = serviceList.Skip(i).Take(chunkSize).ToList();
 
-                    // Normalize the input names to match the functional index requirement
-                    var lowerNames = currentChunk.Select(s => s.Name?.ToLowerInvariant()).ToList();
+                    // Pass original names; let SQLite lower both sides in the SQL itself
+                    var names = currentChunk.Select(s => s.Name).Where(n => !string.IsNullOrEmpty(n)).ToList();
 
-                    // Fetch the generated IDs using LOWER(Name) to ensure index usage and case-insensitivity within the same snapshot
+                    // Fetch the generated IDs using NOCASE collation on Name comparison to ensure index usage and case-insensitivity within the same snapshot
                     var idMap = (await _dapper.QueryAsync<(int Id, string Name)>(
-                        "SELECT Id, Name FROM Services WHERE LOWER(Name) IN @names",
-                        new { names = lowerNames },
+                        "SELECT Id, Name FROM Services WHERE Name COLLATE NOCASE IN @names",
+                        new { names },
                         transaction: tx,
                         cancellationToken: cancellationToken))
                         .ToDictionary(x => x.Name, x => x.Id, StringComparer.OrdinalIgnoreCase);

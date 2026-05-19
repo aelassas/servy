@@ -34,7 +34,7 @@ namespace Servy.Manager.Converters
                 return;
             }
 
-            _processHelper = App.Services!.GetRequiredService<IProcessHelper>();
+            _processHelper = App.Services?.GetService<IProcessHelper>() ?? new DesignTimeProcessHelper();
         }
 
         /// <summary>

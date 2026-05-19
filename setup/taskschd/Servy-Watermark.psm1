@@ -252,16 +252,20 @@ function ConvertFrom-ServyEventMessage {
     #>
     param([string]$Message)
 
-    # 1. Parse raw message context
-    if ($Message -match "^\[(.+?)\]\s*(.+)$") {
+    # Parse raw message context
+    # Split the first line to safely extract the service prefix, preventing multi-line stack traces 
+    # from forcing a fallback to an 'Unknown Service' state.
+    $firstLine, $rest = $Message -split "\r?\n", 2
+
+    if ($firstLine -match '^\[(.+?)\]\s*(.*)$') {
         return @{
             ServiceName = $matches[1]
-            LogText = $matches[2]
+            LogText     = if ($rest) { "$($matches[2])`n$rest" } else { $matches[2] }
         }
     } else {
         return @{
             ServiceName = "Unknown Service"
-            LogText = $Message
+            LogText     = $Message
         }
     }
 }

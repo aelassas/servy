@@ -102,12 +102,17 @@ jobs:
               # Split lines correctly using regex
               $lines = [regex]::Split($jsonString, "\r?\n")
               
-              # Modify each line (expand 2-space indentation to 4-space)
+              # Normalize indentation explicitly: calculate the nesting level based on 
+              # Windows PowerShell 5.1's 2-space baseline and map it securely to a 4-space indent.
               $lines = $lines | ForEach-Object {
-                  [regex]::Replace($_, '^( +)', { param($m) " " * ($m.Value.Length * 2) })
+                  [regex]::Replace($_, '^( +)', {
+                      param($m)
+                      $level = [int]($m.Value.Length / 2)
+                      ' ' * (4 * $level)
+                  })
               }
               
-              # Join lines back together with trailing newline
+              # Join lines back together with a standardized Unix trailing newline
               $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
               
               # Write to file using UTF8
