@@ -181,11 +181,13 @@ try {
     $repoUrl    = "https://github.com/aelassas/servy.git"
     $commitId   = $env:GITHUB_SHA
     $branchName = $env:GITHUB_REF_NAME
+    $repository = $env:GITHUB_REPOSITORY
+    $runId      = $env:GITHUB_RUN_ID
 
-    # BuildData.Url must point to the RUN URL - NOT the job URL
-    $buildUrl = "https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+    if ($commitId -and $branchName -and $repository -and $runId) {
+        # BuildData.Url must point to the RUN URL - NOT the job URL
+        $buildUrl = "https://github.com/$repository/actions/runs/$runId"
 
-    if ($commitId -and $branchName) {
         $commonParams.Origin = @{
             RepositoryData = @{
                 SourceControlManagementType = "git"

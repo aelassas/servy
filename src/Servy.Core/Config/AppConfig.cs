@@ -1024,6 +1024,16 @@ namespace Servy.Core.Config
         /// </remarks>
         public const int WriteFileAtomicRetryDelayMs = 100;
 
+        /// <summary>
+        /// The minimum interval, in seconds, before the same UI exception message 
+        /// will trigger another modal error dialog.
+        /// </summary>
+        /// <remarks>
+        /// This debounce window prevents a flood of repetitive error messages from 
+        /// modal-locking the UI thread during recurring background task failures.
+        /// </remarks>
+        public const int UnexpectedErrorDialogDebounceSeconds = 15;
+
         #endregion
 
         #region Manager Configuration Bounds

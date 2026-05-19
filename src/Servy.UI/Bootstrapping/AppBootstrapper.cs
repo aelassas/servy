@@ -27,6 +27,14 @@ namespace Servy.UI.Bootstrapping
     /// </remarks>
     public class AppBootstrapper
     {
+        #region Private Static Fields
+
+        private static readonly object _errorDialogLock = new object();
+        private static DateTime _lastErrorDialogShown = DateTime.MinValue;
+        private static string _lastErrorDialogMessage = string.Empty;
+
+        #endregion
+
         #region Private Fields
 
         private readonly BootstrapperOptions _options;
@@ -79,7 +87,6 @@ namespace Servy.UI.Bootstrapping
         public bool ForceSoftwareRendering { get; private set; }
 
         #endregion
-
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppBootstrapper"/> class.
@@ -141,21 +148,46 @@ namespace Servy.UI.Bootstrapping
             app.DispatcherUnhandledException += (sender, args) =>
             {
                 Logger.Error("UI Dispatcher Exception", args.Exception);
-                if (!(args.Exception is OutOfMemoryException))
+
+                if (args.Exception is OutOfMemoryException)
                 {
+                    Logger.Error("Non-recoverable OutOfMemoryException detected. Shutting down.");
+                    args.Handled = false;
+                    app.Shutdown(1);
+                    return;
+                }
+
+                bool shouldShowDialog;
+                lock (_errorDialogLock)
+                {
+                    var now = DateTime.UtcNow;
+                    // Combine exception type and message to differentiate between unique concurrent faults
+                    var currentExceptionSignature = args.Exception?.GetType().FullName + ":" + args.Exception?.Message;
+
+                    // Allow the dialog if it is a new exception type/message, or if the debounce window has elapsed
+                    shouldShowDialog = currentExceptionSignature != _lastErrorDialogMessage
+                                       || (now - _lastErrorDialogShown) > TimeSpan.FromSeconds(AppConfig.UnexpectedErrorDialogDebounceSeconds);
+
+                    if (shouldShowDialog)
+                    {
+                        _lastErrorDialogMessage = currentExceptionSignature;
+                        _lastErrorDialogShown = now;
+                    }
+                }
+
+                if (shouldShowDialog)
+                {
+                    // Message box is kept modal to inform the user immediately, but rate-limited via debounce
                     MessageBox.Show(
                         Strings.Msg_UnexpectedError_Body,
                         Strings.Msg_UnexpectedError_Title,
                         MessageBoxButton.OK,
                         MessageBoxImage.Warning);
-                    args.Handled = true;
                 }
-                else
-                {
-                    Logger.Error("Non-recoverable OutOfMemoryException detected. Shutting down.");
-                    args.Handled = false;
-                    app.Shutdown(1);
-                }
+
+                // Suppress the exception to keep the application alive and prevent a hard crash,
+                // allowing operators to save current work or diagnose other active services.
+                args.Handled = true;
             };
 
             // 5. Security Check: Admin Rights

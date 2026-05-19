@@ -4,6 +4,7 @@ using Servy.Core.Services;
 using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
+using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Helpers;
 using Servy.UI.Services;
@@ -36,7 +37,7 @@ namespace Servy.Manager.ViewModels
         private DateTime? _toDateMinDate;
         private string _keyword = string.Empty;
         private CancellationTokenSource? _cancellationTokenSource;
-        private readonly ObservableCollection<LogEntryModel> _logs = new ObservableCollection<LogEntryModel>();
+        private readonly BulkObservableCollection<LogEntryModel> _logs = new BulkObservableCollection<LogEntryModel>();
         private string? _selectedLogMessage;
         private string? _footerText;
         private bool _disposedValue;
@@ -349,8 +350,7 @@ namespace Servy.Manager.ViewModels
                 // Step 3: Update UI safely
                 token.ThrowIfCancellationRequested();
 
-                _logs.Clear();
-
+                var batch = new List<LogEntryModel>(results.Count());
                 foreach (var result in results)
                 {
                     var entry = new LogEntryModel
@@ -361,8 +361,10 @@ namespace Servy.Manager.ViewModels
                         Message = result.Message,
                     };
 
-                    _logs.Add(entry);
+                    batch.Add(entry);
                 }
+                _logs.Clear();
+                _logs.AddRange(batch);
 
                 // Scroll DataGrid to Top
                 ScrollLogsToTopRequested?.Invoke();

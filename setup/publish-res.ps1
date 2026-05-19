@@ -48,12 +48,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-function Assert-LastExitCode {
-    param([string]$ErrorMessage)
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
-    }
-}
+# Import shared helpers (single source of truth for Assert-LastExitCode)
+. (Join-Path $PSScriptRoot "common-helpers.ps1")
 
 # ---------------------------------------------------------------------------------
 # Paths and build settings

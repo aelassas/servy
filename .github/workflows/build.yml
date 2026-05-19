@@ -57,6 +57,10 @@ jobs:
           foreach ($proj in $projects) {
             Write-Host "Restoring $proj for $runtime..."
             dotnet restore $proj --runtime $runtime
+            if ($LASTEXITCODE -ne 0) {
+                Write-Error "Restore failed for $proj"
+                exit $LASTEXITCODE
+            }
           }
 
           foreach ($proj in $projects) {

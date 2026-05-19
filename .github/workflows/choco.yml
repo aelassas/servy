@@ -164,13 +164,22 @@ jobs:
 
       - name: Pack Chocolatey package
         shell: pwsh
-        run: choco pack setup/choco/servy/servy.nuspec --out setup/choco/servy
+        run: |
+          choco pack setup/choco/servy/servy.nuspec --out setup/choco/servy
+          if ($LASTEXITCODE -ne 0) {
+              throw "choco pack failed with exit code $LASTEXITCODE"
+          }
 
       - name: Push Chocolatey package
         shell: pwsh
         env:
           CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
         run: |
-          choco push "setup/choco/servy/servy.$env:VERSION.0.nupkg" `
-            --source "https://community.chocolatey.org/api/v2/package" `
-            --api-key $env:CHOCOLATEY_API_KEY
+          $nupkg = "setup/choco/servy/servy.$env:VERSION.0.nupkg"
+          if (-not (Test-Path $nupkg)) {
+              throw "Expected nupkg not found at '$nupkg' — choco pack likely did not produce it."
+          }
+          choco push $nupkg --source "https://community.chocolatey.org/api/v2/package" --api-key $env:CHOCOLATEY_API_KEY
+          if ($LASTEXITCODE -ne 0) {
+              throw "choco push failed with exit code $LASTEXITCODE"
+          }

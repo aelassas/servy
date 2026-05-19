@@ -253,7 +253,7 @@ namespace Servy.Core.Helpers
                 {
                     // Both probes failed; return DateTime.MinValue so the caller treats the embedded
                     // resource as 'not newer' and leaves the existing extraction in place.
-                    Logger.Debug("AppDomain fallback also failed; returning DateTime.MinValue (no re-extraction).", innerEx);
+                    Logger.Warn("GetHostProcessLastWriteTimeUTC: both MainModule and AppDomain probes failed; resource re-extraction will be skipped this session until an existing file is removed.", innerEx);
                 }
             }
 
@@ -304,6 +304,12 @@ namespace Servy.Core.Helpers
             {
                 DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
                 DateTime embeddedResourceTime = GetHostProcessLastWriteTimeUTC();
+
+                if (embeddedResourceTime == DateTime.MinValue)
+                {
+                    Logger.Warn("Last write time of the host process executable is equal to DateTime.MinValue, "
+                        + $"resource re-extraction will be skipped this session until the existing file '{fileName}' is removed.");
+                }
 
                 Logger.Debug($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
                 Logger.Debug($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");
