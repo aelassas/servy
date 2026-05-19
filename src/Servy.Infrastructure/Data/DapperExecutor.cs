@@ -89,8 +89,14 @@ namespace Servy.Infrastructure.Data
             /// </summary>
             public void Dispose()
             {
-                Transaction.Dispose();
-                Connection.Dispose(); // Prevents connection leak in stateless executor
+                try
+                {
+                    Transaction.Dispose();
+                }
+                finally
+                {
+                    Connection.Dispose(); // Prevents connection leak in stateless executor
+                }
             }
         }
 
@@ -107,9 +113,17 @@ namespace Servy.Infrastructure.Data
         public IDbTransaction BeginTransaction()
         {
             var connection = _dbContext.CreateConnection();
-            connection.Open();
-            var transaction = connection.BeginTransaction();
-            return new WrappedDbTransaction(connection, transaction);
+            try
+            {
+                connection.Open();
+                var transaction = connection.BeginTransaction();
+                return new WrappedDbTransaction(connection, transaction);
+            }
+            catch
+            {
+                connection.Dispose();
+                throw;
+            }
         }
 
         #endregion

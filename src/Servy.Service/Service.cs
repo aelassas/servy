@@ -1878,6 +1878,7 @@ namespace Servy.Service
                     _logger?.Info("Pre-Shutdown bypassed: System reboot initiated by recovery logic.");
                     // Signal stopped immediately so the OS doesn't wait for us
                     UpdateServiceStatus(SERVICE_STOPPED, 0);
+                    FlushAndShutdownLogger();
                     return;
                 }
 
@@ -2025,6 +2026,7 @@ namespace Servy.Service
             if (_isRebooting)
             {
                 _logger?.Info("Shutdown bypassed: System reboot initiated by recovery logic.");
+                FlushAndShutdownLogger();
                 return;
             }
 
