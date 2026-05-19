@@ -84,9 +84,21 @@ try {
         }
 
         Write-Host "`n=== Running: $fullPath ==="
-        & $fullPath @Params
+
+        # Reset before invocation so a stale exit code from earlier work cannot fool us.
+        $global:LASTEXITCODE = 0
+
+        try {
+            & $fullPath @Params
+        }
+        catch {
+            # $ErrorActionPreference='Stop' in the child will land here.
+            throw "Script failed ($ScriptPath): $($_.Exception.Message)"
+        }
+
+        # Only meaningful if the child ended with a native command or an explicit 'exit N'.
         if ($LASTEXITCODE -ne 0) {
-            Write-Error "Script failed: $fullPath"
+            throw "Script failed ($ScriptPath): native exit code $LASTEXITCODE"
         }
     }
 
