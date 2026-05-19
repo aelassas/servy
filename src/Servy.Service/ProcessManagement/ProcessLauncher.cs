@@ -383,7 +383,16 @@ namespace Servy.Service.ProcessManagement
             {
                 string currentArgs = psi.Arguments ?? string.Empty;
 
-                bool hasEncoding = JavaFileEncodingRegex.IsMatch(currentArgs);
+                bool hasEncoding;
+                try
+                {
+                    hasEncoding = JavaFileEncodingRegex.IsMatch(currentArgs);
+                }
+                catch (RegexMatchTimeoutException ex)
+                {
+                    Logger.Warn($"ApplyLanguageFixes: -Dfile.encoding detection regex timed out on Java arguments ({ex.Message}); assuming not present.");
+                    hasEncoding = false;
+                }
 
                 if (!hasEncoding)
                 {

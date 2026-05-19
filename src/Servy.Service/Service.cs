@@ -942,15 +942,16 @@ namespace Servy.Service
                 try
                 {
                     // ProcessLauncher.Start handles the ScmHeartbeat pulses during the wait.
-                    var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger!);
-
-                    if (process.ExitCode == 0)
+                    using (var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger!))
                     {
-                        _logger?.Info("Pre-launch process completed successfully.");
-                        return true;
-                    }
+                        if (process.ExitCode == 0)
+                        {
+                            _logger?.Info("Pre-launch process completed successfully.");
+                            return true;
+                        }
 
-                    LogIssue($"Pre-launch process exited with code {process.ExitCode}.");
+                        LogIssue($"Pre-launch process exited with code {process.ExitCode}.");
+                    }
                 }
                 catch (Exception ex)
                 {

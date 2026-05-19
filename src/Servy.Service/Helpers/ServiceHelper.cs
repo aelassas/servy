@@ -269,14 +269,14 @@ namespace Servy.Service.Helpers
 
         /// <inheritdoc />
         public void RestartProcess(
-            IProcessWrapper process,
-            Action<string, string, string, List<EnvironmentVariable>> startProcess,
-            string realExePath,
-            string realArgs,
-            string workingDir,
-            List<EnvironmentVariable> environmentVariables,
-            IServyLogger logger,
-            int stopTimeoutMs)
+                    IProcessWrapper process,
+                    Action<string, string, string, List<EnvironmentVariable>> startProcess,
+                    string realExePath,
+                    string realArgs,
+                    string workingDir,
+                    List<EnvironmentVariable> environmentVariables,
+                    IServyLogger logger,
+                    int stopTimeoutMs)
         {
             if (startProcess == null) throw new ArgumentNullException(nameof(startProcess));
 
@@ -311,6 +311,12 @@ namespace Servy.Service.Helpers
             catch (Exception ex)
             {
                 logger?.Error($"Failed to restart process.", ex);
+            }
+            finally
+            {
+                // Ensure the old process wrapper is disposed to prevent 
+                // handle leaks during repeated recovery cycles.
+                process?.Dispose();
             }
         }
 

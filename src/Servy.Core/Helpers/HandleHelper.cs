@@ -137,6 +137,7 @@ namespace Servy.Core.Helpers
                 catch (RegexMatchTimeoutException ex)
                 {
                     Logger.Error("Regex parsing timed out while processing handle output.", ex);
+                    throw; // let the caller decide; partial lists are worse than failed lists
                 }
             }
 
