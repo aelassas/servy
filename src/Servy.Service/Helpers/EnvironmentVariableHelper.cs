@@ -44,7 +44,9 @@ namespace Servy.Service.Helpers
         {
             // --- System Integrity ---
             "PATH", "COMSPEC", "SYSTEMROOT", "WINDIR", "SYSTEMDRIVE", "TEMP", "TMP", "PATHEXT",
-  
+            "PROGRAMFILES", "PROGRAMFILES(X86)", "PROGRAMW6432",
+            "COMMONPROGRAMFILES", "COMMONPROGRAMFILES(X86)", "COMMONPROGRAMW6432",
+            
             // --- Profile / Identity Redirection ---
             "APPDATA", "LOCALAPPDATA", "PUBLIC",
             "HOMEDRIVE", "HOMEPATH", "HOME",

@@ -235,18 +235,32 @@ namespace Servy.Core.Security
                 {
                     stableHash = (stableHash ^ c) * 16777619;
                 }
-                var mutexName = $"Global\\Servy.ProtectedKeyProvider:{stableHash:X8}";
+                var mutexName = $@"Global\Servy.ProtectedKeyProvider:{stableHash:X8}";
 
                 Mutex mutex;
                 try
                 {
-                    mutex = new Mutex(initiallyOwned: false, mutexName);
+                    // Configure explicit DACL rules to permit cross-process and cross-session synchronization.
+                    // This ensures both the Session 0 SYSTEM service and the interactive user Manager share the exact same lock.
+                    var mutexSecurity = new MutexSecurity();
+
+                    // Allow everyone (WorldSid) to Synchronize and Modify (Release) the shared Mutex
+                    var accessRule = new MutexAccessRule(
+                        new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+                        MutexRights.Synchronize | MutexRights.Modify,
+                        AccessControlType.Allow);
+
+                    mutexSecurity.AddAccessRule(accessRule);
+
+                    // Use MutexAcl to atomically instantiate the named system mutex with security descriptors applied
+                    mutex = MutexAcl.Create(initiallyOwned: false, mutexName, out _, mutexSecurity);
                 }
-                catch (UnauthorizedAccessException)
+                catch (Exception ex)
                 {
-                    // Fallback to Local session isolation namespace if access to Global is restricted by local sandboxing policies
-                    var localMutexName = $"Local\\Servy.ProtectedKeyProvider:{stableHash:X8}";
-                    mutex = new Mutex(initiallyOwned: false, localMutexName);
+                    // Fail fast: We must not silently fall back to a per-session Local\ namespace, 
+                    // as doing so bypasses cross-session synchronization and risks key corruption.
+                    Logger.Error($"CRITICAL: Failed to allocate global synchronization mutex '{mutexName}'. Key generation aborted.", ex);
+                    throw new System.Security.SecurityException($"Could not establish cross-session lock boundary for key initialization: {ex.Message}", ex);
                 }
 
                 using (mutex)
