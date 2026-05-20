@@ -94,7 +94,7 @@ $installParams = @{
 
 # $env:SERVY_PASSWORD = "ChangeMe!"
 Install-ServyService @installParams
-# Remove-Item Env:SERVY_PASSWORD -ErrorAction SilentlyContinue
+# Remove-Item Env:SERVY_PASSWORD
 
 # ----------------------------------------------------------------
 # Export the service configuration (XML)
