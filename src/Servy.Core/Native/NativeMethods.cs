@@ -649,9 +649,11 @@ namespace Servy.Core.Native
             int dwLogonProvider,
             out IntPtr phToken);
 
+        /// <summary>Renames or moves an existing file or directory, with options to control the move operation.</summary>
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern bool MoveFileEx(string lpExistingFileName, string lpNewFileName, uint dwFlags);
 
+        /// <summary>Retrieves file information for the specified file handle.</summary>
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetFileInformationByHandle(SafeFileHandle hFile, out BY_HANDLE_FILE_INFORMATION lpFileInformation);
 
