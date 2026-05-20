@@ -3,9 +3,16 @@
 namespace Servy.CLI.Options
 {
     /// <summary>
-    /// Options for the <c>import</c> command to import a Windows service configuration into Servy's database.
+    /// Defines command-line options for the <c>import</c> verb, enabling the ingestion 
+    /// of Windows service configurations from JSON or XML files into the Servy 
+    /// database and optional registration with the Windows Service Control Manager.
     /// </summary>
-    [Verb("import", HelpText = "Import a Windows service configuration into Servy's database.")]
+    /// <remarks>
+    /// This command requires administrative privileges to perform service installation 
+    /// and ensures that imported configuration files are validated against 
+    /// path-security policies and schema constraints.
+    /// </remarks>
+    [Verb("import", HelpText = "Import a Windows service configuration into the Servy database and optionally install the service.")]
     public class ImportServiceOptions : GlobalOptionsBase
     {
         /// <summary>
