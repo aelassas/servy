@@ -161,11 +161,11 @@ namespace Servy.CLI.Commands
                 // System Protection: Block reading from critical Windows directories to prevent pulling unintended system files
                 string[] protectedFolders =
                 {
-                      Environment.GetFolderPath(Environment.SpecialFolder.Windows),
-                      Environment.GetFolderPath(Environment.SpecialFolder.System),
-                      Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                      Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-                 };
+                    Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                    Environment.GetFolderPath(Environment.SpecialFolder.System),
+                    Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                    Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+                };
 
                 var violatedFolder = protectedFolders
                     .FirstOrDefault(folder => !string.IsNullOrEmpty(folder) &&
@@ -224,19 +224,27 @@ namespace Servy.CLI.Commands
                                 {
                                     string finalPathName = pathBuilder.ToString();
 
-                                    // NORMALIZE: Strip the extended device path prefix for local volume checks
-                                    // This prevents the security guard from incorrectly flagging local paths 
-                                    // that were resolved via handles (e.g. \\?\C:\... -> C:\...)
+                                    // NORMALIZE: Clean up extended device namespaces safely to track backends accurately
                                     string normalizedPath = finalPathName;
-                                    if (normalizedPath.StartsWith(@"\\?\", StringComparison.Ordinal))
+                                    bool unwrappedUnc = false;
+
+                                    if (normalizedPath.StartsWith(@"\\?\UNC\", StringComparison.OrdinalIgnoreCase))
                                     {
+                                        // Reconstruct the explicit double-backslash structural layout for accurate evaluation
+                                        normalizedPath = @"\\" + normalizedPath.Substring(@"\\?\UNC\".Length);
+                                        unwrappedUnc = true;
+                                    }
+                                    else if (normalizedPath.StartsWith(@"\\?\", StringComparison.Ordinal))
+                                    {
+                                        // Strip standard local volume namespace tags (e.g. \\?\C:\... -> C:\...)
                                         normalizedPath = normalizedPath.Substring(4);
                                     }
 
-                                    bool finalIsUnc = Uri.TryCreate(normalizedPath, UriKind.Absolute, out var finalUri) && finalUri.IsUnc;
+                                    bool finalIsUnc = unwrappedUnc || (Uri.TryCreate(normalizedPath, UriKind.Absolute, out var finalUri) && finalUri.IsUnc);
 
                                     // Now check the normalized path
-                                    if (normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
+                                    if (unwrappedUnc ||
+                                        normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
                                         normalizedPath.Contains(@"\UNC\", StringComparison.OrdinalIgnoreCase) ||
                                         finalIsUnc)
                                     {
