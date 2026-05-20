@@ -87,7 +87,8 @@ namespace Servy.Services
         /// and maps the values to the main view model.
         /// Shows an error message if the XML is invalid, deserialization fails, or any exception occurs.
         /// </summary>
-        Task ImportXmlConfig();
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        Task ImportXmlConfig(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Opens a file dialog to select an JSON configuration file for a service,
@@ -95,7 +96,8 @@ namespace Servy.Services
         /// and maps the values to the main view model.
         /// Shows an error message if the JSON is invalid, deserialization fails, or any exception occurs.
         /// </summary>
-        Task ImportJsonConfig();
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        Task ImportJsonConfig(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Opens Servy Manager to manage services.

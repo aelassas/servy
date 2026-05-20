@@ -103,7 +103,13 @@ namespace Servy.Manager.UnitTests.Services
             var dto = new ServiceDto { Name = "MyService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
             var json = JsonConvert.SerializeObject(dto);
 
-            var tempFile = Path.GetTempFileName();
+            // FIX: Change extension from .tmp to .json to pass ValidatePathSecurity
+            var baseTempFile = Path.GetTempFileName();
+            var tempFile = Path.ChangeExtension(baseTempFile, ".json");
+
+            // Clean up original .tmp file and write the payload to the authorized .json path
+            if (File.Exists(baseTempFile)) File.Delete(baseTempFile);
+
             File.WriteAllText(tempFile, json);
 
             _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
@@ -160,7 +166,14 @@ namespace Servy.Manager.UnitTests.Services
             var dto = new ServiceDto { Name = "XmlService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
 
             var serializer = new System.Xml.Serialization.XmlSerializer(typeof(ServiceDto));
-            var tempFile = Path.GetTempFileName();
+
+            // FIX: Change extension from .tmp to .xml to pass ValidatePathSecurity
+            var baseTempFile = Path.GetTempFileName();
+            var tempFile = Path.ChangeExtension(baseTempFile, ".xml");
+
+            // Clean up original .tmp file and write the payload to the authorized .xml path
+            if (File.Exists(baseTempFile)) File.Delete(baseTempFile);
+
             using (var writer = new StreamWriter(tempFile))
             {
                 serializer.Serialize(writer, dto);

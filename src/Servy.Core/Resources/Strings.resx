@@ -202,10 +202,10 @@
     <value>Executable files (*.exe)|*.exe|All files (*.*)|*.*</value>
   </data>
   <data name="FileFilter_Xml" xml:space="preserve">
-    <value>XML files (*.xml)|*.xml|All files (*.*)|*.*</value>
+    <value>XML files (*.xml)|*.xml</value>
   </data>
   <data name="FileFilter_Json" xml:space="preserve">
-    <value>JSON files (*.json)|*.json|All files (*.*)|*.*</value>
+    <value>JSON files (*.json)|*.json</value>
   </data>
   <data name="FileFilter_AllFiles" xml:space="preserve">
     <value>All files (*.*)|*.*</value>

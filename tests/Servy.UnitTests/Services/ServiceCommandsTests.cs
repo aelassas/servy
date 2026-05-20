@@ -444,7 +444,14 @@ namespace Servy.UnitTests.Services
         public async Task ImportXmlCommand_ValidFile_UpdatesModel()
         {
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
-            var path = Path.GetTempFileName();
+
+            // FIX: Ensure the temporary test file path ends with an authorized extension (.xml)
+            var baseTempPath = Path.GetTempFileName();
+            var path = Path.ChangeExtension(baseTempPath, ".xml");
+
+            // Clean up the .tmp file created by Path.GetTempFileName() and ensure the .xml one is initialized empty
+            if (File.Exists(baseTempPath)) File.Delete(baseTempPath);
+            File.WriteAllText(path, "<service></service>");
 
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(path);
 
@@ -463,7 +470,7 @@ namespace Servy.UnitTests.Services
 
             _xmlServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
 
-            var task = sut.ImportXmlConfig();
+            var task = sut.ImportXmlConfig(CancellationToken.None);
             if (task != null) await task;
 
             if (File.Exists(path)) File.Delete(path);
@@ -474,8 +481,16 @@ namespace Servy.UnitTests.Services
         [Fact]
         public async Task ImportJsonCommand_ValidFile_UpdatesModel()
         {
+            // Arrange
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
-            var path = Path.GetTempFileName();
+
+            // FIX: Ensure the temporary test file path ends with an authorized extension (.json)
+            var baseTempPath = Path.GetTempFileName();
+            var path = Path.ChangeExtension(baseTempPath, ".json");
+
+            // Clean up the .tmp file created by Path.GetTempFileName() and ensure the .json one is initialized empty
+            if (File.Exists(baseTempPath)) File.Delete(baseTempPath);
+            File.WriteAllText(path, "{}");
 
             _dialogServiceMock.Setup(d => d.OpenJson()).Returns(path);
 
@@ -494,11 +509,14 @@ namespace Servy.UnitTests.Services
 
             _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
 
-            var task = sut.ImportJsonConfig();
+            // Act
+            var task = sut.ImportJsonConfig(CancellationToken.None);
             if (task != null) await task;
 
+            // Teardown
             if (File.Exists(path)) File.Delete(path);
 
+            // Assert
             Assert.True(bindCalled, "The logic exited before binding.");
         }
 
@@ -508,7 +526,7 @@ namespace Servy.UnitTests.Services
             var sut = CreateSut();
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(string.Empty);
 
-            sut.ImportXmlConfig();
+            sut.ImportXmlConfig(CancellationToken.None);
 
             _messageBoxService.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }

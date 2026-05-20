@@ -16,8 +16,9 @@ namespace Servy.Design
         public Task<bool> RestartService(string serviceName, CancellationToken token = default) => Task.FromResult(true);
         public Task ExportXmlConfig(string confirmPassword) => Task.CompletedTask;
         public Task ExportJsonConfig(string confirmPassword) => Task.CompletedTask;
-        public Task ImportXmlConfig() => Task.CompletedTask;
-        public Task ImportJsonConfig() => Task.CompletedTask;
+        public Task ImportXmlConfig(CancellationToken token = default) => Task.CompletedTask;
+        public Task ImportJsonConfig(CancellationToken token = default) => Task.CompletedTask;
         public Task OpenManager() => Task.CompletedTask;
+
     }
 }

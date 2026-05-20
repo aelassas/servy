@@ -10,9 +10,8 @@
 
 namespace Servy.UI.Resources {
     using System;
-    using System.Diagnostics.CodeAnalysis;
-
-
+    
+    
     /// <summary>
     ///   Une classe de ressource fortement typée destinée, entre autres, à la consultation des chaînes localisées.
     /// </summary>
@@ -23,7 +22,6 @@ namespace Servy.UI.Resources {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "18.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [ExcludeFromCodeCoverage]
     public class Strings {
         
         private static global::System.Resources.ResourceManager resourceMan;
@@ -72,11 +70,101 @@ namespace Servy.UI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified path is invalid..
+        /// </summary>
+        public static string Msg_InvalidPath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à No updates currently available..
         /// </summary>
         public static string Msg_NoUpdatesAvailable {
             get {
                 return ResourceManager.GetString("Msg_NoUpdatesAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Security Alert: Importing configurations through directory junctions or symlinks is prohibited to prevent path redirection attacks..
+        /// </summary>
+        public static string Msg_SecurityDirReparsePointProhibited {
+            get {
+                return ResourceManager.GetString("Msg_SecurityDirReparsePointProhibited", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Security Alert: Importing configurations through file symbolic links or junctions is prohibited to prevent path redirection attacks..
+        /// </summary>
+        public static string Msg_SecurityFileReparsePointProhibited {
+            get {
+                return ResourceManager.GetString("Msg_SecurityFileReparsePointProhibited", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Security Guard Failure: Target file handle validation rejected. {0}.
+        /// </summary>
+        public static string Msg_SecurityHandleValidationFailed {
+            get {
+                return ResourceManager.GetString("Msg_SecurityHandleValidationFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Security Alert: Invalid file type &apos;{0}&apos;. Only .json and .xml files are supported..
+        /// </summary>
+        public static string Msg_SecurityInvalidFileType {
+            get {
+                return ResourceManager.GetString("Msg_SecurityInvalidFileType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Security Alert: Importing from network drives (including mapped UNC shares) is prohibited..
+        /// </summary>
+        public static string Msg_SecurityNetworkDriveProhibited {
+            get {
+                return ResourceManager.GetString("Msg_SecurityNetworkDriveProhibited", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Access Denied: The resolved path targets protected system directory &apos;{0}&apos;. Import prohibited..
+        /// </summary>
+        public static string Msg_SecurityProtectedDirectory {
+            get {
+                return ResourceManager.GetString("Msg_SecurityProtectedDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Security Alert: &apos;{0}&apos; is a reserved Windows device name and cannot be used..
+        /// </summary>
+        public static string Msg_SecurityReservedDeviceName {
+            get {
+                return ResourceManager.GetString("Msg_SecurityReservedDeviceName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Security Alert: Resolved file target points directly to a UNC destination. Import aborted..
+        /// </summary>
+        public static string Msg_SecurityResolvedUncDestination {
+            get {
+                return ResourceManager.GetString("Msg_SecurityResolvedUncDestination", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Security Alert: Importing from UNC paths is prohibited to prevent malicious configuration injection..
+        /// </summary>
+        public static string Msg_SecurityUncPathProhibited {
+            get {
+                return ResourceManager.GetString("Msg_SecurityUncPathProhibited", resourceCulture);
             }
         }
         
