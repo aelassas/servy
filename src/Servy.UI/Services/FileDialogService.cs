@@ -18,7 +18,7 @@ namespace Servy.UI.Services
         /// <returns>The full path of the selected file if the user clicks OK; otherwise, <see langword="null"/>.</returns>
         private static string? ShowOpenDialog(string filter, string title)
         {
-            var dlg = new Microsoft.Win32.OpenFileDialog
+            var dlg = new OpenFileDialog
             {
                 Filter = filter,
                 Title = title
@@ -34,7 +34,7 @@ namespace Servy.UI.Services
         /// <returns>The full path where the file should be saved if the user clicks OK; otherwise, <see langword="null"/>.</returns>
         private static string? ShowSaveDialog(string filter, string title)
         {
-            var dlg = new Microsoft.Win32.SaveFileDialog
+            var dlg = new SaveFileDialog
             {
                 Filter = filter,
                 Title = title

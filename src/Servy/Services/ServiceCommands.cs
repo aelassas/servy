@@ -537,7 +537,7 @@ namespace Servy.Services
         /// <returns>A task representing the asynchronous import operation.</returns>
         /// <remarks>
         /// The import process follows a multi-stage security gate:
-        /// 1. File size verification (via <see cref="ImportGuard"/>).
+        /// 1. Security & Size Check: Prevents large file attacks, UNC bypasses, and path traversal (via <see cref="ImportGuard"/>).
         /// 2. Raw content/syntax validation.
         /// 3. Logical domain validation (via <see cref="IServiceConfigurationValidator"/>).
         /// Only after passing all gates is the UI model updated.
@@ -558,7 +558,15 @@ namespace Servy.Services
                 if (!await ImportGuard.ValidateFileSizeAsync(path, _messageBoxService, Caption, AppConfig.MaxConfigFileSizeMB, Strings.Msg_ConfigSizeLimitReached))
                     return;
 
-                var content = await File.ReadAllTextAsync(path, cancellationToken);
+                // Defense-in-depth: reuse the same UNC / reparse / device-name / protected-folder guards as the CLI
+                var guardResult = ImportGuard.ValidatePathSecurity(path);
+                if (!guardResult.IsValid || guardResult.ValidPath == null)
+                {
+                    await _messageBoxService.ShowErrorAsync(guardResult.ErrorMessage, Caption);
+                    return;
+                }
+
+                var content = await File.ReadAllTextAsync(guardResult.ValidPath.ResolvedPath, cancellationToken);
                 var validation = validateContent(content);
                 if (!validation.IsValid)
                 {

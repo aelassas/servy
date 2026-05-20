@@ -79,7 +79,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à JSON files (*.json)|*.json|All files (*.*)|*.*.
+        ///   Recherche une chaîne localisée semblable à JSON files (*.json)|*.json.
         /// </summary>
         public static string FileFilter_Json {
             get {
@@ -88,7 +88,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à XML files (*.xml)|*.xml|All files (*.*)|*.*.
+        ///   Recherche une chaîne localisée semblable à XML files (*.xml)|*.xml.
         /// </summary>
         public static string FileFilter_Xml {
             get {

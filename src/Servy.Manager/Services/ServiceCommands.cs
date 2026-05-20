@@ -703,7 +703,7 @@ namespace Servy.Manager.Services
         /// <remarks>
         /// The import follows a strict "Gatekeeper" pattern:
         /// <list type="number">
-        /// <item><description>Size Check: Prevents large file attacks via <see cref="ImportGuard"/>.</description></item>
+        /// <item><description>Security & Size Check: Prevents large file attacks, UNC bypasses, and path traversal via <see cref="ImportGuard"/>.</description></item>
         /// <item><description>Format Check: Ensures the raw string is valid XML/JSON.</description></item>
         /// <item><description>Domain Check: Validates business rules via <see cref="IServiceConfigurationValidator"/>.</description></item>
         /// <item><description>Persistence: Executes an Upsert in the database.</description></item>
@@ -728,7 +728,15 @@ namespace Servy.Manager.Services
                 if (!await ImportGuard.ValidateFileSizeAsync(path, _messageBoxService, AppConfig.Caption, Core.Config.AppConfig.MaxConfigFileSizeMB, Strings.Msg_ConfigSizeLimitReached))
                     return;
 
-                var content = await File.ReadAllTextAsync(path, cancellationToken);
+                // Defense-in-depth: reuse the same UNC / reparse / device-name / protected-folder guards as the CLI
+                var guardResult = ImportGuard.ValidatePathSecurity(path);
+                if (!guardResult.IsValid || guardResult.ValidPath == null)
+                {
+                    await _messageBoxService.ShowErrorAsync(guardResult.ErrorMessage, AppConfig.Caption);
+                    return;
+                }
+
+                var content = await File.ReadAllTextAsync(guardResult.ValidPath.ResolvedPath, cancellationToken);
                 var validation = validateContent(content);
                 if (!validation.IsValid)
                 {
@@ -746,8 +754,8 @@ namespace Servy.Manager.Services
                 if (!await _serviceConfigurationValidator.Validate(dto)) return;
 
                 var res = await _serviceRepository.UpsertAsync(
-                    dto, 
-                    preserveExistingRuntimeState: true, 
+                    dto,
+                    preserveExistingRuntimeState: true,
                     preserveExistingCredentials: true,
                     cancellationToken: cancellationToken);
                 if (res > 0)
