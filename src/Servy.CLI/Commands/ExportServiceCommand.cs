@@ -123,6 +123,25 @@ namespace Servy.CLI.Commands
                 throw new SecurityException("Security Alert: Exporting to UNC paths is prohibited to prevent data exfiltration.");
             }
 
+            // Mapped Network Drive Guard
+            // Catches network paths mapped to local drive letters (e.g. Z:\config.xml -> \\attacker\share)
+            try
+            {
+                string? root = Path.GetPathRoot(fullPath);
+                if (!string.IsNullOrEmpty(root))
+                {
+                    var drive = new DriveInfo(root);
+                    if (drive.DriveType == DriveType.Network)
+                    {
+                        throw new SecurityException("Security Alert: Exporting to network drives (including mapped UNC shares) is prohibited.");
+                    }
+                }
+            }
+            catch (ArgumentException)
+            {
+                /* Invalid or unprobed drive root - fall through to subsequent security blocks */
+            }
+
             // 4. Reparse Point Guard (Directory and File Level)
             // Hardening: We explicitly block reparse points (symlinks/junctions) at both the directory 
             // and file level to prevent path redirection attacks and UNC bypasses.

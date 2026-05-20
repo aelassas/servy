@@ -658,12 +658,19 @@ namespace Servy.Core.Helpers
                 return false; // drive root or UNC share root - no ancestors to inspect
 
             var current = new DirectoryInfo(parentPath);
-            while (current != null && current.Exists)
+
+            // Continue walking upward even if the immediate parent does not exist yet.
+            // This ensures we don't bypass the check when evaluating paths inside 
+            // directories that are about to be created.
+            while (current != null)
             {
-                if (!string.IsNullOrEmpty(current.LinkTarget) ||
-                    (current.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                if (current.Exists)
                 {
-                    return true;
+                    if (!string.IsNullOrEmpty(current.LinkTarget) ||
+                        (current.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                    {
+                        return true;
+                    }
                 }
                 current = current.Parent;
             }

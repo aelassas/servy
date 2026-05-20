@@ -8,10 +8,12 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Mappers;
+using Servy.Core.Native;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Text;
 
 namespace Servy.CLI.Commands
 {
@@ -103,6 +105,27 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(errorMsg);
                 }
 
+                // Mapped Network Drive Guard
+                // Catches network paths mapped to local drive letters (e.g. Z:\config.xml -> \\attacker\share)
+                try
+                {
+                    string? root = Path.GetPathRoot(fullPath);
+                    if (!string.IsNullOrEmpty(root))
+                    {
+                        var drive = new DriveInfo(root);
+                        if (drive.DriveType == DriveType.Network)
+                        {
+                            var errorMsg = "Security Alert: Importing from network drives (including mapped UNC shares) is prohibited.";
+                            Logger.Error(errorMsg);
+                            return CommandResult.Fail(errorMsg);
+                        }
+                    }
+                }
+                catch (ArgumentException)
+                {
+                    /* Invalid or unprobed drive root - fall through to subsequent security blocks */
+                }
+
                 // Reparse Point Guard (Directory and File Level)
                 // Hardening: We explicitly block reparse points (symlinks/junctions) at both the directory 
                 // and file level to prevent path redirection attacks and UNC bypasses.
@@ -138,11 +161,11 @@ namespace Servy.CLI.Commands
                 // System Protection: Block reading from critical Windows directories to prevent pulling unintended system files
                 string[] protectedFolders =
                 {
-                     Environment.GetFolderPath(Environment.SpecialFolder.Windows),
-                     Environment.GetFolderPath(Environment.SpecialFolder.System),
-                     Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                     Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-                };
+                      Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                      Environment.GetFolderPath(Environment.SpecialFolder.System),
+                      Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                      Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+                 };
 
                 var violatedFolder = protectedFolders
                     .FirstOrDefault(folder => !string.IsNullOrEmpty(folder) &&
@@ -173,6 +196,63 @@ namespace Servy.CLI.Commands
                 if (!fileInfo.Exists)
                 {
                     var errorMsg = $"[Import{configFileType}] File not found: {fullPath}";
+                    Logger.Error(errorMsg);
+                    return CommandResult.Fail(errorMsg);
+                }
+
+                // Belt-and-braces: Open a temporary read handle to resolve the true, underlying volume path
+                // This catches complex or nested link configurations resolving out to distant remote networks.
+                try
+                {
+                    using (var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        var safeHandle = fileStream.SafeFileHandle;
+                        IntPtr nativeHandle = safeHandle.DangerousGetHandle();
+
+                        if (nativeHandle != NativeMethods.INVALID_HANDLE_VALUE)
+                        {
+                            // 1. Determine buffer size required
+                            uint requiredSize = NativeMethods.GetFinalPathNameByHandle(nativeHandle, null!, 0, NativeMethods.VOLUME_NAME_DOS);
+
+                            if (requiredSize > 0)
+                            {
+                                // 2. Allocate buffer and retrieve the path
+                                var pathBuilder = new StringBuilder((int)requiredSize);
+                                uint resultSize = NativeMethods.GetFinalPathNameByHandle(nativeHandle, pathBuilder, requiredSize, NativeMethods.VOLUME_NAME_DOS);
+
+                                if (resultSize > 0)
+                                {
+                                    string finalPathName = pathBuilder.ToString();
+
+                                    // NORMALIZE: Strip the extended device path prefix for local volume checks
+                                    // This prevents the security guard from incorrectly flagging local paths 
+                                    // that were resolved via handles (e.g. \\?\C:\... -> C:\...)
+                                    string normalizedPath = finalPathName;
+                                    if (normalizedPath.StartsWith(@"\\?\", StringComparison.Ordinal))
+                                    {
+                                        normalizedPath = normalizedPath.Substring(4);
+                                    }
+
+                                    bool finalIsUnc = Uri.TryCreate(normalizedPath, UriKind.Absolute, out var finalUri) && finalUri.IsUnc;
+
+                                    // Now check the normalized path
+                                    if (normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
+                                        normalizedPath.Contains(@"\UNC\", StringComparison.OrdinalIgnoreCase) ||
+                                        finalIsUnc)
+                                    {
+                                        var errorMsg = "Security Alert: Resolved file target points directly to a UNC destination. Import aborted.";
+                                        Logger.Error(errorMsg);
+                                        return CommandResult.Fail(errorMsg);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Fail fast if an operational error blocks a reliable security verification check
+                    var errorMsg = $"Security Guard Failure: Target file handle validation rejected. {ex.Message}";
                     Logger.Error(errorMsg);
                     return CommandResult.Fail(errorMsg);
                 }
