@@ -111,9 +111,27 @@ namespace Servy.Core.Helpers
 
                 // Final WaitForExit() with no timeout flushes any in-flight async event handlers for the success path
                 process.WaitForExit();
-                string output = outputBuilder.ToString();
 
-                // Check for specific handle.exe errors (like "No matching handles found")
+                string output = outputBuilder.ToString();
+                string error = errorBuilder.ToString();
+
+                // Sysinternals handle.exe returns exit code 1 when it successfully executes but finds no handles.
+                bool noMatchingHandles = process.ExitCode == 1 && output.Contains("No matching handles found", StringComparison.OrdinalIgnoreCase);
+
+                // Inspection of ExitCode is critical to ensure the process actually succeeded
+                if (process.ExitCode != 0 && !noMatchingHandles)
+                {
+                    // Log detailed diagnostic information for the operator
+                    Logger.Error($"handle.exe exited with non-zero code {process.ExitCode}. " +
+                                 $"Stdout: {output.Trim()}. Stderr: {error.Trim()}. " +
+                                 "Handle detection is unreliable; aborting operation to prevent file corruption.");
+
+                    // Throwing an InvalidOperationException forces the caller (ResourceHelper) 
+                    // to catch the error and return 'false', halting the file-replacement pipeline.
+                    throw new InvalidOperationException($"Handle detection failed with exit code {process.ExitCode}.");
+                }
+
+                // Check for specific handle.exe errors
                 if (string.IsNullOrWhiteSpace(output) && errorBuilder.Length > 0)
                 {
                     Logger.Warn($"handle.exe produced error output: {errorBuilder}");

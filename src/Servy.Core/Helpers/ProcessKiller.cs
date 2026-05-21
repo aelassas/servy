@@ -68,6 +68,16 @@ namespace Servy.Core.Helpers
             int selfPid;
             using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
 
+            DateTime parentStartTime = DateTime.MinValue;
+            try
+            {
+                using (var parent = Process.GetProcessById(parentPid))
+                {
+                    parentStartTime = parent.StartTime;
+                }
+            }
+            catch { /* parent already exited; first-level identity check is best-effort */ }
+
             // Step 1: Create a handle-less view of the entire system process table in a single pass
             var (snapshot, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
 
@@ -77,7 +87,7 @@ namespace Servy.Core.Helpers
 
             // Step 2: Recursively terminate descendants using the map
             var visited = new HashSet<int>();
-            WalkAndKillChildren(parentPid, DateTime.MinValue, selfPid, protectedPids, byParent, visited);
+            WalkAndKillChildren(parentPid, parentStartTime, selfPid, protectedPids, byParent, visited);
         }
 
         /// <summary>
@@ -241,25 +251,6 @@ namespace Servy.Core.Helpers
             }
         }
 
-        /// <summary>
-        /// Safely retrieves the start time of a process without throwing an exception if the process has already exited or access is denied.
-        /// </summary>
-        /// <param name="p">The <see cref="Process"/> instance to query.</param>
-        /// <returns>
-        /// The <see cref="DateTime"/> when the process started, or <see cref="DateTime.MinValue"/> if the start time could not be retrieved.
-        /// </returns>
-        private static DateTime SafeStartTime(Process p)
-        {
-            try
-            {
-                return p.StartTime;
-            }
-            catch
-            {
-                return DateTime.MinValue;
-            }
-        }
-
         /// <inheritdoc/>
         public bool KillProcessTreeAndParents(int pid, bool killParents = true)
         {
@@ -288,7 +279,9 @@ namespace Servy.Core.Helpers
                     using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
 
                     // ROBUSTNESS: Perform the parent kill walk BEFORE the tree kill walk.
-                    if (killParents) KillParentProcesses(target.Id, target.StartTime, protectedPids, completeSnapshot, new HashSet<int>());
+                    // Aligned with the string overload to use SafeStartTime wrapper to prevent Win32Exception 
+                    // or InvalidOperationException from skipping the subsequent KillProcessTree execution.
+                    if (killParents) KillParentProcesses(target.Id, SafeStartTime(target), protectedPids, completeSnapshot, new HashSet<int>());
                     KillProcessTree(target, selfPid, protectedPids, byParent);
 
                     return true;
@@ -308,6 +301,25 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
+        /// Safely retrieves the start time of a process without throwing an exception if the process has already exited or access is denied.
+        /// </summary>
+        /// <param name="p">The <see cref="Process"/> instance to query.</param>
+        /// <returns>
+        /// The <see cref="DateTime"/> when the process started, or <see cref="DateTime.MinValue"/> if the start time could not be retrieved.
+        /// </returns>
+        private static DateTime SafeStartTime(Process p)
+        {
+            try
+            {
+                return p.StartTime;
+            }
+            catch
+            {
+                return DateTime.MinValue;
+            }
+        }
+
+        /// <summary>
         /// Internal helper to initiate the downward kill walk followed by killing the root process itself.
         /// </summary>
         /// <param name="process">The target process acting as the root of the tree to terminate.</param>
@@ -323,8 +335,20 @@ namespace Servy.Core.Helpers
 
                 var visited = new HashSet<int>();
 
-                // Thread protectedPids into the walk
-                WalkAndKillChildren(process.Id, process.StartTime, selfPid, protectedPids, byParent, visited);
+                // HARDENING: Resolve start time safely to prevent Win32Exception/InvalidOperationException from aborting the pipeline.
+                // If query access is denied or the process is short-lived, it falls back to MinValue to ensure the tree kill continues.
+                DateTime rootStartTime = DateTime.MinValue;
+                try
+                {
+                    rootStartTime = process.StartTime;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Debug($"Unable to query StartTime for process {process.Id}. Proceeding with best-effort validation. Details: {ex.Message}");
+                }
+
+                // Thread protectedPids into the walk using the securely isolated timestamp
+                WalkAndKillChildren(process.Id, rootStartTime, selfPid, protectedPids, byParent, visited);
 
                 if (!process.HasExited)
                 {

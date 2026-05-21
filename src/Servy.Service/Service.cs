@@ -1448,10 +1448,12 @@ namespace Servy.Service
         /// </summary>
         private void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
         {
-            if (e.Data != null)
-            {
-                _stdoutWriter?.WriteLine(e.Data);
-            }
+            if (e.Data == null) return;
+            var writer = _stdoutWriter;        // snapshot
+            if (writer == null) return;
+            try { writer.WriteLine(e.Data); }
+            catch (ObjectDisposedException) { /* shutting down */ }
+            catch (Exception ex) { _logger?.Warn($"Failed to write stdout line: {ex.Message}"); }
         }
 
         /// <summary>
@@ -1460,10 +1462,12 @@ namespace Servy.Service
         /// </summary>
         private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
-            if (e.Data != null)
-            {
-                _stderrWriter?.WriteLine(e.Data);
-            }
+            if (e.Data == null) return;
+            var writer = _stderrWriter;        // snapshot
+            if (writer == null) return;
+            try { writer.WriteLine(e.Data); }
+            catch (ObjectDisposedException) { /* shutting down */ }
+            catch (Exception ex) { _logger?.Warn($"Failed to write stderr line: {ex.Message}"); }
         }
 
         /// <summary>

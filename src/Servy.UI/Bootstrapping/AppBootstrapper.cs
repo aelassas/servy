@@ -306,7 +306,7 @@ namespace Servy.UI.Bootstrapping
             if (e.Args != null)
             {
                 var positionalArgs = e.Args.Where(arg => !arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase)).ToList();
-  
+
                 if (positionalArgs.Count > 0)
                 {
                     if (bool.TryParse(positionalArgs[0], out var parsed))
@@ -365,8 +365,20 @@ namespace Servy.UI.Bootstrapping
                     var resourceHelper = new ResourceHelper(sh, _processKiller);
 
                     // Copy embedded files
-                    await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "exe");
-                    await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.HandleExeFileName, "exe", false);
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "exe"))
+                    {
+                        string resourceName = $"{AppConfig.ServyServiceUIFileName}.exe";
+                        throw new InvalidOperationException($"Failed to extract embedded resource '{resourceName}'. " +
+                            "Manager cannot start safely - see file log for details.");
+                    }
+
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.HandleExeFileName, "exe", false))
+                    {
+                        string resourceName = $"{AppConfig.HandleExeFileName}.exe";
+                        Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " +
+                            "File-lock diagnostics will be unavailable this session.");
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show($"Failed copying embedded resource: {resourceName}"));
+                    }
 
 #if DEBUG
                     await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "pdb", false);
@@ -448,7 +460,10 @@ namespace Servy.UI.Bootstrapping
 
                     // Log unexpected buffer overflows, but we no longer rely on this for directory renames
                     _availabilityWatcher.Error += (s, e) =>
-                        Logger.Warn($"FileSystemWatcher for {fileName} entered an error state.");
+                    {
+                        var ex = e.GetException();
+                        Logger.Warn($"FileSystemWatcher for {fileName} entered an error state: {ex?.GetType().Name} - {ex?.Message}", ex);
+                    };
 
                     _availabilityWatcher.EnableRaisingEvents = true;   // arm last
 
