@@ -78,6 +78,7 @@ namespace Servy.UI.Helpers
             catch (Exception ex)
             {
                 Logger.Error($"Invalid path provided for file size validation: {path}", ex);
+                await messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPath, caption);
                 return false;
             }
 
