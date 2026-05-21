@@ -1194,9 +1194,9 @@ namespace Servy.Core.Config
         public const int MaxMaxRestartAttempts = 100_000;
 
         /// <summary>
-        /// Maximum pre-launch timeout in seconds (1,000 seconds).
+        /// Maximum pre-launch timeout in seconds (24 hours).
         /// </summary>
-        public const int MaxPreLaunchTimeoutSeconds = 1_000;
+        public const int MaxPreLaunchTimeoutSeconds = 86_400;
 
         /// <summary>
         /// Maximum pre-launch retry attempts.
