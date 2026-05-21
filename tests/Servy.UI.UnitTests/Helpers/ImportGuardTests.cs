@@ -41,7 +41,7 @@ namespace Servy.UI.UnitTests.Helpers
             _mockMessageBox.Verify(m => m.ShowErrorAsync(
                 It.IsAny<string>(),
                 It.IsAny<string>()),
-                Times.Never);
+                Times.Once);
         }
 
         [Fact]
