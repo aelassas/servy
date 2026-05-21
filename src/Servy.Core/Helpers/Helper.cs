@@ -600,12 +600,31 @@ namespace Servy.Core.Helpers
             if (serviceName.IndexOfAny(InvalidServiceChars) >= 0 || serviceName.Any(char.IsControl))
                 return (false, Strings.Msg_InvalidServiceName);
 
-            // 5. Reserved Windows device names (case-insensitive, with or without extension)
-            var stem = serviceName;
-            var dot = stem.IndexOf('.');
-            if (dot >= 0) stem = stem.Substring(0, dot);
-            if (ReservedNames.Contains(stem))
+            // 5. Reserved Windows device names (case-insensitive across all segments)
+            // Prevent leading or trailing dots, which cause severe filesystem/registry volatility.
+            if (serviceName.StartsWith(".", StringComparison.Ordinal) || serviceName.EndsWith(".", StringComparison.Ordinal))
+            {
                 return (false, Strings.Msg_InvalidServiceName);
+            }
+
+            // Tokenize the name by dots to scan every structural segment.
+            // This catches (.CON, .CON.txt, ..PRN, AUX.log, or service.LPT1) uniformly.
+            string[] segments = serviceName.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
+
+            // If the split resulted in zero segments but the name wasn't empty, it was comprised entirely of dots
+            if (segments.Length == 0 && serviceName.Length > 0)
+            {
+                return (false, Strings.Msg_InvalidServiceName);
+            }
+
+            foreach (var segment in segments)
+            {
+                // Ensure case-insensitive evaluation against the reserved DOS device names blocklist
+                if (ReservedNames.Contains(segment.ToUpperInvariant()))
+                {
+                    return (false, Strings.Msg_InvalidServiceName);
+                }
+            }
 
             // If all checks pass, the name is structurally sound for the Windows SCM.
             return (true, string.Empty);

@@ -368,7 +368,10 @@ namespace Servy.UI.Bootstrapping
                     // Binary Resource Extraction
                     if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
                     {
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show($"Failed copying embedded resource: {AppConfig.HandleExe}"));
+                        string resourceName = $"{AppConfig.HandleExeFileName}.exe";
+                        Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " +
+                            "File-lock diagnostics will be unavailable this session.");
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show($"Failed copying embedded resource: {resourceName}"));
                     }
 
                     var resourceItems = new List<ResourceItem>
@@ -398,7 +401,7 @@ namespace Servy.UI.Bootstrapping
 #endif
                     if (!await resourceHelper.CopyResources(asm, _options.ResourcesNamespace, resourceItems))
                     {
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show($"Failed copying embedded resources."));
+                        throw new InvalidOperationException($"Failed to extract embedded resources. Manager cannot start safely - see file log for details.");
                     }
 
                     stopwatch.Stop();
@@ -480,7 +483,10 @@ namespace Servy.UI.Bootstrapping
 
                     // Log unexpected buffer overflows, but we no longer rely on this for directory renames
                     _availabilityWatcher.Error += (s, e) =>
-                        Logger.Warn($"FileSystemWatcher for {fileName} entered an error state.");
+                    {
+                        var ex = e.GetException();
+                        Logger.Warn($"FileSystemWatcher for {fileName} entered an error state: {ex?.GetType().Name} - {ex?.Message}", ex);
+                    };
 
                     _availabilityWatcher.EnableRaisingEvents = true;   // arm last
 

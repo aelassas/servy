@@ -320,6 +320,82 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(string.Empty, error);
         }
 
+        /// <summary>
+        /// Verifies that service names utilizing leading or trailing dots are explicitly rejected 
+        /// to prevent filesystem and registry volatility.
+        /// </summary>
+        [Theory]
+        [InlineData(".CON")]
+        [InlineData(".CON.txt")]
+        [InlineData("..PRN")]
+        [InlineData(".MyService")]
+        [InlineData("MyService.")]
+        [InlineData(".")]
+        public void IsServiceNameValid_LeadingOrTrailingDots_ReturnsFailure(string input)
+        {
+            // Act
+            var (isValid, error) = Helper.IsServiceNameValid(input);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.Equal(Strings.Msg_InvalidServiceName, error);
+        }
+
+        /// <summary>
+        /// Verifies that the validation scanner successfully evaluates every dot-separated segment,
+        /// catching reserved names regardless of their location or extension layout in the string.
+        /// </summary>
+        [Theory]
+        [InlineData("CON")]
+        [InlineData("prn")]
+        [InlineData("service.LPT1")]
+        [InlineData("AUX.manager")]
+        [InlineData("com3.internal.service")]
+        public void IsServiceNameValid_ReservedDeviceNamesInSegments_ReturnsFailure(string input)
+        {
+            // Act
+            var (isValid, error) = Helper.IsServiceNameValid(input);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.Equal(Strings.Msg_InvalidServiceName, error);
+        }
+
+        /// <summary>
+        /// Edge-case safety check verifying that inputs consisting purely of multiple dots 
+        /// are handled cleanly and fail closed.
+        /// </summary>
+        [Theory]
+        [InlineData("...")]
+        [InlineData(".....")]
+        public void IsServiceNameValid_PureDotStrings_ReturnsFailure(string input)
+        {
+            // Act
+            var (isValid, error) = Helper.IsServiceNameValid(input);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.Equal(Strings.Msg_InvalidServiceName, error);
+        }
+
+        /// <summary>
+        /// Ensures valid, standard multi-segment service names that simply contain a reserved substring 
+        /// embedded inside a longer segment are allowed (e.g. "CON" inside "Controller").
+        /// </summary>
+        [Theory]
+        [InlineData("MyController.Service")]
+        [InlineData("NullifierService")]
+        [InlineData("Lpt99.Service")]
+        public void IsServiceNameValid_EmbeddedSubstringMatch_ReturnsSuccess(string input)
+        {
+            // Act
+            var (isValid, error) = Helper.IsServiceNameValid(input);
+
+            // Assert
+            Assert.True(isValid);
+            Assert.Equal(string.Empty, error);
+        }
+
         [Theory]
         [InlineData(null)]
         [InlineData("")]

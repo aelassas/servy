@@ -57,59 +57,23 @@ namespace Servy.Service.ProcessManagement
             if (parentPid <= 0 || parentStartTime == DateTime.MinValue)
                 return children;
 
-            // 1. Take a snapshot of all processes currently in the system.
-            IntPtr hSnapshot = NativeMethods.CreateToolhelp32Snapshot(NativeMethods.TH32CS_SNAPPROCESS, 0);
-            if (hSnapshot == NativeMethods.INVALID_HANDLE_VALUE || hSnapshot == IntPtr.Zero)
+            // 1. ONE snapshot, build parent->children map (centralized)
+            var (_, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
+
+            // Anchor for PID-reuse detection. Any legitimate child MUST exist before this timestamp.
+            var snapshotTime = DateTime.UtcNow;
+
+            // 2. Retrieve verified direct children
+            if (byParent.TryGetValue(parentPid, out var childrenPids))
             {
-                Logger.Error($"Failed to create Toolhelp32 snapshot. Win32 Error: {Marshal.GetLastWin32Error()}");
-                return children;
-            }
-
-            try
-            {
-                var pe32 = new NativeMethods.PROCESSENTRY32();
-                // We MUST set dwSize before calling Process32First, or the API will fail.
-                pe32.dwSize = (uint)Marshal.SizeOf(typeof(NativeMethods.PROCESSENTRY32));
-
-                if (!NativeMethods.Process32First(hSnapshot, ref pe32))
-                    return children;
-
-                // 2. Walk the process tree in memory (extremely fast)
-                do
+                foreach (int childPid in childrenPids)
                 {
-                    if (pe32.th32ParentProcessID == parentPid)
+                    Process validChild = TryResolveValidChild(childPid, parentStartTime, snapshotTime);
+                    if (validChild != null)
                     {
-                        Process child = null;
-                        try
-                        {
-                            // 3. Obtain the managed wrapper only for verified children
-                            child = Process.GetProcessById((int)pe32.th32ProcessID);
-
-                            // Strict StartTime check to prevent PID reuse collisions
-                            // We use >= and subtract 1 second to account for OS tick precision
-                            if (child.StartTime >= parentStartTime.AddSeconds(-AppConfig.PidReuseToleranceSeconds))
-                            {
-                                children.Add(child);
-                                child = null; // ownership transferred to the list
-                            }
-                        }
-                        catch (ArgumentException) { /* PID gone, expected */ }
-                        catch (Win32Exception) { /* Access denied, expected */ }
-                        catch (Exception ex)
-                        {
-                            Logger.Debug($"Unexpected error while resolving child PID {pe32.th32ProcessID}: {ex.Message}");
-                        }
-                        finally
-                        {
-                            child?.Dispose();
-                        }
+                        children.Add(validChild);
                     }
-                } while (NativeMethods.Process32Next(hSnapshot, ref pe32));
-            }
-            finally
-            {
-                // Always close the native handle to prevent memory leaks
-                NativeMethods.CloseHandle(hSnapshot);
+                }
             }
 
             return children;
@@ -135,6 +99,9 @@ namespace Servy.Service.ProcessManagement
             // 1. ONE snapshot, build parent->children map
             var (_, byParent) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
 
+            // Anchor for PID-reuse detection. Any legitimate child MUST exist before this timestamp.
+            var snapshotTime = DateTime.UtcNow;
+
             // 2. BFS over the map, materialize Process objects only for verified descendants
             var queue = new Queue<(int Pid, DateTime StartTime)>();
             var visited = new HashSet<int>(); // Cycle protection
@@ -153,35 +120,62 @@ namespace Servy.Service.ProcessManagement
                 // Only process the child if we haven't seen it before to short-circuit cycles
                 foreach (int childPid in childrenPids.Where(visited.Add))
                 {
-                    Process child = null;
-                    try
+                    Process validChild = TryResolveValidChild(childPid, current.StartTime, snapshotTime);
+                    if (validChild != null)
                     {
-                        child = Process.GetProcessById(childPid);
+                        allDescendants.Add(validChild);
 
-                        // Strict StartTime check to prevent PID reuse collisions
-                        if (child.StartTime >= current.StartTime.AddSeconds(-AppConfig.PidReuseToleranceSeconds))
-                        {
-                            allDescendants.Add(child);
-
-                            // Queue the validated child for the next level of BFS
-                            queue.Enqueue((childPid, child.StartTime));
-                            child = null; // ownership transferred to the list
-                        }
-                    }
-                    catch (ArgumentException) { /* PID gone, expected */ }
-                    catch (Win32Exception) { /* Access denied, expected */ }
-                    catch (Exception ex)
-                    {
-                        Logger.Debug($"Unexpected error while resolving descendant PID {childPid}: {ex.Message}");
-                    }
-                    finally
-                    {
-                        child?.Dispose();
+                        // Queue the validated child for the next level of BFS
+                        queue.Enqueue((childPid, validChild.StartTime));
                     }
                 }
             }
 
             return allDescendants;
+        }
+
+        /// <summary>
+        /// Attempts to securely resolve a child process by PID, applying strict lifetime validation 
+        /// to ensure the PID hasn't been recycled by an unrelated process.
+        /// </summary>
+        /// <param name="childPid">The process ID of the candidate child.</param>
+        /// <param name="parentStartTime">The start time of the parent process at the current depth.</param>
+        /// <param name="snapshotTime">The UTC timestamp of when the system process snapshot was taken.</param>
+        /// <returns>A valid <see cref="Process"/> instance if validation passes; otherwise, <c>null</c>.</returns>
+        private static Process TryResolveValidChild(int childPid, DateTime parentStartTime, DateTime snapshotTime)
+        {
+            Process child = null;
+            try
+            {
+                child = Process.GetProcessById(childPid);
+                var startUtc = child.StartTime.ToUniversalTime();
+
+                // Legitimate child must:
+                //   (a) have started no earlier than the current parent level, AND
+                //   (b) have started no later than when we observed it in the snapshot.
+                bool startedAfterParent = startUtc >= parentStartTime.ToUniversalTime().AddSeconds(-AppConfig.PidReuseToleranceSeconds);
+                bool startedBeforeSnapshot = startUtc <= snapshotTime.AddSeconds(AppConfig.PidReuseToleranceSeconds);
+
+                if (startedAfterParent && startedBeforeSnapshot)
+                {
+                    var validChild = child;
+                    child = null; // ownership transferred safely to the caller
+                    return validChild;
+                }
+            }
+            catch (ArgumentException) { /* PID gone, expected */ }
+            catch (Win32Exception) { /* Access denied, expected */ }
+            catch (Exception ex)
+            {
+                Logger.Debug($"Unexpected error while resolving child PID {childPid}: {ex.Message}");
+            }
+            finally
+            {
+                // Disposes the handle if validation fails, the PID was rejected, or an exception occurred.
+                child?.Dispose();
+            }
+
+            return null;
         }
     }
 }
