@@ -118,7 +118,12 @@ namespace Servy.Core.Helpers
                 string error = errorBuilder.ToString();
 
                 // Sysinternals handle.exe returns exit code 1 when it successfully executes but finds no handles.
-                bool noMatchingHandles = process.ExitCode == 1 && output.IndexOf("No matching handles found", StringComparison.OrdinalIgnoreCase) >= 0;
+                var matchedAny = HandleOutputRegex.IsMatch(output);
+                bool noMatchingHandles =
+                    process.ExitCode == 1
+                    && !matchedAny
+                    && (output.IndexOf("No matching handles found", StringComparison.OrdinalIgnoreCase) >= 0
+                        || string.IsNullOrWhiteSpace(output));
 
                 // Inspection of ExitCode is critical to ensure the process actually succeeded
                 if (process.ExitCode != 0 && !noMatchingHandles)
