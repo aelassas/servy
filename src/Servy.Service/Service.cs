@@ -240,6 +240,8 @@ namespace Servy.Service
         /// <param name="timerFactory">Factory to create timers for health monitoring.</param>
         /// <param name="processFactory">Factory to create process wrappers for launching and managing child processes.</param>
         /// <param name="pathValidator">Path Validator.</param>
+        /// <param name="processHelper">Helper used to enumerate, inspect, and snapshot child processes.</param>
+        /// <param name="processKiller">Helper used to terminate processes (and process trees) during teardown.</param>
         /// <remarks>
         /// This is the primary <b>Production Constructor</b>. It automatically initializes the 
         /// <see cref="Logger"/>, validates the Windows Event Source, loads configuration from 
@@ -444,12 +446,6 @@ namespace Servy.Service
                 // Set up attempts file
                 SetupAttemptsFile(options);
 
-                // Reset restart attempts on service start to avoid blocking recovery
-                if (_recoveryActionEnabled)
-                {
-                    ConditionalResetRestartAttempts(options);
-                }
-
                 // Set up service logging
                 HandleLogWriters(options);
 
@@ -463,6 +459,12 @@ namespace Servy.Service
 
                 // Start the monitored main process
                 StartMonitoredProcess(options);
+
+                // Reset restart attempts on service start to avoid blocking recovery
+                if (_recoveryActionEnabled)
+                {
+                    ConditionalResetRestartAttempts(options);
+                }
 
                 // Enable service health monitoring
                 SetupHealthMonitoring(options);
@@ -717,7 +719,7 @@ namespace Servy.Service
             int bufferSeconds = Math.Max(detectionWindowSeconds, AppConfig.ConditionalResetStabilityBufferSeconds);
             int resetThresholdSeconds = detectionWindowSeconds + bufferSeconds;
 
-            // Cap at 1 hour, but ensure we always wait at least one full detection cycle
+            // Cap at 1 hour (the cap excludes the pre-launch budget), but ensure we always wait at least one full detection cycle
             resetThresholdSeconds = Math.Max(Math.Min(resetThresholdSeconds, 3600), detectionWindowSeconds);
 
             if (_preLaunchEnabled)

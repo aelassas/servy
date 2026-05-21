@@ -93,10 +93,10 @@ namespace Servy.Core.Helpers
                         sb.Append("\\\"");
                         break;
                     case '\r':
-                        sb.Append(@"\r");
+                        sb.Append('\\'); sb.Append('\r');
                         break;
                     case '\n':
-                        sb.Append(@"\n");
+                        sb.Append('\\'); sb.Append('\n');
                         break;
                     default:
                         sb.Append(ch);

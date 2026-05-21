@@ -75,14 +75,6 @@ namespace Servy.Restarter
                 // Centralized logging bootstrapper
                 LoggerConfigurator.ConfigureFromAppSettings(config, instanceLogger: scopedLogger);
 
-                // Sync Event Log enablement to the instance
-                bool isEventLogEnabled;
-                if (!bool.TryParse(config["EnableEventLog"], out isEventLogEnabled))
-                {
-                    isEventLogEnabled = AppConfig.DefaultEnableEventLog;
-                }
-                scopedLogger.SetIsEventLogEnabled(isEventLogEnabled);
-
                 // 5. Initialize database and helpers
                 dbContext = new AppDbContext(connectionString);
 
