@@ -4,9 +4,7 @@ using Servy.Core.Native;
 using Servy.Core.Security;
 using Servy.UI.Resources;
 using Servy.UI.Services;
-using System;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace Servy.UI.Helpers
@@ -254,7 +252,6 @@ namespace Servy.UI.Helpers
 
                                 if (unwrappedUnc ||
                                     normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
-                                    normalizedPath.Contains(@"\UNC\", StringComparison.OrdinalIgnoreCase) ||
                                     finalIsUnc)
                                 {
                                     var errorMsg = Strings.Msg_SecurityResolvedUncDestination;
