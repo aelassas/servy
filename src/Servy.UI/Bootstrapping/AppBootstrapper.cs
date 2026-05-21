@@ -565,7 +565,7 @@ namespace Servy.UI.Bootstrapping
         /// <param name="e">The <see cref="ExitEventArgs"/> containing the event data.</param>
         public void OnExit(ExitEventArgs e)
         {
-            CleanupAvailabilityWatcher();
+            TryRun(CleanupAvailabilityWatcher, nameof(CleanupAvailabilityWatcher));
             TryRun(() => _appLifetimeCts?.Cancel(), nameof(_appLifetimeCts));
             // Do NOT dispose _appLifetimeCts here - the async void monitor still
             // accesses .Token. Let the GC reclaim it after the monitor unwinds.

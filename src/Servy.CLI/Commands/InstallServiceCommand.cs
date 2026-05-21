@@ -70,10 +70,10 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_WrapperNotFound);
 
                 // Parse enums safely with defaults
-                var startupType = ParseEnumOption(opts.ServiceStartType, AppConfig.DefaultStartupType);
-                var processPriority = ParseEnumOption(opts.ProcessPriority, AppConfig.DefaultProcessPriority);
-                var dateRotationType = ParseEnumOption(opts.DateRotationType, AppConfig.DefaultDateRotationType);
-                var recoveryAction = ParseEnumOption(opts.RecoveryAction, AppConfig.DefaultRecoveryAction);
+                var startupType = ConfigParser.ParseEnum(opts.ServiceStartType, AppConfig.DefaultStartupType);
+                var processPriority = ConfigParser.ParseEnum(opts.ProcessPriority, AppConfig.DefaultProcessPriority);
+                var dateRotationType = ConfigParser.ParseEnum(opts.DateRotationType, AppConfig.DefaultDateRotationType);
+                var recoveryAction = ConfigParser.ParseEnum(opts.RecoveryAction, AppConfig.DefaultRecoveryAction);
 
                 // Parse numeric options
                 long rotationSizeBytes = AppConfig.ToBytes(ConfigParser.ParseInt(opts.RotationSize, AppConfig.DefaultRotationSizeMB));
@@ -183,17 +183,6 @@ namespace Servy.CLI.Commands
                     return res.ToFailure();
                 }
             });
-        }
-
-        /// <summary>
-        /// Parses an enum option from string, ignoring case, and returns the default value on failure.
-        /// </summary>
-        private static T ParseEnumOption<T>(string option, T defaultValue) where T : struct, Enum
-        {
-            if (string.IsNullOrWhiteSpace(option)) return defaultValue;
-            if (Enum.TryParse(option, ignoreCase: true, out T result) && Enum.IsDefined(typeof(T), result))
-                return result;
-            return defaultValue;
         }
     }
 }

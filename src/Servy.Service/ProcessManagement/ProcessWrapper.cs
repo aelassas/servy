@@ -14,7 +14,7 @@ using static Servy.Core.Native.NativeMethods;
 namespace Servy.Service.ProcessManagement
 {
     /// <summary>
-    /// Wraps a <see cref="System.Diagnostics.Process"/> to allow abstraction and easier testing.
+    /// Wraps a <see cref="Process"/> to allow abstraction and easier testing.
     /// </summary>
     public class ProcessWrapper : IProcessWrapper
     {
@@ -253,8 +253,9 @@ namespace Servy.Service.ProcessManagement
                 {
                     sent = process.CloseMainWindow();
                 }
-                catch (InvalidOperationException)
+                catch (Exception ex)
                 {
+                    _logger?.Warn($"CloseMainWindow failed for '{process.Format()}': {ex.Message}");
                     return null;
                 }
             }
