@@ -179,7 +179,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             Assert.NotEqual(0, result.ExitCode);
-            Assert.Contains("Configuration input file type is required", result.Message);
+            Assert.Equal(Strings.Msg_InvalidConfigFileType, result.Message);
         }
 
         // Helpers using Moq to correctly simulate success/failure branches

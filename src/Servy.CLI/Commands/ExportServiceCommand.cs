@@ -47,12 +47,9 @@ namespace Servy.CLI.Commands
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 
-                ConfigFileType configFileType;
-                if (string.IsNullOrWhiteSpace(opts.ConfigFileType)
-                    || !Enum.TryParse(opts.ConfigFileType, true, out configFileType)
-                    || !Enum.IsDefined(typeof(ConfigFileType), configFileType)
-                    || char.IsDigit(opts.ConfigFileType.Trim()[0]))
-                    return CommandResult.Fail(Strings.Msg_InvalidConfigFileType);
+                // Validate configuration file type
+                if (!Helpers.Helper.TryParseFileType(opts.ConfigFileType, out var configFileType, out var parseError))
+                    return CommandResult.Fail(parseError);
 
                 if (string.IsNullOrWhiteSpace(opts.Path))
                     return CommandResult.Fail(Strings.Msg_PathRequired);
@@ -63,7 +60,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceNotFound);
 
                 string content;
-                string typeLabel = configFileType.ToString().ToUpper();
+                string typeLabel = configFileType.ToString().ToUpperInvariant();
 
                 // 1. Perform Export based on type using standard switch syntax
                 switch (configFileType)

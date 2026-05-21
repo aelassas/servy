@@ -1,5 +1,7 @@
 ﻿using CommandLine;
+using Servy.CLI.Enums;
 using Servy.CLI.Models;
+using Servy.CLI.Resources;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
@@ -93,5 +95,27 @@ namespace Servy.CLI.Helpers
             return PrintAndReturn(result);
         }
 
+        /// <summary>
+        /// Tries to parse the string input into a <see cref="ConfigFileType"/>.
+        /// </summary>
+        /// <param name="input">The input string (xml or json).</param>
+        /// <param name="fileType">The parsed <see cref="ConfigFileType"/> if successful.</param>
+        /// <param name="error">Error message if parsing fails.</param>
+        /// <returns>True if parsing succeeds; otherwise false.</returns>
+        public static bool TryParseFileType(string? input, out ConfigFileType fileType, out string error)
+        {
+            if (string.IsNullOrWhiteSpace(input)
+                || !Enum.TryParse(input, true, out fileType)
+                || !Enum.IsDefined(typeof(ConfigFileType), fileType)
+                || char.IsDigit(input.Trim()[0]))
+            {
+                fileType = default;
+                error = Strings.Msg_InvalidConfigFileType;
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
     }
 }

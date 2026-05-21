@@ -77,7 +77,7 @@ namespace Servy.CLI.Commands
                 SecurityHelper.EnsureAdministrator();
 
                 // Validate configuration file type
-                if (!TryParseFileType(opts.ConfigFileType, out var configFileType, out var parseError))
+                if (!Helpers.Helper.TryParseFileType(opts.ConfigFileType, out var configFileType, out var parseError))
                     return CommandResult.Fail(parseError);
 
                 // Validate file path
@@ -299,29 +299,6 @@ namespace Servy.CLI.Commands
 
                 return result;
             });
-        }
-
-        /// <summary>
-        /// Tries to parse the string input into a <see cref="ConfigFileType"/>.
-        /// </summary>
-        /// <param name="input">The input string (xml or json).</param>
-        /// <param name="fileType">The parsed <see cref="ConfigFileType"/> if successful.</param>
-        /// <param name="error">Error message if parsing fails.</param>
-        /// <returns>True if parsing succeeds; otherwise false.</returns>
-        private static bool TryParseFileType(string? input, out ConfigFileType fileType, out string error)
-        {
-            if (string.IsNullOrWhiteSpace(input)
-                || !Enum.TryParse(input, true, out fileType)
-                || !Enum.IsDefined(typeof(ConfigFileType), fileType)
-                || char.IsDigit(input.Trim()[0]))
-            {
-                fileType = default;
-                error = "Configuration input file type is required (xml or json).";
-                return false;
-            }
-
-            error = string.Empty;
-            return true;
         }
 
         /// <summary>
