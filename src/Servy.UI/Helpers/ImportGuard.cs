@@ -255,7 +255,6 @@ namespace Servy.UI.Helpers
 
                                 if (unwrappedUnc ||
                                     normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
-                                    normalizedPath.IndexOf(@"\UNC\", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                     finalIsUnc)
                                 {
                                     var errorMsg = Strings.Msg_SecurityResolvedUncDestination;

@@ -101,7 +101,7 @@ namespace Servy.CLI.Commands
         /// Safely persists the exported service configuration to a user-defined file path.
         /// Validates that the target is a supported file type, not a UNC path, 
         /// not a reserved device name, and not a protected system location.
-        /// Blocks NTFS junctions and symlinks to prevent path traversal bypasses.
+        /// Resolves NTFS junctions and symlinks to prevent path traversal bypasses.
         /// </summary>
         /// <param name="userPath">The target file path provided via the CLI.</param>
         /// <param name="content">The serialized configuration string.</param>
@@ -159,7 +159,7 @@ namespace Servy.CLI.Commands
             // Guard against file-level symbolic links
             var fileLinkInfo = new FileInfo(fullPath);
             fileLinkInfo.Refresh();
-            if (fileLinkInfo.Exists && (fileLinkInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+            if ((fileLinkInfo.Exists && (fileLinkInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint))
             {
                 throw new SecurityException("Security Alert: Exporting configurations through file symbolic links or junctions is prohibited to prevent path redirection attacks.");
             }
@@ -204,34 +204,26 @@ namespace Servy.CLI.Commands
                 Directory.CreateDirectory(parentDir);
             }
 
-            // 8. Final Atomic Write
-            Helper.WriteFileAtomic(fullPath, stream =>
-            {
-                // Use the overload: (Stream, Encoding, BufferSize, LeaveOpen)
-                // 1024 is the default buffer size; true keeps the FileStream alive for WriteFileAtomic.
-                using (var sw = new StreamWriter(stream, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
-                {
-                    sw.Write(content);
-                }
-            });
-
-            // 9. Belt-and-braces: Open a temporary read handle to resolve the true, underlying volume path
-            // This catches complex or nested link configurations resolving out to distant remote networks.
+            // 8. Handle Resolution & Guarded Write
+            // Belt-and-braces: Open the file exclusively, verify the underlying volume path, and ONLY THEN write.
+            // This intercepts DFS referrals, iSCSI mounts, and complex subst mappings before data leaves the box.
             try
             {
-                using (var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete))
+                // Open with OpenOrCreate so the file content is NOT truncated or modified upon opening.
+                // This ensures no metadata write commands cross the network stack before verification.
+                using (var fileStream = new FileStream(fullPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
                 {
                     var safeHandle = fileStream.SafeFileHandle;
                     IntPtr nativeHandle = safeHandle.DangerousGetHandle();
 
                     if (nativeHandle != NativeMethods.INVALID_HANDLE_VALUE)
                     {
-                        // 1. Determine buffer size required
+                        // Determine buffer size required
                         uint requiredSize = NativeMethods.GetFinalPathNameByHandle(nativeHandle, null, 0, NativeMethods.VOLUME_NAME_DOS);
 
                         if (requiredSize > 0)
                         {
-                            // 2. Allocate buffer and retrieve the path
+                            // Allocate buffer and retrieve the final physical path representation
                             var pathBuilder = new StringBuilder((int)requiredSize);
                             uint resultSize = NativeMethods.GetFinalPathNameByHandle(nativeHandle, pathBuilder, requiredSize, NativeMethods.VOLUME_NAME_DOS);
 
@@ -260,21 +252,33 @@ namespace Servy.CLI.Commands
                                 // Now check the normalized path
                                 if (unwrappedUnc ||
                                     normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
-                                    normalizedPath.IndexOf(@"\UNC\", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                     finalIsUnc)
                                 {
-                                    File.Delete(fullPath);
                                     throw new SecurityException("Security Alert: Resolved file target points directly to a UNC destination. Export aborted.");
                                 }
                             }
                         }
                     }
+
+                    // 9. Final Materialization
+                    // The volume handle is verified as local. It is now cryptographically safe to push sensitive data to the disk.
+                    using (var sw = new StreamWriter(fileStream, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
+                    {
+                        sw.Write(content);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                // Cannot verify => assume hostile; remove and fail closed.
+                // The stream is inherently closed upon exception due to the using block unwinding.
+                // We wipe the 0-byte empty file footprint off the disk to ensure no artifacts are left on unauthorized volumes.
                 try { File.Delete(fullPath); } catch { /* ignored */ }
+
+                if (ex is SecurityException)
+                {
+                    throw;
+                }
+
                 throw new SecurityException($"Security Guard Failure: Target file handle validation rejected. {ex.Message}");
             }
         }

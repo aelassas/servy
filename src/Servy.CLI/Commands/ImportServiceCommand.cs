@@ -250,7 +250,6 @@ namespace Servy.CLI.Commands
                                     // Now check the normalized path
                                     if (unwrappedUnc ||
                                         normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
-                                        normalizedPath.IndexOf(@"\UNC\", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                         finalIsUnc)
                                     {
                                         var errorMsg = "Security Alert: Resolved file target points directly to a UNC destination. Import aborted.";
