@@ -68,6 +68,15 @@ namespace Servy.Core.Helpers
                 if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
                     return true;
 
+                // ROBUSTNESS: Validate the embedded resource exists BEFORE side-effecting anything.
+                // This prevents stopping services or killing locking processes if the resource is missing.
+                Stream? resourceStream = assembly.GetManifestResourceStream(resourceName);
+                if (resourceStream == null)
+                {
+                    Logger.Error($"Embedded resource not found: {resourceName}");
+                    return false;
+                }
+
                 // Get running services before the inner try block
                 var runningServices = new List<string>();
                 if (stopServices)
@@ -79,24 +88,17 @@ namespace Servy.Core.Helpers
 
                 try
                 {
-                    if (stopServices && runningServices.Count > 0)
-                    {
-                        Logger.Info($"Stopping services before copying resource '{resourceName}': {string.Join(", ", runningServices)}");
-                        await _serviceHelper.StopServices(runningServices);
-                    }
-
-                    if (!TerminateBlockingProcesses(targetPath))
-                        return false;
-
-                    Stream? resourceStream = assembly.GetManifestResourceStream(resourceName);
-                    if (resourceStream == null)
-                    {
-                        Logger.Error($"Embedded resource not found: {resourceName}");
-                        return false;
-                    }
-
                     using (resourceStream)
                     {
+                        if (stopServices && runningServices.Count > 0)
+                        {
+                            Logger.Info($"Stopping services before copying resource '{resourceName}': {string.Join(", ", runningServices)}");
+                            await _serviceHelper.StopServices(runningServices);
+                        }
+
+                        if (!TerminateBlockingProcesses(targetPath))
+                            return false;
+
                         await Helper.WriteFileAtomicAsync(targetPath, resourceStream.CopyToAsync);
                     }
 
@@ -167,12 +169,7 @@ namespace Servy.Core.Helpers
                 if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
                     return true;
 
-                // Log a warning so operators auditing the logs know a brute-force termination might occur
-                Logger.Warn($"Executing synchronous force-copy for '{resourceName}'. Any processes locking this file will be killed without graceful shutdown.");
-
-                if (!TerminateBlockingProcesses(targetPath))
-                    return false;
-
+                // ROBUSTNESS: Validate the embedded resource exists BEFORE side-effecting anything.
                 Stream? resourceStream = assembly.GetManifestResourceStream(resourceName);
                 if (resourceStream == null)
                 {
@@ -182,6 +179,12 @@ namespace Servy.Core.Helpers
 
                 using (resourceStream)
                 {
+                    // Log a warning so operators auditing the logs know a brute-force termination might occur
+                    Logger.Warn($"Executing synchronous force-copy for '{resourceName}'. Any processes locking this file will be killed without graceful shutdown.");
+
+                    if (!TerminateBlockingProcesses(targetPath))
+                        return false;
+
                     Helper.WriteFileAtomic(targetPath, resourceStream.CopyTo);
                 }
 
@@ -219,12 +222,12 @@ namespace Servy.Core.Helpers
         /// </remarks>
         public DateTime GetHostProcessLastWriteTimeUTC()
         {
+            // 1. Primary probe via Process.MainModule
             try
             {
                 using (var process = Process.GetCurrentProcess())
                 {
                     var exePath = process.MainModule?.FileName;
-
                     if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
                     {
                         return File.GetLastWriteTimeUtc(exePath);
@@ -233,31 +236,30 @@ namespace Servy.Core.Helpers
             }
             catch (Exception ex)
             {
-                Logger.Debug("MainModule.FileName not available, trying AppDomain fallback.", ex);
-                try
-                {
-                    var exeName = AppDomain.CurrentDomain.FriendlyName;
-                    string[] candidates =
-                    {
-                        Path.Combine(AppContext.BaseDirectory, exeName),
-                        Path.Combine(AppContext.BaseDirectory, exeName + ".exe"),
-                        Path.Combine(AppContext.BaseDirectory, exeName + ".dll"),
-                    };
-                    foreach (var path in candidates)
-                    {
-                        if (File.Exists(path))
-                            return File.GetLastWriteTimeUtc(path);
-                    }
-                }
-                catch (Exception innerEx)
-                {
-                    // Both probes failed; return DateTime.MinValue so the caller treats the embedded
-                    // resource as 'not newer' and leaves the existing extraction in place.
-                    Logger.Warn("GetHostProcessLastWriteTimeUTC: both MainModule and AppDomain probes failed; resource re-extraction will be skipped this session until an existing file is removed.", innerEx);
-                }
+                Logger.Info("GetHostProcessLastWriteTimeUTC: MainModule.FileName access threw, falling back to AppDomain probe.", ex);
             }
 
-            // Use a sentinel that is older than any plausible existing extraction
+            // 2. AppDomain fallback (runs for BOTH the exception and the silent-null path)
+            try
+            {
+                var exeName = AppDomain.CurrentDomain.FriendlyName;
+                string[] candidates =
+                {
+                    Path.Combine(AppContext.BaseDirectory, exeName),
+                    Path.Combine(AppContext.BaseDirectory, exeName + ".exe"),
+                    Path.Combine(AppContext.BaseDirectory, exeName + ".dll"),
+                };
+                foreach (var path in candidates)
+                {
+                    if (File.Exists(path))
+                        return File.GetLastWriteTimeUtc(path);
+                }
+            }
+            catch (Exception innerEx)
+            {
+                Logger.Warn("GetHostProcessLastWriteTimeUTC: both MainModule and AppDomain probes failed.", innerEx);
+            }
+
             return DateTime.MinValue;
         }
 

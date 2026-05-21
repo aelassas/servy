@@ -1,4 +1,5 @@
 ﻿using Servy.Core.EnvironmentVariables;
+using Servy.Core.Helpers;
 using Servy.Core.Resources;
 using System.Reflection;
 
@@ -275,6 +276,39 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             var result = EnvironmentVariablesValidator.Validate(input, out error);
 
             Assert.True(result);
+        }
+
+        [Fact]
+        public void FormatEnvironmentVariables_WithLiteralNewlines_EscapesCarriageReturnAndLineFeed()
+        {
+            // Arrange
+            // Input string simulating paired variables with multi-line values
+            string rawInput = @"MULTILINE_KEY=line1\nline2";
+
+            // Act
+            string formatted = StringHelper.FormatEnvironmentVariables(rawInput);
+
+            // Assert
+            // The serialization must explicitly present the escaped sequences back out to prevent line truncation
+            Assert.Contains(@"MULTILINE_KEY=line1\\nline2", formatted);
+
+            bool isValid = EnvironmentVariablesValidator.Validate(formatted, out string error);
+            Assert.True(isValid, $"Validator rejected formatted output with error: {error}");
+        }
+
+        [Fact]
+        public void EnvironmentVariablesValidator_UnescapedNewlineWithinSegment_FailsValidation()
+        {
+            // Arrange
+            // Malformed configuration state mimicking an unescaped raw break mid-value
+            string corruptedInput = "KEY=line1\nline2_with_no_equals";
+
+            // Act
+            bool isValid = EnvironmentVariablesValidator.Validate(corruptedInput, out string errorMessage);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.False(string.IsNullOrEmpty(errorMessage));
         }
 
     }

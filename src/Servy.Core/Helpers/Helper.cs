@@ -432,6 +432,7 @@ namespace Servy.Core.Helpers
                     catch (Exception ex) when (retries > 0 && (ex is IOException || ex is UnauthorizedAccessException))
                     {
                         retries--;
+                        Logger.Debug($"WriteFileAtomic retrying after transient '{ex.GetType().Name}': {ex.Message} (retries left: {retries})");
                         // Synchronous pause to allow external locks to be released.
                         Thread.Sleep(AppConfig.WriteFileAtomicRetryDelayMs);
                     }
@@ -488,6 +489,7 @@ namespace Servy.Core.Helpers
                     catch (Exception ex) when (retries > 0 && (ex is IOException || ex is UnauthorizedAccessException))
                     {
                         retries--;
+                        Logger.Debug($"WriteFileAtomicCore retrying after transient '{ex.GetType().Name}': {ex.Message} (retries left: {retries})");
                         // Asynchronous delay to keep the thread pool unblocked during retries.
                         await Task.Delay(AppConfig.WriteFileAtomicRetryDelayMs, cancellationToken).ConfigureAwait(false);
                     }

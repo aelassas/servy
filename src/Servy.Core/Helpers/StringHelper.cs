@@ -65,6 +65,7 @@ namespace Servy.Core.Helpers
 
         /// <summary>
         /// Escapes special characters in environment variable keys/values.
+        /// Hardened to safely process and translate carriage returns and line feeds.
         /// </summary>
         private static string Escape(string value)
         {
@@ -88,6 +89,12 @@ namespace Servy.Core.Helpers
                         break;
                     case '"':
                         sb.Append("\\\"");
+                        break;
+                    case '\r':
+                        sb.Append(@"\r");
+                        break;
+                    case '\n':
+                        sb.Append(@"\n");
                         break;
                     default:
                         sb.Append(ch);

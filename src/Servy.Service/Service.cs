@@ -460,14 +460,15 @@ namespace Servy.Service
                 // Reset restart attempts on service start to avoid blocking recovery
                 if (_recoveryActionEnabled)
                 {
-                    _ = Task.Run(() => ConditionalResetRestartAttemptsAsync(options, CancellationToken.None))
-                            .ContinueWith(t =>
+                    var token = _cancellationSource?.Token ?? CancellationToken.None;
+                    _ = Task.Run(() => ConditionalResetRestartAttemptsAsync(options, token), token)
+                        .ContinueWith(t =>
+                        {
+                            if (t.IsFaulted)
                             {
-                                if (t.IsFaulted)
-                                {
-                                    _logger?.Error("Background restart-attempts reset failed.", t.Exception);
-                                }
-                            }); // Note: No TaskContinuationOptions here, so it runs for all outcomes.
+                                _logger?.Error("Background restart-attempts reset failed.", t.Exception?.Flatten().InnerException);
+                            }
+                        }); // Note: No TaskContinuationOptions here, so it runs for all outcomes.
                 }
 
                 // Set up service logging
@@ -1185,7 +1186,11 @@ namespace Servy.Service
             }
 
             // Fire and forget the post-launch script when process confirmed running
-            var oldCts = Interlocked.Exchange(ref _cancellationSource, null);
+            // ROBUSTNESS: Instantiating the new CTS *before* updating the field ensures that
+            // concurrent background tasks checking the token never experience a temporary 'null' window.
+            var cts = new CancellationTokenSource();
+            var oldCts = Interlocked.Exchange(ref _cancellationSource, cts);
+
             if (oldCts != null)
             {
                 try
@@ -1202,9 +1207,6 @@ namespace Servy.Service
                     oldCts.Dispose();
                 }
             }
-
-            var cts = new CancellationTokenSource();
-            _cancellationSource = cts;
 
             Task.Run(async () =>
             {

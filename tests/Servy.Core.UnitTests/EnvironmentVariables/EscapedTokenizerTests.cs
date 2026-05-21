@@ -1,7 +1,4 @@
-﻿using System;
-using System.Linq;
-using Servy.Core.EnvironmentVariables;
-using Xunit;
+﻿using Servy.Core.EnvironmentVariables;
 
 namespace Servy.Core.UnitTests.EnvironmentVariables
 {
@@ -11,6 +8,8 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
     /// </summary>
     public class EscapedTokenizerTests
     {
+        private static readonly char[] Delimiters = new[] { ';', '\r', '\n' };
+
         #region SplitByUnescapedDelimiters Tests
 
         /// <summary>
@@ -185,6 +184,83 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
             // Assert
             Assert.Equal("trailing\\", result);
+        }
+
+        /// <summary>
+        /// Validates that SplitByUnescapedDelimiters treats standard backslash-escaped 
+        /// CR and LF control characters as part of the token value rather than splitting records on them.
+        /// </summary>
+        [Fact]
+        public void SplitByUnescapedDelimiters_LiteralEscapedControlLineBreaks_DoesNotSplit()
+        {
+            // Arrange
+            // Explicitly embedding literal escaped control character sequences into a single structural block
+            string input = "KEY1\\=value1\\;contains\\\r\\\ncontinued;KEY2\\=value2";
+
+            // Act
+            var tokens = EscapedTokenizer.SplitByUnescapedDelimiters(input, Delimiters)
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .ToList();
+
+            // Assert
+            // The unescaped semicolon should break this into 2 records; the escaped CR/LF must stay internal
+            Assert.Equal(2, tokens.Count);
+            Assert.Contains("KEY1\\=value1\\;contains\\\r\\\ncontinued", tokens[0]);
+            Assert.Equal("KEY2\\=value2", tokens[1]);
+        }
+
+        /// <summary>
+        /// Verifies that Unescape preserves and flushes a literal CR or LF control character when 
+        /// it acts as a line continuation directly following an escaping backslash sequence.
+        /// </summary>
+        [Theory]
+        [InlineData("ValueWith\\\rContinuation", "ValueWith\rContinuation")]
+        [InlineData("ValueWith\\\nContinuation", "ValueWith\nContinuation")]
+        [InlineData("ValueWith\\\r\\\nDoubleContinuation", "ValueWith\r\nDoubleContinuation")]
+        public void Unescape_LiteralControlLineBreakContinuations_PreservesControlBytes(string input, string expected)
+        {
+            // Act
+            string result = EscapedTokenizer.Unescape(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        /// <summary>
+        /// Ensures that trailing escape symbols at the absolute bounds of an input boundary string 
+        /// fail closed and preserve the structural symbol literally instead of truncating or throwing.
+        /// </summary>
+        [Fact]
+        public void Unescape_TrailingEscapeAtStringBounds_PreservesBackslash()
+        {
+            // Arrange
+            string input = "MalformedValue\\";
+
+            // Act
+            string result = EscapedTokenizer.Unescape(input);
+
+            // Assert
+            Assert.Equal("MalformedValue\\", result);
+        }
+
+        /// <summary>
+        /// Validates IndexOfUnescapedChar boundary evaluation rules, ensuring that a target character 
+        /// is ignored if it is preceded by an active escaping operator but detected normally otherwise.
+        /// </summary>
+        [Fact]
+        public void IndexOfUnescapedChar_EscapedVsUnescapedTargets_LocatesCorrectIndex()
+        {
+            // Arrange
+            // First '=' is hidden behind an escape; second '=' is structurally active
+            string input = "PREFIX\\=HIDDEN=VALID_VALUE";
+
+            // Act
+            int index = EscapedTokenizer.IndexOfUnescapedChar(input, '=');
+
+            // Assert
+            // "PREFIX\=HIDDEN" is 14 chars long; index of unescaped '=' should be 14
+            Assert.Equal(14, index);
+            Assert.Equal('=', input[index]);
         }
 
         #endregion
