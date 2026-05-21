@@ -555,7 +555,7 @@ namespace Servy.Services
                 var path = getFilePath();
                 if (string.IsNullOrEmpty(path)) return;
 
-                if (!await ImportGuard.ValidateFileSizeAsync(path, _messageBoxService, Caption, AppConfig.MaxConfigFileSizeMB, Strings.Msg_ConfigSizeLimitReached))
+                if (!await ImportGuard.ValidatePathAndSizeAsync(path, _messageBoxService, Caption, AppConfig.MaxConfigFileSizeMB, Strings.Msg_ConfigSizeLimitReached))
                     return;
 
                 // Defense-in-depth: reuse the same UNC / reparse / device-name / protected-folder guards as the CLI

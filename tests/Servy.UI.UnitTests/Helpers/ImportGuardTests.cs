@@ -25,7 +25,7 @@ namespace Servy.UI.UnitTests.Helpers
             // across all .NET versions.
             var invalidPath = "";
 
-            var result = await ImportGuard.ValidateFileSizeAsync(
+            var result = await ImportGuard.ValidatePathAndSizeAsync(
                 invalidPath,
                 _mockMessageBox.Object,
                 Caption,
@@ -47,7 +47,7 @@ namespace Servy.UI.UnitTests.Helpers
             // Branch: if (!fileInfo.Exists)
             var nonExistentPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
-            var result = await ImportGuard.ValidateFileSizeAsync(
+            var result = await ImportGuard.ValidatePathAndSizeAsync(
                 nonExistentPath,
                 _mockMessageBox.Object,
                 Caption,
@@ -72,7 +72,7 @@ namespace Servy.UI.UnitTests.Helpers
                 }
 
                 // Set limit to 1MB
-                var result = await ImportGuard.ValidateFileSizeAsync(
+                var result = await ImportGuard.ValidatePathAndSizeAsync(
                     tempFile,
                     _mockMessageBox.Object,
                     Caption,
@@ -98,7 +98,7 @@ namespace Servy.UI.UnitTests.Helpers
                 // Create a small 1KB file
                 File.WriteAllText(tempFile, "Valid content");
 
-                var result = await ImportGuard.ValidateFileSizeAsync(
+                var result = await ImportGuard.ValidatePathAndSizeAsync(
                     tempFile,
                     _mockMessageBox.Object,
                     Caption,

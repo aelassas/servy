@@ -725,7 +725,7 @@ namespace Servy.Manager.Services
 
             try
             {
-                if (!await ImportGuard.ValidateFileSizeAsync(path, _messageBoxService, AppConfig.Caption, Core.Config.AppConfig.MaxConfigFileSizeMB, Strings.Msg_ConfigSizeLimitReached))
+                if (!await ImportGuard.ValidatePathAndSizeAsync(path, _messageBoxService, AppConfig.Caption, Core.Config.AppConfig.MaxConfigFileSizeMB, Strings.Msg_ConfigSizeLimitReached))
                     return;
 
                 // Defense-in-depth: reuse the same UNC / reparse / device-name / protected-folder guards as the CLI
