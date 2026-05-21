@@ -1133,7 +1133,11 @@ namespace Servy.Service
             }
 
             // Fire and forget the post-launch script when process confirmed running
-            var oldCts = Interlocked.Exchange(ref _cancellationSource, null);
+            // ROBUSTNESS: Instantiating the new CTS *before* updating the field ensures that
+            // concurrent background tasks checking the token never experience a temporary 'null' window.
+            var cts = new CancellationTokenSource();
+            var oldCts = Interlocked.Exchange(ref _cancellationSource, cts);
+
             if (oldCts != null)
             {
                 try
@@ -1150,9 +1154,6 @@ namespace Servy.Service
                     oldCts.Dispose();
                 }
             }
-
-            var cts = new CancellationTokenSource();
-            _cancellationSource = cts;
 
             Task.Run(async () =>
             {

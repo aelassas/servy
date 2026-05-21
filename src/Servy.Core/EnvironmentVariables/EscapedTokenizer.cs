@@ -115,8 +115,8 @@ namespace Servy.Core.EnvironmentVariables
             {
                 if (escape)
                 {
-                    // Added \r and \n to match the delimiter set used in SplitByUnescapedDelimiters.
-                    // Unescape =, ;, \, ", \r, and \n
+                    // NOTE: This checks for literal structural CR/LF bytes (line continuations),
+                    // NOT the alphanumeric character strings 'r' or 'n'.
                     if (c == '=' || c == ';' || c == '\\' || c == '"' || c == '\r' || c == '\n')
                         sb.Append(c);
                     else

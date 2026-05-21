@@ -71,6 +71,8 @@ namespace Servy.Core.Native
             if (string.IsNullOrWhiteSpace(username))
                 throw new ArgumentException("Username cannot be empty.");
 
+            username = username.Trim();
+
             // 0. FORBIDDEN GROUP CHECK
             // Prevent groups or session contexts from passing as valid service runners.
             if (ForbiddenGroupIdentities.Contains(username))
@@ -115,10 +117,10 @@ namespace Servy.Core.Native
             string user = username;
 
             var parts = username.Split('\\');
-            domain = parts[0];
+            domain = parts[0]?.Trim();
             user = parts[1]?.Trim();
 
-            if (string.IsNullOrWhiteSpace(user?.TrimEnd('$')))
+            if (string.IsNullOrWhiteSpace(domain) || string.IsNullOrWhiteSpace(user?.TrimEnd('$')))
             {
                 throw new ArgumentException(invalidMsg);
             }
