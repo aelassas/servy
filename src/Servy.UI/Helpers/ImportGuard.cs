@@ -65,7 +65,7 @@ namespace Servy.UI.Helpers
         /// <param name="maxFileSizeMb">The maximum allowed size in MB.</param>
         /// <param name="sizeLimitFormat">The localized format string for the size error (expects {0} for path).</param>
         /// <returns>True if the file is valid for import; otherwise false.</returns>
-        public static async Task<bool> ValidateFileSizeAsync(
+        public static async Task<bool> ValidatePathAndSizeAsync(
             string path,
             IMessageBoxService messageBoxService,
             string caption,
