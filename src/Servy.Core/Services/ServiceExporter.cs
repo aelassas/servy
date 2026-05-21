@@ -106,15 +106,15 @@ namespace Servy.Core.Services
                 return;
             }
 
-            var jsonContent = ExportJson(service);
-
             Helper.WriteFileAtomic(filePath, stream =>
             {
                 // We use leaveOpen: true so the using block doesn't prematurely close the stream,
                 // allowing the outer WriteFileAtomic to properly flush before the atomic move.
                 using (var writer = new StreamWriter(stream, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
+                using (var jsonWriter = new JsonTextWriter(writer) { Formatting = Newtonsoft.Json.Formatting.Indented })
                 {
-                    writer.Write(jsonContent);
+                    var serializer = JsonSerializer.Create(JsonSecurity.UntrustedDataSettings);
+                    serializer.Serialize(jsonWriter, service);
                 }
             });
         }
