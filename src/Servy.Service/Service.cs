@@ -1025,7 +1025,8 @@ namespace Servy.Service
             {
                 // If stderr path equals stdout path (explicitly), use the same writer
                 if (_stdoutWriter != null &&
-                    options.StdErrPath.Equals(options.StdOutPath, StringComparison.OrdinalIgnoreCase))
+                    !string.IsNullOrWhiteSpace(options.StdOutPath) &&
+                    string.Equals(Helper.Canonicalise(options.StdErrPath), Helper.Canonicalise(options.StdOutPath), StringComparison.OrdinalIgnoreCase))
                 {
                     _stderrWriter = _stdoutWriter;
                 }
@@ -1979,23 +1980,26 @@ namespace Servy.Service
         /// </summary>
         private void FlushAndShutdownLogger()
         {
+            // Snapshot + clear synchronously so concurrent callers can no longer reach the old logger.
+            IServyLogger toDispose = Interlocked.Exchange(ref _logger, null);
+
             try
             {
-                _ = Task.Run(() =>
+                var flushTask = Task.Run(() =>
                 {
-                    Logger.Shutdown();
+                    try { Logger.Shutdown(); } catch { /* fail-silent */ }
+                    try { toDispose?.Dispose(); } catch { /* fail-silent */ }
+                });
 
-                    if (_logger != null)
-                    {
-                        _logger.Dispose();
-                        _logger = null;
-                    }
-
-                }).Wait(AppConfig.LoggerFlushTimeoutMs); // 1.5 seconds max for local disk I/O
+                if (!flushTask.Wait(AppConfig.LoggerFlushTimeoutMs))
+                {
+                    // Observe orphan so it can't surface an unobserved exception later.
+                    _ = flushTask.ContinueWith(t => _ = t.Exception, TaskContinuationOptions.OnlyOnFaulted);
+                }
             }
             catch
             {
-                // Fail-silent
+                // Fail-silent (per existing contract)
             }
         }
 

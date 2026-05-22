@@ -827,7 +827,7 @@ namespace Servy.Manager.ViewModels
 
                     // 4. Handle results and UI feedback
                     // Correctly await the async Dispatcher operation to prevent fire-and-forget
-                    await _dispatcher.InvokeAsync(new Func<Task>(async () =>
+                    await await _dispatcher.InvokeAsync(new Func<Task>(async () =>
                     {
                         if (failed.Count == 0)
                         {
@@ -1197,10 +1197,28 @@ namespace Servy.Manager.ViewModels
             {
                 _appConfig.PropertyChanged -= AppConfig_PropertyChanged;
 
-                // Stop and Dispose Refresh Timer
+                // Stop the main timer first so no more ticks reach ServiceCommands.
                 StopRefreshTimer();
 
-                // Dispose the command engine to clean up semaphores
+                // Dispose child VMs so their timers/CTS/tailers stop before we tear down
+                // the shared ServiceCommands instance they still reference.
+                (PerformanceVM as IDisposable)?.Dispose();
+                (ConsoleVM as IDisposable)?.Dispose();
+                (DependenciesVM as IDisposable)?.Dispose();
+
+                // Drain the row VM list - unhook MainViewModel's handler and
+                // dispose each row so its own Service.PropertyChanged unsubscription runs.
+                lock (_servicesLock)
+                {
+                    foreach (var vm in _services)
+                    {
+                        vm.PropertyChanged -= Service_PropertyChanged;
+                        vm.Dispose();
+                    }
+                    _services.Clear();
+                }
+
+                // Now safe to dispose the shared command engine.
                 ServiceCommands?.Dispose();
             }
 

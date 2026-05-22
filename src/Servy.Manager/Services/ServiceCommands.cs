@@ -474,6 +474,7 @@ namespace Servy.Manager.Services
                 else
                 {
                     Logger.Warn($"Failed to copy PID {pidValue} for {serviceName} after {Core.Config.AppConfig.ClipboardComMaxRetries} attempts.");
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_PidCopyFailed, AppConfig.Caption);
                 }
             }
             catch (Exception ex)
@@ -758,11 +759,13 @@ namespace Servy.Manager.Services
 
                 if (!await _serviceConfigurationValidator.Validate(dto)) return;
 
-                var res = await _serviceRepository.UpsertAsync(
-                    dto,
-                    preserveExistingRuntimeState: true,
-                    preserveExistingCredentials: true,
-                    cancellationToken: cancellationToken);
+                var res = await ExecuteLockedAsync(dto.Name, () =>
+                    _serviceRepository.UpsertAsync(
+                        dto,
+                        preserveExistingRuntimeState: true,
+                        preserveExistingCredentials: true,
+                        cancellationToken: cancellationToken),
+                    cancellationToken);
                 if (res > 0)
                 {
                     Logger.Info($"Service configuration imported from {formatName} at: {path}");

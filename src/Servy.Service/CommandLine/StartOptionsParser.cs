@@ -5,6 +5,7 @@ using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Servy.Service.CommandLine
@@ -50,9 +51,9 @@ namespace Servy.Service.CommandLine
             {
                 // Main
                 ServiceName = serviceName,
-                ExecutablePath = processHelper.ResolvePath(serviceDto.ExecutablePath ?? string.Empty),
+                ExecutablePath = SafeResolvePath(processHelper, serviceDto.ExecutablePath, nameof(serviceDto.ExecutablePath), serviceName),
                 ExecutableArgs = Helper.EscapeBackslashes(serviceDto.Parameters ?? string.Empty),
-                WorkingDirectory = processHelper.ResolvePath(serviceDto.StartupDirectory ?? string.Empty),
+                WorkingDirectory = SafeResolvePath(processHelper, serviceDto.StartupDirectory, nameof(serviceDto.StartupDirectory), serviceName),
 
                 // Use ConfigParser.ParseEnum to ensure the priority is a valid member of ProcessPriority.
                 // This prevents undefined enum values from entering the process mapping logic.
@@ -78,13 +79,13 @@ namespace Servy.Service.CommandLine
                 RecoveryOnCleanExit = serviceDto.RecoveryOnCleanExit ?? AppConfig.DefaultRecoveryOnCleanExit,
 
                 MaxRestartAttempts = serviceDto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
-                EnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.EnvironmentVariables ?? string.Empty),
+                EnvironmentVariables = SafeParseEnvVars(serviceDto.EnvironmentVariables, nameof(serviceDto.EnvironmentVariables), serviceName),
 
                 // Pre-Launch settings
-                PreLaunchExecutablePath = processHelper.ResolvePath(serviceDto.PreLaunchExecutablePath ?? string.Empty),
-                PreLaunchWorkingDirectory = processHelper.ResolvePath(serviceDto.PreLaunchStartupDirectory ?? string.Empty),
+                PreLaunchExecutablePath = SafeResolvePath(processHelper, serviceDto.PreLaunchExecutablePath, nameof(serviceDto.PreLaunchExecutablePath), serviceName),
+                PreLaunchWorkingDirectory = SafeResolvePath(processHelper, serviceDto.PreLaunchStartupDirectory, nameof(serviceDto.PreLaunchStartupDirectory), serviceName),
                 PreLaunchExecutableArgs = Helper.EscapeBackslashes(serviceDto.PreLaunchParameters ?? string.Empty),
-                PreLaunchEnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.PreLaunchEnvironmentVariables ?? string.Empty),
+                PreLaunchEnvironmentVariables = SafeParseEnvVars(serviceDto.PreLaunchEnvironmentVariables, nameof(serviceDto.PreLaunchEnvironmentVariables), serviceName),
                 PreLaunchStdoutPath = serviceDto.PreLaunchStdoutPath,
                 PreLaunchStderrPath = serviceDto.PreLaunchStderrPath,
                 PreLaunchTimeoutInSeconds = serviceDto.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds,
@@ -92,13 +93,13 @@ namespace Servy.Service.CommandLine
                 PreLaunchIgnoreFailure = serviceDto.PreLaunchIgnoreFailure ?? AppConfig.DefaultPreLaunchIgnoreFailure,
 
                 // Failure program settings
-                FailureProgramPath = processHelper.ResolvePath(serviceDto.FailureProgramPath ?? string.Empty),
-                FailureProgramWorkingDirectory = processHelper.ResolvePath(serviceDto.FailureProgramStartupDirectory ?? string.Empty),
+                FailureProgramPath = SafeResolvePath(processHelper, serviceDto.FailureProgramPath, nameof(serviceDto.FailureProgramPath), serviceName),
+                FailureProgramWorkingDirectory = SafeResolvePath(processHelper, serviceDto.FailureProgramStartupDirectory, nameof(serviceDto.FailureProgramStartupDirectory), serviceName),
                 FailureProgramArgs = Helper.EscapeBackslashes(serviceDto.FailureProgramParameters ?? string.Empty),
 
                 // Post-Launch settings
-                PostLaunchExecutablePath = processHelper.ResolvePath(serviceDto.PostLaunchExecutablePath ?? string.Empty),
-                PostLaunchWorkingDirectory = processHelper.ResolvePath(serviceDto.PostLaunchStartupDirectory ?? string.Empty),
+                PostLaunchExecutablePath = SafeResolvePath(processHelper, serviceDto.PostLaunchExecutablePath, nameof(serviceDto.PostLaunchExecutablePath), serviceName),
+                PostLaunchWorkingDirectory = SafeResolvePath(processHelper, serviceDto.PostLaunchStartupDirectory, nameof(serviceDto.PostLaunchStartupDirectory), serviceName),
                 PostLaunchExecutableArgs = Helper.EscapeBackslashes(serviceDto.PostLaunchParameters ?? string.Empty),
 
                 // Operational toggles
@@ -115,15 +116,15 @@ namespace Servy.Service.CommandLine
                 StopTimeoutInSeconds = serviceDto.StopTimeout ?? AppConfig.DefaultStopTimeout,
 
                 // Pre-Stop settings
-                PreStopExecutablePath = processHelper.ResolvePath(serviceDto.PreStopExecutablePath ?? string.Empty),
-                PreStopWorkingDirectory = processHelper.ResolvePath(serviceDto.PreStopStartupDirectory ?? string.Empty),
+                PreStopExecutablePath = SafeResolvePath(processHelper, serviceDto.PreStopExecutablePath, nameof(serviceDto.PreStopExecutablePath), serviceName),
+                PreStopWorkingDirectory = SafeResolvePath(processHelper, serviceDto.PreStopStartupDirectory, nameof(serviceDto.PreStopStartupDirectory), serviceName),
                 PreStopExecutableArgs = Helper.EscapeBackslashes(serviceDto.PreStopParameters ?? string.Empty),
                 PreStopTimeoutInSeconds = serviceDto.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds,
                 PreStopLogAsError = serviceDto.PreStopLogAsError ?? AppConfig.DefaultPreStopLogAsError,
 
                 // Post-Stop settings
-                PostStopExecutablePath = processHelper.ResolvePath(serviceDto.PostStopExecutablePath ?? string.Empty),
-                PostStopWorkingDirectory = processHelper.ResolvePath(serviceDto.PostStopStartupDirectory ?? string.Empty),
+                PostStopExecutablePath = SafeResolvePath(processHelper, serviceDto.PostStopExecutablePath, nameof(serviceDto.PostStopExecutablePath), serviceName),
+                PostStopWorkingDirectory = SafeResolvePath(processHelper, serviceDto.PostStopStartupDirectory, nameof(serviceDto.PostStopStartupDirectory), serviceName),
                 PostStopExecutableArgs = Helper.EscapeBackslashes(serviceDto.PostStopParameters ?? string.Empty),
             };
         }
@@ -154,9 +155,43 @@ namespace Servy.Service.CommandLine
                 default:
                     Logger.Warn($"Unknown ProcessPriority value '{p}' - defaulting to Normal.");
                     return ProcessPriorityClass.Normal;
-
             }
         }
 
+        /// <summary>
+        /// Intercepts formatting violations inside stored configuration strings, ensuring malformed records do not torpedo service launches.
+        /// </summary>
+        private static List<EnvironmentVariable> SafeParseEnvVars(string raw, string fieldName, string serviceName)
+        {
+            try
+            {
+                return EnvironmentVariableParser.Parse(raw ?? string.Empty);
+            }
+            catch (FormatException ex)
+            {
+                Logger.Error(
+                    $"Service '{serviceName}': stored {fieldName} value is malformed and could not be parsed " +
+                    $"({ex.Message}). Continuing startup with an empty environment for this scope.");
+                return new List<EnvironmentVariable>();
+            }
+        }
+
+        /// <summary>
+        /// Safely intercepts exceptional expansion and path mapping scenarios, continuing with basic empty values to preserve SCM initialization contracts.
+        /// </summary>
+        private static string SafeResolvePath(IProcessHelper processHelper, string rawPath, string fieldName, string serviceName)
+        {
+            try
+            {
+                return processHelper.ResolvePath(rawPath ?? string.Empty) ?? string.Empty;
+            }
+            catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
+            {
+                Logger.Error(
+                    $"Service '{serviceName}': stored {fieldName} location resolution failed or is invalid " +
+                    $"({ex.Message}). Proceeding with an unmapped string token path to ensure startup execution.");
+                return rawPath ?? string.Empty;
+            }
+        }
     }
 }

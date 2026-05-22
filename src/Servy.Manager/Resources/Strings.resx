@@ -407,6 +407,9 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Msg_PidCopied" xml:space="preserve">
     <value>PID copied to clipboard.</value>
   </data>
+  <data name="Msg_PidCopyFailed" xml:space="preserve">
+    <value>Failed to copy PID to clipboard.</value>
+  </data>
 
   <!--CPU/RAM-->
   <data name="Column_CPU" xml:space="preserve">
