@@ -125,7 +125,6 @@
     <Compile Include="Converters\BoolToVisibilityConverterTests.cs" />
     <Compile Include="Converters\InverseBooleanConverterTests.cs" />
     <Compile Include="Design\DesignTimeMocksTests.cs" />
-    <Compile Include="Helpers\ImportGuardTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

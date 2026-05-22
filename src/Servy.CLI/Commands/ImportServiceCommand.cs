@@ -11,6 +11,7 @@ using Servy.Core.Mappers;
 using Servy.Core.Native;
 using Servy.Core.Security;
 using Servy.Core.Services;
+using Servy.Core.Validators;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -85,193 +86,24 @@ namespace Servy.CLI.Commands
                 if (!Helpers.Helper.TryParseFileType(opts.ConfigFileType, out var configFileType, out var parseError))
                     return CommandResult.Fail(parseError);
 
-                // Validate file path
+                // Validate file path presence
                 if (string.IsNullOrWhiteSpace(opts.Path))
                     return CommandResult.Fail(Strings.Msg_PathRequired);
 
-                // Canonicalize the path to resolve ".." and relative segments
-                string fullPath;
-                try
+                // ROBUSTNESS: Delegate the complex path canonicalization, UNC blocking, and 
+                // defense-in-depth symlink/junction guard checks to the centralized ImportGuard.
+                var securityResult = ImportGuard.ValidatePathSecurity(opts.Path);
+                if (!securityResult.IsValid)
                 {
-                    fullPath = Path.GetFullPath(opts.Path);
-                }
-                catch (Exception ex)
-                {
-                    return CommandResult.Fail($"{Strings.Msg_InvalidPath}: {ex.Message}");
+                    Logger.Error(securityResult.ErrorMessage);
+                    return CommandResult.Fail(securityResult.ErrorMessage);
                 }
 
-                // UNC Path Block (Infiltration Guard)
-                // Prevents reading config data from potentially attacker-controlled remote shares.
-                bool isUncUri = Uri.TryCreate(fullPath, UriKind.Absolute, out var uri) && uri.IsUnc;
-                if (fullPath.StartsWith(@"\\", StringComparison.Ordinal) || isUncUri)
-                {
-                    var errorMsg = "Security Alert: Importing from UNC paths is prohibited to prevent malicious configuration injection.";
-                    Logger.Error(errorMsg);
-                    return CommandResult.Fail(errorMsg);
-                }
+                // Extract the fully resolved, safe path token
+                string fullPath = securityResult.ValidPath.ResolvedPath;
 
-                // Mapped Network Drive Guard
-                // Catches network paths mapped to local drive letters (e.g. Z:\config.xml -> \\attacker\share)
-                try
-                {
-                    string root = Path.GetPathRoot(fullPath);
-                    if (!string.IsNullOrEmpty(root))
-                    {
-                        var drive = new DriveInfo(root);
-                        if (drive.DriveType == DriveType.Network)
-                        {
-                            var errorMsg = "Security Alert: Importing from network drives (including mapped UNC shares) is prohibited.";
-                            Logger.Error(errorMsg);
-                            return CommandResult.Fail(errorMsg);
-                        }
-                    }
-                }
-                catch (ArgumentException)
-                {
-                    /* Invalid or unprobed drive root - fall through to subsequent security blocks */
-                }
-
-                // Reparse Point Guard (Directory and File Level)
-                // Hardening: We explicitly block reparse points (symlinks/junctions) at both the directory 
-                // and file level to prevent path redirection attacks and UNC bypasses.
-                if (Helper.HasAncestorReparsePoint(fullPath))
-                {
-                    var errorMsg = "Security Alert: Importing configurations through directory junctions or symlinks is prohibited to prevent path redirection attacks.";
-                    Logger.Error(errorMsg);
-                    return CommandResult.Fail(errorMsg);
-                }
-
-                // Guard against file-level symbolic links
-                var fileLinkInfo = new FileInfo(fullPath);
-                fileLinkInfo.Refresh();
-                if (fileLinkInfo.Exists && (fileLinkInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
-                {
-                    var errorMsg = "Security Alert: Importing configurations through file symbolic links or junctions is prohibited to prevent path redirection attacks.";
-                    Logger.Error(errorMsg);
-                    return CommandResult.Fail(errorMsg);
-                }
-
-                // Reserved Device Name Block (DOS Guard)
-                string fileName = Path.GetFileName(fullPath);
-                foreach (var segment in fileName.Split('.'))
-                {
-                    if (string.IsNullOrEmpty(segment)) continue;
-                    if (ReservedNames.ReservedDeviceNames.Contains(segment))
-                    {
-                        var errorMsg = $"Security Alert: '{segment}' is a reserved Windows device name and cannot be used.";
-                        Logger.Error(errorMsg);
-                        return CommandResult.Fail(errorMsg);
-                    }
-                }
-
-                // System Protection: Block reading from critical Windows directories to prevent pulling unintended system files
-                string[] protectedFolders =
-                {
-                     Environment.GetFolderPath(Environment.SpecialFolder.Windows),
-                     Environment.GetFolderPath(Environment.SpecialFolder.System),
-                     Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                     Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-                };
-
-                var violatedFolder = protectedFolders
-                    .FirstOrDefault(folder => !string.IsNullOrEmpty(folder) &&
-                                              fullPath.StartsWith(
-                                                  folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
-                                                  StringComparison.OrdinalIgnoreCase));
-
-                if (violatedFolder != null)
-                {
-                    var errorMsg = $"Access Denied: The resolved path targets protected system directory '{violatedFolder}'. Import prohibited.";
-                    Logger.Error(errorMsg);
-                    return CommandResult.Fail(errorMsg);
-                }
-
-                // Extension Validation using the resolved path
-                string extension = Path.GetExtension(fullPath).ToLowerInvariant();
-                string[] allowedExtensions = { ".json", ".xml" };
-
-                if (!allowedExtensions.Contains(extension))
-                {
-                    var errorMsg = $"[Import{configFileType}] Security Alert: Invalid file type '{extension}'. Only .json and .xml files are supported.";
-                    Logger.Error(errorMsg);
-                    return CommandResult.Fail(errorMsg);
-                }
-
-                // Existence Check using the resolved path
+                // Validate existence and size limits against the hardened path
                 var fileInfo = new FileInfo(fullPath);
-                if (!fileInfo.Exists)
-                {
-                    var errorMsg = $"[Import{configFileType}] File not found: {fullPath}";
-                    Logger.Error(errorMsg);
-                    return CommandResult.Fail(errorMsg);
-                }
-
-                // Belt-and-braces: Open a temporary read handle to resolve the true, underlying volume path
-                // This catches complex or nested link configurations resolving out to distant remote networks.
-                try
-                {
-                    using (var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    {
-                        var safeHandle = fileStream.SafeFileHandle;
-                        IntPtr nativeHandle = safeHandle.DangerousGetHandle();
-
-                        if (nativeHandle != NativeMethods.INVALID_HANDLE_VALUE)
-                        {
-                            // 1. Determine buffer size required
-                            uint requiredSize = NativeMethods.GetFinalPathNameByHandle(nativeHandle, null, 0, NativeMethods.VOLUME_NAME_DOS);
-
-                            if (requiredSize > 0)
-                            {
-                                // 2. Allocate buffer and retrieve the path
-                                var pathBuilder = new StringBuilder((int)requiredSize);
-                                uint resultSize = NativeMethods.GetFinalPathNameByHandle(nativeHandle, pathBuilder, requiredSize, NativeMethods.VOLUME_NAME_DOS);
-
-                                if (resultSize > 0)
-                                {
-                                    string finalPathName = pathBuilder.ToString();
-
-                                    // NORMALIZE: Clean up extended device namespaces safely to track backends accurately
-                                    string normalizedPath = finalPathName;
-                                    bool unwrappedUnc = false;
-
-                                    if (normalizedPath.StartsWith(@"\\?\UNC\", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        // Reconstruct the explicit double-backslash structural layout for accurate evaluation
-                                        normalizedPath = @"\\" + normalizedPath.Substring(@"\\?\UNC\".Length);
-                                        unwrappedUnc = true;
-                                    }
-                                    else if (normalizedPath.StartsWith(@"\\?\", StringComparison.Ordinal))
-                                    {
-                                        // Strip standard local volume namespace tags (e.g. \\?\C:\... -> C:\...)
-                                        normalizedPath = normalizedPath.Substring(4);
-                                    }
-
-                                    bool finalIsUnc = unwrappedUnc || (Uri.TryCreate(normalizedPath, UriKind.Absolute, out var finalUri) && finalUri.IsUnc);
-
-                                    // Now check the normalized path
-                                    if (unwrappedUnc ||
-                                        normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
-                                        finalIsUnc)
-                                    {
-                                        var errorMsg = "Security Alert: Resolved file target points directly to a UNC destination. Import aborted.";
-                                        Logger.Error(errorMsg);
-                                        return CommandResult.Fail(errorMsg);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Fail fast if an operational error blocks a reliable security verification check
-                    var errorMsg = $"Security Guard Failure: Target file handle validation rejected. {ex.Message}";
-                    Logger.Error(errorMsg);
-                    return CommandResult.Fail(errorMsg);
-                }
-
-                // Refresh so Length reflects current state after the security probes
-                fileInfo.Refresh();
                 if (!fileInfo.Exists)
                 {
                     return CommandResult.Fail($"[Import{configFileType}] File no longer present: {fullPath}");
@@ -284,7 +116,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(errorMsg);
                 }
 
-                // Process file based on its type using the fullPath
+                // Process file based on its type using the validated fullPath
                 CommandResult result;
 
                 switch (configFileType)

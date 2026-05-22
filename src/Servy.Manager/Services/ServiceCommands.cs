@@ -5,12 +5,12 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
+using Servy.Core.Validators;
 using Servy.Manager.Config;
 using Servy.Manager.Mappers;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Validators;
-using Servy.UI.Helpers;
 using Servy.UI.Services;
 using System;
 using System.Collections.Concurrent;
@@ -731,14 +731,22 @@ namespace Servy.Manager.Services
 
             try
             {
-                if (!await ImportGuard.ValidatePathAndSizeAsync(path, _messageBoxService, AppConfig.Caption, Core.Config.AppConfig.MaxConfigFileSizeMB, Strings.Msg_ConfigSizeLimitReached))
-                    return;
-
-                // Defense-in-depth: reuse the same UNC / reparse / device-name / protected-folder guards as the CLI
+                // 1. Defense-in-depth: Run the security guards FIRST before touching the disk via size validation
                 var guardResult = ImportGuard.ValidatePathSecurity(path);
                 if (!guardResult.IsValid || guardResult.ValidPath == null)
                 {
                     await _messageBoxService.ShowErrorAsync(guardResult.ErrorMessage, AppConfig.Caption);
+                    return;
+                }
+
+                // Extract the fully canonicalized, secure path token
+                string validatedPath = guardResult.ValidPath.ResolvedPath;
+
+                // 2. Validate existence and size thresholds using the refactored asynchronous method
+                var sizeResult = ImportGuard.ValidatePathAndSize(validatedPath, Core.Config.AppConfig.MaxConfigFileSizeMB, Strings.Msg_ConfigSizeLimitReached);
+                if (!sizeResult.IsValid)
+                {
+                    await _messageBoxService.ShowErrorAsync(sizeResult.ErrorMessage, AppConfig.Caption);
                     return;
                 }
 

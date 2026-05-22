@@ -2,16 +2,13 @@
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Native;
-using Servy.Core.Security;
-using Servy.UI.Resources;
-using Servy.UI.Services;
+using Servy.Core.Resources;
 using System;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace Servy.UI.Helpers
+namespace Servy.Core.Validators
 {
     /// <summary>
     /// A secure token representing a file path that has successfully passed all defense-in-depth security invariants.
@@ -58,18 +55,14 @@ namespace Servy.UI.Helpers
     public static class ImportGuard
     {
         /// <summary>
-        /// Validates that a configuration file exists and stays within a safe size threshold.
+        /// Validates that a configuration file exists, stays within a safe size threshold, and returns a structured validation result.
         /// </summary>
-        /// <param name="path">Path to the file.</param>
-        /// <param name="messageBoxService">The UI service to display errors.</param>
-        /// <param name="caption">The message box caption.</param>
+        /// <param name="path">The file system path to evaluate.</param>
         /// <param name="maxFileSizeMb">The maximum allowed size in MB.</param>
         /// <param name="sizeLimitFormat">The localized format string for the size error (expects {0} for path).</param>
-        /// <returns>True if the file is valid for import; otherwise false.</returns>
-        public static async Task<bool> ValidatePathAndSizeAsync(
+        /// <returns>A <see cref="PathSecurityResult"/> containing a secure path token on success, or an explicit error message on failure.</returns>
+        public static PathSecurityResult ValidatePathAndSize(
             string path,
-            IMessageBoxService messageBoxService,
-            string caption,
             int maxFileSizeMb,
             string sizeLimitFormat)
         {
@@ -82,8 +75,7 @@ namespace Servy.UI.Helpers
             catch (Exception ex)
             {
                 Logger.Error($"Invalid path provided for file size validation: {path}", ex);
-                await messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPath, caption);
-                return false;
+                return PathSecurityResult.Fail(Strings.Msg_InvalidPath);
             }
 
             var fileInfo = new FileInfo(fullPath);
@@ -91,10 +83,9 @@ namespace Servy.UI.Helpers
             // 1. Existence Check
             if (!fileInfo.Exists)
             {
-                var errorMsg = string.Format(Core.Resources.Strings.Msg_ImportFileNotFound, fullPath);
+                var errorMsg = string.Format(Strings.Msg_ImportFileNotFound, fullPath);
                 Logger.Error(errorMsg);
-                await messageBoxService.ShowErrorAsync(errorMsg, caption);
-                return false;
+                return PathSecurityResult.Fail(errorMsg);
             }
 
             // 2. Size Guard (Safety threshold)
@@ -102,11 +93,11 @@ namespace Servy.UI.Helpers
             {
                 var errorMsg = string.Format(sizeLimitFormat, fullPath);
                 Logger.Error(errorMsg);
-                await messageBoxService.ShowErrorAsync(errorMsg, caption);
-                return false;
+                return PathSecurityResult.Fail(errorMsg);
             }
 
-            return true;
+            // Success: Return the sealed token wrapping the evaluated path
+            return PathSecurityResult.Success(fullPath);
         }
 
         /// <summary>
@@ -158,7 +149,7 @@ namespace Servy.UI.Helpers
             }
 
             // Reparse Point Guard (Directory and File Level)
-            if (Core.Helpers.Helper.HasAncestorReparsePoint(fullPath))
+            if (Helper.HasAncestorReparsePoint(fullPath))
             {
                 var errorMsg = Strings.Msg_SecurityDirReparsePointProhibited;
                 Logger.Error(errorMsg);
@@ -168,7 +159,7 @@ namespace Servy.UI.Helpers
             // Guard against file-level symbolic links
             var fileLinkInfo = new FileInfo(fullPath);
             fileLinkInfo.Refresh();
-            if ((fileLinkInfo.Exists && (fileLinkInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint))
+            if ( (fileLinkInfo.Exists && (fileLinkInfo.Attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint))
             {
                 var errorMsg = Strings.Msg_SecurityFileReparsePointProhibited;
                 Logger.Error(errorMsg);
@@ -217,6 +208,15 @@ namespace Servy.UI.Helpers
             if (!allowedExtensions.Contains(extension))
             {
                 var errorMsg = string.Format(Strings.Msg_SecurityInvalidFileType, extension);
+                Logger.Error(errorMsg);
+                return PathSecurityResult.Fail(errorMsg);
+            }
+
+            // Existence Check
+            var fileInfo = new FileInfo(fullPath);
+            if (!fileInfo.Exists)
+            {
+                var errorMsg = string.Format(Strings.Msg_ImportFileNotFound, fullPath);
                 Logger.Error(errorMsg);
                 return PathSecurityResult.Fail(errorMsg);
             }

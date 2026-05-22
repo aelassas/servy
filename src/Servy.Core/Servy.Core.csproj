@@ -197,6 +197,7 @@
     <Compile Include="Services\Win32ErrorProvider.cs" />
     <Compile Include="Services\WindowsServiceApi.cs" />
     <Compile Include="Services\WindowsServiceInfo.cs" />
+    <Compile Include="Validators\ImportGuard.cs" />
     <Compile Include="Validators\IServiceValidationRules.cs" />
     <Compile Include="Validators\ServiceValidationRules.cs" />
     <Compile Include="Validators\ValidationResult.cs" />
