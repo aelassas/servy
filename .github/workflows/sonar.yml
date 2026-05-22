@@ -94,7 +94,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "sonarscanner begin failed (exit $LASTEXITCODE)" }
 
           # Using MSBuild for .NET 4.8
-          msbuild /p:Configuration=Release
+          msbuild /p:Configuration=Release /p:Platform=x64
           $buildExit = $LASTEXITCODE
           
           ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="$env:SONAR_TOKEN"
