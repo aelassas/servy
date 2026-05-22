@@ -77,19 +77,19 @@ namespace Servy.Core.Helpers
                     return false;
                 }
 
-                // Get running services before the inner try block
-                var runningServices = new List<string>();
-                if (stopServices)
+                using (resourceStream)
                 {
-                    // CLI-installed services are installed with Servy.Service.CLI.exe and UI-installed services are installed with Servy.Service.exe
-                    runningServices = isCli
-                        ? _serviceHelper.GetRunningServyCLIServices()
-                        : _serviceHelper.GetRunningServyUIServices();
-                }
+                    // Get running services before the inner try block
+                    var runningServices = new List<string>();
+                    if (stopServices)
+                    {
+                        // CLI-installed services are installed with Servy.Service.CLI.exe and UI-installed services are installed with Servy.Service.exe
+                        runningServices = isCli
+                            ? _serviceHelper.GetRunningServyCLIServices()
+                            : _serviceHelper.GetRunningServyUIServices();
+                    }
 
-                try
-                {
-                    using (resourceStream)
+                    try
                     {
                         if (stopServices && runningServices.Count > 0)
                         {
@@ -102,28 +102,29 @@ namespace Servy.Core.Helpers
 
                         await Helper.WriteFileAtomicAsync(targetPath, resourceStream.CopyToAsync);
                     }
-
-                    copyDone = true; // File write succeeded
-                }
-                finally
-                {
-                    if (stopServices && runningServices.Count > 0)
+                    finally
                     {
-                        try
+                        if (stopServices && runningServices.Count > 0)
                         {
-                            Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
-                            await _serviceHelper.StartServices(runningServices);
-                        }
-                        catch (Exception startEx)
-                        {
-                            // Differentiate restart failure from copy failure
-                            restartFailed = true;
-                            Logger.Error(
-                                $"Embedded resource '{resourceName}' was successfully copied to '{targetPath}', but {runningServices.Count} previously-running services failed to restart.",
-                                startEx);
+                            try
+                            {
+                                Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
+                                await _serviceHelper.StartServices(runningServices);
+                            }
+                            catch (Exception startEx)
+                            {
+                                // Differentiate restart failure from copy failure
+                                restartFailed = true;
+                                Logger.Error(
+                                    $"Embedded resource '{resourceName}' was successfully copied to '{targetPath}', but {runningServices.Count} previously-running services failed to restart.",
+                                    startEx);
+                            }
                         }
                     }
                 }
+
+                copyDone = true; // File write succeeded
+
 
                 if (copyDone && !restartFailed)
                 {

@@ -72,6 +72,29 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.False(result);
         }
 
+        [Theory]
+        [InlineData(@"C:\Windows", true)]             // Standard drive-rooted absolute path
+        [InlineData(@"D:\Data\config.xml", true)]     // Alternate drive-rooted
+        [InlineData(@"\\Server\Share\Path", true)]    // UNC absolute path
+        [InlineData(@"C:/Windows", true)]             // Forward-slash separator (normalized by .NET)
+        [InlineData(@"\Windows\System32", false)]     // Rooted but relative to current drive
+        [InlineData(@"\Path", false)]                 // Rooted but relative to current drive
+        [InlineData(@"Relative\Path", false)]         // Fully relative
+        [InlineData(@"..\Parent", false)]             // Parent relative
+        [InlineData(@"\Servy\logs\app.log", false)]   // Was BUG: returned true
+        [InlineData(@"/var/log/foo.log", false)]      // Was BUG: returned true
+        [InlineData(@"C:", false)]                    // Rooted but relative to current directory on drive
+        [InlineData("", false)]                       // Empty
+        [InlineData(null, false)]                     // Null
+        public void IsAbsolute_ShouldCorrectlyIdentifyPathTypes(string? input, bool expected)
+        {
+            // Act
+            bool result = Helper.IsAbsolute(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
         // Tests for CreateParentDirectory
         [Fact]
         public void CreateParentDirectory_NullOrWhitespace_ReturnsFalse()

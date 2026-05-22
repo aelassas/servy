@@ -825,7 +825,11 @@ namespace Servy.Service
             }
 
             // 1. Prepare configuration and shared options
-            var (_, args) = PreparePreLaunchEnv(options);
+            var vars = options.PreLaunchEnvironmentVariables ?? options.EnvironmentVariables;
+            var (expandedEnv, args) = ExpandAndAudit(
+                vars,
+                options.PreLaunchExecutableArgs ?? string.Empty,
+                "Pre-Launch");
             var workingDir = string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory)
                 ? options.WorkingDirectory
                 : options.PreLaunchWorkingDirectory;
@@ -938,8 +942,6 @@ namespace Servy.Service
                     _logger?.Error(message);
             }
 
-            int waitChunkMs = 250; // Granularity for SCM heartbeats
-
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
                 _logger?.Info($"Starting pre-launch process (attempt {attempt}/{maxAttempts})...");
@@ -974,7 +976,7 @@ namespace Servy.Service
                     int elapsed = 0;
                     while (elapsed < delayMs)
                     {
-                        int slice = Math.Min(waitChunkMs, delayMs - elapsed);
+                        int slice = Math.Min(_waitChunkMs, delayMs - elapsed);
                         Thread.Sleep(slice);
 
                         // Pulse the SCM during the wait so the service is not killed by timeout.
@@ -995,31 +997,6 @@ namespace Servy.Service
 
             return false; // stop service start
         }
-
-        /// <summary>
-        /// Prepares and expands environment variables and command-line arguments for the pre-launch process.
-        /// </summary>
-        private (Dictionary<string, string?> env, string args) PreparePreLaunchEnv(StartOptions options)
-        {
-            // 1. Expand environment variables list
-            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(
-                options.PreLaunchEnvironmentVariables ?? options.EnvironmentVariables);
-
-            // 2. Audit expanded variables for leftover placeholders
-            foreach (var kvp in expandedEnv)
-            {
-                LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"[Pre-Launch] Environment Variable '{kvp.Key}'");
-            }
-
-            // 3. Expand command-line arguments using the expanded environment
-            var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.PreLaunchExecutableArgs ?? string.Empty, expandedEnv);
-
-            // 4. Audit arguments for leftover placeholders
-            LogUnexpandedPlaceholders(args, "[Pre-Launch] Arguments");
-
-            return (expandedEnv, args);
-        }
-
 
         /// <summary>
         /// Exposes the protected <see cref="OnStart(string[])"/> method for testing purposes.
@@ -1233,11 +1210,13 @@ namespace Servy.Service
                 }
             }
 
+            var capturedProcess = _childProcess;
+            var capturedCts = cts;
             Task.Run(async () =>
             {
                 try
                 {
-                    if (await _childProcess.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(_options!.StartTimeoutInSeconds), cts.Token))
+                    if (await capturedProcess.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(_options!.StartTimeoutInSeconds), capturedCts.Token))
                     {
                         StartPostLaunchProcess();
                     }

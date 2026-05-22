@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Servy.Core.Config;
 using Servy.Core.Data;
-using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Resources;
@@ -405,7 +404,7 @@ namespace Servy.UI.Bootstrapping
             {
                 Logger.Error("Startup error", ex);
                 MessageBox.Show(string.Format(Strings.Msg_StartupError_Format, ex.Message));
-                app.Shutdown();
+                app.Shutdown(1); // Signal failure to the OS
             }
             finally
             {

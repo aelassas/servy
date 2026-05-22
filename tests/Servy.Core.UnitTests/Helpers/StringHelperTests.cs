@@ -16,10 +16,35 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("line1\rline2;line3", "line1;line2;line3")]
         [InlineData("line1\nline2;line3", "line1;line2;line3")]
         [InlineData("line1\r\nline2\nline3\rline4", "line1;line2;line3;line4")]
+        [InlineData("VAR1=value1\r\nVAR2=value2\nVAR3=value3\rVAR4=value4", "VAR1=value1;VAR2=value2;VAR3=value3;VAR4=value4")]
         public void NormalizeString_ShouldHandleLineBreaksAndEscapeSemicolons(string? input, string expected)
         {
             var result = StringHelper.NormalizeString(input);
             Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("PATH=C:\\foo\\\r\nTEMP=C:\\bar", "PATH=C:\\foo\\\\;TEMP=C:\\bar")]
+        [InlineData("PATH=C:\\foo\\\nTEMP=C:\\bar", "PATH=C:\\foo\\\\;TEMP=C:\\bar")]
+        [InlineData("PATH=C:\\foo\\\rTEMP=C:\\bar", "PATH=C:\\foo\\\\;TEMP=C:\\bar")]
+        [InlineData("PATH=C:\\foo\\", "PATH=C:\\foo\\\\")] // End of string boundary check
+        public void NormalizeString_ShouldDoubleTrailingBackslashes_WhenLineEndsWithBackslash(string input, string expected)
+        {
+            // Act
+            string result = StringHelper.NormalizeString(input);
+
+            // Assert
+            // Verifies that the backslash is doubled so downstream EscapedTokenizer interprets it as 
+            // a literal backslash followed by a separate record delimiter semicolon.
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void NormalizeString_ShouldReturnEmptyString_WhenInputIsNullOrEmpty()
+        {
+            // Act & Assert
+            Assert.Equal(string.Empty, StringHelper.NormalizeString(null));
+            Assert.Equal(string.Empty, StringHelper.NormalizeString(string.Empty));
         }
 
         [Fact]

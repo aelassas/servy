@@ -68,7 +68,7 @@ namespace Servy.Core.Helpers
                 }
 
                 // Check if the path is absolute
-                if (!Path.IsPathRooted(path))
+                if (!IsAbsolute(path))
                 {
                     return false;
                 }
@@ -83,6 +83,31 @@ namespace Servy.Core.Helpers
                 Logger.Debug($"IsValidPath: rejected '{path}': {ex.Message}");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Determines whether a specified path string represents an absolute path.
+        /// </summary>
+        /// <param name="p">The path string to evaluate.</param>
+        /// <returns>
+        /// <c>true</c> if the path is rooted and contains a valid drive letter or UNC server/share definition; 
+        /// otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// This method improves upon <see cref="Path.IsPathRooted"/> by ensuring that paths 
+        /// starting with a directory separator (which are rooted but not absolute in Windows) 
+        /// are correctly identified as non-absolute.
+        /// </remarks>
+        public static bool IsAbsolute(string? p)
+        {
+            if (string.IsNullOrWhiteSpace(p))
+                return false;
+
+            string? root = Path.GetPathRoot(p)?.TrimStart('\\', '/');
+
+            return Path.IsPathRooted(p) &&
+                !string.IsNullOrEmpty(root) &&
+                (root.Contains(Path.DirectorySeparatorChar) || root.Contains(Path.AltDirectorySeparatorChar));
         }
 
         /// <summary>

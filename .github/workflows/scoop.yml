@@ -150,7 +150,9 @@ jobs:
             
             # Explicitly target the main branch
             git pull origin main
+            if ($LASTEXITCODE -ne 0) { throw "git pull failed (exit $LASTEXITCODE)" }
             git push origin HEAD:main
+            if ($LASTEXITCODE -ne 0) { throw "git push failed (exit $LASTEXITCODE)" }
           } else {
             Write-Host "No changes to local manifest."
           }
@@ -182,7 +184,9 @@ jobs:
             git add $manifestPath
             git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
             git pull
+            if ($LASTEXITCODE -ne 0) { throw "git pull failed (exit $LASTEXITCODE)" }
             git push origin HEAD
+            if ($LASTEXITCODE -ne 0) { throw "git push failed (exit $LASTEXITCODE)" }
           } else {
             Write-Host "No changes to commit"
           }
@@ -264,6 +268,7 @@ jobs:
               }
           }
           git push origin $branchName --force-with-lease
+          if ($LASTEXITCODE -ne 0) { throw "git push failed (exit $LASTEXITCODE)" }
         
       - name: Open Pull Request in ScoopInstaller/Extras
         if: env.RUN_EXTRAS_PR == 'true'

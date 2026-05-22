@@ -51,8 +51,18 @@ jobs:
 
           Write-Host "Fetching releases for $repo..."
           # Filter out drafts ($_.draft -eq $false) to avoid empty 'published_at' strings
+          $rawJson = gh api repos/$repo/releases --paginate
+          if ($LASTEXITCODE -ne 0) {
+              throw 'gh api releases failed (exit ' + $LASTEXITCODE + '). Aborting changelog update.'
+          }
+
           # Wrap in @() to guarantee an array even if only 1 release exists
-          $releases = @(gh api repos/$repo/releases --paginate | ConvertFrom-Json | Where-Object { $_.draft -eq $false })
+          $releases = @($rawJson | ConvertFrom-Json | Where-Object { $_.draft -eq $false })
+
+          if ($releases.Count -eq 0) {
+              Write-Host "No releases found. Exiting."
+              exit 0
+          }
 
           if ($null -eq $releases -or $releases.Count -eq 0) {
               Write-Host "No releases found. Exiting."
@@ -157,7 +167,16 @@ jobs:
               git commit -m "docs: auto-update CHANGELOG.md"
               
               # Pull any recent changes to avoid push rejections
-              git pull origin main --rebase 
+              git pull origin main --rebase
+              if ($LASTEXITCODE -ne 0) {
+                  Write-Error "git pull --rebase failed (exit $LASTEXITCODE). Aborting before push to avoid leaving the branch in a half-rebased state."
+                  git rebase --abort 2>&1 | Out-Null
+                  exit $LASTEXITCODE
+              }
               
               git push
+              if ($LASTEXITCODE -ne 0) {
+                  Write-Error "git push failed (exit $LASTEXITCODE)."
+                  exit $LASTEXITCODE
+              }
           }
