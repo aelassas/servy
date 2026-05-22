@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4.3.1
         with:
           fetch-depth: 0
-          ref: main # Force checkout of the main branch, not the release tag
+          ref: main # Force checkout of the main branch, not the release tag          
           
       - name: Update CHANGELOG.md
         shell: pwsh
@@ -50,14 +50,16 @@ jobs:
           $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 
           Write-Host "Fetching releases for $repo..."
-          # Filter out drafts ($_.draft -eq $false) to avoid empty 'published_at' strings
+          # Filter out drafts ($_.draft -eq $false) to avoid empty 'published_at' strings          
           $rawJson = gh api repos/$repo/releases --paginate
           if ($LASTEXITCODE -ne 0) {
               throw 'gh api releases failed (exit ' + $LASTEXITCODE + '). Aborting changelog update.'
           }
 
-          # Wrap in @() to guarantee an array even if only 1 release exists
-          $releases = @($rawJson | ConvertFrom-Json | Where-Object { $_.draft -eq $false })
+          # ROBUSTNESS: Stream through the pipeline to ensure safe structural object deserialization
+          $deserializedJson = $rawJson | ConvertFrom-Json
+          # Wrap in @() to guarantee an array even if only 1 release exists          
+          $releases = @($deserializedJson | Where-Object { $_.draft -eq $false })
 
           if ($releases.Count -eq 0) {
               Write-Host "No releases found. Exiting."
@@ -75,7 +77,7 @@ jobs:
               $title = if ([string]::IsNullOrWhiteSpace($Release.name)) { $Release.tag_name } else { $Release.name }
               $url = $Release.html_url
               
-              # Safely parse the date, falling back to "Pending" if missing (e.g., edge cases)
+              # Safely parse the date, falling back to "Pending" if missing (e.g., edge cases)              
               $date = if (![string]::IsNullOrWhiteSpace($Release.published_at)) { 
                   [datetime]::Parse($Release.published_at).ToString("yyyy-MM-dd") 
               } else { 
@@ -130,7 +132,7 @@ jobs:
                   $existing = [System.IO.File]::ReadAllText($changelogPath, $utf8NoBom)
               }
 
-              # Safety check to prevent duplicating the release entry
+              # Safety check to prevent duplicating the release entry              
               $tagLine = "**Tag:** [$bt$tag$bt](https://github.com/$repo/tree/$tag)"
               if ($existing.Contains($tagLine)) {
                   Write-Host "Release $tag is already in the CHANGELOG. No updates needed."
@@ -151,32 +153,67 @@ jobs:
       - name: Commit and Push
         shell: pwsh
         run: |
-          # Disable CRLF warnings
+          # Disable CRLF warnings          
           git config core.autocrlf false
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add CHANGELOG.md
-          
-          # Quietly check if there are any staged changes
-          git diff --staged --quiet
-          
+          # Quietly check if CHANGELOG.md has actually changed          
+          git diff --quiet CHANGELOG.md
           if ($LASTEXITCODE -eq 0) {
-              Write-Host "No changes to commit. The CHANGELOG.md is already up to date."
-          } else {
-              git commit -m "docs: auto-update CHANGELOG.md"
+              Write-Host "No changes detected in CHANGELOG.md. Nothing to update."
+              exit 0
+          }
+
+          # ROBUSTNESS: Stage and create the initial local commit wrapper BEFORE entering the loop.
+          # This allows git pull --rebase to seamlessly overlay updates without swallowing files via git stash.
+          git add CHANGELOG.md
+          git commit -m "docs: auto-update CHANGELOG.md"
+
+          # We use a retry loop to handle concurrent upstream pushes gracefully          
+          $maxAttempts = 3
+          $attempt = 1
+          $pushSuccess = $false
+
+          while ($attempt -le $maxAttempts -and -not $pushSuccess) {
+              Write-Host "Push attempt $attempt of $maxAttempts..."
               
-              # Pull any recent changes to avoid push rejections
+              # Ensure workspace noise is cleared before pulling/rebasing              
+              git stash --include-untracked
+              $stashed = ($LASTEXITCODE -eq 0)
+
+              # Fetch latest remote state and rebase our local working branch              
               git pull origin main --rebase
-              if ($LASTEXITCODE -ne 0) {
-                  Write-Error "git pull --rebase failed (exit $LASTEXITCODE). Aborting before push to avoid leaving the branch in a half-rebased state."
-                  git rebase --abort 2>&1 | Out-Null
-                  exit $LASTEXITCODE
-              }
+              $pullExit = $LASTEXITCODE
               
-              git push
-              if ($LASTEXITCODE -ne 0) {
-                  Write-Error "git push failed (exit $LASTEXITCODE)."
-                  exit $LASTEXITCODE
+              # Always restore unrelated workspace items immediately after rebase
+              if ($stashed) { 
+                  git stash pop 2>&1 | Out-Null 
               }
+
+              if ($pullExit -ne 0) {
+                  Write-Warning "Fetch/Rebase failed. Aborting rebase state and cleaning workspace."
+                  git rebase --abort 2>&1 | Out-Null
+                  
+                  # Back off briefly before trying again to let transient remote locks clear                  
+                  Start-Sleep -Seconds 5
+                  $attempt++
+                  continue
+              }
+
+              # Attempt to push up to the remote repository              
+              git push origin main
+              if ($LASTEXITCODE -eq 0) {
+                  $pushSuccess = $true
+                  Write-Host "CHANGELOG.md successfully pushed on attempt $attempt."
+              } else {
+                  Write-Warning "Push rejected due to concurrent remote updates. Retrying..."
+                  Start-Sleep -Seconds 2
+                  $attempt++
+              }
+          }
+
+          if (-not $pushSuccess) {
+              Write-Error "Failed to push CHANGELOG.md updates after $maxAttempts attempts due to high concurrent repository activity."
+              exit 1
           }
