@@ -128,10 +128,6 @@ namespace Servy.Core.UnitTests.Validators
         [InlineData("LPT¹.xml")]
         public void ValidatePathSecurity_ReservedDeviceName_ReturnsFail(string fileName)
         {
-            // ROBUSTNESS: Do not combine with the temporary directory path (_tempDirectory).
-            // In CI environments like GitHub Actions, the workspace path contains an "\a\" segment 
-            // (e.g., D:\a\repo\), which incorrectly triggers the early UNC path validation guard 
-            // due to legacy Windows device-namespace parsing rules.
             string filePath = fileName;
 
             // Act
@@ -140,7 +136,16 @@ namespace Servy.Core.UnitTests.Validators
             // Assert
             Assert.False(result.IsValid);
             Assert.NotNull(result.ErrorMessage);
-            Assert.Contains(Path.GetFileNameWithoutExtension(fileName), result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+
+            // ROBUSTNESS: .NET Framework 4.8 and .NET 10.0 canonicalize DOS device names differently.
+            // - .NET 10.0: Path.GetFullPath("COM1.json") -> "D:\a\...\COM1.json". Hits the DOS Guard.
+            // - .NET 4.8: Path.GetFullPath("COM1.json") -> "\\.\COM1". Hits the UNC Guard early because it starts with "\\".
+            // Both are secure and block the input. We validate that at least one of these layers caught the payload.
+            bool hitDosGuard = result.ErrorMessage.IndexOf(Path.GetFileNameWithoutExtension(fileName), StringComparison.OrdinalIgnoreCase) >= 0;
+            bool hitUncGuard = result.ErrorMessage.IndexOf("UNC paths", StringComparison.OrdinalIgnoreCase) >= 0;
+
+            Assert.True(hitDosGuard || hitUncGuard,
+                $"Expected DOS device payload to be intercepted by either the DOS guard or the UNC guard. Actual error: {result.ErrorMessage}");
         }
 
         [Fact]
