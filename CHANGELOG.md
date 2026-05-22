@@ -611,7 +611,7 @@ Servy 8.3 improves the UI experience and includes many fixes. The full changelog
 * fix(core): SecurityHelper.CreateSecureDirectory - WindowsIdentity from GetCurrent() never disposed (handle leak per call) (#868)
 * fix(core): LogonAsServiceGrant.Ensure - InvalidOperationException loses the underlying SID-resolution failure cause (#874)
 * fix(core): ResourceHelper + ServiceExporter - non-atomic file writes can leave truncated/partial files on crash, mid-copy interruption, or disk full (#875)
-* fix(core): SecurityHelper.ApplySecurityRules - comparing the current user's SID to BuiltinAdministrators/LocalSystem GROUP SIDs is meaningless (#933)
+* fix(core): SecurityHelper.ApplySecurityRules — comparing the current user's SID to BuiltinAdministrators/LocalSystem GROUP SIDs is meaningless (#933)
 * fix(core): ProcessKiller.KillProcessTreeAndParents(string) - silent catch-all swallows ALL errors with no logging (#935)
 * fix(core): ProcessKiller.KillProcessTree - uses stale 'allProcesses' snapshot during recursion; processes spawned mid-walk survive (#936)
 * fix(core): ResourceHelper.TerminateBlockingProcesses - for .exe resources, kills ALL processes matching the filename, including unrelated instances belonging to other services (#938)
@@ -725,10 +725,11 @@ Servy 8.1 introduces many fixes across main components. The full release notes a
   <summary>Click to expand release notes!</summary>
 
 * fix(core): Child folder ACLs in %ProgramData%\Servy break multi-account setups (#725)
+* fix(service): Partial nginx shutdown leaves orphan process running (#784)
 * fix(core): mixed string empty checks: IsNullOrWhiteSpace vs IsNullOrEmpty used interchangeably (#397)
 * fix(core): Multiple files - Process.MainModule!.FileName! pattern repeated in 7 locations (follow-up to #724) (#757)
 * fix(core): RotatingStreamWriter.cs - Synchronous Thread.Sleep retries during rotation stall stdout/stderr capture (#761)
-* fix(core): Post-launch hook missing EnvironmentVariables / Stdout / Stderr / Timeout / Retry / IgnoreFailure - asymmetric with pre-launch (#762)
+* fix(core): Post-launch hook missing EnvironmentVariables / Stdout / Stderr / Timeout / Retry / IgnoreFailure — asymmetric with pre-launch (#762)
 * fix(core): Servy Event Log - C# code (1000/2000/3000) and PowerShell scripts (9901/9903) use disjoint Event ID ranges on the same source (#764)
 * fix(core): AppConfig.cs - ConfigurationAppPublishDebugPath and ManagerAppPublishDebugPath point to Release folders (#768)
 * fix(core): AppConfig.cs - Inconsistent relative-path depth across Debug/Release folder constants (#769)
@@ -740,7 +741,6 @@ Servy 8.1 introduces many fixes across main components. The full release notes a
 * fix(service): Fire-and-forget PRESHUTDOWN registration races OnStart failure (#758)
 * fix(service): ProcessLauncher.cs - stdout/stderr log flush has no error handling, buffer lost on disk failure (#770)
 * fix(service): EnvironmentVariableHelper.cs - MaxExpansionPasses and MaxStringLength hardcoded, should live in AppConfig (#775)
-* fix(service): Partial nginx shutdown leaves orphan process running (#784)
 * fix(restarter): database locked on restricted accounts
 * fix(desktop): MainViewModel.cs - ConfirmPassword silently overwritten with Password on configuration reload (#782)
 * fix(desktop,manager): Export/Import XML vs JSON methods duplicated in both GUI projects (#407)
@@ -792,10 +792,10 @@ Servy 8.0 introduces many fixes across all components. The full release notes ar
 * fix(core): Central config - Regex ReDoS timeout 200ms duplicated across 6 regexes (#726)
 * fix(core): NativeMethods.cs - Inconsistent SafeHandle vs bare IntPtr across SCM/Job P/Invokes (#730)
 * fix(core): ProtectedKeyProvider.SaveProtected - No explicit file ACL, non-atomic write (#731)
-* fix(core): EventLogReader.cs:44 - Truncated <returns> docstring ending mid-word (#748)
+* fix(core): EventLogReader.cs:44 - Truncated \<returns\> docstring ending mid-word (#748)
 * fix(service): ensure event log availability during pre-shutdown via explicit dependency
 * fix(service): ProcessLauncher.cs - Duplicate FireAndForget check is dead code (#707)
-* fix(service): EnvironmentVariableHelper.cs - Duplicate <summary> XML doc on ExpandWithDictionary (#708)
+* fix(service): EnvironmentVariableHelper.cs - Duplicate \<summary\> XML doc on ExpandWithDictionary (#708)
 * fix(service): ProtectedKeyProvider: stale aes_key.dat from cloned/imaged hosts causes silent 1053, no recovery path (#712)
 * fix(service): ProcessLaunchOptions.cs - DefaultWaitChunkMs and DefaultScmAdditionalTimeMs duplicated (#728)
 * fix(desktop): MainViewModel.cs - Hardcoded English dialog titles in 4 SaveFile calls (#735)
@@ -818,8 +818,8 @@ Servy 8.0 introduces many fixes across all components. The full release notes ar
 * fix(manager): LogsViewModel - CTS + Cleanup() without IDisposable (#732)
 * fix(manager): ServiceConfigurationMapper vs ServiceMapper - Divergent default-handling and enum validation (#733)
 * fix(manager): LogTailer.cs - CreationTime rotation detection misses FAT32 tunneling and same-size rotation (#734)
-* fix(cli): InstallServiceCommand.cs - Duplicate <summary> XML doc blocks on Execute method (#704)
-* fix(cli): ConsoleHelper.cs - Duplicate <summary> XML doc on RunWithLoadingAnimation (#709)
+* fix(cli): InstallServiceCommand.cs - Duplicate \<summary\> XML doc blocks on Execute method (#704)
+* fix(cli): ConsoleHelper.cs - Duplicate \<summary\> XML doc on RunWithLoadingAnimation (#709)
 * fix(tests): ServiceRepositoryTests - Brittle reflection-based property verification couples tests to DTO shape (#736)
 * fix(tests): RotatingStreamWriterTests - DateTime.UtcNow used twice per test, midnight-boundary flake (#737)
 * fix(tests): ServiceRepositoryStub - decrypt parameter ignored; DTOs asymmetric between Get methods (#739)
@@ -951,7 +951,7 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 * fix(core): ServiceExporter.cs - XML export declares UTF-16 but file is written as UTF-8 (#555)
 * fix(core): ServiceValidator.cs - Missing upper-bound check on StopTimeout for import flows (#556)
 * fix(core): Handle.cs - Struct wrapping IntPtr is freely copyable, risks double-close (#557)
-* fix(core): NativeMethods.cs - Regex character class [@!-] parsed as ASCII range, allows unintended characters (#563)
+* fix(core): NativeMethods.cs - Regex character class `[@!-]` parsed as ASCII range, allows unintended characters (#563)
 * fix(core): ServiceManager.cs - InstallServiceAsync leaves partial service in SCM on post-create config failure (#564)
 * fix(core): SecureData.cs - Decrypt silently returns plaintext when input is not Base64 (#568)
 * fix(core): Credential validation triggers real domain logon, can lock out service accounts (#574)
@@ -1243,7 +1243,7 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 * fix(psm1): inconsistent comment-based help indentation across functions (#120)
 * fix(psm1): Invoke-ServyCli: exception error message missing space separator (#121)
 * fix(psm1): five identical single-command functions can share a common body (#130)
-* fix(psm1): Add-Arg null check on $list is dead code - callers always pass @() (#131)
+* fix(psm1): Add-Arg null check on $list is dead code - callers always pass `@()` (#131)
 * fix(psm1): Invoke-ServyCli: verbose argument list construction can be simplified (#132)
 * fix(psm1): Invoke-ServyCli: unnecessary pre-initialization of $stdout, $stderr, and $exitCode (#133)
 * fix(psm1): Install-ServyService: [int] parameters with default 0 are sent to CLI even when not specified (#134)
@@ -1324,7 +1324,7 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 * fix(noticiations): PowerShell task scheduler scripts deviate from codebase conventions (#403)
 * fix(notifications): ServyFailureEmail.ps1 - System.Net.WebUtility unavailable on .NET 3.5 (PS 2.0 target) (#609)
 * fix(notifications): Get-ServyLastErrors.ps1 - Get-WinEvent requires Vista+, not available on XP/Server 2003 (#611)
-* fix(notifications): ServyFailureEmail/Notification.ps1 - Sort-Object result not wrapped in @(), scalar on single event (#614)
+* fix(notifications): ServyFailureEmail/Notification.ps1 - Sort-Object result not wrapped in `@()`, scalar on single event (#614)
 * fix(notifications): Get-ServyLastErrors.ps1 - exit 1 inside dot-sourced function kills caller's session (#627)
 * fix(publish): build scripts use PowerShell 3.0+/5.0+ features despite PS 2.0 compatibility target (#288)
 * fix(publish): Servy.Service/publish.ps1 passes parameters that child scripts silently ignore (#298)
@@ -1346,8 +1346,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 * ci(bump-version): $appConfigPath variable silently reused for unrelated file (#385)
 * ci(bump-version): WriteAllText may add UTF-8 BOM, unlike bump-runtime.ps1 (#502)
 * ci(bump-version): Get-FileEncoding does not detect UTF-16, can corrupt project files (#625)
-* ci(actions): actions/checkout@v5, @v6, and upload-artifact@v6 may not exist (#548)
-* ci(actions): Third-party actions pinned to floating @master/@main branches (#554)
+* ci(actions): `actions/checkout@v5`, `@v6`, and `upload-artifact@v6` may not exist (#548)
+* ci(actions): Third-party actions pinned to floating `@master/@main` branches (#554)
 * ci(sbom): workflow_dispatch input injected directly into PowerShell script string (#577)
 * ci(scoop): branch name mismatch causes git reset to wrong ref (#565)
 * ci(bump-version): git diff --quiet misses untracked files, version bump commit silently skipped (#566)
@@ -1449,7 +1449,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.6...v7.7
 * fix(restarter): ensure logger is disposed on exit
 * fix(manager): improve stability and configuration consistency
 * fix(manager): ensure EventRecords are disposed to prevent memory leaks
-* fix(manager): include missing `DesktopAppPublishPath` configuration in .NET Framework 4.8 build
+* fix(manager): include missing `ConfigurationAppPublishPath` configuration in .NET Framework 4.8 build
 * fix(manager): remove deprecated `EnableDebugLogs` setting from .NET 10.0 build
 * fix(manager): optimize log search threading by removing redundant `Task.Run` and `Dispatcher` nesting
 * fix(net48): rename `Servy.Restarter.exe` to `Servy.Restarter.Net48.exe` to avoid conflict with the .NET 10.0 build
