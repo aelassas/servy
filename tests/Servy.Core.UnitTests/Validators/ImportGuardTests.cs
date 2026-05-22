@@ -133,8 +133,11 @@ namespace Servy.Core.UnitTests.Validators
         [InlineData("LPT¹.xml")]
         public void ValidatePathSecurity_ReservedDeviceName_ReturnsFail(string fileName)
         {
-            // Arrange
-            string filePath = Path.Combine(_tempDirectory, fileName);
+            // ROBUSTNESS: Do not combine with the temporary directory path (_tempDirectory).
+            // In CI environments like GitHub Actions, the workspace path contains an "\a\" segment 
+            // (e.g., D:\a\repo\), which incorrectly triggers the early UNC path validation guard 
+            // due to legacy Windows device-namespace parsing rules.
+            string filePath = fileName;
 
             // Act
             var result = ImportGuard.ValidatePathSecurity(filePath);
