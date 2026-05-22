@@ -11,12 +11,17 @@ on:
     branches:
       - net48
   workflow_dispatch:
+
 permissions:
   contents: read
   issues: write
+
 jobs:
   test:
     runs-on: windows-2022
+
+    env:
+      REPORTGENERATOR_VERSION: "5.5.10"
 
     steps:
       - name: Checkout repository
@@ -192,8 +197,15 @@ jobs:
           }
 
       - name: Install ReportGenerator
+        shell: pwsh
         if: always()
-        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+        run: |
+          dotnet tool install --global dotnet-reportgenerator-globaltool --version $env:REPORTGENERATOR_VERSION
+
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "reportgenerator install failed (exit $LASTEXITCODE)"
+              exit $LASTEXITCODE
+          }
 
       - name: Merge coverage reports
         if: always()

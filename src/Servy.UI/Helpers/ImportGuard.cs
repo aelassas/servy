@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Config;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Native;
 using Servy.Core.Security;
@@ -176,14 +177,15 @@ namespace Servy.UI.Helpers
 
             // Reserved Device Name Block (DOS Guard)
             string fileName = Path.GetFileName(fullPath);
-            int firstDotIndex = fileName.IndexOf('.');
-            string firstSegment = firstDotIndex >= 0 ? fileName.Substring(0, firstDotIndex) : fileName;
-
-            if (SecurityHelper.ReservedDeviceNames.Contains(firstSegment))
+            foreach (var segment in fileName.Split('.'))
             {
-                var errorMsg = string.Format(Strings.Msg_SecurityReservedDeviceName, firstSegment);
-                Logger.Error(errorMsg);
-                return PathSecurityResult.Fail(errorMsg);
+                if (string.IsNullOrEmpty(segment)) continue;
+                if (ReservedNames.ReservedDeviceNames.Contains(segment))
+                {
+                    var errorMsg = string.Format(Strings.Msg_SecurityReservedDeviceName, segment);
+                    Logger.Error(errorMsg);
+                    return PathSecurityResult.Fail(errorMsg);
+                }
             }
 
             // System Protection Guard

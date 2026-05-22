@@ -566,7 +566,7 @@ namespace Servy.Service
                 name = name.Replace(c, '_');
             }
 
-            if (Helper.ReservedNames.Contains(name) || Helper.ReservedNames.Contains(Path.GetFileNameWithoutExtension(name)))
+            if (ReservedNames.ReservedDeviceNames.Contains(name) || ReservedNames.ReservedDeviceNames.Contains(Path.GetFileNameWithoutExtension(name)))
                 name = "_" + name;
 
             return name;
@@ -2435,16 +2435,20 @@ namespace Servy.Service
                 }
                 // ---------------------
 
-                // Total timeout = (Parent + Children) * timeoutMs + 10s safety buffer
-                var totalTimeoutMs = (((long)(childCount + 1)) * timeoutMs) + AppConfig.SafeKillProcessSafetyBufferMs;
+                // Total timeout = time for main process to stop + time for descendants to stop + safety buffer
+                var totalTimeoutMs = 2L * timeoutMs + childCount * ((long)timeoutMs + AppConfig.DefaultDescendantPostKillWaitMs) + AppConfig.SafeKillProcessSafetyBufferMs;
 
                 Task<bool?> stopTask = Task.Run(() =>
                 {
                     // FIX: Send Ctrl+C to the root wrapper first. 
                     // This natively broadcasts the signal to all console-sharing children (like Python).
                     _logger?.Info("Signaling main wrapper process (broadcasts to console group)...");
-                    bool? mainExitedGracefully = true;
-                    if (!process.HasExited)
+                    bool? mainExitedGracefully;
+                    if (process.HasExited)
+                    {
+                        mainExitedGracefully = null; // pre-exited
+                    }
+                    else
                     {
                         mainExitedGracefully = process.Stop(timeoutMs);
                     }

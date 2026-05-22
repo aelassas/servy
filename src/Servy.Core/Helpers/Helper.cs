@@ -23,22 +23,6 @@ namespace Servy.Core.Helpers
     public static class Helper
     {
         /// <summary>
-        /// A collection of reserved Windows device names that cannot be used as service names.
-        /// </summary>
-        /// <remarks>
-        /// These names (e.g., CON, PRN, COM1) are legacy DOS device names reserved by the Windows kernel.
-        /// Using them as service names can cause significant system conflicts, file system errors, or 
-        /// registry corruption, as Windows may attempt to map these names to hardware devices instead 
-        /// of the service controller.
-        /// </remarks>
-        public static readonly IReadOnlyCollection<string> ReservedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "CON", "PRN", "AUX", "NUL",
-            "COM0","COM1","COM2","COM3","COM4","COM5","COM6","COM7","COM8","COM9",
-            "LPT0","LPT1","LPT2","LPT3","LPT4","LPT5","LPT6","LPT7","LPT8","LPT9"
-        };
-
-        /// <summary>
         /// A predefined array of characters that are forbidden in Windows Service names.
         /// </summary>
         /// <remarks>
@@ -663,7 +647,7 @@ namespace Servy.Core.Helpers
             foreach (var segment in segments)
             {
                 // Ensure case-insensitive evaluation against the reserved DOS device names blocklist
-                if (ReservedNames.Contains(segment.ToUpperInvariant()))
+                if (ReservedNames.ReservedDeviceNames.Contains(segment))
                 {
                     return (false, Strings.Msg_InvalidServiceName);
                 }
