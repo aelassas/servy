@@ -88,7 +88,14 @@ jobs:
             /d:sonar.token="$env:SONAR_TOKEN" `
             /d:sonar.host.url="https://sonarcloud.io"
           
+          if ($LASTEXITCODE -ne 0) { throw "sonarscanner begin failed (exit $LASTEXITCODE)" }
+
           # Using MSBuild for .NET 4.8
           msbuild /p:Configuration=Release
+          $buildExit = $LASTEXITCODE
           
           ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="$env:SONAR_TOKEN"
+          $endExit = $LASTEXITCODE
+
+          if ($buildExit -ne 0) { throw "msbuild failed (exit $buildExit)" }
+          if ($endExit  -ne 0) { throw "sonarscanner end failed (exit $endExit)" }
