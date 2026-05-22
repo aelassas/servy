@@ -81,6 +81,7 @@ namespace Servy.Core.Helpers
                 var runningServices = new List<string>();
                 if (stopServices)
                 {
+                    // CLI-installed services are installed with Servy.Service.CLI.exe and UI-installed services are installed with Servy.Service.exe
                     runningServices = isCli
                         ? _serviceHelper.GetRunningServyCLIServices()
                         : _serviceHelper.GetRunningServyUIServices();

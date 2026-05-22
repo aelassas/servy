@@ -880,6 +880,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Failed to copy PID to clipboard..
+        /// </summary>
+        public static string Msg_PidCopyFailed {
+            get {
+                return ResourceManager.GetString("Msg_PidCopyFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Are you sure you want to remove this service? All service configuration will be permanently lost and cannot be recovered..
         /// </summary>
         public static string Msg_RemoveServiceConfirm {

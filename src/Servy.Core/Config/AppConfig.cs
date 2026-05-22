@@ -1034,6 +1034,12 @@ namespace Servy.Core.Config
         /// </remarks>
         public const int UnexpectedErrorDialogDebounceSeconds = 15;
 
+        /// <summary>
+        /// The maximum allowed length for a full Windows file path, typically defined as 260 characters including the null terminator. 
+        /// A limit of 259 is used to safely accommodate paths without overflowing the buffer.
+        /// </summary>
+        public const int WriteFileAtomicMaxPathLength = 259;
+
         #endregion
 
         #region Manager Configuration Bounds

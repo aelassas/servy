@@ -78,7 +78,7 @@ namespace Servy.Core.Helpers
 
                 return true;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Logger.Debug($"IsValidPath: rejected '{path}': {ex.Message}");
                 return false;
@@ -405,6 +405,14 @@ namespace Servy.Core.Helpers
             }
 
             var tmp = GetUniqueTempPath(path);
+
+            // ROBUSTNESS: Explicitly guard against MAX_PATH breaches before touching the filesystem.
+            // This prevents unexpected unhandled failures on legacy systems where long path support is disabled.
+            if (tmp.Length > AppConfig.WriteFileAtomicMaxPathLength)
+            {
+                throw new PathTooLongException($"The calculated atomic staging path length ({tmp.Length}) exceeds the Windows MAX_PATH limit for target destination '{path}'. Ensure the installation path or service name fits within bounds.");
+            }
+
             try
             {
                 using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -464,6 +472,14 @@ namespace Servy.Core.Helpers
             }
 
             var tmp = GetUniqueTempPath(path);
+
+            // ROBUSTNESS: Explicitly guard against MAX_PATH breaches before touching the filesystem.
+            // This prevents unexpected unhandled failures on legacy systems where long path support is disabled.
+            if (tmp.Length > AppConfig.WriteFileAtomicMaxPathLength)
+            {
+                throw new PathTooLongException($"The calculated atomic staging path length ({tmp.Length}) exceeds the Windows MAX_PATH limit for target destination '{path}'. Ensure the installation path or service name fits within bounds.");
+            }
+
             try
             {
                 using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -502,23 +518,23 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Generates a unique temporary file path by appending a hyphenless GUID and a .tmp extension to the specified path.
+        /// Generates a unique temporary file path by appending a collision-resistant hexadecimal suffix and a .tmp extension to the specified path.
         /// </summary>
         /// <param name="path">The base file path (e.g., the destination file path).</param>
         /// <returns>
-        /// A string representing a unique temporary path, such as <c>C:\Data\config.xml.b392...821.tmp</c>.
+        /// A string representing a unique temporary path, such as <c>C:\Data\config.xml.a1b2c3d4e5f6g7h8.tmp</c>.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// This method uses the <c>:N</c> format specifier to generate a 32-digit hexadecimal GUID without hyphens, 
-        /// which is ideal for filesystem compatibility.
+        /// This method appends a 16-character hexadecimal string derived from a <see cref="Guid"/> to minimize 
+        /// the path length footprint while maintaining sufficient uniqueness for atomic staging.
         /// </para>
         /// <para>
-        /// <b>Note:</b> Ensure the resulting string does not exceed the Windows <c>MAX_PATH</c> limit (260 characters), 
-        /// as appending a GUID significantly increases the path length.
+        /// <b>Warning:</b> Callers must verify that the resulting string length does not exceed 
+        /// <see cref="AppConfig.WriteFileAtomicMaxPathLength"/> to avoid <see cref="PathTooLongException"/>.
         /// </para>
         /// </remarks>
-        public static string GetUniqueTempPath(string path) => $"{path}.{Guid.NewGuid():N}.tmp";
+        public static string GetUniqueTempPath(string path) => $"{path}.{Guid.NewGuid().ToString("N").Substring(0, 16)}.tmp";
 
         /// <summary>
         /// Prepares the destination file for an overwrite operation by removing restrictive attributes.
@@ -696,6 +712,25 @@ namespace Servy.Core.Helpers
                 current = current.Parent;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Converts a file system path to its fully qualified, canonical representation.
+        /// </summary>
+        /// <param name="p">The path string to be normalized.</param>
+        /// <returns>
+        /// A fully qualified path string with redundant separators and trailing slashes removed. 
+        /// Returns <see cref="string.Empty"/> if the input is null, empty, or whitespace.
+        /// </returns>
+        /// <remarks>
+        /// This method resolves relative path segments (e.g., '..'), normalizes directory separators 
+        /// to the current platform's standard, and strips any trailing directory separators 
+        /// to ensure a stable, uniform path format for comparison.
+        /// </remarks>
+        public static string Canonicalise(string? p)
+        {
+            if (string.IsNullOrWhiteSpace(p)) return string.Empty;
+            return Path.GetFullPath(p).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         }
     }
 }

@@ -101,9 +101,6 @@ namespace Servy.CLI
                     var quiet = args.Any(a => a.Equals("--quiet", StringComparison.OrdinalIgnoreCase) || a.Equals("-q", StringComparison.OrdinalIgnoreCase))
                         || !IsRealConsole();
 
-                    // Ensure event source exists
-                    Core.Helpers.Helper.EnsureEventSourceExists();
-
                     // Load configuration from appsettings.json
                     var builder = new ConfigurationBuilder();
 #if DEBUG
@@ -182,6 +179,9 @@ namespace Servy.CLI
                     {
                         // Ensure db and security folders exist
                         AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
+
+                        // Ensure event source exists
+                        Core.Helpers.Helper.EnsureEventSourceExists();
 
                         // Initialize the database
                         DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);

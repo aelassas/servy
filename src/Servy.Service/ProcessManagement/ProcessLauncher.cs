@@ -161,10 +161,10 @@ namespace Servy.Service.ProcessManagement
 
                                 if (stdoutWriter == null)
                                 {
-                                    Helper.EnsureDirectoryExists(outPath);
                                     FileStream? stdoutFs = null;
                                     try
                                     {
+                                        Helper.EnsureDirectoryExists(outPath);
                                         stdoutFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
                                         stdoutWriter = new StreamWriter(stdoutFs, encoding) { AutoFlush = true };
                                     }
@@ -205,10 +205,10 @@ namespace Servy.Service.ProcessManagement
 
                                     if (stdoutWriter == null)
                                     {
-                                        Helper.EnsureDirectoryExists(outPath);
                                         FileStream? sharedFs = null;
                                         try
                                         {
+                                            Helper.EnsureDirectoryExists(outPath);
                                             sharedFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
                                             stdoutWriter = new StreamWriter(sharedFs, encoding) { AutoFlush = true };
                                         }
@@ -229,10 +229,10 @@ namespace Servy.Service.ProcessManagement
 
                                     if (stderrWriter == null)
                                     {
-                                        Helper.EnsureDirectoryExists(errPath);
                                         FileStream? stderrFs = null;
                                         try
                                         {
+                                            Helper.EnsureDirectoryExists(errPath);
                                             stderrFs = new FileStream(errPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
                                             stderrWriter = new StreamWriter(stderrFs, encoding) { AutoFlush = true };
                                         }
