@@ -389,7 +389,7 @@ namespace Servy.Core.Helpers
             var expandedPath = Environment.ExpandEnvironmentVariables(inputPath);
 
             // 2. Ensure the path is absolute before checking the filesystem
-            if (!Path.IsPathRooted(expandedPath))
+            if (!Helper.IsAbsolute(expandedPath))
             {
                 throw new InvalidOperationException($"Path '{expandedPath}' is relative. Only absolute paths are allowed.");
             }

@@ -84,12 +84,13 @@ namespace Servy.Core.Helpers
                     return false;
                 }
 
-                // Get running services
-                var runningServices = stopServices ? _serviceHelper.GetRunningServyServices() : new List<string>();
 
-                try
+                using (resourceStream)
                 {
-                    using (resourceStream)
+                    // Get running services
+                    var runningServices = stopServices ? _serviceHelper.GetRunningServyServices() : new List<string>();
+
+                    try
                     {
                         if (stopServices && runningServices.Count > 0)
                         {
@@ -102,28 +103,28 @@ namespace Servy.Core.Helpers
 
                         await Helper.WriteFileAtomicAsync(targetPath, resourceStream.CopyToAsync);
                     }
-
-                    copyDone = true; // File write succeeded
-                }
-                finally
-                {
-                    if (stopServices && runningServices.Count > 0)
+                    finally
                     {
-                        try
+                        if (stopServices && runningServices.Count > 0)
                         {
-                            Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
-                            await _serviceHelper.StartServices(runningServices);
-                        }
-                        catch (Exception startEx)
-                        {
-                            // Log restart failure separately to avoid misattribution
-                            restartFailed = true;
-                            Logger.Error(
-                                $"Embedded resource '{resourceName}' was successfully copied to '{targetPath}', but {runningServices.Count} previously-running services failed to restart.",
-                                startEx);
+                            try
+                            {
+                                Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
+                                await _serviceHelper.StartServices(runningServices);
+                            }
+                            catch (Exception startEx)
+                            {
+                                // Log restart failure separately to avoid misattribution
+                                restartFailed = true;
+                                Logger.Error(
+                                    $"Embedded resource '{resourceName}' was successfully copied to '{targetPath}', but {runningServices.Count} previously-running services failed to restart.",
+                                    startEx);
+                            }
                         }
                     }
                 }
+
+                copyDone = true; // File write succeeded
 
                 if (copyDone && !restartFailed)
                 {

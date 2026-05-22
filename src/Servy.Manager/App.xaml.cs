@@ -341,7 +341,7 @@ namespace Servy.Manager
 #else
                     var baseDirectory = AppFoldersHelper.GetAppDirectory();
                     DesktopAppPublishPath = config["DesktopAppPublishPath"] ?? AppConfig.DefaultDesktopAppPublishPath;
-                    if (!Path.IsPathRooted(DesktopAppPublishPath))
+                    if (!Helper.IsAbsolute(DesktopAppPublishPath))
                     {
                         DesktopAppPublishPath = Path.GetFullPath(Path.Combine(baseDirectory, DesktopAppPublishPath));
                     }

@@ -94,7 +94,12 @@ namespace Servy.UI.Services
                     var latestVersion = Helper.ParseVersion(tagName);
                     var currentVersion = Helper.ParseVersion(AppConfig.Version);
 
-                    if (latestVersion > currentVersion)
+                    // ROBUSTNESS: Normalize both Version instances to 4 components before executing comparison.
+                    // This prevents false positives caused by System.Version evaluating missing fields (-1) as less than 0.
+                    var normalizedLatest = NormalizeVersion(latestVersion);
+                    var normalizedCurrent = NormalizeVersion(currentVersion);
+
+                    if (normalizedLatest > normalizedCurrent)
                     {
                         var res = await _messageBoxService.ShowConfirmAsync(Strings.Msg_UpdateAvailablePrompt, caption);
                         if (res)
@@ -123,6 +128,25 @@ namespace Servy.UI.Services
                 string errorMessage = string.Format(Strings.Msg_UpdateCheckFailed, ex.Message);
                 await _messageBoxService.ShowErrorAsync(errorMessage, caption);
             }
+        }
+
+        /// <summary>
+        /// Normalizes a System.Version instance by padding uninitialized components (-1) out to 0.
+        /// This enforces reliable semantic version checks when comparing 2-part, 3-part, or 4-part strings.
+        /// </summary>
+        private static Version NormalizeVersion(Version version)
+        {
+            if (version == null)
+            {
+                return new Version(0, 0, 0, 0);
+            }
+
+            int major = version.Major;
+            int minor = version.Minor;
+            int build = version.Build < 0 ? 0 : version.Build;
+            int revision = version.Revision < 0 ? 0 : version.Revision;
+
+            return new Version(major, minor, build, revision);
         }
 
         /// <inheritdoc />

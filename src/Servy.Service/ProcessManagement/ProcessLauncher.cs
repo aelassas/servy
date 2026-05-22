@@ -284,10 +284,13 @@ namespace Servy.Service.ProcessManagement
             finally
             {
                 // Dispose writers safely to release file locks.
-                stdoutWriter?.Dispose();
+                try { stdoutWriter?.Dispose(); }
+                catch (Exception ex) { logger.Warn($"Failed to dispose stdout writer: {ex.Message}"); }
+
                 if (!pathsMatch)
                 {
-                    stderrWriter?.Dispose();
+                    try { stderrWriter?.Dispose(); }
+                    catch (Exception ex) { logger.Warn($"Failed to dispose stderr writer: {ex.Message}"); }
                 }
 
                 // ROBUSTNESS: If we didn't successfully return ownership, the process is orphaned.

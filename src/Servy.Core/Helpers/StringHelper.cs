@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Servy.Core.Helpers
 {
@@ -12,29 +13,27 @@ namespace Servy.Core.Helpers
     public static class StringHelper
     {
         /// <summary>
-        /// Normalizes line breaks in a string by replacing CR, LF, or CRLF with semicolons.
+        /// Normalizes a multi-line input string into a single-line, semicolon-delimited configuration string.
+        /// Handles line endings and preserves trailing backslashes to prevent delimiter escaping.
         /// </summary>
-        /// <param name="str">The input string to normalize.</param>
-        /// <returns>
-        /// A single-line string with all line breaks replaced by semicolons, or an empty string if the input is null.
-        /// </returns>
+        /// <param name="str">The multi-line input string to be normalized.</param>
+        /// <returns>A single-line string with line breaks replaced by semicolons.</returns>
         /// <remarks>
-        /// <para>
-        /// This method supports strings containing CR, LF, or CRLF line endings alongside existing semicolons.
-        /// </para>
-        /// <para>
-        /// <b>CRITICAL:</b> Semicolons within the input string must be manually escaped with a backslash (e.g., <c>\;</c>) 
-        /// before calling this method. If internal semicolons are not escaped, they will be treated as record 
-        /// delimiters by downstream parsers, such as the <see cref="Servy.Core.EnvironmentVariables.EnvironmentVariableParser"/>.
-        /// </para>
+        /// Semicolons within the input string must be manually escaped with a backslash. 
+        /// Backslashes that appear immediately before a line break are automatically doubled to prevent them from 
+        /// inadvertently escaping the semicolon delimiter during downstream tokenization.
         /// </remarks>
         public static string NormalizeString(string str)
         {
             if (string.IsNullOrEmpty(str))
                 return string.Empty;
 
+            // ROBUSTNESS: Detect and double any backslash that immediately precedes a line break or the end of the string.
+            // This guarantees that the trailing backslash doesn't escape the substituted semicolon record delimiter down the line.
+            string normalized = Regex.Replace(str, @"\\(?=\r|\n|$)", @"\\");
+
             // Replace line breaks with semicolons to flatten the multi-line input
-            string normalized = str
+            normalized = normalized
                 .Replace("\r\n", ";")
                 .Replace("\n", ";")
                 .Replace("\r", ";");

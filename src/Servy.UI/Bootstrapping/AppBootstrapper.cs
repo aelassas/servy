@@ -427,7 +427,7 @@ namespace Servy.UI.Bootstrapping
             {
                 Logger.Error("Startup error", ex);
                 MessageBox.Show(string.Format(Strings.Msg_StartupError_Format, ex.Message));
-                app.Shutdown();
+                app.Shutdown(1); // Signal failure to the OS
             }
             finally
             {

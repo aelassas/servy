@@ -225,7 +225,7 @@ namespace Servy
 #else
                     var baseDirectory = AppFoldersHelper.GetAppDirectory();
                     ManagerAppPublishPath = config["ManagerAppPublishPath"] ?? AppConfig.DefaultManagerAppPublishPath;
-                    if (!Path.IsPathRooted(ManagerAppPublishPath))
+                    if (!Helper.IsAbsolute(ManagerAppPublishPath))
                     {
                         ManagerAppPublishPath = Path.GetFullPath(Path.Combine(baseDirectory, ManagerAppPublishPath));
                     }
