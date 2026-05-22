@@ -203,6 +203,9 @@ namespace Servy.Manager.ViewModels
 
                 var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, token);
 
+                // Drop this tick if the user switched services while we were awaiting the DB call.
+                if (!ReferenceEquals(currentSelection, SelectedService) || token.IsCancellationRequested) return;
+
                 if (!currentPid.HasValue)
                 {
                     ResetPid();

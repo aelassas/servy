@@ -77,6 +77,7 @@ namespace Servy.Manager.Utils
                 long lastPosition = startPos;
                 DateTime lastCreationTime = startCreated;
                 FILE_IDENTITY? knownIdentity = null;
+                int consecutiveFailures = 0;
 
                 while (!linkedToken.IsCancellationRequested)
                 {
@@ -165,6 +166,10 @@ namespace Servy.Manager.Utils
 
                                         while ((line = await reader.ReadLineAsync()) != null)
                                         {
+                                            // ROBUSTNESS: A successful partial or full line processing loop verifies system liveness.
+                                            // Reset our consecutive unhandled error mitigation states immediately.
+                                            consecutiveFailures = 0;
+
                                             batch.Add(new LogLine(line, type));
                                             if (batch.Count >= AppConfig.LogTailerBatchFlushThreshold)
                                             {
@@ -174,17 +179,19 @@ namespace Servy.Manager.Utils
                                                 batch = new List<LogLine>(AppConfig.LogTailerBatchFlushThreshold);
                                             }
 
-                                            // FIX: Track the position of yielded lines instead of the read-ahead pointer.
-                                            // We accumulate the exact byte length of the line and assume a standard newline terminator.
-                                            // This ensures safe recovery if a transient I/O error drops the stream mid-buffer.
-                                            lastPosition += reader.CurrentEncoding.GetByteCount(line) + reader.CurrentEncoding.GetByteCount(Environment.NewLine);
+                                            // FIX: Track the position of yielded lines using a 1-byte LF ('\n') assumption.
+                                            // Environment.NewLine overcounts on Windows when tailing Unix-style LF-only log files, 
+                                            // which causes the pointer to advance past valid data if a transient error occurs mid-buffer.
+                                            // Undercounting CRLF by 1 byte is safer (might re-read a byte on crash, but won't skip data) 
+                                            // until the EOF block perfectly resyncs the pointer.
+                                            lastPosition += reader.CurrentEncoding.GetByteCount(line) + 1;
                                         }
 
                                         if (batch.Count > 0) OnNewLines?.Invoke(batch);
 
                                         // --- EOF Reached. Verify File Integrity / Rotation ---
                                         // Since the StreamReader buffer is now fully drained, fs.Position is completely accurate.
-                                        // Syncing it here fixes any minor byte-drift from the Environment.NewLine estimation above.
+                                        // Syncing it here fixes any minor byte-drift from the 1-byte LF estimation above.
                                         lastPosition = fs.Position;
 
                                         info.Refresh();
@@ -231,6 +238,8 @@ namespace Servy.Manager.Utils
                                             break; // Break the inner loop to drop the stale handle and reopen
                                         }
 
+                                        // We successfully reached the EOF polling point without crashing.
+                                        consecutiveFailures = 0;
                                         await Task.Delay(AppConfig.LogTailerEofPollIntervalMs, linkedToken);
                                     }
                                 }
@@ -247,8 +256,17 @@ namespace Servy.Manager.Utils
                     catch (OperationCanceledException) { break; }
                     catch (Exception ex)
                     {
-                        Logger.Error($"Unexpected error in log tailer for {path}.", ex);
-                        await Task.Delay(AppConfig.LogTailerUnhandledErrorRecoveryDelayMs, linkedToken);
+                        consecutiveFailures++;
+
+                        // CIRCUIT BREAKER: Suppress continuous log spam for recurring permanent failures.
+                        if (consecutiveFailures == 1 || consecutiveFailures % AppConfig.LogTailerErrorLogThrottlingInterval == 0)
+                        {
+                            Logger.Error($"Unexpected error in log tailer for {path} (Concealed Failure Block #{consecutiveFailures}).", ex);
+                        }
+
+                        // EXPONENTIAL BACKOFF: Progressively scale recovery wait to prevent thrashing, capped at MaxDelay.
+                        int delay = Math.Min(AppConfig.LogTailerMaxUnhandledErrorRecoveryDelayMs, AppConfig.LogTailerUnhandledErrorRecoveryDelayMs * consecutiveFailures);
+                        await Task.Delay(delay, linkedToken);
                     }
                 }
             }
@@ -410,6 +428,5 @@ namespace Servy.Manager.Utils
                 _disposeCts.Dispose();
             }
         }
-
     }
 }

@@ -1257,6 +1257,27 @@ namespace Servy.Core.Config
         /// </summary>
         public const int RotatingStreamWriterMaxUniqueFilenameRetries = 10_000;
 
+        /// <summary>
+        /// The initial delay in milliseconds to wait before retrying a failed pre-launch process attempt.
+        /// </summary>
+        public const int PreLaunchRetryInitialDelayMs = 1_000;
+
+        /// <summary>
+        /// The maximum cumulative delay in milliseconds allowed between pre-launch process retry attempts.
+        /// </summary>
+        public const int PreLaunchRetryMaxDelayMs = 10_000;
+
+        /// <summary>
+        /// Maximum allowed recovery backoff delay in milliseconds for unhandled log tailer errors.
+        /// </summary>
+        public const int LogTailerMaxUnhandledErrorRecoveryDelayMs = 60_000;
+
+        /// <summary>
+        /// Defines the frequency threshold for reporting consecutive unhandled errors to avoid flooding log pipelines.
+        /// Evacuates duplicates by only authorizing reports every Nth exception pattern cycle.
+        /// </summary>
+        public const int LogTailerErrorLogThrottlingInterval = 60;
+
         #endregion
 
         #region Security & Encryption

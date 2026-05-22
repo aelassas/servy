@@ -232,6 +232,7 @@ namespace Servy.Manager.ViewModels
                 _hadSelectedService = true;
 
                 var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, token);
+
                 if (!currentPid.HasValue)
                 {
                     ResetGraphs(true);
@@ -255,6 +256,9 @@ namespace Servy.Manager.ViewModels
                     _processHelper.MaintainCache();
                     return _processHelper.GetProcessTreeMetrics(pid);
                 });
+
+                if (token.IsCancellationRequested) return;
+                if (!ReferenceEquals(currentSelection, _selectedService)) return;
 
                 double rawRamMb = processMetrics.RamUsage / 1024d / 1024d;
 

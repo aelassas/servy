@@ -142,16 +142,28 @@ function Show-Notification {
     $toast.Group = "Servy" # cluster all Servy toasts together
     $toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes($ToastExpirationMinutes)
 
+    # Track synchronous platform failures safely via local reference tracking blocks.
+    $failedRef = [ref]$false
+
     # Event Handlers (Async Error Capture)
     $null = $toast.add_Failed({
         param($evtSender, $evtArgs)
+        $failedRef.Value = $true
         Write-FallbackError -Message "ServyToast: Delivery failed (0x$($evtArgs.ErrorCode.ToString('X')))." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
       })
 
     $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("PowerShell")
     $notifier.Show($toast)
     
-    return $true
+    # ROBUSTNESS: Block execution and loop to await synchronous platform failures.
+    # WinRT validation drops (malformed configurations, disabled notification permissions, Focus Assist)
+    # trigger the add_Failed handler within 100-500ms bounds.
+    $deadline = [DateTime]::UtcNow.AddMilliseconds(750)
+    while ([DateTime]::UtcNow -lt $deadline -and -not $failedRef.Value) {
+        Start-Sleep -Milliseconds 50
+    }
+
+    return (-not $failedRef.Value)
   } catch {
     $syncError = "ServyToast: Notification path failed. Details: $($_.Exception.Message)"
     Write-FallbackError -Message $syncError -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
