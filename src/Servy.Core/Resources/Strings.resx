@@ -223,4 +223,35 @@
     <value>Select startup directory</value>
   </data>
 
+  <data name="Msg_SecurityUncPathProhibited" xml:space="preserve">
+    <value>Security Alert: Importing from UNC paths is prohibited to prevent malicious configuration injection.</value>
+  </data>
+  <data name="Msg_SecurityNetworkDriveProhibited" xml:space="preserve">
+    <value>Security Alert: Importing from network drives (including mapped UNC shares) is prohibited.</value>
+  </data>
+  <data name="Msg_SecurityDirReparsePointProhibited" xml:space="preserve">
+    <value>Security Alert: Importing configurations through directory junctions or symlinks is prohibited to prevent path redirection attacks.</value>
+  </data>
+  <data name="Msg_SecurityFileReparsePointProhibited" xml:space="preserve">
+    <value>Security Alert: Importing configurations through file symbolic links or junctions is prohibited to prevent path redirection attacks.</value>
+  </data>
+  <data name="Msg_SecurityReservedDeviceName" xml:space="preserve">
+    <value>Security Alert: '{0}' is a reserved Windows device name and cannot be used.</value>
+  </data>
+  <data name="Msg_SecurityProtectedDirectory" xml:space="preserve">
+    <value>Access Denied: The resolved path targets protected system directory '{0}'. Import prohibited.</value>
+  </data>
+  <data name="Msg_SecurityInvalidFileType" xml:space="preserve">
+    <value>Security Alert: Invalid file type '{0}'. Only .json and .xml files are supported.</value>
+  </data>
+  <data name="Msg_SecurityResolvedUncDestination" xml:space="preserve">
+    <value>Security Alert: Resolved file target points directly to a UNC destination. Import aborted.</value>
+  </data>
+  <data name="Msg_SecurityHandleValidationFailed" xml:space="preserve">
+    <value>Security Guard Failure: Target file handle validation rejected. {0}</value>
+  </data>
+  <data name="Msg_InvalidPath" xml:space="preserve">
+    <value>The specified path is invalid.</value>
+  </data>
+  
 </root>
