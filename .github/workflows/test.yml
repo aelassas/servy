@@ -12,12 +12,17 @@ on:
     branches:
       - main
   workflow_dispatch:
+
 permissions:
   contents: read
   issues: write
+
 jobs:
   test:
     runs-on: windows-latest
+
+    env:
+      REPORTGENERATOR_VERSION: "5.5.10"
 
     steps:
       - name: Checkout repository
@@ -126,7 +131,12 @@ jobs:
 
           # Install reportgenerator as a local tool                    
           Push-Location $localTools
-          & $dotnet tool install dotnet-reportgenerator-globaltool --version 5.*
+          & $dotnet tool install dotnet-reportgenerator-globaltool --version $env:REPORTGENERATOR_VERSION
+
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "reportgenerator install failed (exit $LASTEXITCODE)"
+              exit $LASTEXITCODE
+          }
 
           # Run reportgenerator via dotnet CLI from local manifest          
           # FIX: Wrapped arguments containing semicolons (;) in double-quotes so PowerShell parses them correctly          

@@ -1,9 +1,9 @@
 #requires -Version 5.0
 <#
-.SYNOPSIS
+    .SYNOPSIS
     Shared publish utilities for Servy projects.
 
-.DESCRIPTION
+    .DESCRIPTION
     Provides standard functions to build installer, portable zip, and copy artifacts,
     ensuring DRY compliance across all project scripts.
 #>
@@ -180,11 +180,16 @@ function New-PortablePackage {
     
     # Compress the folder including its top-level directory entry, so extraction
     # preserves the staging directory name as a wrapper.
-    $zipArgs = @("a", "-t7z", "-m0=lzma2", "-mx=9", "-ms=on", $OutputZip, $PackageFolder)
-    $process = Start-Process -FilePath $SevenZipExe -ArgumentList $zipArgs -Wait -NoNewWindow -PassThru
+    
+    # ROBUSTNESS: Use the call operator (&) instead of Start-Process -ArgumentList
+    # to guarantee that parameters containing spaces (like OutputZip and PackageFolder) 
+    # are correctly quoted by the PowerShell parser before native execution.
+    $exitCode = 0
+    & $SevenZipExe a -t7z -m0=lzma2 -mx=9 -ms=on $OutputZip $PackageFolder
+    $exitCode = $LASTEXITCODE
 
-    if ($process.ExitCode -ne 0) {
-        throw "7-Zip failed with exit code $($process.ExitCode)"
+    if ($exitCode -ne 0) {
+        throw "7-Zip failed with exit code $exitCode"
     }
 
     Write-Host "Success: $OutputZip" -ForegroundColor Green

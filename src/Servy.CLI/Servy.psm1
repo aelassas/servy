@@ -537,7 +537,9 @@ function Assert-Administrator {
         }
     }
     finally {
-        $identity.Dispose()
+        if ($identity -is [System.IDisposable]) {
+            $identity.Dispose()
+        }
     }
 }
 

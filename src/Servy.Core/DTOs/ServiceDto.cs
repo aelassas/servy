@@ -441,6 +441,7 @@ namespace Servy.Core.DTOs
 
         #region ShouldSerialize Methods
 
+        public bool ShouldSerializeDisplayName() => !string.IsNullOrWhiteSpace(DisplayName);
         public bool ShouldSerializeDescription() => !string.IsNullOrWhiteSpace(Description);
         public bool ShouldSerializeStartupDirectory() => !string.IsNullOrWhiteSpace(StartupDirectory);
         public bool ShouldSerializeParameters() => !string.IsNullOrWhiteSpace(Parameters);

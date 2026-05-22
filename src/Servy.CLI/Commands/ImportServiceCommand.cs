@@ -148,14 +148,15 @@ namespace Servy.CLI.Commands
 
                 // Reserved Device Name Block (DOS Guard)
                 string fileName = Path.GetFileName(fullPath);
-                int firstDotIndex = fileName.IndexOf('.');
-                string firstSegment = firstDotIndex >= 0 ? fileName.Substring(0, firstDotIndex) : fileName;
-
-                if (SecurityHelper.ReservedDeviceNames.Contains(firstSegment))
+                foreach (var segment in fileName.Split('.'))
                 {
-                    var errorMsg = $"Security Alert: '{firstSegment}' is a reserved Windows device name and cannot be used.";
-                    Logger.Error(errorMsg);
-                    return CommandResult.Fail(errorMsg);
+                    if (string.IsNullOrEmpty(segment)) continue;
+                    if (ReservedNames.ReservedDeviceNames.Contains(segment))
+                    {
+                        var errorMsg = $"Security Alert: '{segment}' is a reserved Windows device name and cannot be used.";
+                        Logger.Error(errorMsg);
+                        return CommandResult.Fail(errorMsg);
+                    }
                 }
 
                 // System Protection: Block reading from critical Windows directories to prevent pulling unintended system files
