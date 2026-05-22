@@ -68,7 +68,10 @@ jobs:
             exit 1
           }
 
-          $json = ConvertFrom-Json -InputObject $rawJson
+          # FIX: Pass the raw array through the pipeline instead of using -InputObject.
+          # The pipeline streams the strings sequentially, and ConvertFrom-Json automatically
+          # reassembles them into a single coherent JSON block.
+          $json = $rawJson | ConvertFrom-Json
           $hasVuln = $false
 
           # Explicitly walk the object graph to inspect dependency payloads across all frameworks
