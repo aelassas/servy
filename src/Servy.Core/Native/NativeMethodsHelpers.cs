@@ -172,10 +172,16 @@ namespace Servy.Core.Native
                         case 1327: // ERROR_ACCOUNT_RESTRICTION
                             throw new UnauthorizedAccessException("Account restrictions prevent logon (e.g., blank password use is restricted).");
                         case 1385: // ERROR_LOGON_TYPE_NOT_GRANTED
-                            throw new UnauthorizedAccessException(
-                                "Authentication succeeded, but 'Network Logon' is denied by security policy. " +
-                                "This is common for hardened service accounts and indicates the credentials " +
-                                "are likely correct.");
+                            // Network logon denied by policy — retry with SERVICE logon type,
+                            // which is the logon type the SCM will actually use.
+                            if (LogonUser(user, domain, password, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, out token))
+                            {
+                                return; // valid
+                            }
+                            error = Marshal.GetLastWin32Error();
+                            if (error == 1326) throw new UnauthorizedAccessException("Invalid username or password.");
+                            throw new Win32Exception(error,
+                                $"Service logon failed. Ensure the account has 'Log on as a service' (granted automatically by Servy) and is not denied service logon.");
                         default:
                             throw new Win32Exception(error, $"Logon failed with error code {error}.");
                     }

@@ -42,6 +42,7 @@ namespace Servy.Core.IO
         private int _consecutiveDeletionFailures;
         private readonly object _lock = new object();
         private readonly Func<DateTime> _timeProvider;
+        private DateTime _oversizeWarningNextEligibleAt = DateTime.MinValue;
 
 
         /// <summary>
@@ -295,9 +296,10 @@ namespace Servy.Core.IO
                 {
                     // Optionally log a warning if file size gets egregiously large while disabled
                     _file.Refresh();
-                    if (_enableSizeRotation && _file.Exists && _file.Length > _rotationSizeInBytes * 2)
+                    if (_enableSizeRotation && _file.Exists && _file.Length > _rotationSizeInBytes * 2 && now >= _oversizeWarningNextEligibleAt)
                     {
                         Logger.Warn($"Log rotation is currently disabled due to previous errors. File '{_file.Name}' has exceeded twice its max size ({_file.Length} bytes).");
+                        _oversizeWarningNextEligibleAt = _disabledCooldownUntil;
                     }
                     return (null, null);
                 }
@@ -613,13 +615,17 @@ namespace Servy.Core.IO
         {
             if (_writer != null)
             {
-                _writer.Flush();
-                _writer.Dispose();
-                _writer = null;
+                try { _writer.Flush(); }
+                catch (Exception ex) { Logger.Warn($"CloseWriter: Flush failed for '{_file.Name}': {ex.Message}"); }
+                finally
+                {
+                    try { _writer.Dispose(); } catch { /* best effort */ }
+                    _writer = null;
+                }
             }
             if (_baseStream != null)
             {
-                _baseStream.Dispose();
+                try { _baseStream.Dispose(); } catch { /* best effort */ }
                 _baseStream = null;
             }
         }

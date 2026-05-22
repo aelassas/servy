@@ -938,6 +938,8 @@ namespace Servy.Service
                     _logger?.Error(message);
             }
 
+            int waitChunkMs = 250; // Granularity for SCM heartbeats
+
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
                 _logger?.Info($"Starting pre-launch process (attempt {attempt}/{maxAttempts})...");
@@ -959,6 +961,26 @@ namespace Servy.Service
                 catch (Exception ex)
                 {
                     LogIssue($"Pre-launch process attempt {attempt} failed.", ex);
+                }
+
+                // Apply back-off only if further retries remain
+                if (attempt < maxAttempts)
+                {
+                    // Calculate delay: Linear back-off (attempt * initial delay) capped at max delay
+                    int delayMs = Math.Min(attempt * AppConfig.PreLaunchRetryInitialDelayMs, AppConfig.PreLaunchRetryMaxDelayMs);
+
+                    _logger?.Info($"Waiting {delayMs}ms before pre-launch retry {attempt + 1}/{maxAttempts}...");
+
+                    int elapsed = 0;
+                    while (elapsed < delayMs)
+                    {
+                        int slice = Math.Min(waitChunkMs, delayMs - elapsed);
+                        Thread.Sleep(slice);
+
+                        // Pulse the SCM during the wait so the service is not killed by timeout.
+                        _serviceHelper.RequestAdditionalTime(this, _scmAdditionalTimeMs, _logger);
+                        elapsed += slice;
+                    }
                 }
             }
 

@@ -268,6 +268,9 @@ namespace Servy.Manager.ViewModels
                 var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection?.Name, token);
                 var stateSnapshot = serviceDto?.Clone() as ServiceConsoleStateDto;
 
+                // Drop this tick if the user switched services while we were awaiting the DB call.
+                if (!ReferenceEquals(currentSelection, _selectedService)) return;
+
                 if (stateSnapshot?.Pid == null)
                 {
                     ResetConsole(true);

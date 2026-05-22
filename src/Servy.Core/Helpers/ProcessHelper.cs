@@ -78,7 +78,7 @@ namespace Servy.Core.Helpers
                     rootStartTime = rootProcess.StartTime;
                 }
             }
-            catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
+            catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException || ex is Win32Exception)
             {
                 Logger.Warn($"GetProcessTree: Root process {rootPid} is no longer running. Returning empty tree boundary.");
                 return tree;
@@ -168,9 +168,10 @@ namespace Servy.Core.Helpers
                                 }
                             }
                         }
-                        catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
+                        catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException || ex is Win32Exception)
                         {
                             // Child process exited between snapshot capturing and tree evaluation; skip gracefully
+                            Logger.Debug($"GetProcessTree: cannot query start time for PID {child} ({ex.Message}); skipping.");
                         }
                     }
                 }

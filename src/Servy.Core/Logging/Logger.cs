@@ -175,6 +175,10 @@ namespace Servy.Core.Logging
                     maxRotations: _maxBackupLogFiles,
                     useLocalTimeForRotation: _useLocalTimeForRotation
                 );
+
+                // Primary writer just came back online; allow another fallback budget.
+                Interlocked.Exchange(ref _initFallbackWriteCount, 0);
+                Interlocked.Exchange(ref _logFallbackWriteCount, 0);
             }
             catch (Exception ex)
             {
