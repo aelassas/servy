@@ -57,12 +57,39 @@ jobs:
       - name: Scan for vulnerable packages
         shell: pwsh
         run: |
-          $results = dotnet list Servy.sln package --vulnerable --include-transitive
-          Write-Output $results
+          # ROBUSTNESS: Pin execution language to English to ensure stable diagnostic pipelines
+          $env:DOTNET_CLI_UI_LANGUAGE = 'en'
 
-          if ($LASTEXITCODE -ne 0 -or $results -match "has the following vulnerable packages") {
-            Write-Error "Vulnerable packages found!"
+          # Fetch structured analysis data directly via JSON serialization to avoid brittle string matching
+          $rawJson = dotnet list Servy.sln package --vulnerable --include-transitive --format json
+          
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "The dotnet list command tracking invocation failed with a hard infrastructure exit code: $LASTEXITCODE"
             exit 1
+          }
+
+          $json = ConvertFrom-Json -InputObject $rawJson
+          $hasVuln = $false
+
+          # Explicitly walk the object graph to inspect dependency payloads across all frameworks
+          if ($json -and $json.projects) {
+            foreach ($proj in $json.projects) {
+              foreach ($fw in $proj.frameworks) {
+                # Trap vulnerabilities sitting in either top-level manifest declarations or transitive nodes
+                if ($fw.topLevelPackages -and $fw.topLevelPackages.vulnerabilities) { $hasVuln = $true }
+                if ($fw.transitivePackages -and $fw.transitivePackages.vulnerabilities) { $hasVuln = $true }
+              }
+            }
+          }
+
+          if ($hasVuln) {
+            # Print human-readable output to logs for rapid local manual triage
+            dotnet list Servy.sln package --vulnerable --include-transitive
+            Write-Error "SECURITY EXCEPTION: Vulnerable packages were detected in the solution schema! Review structural trace outputs above."
+            exit 1
+          }
+          else {
+            Write-Host "Success: Dependency matrix evaluated healthy with 0 vulnerabilities detected." -ForegroundColor Green
           }
 
   # 2. Static Analysis (SAST)

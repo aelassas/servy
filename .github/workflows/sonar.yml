@@ -76,7 +76,14 @@ jobs:
             /o:"aelassas" `
             /d:sonar.token="$env:SONAR_TOKEN" `
             /d:sonar.host.url="https://sonarcloud.io"
+          
+          if ($LASTEXITCODE -ne 0) { throw "sonarscanner begin failed (exit $LASTEXITCODE)" }
 
           dotnet build --configuration Release
+          $buildExit = $LASTEXITCODE
 
           ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="$env:SONAR_TOKEN"
+          $endExit = $LASTEXITCODE
+
+          if ($buildExit -ne 0) { throw "dotnet build failed (exit $buildExit)" }
+          if ($endExit  -ne 0) { throw "sonarscanner end failed (exit $endExit)" }
