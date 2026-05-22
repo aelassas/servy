@@ -269,6 +269,13 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(errorMsg);
                 }
 
+                // Refresh so Length reflects current state after the security probes
+                fileInfo.Refresh();
+                if (!fileInfo.Exists)
+                {
+                    return CommandResult.Fail($"[Import{configFileType}] File no longer present: {fullPath}");
+                }
+
                 if (fileInfo.Length > AppConfig.MaxConfigFileSizeBytes)
                 {
                     var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, fullPath);
