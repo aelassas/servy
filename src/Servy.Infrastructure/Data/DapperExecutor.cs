@@ -453,28 +453,46 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc/>
-        public async Task<T> QueryFirstOrDefaultAsync<T>(string sql, object param = null, IDbTransaction transaction = null, CancellationToken cancellationToken = default)
+        public async Task<T> QueryFirstOrDefaultAsync<T>(CommandDefinition command)
         {
-            if (sql == null) throw new ArgumentNullException(nameof(sql));
-
-            var actualTx = Unwrap(transaction);
+            var actualTx = Unwrap(command.Transaction);
 
             return await ExecuteWithRetryAsync(async (ct) =>
             {
-                // FIX: Rebuild the CommandDefinition inside the lambda so it captures the per-attempt cancellation token 'ct'
-                var command = new CommandDefinition(sql, param, actualTx, cancellationToken: ct);
+                // ROBUSTNESS: Re-bind the CommandDefinition inside the retry lambda here to ensure 
+                // Dapper uses the correct local iteration token 'ct' and the unwrapped transaction.
+                var cmd = new CommandDefinition(
+                    command.CommandText,
+                    command.Parameters,
+                    actualTx,
+                    command.CommandTimeout,
+                    command.CommandType,
+                    command.Flags,
+                    ct);
 
-                if (actualTx != null)
+                if (cmd.Transaction != null)
                 {
-                    return await actualTx.Connection.QueryFirstOrDefaultAsync<T>(command).ConfigureAwait(false);
+                    return await cmd.Transaction.Connection.QueryFirstOrDefaultAsync<T>(cmd).ConfigureAwait(false);
                 }
 
                 using (var connection = _dbContext.CreateConnection())
                 {
                     await connection.OpenAsync(ct).ConfigureAwait(false);
-                    return await connection.QueryFirstOrDefaultAsync<T>(command).ConfigureAwait(false);
+                    return await connection.QueryFirstOrDefaultAsync<T>(cmd).ConfigureAwait(false);
                 }
-            }, cancellationToken, sql).ConfigureAwait(false);
+            }, command.CancellationToken, command.CommandText).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
+        public async Task<T> QueryFirstOrDefaultAsync<T>(string sql, object param = null, IDbTransaction transaction = null, CancellationToken cancellationToken = default)
+        {
+            if (sql == null) throw new ArgumentNullException(nameof(sql));
+
+            return await QueryFirstOrDefaultAsync<T>(new CommandDefinition(
+                sql,
+                param,
+                transaction,
+                cancellationToken: cancellationToken)).ConfigureAwait(false);
         }
 
         #endregion

@@ -366,7 +366,7 @@ namespace Servy.UI.Bootstrapping
                         string resourceName = $"{AppConfig.HandleExeFileName}.exe";
                         Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " +
                             "File-lock diagnostics will be unavailable this session.");
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show($"Failed copying embedded resource: {resourceName}"));
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource_Format, resourceName)));
                     }
 
                     var resourceItems = new List<ResourceItem>
@@ -377,7 +377,7 @@ namespace Servy.UI.Bootstrapping
 #if DEBUG
                     if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false))
                     {
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIFileName}.pdb"));
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource_Format, $"{AppConfig.ServyServiceUIFileName}.pdb")));
                     }
 #else
                     // Runtime DLL requirements

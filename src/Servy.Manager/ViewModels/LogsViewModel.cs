@@ -144,7 +144,6 @@ namespace Servy.Manager.ViewModels
                     _fromDate = value;
                     ToDateMinDate = value?.Date;
                     OnPropertyChanged(nameof(FromDate));
-                    OnPropertyChanged(nameof(ToDateMinDate));
                 }
             }
         }
@@ -414,9 +413,10 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Gets the list of all available log levels for filtering.
+        /// Gets the list of available log levels for filtering.
+        /// Levels exposed in the filter dropdown - excludes Critical/Verbose because Servy itself never emits them
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Log levels.</returns>
         private static List<EventLogLevel> GetLogLevels() => Enum.GetValues(typeof(EventLogLevel))
                                                             .Cast<EventLogLevel>()
                                                             .Where(logLevel => logLevel != EventLogLevel.Critical && logLevel != EventLogLevel.Verbose)
