@@ -610,7 +610,7 @@ function Set-ServyConfig {
     [int] $TimeoutSeconds = 600,
 
     # Default: 1048576 characters (1MB)
-    [ValidateRange(1024, [int]::MaxValue)]
+    [ValidateRange(1024, 2147483647)]
     [int] $MaxBufferChars = 1048576
   )
 

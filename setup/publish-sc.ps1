@@ -52,9 +52,9 @@ if ($Version -notmatch "^\d+\.\d+$") {
 # ========================
 # Configuration
 # ========================
-$scriptDir = $PSScriptRoot
+$scriptDir  = $PSScriptRoot
 # Resolve the root once at the start (this is safe as the script is running inside it)
-$rootDir   = (Resolve-Path (Join-Path $scriptDir "..")).Path
+$rootDir    = (Resolve-Path (Join-Path $scriptDir "..")).Path
 $servyDir   = Join-Path $rootDir "src\Servy"
 $cliDir     = Join-Path $rootDir "src\Servy.CLI"
 $managerDir = Join-Path $rootDir "src\Servy.Manager"

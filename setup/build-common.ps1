@@ -4,16 +4,62 @@
     Shared build and publish utilities for Servy projects.
 
 .DESCRIPTION
-    Provides standard functions to check exit codes and invoke project publishing,
-    ensuring DRY compliance across all project scripts.
+    Provides standard functions to check exit codes, retry unreliable commands, 
+    and invoke project publishing, ensuring DRY compliance across all project scripts.
 #>
-
 $ErrorActionPreference = "Stop"
-
 $BC_ScriptDir = $PSScriptRoot
 
 # Import helpers
 . (Join-Path $BC_ScriptDir "common-helpers.ps1")
+
+<#
+.SYNOPSIS
+    Executes a scriptblock with automatic retries on failure.
+#>
+function Invoke-WithRetry {
+    param(
+        [Parameter(Mandatory=$true)]
+        [scriptblock]$Command,
+
+        [Parameter(Mandatory=$true)]
+        [string]$ErrorMessage,
+
+        [int]$MaxRetries = 3,
+        [int]$RetryDelaySeconds = 5
+    )
+
+    $attempt = 0
+    $success = $false
+
+    while ($attempt -lt $MaxRetries) {
+        $attempt++
+        if ($attempt -gt 1) {
+            Write-Host "Retrying command (Attempt $attempt of $MaxRetries)..." -ForegroundColor Yellow
+        }
+
+        # Reset exit code before execution
+        $global:LASTEXITCODE = 0
+        
+        & $Command
+
+        if ($global:LASTEXITCODE -eq 0) {
+            $success = $true
+            break
+        } else {
+            Write-Warning "Command exited with code $($global:LASTEXITCODE)."
+            if ($attempt -lt $MaxRetries) {
+                Write-Host "Waiting $RetryDelaySeconds seconds before next attempt..." -ForegroundColor DarkGray
+                Start-Sleep -Seconds $RetryDelaySeconds
+            }
+        }
+    }
+
+    if (-not $success) {
+        Write-Error "$ErrorMessage (Failed after $MaxRetries attempts)"
+        throw "$ErrorMessage (Failed after $MaxRetries attempts)"
+    }
+}
 
 function Invoke-StandardPublish {
     param(
@@ -48,39 +94,44 @@ function Invoke-StandardPublish {
     Write-Host "Configuration    : $BuildConfiguration"
     Write-Host "Runtime          : $Runtime"
 
-    & dotnet restore $projectPath -r $Runtime
-    Assert-LastExitCode "dotnet restore failed"
+    Invoke-WithRetry -ErrorMessage "dotnet restore failed" -Command {
+        & dotnet restore $projectPath -r $Runtime
+    }
 
-    & dotnet clean $projectPath -c $BuildConfiguration
-    Assert-LastExitCode "Project clean failed"
+    Invoke-WithRetry -ErrorMessage "Project clean failed" -Command {
+        & dotnet clean $projectPath -c $BuildConfiguration
+    }
 
     if ($FrameworkDependent) {
-        & dotnet publish $projectPath `
-            -c $BuildConfiguration `
-            -r $Runtime `
-            --self-contained false `
-            --no-restore `
-            --nologo `
-            --verbosity minimal `
-            /p:PublishSingleFile=false `
-            /p:IncludeAllContentForSelfExtract=true `
-            /p:PublishTrimmed=false `
-            /p:DebugType=None `
-            /p:DebugSymbols=false `
-            /p:CopyOutputSymbolsToPublishDirectory=false `
-            /p:CopyCommandLineArguments=false `
-            /p:ErrorOnDuplicatePublishOutputFiles=true `
-            /p:UseAppHost=true `
-            /p:Clean=true `
-            /p:DeleteExistingFiles=true
+        Invoke-WithRetry -ErrorMessage "dotnet publish failed" -Command {
+            & dotnet publish $projectPath `
+                -c $BuildConfiguration `
+                -r $Runtime `
+                --self-contained false `
+                --no-restore `
+                --nologo `
+                --verbosity minimal `
+                /p:PublishSingleFile=false `
+                /p:IncludeAllContentForSelfExtract=true `
+                /p:PublishTrimmed=false `
+                /p:DebugType=None `
+                /p:DebugSymbols=false `
+                /p:CopyOutputSymbolsToPublishDirectory=false `
+                /p:CopyCommandLineArguments=false `
+                /p:ErrorOnDuplicatePublishOutputFiles=true `
+                /p:UseAppHost=true `
+                /p:Clean=true `
+                /p:DeleteExistingFiles=true
+        }
     } else {
-        & dotnet publish $projectPath `
-            -c $BuildConfiguration `
-            -r $Runtime `
-            --force `
-            /p:DeleteExistingFiles=true
+        Invoke-WithRetry -ErrorMessage "dotnet publish failed" -Command {
+            & dotnet publish $projectPath `
+                -c $BuildConfiguration `
+                -r $Runtime `
+                --force `
+                /p:DeleteExistingFiles=true
+        }
     }
-    Assert-LastExitCode "dotnet publish failed"
 
     # Step 2: Sign the published executable if signing is enabled
     if ($BuildConfiguration -eq "Release") {
