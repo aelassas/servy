@@ -464,13 +464,13 @@ namespace Servy.Manager.ViewModels
                     // Start StdOut tailer if the result and path are valid
                     if (outRes != null && !string.IsNullOrEmpty(stdoutPath))
                     {
-                        StartLiveTail(stdoutPath, LogType.StdOut, outRes.Position, outRes.CreationTime, token, sessionId);
+                        StartLiveTail(stdoutPath, LogType.StdOut, outRes.Position, outRes.CreationTime, sessionId, token);
                     }
 
                     // Start StdErr tailer ONLY if it's a different file to prevent duplicate UI entries
                     if (errRes != null && hasUniqueStderr)
                     {
-                        StartLiveTail(stderrPath, LogType.StdErr, errRes.Position, errRes.CreationTime, token, sessionId);
+                        StartLiveTail(stderrPath, LogType.StdErr, errRes.Position, errRes.CreationTime, sessionId, token);
                     }
                 }
             }
@@ -507,9 +507,9 @@ namespace Servy.Manager.ViewModels
         /// <param name="type">The type of log (StdOut/StdErr).</param>
         /// <param name="pos">The byte position to start reading from.</param>
         /// <param name="created">The file creation time for rotation detection.</param>
-        /// <param name="token">Cancellation token for the tailing task.</param>
         /// <param name="sessionId">The session ID this tailer belongs to.</param>
-        private void StartLiveTail(string path, LogType type, long pos, DateTime created, CancellationToken token, int sessionId)
+        /// /// <param name="cancellationToken">Cancellation token for the tailing task.</param>
+        private void StartLiveTail(string path, LogType type, long pos, DateTime created, int sessionId, CancellationToken cancellationToken)
         {
             var tailer = new LogTailer();
 
@@ -554,7 +554,7 @@ namespace Servy.Manager.ViewModels
                 _stderrTailerHandler = handler;
             }
 
-            _ = tailer.RunFromPosition(path, type, pos, created, token)
+            _ = tailer.RunFromPosition(path, type, pos, created, cancellationToken)
                 .ContinueWith(t =>
                 {
                     if (t.IsFaulted)

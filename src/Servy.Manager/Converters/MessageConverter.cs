@@ -10,6 +10,8 @@ namespace Servy.Manager.Converters
     /// </summary>
     public class MessageConverter : IValueConverter
     {
+        private static readonly string[] LineSeparators = { "\r\n", "\r", "\n" };
+
         /// <summary>
         /// Returns the first line of the message (splitting on \r, \n).
         /// </summary>
@@ -25,7 +27,7 @@ namespace Servy.Manager.Converters
 
             var text = value.ToString();
             var firstLine = text
-                .Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None)
+                .Split(LineSeparators, StringSplitOptions.None)
                 .FirstOrDefault();
 
             return firstLine ?? string.Empty;

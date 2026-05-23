@@ -928,7 +928,7 @@ namespace Servy.Manager.ViewModels
 
                         // Run this once after the batch finishes to stabilize the UI state
                         UpdateSelectAllState();
-                    }, DispatcherPriority.Background);
+                    }, DispatcherPriority.Background, cancellationToken: token);
                 }
 
                 // 6. Execute a single atomic database batch write for all drifted services
