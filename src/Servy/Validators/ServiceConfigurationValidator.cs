@@ -40,8 +40,8 @@ namespace Servy.Validators
         /// The task result contains <see langword="true"/> if validation passed; otherwise, <see langword="false"/>.
         /// </returns>
         /// <remarks>
-        /// This method prioritizes warnings over errors, displaying only the first identified issue 
-        /// to the user to maintain a clean "fail-fast" UI experience.
+        /// This implementation follows a fail-fast approach, showing only the first identified 
+        /// error to prevent overwhelming the user with multiple dialog boxes.
         /// </remarks>
         public async Task<bool> Validate(ServiceDto dto, string wrapperExePath = null, string confirmPassword = "")
         {

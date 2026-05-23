@@ -84,7 +84,6 @@ namespace Servy.Core.Helpers
                     return false;
                 }
 
-
                 using (resourceStream)
                 {
                     // Get running services
@@ -102,6 +101,7 @@ namespace Servy.Core.Helpers
                             return false;
 
                         await Helper.WriteFileAtomicAsync(targetPath, resourceStream.CopyToAsync);
+                        copyDone = true; // File write succeeded natively within the execution path
                     }
                     finally
                     {
@@ -116,15 +116,20 @@ namespace Servy.Core.Helpers
                             {
                                 // Log restart failure separately to avoid misattribution
                                 restartFailed = true;
+
+                                // ROBUSTNESS: Dynamically evaluate the copyDone state inside the finally block.
+                                // This guarantees we don't issue false success metrics to the administrator logs if the copy was aborted earlier.
+                                var copyDescription = copyDone
+                                    ? $"Embedded resource '{resourceName}' was successfully copied to '{targetPath}', but "
+                                    : $"Embedded resource '{resourceName}' was NOT copied to '{targetPath}'; additionally, ";
+
                                 Logger.Error(
-                                    $"Embedded resource '{resourceName}' was successfully copied to '{targetPath}', but {runningServices.Count} previously-running services failed to restart.",
+                                    copyDescription + $"{runningServices.Count} previously-running services failed to restart.",
                                     startEx);
                             }
                         }
                     }
                 }
-
-                copyDone = true; // File write succeeded
 
                 if (copyDone && !restartFailed)
                 {

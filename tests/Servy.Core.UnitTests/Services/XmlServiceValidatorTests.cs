@@ -60,7 +60,7 @@ namespace Servy.Core.UnitTests.Services
             var xml = "<NotServiceDto><Foo>bar</Foo></NotServiceDto>";
             var result = _validator.TryValidate(xml, out var error);
             Assert.False(result);
-            Assert.Contains("Invalid XML structure:", error);
+            Assert.Contains("XML structure error:", error);
         }
 
         [Fact]

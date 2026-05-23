@@ -112,13 +112,13 @@ namespace Servy.Core.Helpers
                             throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
                         }
 
-                        var startTimeout = (service.StartTimeout.HasValue && service.StartTimeout.Value > AppConfig.DefaultServiceStartTimeoutSeconds
-                            ? service.StartTimeout.Value : AppConfig.DefaultServiceStartTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                        if (!string.IsNullOrEmpty(service.PreLaunchExecutablePath))
-                        {
-                            startTimeout += service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds;
-                        }
-                        var waitTime = TimeSpan.FromSeconds(startTimeout);
+                        // ROBUSTNESS: Leverage the symmetric helper method instead of nested ternary operations
+                        int preLaunchTimeout = string.IsNullOrEmpty(service.PreLaunchExecutablePath)
+                            ? 0
+                            : (service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds);
+
+                        int timeout = CalculateStartTimeout(service.StartTimeout, preLaunchTimeout);
+                        var waitTime = TimeSpan.FromSeconds(timeout);
 
                         // This blocks until the service is Started or the waitTime expires
                         var stopwatch = Stopwatch.StartNew();
@@ -237,6 +237,27 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
+        /// Calculates the total start timeout by evaluating configured limits,
+        /// mandatory floors, and pre-launch executable hooks.
+        /// </summary>
+        /// <param name="configuredTimeout">The timeout value from the service configuration.</param>
+        /// <param name="preLaunchTimeoutSeconds">The timeout for the pre-launch executable hook in seconds, if any.</param>
+        /// <returns>The calculated timeout in seconds, including SCM safety buffers.</returns>
+        public static int CalculateStartTimeout(int? configuredTimeout, int preLaunchTimeoutSeconds = 0)
+        {
+            // Standardize the floor using the default service start timeout
+            int floor = AppConfig.DefaultServiceStartTimeoutSeconds;
+
+            // Determine the baseline: map to the configured value only if it exceeds our mandatory floor
+            int baseline = configuredTimeout.HasValue && configuredTimeout.Value > floor ? configuredTimeout.Value : floor;
+
+            // Add the SCM communication safety buffer and any pre-launch execution time
+            int total = baseline + AppConfig.ScmTimeoutBufferSeconds + preLaunchTimeoutSeconds;
+
+            return total;
+        }
+
+        /// <summary>
         /// Calculates the total stop timeout by evaluating configured limits, 
         /// historical stop times, and mandatory safety buffers.
         /// </summary>
@@ -273,7 +294,7 @@ namespace Servy.Core.Helpers
         /// <exception cref="ArgumentException">Thrown when <paramref name="wrapperExes"/> is null or empty.</exception>
         /// <exception cref="InvalidOperationException">Thrown when an unexpected error occurs while querying the SCM or Registry.</exception>
         /// <remarks>
-        /// This method bypasses < see cref="ServiceController.ServicesDependedOn"/> (and related
+        /// This method bypasses <see cref="ServiceController.ServicesDependedOn"/> (and related
         /// SCM round-trips) to prevent COM timeout issues in large-scale deployments.
         /// It reads the <c>ImagePath</c> directly from the Registry, expands environment variables, 
         /// and safely parses out executable paths that contain quotes or command-line arguments.
@@ -374,6 +395,5 @@ namespace Servy.Core.Helpers
         }
 
         #endregion
-
     }
 }

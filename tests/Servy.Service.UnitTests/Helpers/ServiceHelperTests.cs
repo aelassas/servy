@@ -43,7 +43,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             // Act
             // We pass the mock directly. In the real app, OnStart passes the Scoped logger here.
-            _helper.LogStartupArguments(mockLog.Object, args, options);
+            _helper.LogStartupArguments(mockLog.Object, options);
 
             // Assert
             // 1. Verify the logger received the info message.
@@ -604,7 +604,7 @@ namespace Servy.Service.UnitTests.Helpers
                 .Verifiable();
 
             // Act
-            _helper.LogStartupArguments(mockLog.Object, args, options);
+            _helper.LogStartupArguments(mockLog.Object, options);
 
             // Assert
             mockLog.Verify(l => l.Info(It.Is<string>(s => s.Contains("[Startup Parameters]")), It.IsAny<Exception>()), Times.Once);

@@ -11,7 +11,7 @@ namespace Servy.Core.Services
     /// Validates XML input to ensure it can be deserialized into a <see cref="ServiceDto"/>
     /// and meets strict Windows SCM and security rules before database persistence.
     /// </summary>
-    public class XmlServiceValidator : ServiceDtoImportValidator<Exception>, IXmlServiceValidator
+    public class XmlServiceValidator : ServiceDtoImportValidator<XmlException>, IXmlServiceValidator
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="XmlServiceValidator"/> class.

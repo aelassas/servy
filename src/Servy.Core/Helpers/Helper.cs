@@ -613,8 +613,10 @@ namespace Servy.Core.Helpers
             // 2. Invisible Padding Check
             // Leading or trailing spaces are technically permitted by some lower-level Windows APIs, 
             // but they cause massive confusion in CLI tools, PowerShell scripts, and visual management consoles.
-            if (serviceName != serviceName.Trim())
+            if (serviceName != serviceName.TrimEnd())
                 return (false, Strings.Msg_ServiceNameContainsTrailingWhitespace);
+            if (serviceName != serviceName.TrimStart())
+                return (false, Strings.Msg_ServiceNameContainsLeadingWhitespace);
 
             // 3. Length check
             if (serviceName.Length > AppConfig.MaxServiceNameLength)

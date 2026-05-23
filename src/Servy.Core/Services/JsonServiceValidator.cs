@@ -10,7 +10,7 @@ namespace Servy.Core.Services
     /// Provides strict validation for JSON strings representing a <see cref="ServiceDto"/>.
     /// Ensures both structural integrity and Windows SCM compatibility.
     /// </summary>
-    public class JsonServiceValidator : ServiceDtoImportValidator<Exception>, IJsonServiceValidator
+    public class JsonServiceValidator : ServiceDtoImportValidator<JsonException>, IJsonServiceValidator
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="JsonServiceValidator"/> class.
