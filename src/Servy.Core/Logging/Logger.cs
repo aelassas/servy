@@ -520,7 +520,7 @@ namespace Servy.Core.Logging
                 if (sb.Length > AppConfig.LoggerMaxFormattedExceptionLength)
                 {
                     const string truncMarker = "... [truncated]";
-                    int reserved = truncMarker.Length;          // reserve room for the marker
+                    int reserved = truncMarker.Length + processedDepth; // reserve room for the marker and ']' chars too
                     int target = Math.Max(0, AppConfig.LoggerMaxFormattedExceptionLength - reserved);
                     sb.Length = target;
                     sb.Append(truncMarker);

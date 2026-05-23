@@ -7,8 +7,6 @@ using Servy.Core.Native;
 using Servy.Core.Resources;
 using Servy.Core.ServiceDependencies;
 using System;
-using System.IO;
-using System.Linq;
 
 namespace Servy.Core.Validators
 {
@@ -56,8 +54,6 @@ namespace Servy.Core.Validators
             }
 
             // Length Bounds
-            if (dto.Name.Length > AppConfig.MaxServiceNameLength)
-                result.Errors.Add(string.Format(Strings.Msg_ServiceNameLengthReached, AppConfig.MaxServiceNameLength));
             if (dto.DisplayName?.Length > AppConfig.MaxDisplayNameLength)
                 result.Errors.Add(string.Format(Strings.Msg_DisplayNameLengthReached, AppConfig.MaxDisplayNameLength));
             if (dto.Description?.Length > AppConfig.MaxDescriptionLength)

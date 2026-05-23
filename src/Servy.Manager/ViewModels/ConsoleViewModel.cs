@@ -254,74 +254,57 @@ namespace Servy.Manager.ViewModels
         {
             var token = _monitoringCts?.Token ?? CancellationToken.None;
 
-            try
+            var currentSelection = SelectedService;
+            if (currentSelection == null)
             {
-                var currentSelection = SelectedService;
-                if (currentSelection == null)
-                {
-                    if (_hadSelectedService)
-                    {
-                        ResetConsole();
-                        _hadSelectedService = false;
-                        CopyPidCommand?.RaiseCanExecuteChanged();
-                    }
-                    return;
-                }
-                _hadSelectedService = true;
-
-                var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection?.Name, token);
-                var stateSnapshot = serviceDto?.Clone() as ServiceConsoleStateDto;
-
-                // Drop this tick if the user switched services while we were awaiting the DB call.
-                if (!ReferenceEquals(currentSelection, _selectedService)) return;
-
-                if (stateSnapshot?.Pid == null)
+                if (_hadSelectedService)
                 {
                     ResetConsole();
-                    if (currentSelection != null)
-                    {
-                        currentSelection.Pid = null;
-                        currentSelection.StdoutPath = null;
-                        currentSelection.StderrPath = null;
-                    }
-                    CopyPidCommand?.RaiseCanExecuteChanged();
-                    return;
-                }
-
-                if (currentSelection?.Pid != stateSnapshot.Pid
-                    || !string.Equals(_stdoutPath, stateSnapshot.ActiveStdoutPath, StringComparison.OrdinalIgnoreCase)
-                    || !string.Equals(_stderrPath, stateSnapshot.ActiveStderrPath, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (currentSelection != null)
-                        currentSelection.Pid = stateSnapshot.Pid;
-                    _stdoutPath = stateSnapshot.ActiveStdoutPath;
-                    _stderrPath = stateSnapshot.ActiveStderrPath;
-                    if (currentSelection != null)
-                    {
-                        currentSelection.StdoutPath = stateSnapshot.ActiveStdoutPath;
-                        currentSelection.StderrPath = stateSnapshot.ActiveStderrPath;
-                    }
-
-                    _ = SwitchServiceAsync(stateSnapshot.ActiveStdoutPath, stateSnapshot.ActiveStderrPath);
+                    _hadSelectedService = false;
                     CopyPidCommand?.RaiseCanExecuteChanged();
                 }
+                return;
+            }
+            _hadSelectedService = true;
 
-                SetPidText(currentSelection);
-            }
-            catch (OperationCanceledException)
+            var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection?.Name, token);
+            var stateSnapshot = serviceDto?.Clone() as ServiceConsoleStateDto;
+
+            // Drop this tick if the user switched services while we were awaiting the DB call.
+            if (!ReferenceEquals(currentSelection, _selectedService)) return;
+
+            if (stateSnapshot?.Pid == null)
             {
-                // Expected during app shutdown or when the ViewModel is deactivated.
-                // No logging required as this is a normal lifecycle event.
-            }
-            catch (Exception ex)
-            {
-                _tickErrorCount++;
-                // Log every 10th error to prevent bloating while maintaining observability
-                if (_tickErrorCount % 10 == 1)
+                ResetConsole();
+                if (currentSelection != null)
                 {
-                    Logger.Warn($"OnTickAsync error (count: {_tickErrorCount}): {ex.Message}");
+                    currentSelection.Pid = null;
+                    currentSelection.StdoutPath = null;
+                    currentSelection.StderrPath = null;
                 }
+                CopyPidCommand?.RaiseCanExecuteChanged();
+                return;
             }
+
+            if (currentSelection?.Pid != stateSnapshot.Pid
+                || !string.Equals(_stdoutPath, stateSnapshot.ActiveStdoutPath, StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(_stderrPath, stateSnapshot.ActiveStderrPath, StringComparison.OrdinalIgnoreCase))
+            {
+                if (currentSelection != null)
+                    currentSelection.Pid = stateSnapshot.Pid;
+                _stdoutPath = stateSnapshot.ActiveStdoutPath;
+                _stderrPath = stateSnapshot.ActiveStderrPath;
+                if (currentSelection != null)
+                {
+                    currentSelection.StdoutPath = stateSnapshot.ActiveStdoutPath;
+                    currentSelection.StderrPath = stateSnapshot.ActiveStderrPath;
+                }
+
+                _ = SwitchServiceAsync(stateSnapshot.ActiveStdoutPath, stateSnapshot.ActiveStderrPath);
+                CopyPidCommand?.RaiseCanExecuteChanged();
+            }
+
+            SetPidText(currentSelection);
         }
 
         #endregion
