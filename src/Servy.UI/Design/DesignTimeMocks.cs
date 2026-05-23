@@ -41,8 +41,8 @@ namespace Servy.UI.Design
     {
         public ServiceDto GetByName(string name) => null;
         public ServiceDto GetByName(string name, bool decrypt = true) => null;
-        public void Upsert(ServiceDto service) { }
-        public void Delete(string name) { }
+        public void Upsert(ServiceDto service) { /* no-op */ }
+        public void Delete(string name) { /* no-op */ }
         public int Update(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials) => 0;
 
         public Task<int> AddAsync(ServiceDto service, CancellationToken cancellationToken = default)
