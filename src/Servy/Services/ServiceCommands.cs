@@ -346,7 +346,7 @@ namespace Servy.Services
                 Strings.ExportJson_Success);
 
         ///<inheritdoc/>
-        public Task ImportXmlConfig(CancellationToken cancellationToken) =>
+        public Task ImportXmlConfig(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
                 _dialogService.OpenXml,
                 (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
@@ -356,7 +356,7 @@ namespace Servy.Services
                 cancellationToken);
 
         ///<inheritdoc/>
-        public Task ImportJsonConfig(CancellationToken cancellationToken) =>
+        public Task ImportJsonConfig(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
                 _dialogService.OpenJson,
                 (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },

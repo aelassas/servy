@@ -29,8 +29,6 @@ namespace Servy.UI.Bootstrapping
         #region Private Static Fields
 
         private static readonly object _errorDialogLock = new object();
-        private static DateTime _lastErrorDialogShown = DateTime.MinValue;
-        private static string _lastErrorDialogMessage = string.Empty;
 
         #endregion
 
@@ -45,6 +43,8 @@ namespace Servy.UI.Bootstrapping
         private FileSystemEventHandler? _availabilityChangedHandler;
         private RenamedEventHandler? _availabilityRenamedHandler;
         private readonly CancellationTokenSource _appLifetimeCts = new CancellationTokenSource();
+        private DateTime _lastErrorDialogShown = DateTime.MinValue;
+        private string _lastErrorDialogMessage = string.Empty;
 
         #endregion
 

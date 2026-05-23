@@ -932,7 +932,7 @@ namespace Servy.Manager.ViewModels
                             allDtosDict.TryGetValue(service.Name, out var dto);
 
                             // Collect updates without touching the UI model yet
-                            var result = await GetServiceUpdateInfoAsync(service, allServicesDict, dto, token);
+                            var result = GetServiceUpdateInfo(service, allServicesDict, dto, token);
 
                             if (result.UpdateInfo != null)
                                 uiUpdates.Add(result.UpdateInfo);
@@ -985,7 +985,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Pure logic method to calculate what needs to change without touching UI models.
         /// </summary>
-        private async Task<(ServiceUpdateInfo? UpdateInfo, ServiceDto? UpdatedDto)> GetServiceUpdateInfoAsync(
+        private (ServiceUpdateInfo? UpdateInfo, ServiceDto? UpdatedDto) GetServiceUpdateInfo(
             Service service,
             Dictionary<string, ServiceInfo>? allServices,
             ServiceDto? serviceDto,

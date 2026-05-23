@@ -407,7 +407,7 @@ namespace Servy.Manager.ViewModels
         /// Handles the specific logic for clearing graph visualizations when 
         /// monitoring is stopped with the clearView flag set to true.
         /// </summary>
-        protected override void OnMonitoringStopped(bool clearView = true)
+        protected override void OnMonitoringStopped(bool clearView)
         {
             if (!clearView) return;
 
