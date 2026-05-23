@@ -288,9 +288,8 @@ namespace Servy.Core.Native
                             using (var sha256 = SHA256.Create())
                             {
                                 byte[] hashBytes = sha256.ComputeHash(buffer, 0, read);
-                                // Store as a lowercase hex string prefixed with the file length 
-                                // for consistent identification across probes and to catch size drifts.
-                                identity.PrefixDigest = $"{fs.Length}:{BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant()}";
+                                // Store as a lowercase hex string for consistent identification across probes and to catch size drifts.
+                                identity.PrefixDigest = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
                             }
                         }
                         else

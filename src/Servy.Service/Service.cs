@@ -1762,8 +1762,16 @@ namespace Servy.Service
                         break;
 
                     case RecoveryAction.RestartComputer:
-                        _isRebooting = true;
-                        _serviceHelper.RestartComputer(_logger);
+                        try
+                        {
+                            _isRebooting = true;
+                            _serviceHelper.RestartComputer(_logger);
+                        }
+                        catch
+                        {
+                            _isRebooting = false; // reboot didn't happen; allow recovery/teardown to continue
+                            throw;
+                        }
                         break;
 
                     default:

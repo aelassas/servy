@@ -131,14 +131,18 @@ namespace Servy.Core.Helpers
                         // to guard against killing ancestors or system critical processes.
                         if (IsProtected(childPid, child.ProcessName, protectedPids)) continue;
 
+                        DateTime childStart = SafeStartTime(child);
+
                         // Identity check: Ensures we don't kill a process that recycled a PID 
                         // from a target that died before this operation started.
-                        if (parentStartTime != DateTime.MinValue && child.StartTime < parentStartTime.AddSeconds(-AppConfig.PidReuseToleranceSeconds))
+                        if (parentStartTime != DateTime.MinValue
+                            && childStart != DateTime.MinValue
+                            && childStart < parentStartTime.AddSeconds(-AppConfig.PidReuseToleranceSeconds))
                             continue;
 
                         // Depth-First Recursion: Kill the leaves of the tree first.
                         // We pass the same visited set and protected PIDs down the stack.
-                        WalkAndKillChildren(childPid, child.StartTime, selfPid, protectedPids, byParent, visited);
+                        WalkAndKillChildren(childPid, childStart, selfPid, protectedPids, byParent, visited);
 
                         if (!child.HasExited)
                         {
@@ -487,9 +491,8 @@ namespace Servy.Core.Helpers
                     // keep MinValue if reading StartTime fails due to transient access limits
                 }
 
-                // Move up further first via post-order traversal - pass real anchor and the visited set
-                KillParentProcesses(parentId, parentStartTime, protectedPids, snapshot, visited);
-
+                // ROBUSTNESS FIX: Perform temporal identity validation BEFORE walking up the ancestor tree.
+                // This isolates PID recycling exploits at the boundary and blocks the walk from leaking into unrelated trees.
                 try
                 {
                     // Verify the handle context directly using the cached or live process start time 
@@ -499,10 +502,15 @@ namespace Servy.Core.Helpers
                     if (childStartTime != DateTime.MinValue && exactStartTime != DateTime.MinValue
                         && exactStartTime > childStartTime.AddSeconds(AppConfig.PidReuseToleranceSeconds))
                     {
+                        Logger.Debug($"Aborting parent tree walk: PID {parentId} has been recycled (started after child).");
                         return;
                     }
                 }
                 catch (Win32Exception) { /* Handle access denied on StartTime, proceed with caution */ }
+
+                // Move up further first via post-order traversal - pass real anchor and the visited set
+                // Safe to recurse now that the immediate parent identity context has been definitively verified.
+                KillParentProcesses(parentId, parentStartTime, protectedPids, snapshot, visited);
 
                 if (!parentProcess.HasExited)
                 {

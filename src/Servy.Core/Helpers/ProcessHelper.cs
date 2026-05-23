@@ -311,8 +311,15 @@ namespace Servy.Core.Helpers
                 }
                 return new ProcessMetrics(0, 0);
             }
+            catch (InvalidOperationException)
+            {
+                // Process exited between GetProcessById and the property read - same eviction semantics as ArgumentException.
+                lock (GetLockForPid(pid)) { _prevCpuTimes.TryRemove(pid, out _); }
+                return new ProcessMetrics(0, 0);
+            }
             catch (Exception ex)
             {
+                // Win32Exception (access denied) and similar - process likely still alive, keep the sample.
                 Logger.Debug($"Failed to get process metrics for PID {pid}.", ex);
                 return new ProcessMetrics(0, 0);
             }
