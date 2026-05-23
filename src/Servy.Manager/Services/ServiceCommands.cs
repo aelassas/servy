@@ -276,17 +276,18 @@ namespace Servy.Manager.Services
                     }
 #endif
                     var res = await Task.Run(() => serviceDomain.Install(wrapperExeDir, cancellationToken: cancellationToken), cancellationToken);
-                    if (res.IsSuccess)
+
+                    if (!res.IsSuccess)
                     {
-                        service.IsInstalled = true;
-                        await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceInstalled, AppConfig.Caption);
-                    }
-                    else
-                    {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                        var msg = !string.IsNullOrWhiteSpace(res.ErrorMessage) ? res.ErrorMessage : Strings.Msg_UnexpectedError;
+                        Logger.Warn($"InstallService failed: {msg}");
+                        await _messageBoxService.ShowErrorAsync(msg, AppConfig.Caption);
+                        return false;
                     }
 
-                    return res.IsSuccess;
+                    service.IsInstalled = true;
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceInstalled, AppConfig.Caption);
+                    return true;
                 }
                 catch (Exception ex)
                 {
@@ -318,9 +319,17 @@ namespace Servy.Manager.Services
                     }
 
                     var res = await Task.Run(() => serviceDomain.Uninstall(cancellationToken), cancellationToken);
-                    if (res.IsSuccess) await Task.Run(() => RemoveService(service));
 
-                    return res.IsSuccess;
+                    if (!res.IsSuccess)
+                    {
+                        var msg = !string.IsNullOrWhiteSpace(res.ErrorMessage) ? res.ErrorMessage : Strings.Msg_UnexpectedError;
+                        Logger.Warn($"UninstallService failed: {msg}");
+                        await _messageBoxService.ShowErrorAsync(msg, AppConfig.Caption);
+                        return false;
+                    }
+
+                    await Task.Run(() => RemoveService(service));
+                    return true;
                 }
                 catch (Exception ex)
                 {
@@ -602,7 +611,8 @@ namespace Servy.Manager.Services
                         }
                         else
                         {
-                            errorMessage = Strings.Msg_UnexpectedError;
+                            errorMessage = !string.IsNullOrWhiteSpace(res.ErrorMessage) ? res.ErrorMessage : Strings.Msg_UnexpectedError;
+                            Logger.Warn($"Failed to execute operation on {service.Name}: {errorMessage}");
                         }
                     }
                 }

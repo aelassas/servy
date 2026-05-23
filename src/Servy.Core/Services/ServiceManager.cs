@@ -593,7 +593,7 @@ namespace Servy.Core.Services
                         sc.Refresh();
                         var sw = Stopwatch.StartNew();
 
-                        var service = await _serviceRepository.GetByNameAsync(serviceName, cancellationToken: cancellationToken);
+                        var service = await _serviceRepository.GetByNameAsync(serviceName, decrypt: false, cancellationToken: cancellationToken);
                         int waitTimeout = ServiceHelper.CalculateStopTimeout(
                             service?.StopTimeout,
                             service?.PreviousStopTimeout,

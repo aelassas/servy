@@ -251,4 +251,10 @@
     <value>The specified path is invalid.</value>
   </data>
 
+  <data name="Msg_DependencyUnavailable" xml:space="preserve">
+    <value>Dependency '{0}' is unavailable.</value>
+  </data>
+  <data name="Msg_DependencyAccessDenied" xml:space="preserve">
+    <value>Dependency '{0}' is not accessible (Access Denied).</value>
+  </data>
 </root>

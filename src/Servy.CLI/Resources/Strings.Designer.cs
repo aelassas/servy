@@ -79,6 +79,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Failed to {0}: {1}.
+        /// </summary>
+        public static string Msg_CommandFailedTemplate {
+            get {
+                return ResourceManager.GetString("Msg_CommandFailedTemplate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Configuration file &apos;{0}&apos; exceeds maximum size (10 MB)..
         /// </summary>
         public static string Msg_ConfigSizeLimitReached {
@@ -318,6 +327,15 @@ namespace Servy.CLI.Resources {
         public static string Msg_StopSuccess {
             get {
                 return ResourceManager.GetString("Msg_StopSuccess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Suggestion: {0}.
+        /// </summary>
+        public static string Msg_SuggestionTemplate {
+            get {
+                return ResourceManager.GetString("Msg_SuggestionTemplate", resourceCulture);
             }
         }
         

@@ -112,20 +112,21 @@ namespace Servy.Manager.Mappers
             // LOG: Resolving display name for service account identity.
             // Logic: If the string is null, empty, or matches the internal "LocalSystem" SCM name, we return the UI-friendly constant.
             if (string.IsNullOrEmpty(userSession))
-            {
                 return AppConfig.LocalSystem;
-            }
 
             if (userSession.Equals(ServiceAccounts.LocalSystem, StringComparison.OrdinalIgnoreCase))
-            {
                 return AppConfig.LocalSystem;
-            }
+
+            if (userSession.Equals(ServiceAccounts.LocalService, StringComparison.OrdinalIgnoreCase))
+                return AppConfig.LocalService;
+
+            if (userSession.Equals(ServiceAccounts.NetworkService, StringComparison.OrdinalIgnoreCase))
+                return AppConfig.NetworkService;
 
             // Future-proofing: Additional checks for LocalService or NetworkService can be added here 
             // if AppConfig is expanded to include specific display names for those accounts.
 
             return userSession;
         }
-
     }
 }

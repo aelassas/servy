@@ -2603,6 +2603,7 @@ namespace Servy.Service
 
         /// <summary>
         /// Iterates through all tracked process hooks and ensures their underlying resources are released.
+        /// Caller must hold lock(_trackedHooks).
         /// </summary>
         /// <remarks>
         /// This method should be called during service shutdown or when a service recovery cycle 
@@ -2613,24 +2614,20 @@ namespace Servy.Service
         {
             if (_trackedHooks == null) return;
 
-            // Use the collection itself as the sync root to stay consistent with Cleanup()
-            lock (_trackedHooks)
+            try
             {
-                try
+                foreach (var hook in _trackedHooks)
                 {
-                    foreach (var hook in _trackedHooks)
-                    {
-                        // Safely dispose each hook to release native handles
-                        hook?.Dispose();
-                    }
+                    // Safely dispose each hook to release native handles
+                    hook?.Dispose();
+                }
 
-                    // Clear the collection while still under the lock
-                    _trackedHooks.Clear();
-                }
-                catch (Exception ex)
-                {
-                    _logger?.Error($"Error during hooks cleanup: {ex.Message}");
-                }
+                // Clear the collection while still under the lock
+                _trackedHooks.Clear();
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error($"Error during hooks cleanup: {ex.Message}");
             }
         }
 

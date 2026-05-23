@@ -167,7 +167,7 @@ namespace Servy.Core.Helpers
         /// <param name="input">The argument string to escape. May be <see langword="null"/> or empty.</param>
         /// <returns>
         /// The escaped string, safe for inclusion inside a quoted command-line argument.
-        /// If <paramref name="input"/> is <see langword="null"/> or whitespace, returns an empty string.
+        /// If <paramref name="input"/> is <see langword="null"/> or empty, returns an empty string.
         /// </returns>
         /// <remarks>
         /// - Escapes all backslashes preceding a quote.  
