@@ -159,7 +159,7 @@ namespace Servy.Manager.Views
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The event data.</param>
-        private void CopyMenuItem_Click(object? sender, RoutedEventArgs? e)
+        private void CopyMenuItem_Click(object sender, RoutedEventArgs e)
         {
             var selected = LogList.SelectedItems
                                   .OfType<LogLine>()
