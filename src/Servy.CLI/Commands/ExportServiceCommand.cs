@@ -204,18 +204,17 @@ namespace Servy.CLI.Commands
                 using (var fileStream = new FileStream(fullPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
                 {
                     var safeHandle = fileStream.SafeFileHandle;
-                    IntPtr nativeHandle = safeHandle.DangerousGetHandle();
 
-                    if (nativeHandle != NativeMethods.INVALID_HANDLE_VALUE)
+                    if (!safeHandle.IsInvalid)
                     {
                         // Determine buffer size required
-                        uint requiredSize = NativeMethods.GetFinalPathNameByHandle(nativeHandle, null!, 0, NativeMethods.VOLUME_NAME_DOS);
+                        uint requiredSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, null!, 0, NativeMethods.VOLUME_NAME_DOS);
 
                         if (requiredSize > 0)
                         {
                             // Allocate buffer and retrieve the final physical path representation
                             var pathBuilder = new StringBuilder((int)requiredSize);
-                            uint resultSize = NativeMethods.GetFinalPathNameByHandle(nativeHandle, pathBuilder, requiredSize, NativeMethods.VOLUME_NAME_DOS);
+                            uint resultSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, pathBuilder, requiredSize, NativeMethods.VOLUME_NAME_DOS);
 
                             if (resultSize > 0)
                             {

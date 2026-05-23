@@ -635,10 +635,10 @@ namespace Servy.Core.Native
         /// <summary>Retrieves the final path for the specified file handle.</summary>
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern uint GetFinalPathNameByHandle(
-            IntPtr hFile,
-            [Out] StringBuilder lpszFilePath,
-            uint cchFilePath,
-            uint dwFlags);
+           SafeFileHandle hFile, // Use SafeFileHandle here instead of IntPtr
+           [Out] StringBuilder lpszFilePath,
+           uint cchFilePath,
+           uint dwFlags);
 
         /// <summary>Attempts to log a user on to the local computer.</summary>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
