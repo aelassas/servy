@@ -341,7 +341,7 @@ namespace Servy.Core.Services
                     };
 
                     cancellationToken.ThrowIfCancellationRequested();
-                    var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: true, cancellationToken);
+                    var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: false, cancellationToken);
                     dto.Pid = serviceDto?.Pid;
 
                     var totalWaitTime = (options.StopTimeout.HasValue && options.StopTimeout.Value > AppConfig.ScmStopTimeoutFloorSeconds

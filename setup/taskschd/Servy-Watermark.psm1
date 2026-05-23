@@ -118,15 +118,22 @@ function Update-Watermark {
 
     for ($attempt = 1; $attempt -le $maxRetries; $attempt++) {
         $fs = $null
+        $reader = $null
+        $writer = $null
         try {
             # 1. Acquire exclusive lock to make the read+compare+write atomic across all processes
             $fs = [System.IO.File]::Open($TimestampFile, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
             
+            # Prevent PowerShell from writing a UTF-8 BOM on every file rewrite
+            $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
             $shouldWrite = $true
 
             # Read current file text to catch concurrent updates from other script instances
-            $reader = New-Object System.IO.StreamReader($fs, [System.Text.Encoding]::UTF8)
+            # leaveOpen=$true prevents the reader from closing the underlying $fs
+            $reader = New-Object System.IO.StreamReader($fs, $utf8NoBom, $false, 1024, $true)
             $currentFileContent = $reader.ReadToEnd().Trim()
+            $reader.Dispose()
+            $reader = $null
 
             if (-not [string]::IsNullOrWhiteSpace($currentFileContent)) {
                 try {
@@ -145,15 +152,17 @@ function Update-Watermark {
                 }
             }
 
-            # 2. Write to file only if necessary, explicitly forcing UTF8
+            # 2. Write to file only if necessary, explicitly forcing BOM-less UTF8
             if ($shouldWrite) {
                 $fs.Position = 0
                 $fs.SetLength(0) # Truncate the file before writing the new content
 
-                # Explicitly use UTF8 encoding to prevent PowerShell from writing UTF-16LE (which causes the NULL chars)
-                $writer = New-Object System.IO.StreamWriter($fs, [System.Text.Encoding]::UTF8)
+                # leaveOpen=$true prevents the writer from closing the underlying $fs during GC
+                $writer = New-Object System.IO.StreamWriter($fs, $utf8NoBom, 1024, $true)
                 $writer.Write($timestampString)
-                $writer.Flush()
+                $writer.Dispose() # Implicitly flushes the buffer to the file stream boundary
+                $writer = $null
+                
                 Write-Verbose "Timestamp updated to: $timestampString"
             }
 
@@ -193,10 +202,10 @@ function Update-Watermark {
             }
             break # Exit loop for non-IO exceptions
         } finally {
-            # Safely release the exclusive handle
-            if ($null -ne $fs) {
-                $fs.Dispose()
-            }
+            # Safely release the active handles and buffers
+            if ($null -ne $writer) { try { $writer.Dispose() } catch {} }
+            if ($null -ne $reader) { try { $reader.Dispose() } catch {} }
+            if ($null -ne $fs)     { $fs.Dispose() }
         }
     }
 }

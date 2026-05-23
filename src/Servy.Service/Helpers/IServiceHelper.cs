@@ -39,10 +39,6 @@ namespace Servy.Service.Helpers
         /// The scoped logger instance used for output. If <see langword="null"/>, diagnostic 
         /// information will not be recorded.
         /// </param>
-        /// <param name="args">
-        /// The raw string array of arguments received by the service entry point or 
-        /// <see cref="System.ServiceProcess.ServiceBase.OnStart(string[])"/>.
-        /// </param>
         /// <param name="options">
         /// The hydrated configuration object containing the executable paths, timeouts, 
         /// and environment variables.
@@ -59,7 +55,7 @@ namespace Servy.Service.Helpers
         /// plaintext exposure in log files.
         /// </para>
         /// </remarks>
-        void LogStartupArguments(IServyLogger? logger, string[] args, StartOptions options);
+        void LogStartupArguments(IServyLogger? logger, StartOptions options);
 
         /// <summary>
         /// Performs a comprehensive validation of the startup options and logs the results.

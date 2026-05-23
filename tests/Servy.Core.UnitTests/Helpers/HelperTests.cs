@@ -345,9 +345,24 @@ namespace Servy.Core.UnitTests.Helpers
         /// </summary>
         [Theory]
         [InlineData(" MyService")] // Leading space
+        [InlineData("  MyService")] // Both
+        public void IsServiceNameValid_UntrimmedLeadingWhitespace_ReturnsTrimError(string input)
+        {
+            // Act
+            var (isValid, error) = Helper.IsServiceNameValid(input);
+
+            // Assert
+            Assert.False(isValid);
+            Assert.Equal(Strings.Msg_ServiceNameContainsLeadingWhitespace, error);
+        }
+
+        /// <summary>
+        /// Covers Branch 2: serviceName != serviceName.Trim()
+        /// </summary>
+        [Theory]
         [InlineData("MyService ")] // Trailing space
-        [InlineData(" MyService ")] // Both
-        public void IsServiceNameValid_UntrimmedWhitespace_ReturnsTrimError(string input)
+        [InlineData("MyService  ")] // Both
+        public void IsServiceNameValid_UntrimmedTrailingWhitespace_ReturnsTrimError(string input)
         {
             // Act
             var (isValid, error) = Helper.IsServiceNameValid(input);

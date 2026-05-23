@@ -1,10 +1,9 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
-using Servy.Core.Validators;
 using System.Text;
 
-namespace Servy.Core.Services
+namespace Servy.Core.Validators
 {
     /// <summary>
     /// Provides a common base class for validating imported service definitions.
@@ -70,7 +69,10 @@ namespace Servy.Core.Services
             {
                 dto = Parse(content);
             }
-            catch (TException ex)
+            // ROBUSTNESS FIX: Match the specific structural exception type or an InvalidOperationException 
+            // that encapsulates the structural exception as an InnerException (common with XmlSerializer).
+            // This prevents the first catch from consuming unrelated exceptions when TException is narrowed.
+            catch (Exception ex) when (ex is TException || (ex is InvalidOperationException && ex.InnerException is TException))
             {
                 errorMessage = $"Invalid {FormatName} structure: {ex.Message}";
                 Logger.Error($"{FormatName} parsing error during import", ex);

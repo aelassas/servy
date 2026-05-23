@@ -178,9 +178,22 @@ namespace Servy.Infrastructure.Data
 
                 foreach (var col in missing)
                 {
+                    string baseDefinition = GetSqlType(col); // e.g., "TEXT NOT NULL" or "INTEGER NOT NULL DEFAULT 0"
+
+                    // ROBUSTNESS: Handle the SQLite ALTER TABLE NOT NULL constraint restriction.
+                    // SQLite prohibits adding a NOT NULL column without a default value constraint to an existing table.
+                    // If 'NOT NULL' is present but 'DEFAULT' is absent, append an intuitive type-safe default mapping.
+                    if (baseDefinition.IndexOf("NOT NULL", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                        baseDefinition.IndexOf("DEFAULT", StringComparison.OrdinalIgnoreCase) < 0)
+                    {
+                        string affinityToken = baseDefinition.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+                        string inferredDefault = string.Equals(affinityToken, "TEXT", StringComparison.OrdinalIgnoreCase) ? "DEFAULT ''" : "DEFAULT 0";
+                        baseDefinition = $"{baseDefinition} {inferredDefault}";
+                    }
+
                     // Core keys shouldn't hit this path dynamically, but we use GetSqlType for standard columns
-                    connection.Execute($"ALTER TABLE Services ADD COLUMN {col} {GetSqlType(col)};", transaction: transaction);
-                    Logger.Info($"Self-healed column: {col}");
+                    connection.Execute($"ALTER TABLE Services ADD COLUMN {col} {baseDefinition};", transaction: transaction);
+                    Logger.Info($"Self-healed column: {col} with schema context '{baseDefinition}'");
                 }
             }
 
@@ -206,13 +219,17 @@ namespace Servy.Infrastructure.Data
                 // Only check types for columns managed by GetSqlType (StandardColumns)
                 if (expectedColumns.Contains(colName) && !coreKeys.Contains(colName, StringComparer.OrdinalIgnoreCase))
                 {
-                    string expectedFullType = GetSqlType(colName); // e.g., "TEXT NOT NULL"
+                    string expectedFullType = GetSqlType(colName); // e.g., "TEXT NOT NULL" or "INTEGER DEFAULT 0"
 
                     // Parse the expected base type and nullability
                     bool expectedNotNull = expectedFullType.IndexOf("NOT NULL", StringComparison.OrdinalIgnoreCase) >= 0;
-                    string expectedBaseType = Regex.Replace(expectedFullType, "NOT NULL", "", RegexOptions.IgnoreCase).Trim();
 
-                    if (!string.Equals(dbBaseType, expectedBaseType, StringComparison.OrdinalIgnoreCase) || dbNotNull != expectedNotNull)
+                    // ROBUSTNESS: Isolate the core data type affinity token from complex metadata extensions (DEFAULT, CHECK, COLLATE, etc.)
+                    // PRAGMA table_info().type only returns the bare data type descriptor (e.g. "TEXT", "INTEGER").
+                    // Extracting the first whitespace-delimited word prevents false-positive warnings.
+                    string expectedAffinity = expectedFullType.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+
+                    if (!string.Equals(dbBaseType, expectedAffinity, StringComparison.OrdinalIgnoreCase) || dbNotNull != expectedNotNull)
                     {
                         // Reconstruct the actual DB state for a clear log message
                         string actualDbDesc = $"{dbBaseType}{(dbNotNull ? " NOT NULL" : "")}";

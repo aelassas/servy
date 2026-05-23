@@ -601,7 +601,16 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service name cannot have leading or trailing whitespace..
+        ///   Recherche une chaîne localisée semblable à Service name cannot have leading whitespace..
+        /// </summary>
+        public static string Msg_ServiceNameContainsLeadingWhitespace {
+            get {
+                return ResourceManager.GetString("Msg_ServiceNameContainsLeadingWhitespace", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service name cannot have trailing whitespace..
         /// </summary>
         public static string Msg_ServiceNameContainsTrailingWhitespace {
             get {

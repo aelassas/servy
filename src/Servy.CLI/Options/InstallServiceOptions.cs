@@ -149,7 +149,7 @@ namespace Servy.CLI.Options
         /// Gets or sets a value indicating whether to use local system time for log rotation.
         /// </summary>
         /// <remarks>
-        /// <para>Default is <see cref="Constants.DefaultUseLocalTimeForRotation"/> (<c>false</c>).</para>
+        /// <para>Default is <see cref="AppConfig.DefaultUseLocalTimeForRotation"/> (<c>false</c>).</para>
         /// <para>When <c>true</c>, rotation occurs at local midnight. When <c>false</c>, rotation occurs at UTC midnight.</para>
         /// </remarks>
         [Option("useLocalTimeForRotation", HelpText = "Use local server time for log rotation instead of UTC. Default is false.")]

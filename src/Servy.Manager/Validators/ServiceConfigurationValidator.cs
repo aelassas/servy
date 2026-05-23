@@ -36,7 +36,7 @@ namespace Servy.Manager.Validators
         /// </returns>
         /// <remarks>
         /// This implementation follows a fail-fast approach, showing only the first identified 
-        /// warning or error to prevent overwhelming the user with multiple dialog boxes.
+        /// error to prevent overwhelming the user with multiple dialog boxes.
         /// </remarks>
         public async Task<bool> Validate(ServiceDto dto)
         {

@@ -456,6 +456,11 @@ namespace Servy.Services
                     return false;
                 }
             }
+            catch (UnauthorizedAccessException)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
+                return false;
+            }
             catch (Exception ex)
             {
                 Logger.Error(UnexpectedError, ex);

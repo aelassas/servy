@@ -21,7 +21,10 @@
     <value>Please fill in all required fields.</value>
   </data>
   <data name="Msg_ServiceNameContainsTrailingWhitespace" xml:space="preserve">
-    <value>Service name cannot have leading or trailing whitespace.</value>
+    <value>Service name cannot have trailing whitespace.</value>
+  </data>
+  <data name="Msg_ServiceNameContainsLeadingWhitespace" xml:space="preserve">
+    <value>Service name cannot have leading whitespace.</value>
   </data>
   <data name="Msg_ServiceNameTooLong" xml:space="preserve">
     <value>The service name is too long. It must be 256 characters or fewer.</value>

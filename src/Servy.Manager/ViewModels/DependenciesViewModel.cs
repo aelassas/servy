@@ -55,7 +55,7 @@ namespace Servy.Manager.ViewModels
 
                 CopyPidCommand?.RaiseCanExecuteChanged();
 
-                StopMonitoring(false); // Pass false so we don't clear the zeros we just added
+                StopMonitoring(clearView: false); // We have already reset our own view state above; skip the base class OnMonitoringStopped callback.
                 StartMonitoring();
             }
         }
