@@ -48,7 +48,7 @@ namespace Servy.Service.UnitTests.Helpers
             // Assert
             // 1. Verify the logger received the info message.
             mockLog.Verify(l => l.Info(It.Is<string>(s =>
-                s.IndexOf("Startup Parameters", StringComparison.OrdinalIgnoreCase) > -1), It.IsAny<Exception>()),
+                s.IndexOf("Startup Parameters", StringComparison.OrdinalIgnoreCase) >= 0), It.IsAny<Exception>()),
                 Times.Once);
 
             // 2. Verify that specific public data fields exist in that log string

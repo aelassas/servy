@@ -720,7 +720,7 @@ namespace Servy.Service
             int resetThresholdSeconds = detectionWindowSeconds + bufferSeconds;
 
             // Cap at 1 hour (the cap excludes the pre-launch budget), but ensure we always wait at least one full detection cycle
-            resetThresholdSeconds = Math.Max(Math.Min(resetThresholdSeconds, 3600), detectionWindowSeconds);
+            resetThresholdSeconds = Math.Max(Math.Min(resetThresholdSeconds, AppConfig.ConditionalResetMaxThresholdSeconds), detectionWindowSeconds);
 
             if (_preLaunchEnabled)
             {
@@ -789,7 +789,7 @@ namespace Servy.Service
                 ExecutablePath = options.PreLaunchExecutablePath,
                 Arguments = args,
                 WorkingDirectory = workingDir,
-                EnvironmentVariables = options.PreLaunchEnvironmentVariables ?? new List<EnvironmentVariable>(),
+                EnvironmentVariables = vars,
                 WaitChunkMs = _waitChunkMs,
                 ScmAdditionalTimeMs = _scmAdditionalTimeMs,
                 OnScmHeartbeat = new Action<int>((time) => _serviceHelper.RequestAdditionalTime(this, time, _logger)),
@@ -1330,7 +1330,8 @@ namespace Servy.Service
                 // 1. Prepare Environment and Arguments
                 var (_, args) = ExpandAndAudit(
                     _options.EnvironmentVariables,
-                    _options.FailureProgramArgs ?? string.Empty
+                    _options.FailureProgramArgs ?? string.Empty,
+                    "Failure-Program"
                     );
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.FailureProgramWorkingDirectory)

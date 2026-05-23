@@ -1019,6 +1019,12 @@ namespace Servy.Core.Config
         /// </summary>
         public const int WriteFileAtomicMaxPathLength = 259;
 
+        /// <summary>
+        /// Absolute cap (in seconds) on the stability window used by ConditionalResetRestartAttempts
+        /// before the persistent restart-attempts counter is reset. Excludes the pre-launch budget.
+        /// </summary>
+        public const int ConditionalResetMaxThresholdSeconds = 3600;
+
         #endregion
 
         #region Manager Configuration Bounds

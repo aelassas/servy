@@ -293,7 +293,7 @@ namespace Servy.Core.Services
                     var dto = new ServiceDto
                     {
                         Name = options.ServiceName,
-                        DisplayName = displayName,
+                        DisplayName = !string.IsNullOrWhiteSpace(options.DisplayName) ? displayName : null,
                         Description = options.Description,
                         ExecutablePath = options.RealExePath,
                         StartupDirectory = options.WorkingDirectory,
@@ -475,7 +475,7 @@ namespace Servy.Core.Services
 
                             cancellationToken.ThrowIfCancellationRequested();
                             await _serviceRepository.UpsertAsync(
-                                dto, 
+                                dto,
                                 preserveExistingRuntimeState: true,
                                 preserveExistingCredentials: false,
                                 cancellationToken);

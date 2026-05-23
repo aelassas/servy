@@ -213,7 +213,7 @@ namespace Servy.Service.Helpers
                 // our multi-pass custom expansion. 
                 // The final pass of 'Environment.ExpandEnvironmentVariables' will 
                 // correctly resolve these using the actual system-level values.
-                if (replacement.IndexOf(token, StringComparison.OrdinalIgnoreCase) > -1)
+                if (replacement.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     continue;
                 }
