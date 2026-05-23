@@ -194,33 +194,25 @@ function Format-SecureLogMessage {
   # Breakdown:
   # (?i)                                   : Case-insensitive evaluation
   # (--(?:...)[=\s]+)                      : Group $1 -> Matches the flag (e.g., --service-name= or --priority )
-  # ( "(?:[^"\\]|\\.)*" | '[^']*' | \S+ )  : Group $2 -> Matches the value safely.
-  #                                          The double-quoted option explicitly matches an escaped char
-  #                                          (\\.) OR any non-quote/non-backslash character ([^"\\]), 
-  #                                          preventing premature termination on internal Win32 escaped quotes (\").
   $fieldsRegex = $sensitiveFields -join '|'
   
-  # Upgraded layout to capture the quote style dynamically within Group 2 or Group 3
-  $pattern = '(?i)(--(?:' + $fieldsRegex + ')[=\s]+)(?:"((?:[^"\\]|\\.)*)"|''([^'']*)''|(\S+))'
+  # ROBUSTNESS: PowerShell 2.0 cannot implicitly cast a ScriptBlock to a MatchEvaluator.
+  # To guarantee backwards compatibility across legacy server environments, the scrubbing 
+  # process is split into three discrete string-replacement passes.
 
-  # Process the match replacements by wrapping masked elements back up in their original delimiters
-  return [regex]::Replace($Text, $pattern, {
-      param($match)
-      $flagPrefix = $match.Groups[1].Value
-      
-      if ($match.Groups[2].Success) {
-          # Preserves original double quote boundary format
-          return $flagPrefix + '"***"'
-      }
-      elseif ($match.Groups[3].Success) {
-          # Preserves original single quote boundary format
-          return $flagPrefix + "'***'"
-      }
-      else {
-          # Fallback standard design wrapper for unquoted positional string logs
-          return $flagPrefix + '"***"'
-      }
-  })
+  # 1. Double-quoted values (safely matching escaped internal quotes: \")
+  $patternDouble = '(?i)(--(?:' + $fieldsRegex + ')[=\s]+)"(?:[^"\\]|\\.)*"'
+  $Text = [regex]::Replace($Text, $patternDouble, '$1"***"')
+
+  # 2. Single-quoted values
+  $patternSingle = '(?i)(--(?:' + $fieldsRegex + ')[=\s]+)''[^'']*'''
+  $Text = [regex]::Replace($Text, $patternSingle, '$1''***''')
+
+  # 3. Unquoted positional values (using negative lookahead to prevent matching quote boundaries)
+  $patternUnquoted = '(?i)(--(?:' + $fieldsRegex + ')[=\s]+)(?![''"])\S+'
+  $Text = [regex]::Replace($Text, $patternUnquoted, '$1"***"')
+
+  return $Text
 }
 
 function Invoke-ServyCli {
