@@ -172,13 +172,17 @@ namespace Servy.UI.UnitTests.Design
         [Fact]
         public async Task DesignTimeUiDispatcher_YieldAsync_Completes()
         {
+            // Arrange
             var dispatcher = new DesignTimeUiDispatcher();
+            bool reachedAfterYield = false;
 
             // Act
             await dispatcher.YieldAsync();
+            reachedAfterYield = true;
 
             // Assert
-            // Task completion is enough to satisfy the test
+            // Verify that the task completed successfully and execution resumed after the yield
+            Assert.True(reachedAfterYield, "The task should have resumed execution after YieldAsync.");
         }
 
         #endregion

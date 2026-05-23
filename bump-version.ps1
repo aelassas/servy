@@ -138,10 +138,10 @@ Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction Silen
 
             # Case-insensitive pattern for [assembly: AssemblyVersion("...")]
             $pattern = "(\[assembly:\s*$tag\(\"")[^""]*(\""\)\])"
-            $matches = [regex]::Matches($content, $pattern, "IgnoreCase")
+            $regexMatches = [regex]::Matches($content, $pattern, "IgnoreCase")
 
-            if ($matches.Count -gt 0) {
-                $totalReplacements += $matches.Count
+            if ($regexMatches.Count -gt 0) {
+                $totalReplacements += $regexMatches.Count
                 $content = [regex]::Replace($content, $pattern, { 
                     param($m) "$($m.Groups[1].Value)$replacementValue$($m.Groups[2].Value)" 
                 }, "IgnoreCase")

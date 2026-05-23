@@ -1,6 +1,5 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Data;
-using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Resources;
@@ -35,8 +34,6 @@ namespace Servy.UI.Bootstrapping
         #region Private Static Fields
 
         private static readonly object _errorDialogLock = new object();
-        private static DateTime _lastErrorDialogShown = DateTime.MinValue;
-        private static string _lastErrorDialogMessage = string.Empty;
 
         #endregion
 
@@ -50,6 +47,8 @@ namespace Servy.UI.Bootstrapping
         private FileSystemEventHandler _availabilityChangedHandler;
         private RenamedEventHandler _availabilityRenamedHandler;
         private readonly CancellationTokenSource _appLifetimeCts = new CancellationTokenSource();
+        private DateTime _lastErrorDialogShown = DateTime.MinValue;
+        private string _lastErrorDialogMessage = string.Empty;
 
         #endregion
 

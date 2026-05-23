@@ -20,8 +20,7 @@ namespace Servy.UI.Converters
         /// <returns>The inverted boolean value if <paramref name="value"/> is a bool; otherwise <c>true</c>.</returns>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is bool b)
-                return !b;
+            if (value is bool b) return !b;
             return true;
         }
 

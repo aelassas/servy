@@ -122,11 +122,18 @@ namespace Servy.UI.UnitTests.Commands
         [Fact]
         public void RaiseCanExecuteChanged_InvokesCommandManager()
         {
-            // This verifies the method can be called without crashing. 
-            // Verifying CommandManager.InvalidateRequerySuggested 
-            // usually requires an STA thread and a Dispatcher.
+            // Arrange
             var command = new AsyncCommand(_ => Task.CompletedTask);
-            command.RaiseCanExecuteChanged();
+
+            // Act
+            // Capture any potential exceptions thrown by environmental mismatches 
+            // or underlying CommandManager synchronization dependencies.
+            var exception = Record.Exception(() => command.RaiseCanExecuteChanged());
+
+            // Assert
+            // This verifies that the execution pipeline is completely safe to call 
+            // from standard threads, preventing regression crashes in background workers.
+            Assert.Null(exception);
         }
     }
 }

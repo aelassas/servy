@@ -168,8 +168,8 @@ namespace Servy.UI.Design
     public class DesignTimeHelpService : IHelpService
     {
         // Standard void no-ops
-        public void OpenDocumentation() { }
-        public void OpenAboutDialog() { }
+        public void OpenDocumentation() { /* no-op */ }
+        public void OpenAboutDialog() { /* no-op */ }
 
         // Standard Task no-ops
         public Task CheckUpdatesAsync() => Task.CompletedTask;
@@ -264,12 +264,12 @@ namespace Servy.UI.Design
         /// <summary>
         /// No-op implementation for the designer.
         /// </summary>
-        public void ResetCursor() { }
+        public void ResetCursor() { /* no-op */ }
 
         /// <summary>
         /// Returns a dummy disposable to satisfy 'using' blocks in ViewModels.
         /// </summary>
-        public void SetWaitCursor() { }
+        public void SetWaitCursor() { /* no-op */ }
 
         private class NoOpDisposable : IDisposable
         {

@@ -103,11 +103,6 @@ namespace Servy.CLI
 
                     args[0] = args[0].ToLowerInvariant();
 
-                    var isInteractive = Environment.UserInteractive;
-                    var isRedirected = Console.IsOutputRedirected;
-                    bool canAccessHeight = false;
-                    try { canAccessHeight = Console.WindowHeight > 0; } catch { }
-
                     var quiet = args.Any(a => a.Equals("--quiet", StringComparison.OrdinalIgnoreCase) || a.Equals("-q", StringComparison.OrdinalIgnoreCase))
                         || !IsRealConsole();
 
