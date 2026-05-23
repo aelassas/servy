@@ -328,8 +328,8 @@ namespace Servy.Manager.Utils
                         int toRead = (int)Math.Min(pos, buffer.Length);
                         pos -= toRead;
                         fs.Seek(pos, SeekOrigin.Begin);
-                        fs.Read(buffer, 0, toRead);
-                        for (int i = toRead - 1; i >= 0; i--)
+                        int bytesRead = fs.Read(buffer, 0, toRead);
+                        for (int i = bytesRead - 1; i >= 0; i--)
                         {
                             if (buffer[i] == (byte)'\n')
                             {

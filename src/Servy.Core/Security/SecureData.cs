@@ -107,7 +107,6 @@ namespace Servy.Core.Security
             if (plainText.Length == 0) throw new ArgumentException("Cannot encrypt empty string.", nameof(plainText));
 
             byte[] plainBytes = null;
-            byte[] binaryPayload = null;
 
             try
             {
@@ -174,8 +173,6 @@ namespace Servy.Core.Security
                 // SECURITY HYGIENE: Wipe sensitive buffers from the heap immediately after use
                 // plainBytes contains sensitive text; binaryPayload contains the IV and Ciphertext
                 if (plainBytes != null) Array.Clear(plainBytes, 0, plainBytes.Length);
-
-                if (binaryPayload != null) Array.Clear(binaryPayload, 0, binaryPayload.Length);
             }
         }
 
