@@ -3,6 +3,7 @@ using Servy.Manager.Models;
 using Servy.Manager.ViewModels;
 using Servy.UI.Helpers;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -158,12 +159,29 @@ namespace Servy.Manager.Views
         {
             var selected = LogList.SelectedItems
                                   .OfType<LogLine>()
-                                  .Select(l => l.Text);
+                                  .Select(l => l.Text)
+                                  .ToList();
 
             if (!selected.Any())
                 return;
 
-            Clipboard.SetText(string.Join(Environment.NewLine, selected));
+            var text = string.Join(Environment.NewLine, selected);
+
+            for (int i = 0; i < Core.Config.AppConfig.ClipboardComMaxRetries; i++)
+            {
+                try
+                {
+                    Clipboard.SetText(text);
+                    return;
+                }
+                catch (COMException) { /* clipboard locked */ }
+                catch (ExternalException) { /* generic Win32 failure */ }
+
+                if (i < Core.Config.AppConfig.ClipboardComMaxRetries - 1)
+                    Thread.Sleep(Core.Config.AppConfig.ClipboardComRetryDelayMs);
+            }
+
+            Logger.Warn($"Failed to copy {selected.Count} log line(s) to clipboard after {Core.Config.AppConfig.ClipboardComMaxRetries} attempts.");
         }
 
         /// <summary>

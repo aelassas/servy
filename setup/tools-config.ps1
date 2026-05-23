@@ -41,11 +41,10 @@ function Resolve-Tool {
         Write-Warning "$envVarName is set to '$envPath' but the file does not exist; ignoring."
     }
 
-    # 2. Check System PATH
-    $cmd = Get-Command $Name -ErrorAction SilentlyContinue
+    # 2. Check System PATH (Application only - avoid alias/function/script shadowing)
+    $cmd = Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue
     if ($cmd) { 
-        # .Definition returns the path for Application types and the command text for others
-        return $cmd.Definition 
+        return $cmd.Source   # Source is the canonical path property for Application commands
     }
 
     # 3. Check Fallbacks

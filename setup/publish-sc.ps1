@@ -175,6 +175,7 @@ try {
 }
 catch {
     Write-Error "Packaging failed: $_"
+    exit 1
 }
 finally {
     # ALWAYS clean up the temporary workspace folder, even on failure
