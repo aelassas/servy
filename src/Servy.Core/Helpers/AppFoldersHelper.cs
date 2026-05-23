@@ -124,10 +124,12 @@ namespace Servy.Core.Helpers
                 .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) 
                 + Path.DirectorySeparatorChar;
 
+            var canonicalRoot = Path.GetFullPath(AppConfig.ProgramDataPath);
+
             foreach (var folder in subFolders)
             {
                 // Skip if it exactly matches the root we just secured
-                if (folder.Equals(AppConfig.ProgramDataPath, StringComparison.OrdinalIgnoreCase))
+                if (folder.Equals(canonicalRoot, StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 // If a folder is nested inside the master vault, we KEEP inheritance so custom service accounts cascade down.

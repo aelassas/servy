@@ -257,7 +257,7 @@ namespace Servy.Manager.ViewModels
                 {
                     if (_hadSelectedService)
                     {
-                        ResetConsole(true);
+                        ResetConsole();
                         _hadSelectedService = false;
                         CopyPidCommand?.RaiseCanExecuteChanged();
                     }
@@ -273,7 +273,7 @@ namespace Servy.Manager.ViewModels
 
                 if (stateSnapshot?.Pid == null)
                 {
-                    ResetConsole(true);
+                    ResetConsole();
                     if (currentSelection != null)
                     {
                         currentSelection.Pid = null;
@@ -505,15 +505,11 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Clears the console buffers and resets UI labels.
         /// </summary>
-        /// <param name="resetLabels">If true, sets the PID display to N/A.</param>
-        private void ResetConsole(bool resetLabels)
+        private void ResetConsole()
         {
-            if (resetLabels)
-            {
-                Pid = UiConstants.NotAvailable;
-                _stdoutPath = null; // Clear these so Resume doesn't re-trigger
-                _stderrPath = null;
-            }
+            Pid = UiConstants.NotAvailable;
+            _stdoutPath = null; // Clear these so Resume doesn't re-trigger
+            _stderrPath = null;
 
             _ = SwitchServiceAsync(string.Empty, string.Empty);
         }
@@ -621,7 +617,7 @@ namespace Servy.Manager.ViewModels
         {
             // Resets the console history and UI labels as required by 
             // the console-specific implementation.
-            ResetConsole(true);
+            ResetConsole();
         }
 
         /// <summary>

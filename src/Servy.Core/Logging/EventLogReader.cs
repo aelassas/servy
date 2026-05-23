@@ -84,9 +84,10 @@ namespace Servy.Core.Logging
         /// Defaults to <see cref="EventLogLevel.Information"/> if the level is unknown.
         /// </returns>
         /// <remarks>
-        /// This method preserves the fidelity of Windows Event Log levels. 
-        /// High-severity 'Critical' events and low-severity 'Verbose' events are mapped 
-        /// explicitly to prevent information loss during DTO conversion.
+        /// Maps Windows Event Log levels into the application's <see cref="EventLogLevel"/> taxonomy.
+        /// Note: Critical (level 1) is intentionally folded into <see cref="EventLogLevel.Error"/>
+        /// because the consuming filter contract (see LogsViewModel.GetLogLevels) does not surface
+        /// a distinct Critical bucket. Verbose is preserved.
         /// </remarks>
         public static EventLogLevel ParseLevel(byte level)
         {

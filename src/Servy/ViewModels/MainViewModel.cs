@@ -71,7 +71,7 @@ namespace Servy.ViewModels
         public bool IsBusy
         {
             get => _isBusy;
-            set { _isBusy = value; OnPropertyChanged(); }
+            set => Set(() => _isBusy, v => _isBusy = v, value);
         }
 
         /// <summary>
@@ -81,14 +81,7 @@ namespace Servy.ViewModels
         public string? ServiceName
         {
             get => _config.Name;
-            set
-            {
-                if (_config.Name != value)
-                {
-                    _config.Name = value;
-                    OnPropertyChanged();
-                }
-            }
+            set => Set(() => _config.Name, v => _config.Name = v, value);
         }
 
         /// <summary>
@@ -97,14 +90,7 @@ namespace Servy.ViewModels
         public string? ServiceDisplayName
         {
             get => _config.DisplayName;
-            set
-            {
-                if (_config.DisplayName != value)
-                {
-                    _config.DisplayName = value;
-                    OnPropertyChanged();
-                }
-            }
+            set => Set(() => _config.DisplayName, v => _config.DisplayName = v, value);
         }
 
         /// <summary>
@@ -113,7 +99,7 @@ namespace Servy.ViewModels
         public string? ServiceDescription
         {
             get => _config.Description;
-            set { _config.Description = value; OnPropertyChanged(); }
+            set => Set(() => _config.Description, v => _config.Description = v, value);
         }
 
         /// <summary>
@@ -122,7 +108,7 @@ namespace Servy.ViewModels
         public string? ProcessPath
         {
             get => _config.ExecutablePath;
-            set { _config.ExecutablePath = value; OnPropertyChanged(); }
+            set => Set(() => _config.ExecutablePath, v => _config.ExecutablePath = v, value);
         }
 
         /// <summary>
@@ -131,7 +117,7 @@ namespace Servy.ViewModels
         public string? StartupDirectory
         {
             get => _config.StartupDirectory;
-            set { _config.StartupDirectory = value; OnPropertyChanged(); }
+            set => Set(() => _config.StartupDirectory, v => _config.StartupDirectory = v, value);
         }
 
         /// <summary>
@@ -140,7 +126,7 @@ namespace Servy.ViewModels
         public string? ProcessParameters
         {
             get => _config.Parameters;
-            set { _config.Parameters = value; OnPropertyChanged(); }
+            set => Set(() => _config.Parameters, v => _config.Parameters = v, value);
         }
 
         /// <summary>
@@ -149,7 +135,7 @@ namespace Servy.ViewModels
         public ServiceStartType SelectedStartupType
         {
             get => _config.StartupType;
-            set { _config.StartupType = value; OnPropertyChanged(); }
+            set => Set(() => _config.StartupType, v => _config.StartupType = v, value);
         }
 
         /// <summary>
@@ -158,7 +144,7 @@ namespace Servy.ViewModels
         public ProcessPriority SelectedProcessPriority
         {
             get => _config.Priority;
-            set { _config.Priority = value; OnPropertyChanged(); }
+            set => Set(() => _config.Priority, v => _config.Priority = v, value);
         }
 
         /// <summary>
@@ -167,7 +153,7 @@ namespace Servy.ViewModels
         public bool EnableConsoleUI
         {
             get => _config.EnableConsoleUI;
-            set { _config.EnableConsoleUI = value; OnPropertyChanged(); }
+            set => Set(() => _config.EnableConsoleUI, v => _config.EnableConsoleUI = v, value);
         }
 
         /// <summary>
@@ -200,7 +186,7 @@ namespace Servy.ViewModels
         public string? StdoutPath
         {
             get => _config.StdoutPath;
-            set { _config.StdoutPath = value; OnPropertyChanged(); }
+            set => Set(() => _config.StdoutPath, v => _config.StdoutPath = v, value);
         }
 
         /// <summary>
@@ -209,7 +195,7 @@ namespace Servy.ViewModels
         public string? StderrPath
         {
             get => _config.StderrPath;
-            set { _config.StderrPath = value; OnPropertyChanged(); }
+            set => Set(() => _config.StderrPath, v => _config.StderrPath = v, value);
         }
 
         /// <summary>
@@ -218,7 +204,7 @@ namespace Servy.ViewModels
         public string? StartTimeout
         {
             get => _config.StartTimeout;
-            set { _config.StartTimeout = value; OnPropertyChanged(); }
+            set => Set(() => _config.StartTimeout, v => _config.StartTimeout = v, value);
         }
 
         /// <summary>
@@ -227,7 +213,7 @@ namespace Servy.ViewModels
         public string? StopTimeout
         {
             get => _config.StopTimeout;
-            set { _config.StopTimeout = value; OnPropertyChanged(); }
+            set => Set(() => _config.StopTimeout, v => _config.StopTimeout = v, value);
         }
 
         /// <summary>
@@ -238,9 +224,10 @@ namespace Servy.ViewModels
             get => _config.EnableSizeRotation;
             set
             {
-                _config.EnableSizeRotation = value;
-                OnPropertyChanged(nameof(EnableSizeRotation));
-                OnPropertyChanged(nameof(EnableRotation));
+                if (Set(() => _config.EnableSizeRotation, v => _config.EnableSizeRotation = v, value))
+                {
+                    OnPropertyChanged(nameof(EnableRotation));
+                }
             }
         }
 
@@ -250,7 +237,7 @@ namespace Servy.ViewModels
         public string? RotationSize
         {
             get => _config.RotationSize;
-            set { _config.RotationSize = value; OnPropertyChanged(); }
+            set => Set(() => _config.RotationSize, v => _config.RotationSize = v, value);
         }
 
         /// <summary>
@@ -261,9 +248,10 @@ namespace Servy.ViewModels
             get => _config.EnableDateRotation;
             set
             {
-                _config.EnableDateRotation = value;
-                OnPropertyChanged(nameof(EnableDateRotation));
-                OnPropertyChanged(nameof(EnableRotation));
+                if (Set(() => _config.EnableDateRotation, v => _config.EnableDateRotation = v, value))
+                {
+                    OnPropertyChanged(nameof(EnableRotation));
+                }
             }
         }
 
@@ -278,7 +266,7 @@ namespace Servy.ViewModels
         public DateRotationType SelectedDateRotationType
         {
             get => _config.DateRotationType;
-            set { _config.DateRotationType = value; OnPropertyChanged(); }
+            set => Set(() => _config.DateRotationType, v => _config.DateRotationType = v, value);
         }
 
         /// <summary>
@@ -298,7 +286,7 @@ namespace Servy.ViewModels
         public string? MaxRotations
         {
             get => _config.MaxRotations;
-            set { _config.MaxRotations = value; OnPropertyChanged(); }
+            set => Set(() => _config.MaxRotations, v => _config.MaxRotations = v, value);
         }
 
         /// <summary>
@@ -314,11 +302,7 @@ namespace Servy.ViewModels
         public bool UseLocalTimeForRotation
         {
             get => _config.UseLocalTimeForRotation;
-            set
-            {
-                _config.UseLocalTimeForRotation = value;
-                OnPropertyChanged(nameof(UseLocalTimeForRotation));
-            }
+            set => Set(() => _config.UseLocalTimeForRotation, v => _config.UseLocalTimeForRotation = v, value);
         }
 
         /// <summary>
@@ -327,7 +311,7 @@ namespace Servy.ViewModels
         public bool EnableHealthMonitoring
         {
             get => _config.EnableHealthMonitoring;
-            set { _config.EnableHealthMonitoring = value; OnPropertyChanged(); }
+            set => Set(() => _config.EnableHealthMonitoring, v => _config.EnableHealthMonitoring = v, value);
         }
 
         /// <summary>
@@ -336,7 +320,7 @@ namespace Servy.ViewModels
         public string? HeartbeatInterval
         {
             get => _config.HeartbeatInterval;
-            set { _config.HeartbeatInterval = value; OnPropertyChanged(); }
+            set => Set(() => _config.HeartbeatInterval, v => _config.HeartbeatInterval = v, value);
         }
 
         /// <summary>
@@ -345,7 +329,7 @@ namespace Servy.ViewModels
         public string? MaxFailedChecks
         {
             get => _config.MaxFailedChecks;
-            set { _config.MaxFailedChecks = value; OnPropertyChanged(); }
+            set => Set(() => _config.MaxFailedChecks, v => _config.MaxFailedChecks = v, value);
         }
 
         /// <summary>
@@ -354,7 +338,7 @@ namespace Servy.ViewModels
         public RecoveryAction SelectedRecoveryAction
         {
             get => _config.RecoveryAction;
-            set { _config.RecoveryAction = value; OnPropertyChanged(); }
+            set => Set(() => _config.RecoveryAction, v => _config.RecoveryAction = v, value);
         }
 
         /// <summary>
@@ -363,7 +347,7 @@ namespace Servy.ViewModels
         public bool RecoveryOnCleanExit
         {
             get => _config.RecoveryOnCleanExit;
-            set { _config.RecoveryOnCleanExit = value; OnPropertyChanged(); }
+            set => Set(() => _config.RecoveryOnCleanExit, v => _config.RecoveryOnCleanExit = v, value);
         }
 
         /// <summary>
@@ -383,7 +367,7 @@ namespace Servy.ViewModels
         public string? MaxRestartAttempts
         {
             get => _config.MaxRestartAttempts;
-            set { _config.MaxRestartAttempts = value; OnPropertyChanged(); }
+            set => Set(() => _config.MaxRestartAttempts, v => _config.MaxRestartAttempts = v, value);
         }
 
         /// <summary>
@@ -392,7 +376,7 @@ namespace Servy.ViewModels
         public string? FailureProgramPath
         {
             get => _config.FailureProgramPath;
-            set { _config.FailureProgramPath = value; OnPropertyChanged(); }
+            set => Set(() => _config.FailureProgramPath, v => _config.FailureProgramPath = v, value);
         }
 
         /// <summary>
@@ -401,7 +385,7 @@ namespace Servy.ViewModels
         public string? FailureProgramStartupDirectory
         {
             get => _config.FailureProgramStartupDirectory;
-            set { _config.FailureProgramStartupDirectory = value; OnPropertyChanged(); }
+            set => Set(() => _config.FailureProgramStartupDirectory, v => _config.FailureProgramStartupDirectory = v, value);
         }
 
         /// <summary>
@@ -410,7 +394,7 @@ namespace Servy.ViewModels
         public string? FailureProgramParameters
         {
             get => _config.FailureProgramParameters;
-            set { _config.FailureProgramParameters = value; OnPropertyChanged(); }
+            set => Set(() => _config.FailureProgramParameters, v => _config.FailureProgramParameters = v, value);
         }
 
         /// <summary>
@@ -419,7 +403,7 @@ namespace Servy.ViewModels
         public string? EnvironmentVariables
         {
             get => _config.EnvironmentVariables;
-            set { _config.EnvironmentVariables = value; OnPropertyChanged(); }
+            set => Set(() => _config.EnvironmentVariables, v => _config.EnvironmentVariables = v, value);
         }
 
         /// <summary>
@@ -428,7 +412,7 @@ namespace Servy.ViewModels
         public string? ServiceDependencies
         {
             get => _config.ServiceDependencies;
-            set { _config.ServiceDependencies = value; OnPropertyChanged(); }
+            set => Set(() => _config.ServiceDependencies, v => _config.ServiceDependencies = v, value);
         }
 
         /// <summary>
@@ -437,7 +421,7 @@ namespace Servy.ViewModels
         public bool RunAsLocalSystem
         {
             get => _config.RunAsLocalSystem;
-            set { _config.RunAsLocalSystem = value; OnPropertyChanged(); }
+            set => Set(() => _config.RunAsLocalSystem, v => _config.RunAsLocalSystem = v, value);
         }
 
         /// <summary>
@@ -446,7 +430,7 @@ namespace Servy.ViewModels
         public string? UserAccount
         {
             get => _config.UserAccount;
-            set { _config.UserAccount = value; OnPropertyChanged(); }
+            set => Set(() => _config.UserAccount, v => _config.UserAccount = v, value);
         }
 
         /// <summary>
@@ -455,7 +439,7 @@ namespace Servy.ViewModels
         public string? Password
         {
             get => _config.Password;
-            set { _config.Password = value; OnPropertyChanged(); }
+            set => Set(() => _config.Password, v => _config.Password = v, value);
         }
 
         /// <summary>
@@ -464,7 +448,7 @@ namespace Servy.ViewModels
         public string? ConfirmPassword
         {
             get => _config.ConfirmPassword;
-            set { _config.ConfirmPassword = value; OnPropertyChanged(); }
+            set => Set(() => _config.ConfirmPassword, v => _config.ConfirmPassword = v, value);
         }
 
         /// <summary>
@@ -473,7 +457,7 @@ namespace Servy.ViewModels
         public string? PreLaunchExecutablePath
         {
             get => _config.PreLaunchExecutablePath;
-            set { _config.PreLaunchExecutablePath = value; OnPropertyChanged(); }
+            set => Set(() => _config.PreLaunchExecutablePath, v => _config.PreLaunchExecutablePath = v, value);
         }
 
         /// <summary>
@@ -482,7 +466,7 @@ namespace Servy.ViewModels
         public string? PreLaunchStartupDirectory
         {
             get => _config.PreLaunchStartupDirectory;
-            set { _config.PreLaunchStartupDirectory = value; OnPropertyChanged(); }
+            set => Set(() => _config.PreLaunchStartupDirectory, v => _config.PreLaunchStartupDirectory = v, value);
         }
 
         /// <summary>
@@ -491,7 +475,7 @@ namespace Servy.ViewModels
         public string? PreLaunchParameters
         {
             get => _config.PreLaunchParameters;
-            set { _config.PreLaunchParameters = value; OnPropertyChanged(); }
+            set => Set(() => _config.PreLaunchParameters, v => _config.PreLaunchParameters = v, value);
         }
 
         /// <summary>
@@ -500,7 +484,7 @@ namespace Servy.ViewModels
         public string? PreLaunchEnvironmentVariables
         {
             get => _config.PreLaunchEnvironmentVariables;
-            set { _config.PreLaunchEnvironmentVariables = value; OnPropertyChanged(); }
+            set => Set(() => _config.PreLaunchEnvironmentVariables, v => _config.PreLaunchEnvironmentVariables = v, value);
         }
 
         /// <summary>
@@ -509,7 +493,7 @@ namespace Servy.ViewModels
         public string? PreLaunchStdoutPath
         {
             get => _config.PreLaunchStdoutPath;
-            set { _config.PreLaunchStdoutPath = value; OnPropertyChanged(); }
+            set => Set(() => _config.PreLaunchStdoutPath, v => _config.PreLaunchStdoutPath = v, value);
         }
 
         /// <summary>
@@ -518,7 +502,7 @@ namespace Servy.ViewModels
         public string? PreLaunchStderrPath
         {
             get => _config.PreLaunchStderrPath;
-            set { _config.PreLaunchStderrPath = value; OnPropertyChanged(); }
+            set => Set(() => _config.PreLaunchStderrPath, v => _config.PreLaunchStderrPath = v, value);
         }
 
         /// <summary>
@@ -527,7 +511,7 @@ namespace Servy.ViewModels
         public string? PreLaunchTimeoutSeconds
         {
             get => _config.PreLaunchTimeoutSeconds;
-            set { _config.PreLaunchTimeoutSeconds = value; OnPropertyChanged(); }
+            set => Set(() => _config.PreLaunchTimeoutSeconds, v => _config.PreLaunchTimeoutSeconds = v, value);
         }
 
         /// <summary>
@@ -536,7 +520,7 @@ namespace Servy.ViewModels
         public string? PreLaunchRetryAttempts
         {
             get => _config.PreLaunchRetryAttempts;
-            set { _config.PreLaunchRetryAttempts = value; OnPropertyChanged(); }
+            set => Set(() => _config.PreLaunchRetryAttempts, v => _config.PreLaunchRetryAttempts = v, value);
         }
 
         /// <summary>
@@ -545,7 +529,7 @@ namespace Servy.ViewModels
         public bool PreLaunchIgnoreFailure
         {
             get => _config.PreLaunchIgnoreFailure;
-            set { _config.PreLaunchIgnoreFailure = value; OnPropertyChanged(); }
+            set => Set(() => _config.PreLaunchIgnoreFailure, v => _config.PreLaunchIgnoreFailure = v, value);
         }
 
         /// <summary>
@@ -554,7 +538,7 @@ namespace Servy.ViewModels
         public bool IsManagerAppAvailable
         {
             get => _isManagerAppAvailable;
-            set { _isManagerAppAvailable = value; OnPropertyChanged(); }
+            set => Set(() => _isManagerAppAvailable, v => _isManagerAppAvailable = v, value);
         }
 
         /// <summary>
@@ -563,7 +547,7 @@ namespace Servy.ViewModels
         public string? PostLaunchExecutablePath
         {
             get => _config.PostLaunchExecutablePath;
-            set { _config.PostLaunchExecutablePath = value; OnPropertyChanged(); }
+            set => Set(() => _config.PostLaunchExecutablePath, v => _config.PostLaunchExecutablePath = v, value);
         }
 
         /// <summary>
@@ -572,7 +556,7 @@ namespace Servy.ViewModels
         public string? PostLaunchStartupDirectory
         {
             get => _config.PostLaunchStartupDirectory;
-            set { _config.PostLaunchStartupDirectory = value; OnPropertyChanged(); }
+            set => Set(() => _config.PostLaunchStartupDirectory, v => _config.PostLaunchStartupDirectory = v, value);
         }
 
         /// <summary>
@@ -581,7 +565,7 @@ namespace Servy.ViewModels
         public string? PostLaunchParameters
         {
             get => _config.PostLaunchParameters;
-            set { _config.PostLaunchParameters = value; OnPropertyChanged(); }
+            set => Set(() => _config.PostLaunchParameters, v => _config.PostLaunchParameters = v, value);
         }
 
         /// <summary>
@@ -590,7 +574,7 @@ namespace Servy.ViewModels
         public bool EnableDebugLogs
         {
             get => _config.EnableDebugLogs;
-            set { _config.EnableDebugLogs = value; OnPropertyChanged(); }
+            set => Set(() => _config.EnableDebugLogs, v => _config.EnableDebugLogs = v, value);
         }
 
         /// <summary>
@@ -599,7 +583,7 @@ namespace Servy.ViewModels
         public string? PreStopExecutablePath
         {
             get => _config.PreStopExecutablePath;
-            set { _config.PreStopExecutablePath = value; OnPropertyChanged(); }
+            set => Set(() => _config.PreStopExecutablePath, v => _config.PreStopExecutablePath = v, value);
         }
 
         /// <summary>
@@ -608,7 +592,7 @@ namespace Servy.ViewModels
         public string? PreStopStartupDirectory
         {
             get => _config.PreStopStartupDirectory;
-            set { _config.PreStopStartupDirectory = value; OnPropertyChanged(); }
+            set => Set(() => _config.PreStopStartupDirectory, v => _config.PreStopStartupDirectory = v, value);
         }
 
         /// <summary>
@@ -617,7 +601,7 @@ namespace Servy.ViewModels
         public string? PreStopParameters
         {
             get => _config.PreStopParameters;
-            set { _config.PreStopParameters = value; OnPropertyChanged(); }
+            set => Set(() => _config.PreStopParameters, v => _config.PreStopParameters = v, value);
         }
 
         /// <summary>
@@ -626,7 +610,7 @@ namespace Servy.ViewModels
         public string? PreStopTimeoutSeconds
         {
             get => _config.PreStopTimeoutSeconds;
-            set { _config.PreStopTimeoutSeconds = value; OnPropertyChanged(); }
+            set => Set(() => _config.PreStopTimeoutSeconds, v => _config.PreStopTimeoutSeconds = v, value);
         }
 
         /// <summary>
@@ -635,7 +619,7 @@ namespace Servy.ViewModels
         public bool PreStopLogAsError
         {
             get => _config.PreStopLogAsError;
-            set { _config.PreStopLogAsError = value; OnPropertyChanged(); }
+            set => Set(() => _config.PreStopLogAsError, v => _config.PreStopLogAsError = v, value);
         }
 
         /// <summary>
@@ -644,7 +628,7 @@ namespace Servy.ViewModels
         public string? PostStopExecutablePath
         {
             get => _config.PostStopExecutablePath;
-            set { _config.PostStopExecutablePath = value; OnPropertyChanged(); }
+            set => Set(() => _config.PostStopExecutablePath, v => _config.PostStopExecutablePath = v, value);
         }
 
         /// <summary>
@@ -653,7 +637,7 @@ namespace Servy.ViewModels
         public string? PostStopStartupDirectory
         {
             get => _config.PostStopStartupDirectory;
-            set { _config.PostStopStartupDirectory = value; OnPropertyChanged(); }
+            set => Set(() => _config.PostStopStartupDirectory, v => _config.PostStopStartupDirectory = v, value);
         }
 
         /// <summary>
@@ -662,7 +646,7 @@ namespace Servy.ViewModels
         public string? PostStopParameters
         {
             get => _config.PostStopParameters;
-            set { _config.PostStopParameters = value; OnPropertyChanged(); }
+            set => Set(() => _config.PostStopParameters, v => _config.PostStopParameters = v, value);
         }
 
         #endregion
@@ -1028,6 +1012,25 @@ namespace Servy.ViewModels
             PostStopExecutablePath = string.Empty;
             PostStopStartupDirectory = string.Empty;
             PostStopParameters = string.Empty;
+        }
+
+        /// <summary>
+        /// Compares the current property value with a new value. If they are different, updates 
+        /// the property and raises the <see cref="PropertyChanged"/> event.
+        /// </summary>
+        /// <typeparam name="T">The type of the property.</typeparam>
+        /// <param name="getValue">A delegate to retrieve the current property value.</param>
+        /// <param name="setValue">A delegate to update the property value.</param>
+        /// <param name="value">The new value to assign.</param>
+        /// <param name="propertyName">The name of the property (automatically populated via CallerMemberName).</param>
+        /// <returns>True if the value changed and notification was sent; otherwise false.</returns>
+        private bool Set<T>(Func<T> getValue, Action<T> setValue, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(getValue(), value)) return false;
+
+            setValue(value);
+            OnPropertyChanged(propertyName);
+            return true;
         }
 
         #endregion

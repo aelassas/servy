@@ -138,7 +138,7 @@ namespace Servy.Core.Helpers
                 catch (Exception ex)
                 {
                     // Instead of throwing, we log the error and store it
-                    Logger.Error($"Failed to start {serviceName}.", ex);
+                    Logger.Error($"Failed to start '{serviceName}'.", ex);
 
                     // Wrap in a descriptive exception so the caller knows which one failed
                     exceptions.Add(new InvalidOperationException($"Service '{serviceName}' failed.", ex));
@@ -267,7 +267,8 @@ namespace Servy.Core.Helpers
         /// <exception cref="ArgumentException">Thrown when <paramref name="wrapperExes"/> is null or empty.</exception>
         /// <exception cref="InvalidOperationException">Thrown when an unexpected error occurs while querying the SCM or Registry.</exception>
         /// <remarks>
-        /// This method bypasses prevents COM timeout issues in large-scale deployments. 
+        /// This method bypasses < see cref="ServiceController.ServicesDependedOn"/> (and related
+        /// SCM round-trips) to prevent COM timeout issues in large-scale deployments.
         /// It reads the <c>ImagePath</c> directly from the Registry, expands environment variables, 
         /// and safely parses out executable paths that contain quotes or command-line arguments.
         /// </remarks>
