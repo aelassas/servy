@@ -50,8 +50,9 @@
         /// <param name="filePath">The absolute path of the targeted file currently constrained by an active lock.</param>
         /// <returns>A boolean value indicating whether the lock release operation resolved and executed without encountering critical errors.</returns>
         /// <remarks>
-        /// This method requires Sysinternals Handle.exe or Handle64.exe to be available
-        /// and assumes its path is in <c>C:\Program Files\Sysinternals\handle64.exe</c> by default.
+        /// This method requires the Sysinternals handle64.exe utility, which Servy extracts to its
+        /// ProgramData vault during install (or to the application base directory in DEBUG builds).
+        /// The actual lookup is performed by <see cref="Config.AppConfig.GetHandleExePath"/>.
         /// </remarks>
         bool KillProcessesUsingFile(string filePath);
     }

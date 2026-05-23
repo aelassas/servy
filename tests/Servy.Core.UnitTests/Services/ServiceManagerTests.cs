@@ -928,7 +928,8 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle.DangerousGetHandle())).Returns(true);
 
-            var result = _serviceManager.UpdateServiceConfig(
+            // Test 1: Verify UpdateServiceConfig executes without exception
+            var exception1 = Record.Exception(() => _serviceManager.UpdateServiceConfig(
                 scmHandle,
                 serviceName,
                 description,
@@ -938,11 +939,11 @@ namespace Servy.Core.UnitTests.Services
                 null,
                 null,
                 null
-                );
+            ));
+            Assert.Null(exception1);
 
-            Assert.True(result);
-
-            result = _serviceManager.UpdateServiceConfig(
+            // Test 2: Verify UpdateServiceConfig executes without exception with service name
+            var exception2 = Record.Exception(() => _serviceManager.UpdateServiceConfig(
                 scmHandle,
                 serviceName,
                 description,
@@ -952,9 +953,8 @@ namespace Servy.Core.UnitTests.Services
                 null,
                 null,
                 serviceName
-                );
-
-            Assert.True(result);
+            ));
+            Assert.Null(exception2);
         }
 
         [Fact]

@@ -22,11 +22,14 @@ namespace Servy.Core.Helpers
         public double CpuUsage { get; }
 
         /// <summary>
-        /// Gets the physical memory usage in bytes.
+        /// Gets the committed private virtual memory usage in bytes.
         /// </summary>
         /// <value>
-        /// The number of private bytes allocated for the process, equivalent to 
-        /// "Private Working Set" in Windows Task Manager.
+        /// The number of bytes of committed private virtual memory for the process 
+        /// (<see cref="System.Diagnostics.Process.PrivateMemorySize64"/>),
+        /// equivalent to "Commit size" in the Details tab of Windows Task Manager.
+        /// Note: this is NOT the same as "Private Working Set", which measures the 
+        /// resident portion of private memory currently in physical RAM.
         /// </value>
         public long RamUsage { get; }
 

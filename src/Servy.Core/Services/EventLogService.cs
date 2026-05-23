@@ -131,9 +131,10 @@ namespace Servy.Core.Services
                     var message = evt.Message ?? string.Empty;
                     var provider = evt.ProviderName ?? string.Empty;
 
-                    // 1. Heuristic: Only include events where the provider contains "Servy"
+                    // 1. Heuristic only meaningful in wildcard mode; the SQL filter handles non-empty source names exactly.
                     // This prevents capturing unrelated system/app logs even when _sourceName is empty.
-                    if (!string.IsNullOrEmpty(_sourceName) && provider.IndexOf(_sourceName, StringComparison.OrdinalIgnoreCase) < 0)
+                    if (string.IsNullOrEmpty(_sourceName) &&
+                        provider.IndexOf(AppConfig.EventSource, StringComparison.OrdinalIgnoreCase) < 0)
                         continue;
 
                     // 2. Formatting Check: Ensure it follows the Servy log pattern [Service] Message

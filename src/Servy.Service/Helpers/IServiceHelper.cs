@@ -70,6 +70,7 @@ namespace Servy.Service.Helpers
         /// </remarks>
         /// <param name="options">The startup options to validate.</param>
         /// <param name="logger">The logger instance (typically a scoped/promoted logger) used for reporting.</param>
+        /// <param name="processHelper">The process helper used to validate executable paths and gather metrics.</param>
         /// <param name="fullArgs">The original command-line arguments for logging purposes.</param>
         /// <returns>
         /// <c>true</c> if the options are valid and the service can proceed; otherwise, <c>false</c>.
@@ -81,7 +82,7 @@ namespace Servy.Service.Helpers
         /// If not valid, sets a fallback working directory and logs a warning.
         /// </summary>
         /// <param name="options">The startup options containing the working directory to validate.</param>
-        /// <param name="eventLog">The event log to write warnings to.</param>
+        /// <param name="logger">The logger to write warnings to.</param>
         void EnsureValidWorkingDirectory(StartOptions options, IServyLogger logger);
 
         /// <summary>

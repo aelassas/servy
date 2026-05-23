@@ -1405,10 +1405,6 @@ namespace Servy.Service
                 // should outlive the service teardown.
                 using (var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger!))
                 {
-                    if (process == null)
-                    {
-                        _logger?.Error($"Failed to start failure program: {launchOptions.ExecutablePath}");
-                    }
                     // The process wrapper is disposed, but the underlying OS process continues.
                 }
 
@@ -1486,7 +1482,12 @@ namespace Servy.Service
 
             try
             {
-                var serviceDto = _serviceRepository.GetByName(_serviceName);
+                // We need to fetch the full unencrypted service DTO in order to update the runtime state fields.
+                // We cannot use decrypt:false here because encrypted fields (like Parameters and EnvironmentVariables)
+                // are not marked to be ignored during update, and the update operation requires the full DTO to avoid overwriting existing values with wrong values.
+                // This is a bit inefficient, but PersistProcessState only runs on service start/stop and process exit,
+                // so the performance impact should be minimal in the grand scheme of things.
+                var serviceDto = _serviceRepository.GetByName(_serviceName, decrypt: true);
 
                 if (serviceDto != null)
                 {
@@ -2442,12 +2443,6 @@ namespace Servy.Service
                 // 3. Launch and Evaluate
                 using (var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger!))
                 {
-                    if (process == null)
-                    {
-                        LogIssue($"Failed to run pre-stop process: {launchOptions.ExecutablePath}");
-                        return !logAsError;
-                    }
-
                     if (launchOptions.FireAndForget)
                     {
                         _logger?.Info("Pre-stop configured as fire-and-forget. Continuing service stop immediately.");
@@ -2701,10 +2696,6 @@ namespace Servy.Service
                 // should outlive the service teardown.
                 using (var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger!))
                 {
-                    if (process == null)
-                    {
-                        _logger?.Error($"Failed to start post-stop program: {launchOptions.ExecutablePath}");
-                    }
                     // The process wrapper is disposed, but the underlying OS process continues.
                 }
             }

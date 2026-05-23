@@ -75,9 +75,8 @@ namespace Servy.Core.Services
         /// <param name="password">The password for the account.</param>
         /// <param name="lpDependencies">A double null-terminated string of dependencies.</param>
         /// <param name="displayName">The display name to show in the Services console.</param>
-        /// <returns><c>true</c> if the configuration was successfully applied; otherwise, <c>false</c>.</returns>
         /// <exception cref="Win32Exception">Thrown when a native API call fails to open or change the service.</exception>
-        public bool UpdateServiceConfig(
+        public void UpdateServiceConfig(
             SafeScmHandle scmHandle,
             string serviceName,
             string description,
@@ -124,8 +123,6 @@ namespace Servy.Core.Services
                 }
 
                 SetServiceDescription(serviceHandle, description);
-
-                return true;
             }
         }
 
@@ -407,7 +404,7 @@ namespace Servy.Core.Services
                         if (isInstalled)
                         {
                             cancellationToken.ThrowIfCancellationRequested();
-                            var updated = UpdateServiceConfig(
+                            UpdateServiceConfig(
                                 scmHandle: scmHandle,
                                 serviceName: options.ServiceName,
                                 description: options.Description,
@@ -418,11 +415,6 @@ namespace Servy.Core.Services
                                 lpDependencies: lpDependencies,
                                 displayName: displayName
                             );
-
-                            if (!updated)
-                            {
-                                Logger.Warn($"Failed to update existing service configuration for service '{options.ServiceName}'.");
-                            }
 
                             // Open the existing service for configuration updates (delayed start and pre-shutdown)
                             using (var existingServiceHandle = _windowsServiceApi.OpenService(
