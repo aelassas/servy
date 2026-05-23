@@ -35,6 +35,15 @@ namespace Servy.Service.ProcessManagement
             AppConfig.InputRegexTimeout);
 
         /// <summary>
+        /// Matches canonical Python launcher executable names strictly.
+        /// Evaluates patterns such as 'python', 'pythonw', 'python2', 'python3', or 'python3.x' without capturing arbitrary prefixes.
+        /// </summary>
+        private static readonly Regex PythonExeRegex = new Regex(
+            @"^python(w|\d+(\.\d+)?)?$",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+            AppConfig.InputRegexTimeout);
+
+        /// <summary>
         /// Orchestrates the initialization and startup of an external process based on the provided options.
         /// </summary>
         /// <remarks>
@@ -365,7 +374,9 @@ namespace Servy.Service.ProcessManagement
 
             // Python Logic: 
             // Matches 'python', 'pythonw', 'python2', 'python3', or 'python3.x' patterns.
-            bool isPython = fileNameOnly.StartsWith("python", StringComparison.OrdinalIgnoreCase);
+            bool isPython;
+            try { isPython = PythonExeRegex.IsMatch(fileNameOnly); }
+            catch (RegexMatchTimeoutException) { isPython = false; }
 
             if (isPython)
             {

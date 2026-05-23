@@ -81,10 +81,13 @@ namespace Servy.CLI.Commands
             {
                 Logger.Error($"Failed to {action}", ex);
 
-                var errorMessage = $"Failed to {action}: {ex.Message}";
+                // ROBUSTNESS: Utilize localized templates rather than hardcoded English string fragments.
+                var errorMessage = string.Format(Strings.Msg_CommandFailedTemplate, action, ex.Message);
+
                 if (!string.IsNullOrEmpty(suggestion))
                 {
-                    errorMessage += $"{Environment.NewLine}Suggestion: {suggestion}";
+                    var localizedSuggestion = string.Format(Strings.Msg_SuggestionTemplate, suggestion);
+                    errorMessage += $"{Environment.NewLine}{localizedSuggestion}";
                 }
 
                 return CommandResult.Fail(errorMessage);

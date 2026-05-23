@@ -51,7 +51,7 @@ namespace Servy.Core.UnitTests.Helpers
         public void FormatServiceDependencies_ShouldReturnNull_WhenInputIsNull()
         {
             var result = StringHelper.FormatServiceDependencies(null!);
-            Assert.Null(result);
+            Assert.Empty(result!);
         }
 
         [Theory]

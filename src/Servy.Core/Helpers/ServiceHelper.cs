@@ -100,7 +100,7 @@ namespace Servy.Core.Helpers
                             }
                         }
 
-                        var service = await _serviceRepository.GetByNameAsync(serviceName, cancellationToken: cancellationToken);
+                        var service = await _serviceRepository.GetByNameAsync(serviceName, decrypt: false, cancellationToken: cancellationToken);
                         if (service == null)
                         {
                             throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
@@ -182,7 +182,7 @@ namespace Servy.Core.Helpers
                             sc.Stop();
                         }
 
-                        var service = await _serviceRepository.GetByNameAsync(serviceName, cancellationToken: cancellationToken);
+                        var service = await _serviceRepository.GetByNameAsync(serviceName, decrypt: false, cancellationToken: cancellationToken);
                         if (service == null)
                         {
                             throw new InvalidOperationException($"Service '{serviceName}' not found in database.");

@@ -115,6 +115,24 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Dependency &apos;{0}&apos; is not accessible (Access Denied)..
+        /// </summary>
+        public static string Msg_DependencyAccessDenied {
+            get {
+                return ResourceManager.GetString("Msg_DependencyAccessDenied", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Dependency &apos;{0}&apos; is unavailable..
+        /// </summary>
+        public static string Msg_DependencyUnavailable {
+            get {
+                return ResourceManager.GetString("Msg_DependencyUnavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Description exceeds {0} characters..
         /// </summary>
         public static string Msg_DescriptionLengthReached {

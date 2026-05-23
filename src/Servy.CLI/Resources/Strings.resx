@@ -112,4 +112,13 @@
   <data name="Msg_CommandCancelled" xml:space="preserve">
     <value>Operation '{0}' was cancelled by the user.</value>
   </data>
+
+  <data name="Msg_CommandFailedTemplate" xml:space="preserve">
+    <value>Failed to {0}: {1}</value>
+    <comment>Generic template for command failures. {0} is the localized action description, {1} is the exception message.</comment>
+  </data>
+  <data name="Msg_SuggestionTemplate" xml:space="preserve">
+    <value>Suggestion: {0}</value>
+    <comment>Prefix for actionable troubleshooting suggestions. {0} is the localized suggestion text.</comment>
+  </data>
 </root>

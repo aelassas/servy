@@ -89,7 +89,7 @@ namespace Servy.Restarter
                 var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
 
                 // 6. Validation
-                if (serviceRepository.GetByName(serviceName) == null)
+                if (serviceRepository.GetByName(serviceName, decrypt: false) == null)
                 {
                     scopedLogger.Error($"Service '{serviceName}' is not managed by Servy.");
                     Environment.ExitCode = 1;

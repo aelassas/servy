@@ -398,7 +398,7 @@ namespace Servy.Infrastructure.Data
         /// Applies the Version 3 schema migration, adding the 'EnableConsoleUI' column 
         /// to the 'Services' table to support allocating a console for interactive apps.
         /// </summary>
-        private static void ApplyVersion3(DbConnection connection, DbTransaction transaction) => AddColumnIfMissing(connection, transaction, 3, "EnableConsoleUI", "INTEGER");
+        private static void ApplyVersion3(DbConnection connection, DbTransaction transaction) => AddColumnIfMissing(connection, transaction, 3, "EnableConsoleUI");
 
         /// <summary>
         /// Applies the Version 4 schema migration, removing strict NOT NULL constraints from 13 configuration 
@@ -464,7 +464,7 @@ namespace Servy.Infrastructure.Data
         /// Applies the Version 5 schema migration, adding the 'RecoveryOnCleanExit' column 
         /// to the 'Services' table to support triggering recovery actions even on successful exits (Code 0).
         /// </summary>
-        private static void ApplyVersion5(DbConnection connection, DbTransaction transaction) => AddColumnIfMissing(connection, transaction, 5, "RecoveryOnCleanExit", "INTEGER");
+        private static void ApplyVersion5(DbConnection connection, DbTransaction transaction) => AddColumnIfMissing(connection, transaction, 5, "RecoveryOnCleanExit");
 
         #endregion
 
@@ -473,7 +473,7 @@ namespace Servy.Infrastructure.Data
         /// <summary>
         /// A transactional helper to safely add a new column to the Services table if it doesn't already exist.
         /// </summary>
-        private static void AddColumnIfMissing(DbConnection conn, DbTransaction tx, int version, string columnName, string sqlType)
+        private static void AddColumnIfMissing(DbConnection conn, DbTransaction tx, int version, string columnName)
         {
             var existing = new HashSet<string>(
                 conn.Query("PRAGMA table_info(Services);", transaction: tx).Select(r => (string)r.name),
@@ -481,6 +481,7 @@ namespace Servy.Infrastructure.Data
 
             if (!existing.Contains(columnName))
             {
+                var sqlType = GetSqlType(columnName);   // SSoT via [SqlColumn]
                 Logger.Info($"Migrating database to Version {version}: Adding '{columnName}' column.");
                 conn.Execute($"ALTER TABLE Services ADD COLUMN {columnName} {sqlType};", transaction: tx);
                 Logger.Info($"Database successfully migrated to Version {version}.");

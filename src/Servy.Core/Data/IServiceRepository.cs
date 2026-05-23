@@ -55,8 +55,11 @@ namespace Servy.Core.Data
         /// <remarks>
         /// <para>
         /// This method iterates through the collection and executes individual upsert commands. 
-        /// <b>Caution:</b> This operation is NOT executed within an atomic transaction. If the 
-        /// operation is interrupted or an error occurs mid-batch, partial data may remain in the database.
+        /// </para>
+        /// <para>
+        /// The entire batch is executed within an explicit transaction (BeginTransaction/Commit),
+        /// so either every row is upserted or none are. On exception the transaction is disposed
+        /// without commit and partial writes are rolled back.
         /// </para>
         /// <para>
         /// After the database write, the method attempts to synchronize the auto-incremented 

@@ -59,7 +59,8 @@ namespace Servy.Core.Helpers
         /// <returns>A string with each dependency on a separate line, or null if input is null.</returns>
         public static string? FormatServiceDependencies(string? deps)
         {
-            return deps?.Replace(";", Environment.NewLine);
+            if (string.IsNullOrEmpty(deps)) return string.Empty;
+            return deps.Replace(";", Environment.NewLine);
         }
 
         /// <summary>

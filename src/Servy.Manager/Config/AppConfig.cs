@@ -16,6 +16,16 @@
         public const string LocalSystem = "Local System";
 
         /// <summary>
+        /// Label for the Local Service built-in account, often used for service log-on configurations.
+        /// </summary>
+        public const string LocalService = "Local Service";
+
+        /// <summary>
+        /// Label for the Network Service built-in account, used for services requiring network-aware identity.
+        /// </summary>
+        public const string NetworkService = "Network Service";
+
+        /// <summary>
         /// Event Viewer Source Name for Servy Manager.
         /// </summary>
         public const string EventSource = "ServyManager";

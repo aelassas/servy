@@ -1,5 +1,6 @@
 ﻿using Servy.Config;
 using Servy.Core.Common;
+using Servy.Core.Domain;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
@@ -226,14 +227,16 @@ namespace Servy.Services
 
                 var res = await _serviceManager.InstallServiceAsync(options, cancellationToken);
 
-                if (res.IsSuccess)
+                if (!res.IsSuccess)
                 {
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceInstalled, Caption);
-                    return true;
+                    var msg = !string.IsNullOrWhiteSpace(res.ErrorMessage) ? res.ErrorMessage : Strings.Msg_UnexpectedError;
+                    Logger.Warn($"InstallService failed: {msg}");
+                    await _messageBoxService.ShowErrorAsync(msg, Caption);
+                    return false;
                 }
 
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
-                return false;
+                await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceInstalled, Caption);
+                return true;
             }
             catch (UnauthorizedAccessException)
             {
@@ -271,16 +274,17 @@ namespace Servy.Services
             {
                 _cursorService.SetWaitCursor();
                 var res = await _serviceManager.UninstallServiceAsync(serviceName, cancellationToken);
-                if (res.IsSuccess)
+
+                if (!res.IsSuccess)
                 {
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRemoved, Caption);
-                    return true;
-                }
-                else
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                    var msg = !string.IsNullOrWhiteSpace(res.ErrorMessage) ? res.ErrorMessage : Strings.Msg_UnexpectedError;
+                    Logger.Warn($"UninstallService failed: {msg}");
+                    await _messageBoxService.ShowErrorAsync(msg, Caption);
                     return false;
                 }
+
+                await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRemoved, Caption);
+                return true;
             }
             catch (UnauthorizedAccessException)
             {
@@ -446,7 +450,9 @@ namespace Servy.Services
                 }
                 else
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                    var errorMessage = !string.IsNullOrWhiteSpace(res.ErrorMessage) ? res.ErrorMessage : Strings.Msg_UnexpectedError;
+                    Logger.Warn($"Failed to execute operation on {serviceName}: {errorMessage}");
+                    await _messageBoxService.ShowErrorAsync(errorMessage, Caption);
                     return false;
                 }
             }

@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Logging;
+using Servy.Core.Resources;
 using System.ServiceProcess;
 
 namespace Servy.Core.Services
@@ -193,12 +194,12 @@ namespace Servy.Core.Services
             catch (InvalidOperationException ex)
             {
                 Logger.Debug($"Dependency '{serviceName}' unavailable: {ex.Message}");
-                return new ServiceDependencyNode(serviceName, $"{serviceName} (Unavailable)", false, false);
+                return new ServiceDependencyNode(serviceName, string.Format(Strings.Msg_DependencyUnavailable, serviceName), false, false);
             }
             catch (System.ComponentModel.Win32Exception ex)
             {
                 Logger.Warn($"Win32 error resolving dependency '{serviceName}'.", ex);
-                return new ServiceDependencyNode(serviceName, $"{serviceName} (Access Denied)", false, false);
+                return new ServiceDependencyNode(serviceName, string.Format(Strings.Msg_DependencyAccessDenied, serviceName), false, false);
             }
         }
 
