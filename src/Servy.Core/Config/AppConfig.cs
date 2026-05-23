@@ -2,6 +2,7 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System;
+using System.Data;
 using System.IO;
 
 namespace Servy.Core.Config
@@ -11,29 +12,6 @@ namespace Servy.Core.Config
     /// </summary>
     public static class AppConfig
     {
-        #region Static Constructor
-
-        /// <summary>
-        /// Initializes the <see cref="AppConfig"/> static members and performs 
-        /// cross-field validation for configuration consistency.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown if <see cref="UpdateCheckTimeoutSeconds"/> exceeds <see cref="UpdateCheckHttpTimeoutSeconds"/>.
-        /// This ensures the total task timeout provides enough buffer for the underlying HTTP request.
-        /// </exception>
-        static AppConfig()
-        {
-            // Invariant: The overall task timeout must be less than or equal to the HTTP client timeout 
-            // to prevent orphaned requests or race conditions during update checks.
-            if (UpdateCheckTimeoutSeconds > UpdateCheckHttpTimeoutSeconds)
-            {
-                throw new InvalidOperationException(
-                    "UpdateCheckTimeoutSeconds must be <= UpdateCheckHttpTimeoutSeconds.");
-            }
-        }
-
-        #endregion
-
         #region Application Info & Links
 
         /// <summary>
@@ -512,7 +490,7 @@ namespace Servy.Core.Config
         /// <remarks>
         /// static readonly int so the static constructor check is evaluated at runtime.
         /// </remarks>
-        public static readonly int UpdateCheckHttpTimeoutSeconds = 20;
+        public const int UpdateCheckHttpTimeoutSeconds = 20;
 
         /// <summary>
         /// The cooperative cancellation timeout for update checks.
@@ -523,7 +501,7 @@ namespace Servy.Core.Config
         /// <remarks>
         /// static readonly int so the static constructor check is evaluated at runtime.
         /// </remarks>
-        public static readonly int UpdateCheckTimeoutSeconds = 10;
+        public const int UpdateCheckTimeoutSeconds = 10;
 
         /// <summary>
         /// The default log search window duration (3 days) used when no specific configuration value is found.

@@ -6,6 +6,13 @@ namespace Servy.Core.UnitTests.Config
     public class AppConfigTests
     {
         [Fact]
+        public void UpdateCheckTimeouts_AreConsistent()
+        {
+            Assert.True(AppConfig.UpdateCheckTimeoutSeconds <= AppConfig.UpdateCheckHttpTimeoutSeconds,
+                "Cooperative cancellation timeout must not exceed the HTTP client timeout.");
+        }
+
+        [Fact]
         public void Version_ShouldNotBeNullOrEmpty()
         {
             Assert.False(string.IsNullOrWhiteSpace(AppConfig.Version));
