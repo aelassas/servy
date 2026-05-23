@@ -190,7 +190,7 @@ namespace Servy.Manager.ViewModels
             new UI.Design.DesignTimeProcessHelper(),
             new UI.Design.DesignTimeUiDispatcher()
             )
-            { }
+        { }
 
         #endregion
 
@@ -421,8 +421,10 @@ namespace Servy.Manager.ViewModels
         /// Handles the specific logic for clearing graph visualizations when 
         /// monitoring is stopped with the clearView flag set to true.
         /// </summary>
-        protected override void OnViewCleared()
+        protected override void OnMonitoringStopped(bool clearView = true)
         {
+            if (!clearView) return;
+
             // Clear graph collections to reset the UI visualizations
             CpuPointCollection = new PointCollection();
             CpuFillPoints = new PointCollection();

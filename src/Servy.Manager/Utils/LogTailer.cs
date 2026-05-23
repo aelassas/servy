@@ -132,16 +132,6 @@ namespace Servy.Manager.Utils
                                     lastCreationTime = info.CreationTimeUtc;
                                     Logger.Debug("[LogTailer] Rotation or truncation detected on reopen.");
                                 }
-                                else if (!currentIdentity.IsValidHandleInfo && currentIdentity.PrefixDigest == null)
-                                {
-                                    // Both robust signals failed (unlikely), fallback to old heuristics
-                                    if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
-                                    {
-                                        lastPosition = 0;
-                                        lastCreationTime = info.CreationTimeUtc;
-                                        Logger.Debug("[LogTailer] Rotation detected on reopen (Metadata fallback).");
-                                    }
-                                }
                             }
 
                             knownIdentity = currentIdentity;

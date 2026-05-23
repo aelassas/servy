@@ -34,7 +34,7 @@
         public LogType Type { get; set; }
 
         /// <summary>
-        /// Gets or sets the local time when the log line was processed by the manager.
+        /// Gets the UTC time when the log line was processed by the manager.
         /// </summary>
         public DateTime Timestamp { get; set; }
 

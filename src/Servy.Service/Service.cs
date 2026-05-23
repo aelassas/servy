@@ -1092,15 +1092,12 @@ namespace Servy.Service
             _ = SetConsoleCtrlHandler(null, false); // inherited
             _ = SetConsoleOutputCP(CP_UTF8);
 
-            var (expandedEnv, expandedArgs) = ExpandAndAudit(environmentVariables, realArgs);
+            var (expandedEnv, expandedArgs) = ExpandAndAudit(environmentVariables, realArgs, "StartProcess");
 
             _realExePath = realExePath;
             _realArgs = expandedArgs;
             _workingDir = workingDir;
             _environmentVariables = environmentVariables;
-
-            // Log any remaining unexpanded placeholders
-            LogUnexpandedPlaceholders(_realArgs, "Arguments");
 
             var enableConsoleUI = _options?.EnableConsoleUI == true;
 

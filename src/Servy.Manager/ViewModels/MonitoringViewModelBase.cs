@@ -54,7 +54,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="cursorService">Service to manage cursor state.</param>
         /// <param name="uiDispatcher">Dispatcher for UI thread operations.</param>
         /// <param name="serviceCommands">Commands for service operations.</param>
-        protected MonitoringViewModelBase(ICursorService cursorService, IUiDispatcher uiDispatcher, IServiceCommands serviceCommands) 
+        protected MonitoringViewModelBase(ICursorService cursorService, IUiDispatcher uiDispatcher, IServiceCommands serviceCommands)
             : base(cursorService, uiDispatcher, serviceCommands)
         {
         }
@@ -155,27 +155,27 @@ namespace Servy.Manager.ViewModels
         /// Stops the performance monitoring timer, cancels any in-flight background operations, 
         /// and atomically sets the monitoring flag to stopped.
         /// </summary>
-        /// <param name="clearView">If <see langword="true"/>, clears the view model's data to reflect a stopped state.</param>
-        public void StopMonitoring(bool clearView = false)
+        /// <param name="clearView">If <see langword="true"/>, signals the derived view model to clear its data to reflect a stopped state.</param>
+        public virtual void StopMonitoring(bool clearView = false)
         {
             _monitoringCts?.Cancel();
             Interlocked.Exchange(ref _isMonitoringFlag, 0);
             _timer?.Stop();
 
-            if (clearView)
-            {
-                OnViewCleared();
-            }
+            // Unconditionally fire the stop extension point so derived models can run teardown logic
+            OnMonitoringStopped(clearView);
         }
 
         /// <summary>
-        /// Invoked by <see cref="StopMonitoring"/> when the view requires clearing. 
-        /// When overridden in a derived class, clears the view model's specific data collections to reflect a stopped state.
+        /// Invoked unconditionally by <see cref="StopMonitoring"/> to allow derived classes to execute 
+        /// teardown logic, state persistence, or view clearing operations.
         /// </summary>
-        protected virtual void OnViewCleared()
+        /// <param name="clearView">Indicates whether the caller explicitly requested the view model to clear its visual state.</param>
+        protected virtual void OnMonitoringStopped(bool clearView)
         {
             // Base implementation is empty. Derived view models (e.g., PerformanceViewModel)
-            // should override this to clear their observable collections or reset states.
+            // should override this to handle shutdown tasks, such as flushing snapshots,
+            // disposing helpers, or clearing their observable collections if clearView is true.
         }
 
         /// <summary>

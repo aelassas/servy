@@ -320,7 +320,7 @@ namespace Servy.Core.Security
                             throw;
                         }
 
-                        // Exponential backoff: 100ms, 200ms, 400ms
+                        // Exponential backoff: 100ms after attempt 0, 200ms after attempt 1
                         Thread.Sleep(100 * (1 << attempt));
                     }
                 }
@@ -454,8 +454,11 @@ namespace Servy.Core.Security
                     var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
                     var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
                     SecurityIdentifier? currentUserSid;
+                    bool isAdmin;
                     using (var identity = WindowsIdentity.GetCurrent())
                     {
+                        var principal = new WindowsPrincipal(identity);
+                        isAdmin = principal.IsInRole(WindowsBuiltInRole.Administrator);
                         currentUserSid = identity.User;
                     }
 
@@ -467,7 +470,7 @@ namespace Servy.Core.Security
                     fs.AddAccessRule(new FileSystemAccessRule(adminSid, FileSystemRights.FullControl, AccessControlType.Allow));
 
                     // Grant operational continuity to the current user (prevents self-lockout on external paths)
-                    if (currentUserSid != null && !currentUserSid.Equals(systemSid) && !currentUserSid.Equals(adminSid))
+                    if (currentUserSid != null && !currentUserSid.Equals(systemSid) && !isAdmin)
                     {
                         fs.AddAccessRule(new FileSystemAccessRule(currentUserSid, FileSystemRights.FullControl, AccessControlType.Allow));
                     }

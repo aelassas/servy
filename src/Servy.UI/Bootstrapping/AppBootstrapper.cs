@@ -371,7 +371,7 @@ namespace Servy.UI.Bootstrapping
                         string resourceName = $"{AppConfig.HandleExeFileName}.exe";
                         Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " +
                             "File-lock diagnostics will be unavailable this session.");
-                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show($"Failed copying embedded resource: {resourceName}"));
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource_Format, resourceName)));
                     }
 
 #if DEBUG

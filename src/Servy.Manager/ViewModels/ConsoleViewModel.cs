@@ -613,8 +613,10 @@ namespace Servy.Manager.ViewModels
         /// Handles the specific logic for resetting the console view when 
         /// monitoring is stopped with the clearView flag set to true.
         /// </summary>
-        protected override void OnViewCleared()
+        protected override void OnMonitoringStopped(bool clearView = true)
         {
+            if (!clearView) return;
+
             // Resets the console history and UI labels as required by 
             // the console-specific implementation.
             ResetConsole();

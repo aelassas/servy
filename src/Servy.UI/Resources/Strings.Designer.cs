@@ -70,6 +70,15 @@ namespace Servy.UI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Failed copying embedded resource: {0}.
+        /// </summary>
+        public static string Msg_FailedCopyingEmbeddedResource_Format {
+            get {
+                return ResourceManager.GetString("Msg_FailedCopyingEmbeddedResource_Format", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The specified path is invalid..
         /// </summary>
         public static string Msg_InvalidPath {

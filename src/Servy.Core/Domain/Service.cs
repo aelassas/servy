@@ -397,7 +397,7 @@ namespace Servy.Core.Domain
         /// <returns>
         /// <c>true</c> if the service was successfully stopped; otherwise, <c>false</c>.
         /// </returns>
-        public virtual async Task<OperationResult> Stop(CancellationToken cancellationToken = default)
+        public async Task<OperationResult> Stop(CancellationToken cancellationToken = default)
         {
             return await _serviceManager.StopServiceAsync(Name, logSuccessfulStop:true, cancellationToken);
         }
