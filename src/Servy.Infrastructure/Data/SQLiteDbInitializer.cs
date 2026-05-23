@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 
 namespace Servy.Infrastructure.Data
 {
@@ -16,6 +15,8 @@ namespace Servy.Infrastructure.Data
     /// </summary>
     public static class SQLiteDbInitializer
     {
+        private static readonly char[] SplitWhitespaceChars = { ' ', '\t' };
+
         // Static Cache for O(1) lookups and zero reflection overhead during database migrations.
         // It guarantees the DTO is the Single Source of Truth for schema data types.
         private static readonly Dictionary<string, string> SqlTypeMap = BuildSqlTypeMap();
@@ -189,7 +190,7 @@ namespace Servy.Infrastructure.Data
                     if (baseDefinition.IndexOf("NOT NULL", StringComparison.OrdinalIgnoreCase) >= 0 &&
                         baseDefinition.IndexOf("DEFAULT", StringComparison.OrdinalIgnoreCase) < 0)
                     {
-                        string affinityToken = baseDefinition.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+                        string affinityToken = baseDefinition.Split(SplitWhitespaceChars, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
                         string inferredDefault = string.Equals(affinityToken, "TEXT", StringComparison.OrdinalIgnoreCase) ? "DEFAULT ''" : "DEFAULT 0";
                         baseDefinition = $"{baseDefinition} {inferredDefault}";
                     }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.Core.Logging;
+using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
@@ -155,11 +156,22 @@ namespace Servy.Core.Native
                 }
                 if (rightsPtr != IntPtr.Zero)
                 {
-                    LsaFreeMemory(rightsPtr);
+                    // Capture the NTSTATUS result to satisfy code analysis metrics
+                    int freeStatus = LsaFreeMemory(rightsPtr);
+                    if (freeStatus != 0)
+                    {
+                        // Defensive: Log the leak warning without throwing, preserving any primary exception
+                        Logger.Warn($"LsaFreeMemory failed to release unmanaged account rights buffer. (NTSTATUS 0x{freeStatus:X})");
+                    }
                 }
                 if (policy != IntPtr.Zero)
                 {
-                    LsaClose(policy);
+                    // Apply the same defensive rule check to LsaClose for complete hygiene
+                    int closeStatus = LsaClose(policy);
+                    if (closeStatus != 0)
+                    {
+                        Logger.Warn($"LsaClose failed to safely release the Local Security Authority policy handle. (NTSTATUS 0x{closeStatus:X})");
+                    }
                 }
             }
         }

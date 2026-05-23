@@ -45,7 +45,6 @@ namespace Servy.Manager.ViewModels
         private string _stderrPath;
         private int _currentSessionId = 0; // Track the "active" switch request
         private volatile bool _isSelectionActive;
-        private int _tickErrorCount = 0;
         private bool _disposedValue;
         private readonly IAppConfiguration _appConfig;
 

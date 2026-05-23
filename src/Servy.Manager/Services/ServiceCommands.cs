@@ -172,14 +172,34 @@ namespace Servy.Manager.Services
 
         /// <inheritdoc />
         public Task<bool> StartServiceAsync(Service service, bool showMessageBox = true, CancellationToken cancellationToken = default) =>
-            ExecuteServiceCommandAsync(service, d => d.Start(cancellationToken), ServiceStatus.Running, Strings.Msg_ServiceStarted, checkDisabled: true, showMessageBox);
+            ExecuteServiceCommandAsync(
+                service,
+                d => d.Start(cancellationToken),
+                ServiceStatus.Running,
+                Strings.Msg_ServiceStarted,
+                checkDisabled: true,
+                showMessageBox: showMessageBox,
+                cancellationToken: cancellationToken);
 
         /// <inheritdoc />
         public Task<bool> StopServiceAsync(Service service, bool showMessageBox = true, CancellationToken cancellationToken = default) =>
-            ExecuteServiceCommandAsync(service, d => d.Stop(cancellationToken), ServiceStatus.Stopped, Strings.Msg_ServiceStopped, checkDisabled: false, showMessageBox);
+            ExecuteServiceCommandAsync(service, 
+                d => d.Stop(cancellationToken), 
+                ServiceStatus.Stopped, 
+                Strings.Msg_ServiceStopped, 
+                checkDisabled: false, 
+                showMessageBox: showMessageBox, 
+                cancellationToken: cancellationToken);
+
         /// <inheritdoc />
         public Task<bool> RestartServiceAsync(Service service, bool showMessageBox = true, CancellationToken cancellationToken = default) =>
-            ExecuteServiceCommandAsync(service, d => d.Restart(cancellationToken), ServiceStatus.Running, Strings.Msg_ServiceRestarted, checkDisabled: true, showMessageBox);
+            ExecuteServiceCommandAsync(service,
+                d => d.Restart(cancellationToken), 
+                ServiceStatus.Running, 
+                Strings.Msg_ServiceRestarted, 
+                checkDisabled: true, 
+                showMessageBox: showMessageBox, 
+                cancellationToken: cancellationToken);
 
         /// <inheritdoc />
         public async Task ConfigureServiceAsync(Service service)
