@@ -5,7 +5,7 @@ namespace Servy.Core.Helpers
     /// <summary>
     /// Provides a centralized repository of names that are restricted by the Windows file system.
     /// </summary>
-    public class ReservedNames
+    public static class ReservedNames
     {
         /// <summary>
         /// A complete immutable collection of legacy Windows reserved device names that cannot be used as filenames,

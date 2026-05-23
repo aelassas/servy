@@ -65,7 +65,7 @@ namespace Servy.Core.Helpers
 
             try
             {
-                if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
+                if (!ShouldCopyResource(resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
                     return true;
 
                 // ROBUSTNESS: Validate the embedded resource exists BEFORE side-effecting anything.
@@ -131,9 +131,6 @@ namespace Servy.Core.Helpers
                     }
                 }
 
-                copyDone = true; // File write succeeded
-
-
                 if (copyDone && !restartFailed)
                 {
                     Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
@@ -176,7 +173,7 @@ namespace Servy.Core.Helpers
         {
             try
             {
-                if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
+                if (!ShouldCopyResource(resourceNamespace, fileName, extension, out var targetPath, out var resourceName))
                     return true;
 
                 // ROBUSTNESS: Validate the embedded resource exists BEFORE side-effecting anything.
@@ -278,7 +275,6 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Resolves output paths, creates necessary directories, and determines if a resource extraction is required based on timestamps.
         /// </summary>
-        /// <param name="assembly">The assembly containing the embedded resource.</param>
         /// <param name="resourceNamespace">The namespace where the resource is located within the assembly.</param>
         /// <param name="fileName">The base name of the file to extract (without extension).</param>
         /// <param name="extension">The file extension (e.g., "exe", "dll").</param>
@@ -286,7 +282,6 @@ namespace Servy.Core.Helpers
         /// <param name="resourceName">Output parameter containing the full manifest resource name used for extraction.</param>
         /// <returns>True if the resource needs to be copied; false if the existing file is up to date.</returns>
         private bool ShouldCopyResource(
-            Assembly assembly,
             string resourceNamespace,
             string fileName,
             string extension,
