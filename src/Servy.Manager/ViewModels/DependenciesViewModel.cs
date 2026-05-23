@@ -182,53 +182,39 @@ namespace Servy.Manager.ViewModels
         {
             var token = _monitoringCts?.Token ?? CancellationToken.None;
 
-            try
+            var currentSelection = SelectedService;
+            if (currentSelection == null)
             {
-                var currentSelection = SelectedService;
-                if (currentSelection == null)
-                {
-                    if (_hadSelectedService)
-                    {
-                        ResetPid();
-                        _hadSelectedService = false;
-                        CopyPidCommand?.RaiseCanExecuteChanged();
-                    }
-                    return;
-                }
-                _hadSelectedService = true;
-
-                var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, token);
-
-                // Drop this tick if the user switched services while we were awaiting the DB call.
-                if (!ReferenceEquals(currentSelection, SelectedService) || token.IsCancellationRequested) return;
-
-                if (!currentPid.HasValue)
+                if (_hadSelectedService)
                 {
                     ResetPid();
-                    currentSelection.Pid = null;
-                    CopyPidCommand?.RaiseCanExecuteChanged();
-                    return;
-                }
-
-                if (currentSelection.Pid != currentPid)
-                {
-                    currentSelection.Pid = currentPid;
+                    _hadSelectedService = false;
                     CopyPidCommand?.RaiseCanExecuteChanged();
                 }
+                return;
+            }
+            _hadSelectedService = true;
 
-                SetPidText(currentSelection);
-            }
-            catch (OperationCanceledException)
+            var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, token);
+
+            // Drop this tick if the user switched services while we were awaiting the DB call.
+            if (!ReferenceEquals(currentSelection, SelectedService) || token.IsCancellationRequested) return;
+
+            if (!currentPid.HasValue)
             {
-                // Expected during app shutdown or when the ViewModel is deactivated.
-                // No logging required as this is a normal lifecycle event.
+                ResetPid();
+                currentSelection.Pid = null;
+                CopyPidCommand?.RaiseCanExecuteChanged();
+                return;
             }
-            catch (Exception ex)
+
+            if (currentSelection.Pid != currentPid)
             {
-                // Log the error so it's visible in 'Servy.Manager.log'
-                // This ensures developers can diagnose why the UI stopped updating.
-                Logger.Error($"Background tick failed in {GetType().Name}", ex);
+                currentSelection.Pid = currentPid;
+                CopyPidCommand?.RaiseCanExecuteChanged();
             }
+
+            SetPidText(currentSelection);
         }
 
         #endregion

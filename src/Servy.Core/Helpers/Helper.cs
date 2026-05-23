@@ -167,7 +167,19 @@ namespace Servy.Core.Helpers
         /// - Doubles trailing backslashes before the closing quote.  
         /// - Replaces any null characters (<c>\0</c>) with the literal sequence <c>\\0</c>.
         /// </remarks>
-        public static string EscapeArgs(string? input)
+        public static string EscapeArgs(string? input) => EscapeCore(input, escapeQuotes: true);
+
+        /// <summary>
+        /// Escapes only backslashes that appear immediately before double quotes.
+        /// </summary>
+        /// <param name="input">The input string to escape.</param>
+        /// <returns>The escaped string.</returns>
+        public static string EscapeBackslashes(string? input) => EscapeCore(input, escapeQuotes: false);
+
+        /// <summary>
+        /// Core extraction helper containing common parsing logic for command line escaping.
+        /// </summary>
+        private static string EscapeCore(string? input, bool escapeQuotes)
         {
             if (string.IsNullOrEmpty(input))
                 return string.Empty;
@@ -183,7 +195,6 @@ namespace Servy.Core.Helpers
             // because \" is treated as a literal quote, and \\" is a literal backslash + quote.
             // The logic: 2n backslashes + " => n backslashes + literal "
             // 2n+1 backslashes + " => n backslashes + literal " + escape next... 
-            // Actually, a simpler way for standard .NET/Windows:
             var sb = new StringBuilder();
 
             int backslashCount = 0;
@@ -196,13 +207,14 @@ namespace Servy.Core.Helpers
                 else if (c == '"')
                 {
                     // Escape all backslashes before a quote
-                    sb.Append('\\', backslashCount * 2 + 1);
+                    // EscapeArgs adds an extra backslash to escape the quote itself; EscapeBackslashes does not.
+                    sb.Append('\\', backslashCount * 2 + (escapeQuotes ? 1 : 0));
                     sb.Append('"');
                     backslashCount = 0;
                 }
                 else
                 {
-                    // Normal character - just flush any backslashes
+                    // Normal character / Write any previous backslashes as-is - just flush any backslashes
                     if (backslashCount > 0)
                     {
                         sb.Append('\\', backslashCount);
@@ -213,59 +225,9 @@ namespace Servy.Core.Helpers
             }
 
             // Escape trailing backslashes before closing quote
+            // Flush any remaining backslashes unchanged or doubled depending on mode
             if (backslashCount > 0)
-                sb.Append('\\', backslashCount * 2);
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// Escapes only backslashes that appear immediately before double quotes.
-        /// </summary>
-        /// <param name="input">The input string to escape.</param>
-        /// <returns>The escaped string.</returns>
-        public static string EscapeBackslashes(string? input)
-        {
-            if (string.IsNullOrEmpty(input))
-                return string.Empty;
-
-            if (input.Contains('\0'))
-            {
-                // Replace actual null chars with literal "\0" sequence to keep argument safe
-                input = input.Replace("\0", "\\0");
-            }
-
-            var sb = new StringBuilder();
-            int backslashCount = 0;
-
-            foreach (char c in input)
-            {
-                if (c == '\\')
-                {
-                    backslashCount++;
-                }
-                else if (c == '"')
-                {
-                    // Double only the backslashes that come right before a quote
-                    sb.Append('\\', backslashCount * 2);
-                    sb.Append('"');
-                    backslashCount = 0;
-                }
-                else
-                {
-                    // Write any previous backslashes as-is
-                    if (backslashCount > 0)
-                    {
-                        sb.Append('\\', backslashCount);
-                        backslashCount = 0;
-                    }
-                    sb.Append(c);
-                }
-            }
-
-            // Flush any remaining backslashes unchanged
-            if (backslashCount > 0)
-                sb.Append('\\', backslashCount);
+                sb.Append('\\', escapeQuotes ? backslashCount * 2 : backslashCount);
 
             return sb.ToString();
         }

@@ -211,69 +211,55 @@ namespace Servy.Manager.ViewModels
         {
             var token = _monitoringCts?.Token ?? CancellationToken.None;
 
-            try
+            var currentSelection = SelectedService;
+            if (currentSelection == null)
             {
-                var currentSelection = SelectedService;
-                if (currentSelection == null)
-                {
-                    if (_hadSelectedService)
-                    {
-                        ResetGraphs(true);
-                        _hadSelectedService = false;
-                        CopyPidCommand?.RaiseCanExecuteChanged();
-                    }
-                    return;
-                }
-                _hadSelectedService = true;
-
-                var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, token);
-
-                if (!currentPid.HasValue)
+                if (_hadSelectedService)
                 {
                     ResetGraphs(true);
-                    currentSelection.Pid = null;
-                    CopyPidCommand?.RaiseCanExecuteChanged();
-                    return;
-                }
-
-                if (currentSelection.Pid != currentPid)
-                {
-                    currentSelection.Pid = currentPid;
-                    ResetGraphs(true);
+                    _hadSelectedService = false;
                     CopyPidCommand?.RaiseCanExecuteChanged();
                 }
-
-                int pid = currentSelection.Pid.Value;
-                SetPidText(currentSelection);
-
-                var processMetrics = await Task.Run(() =>
-                {
-                    _processHelper.MaintainCache();
-                    return _processHelper.GetProcessTreeMetrics(pid);
-                });
-
-                if (token.IsCancellationRequested) return;
-                if (!ReferenceEquals(currentSelection, _selectedService)) return;
-
-                double rawRamMb = processMetrics.RamUsage / 1024d / 1024d;
-
-                CpuUsage = _processHelper.FormatCpuUsage(processMetrics.CpuUsage);
-                RamUsage = _processHelper.FormatRamUsage(processMetrics.RamUsage);
-
-                AddPoint(_cpuValues, processMetrics.CpuUsage, MetricType.Cpu);
-                AddPoint(_ramValues, rawRamMb, MetricType.Ram);
+                return;
             }
-            catch (OperationCanceledException)
+            _hadSelectedService = true;
+
+            var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, token);
+
+            if (!currentPid.HasValue)
             {
-                // Expected during app shutdown or when the ViewModel is deactivated.
-                // No logging required as this is a normal lifecycle event.
+                ResetGraphs(true);
+                currentSelection.Pid = null;
+                CopyPidCommand?.RaiseCanExecuteChanged();
+                return;
             }
-            catch (Exception ex)
+
+            if (currentSelection.Pid != currentPid)
             {
-                // Log the error so it's visible in 'Servy.Manager.log'
-                // This ensures developers can diagnose why the UI stopped updating.
-                Logger.Error($"Background tick failed in {GetType().Name}", ex);
+                currentSelection.Pid = currentPid;
+                ResetGraphs(true);
+                CopyPidCommand?.RaiseCanExecuteChanged();
             }
+
+            int pid = currentSelection.Pid.Value;
+            SetPidText(currentSelection);
+
+            var processMetrics = await Task.Run(() =>
+            {
+                _processHelper.MaintainCache();
+                return _processHelper.GetProcessTreeMetrics(pid);
+            });
+
+            if (token.IsCancellationRequested) return;
+            if (!ReferenceEquals(currentSelection, _selectedService)) return;
+
+            double rawRamMb = processMetrics.RamUsage / 1024d / 1024d;
+
+            CpuUsage = _processHelper.FormatCpuUsage(processMetrics.CpuUsage);
+            RamUsage = _processHelper.FormatRamUsage(processMetrics.RamUsage);
+
+            AddPoint(_cpuValues, processMetrics.CpuUsage, MetricType.Cpu);
+            AddPoint(_ramValues, rawRamMb, MetricType.Ram);
         }
 
         #endregion

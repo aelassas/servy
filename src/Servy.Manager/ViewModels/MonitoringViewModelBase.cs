@@ -38,6 +38,11 @@ namespace Servy.Manager.ViewModels
         protected int _isTickRunningFlag = 0;
 
         /// <summary>
+        /// Tracks the total number of sequential monitoring failures to support log rate-limiting.
+        /// </summary>
+        private long _tickErrorCount = 0;
+
+        /// <summary>
         /// Tracks whether the instance has already been disposed to prevent redundant cleanup.
         /// </summary>
         private bool _isDisposed;
@@ -96,14 +101,26 @@ namespace Servy.Manager.ViewModels
             try
             {
                 await OnTickAsync();
+
+                // Reset error counter upon a completely successful operation sequence
+                Interlocked.Exchange(ref _tickErrorCount, 0);
             }
             catch (OperationCanceledException)
             {
                 // Expected behavior during shutdown or monitoring reset.
+                Interlocked.Exchange(ref _tickErrorCount, 0);
             }
             catch (Exception ex)
             {
-                Logger.Error($"Monitoring tick failed in {GetType().Name}.", ex);
+                // Unify error policy: Throttles background logging without losing observability traces.
+                // Increments atomically to maintain accurate tracking if multi-tab components ever fire concurrently.
+                long currentErrorCount = Interlocked.Increment(ref _tickErrorCount);
+
+                if (currentErrorCount % 10 == 1)
+                {
+                    Logger.Warn($"Background monitoring tick failed in {GetType().Name} (Consecutive Failure Count: {currentErrorCount}).", ex);
+                }
+
                 // Do NOT rethrow - async void would terminate the dispatcher and crash the Manager UI.
             }
             finally

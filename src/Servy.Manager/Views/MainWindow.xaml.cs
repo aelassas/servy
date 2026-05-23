@@ -669,10 +669,11 @@ namespace Servy.Manager.Views
         /// <param name="action">The asynchronous work to execute.</param>
         /// <remarks>
         /// <para>
-        /// This method uses <c>async void</c> to bridge synchronous UI event signatures with 
-        /// asynchronous logic. Because <c>async void</c> methods cannot be awaited and their 
-        /// exceptions do not bubble up to the caller, this wrapper includes a top-level 
-        /// try-catch block to ensure all failures are recorded by the <see cref="Logger"/>.
+        /// This method returns <c>Task</c> but is invoked as fire-and-forget via 
+        /// <c>_ = RunAsync(...)</c> from synchronous UI event handlers. Because the 
+        /// returned task is discarded, exceptions would otherwise be observed only on 
+        /// finalizer/GC. The top-level try-catch ensures all failures are recorded by 
+        /// the <see cref="Logger"/> instead.
         /// </para>
         /// <para>
         /// <b>Note:</b> Use this only for top-level event handlers where the caller does not 
