@@ -977,7 +977,7 @@ namespace Servy.ViewModels
             EnvironmentVariables = string.Empty;
             ServiceDependencies = string.Empty;
 
-            RunAsLocalSystem = true;
+            RunAsLocalSystem = DefaultRunAsLocalSystem;
             UserAccount = string.Empty;
             Password = string.Empty;
             ConfirmPassword = string.Empty;
@@ -1006,7 +1006,7 @@ namespace Servy.ViewModels
             PreStopStartupDirectory = string.Empty;
             PreStopParameters = string.Empty;
             PreStopTimeoutSeconds = DefaultPreStopTimeoutSeconds.ToString();
-            PreStopLogAsError = false;
+            PreStopLogAsError = DefaultPreStopLogAsError;
 
             // Post-Stop
             PostStopExecutablePath = string.Empty;

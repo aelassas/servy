@@ -522,7 +522,7 @@ namespace Servy.Core.IO
                     Logger.Warn($"Failed to delete old log file '{file}': {ex.Message}. Consecutive failures: {_consecutiveDeletionFailures}");
 
                     // If we hit a threshold (e.g., 10), we log a more severe error to alert operators.
-                    if (_consecutiveDeletionFailures >= 10)
+                    if (_consecutiveDeletionFailures >= AppConfig.LogRotationDeletionFailureEscalationThreshold)
                     {
                         Logger.Error($"Persistent failure to enforce log rotation limit for '{_file.FullName}' (consecutive failures: {_consecutiveDeletionFailures}, max retained: {_maxRotations}). Disk space growth is no longer bounded.");
                     }
