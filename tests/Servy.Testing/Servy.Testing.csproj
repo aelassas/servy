@@ -18,9 +18,9 @@
     <AssemblyDescription>Shared testing utilities</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy.Testing</Product>
-    <Version>8.7.0</Version>
-    <FileVersion>8.7.0.0</FileVersion>
-    <AssemblyVersion>8.7.0.0</AssemblyVersion>
+    <Version>8.5.0</Version>
+    <FileVersion>8.5.0.0</FileVersion>
+    <AssemblyVersion>8.5.0.0</AssemblyVersion>
     <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
 
