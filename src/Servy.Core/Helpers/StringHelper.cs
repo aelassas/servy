@@ -1,4 +1,5 @@
-﻿using Servy.Core.EnvironmentVariables;
+﻿using Servy.Core.Config;
+using Servy.Core.EnvironmentVariables;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -28,7 +29,13 @@ namespace Servy.Core.Helpers
 
             // ROBUSTNESS: Detect and double any backslash that immediately precedes a line break or the end of the string.
             // This guarantees that the trailing backslash doesn't escape the substituted semicolon record delimiter down the line.
-            string normalized = Regex.Replace(str, @"\\(?=\r|\n|$)", @"\\");
+            // A timeout guard from AppConfig is passed to protect against evaluation spikes or processing stalls.
+            string normalized = Regex.Replace(
+                str,
+                @"\\(?=\r|\n|$)",
+                @"\\",
+                RegexOptions.None,
+                AppConfig.InputRegexTimeout);
 
             // Replace line breaks with semicolons to flatten the multi-line input
             normalized = normalized
