@@ -21,6 +21,7 @@
 #
 #  Result:
 #    Green  -> All release workflows succeeded
+#    Yellow -> One or more still in progress.
 #    Red    -> One or more failed, skipped, or missing
 # ==============================================================
 name: release
@@ -55,7 +56,6 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 workflow_id: `${wf}.yml`,
-                branch: 'main',
                 per_page: 1,
               });
 
