@@ -10,6 +10,4 @@ namespace Servy.Manager.UnitTests.Services
             Name = name;
         }
     }
-
-
 }

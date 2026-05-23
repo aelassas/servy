@@ -195,9 +195,20 @@ namespace Servy.Core.Security
         /// via <c>AppConfig.AllowLegacyV1Decryption</c> to safeguard production systems.
         /// </remarks>
         /// <param name="cipherText">The versioned ciphertext (with marker) or a raw legacy string.</param>
-        /// <returns>The decrypted plain text if successful; otherwise, the original <paramref name="cipherText"/>.</returns>
+        /// <returns>
+        /// The decrypted plain text on success, or the original <paramref name="cipherText"/> 
+        /// only when the input has no marker and does not look like Base64.
+        /// </returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="cipherText"/> is null.</exception>
         /// <exception cref="ArgumentException">Thrown if <paramref name="cipherText"/> is empty.</exception>
+        /// <exception cref="SecureDataIntegrityException">
+        /// Thrown when:
+        ///  - a marked v2 payload fails HMAC or AES decryption (tampering or corruption);
+        ///  - a marked v1 payload is supplied while AllowLegacyV1Decryption is false;
+        ///  - the input has no marker but is strict Base64 and legacy decryption is disabled;
+        ///  - the marker version is unrecognized.
+        /// </exception>
+        /// <exception cref="CryptographicException">Thrown when legacy v1 decryption is enabled but AES decryption fails.</exception>
         public string Decrypt(string cipherText)
         {
             ThrowIfDisposed();

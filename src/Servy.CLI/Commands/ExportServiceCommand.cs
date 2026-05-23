@@ -263,20 +263,21 @@ namespace Servy.CLI.Commands
                     }
                 }
             }
+            catch (SecurityException)
+            {
+                // Already a precise, intentionally-thrown guard message - let it propagate.
+                throw;
+            }
             catch (Exception ex)
             {
                 // The stream is inherently closed upon exception due to the using block unwinding.
                 // We wipe the 0-byte empty file footprint off the disk to ensure no artifacts are left on unauthorized volumes.
                 try { File.Delete(fullPath); } catch { /* ignored */ }
 
-                if (ex is SecurityException)
-                {
-                    throw;
-                }
-
-                throw new SecurityException($"Security Guard Failure: Target file handle validation rejected. {ex.Message}");
+                throw new SecurityException(
+                    $"Security Guard Failure: Target file handle validation rejected. {ex.Message}",
+                    ex);   // preserve the inner exception for diagnostics
             }
         }
-
     }
 }
