@@ -209,15 +209,22 @@ namespace Servy.CLI
                     // Copy *.dll from embedded resources
                     resourceItems.AddRange(new List<ResourceItem>
                     {
-                        new ResourceItem{ FileNameWithoutExtension = "Servy.Core", Extension= "dll" },
                         new ResourceItem{ FileNameWithoutExtension = "Dapper", Extension= "dll" },
+                        new ResourceItem{ FileNameWithoutExtension = "e_sqlite3", Extension= "dll" },
                         new ResourceItem{ FileNameWithoutExtension = "Microsoft.Bcl.AsyncInterfaces", Extension= "dll" },
                         new ResourceItem{ FileNameWithoutExtension = "Newtonsoft.Json", Extension= "dll" },
+                        new ResourceItem{ FileNameWithoutExtension = "Servy.Core", Extension= "dll" },
                         new ResourceItem{ FileNameWithoutExtension = "Servy.Infrastructure", Extension= "dll" },
+                        new ResourceItem{ FileNameWithoutExtension = "System.Buffers", Extension= "dll" },
+                        new ResourceItem{ FileNameWithoutExtension = "System.Collections.Immutable", Extension= "dll" },
                         new ResourceItem{ FileNameWithoutExtension = "System.Data.SQLite", Extension= "dll" },
+                        new ResourceItem{ FileNameWithoutExtension = "System.Memory", Extension= "dll" },
+                        new ResourceItem{ FileNameWithoutExtension = "System.Numerics.Vectors", Extension= "dll" },
                         new ResourceItem{ FileNameWithoutExtension = "System.Runtime.CompilerServices.Unsafe", Extension= "dll" },
+                        new ResourceItem{ FileNameWithoutExtension = "System.Security.AccessControl", Extension= "dll" },
+                        new ResourceItem{ FileNameWithoutExtension = "System.Security.Principal.Windows", Extension= "dll" },
+                        new ResourceItem{ FileNameWithoutExtension = "System.Threading.AccessControl", Extension= "dll" },
                         new ResourceItem{ FileNameWithoutExtension = "System.Threading.Tasks.Extensions", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "e_sqlite3", Extension= "dll" },
                     });
 #endif
 

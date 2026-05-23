@@ -187,16 +187,30 @@
     <Content Include="App.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <EmbeddedResource Include="Resources\e_sqlite3.dll" />
-    <EmbeddedResource Include="Resources\System.Threading.Tasks.Extensions.dll" />
-    <EmbeddedResource Include="Resources\System.Runtime.CompilerServices.Unsafe.dll" />
-    <EmbeddedResource Include="Resources\System.Data.SQLite.dll" />
-    <EmbeddedResource Include="Resources\Servy.Infrastructure.dll" />
-    <EmbeddedResource Include="Resources\Newtonsoft.Json.dll" />
-    <EmbeddedResource Include="Resources\Microsoft.Bcl.AsyncInterfaces.dll" />
+
     <EmbeddedResource Include="Resources\Dapper.dll" />
-    <EmbeddedResource Include="Resources\handle64.exe" />
+    <EmbeddedResource Include="Resources\e_sqlite3.dll" />
+    <EmbeddedResource Include="Resources\Microsoft.Bcl.AsyncInterfaces.dll" />
+    <EmbeddedResource Include="Resources\Newtonsoft.Json.dll" />
     <EmbeddedResource Include="Resources\Servy.Core.dll" />
+    <EmbeddedResource Include="Resources\Servy.Infrastructure.dll" />
+    <EmbeddedResource Include="Resources\System.Buffers.dll" />
+    <EmbeddedResource Include="Resources\System.Collections.Immutable.dll" />
+    <EmbeddedResource Include="Resources\System.Data.SQLite.dll" />
+    <EmbeddedResource Include="Resources\System.Memory.dll" />
+    <EmbeddedResource Include="Resources\System.Numerics.Vectors.dll" />
+    <EmbeddedResource Include="Resources\System.Runtime.CompilerServices.Unsafe.dll" />
+    <EmbeddedResource Include="Resources\System.Security.AccessControl.dll" />
+    <EmbeddedResource Include="Resources\System.Security.Principal.Windows.dll" />
+    <EmbeddedResource Include="Resources\System.Threading.AccessControl.dll" />
+    <EmbeddedResource Include="Resources\System.Threading.Tasks.Extensions.dll" />
+    
+    <EmbeddedResource Include="Resources\handle64.exe" />
+    <EmbeddedResource Include="Resources\Servy.Service.Net48.exe" />
+    <EmbeddedResource Include="Resources\Servy.Service.Net48.pdb" />
+
+    <Resource Include="servy.ico" />
+
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Servy.Core\Servy.Core.csproj">
@@ -212,15 +226,7 @@
       <Name>Servy.UI</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Resource Include="servy.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\Servy.Service.Net48.pdb" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\Servy.Service.Net48.exe" />
-  </ItemGroup>
+
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

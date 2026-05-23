@@ -237,21 +237,30 @@
     <Content Include="App.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <EmbeddedResource Include="Resources\e_sqlite3.dll" />
     <EmbeddedResource Include="Resources\Dapper.dll" />
+    <EmbeddedResource Include="Resources\e_sqlite3.dll" />
     <EmbeddedResource Include="Resources\Microsoft.Bcl.AsyncInterfaces.dll" />
     <EmbeddedResource Include="Resources\Newtonsoft.Json.dll" />
+    <EmbeddedResource Include="Resources\Servy.Core.dll" />
     <EmbeddedResource Include="Resources\Servy.Infrastructure.dll" />
+    <EmbeddedResource Include="Resources\System.Buffers.dll" />
+    <EmbeddedResource Include="Resources\System.Collections.Immutable.dll" />
     <EmbeddedResource Include="Resources\System.Data.SQLite.dll" />
+    <EmbeddedResource Include="Resources\System.Memory.dll" />
+    <EmbeddedResource Include="Resources\System.Numerics.Vectors.dll" />
     <EmbeddedResource Include="Resources\System.Runtime.CompilerServices.Unsafe.dll" />
+    <EmbeddedResource Include="Resources\System.Security.AccessControl.dll" />
+    <EmbeddedResource Include="Resources\System.Security.Principal.Windows.dll" />
+    <EmbeddedResource Include="Resources\System.Threading.AccessControl.dll" />
     <EmbeddedResource Include="Resources\System.Threading.Tasks.Extensions.dll" />
+    
+    <EmbeddedResource Include="Resources\handle64.exe" />
+    <EmbeddedResource Include="Resources\Servy.Service.Net48.exe" />
+    <EmbeddedResource Include="Resources\Servy.Service.Net48.pdb" />
+    
     <Resource Include="Resources\Icons\Error.png" />
     <Resource Include="Resources\Icons\Info.png" />
     <Resource Include="Resources\Icons\Warning.png" />
-    <EmbeddedResource Include="Resources\handle64.exe" />
-    <EmbeddedResource Include="Resources\Servy.Core.dll" />
-    <EmbeddedResource Include="Resources\Servy.Service.Net48.pdb" />
-    <EmbeddedResource Include="Resources\Servy.Service.Net48.exe" />
     <Resource Include="servy.ico" />
   </ItemGroup>
   <ItemGroup>
