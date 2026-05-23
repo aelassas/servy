@@ -177,14 +177,14 @@ jobs:
           foreach ($dll in $testDlls) {
               Write-Host "`nRunning tests in $($dll.Name)..." -ForegroundColor Yellow
               
-              $args = @($dll.FullName, "/Framework:.NETFramework,Version=v4.8", "/logger:trx")
+              $vsTestArgs = @($dll.FullName, "/Framework:.NETFramework,Version=v4.8", "/logger:trx")
               
               # Automatically apply the required exclusion filter to the Service.UnitTests assembly
               if ($dll.Name -eq "Servy.Service.UnitTests.dll") {
-                  $args += '/TestCaseFilter:Category!=ReflectionValidation'
+                  $vsTestArgs += '/TestCaseFilter:Category!=ReflectionValidation'
               }
 
-              & $vsTest $args
+              & $vsTest @vsTestArgs
 
               if ($LASTEXITCODE -ne 0) {
                   Write-Error "Tests failed in $($dll.Name)"

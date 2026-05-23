@@ -1248,8 +1248,11 @@ function Install-ServyService {
   }
   # Fallback: If no parameter was provided, manually grab the session's env var 
   # to ensure it is passed into the CLI's process block.
-  elseif (Test-Path "env:\$script:ServyPasswordEnvVar") {
-      $secureEnv[$script:ServyPasswordEnvVar] = Get-Content "env:\$script:ServyPasswordEnvVar"
+  else {
+      $envValue = [System.Environment]::GetEnvironmentVariable($script:ServyPasswordEnvVar, 'Process')
+      if (-not [string]::IsNullOrEmpty($envValue)) {
+          $secureEnv[$script:ServyPasswordEnvVar] = $envValue
+      }
   }
 
   # 5. CLI Invocation with deterministic cleanup

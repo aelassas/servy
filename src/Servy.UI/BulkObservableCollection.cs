@@ -14,22 +14,16 @@ namespace Servy.UI
     /// <remarks>
     /// <para>
     /// Thread Safety: To ensure UI consistency in WPF, bulk operations should ideally be performed 
-    /// on the UI thread. The <c>_suppressNotification</c> field is marked volatile to ensure 
-    /// visibility across threads if background updates are performed.
+    /// on the UI thread.
     /// </para>
     /// <para>
-    /// Performance: This class optimizes range removals and additions by suppressing UI 
-    /// updates until the entire operation is complete, followed by a single <see cref="NotifyCollectionChangedAction.Reset"/> notification.
+    /// Performance: This class optimizes range removals and additions by manipulating the internal 
+    /// Items collection directly, bypassing per-item virtual method overhead, followed by a single 
+    /// <see cref="NotifyCollectionChangedAction.Reset"/> notification.
     /// </para>
     /// </remarks>
     public class BulkObservableCollection<T> : ObservableCollection<T>
     {
-        /// <summary>
-        /// Flag to indicate whether collection changed notifications should be suppressed.
-        /// Marked volatile to ensure cross-thread visibility of the suppression state.
-        /// </summary>
-        private volatile bool _suppressNotification = false;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="BulkObservableCollection{T}"/> class.
         /// </summary>
@@ -54,44 +48,19 @@ namespace Servy.UI
         /// </summary>
         /// <param name="items">The collection of items to add. If null, no action is taken.</param>
         /// <remarks>
-        /// This method suppresses notifications for each individual addition and raises a 
+        /// This method mutates the underlying list directly and raises a 
         /// single <see cref="NotifyCollectionChangedAction.Reset"/> event upon completion.
         /// </remarks>
         public void AddRange(IEnumerable<T> items)
         {
             if (items == null) return;
 
-            _suppressNotification = true;
-
-            try
+            foreach (var item in items)
             {
-                foreach (var item in items)
-                {
-                    Items.Add(item);
-                }
+                Items.Add(item);
             }
-            finally
-            {
-                _suppressNotification = false;
 
-                RaiseResetNotifications();
-            }
-        }
-
-        /// <summary>
-        /// Raises the <see cref="ObservableCollection{T}.CollectionChanged"/> event.
-        /// </summary>
-        /// <param name="e">Arguments of the event being raised.</param>
-        /// <remarks>
-        /// If <c>_suppressNotification</c> is <see langword="true"/>, the event is swallowed 
-        /// to prevent UI overhead during bulk operations.
-        /// </remarks>
-        protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
-        {
-            if (!_suppressNotification)
-            {
-                base.OnCollectionChanged(e);
-            }
+            RaiseResetNotifications();
         }
 
         /// <summary>
@@ -111,30 +80,21 @@ namespace Servy.UI
             int removeCount = Items.Count - maxItems;
             if (removeCount <= 0) return;
 
-            _suppressNotification = true;
-
-            try
+            // Using RemoveRange is O(n) instead of O(n^2) for multiple RemoveAt(0) calls.
+            if (Items is List<T> list)
             {
-                // Using RemoveRange is O(n) instead of O(n^2) for multiple RemoveAt(0) calls.
-                if (Items is List<T> list)
+                list.RemoveRange(0, removeCount);
+            }
+            else
+            {
+                // Fallback for non-List implementations, though ObservableCollection uses List by default
+                for (int i = 0; i < removeCount; i++)
                 {
-                    list.RemoveRange(0, removeCount);
-                }
-                else
-                {
-                    // Fallback for non-List implementations, though ObservableCollection uses List by default
-                    for (int i = 0; i < removeCount; i++)
-                    {
-                        Items.RemoveAt(0);
-                    }
+                    Items.RemoveAt(0);
                 }
             }
-            finally
-            {
-                _suppressNotification = false;
 
-                RaiseResetNotifications();
-            }
+            RaiseResetNotifications();
         }
 
         /// <summary>
@@ -160,9 +120,7 @@ namespace Servy.UI
             // as manual manipulation of the internal 'Items' collection bypasses these.
 
             OnPropertyChanged(new PropertyChangedEventArgs("Count"));
-
             OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
-
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
     }
