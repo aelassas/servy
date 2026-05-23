@@ -6,7 +6,7 @@
     to prevent drift across multiple orchestration scripts.
 #>
 @{
-    Version            = "8.5"
+    Version            = "8.7"
     Tfm                = "net10.0-windows"
     BuildConfiguration = "Release"
     Runtime            = "win-x64"
