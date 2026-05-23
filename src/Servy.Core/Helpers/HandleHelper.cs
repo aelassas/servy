@@ -116,7 +116,18 @@ namespace Servy.Core.Helpers
                 string error = errorBuilder.ToString();
 
                 // Sysinternals handle.exe returns exit code 1 when it successfully executes but finds no handles.
-                var matchedAny = HandleOutputRegex.IsMatch(output);
+                MatchCollection matches;
+                try
+                {
+                    matches = HandleOutputRegex.Matches(output);
+                }
+                catch (RegexMatchTimeoutException ex)
+                {
+                    Logger.Error("Regex parsing timed out while processing handle output.", ex);
+                    throw;
+                }
+
+                var matchedAny = matches.Count > 0;
                 bool noMatchingHandles =
                     process.ExitCode == 1
                     && !matchedAny
@@ -142,25 +153,16 @@ namespace Servy.Core.Helpers
                     Logger.Warn($"handle.exe produced error output: {errorBuilder}");
                 }
 
-                try
+                foreach (Match match in matches)
                 {
-                    var matches = HandleOutputRegex.Matches(output);
-                    foreach (Match match in matches)
+                    if (match.Success && int.TryParse(match.Groups["pid"].Value, out int pid))
                     {
-                        if (match.Success && int.TryParse(match.Groups["pid"].Value, out int pid))
+                        processes.Add(new ProcessHandleInfo
                         {
-                            processes.Add(new ProcessHandleInfo
-                            {
-                                ProcessName = match.Groups["name"].Value.Trim(),
-                                ProcessId = pid
-                            });
-                        }
+                            ProcessName = match.Groups["name"].Value.Trim(),
+                            ProcessId = pid
+                        });
                     }
-                }
-                catch (RegexMatchTimeoutException ex)
-                {
-                    Logger.Error("Regex parsing timed out while processing handle output.", ex);
-                    throw; // let the caller decide; partial lists are worse than failed lists
                 }
             }
 

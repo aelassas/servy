@@ -326,6 +326,36 @@ namespace Servy.Infrastructure.Data
                 Logger.Info("Dropped legacy non-unique index 'idx_services_name_lower'.");
             }
 
+            // --- ROBUSTNESS: Defensively resolve duplicate LOWER(Name) groups before enforcing UNIQUE constraints ---
+            // This prevents migration failure crashes (SQLite Error 19: UNIQUE constraint failed) when upgrading legacy DBs.
+            var duplicates = connection.Query(@"
+                SELECT LOWER(Name) AS LowerName, COUNT(*) AS Count, GROUP_CONCAT(Id) AS Ids
+                FROM Services
+                GROUP BY LOWER(Name)
+                HAVING COUNT(*) > 1;", transaction: transaction).ToList();
+
+            if (duplicates.Count > 0)
+            {
+                Logger.Warn($"Database migration warning: Found {duplicates.Count} duplicate service name group(s). Resolving automatically by retaining the oldest entry.");
+
+                foreach (var dup in duplicates)
+                {
+                    string lowerName = dup.LowerName;
+                    string[] allIds = ((string)dup.Ids).Split(',');
+
+                    // Retain the first/lowest ID for historical integrity, mark trailing IDs for deletion
+                    string primaryId = allIds[0];
+                    var redundantIds = allIds.Skip(1).ToList();
+                    string idListString = string.Join(",", redundantIds);
+
+                    Logger.Info($"Deduplicating name group '{lowerName}': Keeping primary ID {primaryId}, removing redundant variant ID(s): {idListString}.");
+
+                    // Prune the redundant records within the transaction scope
+                    connection.Execute($"DELETE FROM Services WHERE Id IN ({idListString});", transaction: transaction);
+                }
+            }
+            // --------------------------------------------------------------------------------------------------------
+
             connection.Execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_lower ON Services(LOWER(Name));", transaction: transaction);
 
             var existingColumns = new HashSet<string>(

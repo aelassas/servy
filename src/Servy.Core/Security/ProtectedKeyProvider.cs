@@ -264,7 +264,17 @@ namespace Servy.Core.Security
                     bool owned = false;
                     try
                     {
-                        owned = mutex.WaitOne(TimeSpan.FromSeconds(30));
+                        try
+                        {
+                            owned = mutex.WaitOne(TimeSpan.FromSeconds(30));
+                        }
+                        catch (AbandonedMutexException)
+                        {
+                            // Prior owner died while holding the mutex. We still own it; just log and proceed.
+                            owned = true;
+                            Logger.Warn($"Mutex '{mutexName}' was abandoned by a previous owner (likely a Servy process killed during key generation). Continuing with ownership.");
+                        }
+
                         if (!owned)
                         {
                             throw new TimeoutException($"Timed out waiting for cross-process lock on {path}");

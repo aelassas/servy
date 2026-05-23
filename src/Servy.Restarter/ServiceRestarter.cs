@@ -29,10 +29,12 @@ namespace Servy.Restarter
                 // 1. Settle: If Pending, wait for it to reach a stable state first
                 while (IsPendingState(controller.Status))
                 {
-                    if (stopwatch.Elapsed > timeout)
+                    var remaining = timeout - stopwatch.Elapsed;
+                    if (remaining <= TimeSpan.Zero)
                         throw new System.TimeoutException($"Service '{serviceName}' stuck in {controller.Status} state.");
 
-                    Thread.Sleep(AppConfig.ServiceRestarterPollIntervalMs);
+                    var sleepFor = (int)Math.Min(AppConfig.ServiceRestarterPollIntervalMs, remaining.TotalMilliseconds);
+                    if (sleepFor > 0) Thread.Sleep(sleepFor);
                     controller.Refresh();
                 }
 
@@ -138,7 +140,9 @@ namespace Servy.Restarter
                 catch (InvalidOperationException)
                 {
                     // Still transitional, wait a bit before the next poll
-                    Thread.Sleep(AppConfig.ServiceRestarterPollIntervalMs);
+                    var remaining = timeout - stopwatch.Elapsed;
+                    if (remaining <= TimeSpan.Zero) break;
+                    Thread.Sleep((int)Math.Min(AppConfig.ServiceRestarterPollIntervalMs, remaining.TotalMilliseconds));
                 }
             }
 

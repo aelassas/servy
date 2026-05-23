@@ -251,7 +251,7 @@ namespace Servy.Core.Logging
                         _isEventLogEnabled = false;
                         Logger.Error(
                             $"Event source '{_source}' is already registered to log '{currentLog}', " +
-                            $"not '{AppConfig.EventLogName}'. Refusing to write to the wrong log — " +
+                            $"not '{AppConfig.EventLogName}'. Refusing to write to the wrong log - " +
                             $"falling back to file-only logging. Run as admin and delete/recreate the source to fix.");
                         return;
                     }
