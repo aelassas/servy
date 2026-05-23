@@ -2,7 +2,6 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System;
-using System.Data;
 using System.IO;
 
 namespace Servy.Core.Config
