@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Runs unit tests for Servy projects and generates code coverage reports.
+    Runs unit tests and integration tests, and generates code coverage reports.
 
 .DESCRIPTION
     This script performs the following tasks:

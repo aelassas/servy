@@ -78,5 +78,11 @@
     <!-- Include project-specific preserves if the file exists in the project directory -->
     <TrimmerRootDescriptor Include="linker.xml" Condition="Exists('linker.xml')" />
   </ItemGroup>
-  
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Servy.Service.UnitTests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
 </Project>

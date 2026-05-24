@@ -1,7 +1,6 @@
 ﻿using Servy.Core.Native;
 using Servy.Testing;
 using System.Runtime.InteropServices;
-using System.Security.Principal;
 
 namespace Servy.Core.IntegrationTests.Native
 {

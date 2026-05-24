@@ -1,11 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Testing;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Security.Principal;
-using System.Threading;
-using Xunit;
 
 namespace Servy.Core.Logging.IntegrationTests
 {
