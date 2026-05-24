@@ -48,6 +48,7 @@ namespace Servy.CLI.Options
         /// Gets or sets additional command-line parameters for the process.
         /// Optional.
         /// </summary>
+        [Sensitive]
         [Option("params", HelpText = "Additional parameters for the process. Supports environment variable expansion, example: --params=\"%ProgramData%\\MyApp\" --params=\"%MY_VAR%\\bin\"")]
         public string ProcessParameters { get; set; }
 
@@ -219,6 +220,7 @@ namespace Servy.CLI.Options
         /// Gets or sets additional command-line parameters for the failure program.
         /// Optional.
         /// </summary>
+        [Sensitive]
         [Option("failureProgramParams", HelpText = "Additional parameters for the failure program.")]
         public string FailureProgramParameters { get; set; }
 
@@ -226,6 +228,7 @@ namespace Servy.CLI.Options
         /// Gets or sets environment variables for the process.
         /// Optional.
         /// </summary>
+        [Sensitive]
         [Option("envVars", HelpText = "Environment variables for the process. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';' and \\\\ to escape '\\'. Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin")]
         public string EnvironmentVariables { get; set; }
 
@@ -258,6 +261,7 @@ namespace Servy.CLI.Options
         /// in process listings and shell history. Use the <see cref="AppConfig.PasswordEnvVarName"/> environment 
         /// variable instead.
         /// </remarks>
+        [Sensitive]
         [Option("password", HelpText = "The service account password. SECURITY WARNING: Use the " + AppConfig.PasswordEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
         public string Password { get; set; }
 
@@ -279,6 +283,7 @@ namespace Servy.CLI.Options
         /// Gets or sets additional parameters for the pre-launch executable.
         /// Optional.
         /// </summary>
+        [Sensitive]
         [Option("preLaunchParams", HelpText = "Additional parameters for the pre-launch executable.")]
         public string PreLaunchParameters { get; set; }
 
@@ -286,6 +291,7 @@ namespace Servy.CLI.Options
         /// Gets or sets environment variables for the pre-launch executable.
         /// Optional.
         /// </summary>
+        [Sensitive]
         [Option("preLaunchEnv", HelpText = "Environment variables for the pre-launch executable. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';' and \\\\ to escape '\\'. Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin")]
         public string PreLaunchEnvironmentVariables { get; set; }
 
@@ -343,6 +349,7 @@ namespace Servy.CLI.Options
         /// Gets or sets additional parameters for the post-launch executable.
         /// Optional.
         /// </summary>
+        [Sensitive]
         [Option("postLaunchParams", HelpText = "Additional parameters for the post-launch executable.")]
         public string PostLaunchParameters { get; set; }
 
@@ -388,6 +395,7 @@ namespace Servy.CLI.Options
         /// Gets or sets additional parameters for the pre-stop executable.
         /// Optional.
         /// </summary>
+        [Sensitive]
         [Option("preStopParams", HelpText = "Additional parameters for the pre-stop executable.")]
         public string PreStopParameters { get; set; }
 
@@ -423,6 +431,7 @@ namespace Servy.CLI.Options
         /// Gets or sets additional parameters for the post-stop executable.
         /// Optional.
         /// </summary>
+        [Sensitive]
         [Option("postStopParams", HelpText = "Additional parameters for the post-stop executable.")]
         public string PostStopParameters { get; set; }
     }
