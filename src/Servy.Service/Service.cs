@@ -179,7 +179,7 @@ namespace Servy.Service
         /// and cryptographic setup.
         /// </remarks>
         public Service() : this(
-            new Helpers.ServiceHelper(new CommandLineProvider()),
+            new Helpers.ServiceHelper(new CommandLineProvider(), new ProcessHelper()),
             new EventLogLogger(AppConfig.EventSource),
             new StreamWriterFactory(),
             new TimerFactory(),
@@ -401,7 +401,7 @@ namespace Servy.Service
 
                 // Load startup options
                 var fullArgs = _serviceHelper.GetArgs(); // You'll need to expose this helper
-                var options = _serviceHelper.ParseOptions(_serviceRepository, _processHelper, fullArgs);
+                var options = _serviceHelper.ParseOptions(_serviceRepository, fullArgs);
 
                 if (options == null)
                 {
@@ -417,7 +417,7 @@ namespace Servy.Service
                 _logger = _logger?.CreateScoped(options.ServiceName!);
 
                 // Log and Validate using the new scoped _logger
-                if (!_serviceHelper.ValidateAndLog(options, _logger, _processHelper, fullArgs))
+                if (!_serviceHelper.ValidateAndLog(options, _logger, fullArgs))
                 {
                     ExitCode = 1066; // ERROR_SERVICE_SPECIFIC_ERROR
                     Stop();

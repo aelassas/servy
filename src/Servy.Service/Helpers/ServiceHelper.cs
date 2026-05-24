@@ -98,6 +98,7 @@ namespace Servy.Service.Helpers
         #region Private Fields
 
         private readonly ICommandLineProvider _commandLineProvider;
+        private readonly IProcessHelper _processHelper;
 
         #endregion
 
@@ -107,10 +108,15 @@ namespace Servy.Service.Helpers
         /// Initializes a new instance of the <see cref="ServiceHelper"/> class.
         /// </summary>
         /// <param name="commandLineProvider">The provider used to access system command line arguments.</param>
+        /// <param name="processHelper">The process helper used for any necessary process-related operations during parsing.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="commandLineProvider"/> is null.</exception>
-        public ServiceHelper(ICommandLineProvider commandLineProvider)
+        public ServiceHelper(
+            ICommandLineProvider commandLineProvider,
+            IProcessHelper processHelper
+            )
         {
             _commandLineProvider = commandLineProvider ?? throw new ArgumentNullException(nameof(commandLineProvider));
+            _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
         }
 
         #endregion
@@ -251,15 +257,15 @@ namespace Servy.Service.Helpers
             => _commandLineProvider.GetArgs();
 
         /// <inheritdoc />
-        public StartOptions? ParseOptions(IServiceRepository serviceRepository, IProcessHelper processHelper, string[] fullArgs)
-            => StartOptionsParser.Parse(serviceRepository, processHelper, fullArgs);
+        public StartOptions? ParseOptions(IServiceRepository serviceRepository, string[] fullArgs)
+            => StartOptionsParser.Parse(serviceRepository, _processHelper, fullArgs);
 
         /// <inheritdoc />
-        public bool ValidateAndLog(StartOptions options, IServyLogger? logger, IProcessHelper processHelper, string[] fullArgs)
+        public bool ValidateAndLog(StartOptions options, IServyLogger? logger, string[] fullArgs)
         {
             LogStartupArguments(logger, options);
 
-            if (!ValidateStartupOptions(logger, processHelper, options))
+            if (!ValidateStartupOptions(logger, options))
             {
                 return false;
             }
@@ -372,7 +378,7 @@ namespace Servy.Service.Helpers
                     UseShellExecute = false
                 };
 
-                using (var process = Process.Start(psi))
+                using (var process = _processHelper.Start(psi))
                 {
                     if (process == null)
                     {
@@ -418,7 +424,7 @@ namespace Servy.Service.Helpers
         {
             try
             {
-                using (Process.Start(new ProcessStartInfo
+                using (_processHelper.Start(new ProcessStartInfo
                 {
                     FileName = "shutdown",
                     Arguments = "/r /t 0 /f",
@@ -550,7 +556,7 @@ namespace Servy.Service.Helpers
         /// <returns>
         /// <c>true</c> if all mandatory paths and directories are valid; otherwise, <c>false</c>.
         /// </returns>
-        private bool ValidateStartupOptions(IServyLogger? logger, IProcessHelper processHelper, StartOptions options)
+        private bool ValidateStartupOptions(IServyLogger? logger, StartOptions options)
         {
             // 1. Explicit check for ServiceName (not a path field)
             if (string.IsNullOrWhiteSpace(options.ServiceName))
@@ -585,7 +591,7 @@ namespace Servy.Service.Helpers
                 }
 
                 // Validity check: Logic matches original error "{label} {path} is invalid."
-                if (!isPathEmpty && !processHelper.ValidatePath(pathValue, attr.IsFile))
+                if (!isPathEmpty && !_processHelper.ValidatePath(pathValue, attr.IsFile))
                 {
                     logger?.Error($"{attr.Label} {pathValue} is invalid.");
                     return false;

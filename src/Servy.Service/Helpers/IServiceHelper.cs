@@ -1,6 +1,5 @@
 ﻿using Servy.Core.Data;
 using Servy.Core.EnvironmentVariables;
-using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
@@ -24,12 +23,11 @@ namespace Servy.Service.Helpers
         /// Parses the command-line arguments and loads the service configuration from the repository.
         /// </summary>
         /// <param name="serviceRepository">The repository used to fetch service-specific configurations.</param>
-        /// <param name="processHelper">The process helper used for any necessary process-related operations during parsing.</param>
         /// <param name="fullArgs">The full set of command-line arguments to parse.</param>
         /// <returns>
         /// A <see cref="StartOptions"/> object if parsing is successful; otherwise, <c>null</c>.
         /// </returns>
-        StartOptions? ParseOptions(IServiceRepository serviceRepository, IProcessHelper processHelper, string[] fullArgs);
+        StartOptions? ParseOptions(IServiceRepository serviceRepository, string[] fullArgs);
 
         /// <summary>
         /// Records the full initialization context, including raw command-line arguments and resolved 
@@ -66,12 +64,11 @@ namespace Servy.Service.Helpers
         /// </remarks>
         /// <param name="options">The startup options to validate.</param>
         /// <param name="logger">The logger instance (typically a scoped/promoted logger) used for reporting.</param>
-        /// <param name="processHelper">The process helper used to validate executable paths and gather metrics.</param>
         /// <param name="fullArgs">The original command-line arguments for logging purposes.</param>
         /// <returns>
         /// <c>true</c> if the options are valid and the service can proceed; otherwise, <c>false</c>.
         /// </returns>
-        bool ValidateAndLog(StartOptions options, IServyLogger? logger, IProcessHelper processHelper, string[] fullArgs);
+        bool ValidateAndLog(StartOptions options, IServyLogger? logger, string[] fullArgs);
 
         /// <summary>
         /// Ensures the working directory specified in the options is valid.

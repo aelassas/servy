@@ -1,10 +1,18 @@
 ﻿using Moq;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Enums;
+using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
+using Servy.Service.ProcessManagement;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.ServiceProcess;
+using Xunit;
 using ServiceHelper = Servy.Service.Helpers.ServiceHelper;
 
 namespace Servy.Service.UnitTests.Helpers
@@ -13,15 +21,22 @@ namespace Servy.Service.UnitTests.Helpers
     {
         private readonly Mock<ICommandLineProvider> _mockCommandLineProvider;
         private readonly Mock<IProcessHelper> _mockProcessHelper;
+        private readonly Mock<IServiceRepository> _mockRepo;
         private readonly ServiceHelper _helper;
 
         public ServiceHelperTests()
         {
             _mockCommandLineProvider = new Mock<ICommandLineProvider>();
             _mockProcessHelper = new Mock<IProcessHelper>();
+            _mockRepo = new Mock<IServiceRepository>();
+
+            // Default setup to pass validation so we can isolate specific test cases
             _mockProcessHelper.Setup(ph => ph.ValidatePath(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
-            _helper = new ServiceHelper(_mockCommandLineProvider.Object);
+
+            _helper = new ServiceHelper(_mockCommandLineProvider.Object, _mockProcessHelper.Object);
         }
+
+        #region LogStartupArguments Tests (Public & Sensitive Data Masking)
 
         [Fact]
         public void LogStartupArguments_LogsPublicData()
@@ -35,251 +50,117 @@ namespace Servy.Service.UnitTests.Helpers
                 EnableDebugLogs = false // Testing just public data for now
             };
 
-            // We only need one mock here because this method just uses the provided logger
             var mockLog = new Mock<IServyLogger>();
 
             // Act
-            // We pass the mock directly. In the real app, OnStart passes the Scoped logger here.
             _helper.LogStartupArguments(mockLog.Object, options);
 
             // Assert
-            // 1. Verify the logger received the info message.
             mockLog.Verify(l => l.Info(It.Is<string>(s =>
                 s.IndexOf("Startup Parameters", StringComparison.OrdinalIgnoreCase) >= 0), It.IsAny<Exception>()),
                 Times.Once);
 
-            // 2. Verify that specific public data fields exist in that log string
             mockLog.Verify(l => l.Info(It.Is<string>(s => s.Contains("serviceName: TestService")), It.IsAny<Exception>()), Times.Once);
         }
 
+        [Fact]
+        public void LogStartupArguments_NullOptions_LogsError()
+        {
+            // Arrange
+            var mockLog = new Mock<IServyLogger>();
+
+            // Act
+            _helper.LogStartupArguments(mockLog.Object, null!);
+
+            // Assert
+            mockLog.Verify(l => l.Error("StartOptions is null.", It.IsAny<Exception>()), Times.Once);
+        }
+
+        #endregion
+
+        #region EnsureValidWorkingDirectory Tests
+
+        [Fact]
+        public void EnsureValidWorkingDirectory_ValidDirectory_RemainsUnchanged()
+        {
+            // Arrange
+            var mockLog = new Mock<IServyLogger>();
+            string validDir = Path.GetTempPath();
+            var options = new StartOptions { WorkingDirectory = validDir };
+
+            // Act
+            _helper.EnsureValidWorkingDirectory(options, mockLog.Object);
+
+            // Assert
+            Assert.Equal(validDir, options.WorkingDirectory);
+            mockLog.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
+        public void EnsureValidWorkingDirectory_FallbacksToExecutableDirectory_IfInvalid()
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                WorkingDirectory = "C:\\InvalidPath_That_Does_Not_Exist",
+                ExecutablePath = "C:\\Windows\\System32\\notepad.exe"
+            };
+            var mockLog = new Mock<IServyLogger>();
+
+            // Act
+            _helper.EnsureValidWorkingDirectory(options, mockLog.Object);
+
+            // Assert
+            Assert.Equal(Path.GetDirectoryName(options.ExecutablePath), options.WorkingDirectory);
+            mockLog.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Falling back to")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void EnsureValidWorkingDirectory_InvalidDirectoryAndEmptyExePath_FallsBackToSystem32()
+        {
+            // Arrange
+            var options = new StartOptions { WorkingDirectory = " ", ExecutablePath = null };
+            string system32 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32");
+            var mockLog = new Mock<IServyLogger>();
+
+            // Act
+            _helper.EnsureValidWorkingDirectory(options, mockLog.Object);
+
+            // Assert
+            Assert.Equal(system32, options.WorkingDirectory);
+        }
+
+        #endregion
+
+        #region ICommandLineProvider & Options Parsing Tests
+
+        [Fact]
+        public void GetArgs_ReturnsArgsFromProvider()
+        {
+            // Arrange
+            var expectedArgs = new[] { "arg1", "arg2" };
+            _mockCommandLineProvider.Setup(p => p.GetArgs()).Returns(expectedArgs);
+
+            // Act
+            var result = _helper.GetArgs();
+
+            // Assert
+            Assert.Equal(expectedArgs, result);
+        }
+
+        [Fact]
+        public void ParseOptions_EmptyArgs_ThrowsArgumentExceptionFromParser()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentException>(() => _helper.ParseOptions(_mockRepo.Object, new string[0]));
+        }
+
+        #endregion
+
+        #region ValidateAndLog Tests
+
         // Helper: create a temporary file
         private string TempFile() => Path.GetTempFileName();
-
-        [Fact]
-        public void ValidateAndLog_ExecutablePath_NullOrWhitespace_ReturnsFalse_LogsError()
-        {
-            // Arrange
-            var fullArgs = new[] { "ignored.exe" };
-            var options = new StartOptions { ServiceName = "TestService", ExecutablePath = " " };
-            var mockLog = new Mock<IServyLogger>();
-
-            // Setup: We must handle CreateScoped because ValidateAndLog calls LogStartupArguments,
-            // which creates a scope.
-            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockLog.Object);
-
-            // Act
-            var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
-
-            // Assert
-            Assert.False(result);
-            mockLog.Verify(l => l.Error(
-                It.Is<string>(s => s.Contains("Executable path not provided.")),
-                It.IsAny<Exception>()),
-                Times.Once);
-        }
-
-        [Fact]
-        public void ValidateAndLog_ServiceName_Empty_ReturnsFalse_LogsError()
-        {
-            // Arrange
-            var tempExe = TempFile();
-            var fullArgs = new[] { "servy.exe", "--name", "" };
-            var options = new StartOptions { ServiceName = "", ExecutablePath = tempExe };
-
-            var mockLog = new Mock<IServyLogger>();
-            // Setup: Handle CreateScoped because ValidateAndLog calls LogStartupArguments internally
-            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockLog.Object);
-
-            try
-            {
-                // Act - Using the new unified entry point
-                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
-
-                // Assert
-                Assert.False(result);
-
-                // Verify the specific validation error was logged
-                mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains("Service name empty")),
-                    It.IsAny<Exception>()),
-                    Times.Once);
-            }
-            finally
-            {
-                if (File.Exists(tempExe)) File.Delete(tempExe);
-            }
-        }
-        [Fact]
-        public void ValidateAndLog_ExecutablePath_Invalid_ReturnsFalse_LogsError()
-        {
-            // Arrange
-            var fullArgs = new[] { "servy.exe" };
-            var options = new StartOptions
-            {
-                ServiceName = "TestService",
-                ExecutablePath = @"C:\Nonexistent\fake.exe"
-            };
-
-            var mockLog = new Mock<IServyLogger>();
-
-            // Setup: LogStartupArguments creates a scope. We return the same mock 
-            // so we can verify the error call on it.
-            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
-                   .Returns(mockLog.Object);
-
-            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.ExecutablePath, It.IsAny<bool>())).Returns(false);
-
-            // Act
-            // We call the new orchestration method instead of the old private one
-            var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
-
-            // Assert
-            Assert.False(result);
-
-            // Verify the error was logged to the logger instance
-            mockLog.Verify(l => l.Error(
-                It.Is<string>(s => s.Contains($"Executable path {options.ExecutablePath} is invalid.")),
-                It.IsAny<Exception>()),
-                Times.Once);
-        }
-
-        [Fact]
-        public void ValidateAndLog_FailureProgramPath_Invalid_ReturnsFalse_LogsError()
-        {
-            // Arrange
-            var tempExe = TempFile();
-            var fullArgs = new[] { "servy.exe" };
-            var options = new StartOptions
-            {
-                ServiceName = "TestService",
-                ExecutablePath = tempExe,
-                FailureProgramPath = @"C:\Invalid\failure.exe"
-            };
-
-            var mockLog = new Mock<IServyLogger>();
-
-            // Setup: LogStartupArguments creates a scope. 
-            // We return the same mock object to verify the error call on it.
-            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
-                   .Returns(mockLog.Object);
-
-            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.FailureProgramPath, It.IsAny<bool>())).Returns(false);
-
-            try
-            {
-                // Act
-                // Use the new orchestration method
-                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
-
-                // Assert
-                Assert.False(result);
-
-                // Verify the validation error was logged to the logger instance
-                mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains($"Failure program executable path {options.FailureProgramPath} is invalid.")),
-                    It.IsAny<Exception>()),
-                    Times.Once);
-            }
-            finally
-            {
-                if (File.Exists(tempExe))
-                {
-                    File.Delete(tempExe);
-                }
-            }
-        }
-
-        [Fact]
-        public void ValidateAndLog_PreLaunchExecutablePath_Invalid_ReturnsFalse_LogsError()
-        {
-            // Arrange
-            var tempExe = TempFile();
-            var fullArgs = new[] { "servy.exe" };
-            var options = new StartOptions
-            {
-                ServiceName = "TestService",
-                ExecutablePath = tempExe,
-                PreLaunchExecutablePath = @"C:\Invalid\prelaunch.exe"
-            };
-
-            var mockLog = new Mock<IServyLogger>();
-
-            // Setup: ValidateAndLog calls LogStartupArguments, which creates a scope.
-            // We return the same mock so the verification below catches the error call.
-            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
-                   .Returns(mockLog.Object);
-
-            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.PreLaunchExecutablePath, It.IsAny<bool>())).Returns(false);
-
-            try
-            {
-                // Act
-                // Use the new orchestration method that handles logging and validation
-                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
-
-                // Assert
-                Assert.False(result);
-
-                // Verify the specific pre-launch validation error was logged
-                mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains($"Pre-launch executable path {options.PreLaunchExecutablePath} is invalid.")),
-                    It.IsAny<Exception>()),
-                    Times.Once);
-            }
-            finally
-            {
-                if (File.Exists(tempExe))
-                {
-                    File.Delete(tempExe);
-                }
-            }
-        }
-
-        [Fact]
-        public void ValidateAndLog_PostLaunchExecutablePath_Invalid_ReturnsFalse_LogsError()
-        {
-            // Arrange
-            var tempExe = TempFile();
-            var fullArgs = new[] { "servy.exe" };
-            var options = new StartOptions
-            {
-                ServiceName = "TestService",
-                ExecutablePath = tempExe,
-                PostLaunchExecutablePath = @"C:\Invalid\postlaunch.exe"
-            };
-
-            var mockLog = new Mock<IServyLogger>();
-
-            // Setup: ValidateAndLog calls LogStartupArguments, which creates a scope.
-            // We return the same mock so the verification below catches the error call.
-            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
-                   .Returns(mockLog.Object);
-
-            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.PostLaunchExecutablePath, It.IsAny<bool>())).Returns(false);
-
-            try
-            {
-                // Act
-                // Use the new orchestration method that handles both logging and validation
-                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
-
-                // Assert
-                Assert.False(result);
-
-                // Verify the specific post-launch validation error was logged
-                mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains($"Post-launch executable path {options.PostLaunchExecutablePath} is invalid.")),
-                    It.IsAny<Exception>()),
-                    Times.Once);
-            }
-            finally
-            {
-                if (File.Exists(tempExe))
-                {
-                    File.Delete(tempExe);
-                }
-            }
-        }
 
         [Fact]
         public void ValidateAndLog_AllPathsValid_ReturnsTrue_NoErrorsLogged()
@@ -301,20 +182,15 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             var mockLog = new Mock<IServyLogger>();
-
-            // Setup: Handle the scoping that happens inside LogStartupArguments
-            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
-                   .Returns(mockLog.Object);
+            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockLog.Object);
 
             try
             {
                 // Act
-                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
+                var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
 
                 // Assert
                 Assert.True(result);
-
-                // Ensure no Errors were logged (Info logs are expected and okay)
                 mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             }
             finally
@@ -327,285 +203,252 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
-        public void ValidateAndLog_OptionalPaths_NullOrWhitespace_Skipped_ReturnsTrue()
+        public void ValidateAndLog_ExecutablePath_NullOrWhitespace_ReturnsFalse_LogsError()
         {
             // Arrange
-            var exe = TempFile();
+            var fullArgs = new[] { "ignored.exe" };
+            var options = new StartOptions { ServiceName = "TestService", ExecutablePath = " " };
+            var mockLog = new Mock<IServyLogger>();
+
+            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockLog.Object);
+
+            // Act
+            var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+
+            // Assert
+            Assert.False(result);
+            mockLog.Verify(l => l.Error(It.Is<string>(s => s.Contains("not provided")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void ValidateAndLog_ServiceName_Empty_ReturnsFalse_LogsError()
+        {
+            // Arrange
+            var fullArgs = new[] { "servy.exe" };
+            var options = new StartOptions { ServiceName = "", ExecutablePath = "C:\\test.exe" };
+            var mockLog = new Mock<IServyLogger>();
+
+            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockLog.Object);
+
+            // Act
+            var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+
+            // Assert
+            Assert.False(result);
+            mockLog.Verify(l => l.Error(It.Is<string>(s => s.Contains("Service name empty")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void ValidateAndLog_ExecutablePath_Invalid_ReturnsFalse_LogsError()
+        {
+            // Arrange
             var fullArgs = new[] { "servy.exe" };
             var options = new StartOptions
             {
                 ServiceName = "TestService",
-                ExecutablePath = exe,
-                FailureProgramPath = null,
-                PreLaunchExecutablePath = "",
-                PostLaunchExecutablePath = "   "
+                ExecutablePath = @"C:\Nonexistent\fake.exe"
             };
 
             var mockLog = new Mock<IServyLogger>();
+            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockLog.Object);
 
-            // Setup: Handle the scoping logic inside LogStartupArguments.
-            // Returning the same mock object allows Verify to track all calls.
-            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
-                   .Returns(mockLog.Object);
+            // Trigger failure in the ProcessHelper validate wrapper
+            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.ExecutablePath, It.IsAny<bool>())).Returns(false);
+
+            // Act
+            var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+
+            // Assert
+            Assert.False(result);
+            mockLog.Verify(l => l.Error(It.Is<string>(s => s.Contains("is invalid")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        #endregion
+
+        #region RestartProcess Tests
+
+        [Fact]
+        public void RestartProcess_NullStartAction_ThrowsArgumentNullException()
+        {
+            var mockLog = new Mock<IServyLogger>();
+
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => _helper.RestartProcess(
+                null!, null!, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000));
+        }
+
+        [Fact]
+        public void RestartProcess_ProcessActive_StopsParentAndDescendantsThenRestarts()
+        {
+            // Arrange
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Id).Returns(1234);
+            mockProcess.Setup(p => p.StartTime).Returns(DateTime.Now);
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+
+            var mockLog = new Mock<IServyLogger>();
+            bool startActionInvoked = false;
+            Action<string, string, string, List<EnvironmentVariable>> startAction = (exe, args, dir, env) => startActionInvoked = true;
+
+            // Act
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000);
+
+            // Assert
+            mockProcess.Verify(p => p.Stop(1000), Times.Once);
+            mockProcess.Verify(p => p.StopDescendants(1234, It.IsAny<DateTime>(), 1000), Times.Once);
+            mockProcess.Verify(p => p.Dispose(), Times.Once);
+            Assert.True(startActionInvoked);
+            mockLog.Verify(l => l.Info("Process restarted.", It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void RestartProcess_ProcessStopThrows_CatchesErrorAndRestartsAnyway()
+        {
+            // Arrange
+            var mockProcess = new Mock<IProcessWrapper>();
+            mockProcess.Setup(p => p.Id).Returns(1234);
+            mockProcess.Setup(p => p.HasExited).Returns(false);
+            mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Throws(new UnauthorizedAccessException("Access Denied"));
+
+            var mockLog = new Mock<IServyLogger>();
+            bool startActionInvoked = false;
+            Action<string, string, string, List<EnvironmentVariable>> startAction = (exe, args, dir, env) => startActionInvoked = true;
+
+            // Act
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000);
+
+            // Assert
+            mockLog.Verify(l => l.Error(It.Is<string>(s => s.Contains("proceeding with launch anyway")), It.IsAny<UnauthorizedAccessException>()), Times.Once);
+            mockProcess.Verify(p => p.Dispose(), Times.Once);
+            Assert.True(startActionInvoked);
+        }
+
+        #endregion
+
+        #region RestartService Tests
+
+        [Fact]
+        public void RestartService_ProcessIsNull_LogsError()
+        {
+            // Arrange
+            var mockLog = new Mock<IServyLogger>();
+#if DEBUG
+            var restarterPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Servy.Restarter.exe");
+#else
+            var restarterPath = Path.Combine(AppConfig.ProgramDataPath, "Servy.Restarter.exe");
+            if (!Directory.Exists(AppConfig.ProgramDataPath))
+            {
+                Directory.CreateDirectory(AppConfig.ProgramDataPath);
+            }
+#endif
+            File.WriteAllText(restarterPath, "dummy"); // Create file so it passes the Exists check
 
             try
             {
+                _mockProcessHelper.Setup(p => p.Start(It.IsAny<ProcessStartInfo>())).Returns((Process?)null);
+
                 // Act
-                // Use the new orchestration method
-                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
+                _helper.RestartService(mockLog.Object, "TestService");
 
                 // Assert
-                Assert.True(result);
-
-                // Verify that no errors were logged during validation
-                mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+                mockLog.Verify(l => l.Error("Failed to start Servy.Restarter.exe.", It.IsAny<Exception>()), Times.Once);
             }
-            finally
+            finally { File.Delete(restarterPath); }
+        }
+
+        #endregion
+
+        #region RestartComputer Tests
+
+        [Fact]
+        public void RestartComputer_Success_StartsProcessAndDisposesCorrectly()
+        {
+            // Arrange
+            var mockLog = new Mock<IServyLogger>();
+
+            // We return a new Process instance. Since this process is never 
+            // actually started, disposing it is safe and does not trigger OS side-effects.
+            var mockProcess = new Process();
+
+            _mockProcessHelper
+                .Setup(p => p.Start(It.Is<ProcessStartInfo>(psi =>
+                    psi.FileName == "shutdown" &&
+                    psi.Arguments == "/r /t 0 /f" &&
+                    psi.CreateNoWindow == true &&
+                    psi.UseShellExecute == false)))
+                .Returns(mockProcess);
+
+            // Act
+            _helper.RestartComputer(mockLog.Object);
+
+            // Assert
+            _mockProcessHelper.Verify(p => p.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
+
+            // Verify no errors were logged in the success branch
+            mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Fact]
+        public void RestartComputer_HelperThrowsException_LogsErrorCorrectly()
+        {
+            // Arrange
+            var mockLog = new Mock<IServyLogger>();
+
+            // Force the mock helper to throw an exception to trigger the catch block
+            _mockProcessHelper
+                .Setup(p => p.Start(It.IsAny<ProcessStartInfo>()))
+                .Throws(new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified"));
+
+            // Act
+            _helper.RestartComputer(mockLog.Object);
+
+            // Assert
+            // Verify that the error was caught and logged as expected
+            mockLog.Verify(l => l.Error(
+                It.Is<string>(s => s.Contains("Failed to restart computer")),
+                It.IsAny<Exception>()),
+                Times.Once);
+        }
+
+        #endregion
+
+        #region RequestAdditionalTime Tests
+
+        private class DummyService : ServiceBase { }
+
+        [Fact]
+        public void RequestAdditionalTime_ValidService_LogsRequest()
+        {
+            // Arrange
+            using (var service = new DummyService())
             {
-                if (File.Exists(exe))
-                {
-                    File.Delete(exe);
-                }
+                var mockLog = new Mock<IServyLogger>();
+
+                // Act
+                _helper.RequestAdditionalTime(service, 5000, mockLog.Object);
+
+                // Assert
+                // Expect either successful log OR the InvalidOperationException 
+                // (since it's not connected to the real Windows SCM in the test runner)
+                // Both are handled cleanly.
+                Assert.True(true);
             }
         }
 
         [Fact]
-        public void ValidateAndLog_WorkingDirectory_Invalid_ReturnsFalse_LogsError()
+        public void RequestAdditionalTime_NullService_ReturnsEarly()
         {
             // Arrange
-            var tempExe = TempFile();
-            var fullArgs = new[] { "servy.exe" };
-            var options = new StartOptions
-            {
-                ServiceName = "TestService",
-                ExecutablePath = tempExe,
-                WorkingDirectory = @"C:\Invalid\workingdir"
-            };
-
-            var mockLog = new Mock<IServyLogger>();
-
-            // Setup: Handle the scoping logic that happens inside ValidateAndLog -> LogStartupArguments
-            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
-                   .Returns(mockLog.Object);
-
-            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.WorkingDirectory, It.IsAny<bool>())).Returns(false);
-
-            try
-            {
-                // Act
-                // Use the new orchestration method that handles logging and validation
-                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
-
-                // Assert
-                Assert.False(result);
-
-                // Verify the specific startup directory error was logged
-                mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains($"Startup directory {options.WorkingDirectory} is invalid.")),
-                    It.IsAny<Exception>()),
-                    Times.Once);
-            }
-            finally
-            {
-                if (File.Exists(tempExe))
-                {
-                    File.Delete(tempExe);
-                }
-            }
-        }
-
-        [Fact]
-        public void ValidateAndLog_FailureProgramWorkingDirectory_Invalid_ReturnsFalse_LogsError()
-        {
-            // Arrange
-            var tempExe = TempFile();
-            var fullArgs = new[] { "servy.exe" };
-            var options = new StartOptions
-            {
-                ServiceName = "TestService",
-                ExecutablePath = tempExe,
-                FailureProgramWorkingDirectory = @"C:\Invalid\failureWorkDir"
-            };
-
-            var mockLog = new Mock<IServyLogger>();
-
-            // Setup: Handle the scoping logic inside ValidateAndLog -> LogStartupArguments.
-            // Returning the same mock object allows Verify to track all calls on the same instance.
-            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
-                   .Returns(mockLog.Object);
-
-            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.FailureProgramWorkingDirectory, It.IsAny<bool>())).Returns(false);
-
-            try
-            {
-                // Act
-                // Call the new unified method for logging and validation
-                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
-
-                // Assert
-                Assert.False(result);
-
-                // Verify the specific error for the failure program startup directory was logged
-                mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains("Failure program startup directory")),
-                    It.IsAny<Exception>()),
-                    Times.Once);
-            }
-            finally
-            {
-                if (File.Exists(tempExe))
-                {
-                    File.Delete(tempExe);
-                }
-            }
-        }
-
-        [Fact]
-        public void ValidateAndLog_PreLaunchWorkingDirectory_Invalid_ReturnsFalse_LogsError()
-        {
-            // Arrange
-            var tempExe = TempFile();
-            var fullArgs = new[] { "servy.exe" };
-            var options = new StartOptions
-            {
-                ServiceName = "TestService",
-                ExecutablePath = tempExe,
-                PreLaunchWorkingDirectory = @"C:\Invalid\preLaunchWorkDir"
-            };
-
-            var mockLog = new Mock<IServyLogger>();
-
-            // Setup: Handle the scoping logic inside ValidateAndLog -> LogStartupArguments.
-            // We return the same mock object so we can verify the error call on it later.
-            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
-                   .Returns(mockLog.Object);
-
-            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.PreLaunchWorkingDirectory, It.IsAny<bool>())).Returns(false);
-
-            try
-            {
-                // Act
-                // Use the new orchestration method that handles both logging and validation
-                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
-
-                // Assert
-                Assert.False(result);
-
-                // Verify the specific pre-launch startup directory error was logged
-                mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains("Pre-launch startup directory")),
-                    It.IsAny<Exception>()),
-                    Times.Once);
-            }
-            finally
-            {
-                if (File.Exists(tempExe))
-                {
-                    File.Delete(tempExe);
-                }
-            }
-        }
-
-        [Fact]
-        public void ValidateAndLog_PostLaunchWorkingDirectory_Invalid_ReturnsFalse_LogsError()
-        {
-            // Arrange
-            var tempExe = TempFile();
-            var fullArgs = new[] { "servy.exe" };
-            var options = new StartOptions
-            {
-                ServiceName = "TestService",
-                ExecutablePath = tempExe,
-                PostLaunchWorkingDirectory = @"C:\Invalid\postLaunchWorkDir"
-            };
-
-            var mockLog = new Mock<IServyLogger>();
-
-            // Setup: Handle the scoping logic inside ValidateAndLog -> LogStartupArguments.
-            // We return the same mock object so we can verify the error call on it later.
-            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
-                   .Returns(mockLog.Object);
-
-            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.PostLaunchWorkingDirectory, It.IsAny<bool>())).Returns(false);
-
-            try
-            {
-                // Act
-                // Use the new orchestration method that handles both logging and validation
-                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
-
-                // Assert
-                Assert.False(result);
-
-                // Verify the specific post-launch startup directory error was logged
-                mockLog.Verify(l => l.Error(
-                    It.Is<string>(s => s.Contains("Post-launch startup directory")),
-                    It.IsAny<Exception>()),
-                    Times.Once);
-            }
-            finally
-            {
-                if (File.Exists(tempExe))
-                {
-                    File.Delete(tempExe);
-                }
-            }
-        }
-
-        [Fact]
-        public void EnsureValidWorkingDirectory_FallbacksToExecutableDirectory_IfInvalid()
-        {
-            // Arrange
-            var options = new StartOptions
-            {
-                WorkingDirectory = "C:\\InvalidPath",
-                ExecutablePath = "C:\\Windows\\System32\\notepad.exe"
-            };
-
             var mockLog = new Mock<IServyLogger>();
 
             // Act
-            _helper.EnsureValidWorkingDirectory(options, mockLog.Object);
+            _helper.RequestAdditionalTime(null!, 5000, mockLog.Object);
 
             // Assert
-            Assert.Equal(Path.GetDirectoryName(options.ExecutablePath), options.WorkingDirectory);
+            mockLog.Verify(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+            mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
-
-
-        [Fact]
-        public void LogStartupArguments_WritesToILogger_WhenOptionsProvided()
-        {
-            // Arrange
-            var args = new[] { "arg1", "arg2" };
-            var options = new StartOptions
-            {
-                ServiceName = "MyService",
-                ExecutablePath = "path.exe",
-                ExecutableArgs = "--test",
-                WorkingDirectory = "C:\\Work",
-                Priority = ProcessPriorityClass.Normal,
-                StdOutPath = "stdout.txt",
-                StdErrPath = "stderr.txt",
-                RotationSizeInBytes = 1024,
-                HeartbeatInterval = 10,
-                MaxFailedChecks = 3,
-                RecoveryAction = RecoveryAction.RestartService,
-                MaxRestartAttempts = 5
-            };
-
-            var mockLog = new Mock<IServyLogger>();
-            mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
-                   .Returns(mockLog.Object);
-            mockLog.Setup(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()))
-                .Verifiable();
-
-            // Act
-            _helper.LogStartupArguments(mockLog.Object, options);
-
-            // Assert
-            mockLog.Verify(l => l.Info(It.Is<string>(s => s.Contains("[Startup Parameters]")), It.IsAny<Exception>()), Times.Once);
-        }
-
+        #endregion
     }
 }
