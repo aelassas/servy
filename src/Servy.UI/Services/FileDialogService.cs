@@ -1,11 +1,13 @@
 ﻿using Microsoft.Win32;
 using Servy.Core.Resources;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Servy.UI.Services
 {
     /// <summary>
     /// Concrete implementation of <see cref="IFileDialogService"/> that uses standard Windows dialogs.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public class FileDialogService : IFileDialogService
     {
         #region Private Helpers

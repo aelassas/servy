@@ -44,7 +44,9 @@ namespace Servy.CLI.UnitTests.Helpers
                 // If the action DOES produce output, the helper shouldn't append animation frames.
                 var output = sw.ToString();
                 Assert.DoesNotContain("Testing Redirected...", output); // Ensure animation text is missing
-                Assert.Empty(output); // Only passes if the dummyAction itself produced no output
+
+                // Soft fallback: Do NOT use Assert.Empty(output) here because parallel tests 
+                // writing to the global Console.Out will bleed into this StringWriter instance.
             }
         }
 

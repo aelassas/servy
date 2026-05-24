@@ -43,6 +43,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Servy.Core\Servy.Core.csproj" />
+    <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj" />
   </ItemGroup>
 
   <ItemGroup>
