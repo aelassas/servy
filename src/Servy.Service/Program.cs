@@ -1,4 +1,7 @@
-﻿using Servy.Core.Native;
+﻿using Servy.Core.Logging;
+using Servy.Core.Native;
+using System;
+using System.Diagnostics.CodeAnalysis;
 using System.ServiceProcess;
 
 namespace Servy.Service
@@ -13,6 +16,7 @@ namespace Servy.Service
         /// Main entry point of the Servy Windows service application.
         /// Extracts required embedded resources and starts the service host.
         /// </summary>
+        [ExcludeFromCodeCoverage]
         internal static void Main(string[] args)
         {
             _ = NativeMethods.FreeConsole();

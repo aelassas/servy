@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Runs Servy.Core and Servy.Infrastructure unit tests, collects coverage with Coverlet, and generates an HTML coverage report.
+Runs unit tests and integration tests, collects coverage with Coverlet, and generates an HTML coverage report.
 
 .DESCRIPTION
 This script:
@@ -128,6 +128,7 @@ reportgenerator `
     -reports:$coverageFiles `
     -targetdir:$CoverageReportDir `
     -reporttypes:Html `
+    -assemblyfilters:"-Servy.Restarter.Net48" `
     -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/obj/**/*"
 if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed"; exit $LASTEXITCODE }
 

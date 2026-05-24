@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // Les informations générales relatives à un assembly dépendent de
@@ -30,3 +31,5 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyVersion("8.5.0.0")]
 [assembly: AssemblyFileVersion("8.5.0.0")]
+
+[assembly: InternalsVisibleTo("Servy.Service.UnitTests")]

@@ -245,7 +245,7 @@ jobs:
               "-reports:$reportPaths" `
               "-targetdir:CoverageMerged" `
               "-reporttypes:Cobertura" `
-              "-assemblyfilters:-*.UnitTests;-*.IntegrationTests;-Servy.Testing" `
+              "-assemblyfilters:-*.UnitTests;-*.IntegrationTests;-Servy.Testing;-Servy.Restarter.Net48" `
               -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/obj/**/*"
 
       - name: Normalize coverage paths (PowerShell)

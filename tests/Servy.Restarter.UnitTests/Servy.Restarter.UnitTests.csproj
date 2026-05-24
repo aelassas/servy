@@ -117,6 +117,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ProgramTests.cs" />
+    <Compile Include="ServiceControllerTests.cs" />
     <Compile Include="ServiceRestarterTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
