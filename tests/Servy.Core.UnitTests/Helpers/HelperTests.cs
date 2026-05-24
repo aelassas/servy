@@ -863,23 +863,34 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void HasAncestorReparsePoint_WhenImmediateParentIsJunctionOrSymlink_ReturnsTrue()
         {
-            // We run this test only on Windows since the method checks NTFS specific behaviors
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
 
             // Arrange
             string realDir = Path.Combine(_testRoot, "RealDirectory");
+            string junctionTarget = Path.Combine(_testRoot, "JunctionDir");
             Directory.CreateDirectory(realDir);
 
-            string junctionTarget = Path.Combine(_testRoot, "JunctionDir");
-
-            // Use native .NET link creation to guarantee stability and error visibility
-            Directory.CreateSymbolicLink(junctionTarget, realDir);
+            // Use a retry mechanism for link creation (unstable NTFS operations)
+            bool created = false;
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    Directory.CreateSymbolicLink(junctionTarget, realDir);
+                    created = true;
+                    break;
+                }
+                catch (IOException) when (i < 2)
+                {
+                    Thread.Sleep(500 * (i + 1)); // Linear backoff
+                }
+            }
+            Assert.True(created, "Failed to create symbolic link after 3 retries.");
 
             try
             {
-                string targetFilePath = Path.Combine(junctionTarget, "config.json");
-
                 // Act
+                string targetFilePath = Path.Combine(junctionTarget, "config.json");
                 bool result = Helper.HasAncestorReparsePoint(targetFilePath);
 
                 // Assert
@@ -887,18 +898,27 @@ namespace Servy.Core.UnitTests.Helpers
             }
             finally
             {
-                // 1. Safe native unlink of the link point first to drop OS locks
-                DeleteDirectoryLink(junctionTarget);
-
-                // 2. Explicitly clean up the real directory source 
-                try
+                // Teardown with retries for file system lock release
+                for (int i = 0; i < 3; i++)
                 {
-                    if (Directory.Exists(realDir))
+                    try
                     {
-                        Directory.Delete(realDir, true);
+                        if (Directory.Exists(junctionTarget))
+                        {
+                            // Symbolic links are deleted via Directory.Delete on modern .NET
+                            Directory.Delete(junctionTarget);
+                        }
+                        if (Directory.Exists(realDir))
+                        {
+                            Directory.Delete(realDir, true);
+                        }
+                        break;
+                    }
+                    catch (Exception ex) when (i < 2 && (ex is IOException || ex is UnauthorizedAccessException))
+                    {
+                        Thread.Sleep(500 * (i + 1));
                     }
                 }
-                catch { /* fail silent in finally to protect test runner teardown */ }
             }
         }
 
@@ -909,22 +929,38 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Arrange
             string realDir = Path.Combine(_testRoot, "ActualData");
+            string junctionDir = Path.Combine(_testRoot, "HiddenJunction");
+            string deepNestedPath = Path.Combine(junctionDir, "App_Data", "Logs");
+
             Directory.CreateDirectory(realDir);
 
-            string junctionDir = Path.Combine(_testRoot, "HiddenJunction");
+            int maxRetries = 3;
+            bool setupSuccess = false;
 
-            // Establish the native directory link boundary
-            Directory.CreateSymbolicLink(junctionDir, realDir);
+            // Retry loop for symbolic link creation and nested structure setup
+            for (int i = 0; i < maxRetries; i++)
+            {
+                try
+                {
+                    Directory.CreateSymbolicLink(junctionDir, realDir);
+                    Directory.CreateDirectory(deepNestedPath);
+                    setupSuccess = true;
+                    break;
+                }
+                catch (Exception ex) when ((ex is IOException || ex is UnauthorizedAccessException) && i < maxRetries - 1)
+                {
+                    // Reset state before retry
+                    try { if (Directory.Exists(junctionDir)) Directory.Delete(junctionDir); } catch { }
+                    Thread.Sleep(500 * (i + 1));
+                }
+            }
+
+            Assert.True(setupSuccess, "Failed to create junction and nested directory structure after retries.");
 
             try
             {
-                // Create nested directories inside the resolved structure to hide the link 2 levels deep
-                string deepNestedPathInsideJunction = Path.Combine(junctionDir, "App_Data", "Logs");
-                Directory.CreateDirectory(deepNestedPathInsideJunction);
-
-                string targetFilePath = Path.Combine(deepNestedPathInsideJunction, "output.log");
-
                 // Act
+                string targetFilePath = Path.Combine(deepNestedPath, "output.log");
                 bool result = Helper.HasAncestorReparsePoint(targetFilePath);
 
                 // Assert
@@ -932,18 +968,26 @@ namespace Servy.Core.UnitTests.Helpers
             }
             finally
             {
-                // 1. Safe native unlink of the directory link first
-                DeleteDirectoryLink(junctionDir);
-
-                // 2. Explicitly clean up the actual data folder leftovers
-                try
+                // Teardown with retry logic
+                for (int i = 0; i < maxRetries; i++)
                 {
-                    if (Directory.Exists(realDir))
+                    try
                     {
-                        Directory.Delete(realDir, true);
+                        if (Directory.Exists(junctionDir))
+                        {
+                            Directory.Delete(junctionDir);
+                        }
+                        if (Directory.Exists(realDir))
+                        {
+                            Directory.Delete(realDir, true);
+                        }
+                        break;
+                    }
+                    catch (Exception ex) when (i < maxRetries - 1 && (ex is IOException || ex is UnauthorizedAccessException))
+                    {
+                        Thread.Sleep(500 * (i + 1));
                     }
                 }
-                catch { /* fail silent in finally */ }
             }
         }
 

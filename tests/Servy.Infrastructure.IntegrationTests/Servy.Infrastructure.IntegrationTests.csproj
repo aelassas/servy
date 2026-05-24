@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
@@ -13,18 +13,18 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <AssemblyTitle>Servy.UnitTests</AssemblyTitle>
-    <AssemblyDescription>Servy unit tests</AssemblyDescription>
+    <AssemblyTitle>Servy.Infrastructure.IntegrationTests</AssemblyTitle>
+    <AssemblyDescription>Servy.Infrastructure integration tests</AssemblyDescription>
     <Company>Akram El Assas</Company>
-    <Product>Servy.UnitTests</Product>
+    <Product>Servy.Infrastructure.IntegrationTests</Product>
     <Version>8.5.0</Version>
     <FileVersion>8.5.0.0</FileVersion>
     <AssemblyVersion>8.5.0.0</AssemblyVersion>
     <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
-  
+
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="10.0.0">
+    <PackageReference Include="coverlet.collector" Version="10.0.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -34,22 +34,15 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Xunit.StaFact" Version="3.0.13" />
     <PackageReference Include="xunit.v3" Version="3.2.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Servy.Core\Servy.Core.csproj" />
-    <ProjectReference Include="..\..\src\Servy.UI\Servy.UI.csproj" />
-    <ProjectReference Include="..\..\src\Servy\Servy.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <PropertyGroup>
-    <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
-  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Servy.Infrastructure\Servy.Infrastructure.csproj" />
+  </ItemGroup>
 
 </Project>

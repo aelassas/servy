@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel;
-using Servy.Core.Config;
 
 namespace Servy.Manager.Config
 {

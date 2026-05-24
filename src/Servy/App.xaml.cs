@@ -23,12 +23,14 @@ using AppConfig = Servy.Core.Config.AppConfig;
 using Servy.Core.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Servy.Core.Validators;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Servy
 {
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public partial class App : Application, IAppConfiguration
     {
         #region Constants

@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Logging;
 using Servy.Manager.ViewModels;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -10,9 +11,9 @@ namespace Servy.Manager.Views
     /// Interaction logic for DependenciesView.xaml.
     /// Provides the UI for live-monitoring stdout/stderr and searching available services.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public partial class DependenciesView : UserControl
     {
-
         /// <summary>
         /// Initializes a new instance of the <see cref="DependenciesView"/> class.
         /// Sets up the data context change listener to wire up ViewModel events and manages selection changes.

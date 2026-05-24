@@ -3,6 +3,7 @@ using Servy.Core.Logging;
 using Servy.ViewModels;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 
 namespace Servy.Views
@@ -11,6 +12,7 @@ namespace Servy.Views
     /// Interaction logic for <see cref="MainWindow"/>.
     /// Represents the main window of the Servy application.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public partial class MainWindow : Window
     {
         private readonly MainViewModel _mainViewModel;

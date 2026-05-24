@@ -1,5 +1,6 @@
 ﻿using Servy.Manager.Models;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -11,6 +12,7 @@ namespace Servy.Manager.Views.Controls
     /// Designed to be shared across multiple views such as dependencies,
     /// performance monitoring, and console output.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public partial class ServiceListControl : UserControl
     {
         /// <summary>

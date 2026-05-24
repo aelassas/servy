@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace Servy.CLI.Helpers
 {
-    internal static class Helper
+    public static class Helper
     {
         /// <summary>
         /// Gets the verb name defined by the <see cref="VerbAttribute"/> on the specified options class.

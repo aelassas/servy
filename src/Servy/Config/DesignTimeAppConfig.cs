@@ -1,6 +1,4 @@
-﻿using System;
-using System.ComponentModel;
-using Servy.Core.Config;
+﻿using System.ComponentModel;
 
 namespace Servy.Config
 {

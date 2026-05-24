@@ -168,6 +168,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_global", "_global", "{AF41
 		src\linker.shared.xml = src\linker.shared.xml
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Infrastructure.IntegrationTests", "tests\Servy.Infrastructure.IntegrationTests\Servy.Infrastructure.IntegrationTests.csproj", "{99D2C270-5AF9-482B-B8F4-780A6687554D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -254,6 +256,10 @@ Global
 		{3B4345FC-28F9-4016-8FB3-E87A70C78923}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3B4345FC-28F9-4016-8FB3-E87A70C78923}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3B4345FC-28F9-4016-8FB3-E87A70C78923}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99D2C270-5AF9-482B-B8F4-780A6687554D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99D2C270-5AF9-482B-B8F4-780A6687554D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99D2C270-5AF9-482B-B8F4-780A6687554D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99D2C270-5AF9-482B-B8F4-780A6687554D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -291,6 +297,7 @@ Global
 		{09CA340C-8754-4FCC-92DA-441D279C604C} = {0C916905-AFCC-4C80-85FD-7D98DF5E6DE5}
 		{DA3B55F8-FA18-4FF3-9221-F528D0501C72} = {09CA340C-8754-4FCC-92DA-441D279C604C}
 		{AF414E4C-11AC-4D83-A5CB-C9225D44F7F2} = {F56CEF5B-4A0B-4494-8BFD-F6EC660B510E}
+		{99D2C270-5AF9-482B-B8F4-780A6687554D} = {50795869-2933-430F-98BD-956C414ABBE4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {93B02B52-77CF-4BAA-AD7E-08960E6D6482}

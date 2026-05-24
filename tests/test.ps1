@@ -47,6 +47,7 @@ $TestProjects = @(
     Join-Path $ScriptDir "Servy.Core.UnitTests\Servy.Core.UnitTests.csproj"
     Join-Path $ScriptDir "Servy.Core.IntegrationTests\Servy.Core.IntegrationTests.csproj"
     Join-Path $ScriptDir "Servy.Infrastructure.UnitTests\Servy.Infrastructure.UnitTests.csproj"
+    Join-Path $ScriptDir "Servy.Infrastructure.IntegrationTests\Servy.Infrastructure.IntegrationTests.csproj"
     Join-Path $ScriptDir "Servy.Restarter.UnitTests\Servy.Restarter.UnitTests.csproj"
     Join-Path $ScriptDir "Servy.Service.UnitTests\Servy.Service.UnitTests.csproj"
     Join-Path $ScriptDir "Servy.Service.IntegrationTests\Servy.Service.IntegrationTests.csproj"
@@ -69,7 +70,8 @@ foreach ($Proj in $TestProjects) {
         --configuration Debug `
         --collect:"XPlat Code Coverage" `
         --results-directory $TestResultsDir `
-        -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+        -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura `
+        -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/obj/**/*"
     if ($LASTEXITCODE -ne 0) { Write-Error "dotnet test failed for $Proj"; exit $LASTEXITCODE }
 }
 
@@ -79,7 +81,8 @@ Write-Host "Generating global coverage report..."
 reportgenerator `
     -reports:$CoverageFiles `
     -targetdir:$CoverageReportDir `
-    -reporttypes:Html
+    -reporttypes:Html `
+    -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/obj/**/*"
 if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed"; exit $LASTEXITCODE }
 
 Write-Host "Coverage report generated at $CoverageReportDir"
