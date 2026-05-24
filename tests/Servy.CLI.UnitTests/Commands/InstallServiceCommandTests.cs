@@ -5,7 +5,6 @@ using Servy.CLI.Resources;
 using Servy.CLI.Validators;
 using Servy.Core.Common;
 using Servy.Core.Config;
-using Servy.Core.Data;
 using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests.Commands
@@ -27,7 +26,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_ValidOptions_ReturnsSuccess()
         {
             // Arrange
-            var options = new Options.InstallServiceOptions
+            var options = new CLI.Options.InstallServiceOptions
             {
                 ServiceName = "TestService",
                 ProcessPath = "C:\\path\\to\\app.exe"
@@ -64,7 +63,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_ValidationFails_ReturnsFailure()
         {
             // Arrange
-            var options = new Options.InstallServiceOptions();
+            var options = new CLI.Options.InstallServiceOptions();
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Fail("Validation error."));
 
             // Act
@@ -79,7 +78,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_ServiceManagerFails_ReturnsFailure()
         {
             // Arrange
-            var options = new Options.InstallServiceOptions
+            var options = new CLI.Options.InstallServiceOptions
             {
                 ServiceName = "TestService",
                 ProcessPath = "C:\\path\\to\\app.exe"
@@ -114,7 +113,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_UnauthorizedAccessException_ReturnsFailure()
         {
             // Arrange
-            var options = new Options.InstallServiceOptions
+            var options = new CLI.Options.InstallServiceOptions
             {
                 ServiceName = "TestService",
                 ProcessPath = "C:\\path\\to\\app.exe"
@@ -149,7 +148,7 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_GenericException_ReturnsFailure()
         {
             // Arrange
-            var options = new Options.InstallServiceOptions
+            var options = new CLI.Options.InstallServiceOptions
             {
                 ServiceName = "TestService",
                 ProcessPath = "C:\\path\\to\\app.exe"

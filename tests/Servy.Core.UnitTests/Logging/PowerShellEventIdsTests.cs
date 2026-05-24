@@ -1,7 +1,6 @@
-﻿using System.Text.RegularExpressions;
-using Servy.Core.Config;
+﻿using Servy.Core.Config;
 using Servy.Core.Logging;
-using Xunit;
+using System.Text.RegularExpressions;
 
 namespace Servy.Core.UnitTests.Logging
 {
