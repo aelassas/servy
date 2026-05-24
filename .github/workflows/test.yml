@@ -113,27 +113,36 @@ jobs:
 
               Write-Host "Using vstest.console.exe at: $vsTest"
 
-              # Define common exclusions using Coverlet console CLI's --exclude-by-file property filter 
+              # Define common exclusions 
               $TestExclusions = @("**/*.xaml", "**/*.xaml.cs", "**/*.g.cs", "**/obj/**/*")
 
-              $excludeArgs = ""
+              # 1. Initialize the arguments array with base arguments
+              $coverletArgs = @(
+                  $dllPath,
+                  "--target", $vsTest,
+                  "--targetargs", $targetArgs,
+                  "--output", $outPath,
+                  "--format", "cobertura",
+                  "--include-directory", "$env:GITHUB_WORKSPACE",
+                  "--exclude", "[*.UnitTests]*",
+                  "--exclude", "[*.IntegrationTests]*",
+                  "--exclude", "[Servy.Testing]*"
+              )
+
+              # 2. Add the exclusions as individual array items
               foreach ($pattern in $TestExclusions) {
-                  # No @ symbol, just the flag and the pattern
-                  $excludeArgs += "--exclude-by-file `"$pattern`" "
+                  $coverletArgs += "--exclude-by-file"
+                  $coverletArgs += $pattern
               }
 
-              # FIX: Exclude all Unit, Integration, and Testing assemblies from instrumentation,
-              # and exclude UI .xaml views/code-behind using the direct coverlet CLI parameter syntax.
-              & coverlet.exe $dllPath `
-                  --target "$vsTest" `
-                  --targetargs $targetArgs `
-                  --output $outPath `
-                  --format "cobertura" `
-                  --include-directory "$env:GITHUB_WORKSPACE" `
-                  --exclude "[*.UnitTests]*" `
-                  --exclude "[*.IntegrationTests]*" `
-                  --exclude "[Servy.Testing]*" `
-                  $excludeArgs
+              # 3. Add Infrastructure specific exclusion if needed
+              if ($Proj -like "*Servy.Infrastructure*") {
+                  $coverletArgs += "--exclude"
+                  $coverletArgs += "[Servy.Core]*"
+              }
+
+              # 4. Execute using the splatting operator (@)
+              & coverlet @coverletArgs
                   
               if ($LASTEXITCODE -ne 0) { 
                   $failed = $true 
