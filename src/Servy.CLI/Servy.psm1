@@ -179,7 +179,7 @@ function Format-SecureLogMessage {
 
   # Define all CLI parameters that may contain sensitive data or injected variables
   # WARNING: This list must be kept in sync with the CLI sensitive options.
-  # Any C# option property ending in *Params, *Env, or starting with password* 
+  # Any C# option property ending in *Params, *Env, *envVars or starting with password* 
   # MUST be decorated with the [Sensitive] attribute and listed here. 
   # This is enforced by unit tests in Servy.CLI.UnitTests.
   $sensitiveFields = @(
