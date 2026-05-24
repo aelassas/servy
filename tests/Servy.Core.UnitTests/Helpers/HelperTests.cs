@@ -812,7 +812,7 @@ namespace Servy.Core.UnitTests.Helpers
             string junctionTarget = Path.Combine(_testRoot, "JunctionDir");
             Directory.CreateDirectory(realDir);
 
-            int maxRetries = 3;
+            int maxRetries = 5;
             bool created = false;
 
             // Retry loop for the unstable NTFS link creation
@@ -869,7 +869,7 @@ namespace Servy.Core.UnitTests.Helpers
 
             Directory.CreateDirectory(realDir);
 
-            int maxRetries = 3;
+            int maxRetries = 5;
             bool setupSuccess = false;
 
             // Retry loop for junction creation and nested structure setup
