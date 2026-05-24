@@ -66,6 +66,7 @@ jobs:
               @{ Name = "Servy.Core.UnitTests"; Dir = "Core"; Filter = $null }
               @{ Name = "Servy.Core.IntegrationTests"; Dir = "Core"; Filter = $null }
               @{ Name = "Servy.Infrastructure.UnitTests"; Dir = "Infrastructure"; Filter = $null }
+              @{ Name = "Servy.Infrastructure.IntegrationTests"; Dir = "Infrastructure"; Filter = $null }
               @{ Name = "Servy.Restarter.UnitTests"; Dir = "Restarter"; Filter = $null }
               @{ Name = "Servy.Service.UnitTests"; Dir = "Service"; Filter = "Category!=ReflectionValidation" }
               @{ Name = "Servy.Service.IntegrationTests"; Dir = "Service"; Filter = $null }
@@ -112,7 +113,17 @@ jobs:
 
               Write-Host "Using vstest.console.exe at: $vsTest"
 
-              # FIX: Exclude all Unit, Integration, and Testing assemblies from instrumentation              
+              # Define common exclusions using Coverlet console CLI's --exclude-by-file property filter 
+              $TestExclusions = @("**/*.xaml", "**/*.xaml.cs", "**/*.g.cs", "**/obj/**/*")
+
+              $excludeArgs = ""
+              foreach ($pattern in $TestExclusions) {
+                  # No @ symbol, just the flag and the pattern
+                  $excludeArgs += "--exclude-by-file `"$pattern`" "
+              }
+
+              # FIX: Exclude all Unit, Integration, and Testing assemblies from instrumentation,
+              # and exclude UI .xaml views/code-behind using the direct coverlet CLI parameter syntax.
               & coverlet.exe $dllPath `
                   --target "$vsTest" `
                   --targetargs $targetArgs `
@@ -121,7 +132,8 @@ jobs:
                   --include-directory "$env:GITHUB_WORKSPACE" `
                   --exclude "[*.UnitTests]*" `
                   --exclude "[*.IntegrationTests]*" `
-                  --exclude "[Servy.Testing]*"
+                  --exclude "[Servy.Testing]*" `
+                  $excludeArgs
                   
               if ($LASTEXITCODE -ne 0) { 
                   $failed = $true 
@@ -218,12 +230,14 @@ jobs:
           
           $reportPaths = $reports.FullName -join ";"
           
-          # FIX: Add wildcard assembly filters to physically strip test assemblies from the merged XML          
+          # FIX: Add wildcard assembly filters to physically strip test assemblies from the merged XML,
+          # and include file-level exclusions to eliminate any residual XAML markup layout records.
           reportgenerator `
               "-reports:$reportPaths" `
               "-targetdir:CoverageMerged" `
               "-reporttypes:Cobertura" `
-              "-assemblyfilters:-*.UnitTests;-*.IntegrationTests;-Servy.Testing"
+              "-assemblyfilters:-*.UnitTests;-*.IntegrationTests;-Servy.Testing" `
+              -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/obj/**/*"
 
       - name: Normalize coverage paths (PowerShell)
         if: always()

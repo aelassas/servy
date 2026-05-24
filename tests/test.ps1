@@ -53,6 +53,7 @@ $TestProjects = @(
     Join-Path $ScriptDir "Servy.Core.UnitTests\Servy.Core.UnitTests.csproj"
     Join-Path $ScriptDir "Servy.Core.IntegrationTests\Servy.Core.IntegrationTests.csproj"
     Join-Path $ScriptDir "Servy.Infrastructure.UnitTests\Servy.Infrastructure.UnitTests.csproj"
+    Join-Path $ScriptDir "Servy.Infrastructure.IntegrationTests\Servy.Infrastructure.IntegrationTests.csproj"
     Join-Path $ScriptDir "Servy.Restarter.UnitTests\Servy.Restarter.UnitTests.csproj"
     Join-Path $ScriptDir "Servy.Service.UnitTests\Servy.Service.UnitTests.csproj"
     Join-Path $ScriptDir "Servy.Service.IntegrationTests\Servy.Service.IntegrationTests.csproj"
@@ -88,6 +89,15 @@ foreach ($Proj in $TestProjects) {
 
     Write-Host "Running tests for $($ProjName)..."
 
+    # Define common exclusions using Coverlet console CLI's --exclude-by-file property filter 
+    $TestExclusions = @("**/*.xaml", "**/*.xaml.cs", "**/*.g.cs", "**/obj/**/*")
+
+    $excludeArgs = ""
+    foreach ($pattern in $TestExclusions) {
+        # No @ symbol, just the flag and the pattern
+        $excludeArgs += "--exclude-by-file `"$pattern`" "
+    }
+
     if ($Proj -like "*Servy.Infrastructure*") {
         coverlet "$DllPath" `
             --target "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
@@ -95,7 +105,8 @@ foreach ($Proj in $TestProjects) {
             --output (Join-Path $TestResultsDir "$ProjName.coverage.xml") `
             --format "cobertura" `
             --include-directory "$ProjDir" `
-            --exclude "[Servy.Core]*"
+            --exclude "[Servy.Core]*" `
+            $excludeArgs
         if ($LASTEXITCODE -ne 0) { Write-Error "coverlet failed for $ProjName"; exit $LASTEXITCODE }
     } else {
         coverlet "$DllPath" `
@@ -103,7 +114,8 @@ foreach ($Proj in $TestProjects) {
             --targetargs "`"$DllPath`" --ResultsDirectory:`"$TestResultsDir`"" `
             --output (Join-Path $TestResultsDir "$ProjName.coverage.xml") `
             --format "cobertura" `
-            --include-directory "$ProjDir"
+            --include-directory "$ProjDir" `
+            $excludeArgs
         if ($LASTEXITCODE -ne 0) { Write-Error "coverlet failed for $ProjName"; exit $LASTEXITCODE }
     }
 
@@ -115,8 +127,8 @@ Write-Host "Generating global coverage report..."
 reportgenerator `
     -reports:$coverageFiles `
     -targetdir:$CoverageReportDir `
-    -reporttypes:Html
+    -reporttypes:Html `
+    -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/obj/**/*"
 if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed"; exit $LASTEXITCODE }
 
 Write-Host "Coverage report generated at $CoverageReportDir"
-

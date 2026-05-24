@@ -45,6 +45,8 @@ namespace Servy.Validators
         /// </remarks>
         public async Task<bool> Validate(ServiceDto dto, string wrapperExePath = null, string confirmPassword = "")
         {
+            if (dto == null) return false;
+
             // Delegate logic to the shared Core rules engine
             var result = _serviceValidationRules.Validate(dto, wrapperExePath, confirmPassword);
 

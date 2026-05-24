@@ -1,4 +1,5 @@
 ﻿using Servy.Manager.ViewModels;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -10,6 +11,7 @@ namespace Servy.Manager.Views
     /// Subscribes to the <see cref="LogsViewModel.ScrollLogsToTopRequested"/> event
     /// to scroll the logs DataGrid to the top when requested.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public partial class LogsView : UserControl
     {
         /// <summary>

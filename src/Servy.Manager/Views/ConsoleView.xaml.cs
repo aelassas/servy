@@ -4,6 +4,7 @@ using Servy.Manager.ViewModels;
 using Servy.UI.Helpers;
 using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -19,6 +20,7 @@ namespace Servy.Manager.Views
     /// Interaction logic for ConsoleView.xaml.
     /// Provides the UI for live-monitoring stdout/stderr and searching available services.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public partial class ConsoleView : UserControl
     {
         /// <summary>

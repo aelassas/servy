@@ -10,8 +10,9 @@
 
 namespace Servy.UI.Resources {
     using System;
-    
-    
+    using System.Diagnostics.CodeAnalysis;
+
+
     /// <summary>
     ///   Une classe de ressource fortement typée destinée, entre autres, à la consultation des chaînes localisées.
     /// </summary>
@@ -22,6 +23,7 @@ namespace Servy.UI.Resources {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "18.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+    [ExcludeFromCodeCoverage]
     public class Strings {
         
         private static global::System.Resources.ResourceManager resourceMan;

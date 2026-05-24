@@ -25,14 +25,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Servy.Core.Validators;
 using System.Threading.Tasks;
 using System;
-using System.Configuration;
 using System.Collections.Specialized;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Servy.Manager
 {
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public partial class App : Application, IAppConfiguration
     {
         #region Constants

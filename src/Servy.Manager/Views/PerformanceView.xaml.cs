@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Logging;
 using Servy.Manager.ViewModels;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,6 +14,7 @@ namespace Servy.Manager.Views
     /// Interaction logic for PerformanceView.xaml.
     /// Provides the UI for monitoring service performance metrics and searching available services.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public partial class PerformanceView : UserControl
     {
         /// <summary>

@@ -7,6 +7,7 @@ using Servy.UI.Services;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,6 +21,7 @@ namespace Servy.Manager.Views
     /// Interaction logic for <see cref="MainWindow"/>.
     /// Represents the main window of the Servy Manager application.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public partial class MainWindow : Window
     {
         private readonly IMessageBoxService _messageBoxService;
