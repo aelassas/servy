@@ -448,5 +448,11 @@ namespace Servy.Core.Helpers
             }
         }
 
+        /// <inheritdoc />
+        public Process Start(ProcessStartInfo psi)
+        {
+            return Process.Start(psi);
+        }
+
     }
 }

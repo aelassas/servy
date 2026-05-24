@@ -1,4 +1,6 @@
-﻿namespace Servy.Core.Helpers
+﻿using System.Diagnostics;
+
+namespace Servy.Core.Helpers
 {
     /// <summary>
     /// Provides helper methods for retrieving and formatting process-related information
@@ -107,5 +109,17 @@
         /// </remarks>
         bool ValidatePath(string path, bool isFile = true);
 
+        /// <summary>
+        /// Starts a new process resource and associates it with the specified <see cref="ProcessStartInfo"/> instance.
+        /// </summary>
+        /// <param name="psi">The <see cref="ProcessStartInfo"/> that contains the information used to start the process, 
+        /// including the file name and command-line arguments.</param>
+        /// <returns>
+        /// A new <see cref="Process"/> component that is associated with the process resource, 
+        /// or <c>null</c> if no process resource is started (e.g., if an existing process is reused).
+        /// </returns>
+        /// <exception cref="System.InvalidOperationException">Thrown if no file name is specified in <paramref name="psi"/>.</exception>
+        /// <exception cref="System.ComponentModel.Win32Exception">Thrown if there is an error opening the associated file.</exception>
+        Process Start(ProcessStartInfo psi);
     }
 }
