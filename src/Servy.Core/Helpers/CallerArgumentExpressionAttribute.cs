@@ -1,9 +1,12 @@
-﻿namespace System.Runtime.CompilerServices
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace System.Runtime.CompilerServices
 {
     /// <summary>
     /// Polyfill for CallerArgumentExpressionAttribute to allow C# 10+ features 
     /// in .NET Framework 4.8.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
     internal sealed class CallerArgumentExpressionAttribute : Attribute
     {

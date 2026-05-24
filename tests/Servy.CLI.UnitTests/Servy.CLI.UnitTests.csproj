@@ -126,12 +126,14 @@
     <Compile Include="Helpers\ConsoleHelperTests.cs" />
     <Compile Include="Helpers\HelperTests.cs" />
     <Compile Include="Options\SensitiveOptionsTests.cs" />
+    <Compile Include="ProgramTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Commands\RestartServiceCommandTests.cs" />
     <Compile Include="Commands\ServiceStatusCommandTests.cs" />
     <Compile Include="Commands\StartServiceCommandTests.cs" />
     <Compile Include="Commands\StopServiceCommandTests.cs" />
     <Compile Include="Commands\UninstallServiceCommandTests.cs" />
+    <Compile Include="Validators\ServiceInstallValidatorTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

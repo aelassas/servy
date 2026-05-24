@@ -120,8 +120,11 @@
     <Compile Include="Helpers\ProcessHelperIntegrationTests.cs" />
     <Compile Include="Helpers\ProcessKillerIntegrationTests.cs" />
     <Compile Include="Helpers\ResourceHelperIntegrationTests.cs" />
+    <Compile Include="Logging\EventLogLoggerIntegrationTests.cs" />
+    <Compile Include="Native\LogonAsServiceGrantIntegrationTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Security\ProtectedKeyProviderIntegrationTests.cs" />
+    <Compile Include="Services\WindowsServiceApiIntegrationTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -135,11 +138,16 @@
       <Project>{4d92fa0d-47bb-4658-91cd-774a25adeb87}</Project>
       <Name>Servy.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj">
+      <Project>{4BC9A435-C352-4953-82B8-B419B13E8F56}</Project>
+      <Name>Servy.Testing</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\..\packages\xunit.analyzers.1.27.0\analyzers\dotnet\cs\xunit.analyzers.dll" />
     <Analyzer Include="..\..\packages\xunit.analyzers.1.27.0\analyzers\dotnet\cs\xunit.analyzers.fixes.dll" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Servy.Core.Native;
+using System;
+using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -77,6 +80,51 @@ namespace Servy.Testing
 
             // Wait for the test (and the STA thread lifecycle) to complete
             await tcs.Task;
+        }
+
+        /// <summary>
+        /// Checks if the current process is running with administrative privileges by examining the Windows identity and principal.
+        /// </summary>
+        /// <returns>Returns true if the process is running with administrative privileges; otherwise, false.</returns>
+        public static bool IsAdministrator()
+        {
+            using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
+            {
+                WindowsPrincipal principal = new WindowsPrincipal(identity);
+                return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+        }
+
+        /// <summary>
+        /// Proactively probes the system's LSA policy subsystem to see if the runner process 
+        /// has security tokens capable of opening policy access mappings.
+        /// </summary>
+        public static bool CheckLsaPolicyAccess()
+        {
+            // Emulates an LSA open loop using minimum query flags to detect if the kernel drops an access error
+            var oa = new NativeMethods.LSA_OBJECT_ATTRIBUTES
+            {
+                Length = Marshal.SizeOf<NativeMethods.LSA_OBJECT_ATTRIBUTES>()
+            };
+
+            IntPtr policyHandle = IntPtr.Zero;
+            try
+            {
+                // Request lookup names permissions to check if policy manipulation can structurally be performed
+                int status = NativeMethods.LsaOpenPolicy(IntPtr.Zero, ref oa, NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES, out policyHandle);
+                return status == 0;
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                if (policyHandle != IntPtr.Zero)
+                {
+                    NativeMethods.LsaClose(policyHandle);
+                }
+            }
         }
 
     }
