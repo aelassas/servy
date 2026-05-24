@@ -1,16 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
-using Moq;
-using Servy.CLI;
-using Servy.CLI.Options;
-using Servy.Core.Config;
-using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
-
-namespace Servy.CLI.UnitTests
+﻿namespace Servy.CLI.UnitTests
 {
+    [CollectionDefinition("Servy.CLI.UnitTests.ProgramTests", DisableParallelization = true)]
     public class ProgramTests : IDisposable
     {
         private readonly string _tempConfigPath;
@@ -63,104 +53,111 @@ namespace Servy.CLI.UnitTests
         [Fact]
         public async Task Main_EmptyArguments_InjectsHelpVerbAndExitsWithSuccess()
         {
-            // Arrange
-            string[] emptyArgs = new string[0];
+            // 1. Capture the original writer so we can restore it later
+            var originalOut = Console.Out;
+            var stringWriter = new StringWriter();
 
-            using (StringWriter sw = new StringWriter())
+            try
             {
-                Console.SetOut(sw);
+                // 2. Redirect
+                Console.SetOut(stringWriter);
 
-                try
-                {
-                    // Act
-                    int exitCode = await Program.Main(emptyArgs);
+                // 3. Act
+                string[] emptyArgs = new string[0];
+                int exitCode = await Program.Main(emptyArgs);
 
-                    // Assert
-                    // Empty args inject HelpOptions verb, parsing returns successful exit code
-                    Assert.Equal((int)CliExitCode.Success, exitCode);
-                }
-                finally
-                {
-                    Console.SetOut(_originalConsoleOut);
-                }
+                // 4. Assert
+                // Empty args inject HelpOptions verb, parsing returns successful exit code
+                Assert.Equal((int)CliExitCode.Success, exitCode);
+            }
+            finally
+            {
+                // 5. Restore original output BEFORE disposing the stringWriter
+                Console.SetOut(originalOut);
+                stringWriter.Dispose();
             }
         }
 
         [Fact]
         public async Task Main_HelpFlagProvided_ReturnsSuccessExitCode()
         {
-            // Arrange
-            string[] args = new string[] { "--help" };
+            // 1. Capture the original writer so we can restore it later
+            var originalOut = Console.Out;
+            var stringWriter = new StringWriter();
 
-            using (StringWriter sw = new StringWriter())
+            try
             {
-                Console.SetOut(sw);
+                // 2. Redirect
+                Console.SetOut(stringWriter);
 
-                try
-                {
-                    // Act
-                    int exitCode = await Program.Main(args);
+                // 3. Act
+                string[] args = { "--help" };
+                int exitCode = await Program.Main(args);
 
-                    // Assert
-                    Assert.Equal((int)CliExitCode.Success, exitCode);
-                }
-                finally
-                {
-                    Console.SetOut(_originalConsoleOut);
-                }
+                // 4. Assert
+                Assert.Equal((int)CliExitCode.Success, exitCode);
+            }
+            finally
+            {
+                // 5. Restore original output BEFORE disposing the stringWriter
+                Console.SetOut(originalOut);
+                stringWriter.Dispose();
             }
         }
 
         [Fact]
         public async Task Main_InvalidArgumentsProvided_ReturnsErrorExitCode()
         {
-            // Arrange
-            string[] args = new string[] { "install", "--unsupported-option" };
+            // 1. Capture the original writer so we can restore it later
+            var originalOut = Console.Out;
+            var stringWriter = new StringWriter();
 
-            using (StringWriter sw = new StringWriter())
+            try
             {
-                Console.SetOut(sw);
+                // 2. Redirect
+                Console.SetOut(stringWriter);
 
-                try
-                {
-                    // Act
-                    int exitCode = await Program.Main(args);
+                // 3. Act
+                string[] args = new string[] { "install", "--unsupported-option" };
+                int exitCode = await Program.Main(args);
 
-                    // Assert
-                    Assert.Equal((int)CliExitCode.Error, exitCode);
-                }
-                finally
-                {
-                    Console.SetOut(_originalConsoleOut);
-                }
+                // 4. Assert
+                Assert.Equal((int)CliExitCode.Error, exitCode);
+            }
+            finally
+            {
+                // 5. Restore original output BEFORE disposing the stringWriter
+                Console.SetOut(originalOut);
+                stringWriter.Dispose();
             }
         }
 
         [Fact]
         public async Task Main_QuietFlagProvided_AltersExecutionToQuietPath()
         {
-            // Arrange
-            // Using a structured verb along with global --quiet flag path verification
-            string[] args = new string[] { "status", "--quiet" };
+            // 1. Capture the original writer so we can restore it later
+            var originalOut = Console.Out;
+            var stringWriter = new StringWriter();
 
-            using (StringWriter sw = new StringWriter())
+            try
             {
-                Console.SetOut(sw);
+                // 2. Redirect
+                Console.SetOut(stringWriter);
 
-                try
-                {
-                    // Act
-                    int exitCode = await Program.Main(args);
+                // 3. Act
+                string[] args = new string[] { "status", "--quiet" };
+                int exitCode = await Program.Main(args);
 
-                    // Assert
-                    // Verb option matching flow works successfully. Returns Error or Success 
-                    // depending on system level service controller permissions during test initialization
-                    Assert.True(exitCode == (int)CliExitCode.Success || exitCode == (int)CliExitCode.Error);
-                }
-                finally
-                {
-                    Console.SetOut(_originalConsoleOut);
-                }
+                // 4. Assert
+                // Verb option matching flow works successfully. Returns Error or Success 
+                // depending on system level service controller permissions during test initialization
+                Assert.True(exitCode == (int)CliExitCode.Success || exitCode == (int)CliExitCode.Error);
+            }
+            finally
+            {
+                // 5. Restore original output BEFORE disposing the stringWriter
+                Console.SetOut(originalOut);
+                stringWriter.Dispose();
             }
         }
 
@@ -171,30 +168,34 @@ namespace Servy.CLI.UnitTests
         [Fact]
         public async Task Main_ExecutionFlowInterruptedByCancellation_ReturnsErrorExitCode()
         {
-            // Arrange
             // We simulate a cancelled token runtime interrupt path by canceling early inside a task thread run
             using (CancellationTokenSource localCts = new CancellationTokenSource())
             {
                 localCts.Cancel();
 
-                using (StringWriter sw = new StringWriter())
+                // 1. Capture the original writer so we can restore it later
+                var originalOut = Console.Out;
+                var stringWriter = new StringWriter();
+
+                try
                 {
-                    Console.SetOut(sw);
+                    // 2. Redirect
+                    Console.SetOut(stringWriter);
 
-                    try
-                    {
-                        // Act - We trigger the programmatic cancellation handling logic flow block 
-                        // by passing corrupted/unparsable option combinations designed to abort processing.
-                        string[] args = new string[] { "install", "--corrupt-flag-combination" };
-                        int exitCode = await Program.Main(args);
+                    // 3. Act
+                    // We trigger the programmatic cancellation handling logic flow block 
+                    // by passing corrupted/unparsable option combinations designed to abort processing.
+                    string[] args = new string[] { "install", "--corrupt-flag-combination" };
+                    int exitCode = await Program.Main(args);
 
-                        // Assert
-                        Assert.Equal((int)CliExitCode.Error, exitCode);
-                    }
-                    finally
-                    {
-                        Console.SetOut(_originalConsoleOut);
-                    }
+                    // 4. Assert
+                    Assert.Equal((int)CliExitCode.Error, exitCode);
+                }
+                finally
+                {
+                    // 5. Restore original output BEFORE disposing the stringWriter
+                    Console.SetOut(originalOut);
+                    stringWriter.Dispose();
                 }
             }
         }

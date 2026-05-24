@@ -871,8 +871,9 @@ namespace Servy.Core.UnitTests.Helpers
             Directory.CreateDirectory(realDir);
 
             // Use a retry mechanism for link creation (unstable NTFS operations)
+            int maxRetries = 5;
             bool created = false;
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < maxRetries; i++)
             {
                 try
                 {
@@ -880,12 +881,12 @@ namespace Servy.Core.UnitTests.Helpers
                     created = true;
                     break;
                 }
-                catch (IOException) when (i < 2)
+                catch (IOException) when (i < maxRetries - 1)
                 {
                     Thread.Sleep(500 * (i + 1)); // Linear backoff
                 }
             }
-            Assert.True(created, "Failed to create symbolic link after 3 retries.");
+            Assert.True(created, "Failed to create junction after multiple attempts.");
 
             try
             {
@@ -899,7 +900,7 @@ namespace Servy.Core.UnitTests.Helpers
             finally
             {
                 // Teardown with retries for file system lock release
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < maxRetries; i++)
                 {
                     try
                     {
@@ -914,7 +915,7 @@ namespace Servy.Core.UnitTests.Helpers
                         }
                         break;
                     }
-                    catch (Exception ex) when (i < 2 && (ex is IOException || ex is UnauthorizedAccessException))
+                    catch (Exception ex) when (i < maxRetries - 1 && (ex is IOException || ex is UnauthorizedAccessException))
                     {
                         Thread.Sleep(500 * (i + 1));
                     }
@@ -934,7 +935,7 @@ namespace Servy.Core.UnitTests.Helpers
 
             Directory.CreateDirectory(realDir);
 
-            int maxRetries = 3;
+            int maxRetries = 5;
             bool setupSuccess = false;
 
             // Retry loop for symbolic link creation and nested structure setup
