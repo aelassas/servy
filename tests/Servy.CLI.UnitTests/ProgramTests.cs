@@ -1,6 +1,11 @@
 ﻿namespace Servy.CLI.UnitTests
 {
-    [CollectionDefinition("Servy.CLI.UnitTests.ProgramTests", DisableParallelization = true)]
+    // 1. Establish a unique, non-parallelized execution collection domain for CLI tests
+    [CollectionDefinition("Servy.CLI.ConsoleTests", DisableParallelization = true)]
+    public class CliConsoleCollection { }
+
+    // 2. Explicitly bind the test class to the sequential execution collection
+    [Collection("Servy.CLI.ConsoleTests")]
     public class ProgramTests : IDisposable
     {
         private readonly string _tempConfigPath;
@@ -55,109 +60,114 @@
         {
             // 1. Capture the original writer so we can restore it later
             var originalOut = Console.Out;
-            var stringWriter = new StringWriter();
 
-            try
+            // 2. Wrap the writer in a thread-safe synchronized boundary
+            using (var stringWriter = TextWriter.Synchronized(new StringWriter()))
             {
-                // 2. Redirect
-                Console.SetOut(stringWriter);
+                try
+                {
+                    // 3. Redirect
+                    Console.SetOut(stringWriter);
 
-                // 3. Act
-                string[] emptyArgs = new string[0];
-                int exitCode = await Program.Main(emptyArgs);
+                    // 4. Act
+                    string[] emptyArgs = Array.Empty<string>();
+                    int exitCode = await Program.Main(emptyArgs);
 
-                // 4. Assert
-                // Empty args inject HelpOptions verb, parsing returns successful exit code
-                Assert.Equal((int)CliExitCode.Success, exitCode);
-            }
-            finally
-            {
-                // 5. Restore original output BEFORE disposing the stringWriter
-                Console.SetOut(originalOut);
-                stringWriter.Dispose();
+                    // 5. Assert
+                    Assert.Equal((int)CliExitCode.Success, exitCode);
+                }
+                finally
+                {
+                    // 6. Restore original output BEFORE leaving the using block to protect background async threads
+                    Console.SetOut(originalOut);
+                }
             }
         }
 
         [Fact]
         public async Task Main_HelpFlagProvided_ReturnsSuccessExitCode()
         {
-            // 1. Capture the original writer so we can restore it later
+            // 1. Capture the original writer
             var originalOut = Console.Out;
-            var stringWriter = new StringWriter();
 
-            try
+            // 2. Synchronized allocation
+            using (var stringWriter = TextWriter.Synchronized(new StringWriter()))
             {
-                // 2. Redirect
-                Console.SetOut(stringWriter);
+                try
+                {
+                    // 3. Redirect
+                    Console.SetOut(stringWriter);
 
-                // 3. Act
-                string[] args = { "--help" };
-                int exitCode = await Program.Main(args);
+                    // 4. Act
+                    string[] args = { "--help" };
+                    int exitCode = await Program.Main(args);
 
-                // 4. Assert
-                Assert.Equal((int)CliExitCode.Success, exitCode);
-            }
-            finally
-            {
-                // 5. Restore original output BEFORE disposing the stringWriter
-                Console.SetOut(originalOut);
-                stringWriter.Dispose();
+                    // 5. Assert
+                    Assert.Equal((int)CliExitCode.Success, exitCode);
+                }
+                finally
+                {
+                    // 6. Restore
+                    Console.SetOut(originalOut);
+                }
             }
         }
 
         [Fact]
         public async Task Main_InvalidArgumentsProvided_ReturnsErrorExitCode()
         {
-            // 1. Capture the original writer so we can restore it later
+            // 1. Capture the original writer
             var originalOut = Console.Out;
-            var stringWriter = new StringWriter();
 
-            try
+            // 2. Synchronized allocation
+            using (var stringWriter = TextWriter.Synchronized(new StringWriter()))
             {
-                // 2. Redirect
-                Console.SetOut(stringWriter);
+                try
+                {
+                    // 3. Redirect
+                    Console.SetOut(stringWriter);
 
-                // 3. Act
-                string[] args = new string[] { "install", "--unsupported-option" };
-                int exitCode = await Program.Main(args);
+                    // 4. Act
+                    string[] args = { "install", "--unsupported-option" };
+                    int exitCode = await Program.Main(args);
 
-                // 4. Assert
-                Assert.Equal((int)CliExitCode.Error, exitCode);
-            }
-            finally
-            {
-                // 5. Restore original output BEFORE disposing the stringWriter
-                Console.SetOut(originalOut);
-                stringWriter.Dispose();
+                    // 5. Assert
+                    Assert.Equal((int)CliExitCode.Error, exitCode);
+                }
+                finally
+                {
+                    // 6. Restore
+                    Console.SetOut(originalOut);
+                }
             }
         }
 
         [Fact]
         public async Task Main_QuietFlagProvided_AltersExecutionToQuietPath()
         {
-            // 1. Capture the original writer so we can restore it later
+            // 1. Capture the original writer
             var originalOut = Console.Out;
-            var stringWriter = new StringWriter();
 
-            try
+            // 2. Synchronized allocation
+            using (var stringWriter = TextWriter.Synchronized(new StringWriter()))
             {
-                // 2. Redirect
-                Console.SetOut(stringWriter);
+                try
+                {
+                    // 3. Redirect
+                    Console.SetOut(stringWriter);
 
-                // 3. Act
-                string[] args = new string[] { "status", "--quiet" };
-                int exitCode = await Program.Main(args);
+                    // 4. Act
+                    string[] args = { "status", "--quiet" };
+                    int exitCode = await Program.Main(args);
 
-                // 4. Assert
-                // Verb option matching flow works successfully. Returns Error or Success 
-                // depending on system level service controller permissions during test initialization
-                Assert.True(exitCode == (int)CliExitCode.Success || exitCode == (int)CliExitCode.Error);
-            }
-            finally
-            {
-                // 5. Restore original output BEFORE disposing the stringWriter
-                Console.SetOut(originalOut);
-                stringWriter.Dispose();
+                    // 5. Assert
+                    Assert.True(exitCode == (int)CliExitCode.Success || exitCode == (int)CliExitCode.Error);
+                }
+                finally
+                {
+                    // 6. Restore
+                    Console.SetOut(originalOut);
+                }
             }
         }
 
@@ -168,34 +178,33 @@
         [Fact]
         public async Task Main_ExecutionFlowInterruptedByCancellation_ReturnsErrorExitCode()
         {
-            // We simulate a cancelled token runtime interrupt path by canceling early inside a task thread run
             using (CancellationTokenSource localCts = new CancellationTokenSource())
             {
                 localCts.Cancel();
 
-                // 1. Capture the original writer so we can restore it later
+                // 1. Capture the original writer
                 var originalOut = Console.Out;
-                var stringWriter = new StringWriter();
 
-                try
+                // 2. Synchronized allocation
+                using (var stringWriter = TextWriter.Synchronized(new StringWriter()))
                 {
-                    // 2. Redirect
-                    Console.SetOut(stringWriter);
+                    try
+                    {
+                        // 3. Redirect
+                        Console.SetOut(stringWriter);
 
-                    // 3. Act
-                    // We trigger the programmatic cancellation handling logic flow block 
-                    // by passing corrupted/unparsable option combinations designed to abort processing.
-                    string[] args = new string[] { "install", "--corrupt-flag-combination" };
-                    int exitCode = await Program.Main(args);
+                        // 4. Act
+                        string[] args = { "install", "--corrupt-flag-combination" };
+                        int exitCode = await Program.Main(args);
 
-                    // 4. Assert
-                    Assert.Equal((int)CliExitCode.Error, exitCode);
-                }
-                finally
-                {
-                    // 5. Restore original output BEFORE disposing the stringWriter
-                    Console.SetOut(originalOut);
-                    stringWriter.Dispose();
+                        // 5. Assert
+                        Assert.Equal((int)CliExitCode.Error, exitCode);
+                    }
+                    finally
+                    {
+                        // 6. Restore
+                        Console.SetOut(originalOut);
+                    }
                 }
             }
         }
@@ -204,7 +213,7 @@
 
         public void Dispose()
         {
-            // Revert console intercepts
+            // Revert console intercepts globally
             Console.SetOut(_originalConsoleOut);
             Console.SetError(_originalConsoleError);
 
