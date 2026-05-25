@@ -114,7 +114,7 @@ namespace Servy.Manager.Mappers
             if (string.IsNullOrEmpty(userSession))
                 return AppConfig.LocalSystem;
 
-            if (userSession.Equals(ServiceAccounts.LocalSystem, StringComparison.OrdinalIgnoreCase))
+            if (ServiceAccounts.LocalSystemAliases.Contains(userSession))
                 return AppConfig.LocalSystem;
 
             if (userSession.Equals(ServiceAccounts.LocalService, StringComparison.OrdinalIgnoreCase))

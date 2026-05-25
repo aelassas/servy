@@ -1,4 +1,7 @@
-﻿namespace Servy.Core.Config
+﻿using System;
+using System.Collections.Immutable;
+
+namespace Servy.Core.Config
 {
     /// <summary>
     /// Contains the internal account names utilized by the Windows Service Control Manager (SCM). 
@@ -20,5 +23,13 @@
         /// The internal SCM name for the NT AUTHORITY\NetworkService account, which has minimum privileges on the local computer and acts as the computer on the network.
         /// </summary>
         public const string NetworkService = @"NT AUTHORITY\NetworkService";
+
+        /// <summary>
+        /// A collection of standard aliases used to identify the Windows 'LocalSystem' account.
+        /// </summary>
+        public static readonly ImmutableHashSet<string> LocalSystemAliases = ImmutableHashSet.Create(
+            StringComparer.OrdinalIgnoreCase,
+            "LocalSystem", @".\LocalSystem", @"NT AUTHORITY\SYSTEM", "SYSTEM"
+        );
     }
 }
