@@ -1456,7 +1456,7 @@ namespace Servy.Service
                     _serviceRepository.Update(
                         serviceDto,
                         preserveExistingRuntimeState: false,
-                        preserveExistingCredentials: false
+                        preserveExistingCredentials: true
                         );
                 }
             }
