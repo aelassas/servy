@@ -163,13 +163,12 @@ namespace Servy.CLI.Commands
 
             // 5. Reserved Device Name Block (DOS/Data Loss Guard)
             string fileName = Path.GetFileName(fullPath);
-            foreach (var segment in fileName.Split('.'))
+            int firstDotIndex = fileName.IndexOf('.');
+            string firstSegment = firstDotIndex >= 0 ? fileName.Substring(0, firstDotIndex) : fileName;
+
+            if (ReservedNames.ReservedDeviceNames.Contains(firstSegment))
             {
-                if (string.IsNullOrEmpty(segment)) continue;
-                if (ReservedNames.ReservedDeviceNames.Contains(segment))
-                {
-                    throw new ArgumentException($"Security Alert: '{segment}' is a reserved Windows device name and cannot be used.");
-                }
+                throw new ArgumentException($"Security Alert: '{firstSegment}' is a reserved Windows device name and cannot be used.");
             }
 
             // 6. System Protection: Block writing to critical Windows directories
@@ -202,6 +201,7 @@ namespace Servy.CLI.Commands
             // 8. Handle Resolution & Guarded Write
             // Belt-and-braces: Open the file exclusively, verify the underlying volume path, and ONLY THEN write.
             // This intercepts DFS referrals, iSCSI mounts, and complex subst mappings before data leaves the box.
+            bool createdByUs = !File.Exists(fullPath);
             try
             {
                 // Open with OpenOrCreate so the file content is NOT truncated or modified upon opening.
@@ -250,6 +250,20 @@ namespace Servy.CLI.Commands
                                 {
                                     throw new SecurityException("Security Alert: Resolved file target points directly to a UNC destination. Export aborted.");
                                 }
+
+                                // NEW: re-check protected folders against the RESOLVED path
+                                var resolvedViolation = protectedFolders.FirstOrDefault(folder =>
+                                    !string.IsNullOrEmpty(folder) &&
+                                    normalizedPath.StartsWith(
+                                        folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
+                                        StringComparison.OrdinalIgnoreCase));
+
+                                if (resolvedViolation != null)
+                                {
+                                    throw new SecurityException(
+                                        $"Access Denied: Resolved file target points into protected system directory '{resolvedViolation}'. Export aborted."
+                                        );
+                                }
                             }
                         }
                     }
@@ -259,6 +273,8 @@ namespace Servy.CLI.Commands
                     using (var sw = new StreamWriter(fileStream, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
                     {
                         sw.Write(content);
+                        sw.Flush();
+                        fileStream.SetLength(fileStream.Position); // truncate any stale tail
                     }
                 }
             }
@@ -271,7 +287,10 @@ namespace Servy.CLI.Commands
             {
                 // The stream is inherently closed upon exception due to the using block unwinding.
                 // We wipe the 0-byte empty file footprint off the disk to ensure no artifacts are left on unauthorized volumes.
-                try { File.Delete(fullPath); } catch { /* ignored */ }
+                if (createdByUs)
+                {
+                    try { File.Delete(fullPath); } catch { /* ignored */ }
+                }
 
                 throw new SecurityException(
                     $"Security Guard Failure: Target file handle validation rejected. {ex.Message}",

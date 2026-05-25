@@ -285,9 +285,15 @@ namespace Servy.Core.Native
 
                         if (read > 0)
                         {
-                            using (var sha256 = SHA256.Create())
+                            using (var sha256 = IncrementalHash.CreateHash(HashAlgorithmName.SHA256))
                             {
-                                byte[] hashBytes = sha256.ComputeHash(buffer, 0, read);
+                                sha256.AppendData(buffer, 0, read);
+
+                                // Length-domain separator so 'AB' + 4-byte-len cannot collide with 'A' + 'B' + 4-byte-len.
+                                sha256.AppendData(BitConverter.GetBytes(fs.Length));
+
+                                byte[] hashBytes = sha256.GetHashAndReset();
+
                                 // Store as a lowercase hex string for consistent identification across probes and to catch size drifts.
                                 identity.PrefixDigest = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
                             }

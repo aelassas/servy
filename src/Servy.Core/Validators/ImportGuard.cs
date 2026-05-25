@@ -168,15 +168,14 @@ namespace Servy.Core.Validators
 
             // Reserved Device Name Block (DOS Guard)
             string fileName = Path.GetFileName(fullPath);
-            foreach (var segment in fileName.Split('.'))
+            int firstDotIndex = fileName.IndexOf('.');
+            string firstSegment = firstDotIndex >= 0 ? fileName.Substring(0, firstDotIndex) : fileName;
+
+            if (ReservedNames.ReservedDeviceNames.Contains(firstSegment))
             {
-                if (string.IsNullOrEmpty(segment)) continue;
-                if (ReservedNames.ReservedDeviceNames.Contains(segment))
-                {
-                    var errorMsg = string.Format(Strings.Msg_SecurityReservedDeviceName, segment);
-                    Logger.Error(errorMsg);
-                    return PathSecurityResult.Fail(errorMsg);
-                }
+                var errorMsg = string.Format(Strings.Msg_SecurityReservedDeviceName, firstSegment);
+                Logger.Error(errorMsg);
+                return PathSecurityResult.Fail(errorMsg);
             }
 
             // System Protection Guard

@@ -138,6 +138,7 @@
     <Compile Include="Helpers\ServiceHelperTests.cs" />
     <Compile Include="Logging\PowerShellEventIdsTests.cs" />
     <Compile Include="Native\HandleTests.cs" />
+    <Compile Include="Native\NativeMethodsHelpersTests.cs" />
     <Compile Include="Security\SecureDataStressTests.cs" />
     <Compile Include="Security\SecurityHelperTests.cs" />
     <Compile Include="Services\EventLogServiceTests.cs" />
