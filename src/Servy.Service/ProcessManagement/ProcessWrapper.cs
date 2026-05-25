@@ -248,10 +248,17 @@ namespace Servy.Service.ProcessManagement
                 {
                     sent = process.CloseMainWindow();
                 }
+                catch (InvalidOperationException ex) when (process.HasExited)
+                {
+                    // Truly dead between Ctrl+C and CloseMainWindow.
+                    _logger?.Debug($"CloseMainWindow noted process exit for '{process.Format()}': {ex.Message}");
+                    return null;
+                }
                 catch (Exception ex)
                 {
-                    _logger?.Warn($"CloseMainWindow failed for '{process.Format()}': {ex.Message}");
-                    return null;
+                    // Window operation failed but process is still alive — fall through to force-kill.
+                    _logger?.Warn($"CloseMainWindow failed for '{process.Format()}': {ex.Message}. Falling through to force-kill.");
+                    sent = false;
                 }
             }
 
