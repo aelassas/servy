@@ -120,9 +120,6 @@ namespace Servy.Manager.Mappers
             if (userSession.Equals(ServiceAccounts.NetworkService, StringComparison.OrdinalIgnoreCase))
                 return AppConfig.NetworkService;
 
-            // Future-proofing: Additional checks for LocalService or NetworkService can be added here 
-            // if AppConfig is expanded to include specific display names for those accounts.
-
             return userSession;
         }
     }
