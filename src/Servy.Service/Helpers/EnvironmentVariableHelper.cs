@@ -1,10 +1,8 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Servy.Service.Helpers
 {
@@ -130,7 +128,7 @@ namespace Servy.Service.Helpers
                     string? original = result[key];
                     if (string.IsNullOrEmpty(original)) continue;
 
-                    string expanded = ExpandWithDictionary(original, snapshot);
+                    string expanded = ExpandWithDictionary(original, snapshot, key);
 
                     // Exponential growth guard
                     if (expanded != null && expanded.Length > AppConfig.MaxEnvVarExpandedLength)
@@ -180,7 +178,7 @@ namespace Servy.Service.Helpers
 
             // Since 'expandedEnv' is already resolved to a fixed point by the dictionary builder,
             // only one pass is needed here.
-            string result = ExpandWithDictionary(input, expandedEnv);
+            string result = ExpandWithDictionary(input, expandedEnv, null);
             return Environment.ExpandEnvironmentVariables(result);
         }
 
@@ -191,8 +189,9 @@ namespace Servy.Service.Helpers
         /// </summary>
         /// <param name="value">The string to expand.</param>
         /// <param name="variables">The dictionary of environment variables to use during expansion.</param>
+        /// <param name="currentKey">The specific variable key currently being expanded, if any.</param>
         /// <returns>The expanded string.</returns>
-        private static string ExpandWithDictionary(string value, IDictionary<string, string?> variables)
+        private static string ExpandWithDictionary(string value, IDictionary<string, string?> variables, string? currentKey = null)
         {
             if (string.IsNullOrEmpty(value))
                 return value;
@@ -208,14 +207,34 @@ namespace Servy.Service.Helpers
                 string replacement = kvp.Value; // empty string is a valid replacement
 
                 // SELF-REFERENCE GUARD:
-                // If the replacement value contains the token itself (e.g., PATH=%PATH%;bin), 
-                // we must skip it here. This prevents exponential string growth during 
-                // our multi-pass custom expansion. 
-                // The final pass of 'Environment.ExpandEnvironmentVariables' will 
-                // correctly resolve these using the actual system-level values.
+                // If the replacement value contains the token itself (e.g., MY_PATH=%MY_PATH%;bin), 
+                // we must resolve it to prevent exponential string growth during multi-pass expansion.
+                // We substitute the current process's OS-level value of that variable for the token,
+                // mimicking standard Windows "PATH-append" semantics.
                 if (replacement.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    continue;
+                    string? inheritedValue = Environment.GetEnvironmentVariable(kvp.Key);
+
+                    // If there is no inherited OS value to append to, leave the placeholder 
+                    // intact so the user understands why the append operation did not occur.
+                    if (string.IsNullOrEmpty(inheritedValue))
+                    {
+                        Logger.Warn($"Direct cycle detected for variable '{kvp.Key}'; leaving literal placeholder.");
+                        continue;
+                    }
+
+                    // If we are currently expanding the self-referential variable's OWN definition, 
+                    // we substitute only the inherited OS value to avoid double-appending the suffix.
+                    // If we are expanding a DIFFERENT variable or a raw string, we substitute the 
+                    // fully resolved replacement. Note: MatchEvaluator prevents parser issues with '$' signs.
+                    if (string.Equals(currentKey, kvp.Key, StringComparison.OrdinalIgnoreCase))
+                    {
+                        replacement = inheritedValue;
+                    }
+                    else
+                    {
+                        replacement = Regex.Replace(replacement, Regex.Escape(token), m => inheritedValue, RegexOptions.IgnoreCase);
+                    }
                 }
 
                 int index = 0;

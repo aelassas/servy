@@ -1,10 +1,92 @@
-﻿using Servy.Core.EnvironmentVariables;
+﻿using Servy.Core.Config;
+using Servy.Core.EnvironmentVariables;
 using Servy.Service.Helpers;
+using System;
+using System.Collections.Generic;
+using Xunit;
 
 namespace Servy.Service.UnitTests.Helpers
 {
-    public class EnvironmentVariableHelperTests
+    // Running sequentially to prevent Environment.SetEnvironmentVariable calls 
+    // from causing race conditions across different tests.
+    [CollectionDefinition("SequentialEnvTests", DisableParallelization = true)]
+    public class SequentialEnvTestsCollection { }
+
+    [Collection("SequentialEnvTests")]
+    public class EnvironmentVariableHelperTests : IDisposable
     {
+        // Tracks temporarily modified OS environment variables to restore them after each test
+        private readonly List<string> _modifiedOsVars = new List<string>();
+
+        public void Dispose()
+        {
+            // Cleanup OS environment state to ensure pristine runs for subsequent tests
+            foreach (var varName in _modifiedOsVars)
+            {
+                Environment.SetEnvironmentVariable(varName, null);
+            }
+        }
+
+        private void SetTempOsVariable(string name, string value)
+        {
+            Environment.SetEnvironmentVariable(name, value);
+            if (!_modifiedOsVars.Contains(name))
+            {
+                _modifiedOsVars.Add(name);
+            }
+        }
+
+        #region Input Guards & Null Handling
+
+        [Fact]
+        public void ExpandEnvironmentVariables_NullList_ReturnsSystemVariables()
+        {
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(null!);
+
+            // Assert
+            Assert.NotNull(expanded);
+            Assert.True(expanded.ContainsKey("PATH") || expanded.ContainsKey("Path"));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void ExpandEnvironmentVariables_String_NullOrEmptyInput_ReturnsAsIs(string? input)
+        {
+            // Arrange
+            var dict = new Dictionary<string, string?>();
+
+            // Act
+            var result = EnvironmentVariableHelper.ExpandEnvironmentVariables(input!, dict);
+
+            // Assert
+            Assert.Equal(input, result);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_EmptyOrWhitespaceCustomNames_AreIgnored()
+        {
+            // Arrange
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "", Value = "Empty" },
+                new EnvironmentVariable { Name = "   ", Value = "Whitespace" },
+                new EnvironmentVariable { Name = null!, Value = "Null" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            Assert.False(expanded.ContainsKey(""));
+            Assert.False(expanded.ContainsKey("   "));
+        }
+
+        #endregion
+
+        #region Standard Expansion Paths
+
         [Fact]
         public void ExpandEnvironmentVariables_ShouldExpandSystemVariable()
         {
@@ -65,7 +147,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             // Act
             var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
-            string expected = System.IO.Path.Combine(Environment.GetEnvironmentVariable("TEMP")!, "MyApp");
+            string expected = Path.Combine(Environment.GetEnvironmentVariable("TEMP")!, "MyApp");
 
             // Assert
             Assert.Equal(expected, expanded["MY_TEMP"]);
@@ -106,13 +188,35 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.Equal("C:\\MyApp\\data", result);
         }
 
+        #endregion
+
+        #region Self-Referencing and Cycle Paths
+
         [Fact]
-        public void ExpandEnvironmentVariables_ShouldHandleSelfReferencingVariableGracefully()
+        public void ExpandEnvironmentVariables_DirectCircularReference_SafelyLeavesPlaceholders()
+        {
+            // Arrange: Tests Issue #2024
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "CYCLE_A", Value = "%CYCLE_B%" },
+                new EnvironmentVariable { Name = "CYCLE_B", Value = "%CYCLE_A%" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            Assert.Equal("%CYCLE_A%", expanded["CYCLE_A"]);
+            Assert.Equal("%CYCLE_A%", expanded["CYCLE_B"]);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_ShouldHandleSelfReferencingVariableGracefully_WhenNoOsValueExists()
         {
             // Arrange
             var vars = new List<EnvironmentVariable>
             {
-                new EnvironmentVariable { Name = "FOO", Value = "%FOO%bar" }
+                new EnvironmentVariable { Name = "NO_OS_VAR", Value = "%NO_OS_VAR%;\\bin" }
             };
 
             // Act
@@ -120,34 +224,104 @@ namespace Servy.Service.UnitTests.Helpers
 
             // Assert
             // The self-referencing token should be skipped and remain safely intact in the string, 
-            // exactly how Windows cmd handles unresolved variables.
-            Assert.Equal("%FOO%bar", expanded["FOO"]);
+            // since there is no inherited OS value to append it to.
+            Assert.Equal("%NO_OS_VAR%;\\bin", expanded["NO_OS_VAR"]);
         }
 
         [Fact]
-        public void ExpandEnvironmentVariables_ShouldHandleCircularReferencesGracefully()
+        public void ExpandEnvironmentVariables_SelfReference_AppendsToInheritedOsValue()
         {
             // Arrange
+            string osVarName = "TEST_OS_APPEND_PATH";
+            SetTempOsVariable(osVarName, "C:\\BaseOSPath");
+
             var vars = new List<EnvironmentVariable>
             {
-                new EnvironmentVariable { Name = "A", Value = "%B%_suffix" },
-                new EnvironmentVariable { Name = "B", Value = "prefix_%A%" },
-                new EnvironmentVariable { Name = "C", Value = "bar" },
-                new EnvironmentVariable { Name = "D", Value = "foo_%C%" },
+                new EnvironmentVariable { Name = osVarName, Value = $"%{osVarName}%;\\MyTools" }
             };
 
             // Act
             var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
 
             // Assert
-            // The expansion should gracefully halt without blowing up memory.
-            // The exact string state depends on dictionary hashing order, 
-            // but neither should have caused a catastrophic loop.
+            Assert.Equal("C:\\BaseOSPath;\\MyTools", expanded[osVarName]);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_SelfReference_DependentVariablesResolveCorrectly()
+        {
+            // Arrange
+            // This tests the `else` block in the double-append prevention logic,
+            // ensuring that if variable B depends on a self-referencing variable A,
+            // variable B gets the fully resolved replacement string.
+            string osVarName = "TEST_CORE_VAR";
+            SetTempOsVariable(osVarName, "C:\\Inherited");
+
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = osVarName, Value = $"%{osVarName}%\\Child" },
+                new EnvironmentVariable { Name = "DEPENDENT_VAR", Value = $"%{osVarName}%\\Grandchild" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            Assert.Equal("C:\\Inherited\\Child", expanded[osVarName]);
+            Assert.Equal("C:\\Inherited\\Child\\Grandchild", expanded["DEPENDENT_VAR"]);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_ShouldHandleIndirectCircularReferencesGracefully()
+        {
+            // Arrange
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "A", Value = "%B%_suffix" },
+                new EnvironmentVariable { Name = "B", Value = "prefix_%C%" },
+                new EnvironmentVariable { Name = "C", Value = "foo_%A%" },
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            // The expansion should halt at MaxEnvVarExpansionPasses without blowing up memory.
             Assert.Contains("%", expanded["A"]);
             Assert.Contains("%", expanded["B"]);
-            Assert.Equal("bar", expanded["C"]);
-            Assert.Contains("foo_bar", expanded["D"]);
+            Assert.Contains("%", expanded["C"]);
         }
+
+        #endregion
+
+        #region Size Limitations and Guard Paths
+
+        [Fact]
+        public void ExpandEnvironmentVariables_ExceedingMaxExpandedLength_TruncatesString()
+        {
+            // Arrange
+            int maxLen = AppConfig.MaxEnvVarExpandedLength;
+
+            // We create a base variable that is just under half the max length.
+            // Referencing it twice in OVERFLOW will cause the inline expansion to breach the limit.
+            string largePayload = new string('A', (maxLen / 2) + 100);
+
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "LARGE_BASE", Value = largePayload },
+                new EnvironmentVariable { Name = "OVERFLOW_VAR", Value = "%LARGE_BASE%_%LARGE_BASE%" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            Assert.Equal(maxLen, expanded["OVERFLOW_VAR"]?.Length);
+        }
+
+        #endregion
+
+        #region Security and Protected Variables
 
         [Fact]
         public void ExpandEnvironmentVariables_ShouldBlockProtectedVariableOverride()
@@ -226,5 +400,7 @@ namespace Servy.Service.UnitTests.Helpers
             // Assert
             Assert.Equal("SafeValue", expanded["CUSTOM_APP_SETTING"]);
         }
+
+        #endregion
     }
 }
