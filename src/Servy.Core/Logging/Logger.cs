@@ -522,7 +522,7 @@ namespace Servy.Core.Logging
                     int target = Math.Max(0, AppConfig.LoggerMaxFormattedExceptionLength - reserved);
                     sb.Length = target;
                     sb.Append(truncMarker);
-                    // Skip the trailing-bracket loop on the truncated path:
+                    for (int i = 1; i < processedDepth; i++) sb.Append(']');
                     return sb.ToString();
                 }
 
