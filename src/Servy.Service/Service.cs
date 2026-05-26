@@ -572,7 +572,15 @@ namespace Servy.Service
 
         /// <summary>
         /// Sanitizes a string to be safe for use as a filename by replacing
-        /// all invalid filename characters with underscores ('_').
+        /// all invalid filename characters with underscores ('_'). Handles DOS reserved device names
+        /// and prevents filename namespace collisions.
+        /// </summary>
+        /// <param name="name">The original string to sanitize.</param>
+        /// <returns>A sanitized string safe for use as a filename.</returns>
+        /// <summary>
+        /// Sanitizes a string to be safe for use as a filename by replacing
+        /// all invalid filename characters with underscores ('_'). Handles DOS reserved device names
+        /// and prevents filename namespace collisions.
         /// </summary>
         /// <param name="name">The original string to sanitize.</param>
         /// <returns>A sanitized string safe for use as a filename.</returns>
@@ -581,20 +589,35 @@ namespace Servy.Service
             if (string.IsNullOrEmpty(name))
                 return name;
 
+            // 1. Strip trailing spaces and periods as Windows ignores these on disk handles (Issue #2069 mitigation)
+            name = name.TrimEnd(' ', '.');
+            if (string.IsNullOrEmpty(name))
+                return "_";
+
+            // 2. Replace invalid character markers
             var invalidChars = Path.GetInvalidFileNameChars();
             foreach (var c in invalidChars)
             {
                 name = name.Replace(c, '_');
             }
 
-            // Windows treats any file whose leading segment (before the first period) matches a reserved 
-            // DOS device name as the device itself. We check the exact name or its leading dot-segment.
+            // 3. Prevent Reserved DOS Name collisions and User-supplied namespace overlaps (Issue #2118 & #2080)
             int firstDotIndex = name.IndexOf('.');
             string leadingSegment = firstDotIndex >= 0 ? name.Substring(0, firstDotIndex) : name;
 
-            if (ReservedNames.ReservedDeviceNames.Contains(name) || ReservedNames.ReservedDeviceNames.Contains(leadingSegment))
+            // Isolate the base word by stripping all leading underscores
+            string baseSegment = leadingSegment.TrimStart('_');
+
+            // Only escape if the underlying base keyword is an actual hardware reserved name
+            if (ReservedNames.ReservedDeviceNames.Contains(baseSegment))
             {
-                name = "_" + name;
+                // Count how many leading underscores the user already had in their input segment
+                int existingUnderscores = leadingSegment.Length - baseSegment.Length;
+
+                // Prepend exactly one more underscore than what currently exists to break the collision chain
+                string protectionPrefix = new string('_', existingUnderscores + 1);
+
+                name = protectionPrefix + baseSegment + (firstDotIndex >= 0 ? name.Substring(firstDotIndex) : string.Empty);
             }
 
             return name;

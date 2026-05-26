@@ -630,5 +630,41 @@ namespace Servy.Service.UnitTests
         }
 
         #endregion
+
+        #region Disambiguation & Namespace Collision Resolution (Issue #2118 & #2069)
+
+        [Theory]
+        [InlineData("CON", "_CON")]
+        [InlineData("_CON", "__CON")]
+        [InlineData("__CON", "___CON")]
+        [InlineData("CON.log.gz", "_CON.log.gz")]
+        [InlineData("_CON.log.gz", "__CON.log.gz")]
+        public void MakeFilenameSafe_CollidingNamespaceInputs_ResolvesToUniqueFilenames(string input, string expected)
+        {
+            // Act
+            string result = Service.MakeFilenameSafe(input);
+
+            // Assert
+            // Verifies that cascading underscores ensure distinct services like 'CON' 
+            // and '_CON' have separate persistence paths, eliminating issue #2118 collisions.
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("CON  ", "_CON")]
+        [InlineData("CON...", "_CON")]
+        [InlineData("CON.log.gz  ", "_CON.log.gz")]
+        [InlineData("正常_service_name.log.  ", "正常_service_name.log")]
+        public void MakeFilenameSafe_WithTrailingSpacesOrPeriods_NormalizesAndEscapesCorrectly(string input, string expected)
+        {
+            // Act
+            string result = Service.MakeFilenameSafe(input);
+
+            // Assert
+            // Confirms that Windows trailing-trim variations are flattened before evaluation
+            Assert.Equal(expected, result);
+        }
+
+        #endregion
     }
 }
