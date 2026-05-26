@@ -76,8 +76,6 @@ namespace Servy.Core.IntegrationTests.Helpers
         [Fact]
         public void GetProcessTreeMetrics_WithChildProcess_AggregatesRamSuccessfully()
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
-
             // Arrange: Use a longer-lived PowerShell command to ensure stability
             var childProcessInfo = new ProcessStartInfo("powershell.exe", "-NoProfile -Command \"$data = New-Object byte[] 30MB; Start-Sleep -Seconds 5\"")
             {

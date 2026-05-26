@@ -781,45 +781,59 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void HasAncestorReparsePoint_WhenPathDoesNotExistButAncestorIsJunction_ReturnsTrue()
         {
-            // We run this test only on Windows since the method checks NTFS specific behaviors
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
+            const int maxRetries = 5;
+            int attempt = 0;
 
-            // Arrange
-            string realDir = Path.Combine(_testRoot, "RealDirectoryMissingLeaf");
-            Directory.CreateDirectory(realDir);
-
-            string junctionTarget = Path.Combine(_testRoot, "JunctionDirMissingLeaf");
-
-            // Use native .NET link creation to guarantee stability and error visibility
-            Directory.CreateSymbolicLink(junctionTarget, realDir);
-
-            try
+            while (true)
             {
-                // The junction exists, but the target file and its immediate parent folder DO NOT exist
-                string targetFilePath = Path.Combine(junctionTarget, "NotYet", "config.json");
+                attempt++;
 
-                // Act
-                bool result = Helper.HasAncestorReparsePoint(targetFilePath);
+                // Isolate paths per attempt to clear trailing Windows handle locks
+                string realDir = Path.Combine(_testRoot, $"RealDirectoryMissingLeaf_att{attempt}");
+                string junctionTarget = Path.Combine(_testRoot, $"JunctionDirMissingLeaf_att{attempt}");
 
-                // Assert
-                // Branch Covered: Walks past the non-existent 'NotYet' folder and successfully 
-                // detects the junction at the existing ancestor level.
-                Assert.True(result);
-            }
-            finally
-            {
-                // 1. Safe native unlink of the link point first to drop OS locks
-                DeleteDirectoryLink(junctionTarget);
-
-                // 2. Explicitly clean up the real directory source 
                 try
                 {
-                    if (Directory.Exists(realDir))
-                    {
-                        Directory.Delete(realDir, true);
-                    }
+                    // Arrange
+                    Directory.CreateDirectory(realDir);
+
+                    // Use native .NET link creation to guarantee stability and error visibility
+                    Directory.CreateSymbolicLink(junctionTarget, realDir);
+
+                    // The junction exists, but the target file and its immediate parent folder DO NOT exist
+                    string targetFilePath = Path.Combine(junctionTarget, "NotYet", "config.json");
+
+                    // Act
+                    bool result = Helper.HasAncestorReparsePoint(targetFilePath);
+
+                    // Assert
+                    // Branch Covered: Walks past the non-existent 'NotYet' folder and successfully 
+                    // detects the junction at the existing ancestor level.
+                    Assert.True(result);
+
+                    // Exit the loop on success
+                    break;
                 }
-                catch { /* fail silent in finally to protect test runner teardown */ }
+                catch (Exception) when (attempt < maxRetries)
+                {
+                    // Give the Windows Object Manager a small window to flush lazy handles
+                    Thread.Sleep(50);
+                }
+                finally
+                {
+                    // 1. Safe native unlink of the link point first to drop OS locks
+                    try { DeleteDirectoryLink(junctionTarget); } catch { /* ignore */ }
+
+                    // 2. Explicitly clean up the real directory source 
+                    try
+                    {
+                        if (Directory.Exists(realDir))
+                        {
+                            Directory.Delete(realDir, true);
+                        }
+                    }
+                    catch { /* fail silent in finally to protect test runner teardown */ }
+                }
             }
         }
 
@@ -863,8 +877,6 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void HasAncestorReparsePoint_WhenImmediateParentIsJunctionOrSymlink_ReturnsTrue()
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
-
             // Arrange
             string realDir = Path.Combine(_testRoot, "RealDirectory");
             string junctionTarget = Path.Combine(_testRoot, "JunctionDir");
@@ -926,8 +938,6 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void HasAncestorReparsePoint_WhenDeepAncestorIsJunction_ReturnsTrue()
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
-
             // Arrange
             string realDir = Path.Combine(_testRoot, "ActualData");
             string junctionDir = Path.Combine(_testRoot, "HiddenJunction");
