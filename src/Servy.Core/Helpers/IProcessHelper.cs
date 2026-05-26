@@ -66,27 +66,12 @@ namespace Servy.Core.Helpers
         string FormatRamUsage(long ramUsage);
 
         /// <summary>
-        /// Resolves and validates an absolute filesystem path for use by a Windows service.
+        /// Resolves an input path by expanding environment variables, ensuring it is absolute,
+        /// and resolving relative segment traversals (e.g., directory shifts via '..').
         /// </summary>
-        /// <param name="inputPath">
-        /// The input path, which may contain environment variables (e.g. %ProgramFiles%).
-        /// Environment variables are expanded using the service account's environment only.
-        /// </param>
-        /// <returns>
-        /// A normalized, absolute path with environment variables expanded.
-        /// </returns>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown if the path is relative or contains environment variables that could not be expanded.
-        /// </exception>
-        /// <remarks>
-        /// This method is intentionally strict:
-        /// <list type="bullet">
-        /// <item>Only absolute paths are allowed.</item>
-        /// <item>Environment variables must be defined at the system level and visible to the service account.</item>
-        /// <item>User-level environment variables are not supported.</item>
-        /// </list>
-        /// Use <see cref="ValidatePath"/> if you only need a boolean existence check.
-        /// </remarks>
+        /// <param name="inputPath">The original raw path string to resolve.</param>
+        /// <returns>A fully qualified, normalized absolute path string; or <c>null</c> if the input is empty.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the input path evaluates to a relative path.</exception>
         string? ResolvePath(string? inputPath);
 
         /// <summary>

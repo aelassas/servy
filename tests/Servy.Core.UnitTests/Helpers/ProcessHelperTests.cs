@@ -87,17 +87,6 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void ResolvePath_UnexpandedEnvVar_ThrowsInvalidOperationException()
-        {
-            var input = @"C:\%THIS_VAR_SHOULD_NOT_EXIST%\file.txt";
-
-            var ex = Assert.Throws<InvalidOperationException>(() =>
-                _processHelper.ResolvePath(input));
-
-            Assert.Contains("could not be expanded", ex.Message);
-        }
-
-        [Fact]
         public void ResolvePath_RelativePath_ThrowsInvalidOperationException()
         {
             var input = @"relative\path\file.txt";
@@ -119,6 +108,53 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(
                 Path.GetFullPath(Path.Combine(Path.GetTempPath(), "test")),
                 result);
+        }
+
+        [Fact]
+        public void ResolvePath_ValidExistingAbsolutePath_ResolvesAndNormalizes()
+        {
+            // Arrange
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string rawPath = Path.Combine(baseDir, "..", Path.GetFileName(baseDir), "app.log");
+            string expected = Path.GetFullPath(rawPath);
+
+            // Act
+            string? result = _processHelper.ResolvePath(rawPath);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void ResolvePath_NonExistentPathWithLiteralPercentSegments_ResolvesSuccessfully()
+        {
+            // Arrange: Tests Issue #2082 
+            // A future log destination that contains literal '%' bounds and does not exist yet.
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string futurePath = Path.Combine(baseDir, "runs_%batch_id%", "stdout.log");
+
+            // Act
+            string? result = _processHelper.ResolvePath(futurePath);
+
+            // Assert
+            // The method must not throw an exception on non-existent targets, 
+            // allowing the application to create directories dynamically later.
+            string expected = Path.GetFullPath(futurePath);
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void ResolvePath_ValidSystemVariable_ExpandsCorrectly()
+        {
+            // Arrange
+            string systemRoot = Environment.GetEnvironmentVariable("SystemRoot")!;
+            string input = "%SystemRoot%\\System32\\cmd.exe";
+
+            // Act
+            string? result = _processHelper.ResolvePath(input);
+
+            // Assert
+            Assert.Equal(Path.Combine(systemRoot, "System32\\cmd.exe"), result, ignoreCase: true);
         }
 
         // -------------------------
