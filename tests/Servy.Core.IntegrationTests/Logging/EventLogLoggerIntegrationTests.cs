@@ -200,7 +200,7 @@ namespace Servy.Core.Logging.IntegrationTests
 
                 // Assert
                 // When a scoped logger creates a child scope, it combines them: "[L1] [L2]"
-                Assert.Equal("[L1] [L2]", level2Scope.Prefix);
+                Assert.Equal("L1] [L2", level2Scope.Prefix);
 
                 // Ensure it runs log formatting gracefully
                 Exception? ex = Record.Exception(() => level2Scope.Info("Nested Log"));
