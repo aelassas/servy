@@ -109,7 +109,7 @@ function Update-Watermark {
 
     # --- CRITICAL: Always advance the watermark ---
     # Update timestamp immediately for this specific event, regardless of email/toast success.
-    $newestTimestamp = $TimeCreated.AddTicks(1)
+    $newestTimestamp = $TimeCreated
     $timestampString = $newestTimestamp.ToString("o")
 
     # Retry loop to gracefully handle concurrent FileShare.None lock collisions
