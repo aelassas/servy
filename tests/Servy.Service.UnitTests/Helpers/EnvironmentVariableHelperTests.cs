@@ -191,6 +191,64 @@ namespace Servy.Service.UnitTests.Helpers
 
         #endregion
 
+        #region Percent Escaping (%%) Paths
+
+        [Fact]
+        public void ExpandEnvironmentVariables_DoublePercent_CollapsesToSinglePercent()
+        {
+            // Arrange
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "PROFIT_MARGIN", Value = "100%%" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            // The literal '%%' should be safely decoded back to '%' after expansion passes.
+            Assert.Equal("100%", expanded["PROFIT_MARGIN"]);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_DoublePercent_PreventsVariableExpansion()
+        {
+            // Arrange
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "LITERAL_TEMP", Value = "%%TEMP%%" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            // The double percent should collapse to a single percent, leaving the literal placeholder intact
+            // rather than expanding it to the system TEMP path.
+            Assert.Equal("%TEMP%", expanded["LITERAL_TEMP"]);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_InputString_HandlesMixedEscapedAndUnescapedPercents()
+        {
+            // Arrange
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "MY_CUSTOM", Value = "Value" }
+            };
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Act
+            // Tests an escaped 100%, an escaped variable marker, and a live variable marker side-by-side
+            string input = "100%% of %%MY_CUSTOM%% is %MY_CUSTOM%";
+            string result = EnvironmentVariableHelper.ExpandEnvironmentVariables(input, expanded);
+
+            // Assert
+            Assert.Equal("100% of %MY_CUSTOM% is Value", result);
+        }
+
+        #endregion
+
         #region Self-Referencing and Cycle Paths
 
         [Fact]

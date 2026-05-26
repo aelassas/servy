@@ -38,6 +38,13 @@ namespace Servy.Service.Helpers
     public static class EnvironmentVariableHelper
     {
         /// <summary>
+        /// A deterministic, reserved token used to temporarily protect '%%' escape sequences 
+        /// from being parsed during the fixed-point expansion loop. Uses the Unicode Replacement 
+        /// Character (\uFFFD) to guarantee no collisions with legitimate user input.
+        /// </summary>
+        private const string PercentEscapeToken = "\uFFFD_SERVY_ESC_PERCENT_\uFFFD";
+
+        /// <summary>
         /// Protected system variables that should never be overridden by user configuration
         /// to prevent privilege escalation and system instability.
         /// </summary>
@@ -78,6 +85,7 @@ namespace Servy.Service.Helpers
         /// Builds a dictionary of environment variables by merging the current system environment
         /// with the provided custom environment variables. All values are expanded so that system
         /// and custom variables can reference each other (e.g. %ProgramData%, %MY_CUSTOM_VAR%).
+        /// Supports escaping '%' via '%%' (e.g. '100%%' resolves to '100%').
         /// </summary>
         /// <param name="environmentVariables">
         /// A list of custom environment variables to include. May be <c>null</c>.
@@ -96,7 +104,7 @@ namespace Servy.Service.Helpers
                 result[(string)entry.Key] = (string)entry.Value;
             }
 
-            // 2. Merge Custom Variables with SECURITY CHECK
+            // 2. Merge Custom Variables with SECURITY CHECK & ESCAPE PROTECTION
             if (environmentVariables != null)
             {
                 foreach (var envVar in environmentVariables)
@@ -110,7 +118,9 @@ namespace Servy.Service.Helpers
                         continue;
                     }
 
-                    result[envVar.Name] = envVar.Value;
+                    // Encode '%%' into a temporary token to prevent the expansion engine 
+                    // from treating escaped percent signs as variable boundaries.
+                    result[envVar.Name] = envVar.Value?.Replace("%%", PercentEscapeToken);
                 }
             }
 
@@ -162,27 +172,40 @@ namespace Servy.Service.Helpers
                 result[key] = Environment.ExpandEnvironmentVariables(result[key]);
             }
 
+            // 5. Decode escaped percentages: Collapse the protective token into a literal '%'
+            foreach (var key in result.Keys.Where(k => !string.IsNullOrEmpty(result[k])).ToList())
+            {
+                result[key] = result[key].Replace(PercentEscapeToken, "%");
+            }
+
             return result;
         }
 
         /// <summary>
         /// Expands environment variables in the given input string using both system and custom variables.
+        /// Supports escaping '%' via '%%'.
         /// </summary>
         /// <param name="input">The string containing environment variable references (e.g. "%ProgramFiles%\\MyApp").</param>
         /// <param name="expandedEnv">
         /// A dictionary of environment variables previously built by <see cref="ExpandEnvironmentVariables(List{EnvironmentVariable})"/>.
         /// </param>
         /// <returns>
-        /// The input string with all environment variable references expanded.
+        /// The input string with all environment variable references expanded, and escaped '%%' collapsed to '%'.
         /// </returns>
         public static string ExpandEnvironmentVariables(string input, IDictionary<string, string> expandedEnv)
         {
             if (string.IsNullOrEmpty(input)) return input;
 
+            // Encode '%%' to protect it during dictionary and OS expansion
+            string encodedInput = input.Replace("%%", PercentEscapeToken);
+
             // Since 'expandedEnv' is already resolved to a fixed point by the dictionary builder,
             // only one pass is needed here.
-            string result = ExpandWithDictionary(input, expandedEnv, null);
-            return Environment.ExpandEnvironmentVariables(result);
+            string result = ExpandWithDictionary(encodedInput, expandedEnv, null);
+            result = Environment.ExpandEnvironmentVariables(result);
+
+            // Decode '%%' protection token back to a single literal '%'
+            return result.Replace(PercentEscapeToken, "%");
         }
 
         /// <summary>

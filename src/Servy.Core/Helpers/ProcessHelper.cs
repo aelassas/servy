@@ -404,22 +404,6 @@ namespace Servy.Core.Helpers
             // 3. Normalize (removes trailing slashes, resolves ..\ segments)
             var normalizedPath = Path.GetFullPath(expandedPath);
 
-            // 4. Strict Check: If the path still contains %, it might be an unexpanded variable 
-            // OR a legitimate file path containing a literal '%' (e.g., "C:\Data_100%\file.txt").
-            var match = UnexpandedEnvVarRegex.Match(normalizedPath);
-            if (match.Success)
-            {
-                // To avoid false positives on legitimate paths, check if the path actually exists.
-                // If it exists, the '%' is literal. If it doesn't, we assume it's a failed expansion.
-                if (!File.Exists(normalizedPath) && !Directory.Exists(normalizedPath))
-                {
-                    var varName = match.Groups[0].Value;
-                    throw new InvalidOperationException(
-                        $"Environment variable '{varName}' could not be expanded. " +
-                        "Ensure it is defined as a System variable and visible to the service account.");
-                }
-            }
-
             return normalizedPath;
         }
 
