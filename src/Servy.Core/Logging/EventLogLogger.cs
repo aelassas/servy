@@ -402,7 +402,7 @@ namespace Servy.Core.Logging
             public IServyLogger CreateScoped(string prefix)
             {
                 // Create a new scope that inherits THIS scope's current settings
-                var combined = string.IsNullOrWhiteSpace(Prefix) ? prefix : $"[{Prefix}] [{prefix}]";
+                var combined = string.IsNullOrWhiteSpace(Prefix) ? prefix : $"{Prefix}] [{prefix}";
                 var scope = new ScopedEventLogLogger(_parent, combined);
                 scope.SetLogLevel((LogLevel)_currentLogLevel);
                 scope.SetIsEventLogEnabled(_isEventLogEnabled);
