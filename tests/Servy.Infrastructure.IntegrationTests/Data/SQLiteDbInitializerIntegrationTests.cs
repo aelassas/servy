@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Dapper;
+using Servy.Infrastructure.Data;
 using System.Data.Common;
 using System.Data.SQLite;
-using System.Linq;
 using System.Reflection;
-using Dapper;
-using Servy.Infrastructure.Data;
-using Xunit;
 
 namespace Servy.Infrastructure.IntegrationTests.Data
 {

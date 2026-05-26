@@ -346,8 +346,9 @@ namespace Servy.Infrastructure.Data
 
             // --- ROBUSTNESS: Defensively resolve duplicate LOWER(Name) groups before enforcing UNIQUE constraints ---
             // This prevents migration failure crashes (SQLite Error 19: UNIQUE constraint failed) when upgrading legacy DBs.
+            // FIX: Using MIN(Id) ensures deterministic selection of the oldest record, avoiding GROUP_CONCAT non-determinism.
             var duplicates = connection.Query(@"
-                SELECT LOWER(Name) AS LowerName, COUNT(*) AS Count, GROUP_CONCAT(Id) AS Ids
+                SELECT LOWER(Name) AS LowerName, COUNT(*) AS Count, MIN(Id) AS KeepId
                 FROM Services
                 GROUP BY LOWER(Name)
                 HAVING COUNT(*) > 1;", transaction: transaction).ToList();
@@ -359,17 +360,15 @@ namespace Servy.Infrastructure.Data
                 foreach (var dup in duplicates)
                 {
                     string lowerName = dup.LowerName;
-                    string[] allIds = ((string)dup.Ids).Split(',');
+                    long keepId = Convert.ToInt64(dup.KeepId);
 
-                    // Retain the first/lowest ID for historical integrity, mark trailing IDs for deletion
-                    string primaryId = allIds[0];
-                    var redundantIds = allIds.Skip(1).ToList();
-                    string idListString = string.Join(",", redundantIds);
+                    Logger.Info($"Deduplicating name group '{lowerName}': Keeping primary ID {keepId}, removing redundant variants.");
 
-                    Logger.Info($"Deduplicating name group '{lowerName}': Keeping primary ID {primaryId}, removing redundant variant ID(s): {idListString}.");
-
-                    // Prune the redundant records within the transaction scope
-                    connection.Execute($"DELETE FROM Services WHERE Id IN ({idListString});", transaction: transaction);
+                    // Prune the redundant records within the transaction scope using parameterized queries
+                    connection.Execute(
+                        "DELETE FROM Services WHERE LOWER(Name) = @LowerName AND Id <> @KeepId;",
+                        new { LowerName = lowerName, KeepId = keepId },
+                        transaction: transaction);
                 }
             }
             // --------------------------------------------------------------------------------------------------------
