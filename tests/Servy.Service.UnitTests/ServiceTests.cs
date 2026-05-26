@@ -525,6 +525,114 @@ namespace Servy.Service.UnitTests
             mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
+        #region Null, Empty, and Standard Sanitization Tests
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void MakeFilenameSafe_NullOrEmptyInput_ReturnsOriginalValue(string input)
+        {
+            // Act
+            string result = Service.MakeFilenameSafe(input);
+
+            // Assert
+            Assert.Equal(input, result);
+        }
+
+        [Fact]
+        public void MakeFilenameSafe_ValidStandardName_ReturnsUnchanged()
+        {
+            // Arrange
+            string input = "service_runtime_log.txt";
+
+            // Act
+            string result = Service.MakeFilenameSafe(input);
+
+            // Assert
+            Assert.Equal(input, result);
+        }
+
+        [Fact]
+        public void MakeFilenameSafe_WithInvalidCharacters_ReplacesThemWithUnderscores()
+        {
+            // Arrange
+            // Contains invalid characters like <, >, :, ", /, \, |, ?, *
+            string input = "log:service/v1*production?.txt";
+            string expected = "log_service_v1_production_.txt";
+
+            // Act
+            string result = Service.MakeFilenameSafe(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        #endregion
+
+        #region DOS Reserved Device Names & Multi-Extension Edge Cases (Issue #2080)
+
+        [Theory]
+        [InlineData("CON")]
+        [InlineData("PRN")]
+        [InlineData("AUX")]
+        [InlineData("NUL")]
+        [InlineData("COM1")]
+        [InlineData("LPT5")]
+        public void MakeFilenameSafe_ExactReservedDeviceName_PrependsUnderscore(string reservedName)
+        {
+            // Arrange
+            string expected = "_" + reservedName;
+
+            // Act
+            string result = Service.MakeFilenameSafe(reservedName);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("CON.log", "_CON.log")]
+        [InlineData("NUL.txt", "_NUL.txt")]
+        [InlineData("LPT1.dat", "_LPT1.dat")]
+        public void MakeFilenameSafe_SingleExtensionReservedDeviceName_PrependsUnderscore(string input, string expected)
+        {
+            // Act
+            string result = Service.MakeFilenameSafe(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("CON.log.gz", "_CON.log.gz")]
+        [InlineData("NUL.bak.tmp", "_NUL.bak.tmp")]
+        [InlineData("LPT1.foo.bar", "_LPT1.foo.bar")]
+        [InlineData("AUX.spec.json.zip", "_AUX.spec.json.zip")]
+        public void MakeFilenameSafe_MultiExtensionReservedDeviceName_SuccessfullyCatchesAndPrependsUnderscore(string input, string expected)
+        {
+            // Act
+            string result = Service.MakeFilenameSafe(input);
+
+            // Assert
+            // Verifies that multi-dot segment splits correctly recognize 'CON', 'NUL', etc.,
+            // as the leading target, satisfying issue #2080 mitigations.
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("CONSTANT.log")]
+        [InlineData("NULLED.bak")]
+        [InlineData("COMPASS.json")]
+        [InlineData("A.CON.log")] // Reserved word is not the leading segment
+        public void MakeFilenameSafe_NamesContainingReservedWordsAsSubstrings_DoesNotPrependUnderscore(string safeName)
+        {
+            // Act
+            string result = Service.MakeFilenameSafe(safeName);
+
+            // Assert
+            Assert.Equal(safeName, result);
+        }
+
+        #endregion
     }
 }
