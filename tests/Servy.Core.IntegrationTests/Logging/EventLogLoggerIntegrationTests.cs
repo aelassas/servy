@@ -204,7 +204,7 @@ namespace Servy.Core.Logging.IntegrationTests
                 var level2Scope = level1Scope.CreateScoped("L2"); // Scoped -> Scoped
 
                 // Assert
-                // When a scoped logger creates a child scope, it combines them: "[L1] [L2]"
+                // When a scoped logger creates a child scope, it combines them: "L1] [L2"
                 Assert.Equal("L1] [L2", level2Scope.Prefix);
 
                 // Ensure it runs log formatting gracefully
