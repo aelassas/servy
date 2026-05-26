@@ -106,8 +106,8 @@ namespace Servy.Core.Logging
         /// <remarks>
         /// <para>
         /// This method is thread-safe and can be called at runtime to reconfigure logging parameters. 
-        /// If an active log writer already exists, it is automatically reinitialized to immediately apply 
-        /// the new rotation and retention settings.
+        /// If an active log writer already exists, or if a filename was previously established, it is automatically 
+        /// reinitialized to immediately apply the new rotation and retention settings.
         /// </para>
         /// <para>
         /// Settings established here govern the behavior of the <c>InternalInitialize</c> process, which 
@@ -138,8 +138,9 @@ namespace Servy.Core.Logging
                 _useLocalTimeForRotation = useLocalTimeForRotation;
                 _maxBackupLogFiles = maxBackupLogFiles;
 
-                // If we have an active writer, recreate it to apply the new settings
-                if (_writer != null)
+                // Re-arm or cycle the writer if we have a valid baseline path,
+                // ensuring re-initialization requests that follow a Shutdown() do not silently lose their state.
+                if (!string.IsNullOrEmpty(_fileName))
                 {
                     InternalInitialize();
                 }
