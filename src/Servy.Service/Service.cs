@@ -576,7 +576,7 @@ namespace Servy.Service
         /// </summary>
         /// <param name="name">The original string to sanitize.</param>
         /// <returns>A sanitized string safe for use as a filename.</returns>
-        private string MakeFilenameSafe(string name)
+        public static string MakeFilenameSafe(string name)
         {
             if (string.IsNullOrEmpty(name))
                 return name;
@@ -587,8 +587,15 @@ namespace Servy.Service
                 name = name.Replace(c, '_');
             }
 
-            if (ReservedNames.ReservedDeviceNames.Contains(name) || ReservedNames.ReservedDeviceNames.Contains(Path.GetFileNameWithoutExtension(name)))
+            // Windows treats any file whose leading segment (before the first period) matches a reserved 
+            // DOS device name as the device itself. We check the exact name or its leading dot-segment.
+            int firstDotIndex = name.IndexOf('.');
+            string leadingSegment = firstDotIndex >= 0 ? name.Substring(0, firstDotIndex) : name;
+
+            if (ReservedNames.ReservedDeviceNames.Contains(name) || ReservedNames.ReservedDeviceNames.Contains(leadingSegment))
+            {
                 name = "_" + name;
+            }
 
             return name;
         }
