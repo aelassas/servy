@@ -6,6 +6,7 @@ using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Resources;
 using Servy.Core.Validators;
+using System.Globalization;
 
 namespace Servy.CLI.Validators
 {
@@ -171,7 +172,7 @@ namespace Servy.CLI.Validators
             if (error != null || string.IsNullOrWhiteSpace(val)) return null;
 
             int result;
-            if (int.TryParse(val, out result)) return result;
+            if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out result)) return result;
 
             error = string.Format("Invalid integer format for {0}: '{1}'", GetOptionName(propertyName), val);
             return null;
