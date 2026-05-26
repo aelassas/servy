@@ -520,6 +520,13 @@ namespace Servy.Core.Logging
                     const string truncMarker = "... [truncated]";
                     int reserved = truncMarker.Length + processedDepth; // reserve room for the marker and ']' chars too
                     int target = Math.Max(0, AppConfig.LoggerMaxFormattedExceptionLength - reserved);
+
+                    // Avoid splitting a UTF-16 surrogate pair
+                    if (target > 0 && target < sb.Length && char.IsHighSurrogate(sb[target - 1]))
+                    {
+                        target--;
+                    }
+
                     sb.Length = target;
                     sb.Append(truncMarker);
                     for (int i = 1; i < processedDepth; i++) sb.Append(']');
