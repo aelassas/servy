@@ -1,5 +1,5 @@
-﻿using Servy.Core.Helpers;
-using System.Reflection;
+﻿using Servy.Core.EnvironmentVariables;
+using Servy.Core.Helpers;
 
 namespace Servy.Core.UnitTests.Helpers
 {
@@ -47,6 +47,54 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(string.Empty, StringHelper.NormalizeString(string.Empty));
         }
 
+        [Theory]
+        [InlineData("KEY=C:\\Foo\\\r\nNEXT=Val", "KEY=C:\\Foo\\\\;NEXT=Val")] // Trailing odd run (1) gets padded to even (2)
+        [InlineData("KEY=C:\\Foo\\\\\r\nNEXT=Val", "KEY=C:\\Foo\\\\;NEXT=Val")] // Trailing even run (2) safely remains even (2)
+        public void NormalizeString_ValidatesExplicitLineBreakParity(string input, string expected)
+        {
+            // Act
+            string result = StringHelper.NormalizeString(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void EnvironmentVariable_FullRoundTripLifecycle_PreservesTrickyPunctuation()
+        {
+            // Arrange: Replicates all collision conditions specified in issue #1972
+            var originalVars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "KEY_TRAILING_SLASH", Value = @"C:\Foo\" },
+                new EnvironmentVariable { Name = "KEY_DOUBLE_SLASH", Value = @"C:\Bar\\" },
+                new EnvironmentVariable { Name = "KEY_INTERNAL_NEWLINE", Value = "line1\\nline2" },
+                new EnvironmentVariable { Name = "KEY_ESCAPED_SEMICOLON", Value = "value1;value2" },
+                new EnvironmentVariable { Name = "STANDARD_KEY", Value = "NormalValue" }
+            };
+
+            // Convert raw structural model to single-line persistence string (Simulates initial load from DB)
+            // Example layout: "KEY_TRAILING_SLASH=C:\\Foo\\;KEY_DOUBLE_SLASH=..."
+            string serializedDbString = string.Join(";", originalVars.Select(v => $"{v.Name}={StringHelper.Escape(v.Value)}"));
+
+            // Step 1: Format for UI presentation (Multi-line layout)
+            string uiText = StringHelper.FormatEnvironmentVariables(serializedDbString);
+
+            // Step 2: Act - Run the UI multi-line string through our updated, parity-aware normalization
+            string singleLineSaveString = StringHelper.NormalizeString(uiText);
+
+            // Step 3: Parse the saved string back into model objects
+            List<EnvironmentVariable> processedVars = EnvironmentVariableParser.Parse(singleLineSaveString).ToList();
+
+            // Assert
+            Assert.Equal(originalVars.Count, processedVars.Count);
+
+            for (int i = 0; i < originalVars.Count; i++)
+            {
+                Assert.Equal(originalVars[i].Name, processedVars[i].Name);
+                Assert.Equal(originalVars[i].Value, processedVars[i].Value);
+            }
+        }
+
         [Fact]
         public void FormatServiceDependencies_ShouldReturnNull_WhenInputIsNull()
         {
@@ -67,13 +115,8 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void Escape_NullInput_ReturnsEmptyString_UsingReflection()
         {
-            // Arrange
-            var type = typeof(StringHelper);
-            var method = type.GetMethod("Escape", BindingFlags.NonPublic | BindingFlags.Static);
-            Assert.NotNull(method);
-
             // Act
-            var result = method.Invoke(null, new object[] { null! }) as string;
+            var result = StringHelper.Escape(null!);
 
             // Assert
             Assert.Equal(string.Empty, result);

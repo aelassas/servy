@@ -357,5 +357,50 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Equal("NEXT", result[1].Value);
         }
 
+        [Theory]
+        // Preceding the raw newline control bytes with a backslash keeps the record unified 
+        // during the tokenizer phase. Then, Unescape strips the backslash, leaving the raw control byte
+        // inside 'value' to correctly trip your forbidden character exception.
+        [InlineData("KEY=Line1\\\nLine2", "KEY")]
+        [InlineData("KEY=Line1\\\rLine2", "KEY")]
+        [InlineData("KEY=Line1\\\r\\\nLine2", "KEY")]
+        public void Parse_ValueContainsForbiddenNewline_ThrowsFormatException(string input, string expectedKeyInMessage)
+        {
+            // Act & Assert
+            var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
+
+            // Verifies that the custom multi-line check was successfully triggered
+            Assert.Contains($"Environment variable '{expectedKeyInMessage}' contains a forbidden newline character", ex.Message);
+            Assert.Contains("Multi-line values are not supported", ex.Message);
+        }
+
+        [Theory]
+        // Raw unquoted, unescaped control bytes cause structural splitting errors, 
+        // confirming that multi-line formatting fails early at the boundary layer.
+        [InlineData("KEY=Line1\nLine2", "Line2")]
+        [InlineData("KEY=Line1\rLine2", "Line2")]
+        [InlineData("KEY=Line1\r\nLine2", "Line2")]
+        public void Parse_UnquotedRawNewline_ThrowsStructuralFormatException(string input, string expectedFragmentInMessage)
+        {
+            // Act & Assert
+            var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
+
+            // Verifies that the tokenizer split the record, causing a structural missing '=' failure
+            Assert.Contains($"no unescaped '='", ex.Message);
+            Assert.Contains(expectedFragmentInMessage, ex.Message);
+        }
+
+        [Fact]
+        public void Parse_EscapedRawNewlineControlBytes_ThrowsFormatExceptionAfterUnescaping()
+        {
+            // Arrange: Replicates an escaped raw control newline byte character block.
+            // When EscapedTokenizer.Unescape processes '\' followed by a true '\n' byte,
+            // it strips the backslash and appends the raw '\n' byte directly to the value stream.
+            string input = "KEY=Line1\\\nLine2";
+
+            // Act & Assert
+            var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
+            Assert.Contains("Environment variable 'KEY' contains a forbidden newline character", ex.Message);
+        }
     }
 }

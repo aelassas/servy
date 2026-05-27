@@ -48,6 +48,7 @@
 
                 var key = EscapedTokenizer.Unescape(rawKey).Trim();
 
+
                 // 1. Trim whitespace first to expose structural quotes
                 var trimmedValue = rawValue.Trim();
 
@@ -67,6 +68,11 @@
 
                 if (string.IsNullOrEmpty(key))
                     throw new FormatException($"Environment variable key cannot be empty: {part}");
+
+                if (value.Contains("\n") || value.Contains("\r"))
+                {
+                    throw new FormatException($"Environment variable '{key}' contains a forbidden newline character. Multi-line values are not supported.");
+                }
 
                 result.Add(new EnvironmentVariable { Name = key, Value = value });
             }
