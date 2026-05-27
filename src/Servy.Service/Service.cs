@@ -792,7 +792,24 @@ namespace Servy.Service
                 int resetThresholdSeconds = detectionWindowSeconds + bufferSeconds;
 
                 // Cap at 1 hour (the cap excludes the pre-launch budget), but ensure we always wait at least one full detection cycle
-                resetThresholdSeconds = Math.Max(Math.Min(resetThresholdSeconds, AppConfig.ConditionalResetMaxThresholdSeconds), detectionWindowSeconds);
+                int cap = AppConfig.ConditionalResetMaxThresholdSeconds;
+
+                // If the detection window itself already exceeds the cap, the cap is meaningless —
+                // the contract is broken at configuration time and should be logged once.
+                if (detectionWindowSeconds > cap)
+                {
+                    _logger?.Warn(
+                        $"Detection window ({detectionWindowSeconds}s) exceeds the reset cap ({cap}s); " +
+                        $"the configured ConditionalResetMaxThresholdSeconds will be ignored for this service.");
+                
+                    resetThresholdSeconds = detectionWindowSeconds;
+                }
+                else
+                {
+                    resetThresholdSeconds = Math.Min(resetThresholdSeconds, cap);
+                    if (resetThresholdSeconds < detectionWindowSeconds)
+                        resetThresholdSeconds = detectionWindowSeconds;
+                }
 
                 if (_preLaunchEnabled)
                 {
