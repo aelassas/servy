@@ -20,8 +20,10 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.ServiceProcess;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -555,39 +557,40 @@ namespace Servy.Service
         /// </summary>
         /// <param name="name">The original string to sanitize.</param>
         /// <returns>A sanitized string safe for use as a filename.</returns>
-        /// <summary>
-        /// Sanitizes a string to be safe for use as a filename by replacing
-        /// all invalid filename characters with underscores ('_'). Handles DOS reserved device names
-        /// and prevents filename namespace collisions.
-        /// </summary>
-        /// <param name="name">The original string to sanitize.</param>
-        /// <returns>A sanitized string safe for use as a filename.</returns>
         public static string MakeFilenameSafe(string name)
         {
+            // If null or empty, treat the base name as an underscore but still 
+            // append the short hash to satisfy the unique signature layout requirement
             if (string.IsNullOrEmpty(name))
-                return name;
+            {
+                return $"_{ComputeShortHash(string.Empty)}";
+            }
 
-            // 1. Strip trailing spaces and periods as Windows ignores these on disk handles (Issue #2069 mitigation)
-            name = name.TrimEnd(' ', '.');
-            if (string.IsNullOrEmpty(name))
-                return "_";
+            // 1. Strip trailing spaces, tabs, and periods as Windows ignores these on disk handles (Issue #2069 mitigation)
+            string sanitized = name.TrimEnd(' ', '.', '\t');
+
+            // Explicit guard against directory traversal sequences or inputs that normalize to empty/dots
+            if (string.IsNullOrEmpty(sanitized) || sanitized == "." || sanitized == "..")
+            {
+                sanitized = "_";
+            }
 
             // 2. Replace invalid character markers
             var invalidChars = Path.GetInvalidFileNameChars();
             foreach (var c in invalidChars)
             {
-                name = name.Replace(c, '_');
+                sanitized = sanitized.Replace(c, '_');
             }
 
             // 3. Prevent Reserved DOS Name collisions and User-supplied namespace overlaps (Issue #2118 & #2080)
-            int firstDotIndex = name.IndexOf('.');
-            string leadingSegment = firstDotIndex >= 0 ? name.Substring(0, firstDotIndex) : name;
+            int firstDotIndex = sanitized.IndexOf('.');
+            string leadingSegment = firstDotIndex >= 0 ? sanitized.Substring(0, firstDotIndex) : sanitized;
 
             // Isolate the base word by stripping all leading underscores
             string baseSegment = leadingSegment.TrimStart('_');
 
             // Only escape if the underlying base keyword is an actual hardware reserved name
-            if (ReservedNames.ReservedDeviceNames.Contains(baseSegment))
+            if (ReservedNames.ReservedDeviceNames.Contains(baseSegment, StringComparer.OrdinalIgnoreCase))
             {
                 // Count how many leading underscores the user already had in their input segment
                 int existingUnderscores = leadingSegment.Length - baseSegment.Length;
@@ -595,10 +598,27 @@ namespace Servy.Service
                 // Prepend exactly one more underscore than what currently exists to break the collision chain
                 string protectionPrefix = new string('_', existingUnderscores + 1);
 
-                name = protectionPrefix + baseSegment + (firstDotIndex >= 0 ? name.Substring(firstDotIndex) : string.Empty);
+                sanitized = protectionPrefix + baseSegment + (firstDotIndex >= 0 ? sanitized.Substring(firstDotIndex) : string.Empty);
             }
 
-            return name;
+            // 4. Collision Insurance: Append a deterministic short hash of the ORIGINAL raw name input string.
+            // This guarantees unique on-disk allocations for variations such as "MyService", "MyService ", and "MyService."
+            string shortHash = ComputeShortHash(name);
+
+            return $"{sanitized}_{shortHash}";
+        }
+
+        /// <summary>
+        /// Computes a deterministic 6-character hex string hash from an input value.
+        /// </summary>
+        private static string ComputeShortHash(string input)
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
+                // 3 bytes maps cleanly to a highly unique 6-character hex identifier
+                return BitConverter.ToString(bytes, 0, 3).Replace("-", "").ToLowerInvariant();
+            }
         }
 
         /// <summary>

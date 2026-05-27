@@ -166,9 +166,13 @@ namespace Servy.CLI.Commands
             int firstDotIndex = fileName.IndexOf('.');
             string firstSegment = firstDotIndex >= 0 ? fileName.Substring(0, firstDotIndex) : fileName;
 
-            if (ReservedNames.ReservedDeviceNames.Contains(firstSegment))
+            // Strip trailing spaces, periods, and tabs to match Win32's internal 
+            // normalization behavior before checking the reserved device registry hash-set.
+            string normalizedSegment = firstSegment.TrimEnd(' ', '.', '\t');
+
+            if (ReservedNames.ReservedDeviceNames.Contains(normalizedSegment))
             {
-                throw new ArgumentException($"Security Alert: '{firstSegment}' is a reserved Windows device name and cannot be used.");
+                throw new ArgumentException($"Security Alert: '{normalizedSegment}' is a reserved Windows device name and cannot be used.");
             }
 
             // 6. System Protection: Block writing to critical Windows directories

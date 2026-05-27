@@ -528,19 +528,23 @@ namespace Servy.Service.UnitTests
         #region Null, Empty, and Standard Sanitization Tests
 
         [Theory]
-        [InlineData(null)]
-        [InlineData("")]
-        public void MakeFilenameSafe_NullOrEmptyInput_ReturnsOriginalValue(string input)
+        [InlineData(null, "_")]
+        [InlineData("", "_")]
+        public void MakeFilenameSafe_NullOrEmptyInput_ReturnsSafeFallback(string input, string expectedBase)
         {
             // Act
             string result = Service.MakeFilenameSafe(input);
 
             // Assert
-            Assert.Equal(input, result);
+            Assert.StartsWith(expectedBase, result);
+
+            // The result length minus the expected base prefix length must equal 
+            // exactly 6 characters (the length of our deterministic hex short hash).
+            Assert.Equal(6, result.Length - expectedBase.Length);
         }
 
         [Fact]
-        public void MakeFilenameSafe_ValidStandardName_ReturnsUnchanged()
+        public void MakeFilenameSafe_ValidStandardName_AppendsHashSuffix()
         {
             // Arrange
             string input = "service_runtime_log.txt";
@@ -549,22 +553,24 @@ namespace Servy.Service.UnitTests
             string result = Service.MakeFilenameSafe(input);
 
             // Assert
-            Assert.Equal(input, result);
+            Assert.StartsWith("service_runtime_log.txt_", result);
+            // Verify hash part length is exactly 6 hex characters
+            string hashPart = result.Substring("service_runtime_log.txt_".Length);
+            Assert.Equal(6, hashPart.Length);
         }
 
         [Fact]
-        public void MakeFilenameSafe_WithInvalidCharacters_ReplacesThemWithUnderscores()
+        public void MakeFilenameSafe_WithInvalidCharacters_ReplacesThemAndAppendsHash()
         {
             // Arrange
-            // Contains invalid characters like <, >, :, ", /, \, |, ?, *
             string input = "log:service/v1*production?.txt";
-            string expected = "log_service_v1_production_.txt";
+            string expectedPrefix = "log_service_v1_production_.txt_";
 
             // Act
             string result = Service.MakeFilenameSafe(input);
 
             // Assert
-            Assert.Equal(expected, result);
+            Assert.StartsWith(expectedPrefix, result);
         }
 
         #endregion
@@ -581,56 +587,54 @@ namespace Servy.Service.UnitTests
         public void MakeFilenameSafe_ExactReservedDeviceName_PrependsUnderscore(string reservedName)
         {
             // Arrange
-            string expected = "_" + reservedName;
+            string expectedPrefix = "_" + reservedName + "_";
 
             // Act
             string result = Service.MakeFilenameSafe(reservedName);
 
             // Assert
-            Assert.Equal(expected, result);
+            Assert.StartsWith(expectedPrefix, result);
         }
 
         [Theory]
-        [InlineData("CON.log", "_CON.log")]
-        [InlineData("NUL.txt", "_NUL.txt")]
-        [InlineData("LPT1.dat", "_LPT1.dat")]
-        public void MakeFilenameSafe_SingleExtensionReservedDeviceName_PrependsUnderscore(string input, string expected)
+        [InlineData("CON.log", "_CON.log_")]
+        [InlineData("NUL.txt", "_NUL.txt_")]
+        [InlineData("LPT1.dat", "_LPT1.dat_")]
+        public void MakeFilenameSafe_SingleExtensionReservedDeviceName_PrependsUnderscore(string input, string expectedPrefix)
         {
             // Act
             string result = Service.MakeFilenameSafe(input);
 
             // Assert
-            Assert.Equal(expected, result);
+            Assert.StartsWith(expectedPrefix, result);
         }
 
         [Theory]
-        [InlineData("CON.log.gz", "_CON.log.gz")]
-        [InlineData("NUL.bak.tmp", "_NUL.bak.tmp")]
-        [InlineData("LPT1.foo.bar", "_LPT1.foo.bar")]
-        [InlineData("AUX.spec.json.zip", "_AUX.spec.json.zip")]
-        public void MakeFilenameSafe_MultiExtensionReservedDeviceName_SuccessfullyCatchesAndPrependsUnderscore(string input, string expected)
+        [InlineData("CON.log.gz", "_CON.log.gz_")]
+        [InlineData("NUL.bak.tmp", "_NUL.bak.tmp_")]
+        [InlineData("LPT1.foo.bar", "_LPT1.foo.bar_")]
+        [InlineData("AUX.spec.json.zip", "_AUX.spec.json.zip_")]
+        public void MakeFilenameSafe_MultiExtensionReservedDeviceName_SuccessfullyCatchesAndPrependsUnderscore(string input, string expectedPrefix)
         {
             // Act
             string result = Service.MakeFilenameSafe(input);
 
             // Assert
-            // Verifies that multi-dot segment splits correctly recognize 'CON', 'NUL', etc.,
-            // as the leading target, satisfying issue #2080 mitigations.
-            Assert.Equal(expected, result);
+            Assert.StartsWith(expectedPrefix, result);
         }
 
         [Theory]
-        [InlineData("CONSTANT.log")]
-        [InlineData("NULLED.bak")]
-        [InlineData("COMPASS.json")]
-        [InlineData("A.CON.log")] // Reserved word is not the leading segment
-        public void MakeFilenameSafe_NamesContainingReservedWordsAsSubstrings_DoesNotPrependUnderscore(string safeName)
+        [InlineData("CONSTANT.log", "CONSTANT.log_")]
+        [InlineData("NULLED.bak", "NULLED.bak_")]
+        [InlineData("COMPASS.json", "COMPASS.json_")]
+        [InlineData("A.CON.log", "A.CON.log_")]
+        public void MakeFilenameSafe_NamesContainingReservedWordsAsSubstrings(string safeName, string expectedPrefix)
         {
             // Act
             string result = Service.MakeFilenameSafe(safeName);
 
             // Assert
-            Assert.Equal(safeName, result);
+            Assert.StartsWith(expectedPrefix, result);
         }
 
         #endregion
@@ -638,35 +642,74 @@ namespace Servy.Service.UnitTests
         #region Disambiguation & Namespace Collision Resolution (Issue #2118 & #2069)
 
         [Theory]
-        [InlineData("CON", "_CON")]
-        [InlineData("_CON", "__CON")]
-        [InlineData("__CON", "___CON")]
-        [InlineData("CON.log.gz", "_CON.log.gz")]
-        [InlineData("_CON.log.gz", "__CON.log.gz")]
-        public void MakeFilenameSafe_CollidingNamespaceInputs_ResolvesToUniqueFilenames(string input, string expected)
+        [InlineData("CON", "_CON_")]
+        [InlineData("_CON", "__CON_")]
+        [InlineData("__CON", "___CON_")]
+        [InlineData("CON.log.gz", "_CON.log.gz_")]
+        [InlineData("_CON.log.gz", "__CON.log.gz_")]
+        public void MakeFilenameSafe_CollidingNamespaceInputs_ResolvesToUniqueFilenames(string input, string expectedPrefix)
         {
             // Act
             string result = Service.MakeFilenameSafe(input);
 
             // Assert
-            // Verifies that cascading underscores ensure distinct services like 'CON' 
-            // and '_CON' have separate persistence paths, eliminating issue #2118 collisions.
-            Assert.Equal(expected, result);
+            Assert.StartsWith(expectedPrefix, result);
         }
 
         [Theory]
-        [InlineData("CON  ", "_CON")]
-        [InlineData("CON...", "_CON")]
-        [InlineData("CON.log.gz  ", "_CON.log.gz")]
-        [InlineData("正常_service_name.log.  ", "正常_service_name.log")]
-        public void MakeFilenameSafe_WithTrailingSpacesOrPeriods_NormalizesAndEscapesCorrectly(string input, string expected)
+        [InlineData("CON  ", "_CON_")]
+        [InlineData("CON...", "_CON_")]
+        [InlineData("CON.log.gz  ", "_CON.log.gz_")]
+        [InlineData("正常_service_name.log.  ", "正常_service_name.log_")]
+        public void MakeFilenameSafe_WithTrailingSpacesOrPeriods_NormalizesAndEscapesCorrectly(string input, string expectedPrefix)
         {
             // Act
             string result = Service.MakeFilenameSafe(input);
 
             // Assert
-            // Confirms that Windows trailing-trim variations are flattened before evaluation
-            Assert.Equal(expected, result);
+            Assert.StartsWith(expectedPrefix, result);
+        }
+
+        [Fact]
+        public void MakeFilenameSafe_Issue2069_TrailingVariationsProduceUniqueOutputs()
+        {
+            // Arrange: Inputs that would natively collide on Win32 filesystems due to trailing strip behaviors
+            string nameBase = "MyService";
+            string nameWithSpace = "MyService ";
+            string nameWithDot = "MyService.";
+            string nameWithSpaces = "MyService   ";
+
+            // Act
+            string outBase = Service.MakeFilenameSafe(nameBase);
+            string outSpace = Service.MakeFilenameSafe(nameWithSpace);
+            string outDot = Service.MakeFilenameSafe(nameWithDot);
+            string outSpaces = Service.MakeFilenameSafe(nameWithSpaces);
+
+            // Assert: Verify that despite trimming, appending original hashes isolates filenames completely
+            Assert.NotEqual(outBase, outSpace);
+            Assert.NotEqual(outBase, outDot);
+            Assert.NotEqual(outSpace, outDot);
+            Assert.NotEqual(outSpace, outSpaces);
+
+            // All must preserve base readability prefixing
+            Assert.StartsWith("MyService_", outBase);
+            Assert.StartsWith("MyService_", outSpace);
+            Assert.StartsWith("MyService_", outDot);
+        }
+
+        [Theory]
+        [InlineData(".")]
+        [InlineData("..")]
+        [InlineData("...")]
+        [InlineData(" \t. ")]
+        public void MakeFilenameSafe_Issue2069_PathTraversalAndEmptyTrimsAreNeutralized(string input)
+        {
+            // Act
+            string result = Service.MakeFilenameSafe(input);
+
+            // Assert: Directory traversal markers or blank nodes reduce to safe baseline anchors plus hash codes
+            Assert.StartsWith("__", result);
+            Assert.False(result.Contains(".."), "Output must not contain directory traversal paths.");
         }
 
         #endregion
