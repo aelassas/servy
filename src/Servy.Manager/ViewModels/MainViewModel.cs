@@ -997,9 +997,9 @@ namespace Servy.Manager.ViewModels
                 update.CpuUsage = cpu;
                 update.RamUsage = ram;
 
-                if (service.StartupType == null && serviceDto != null)
+                if (update.StartupType == null && serviceDto != null && serviceDto.StartupType.HasValue)
                 {
-                    update.StartupType = (ServiceStartType)serviceDto.StartupType;
+                    update.StartupType = (ServiceStartType)serviceDto.StartupType.Value;
                 }
 
                 ServiceDto resultDto = null;
