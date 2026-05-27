@@ -175,7 +175,7 @@ namespace Servy.Core.Native
                         case 1327: // ERROR_ACCOUNT_RESTRICTION
                             throw new UnauthorizedAccessException("Account restrictions prevent logon (e.g., blank password use is restricted).");
                         case 1385: // ERROR_LOGON_TYPE_NOT_GRANTED
-                            // Network logon denied by policy — retry with SERVICE logon type,
+                            // Network logon denied by policy - retry with SERVICE logon type,
                             // which is the logon type the SCM will actually use.
                             if (LogonUser(user, domain, password, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, out token))
                             {

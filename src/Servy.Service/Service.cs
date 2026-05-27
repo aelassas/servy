@@ -771,7 +771,7 @@ namespace Servy.Service
             // Cap at 1 hour (the cap excludes the pre-launch budget), but ensure we always wait at least one full detection cycle
             int cap = AppConfig.ConditionalResetMaxThresholdSeconds;
 
-            // If the detection window itself already exceeds the cap, the cap is meaningless —
+            // If the detection window itself already exceeds the cap, the cap is meaningless -
             // the contract is broken at configuration time and should be logged once.
             if (detectionWindowSeconds > cap)
             {

@@ -46,7 +46,7 @@ namespace Servy.Service.Helpers
 
         /// <summary>
         /// Protected system variables that should never be overridden by user configuration
-        /// to prevent privilege escalation and system instability.
+        /// to prevent privilege escalation, process hijacking, and system instability.
         /// </summary>
         private static readonly HashSet<string> ProtectedVariables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -64,20 +64,37 @@ namespace Servy.Service.Helpers
             "USERNAME", "USERPROFILE", "ALLUSERSPROFILE", "PROGRAMDATA", "PSMODULEPATH",
 
             // --- Runtime Injection & Hijack Vectors ---
-            "COR_ENABLE_PROFILING", "COR_PROFILER", "COR_PROFILER_PATH", "DOTNET_STARTUP_HOOKS",
-            "DOTNET_ROOT", "DOTNET_ROOT(x86)", "DOTNET_HOST_PATH",
+            
+            // .NET Injection (Legacy & Modern CoreCLR)
+            "COR_ENABLE_PROFILING", "COR_PROFILER", "COR_PROFILER_PATH",
+            "CORECLR_ENABLE_PROFILING", "CORECLR_PROFILER", "CORECLR_PROFILER_PATH",
+            "DOTNET_STARTUP_HOOKS", "DOTNET_ROOT", "DOTNET_ROOT(x86)", "DOTNET_HOST_PATH",
             "DOTNET_BUNDLE_EXTRACT_BASE_DIR", "DOTNET_ADDITIONAL_DEPS", "DOTNET_SHARED_STORE",
   
-            // Java Injection
-            "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH", "JAVA_HOME",
+            // Java Injection - Covers direct java.exe (TOOL_OPTIONS) and common shell-wrapper launchers (OPTS)
+            "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "JAVA_OPTS", "JAVA_OPTIONS",
+            "CATALINA_OPTS", "CATALINA_JAVA_OPTS",
+            "MAVEN_OPTS", "M2_OPTS",
+            "GRADLE_OPTS",
+            "ANT_OPTS",
+            "JBOSS_JAVA_OPTS", "WILDFLY_OPTS",
+            "CLASSPATH", "JAVA_HOME", "JRE_HOME", "JDK_HOME",
   
-            // Node.js Injection
-            "NODE_OPTIONS", "NODE_PATH",
+            // Node.js & NPM Injection - Covers direct runtime, npm config wrappers, and rogue CA injection
+            "NODE_OPTIONS", "NODE_PATH", "NODE_EXTRA_CA_CERTS",
+            "NPM_CONFIG_PREFIX", "NPM_CONFIG_USERCONFIG", "NPM_CONFIG_GLOBALCONFIG",
   
-            // Python Injection
+            // Python Injection - Covers interpreters and package manager wrappers
             "PYTHONSTARTUP", "PYTHONPATH", "PYTHONHOME",
+            "PYTHONIOENCODING", "PYTHONFAULTHANDLER", "PYTHONUSERBASE", "PYTHONEXECUTABLE",
+            
+            // Ruby & Perl Injection
+            "RUBYOPT", "RUBYLIB", "PERL5OPT", "PERL5LIB",
+
+            // PHP Injection - Prevents loading malicious extensions or rogue php.ini files
+            "PHPRC", "PHP_INI_SCAN_DIR",
   
-            // Global/Unix-like fallback (for MinGW/WSL contexts)
+            // Global/Unix-like fallback (for MinGW/WSL/Cygwin contexts)
             "LD_PRELOAD", "LD_LIBRARY_PATH",
 
             // --- Windows AppCompat / Debugger Injection Vectors ---

@@ -261,7 +261,7 @@ namespace Servy.Service.ProcessManagement
                 }
                 catch (Exception ex)
                 {
-                    // Window operation failed but process is still alive — fall through to force-kill.
+                    // Window operation failed but process is still alive - fall through to force-kill.
                     _logger?.Warn($"CloseMainWindow failed for '{process.Format()}': {ex.Message}. Falling through to force-kill.");
                     sent = false;
                 }
