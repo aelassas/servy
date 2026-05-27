@@ -78,7 +78,16 @@ namespace Servy.Service.Helpers
             "PYTHONSTARTUP", "PYTHONPATH", "PYTHONHOME",
   
             // Global/Unix-like fallback (for MinGW/WSL contexts)
-            "LD_PRELOAD", "LD_LIBRARY_PATH"
+            "LD_PRELOAD", "LD_LIBRARY_PATH",
+
+            // --- Windows AppCompat / Debugger Injection Vectors ---
+            "__COMPAT_LAYER", "SHIM_FILE_LOG", "SHIM_DEBUG_LEVEL",
+            "_NT_SYMBOL_PATH", "_NT_ALT_SYMBOL_PATH", "_NT_SOURCE_PATH",
+            "MICROSOFT_TELEMETRY_ENV_OVERRIDE",
+
+            // PowerShell Injection / Hardening Bypass
+            "__PSLockDownPolicy",          // Forces a weaker LanguageMode at PS startup
+            "PSExecutionPolicyPreference", // Overrides ExecutionPolicy at PS startup
         };
 
         /// <summary>
