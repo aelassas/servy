@@ -1,10 +1,9 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Logging;
-using Servy.Core.Native;
 using Servy.Core.Resources;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Reflection;
 using System.Text;
 
@@ -589,8 +588,10 @@ namespace Servy.Core.Helpers
             // 4. Structural Integrity Check
             // We reject the input if it contains:
             //  a) Forbidden file system/registry characters (InvalidServiceChars).
-            //  b) Control characters (e.g., \n, \t, \r) which can break console output or CLI parsers.
-            if (serviceName.IndexOfAny(InvalidServiceChars) >= 0 || serviceName.Any(char.IsControl))
+            //  b) Unicode control, format, line separator, or paragraph separator characters 
+            //     (as defined in IsDisallowedNameChar) which can compromise display formatting 
+            //     or cause malformed output in console/CLI parsers.
+            if (serviceName.IndexOfAny(InvalidServiceChars) >= 0 || serviceName.Any(IsDisallowedNameChar))
                 return (false, Strings.Msg_InvalidServiceName);
 
             // 5. Reserved Windows device names (case-insensitive across all segments)
@@ -704,6 +705,27 @@ namespace Servy.Core.Helpers
         {
             if (string.IsNullOrWhiteSpace(p)) return string.Empty;
             return Path.GetFullPath(p).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        }
+
+        /// <summary>
+        /// Determines whether a character is disallowed for use in service names.
+        /// </summary>
+        /// <param name="c">The character to evaluate.</param>
+        /// <returns>
+        /// <c>true</c> if the character falls under Unicode control, format, 
+        /// line separator, or paragraph separator categories; otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// This method blocks non-printable characters and structural separators (U+2028, U+2029)
+        /// to ensure consistent behavior across file systems and service management APIs.
+        /// </remarks>
+        private static bool IsDisallowedNameChar(char c)
+        {
+            var cat = CharUnicodeInfo.GetUnicodeCategory(c);
+            return cat == UnicodeCategory.Control
+                || cat == UnicodeCategory.Format
+                || cat == UnicodeCategory.LineSeparator       // U+2028
+                || cat == UnicodeCategory.ParagraphSeparator; // U+2029
         }
     }
 }
