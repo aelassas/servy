@@ -3,6 +3,7 @@ using Servy.Core.Logging;
 using Servy.Core.Native;
 using Servy.Core.Resources;
 using System.ComponentModel;
+using System.Globalization;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -590,7 +591,7 @@ namespace Servy.Core.Helpers
             // We reject the input if it contains:
             //  a) Forbidden file system/registry characters (InvalidServiceChars).
             //  b) Control characters (e.g., \n, \t, \r) which can break console output or CLI parsers.
-            if (serviceName.IndexOfAny(InvalidServiceChars) >= 0 || serviceName.Any(char.IsControl))
+            if (serviceName.IndexOfAny(InvalidServiceChars) >= 0 || serviceName.Any(IsDisallowedNameChar))
                 return (false, Strings.Msg_InvalidServiceName);
 
             // 5. Reserved Windows device names (case-insensitive across all segments)
