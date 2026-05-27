@@ -25,7 +25,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             using (var conn = CreateConnection())
             {
-
                 // Act
                 SQLiteDbInitializer.Initialize(conn);
 
@@ -49,7 +48,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             using (var conn = CreateConnection())
             {
-
                 // Arrange: Poison the database to force a SQL exception during ApplyVersion1
                 // By creating 'Services' as a VIEW, the subsequent 'CREATE UNIQUE INDEX' on it will throw a SQLiteException.
                 conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY CHECK (Id = 1), Version INTEGER NOT NULL);");
@@ -57,7 +55,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 conn.Execute("CREATE VIEW Services AS SELECT 1 AS Id;");
 
                 // Act & Assert
-                var ex = Assert.Throws<SQLiteException>(() => SQLiteDbInitializer.Initialize(conn));
+                Assert.Throws<SQLiteException>(() => SQLiteDbInitializer.Initialize(conn));
 
                 // Verify the transaction was successfully rolled back
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
@@ -74,7 +72,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             using (var conn = CreateConnection())
             {
-
                 // Access internal definitions to properly build the legacy table avoiding SQLite NOT NULL strict constraints
                 var getSqlType = typeof(SQLiteDbInitializer).GetMethod("GetSqlType", BindingFlags.Static | BindingFlags.NonPublic);
                 var getExpectedCols = typeof(SQLiteDbInitializer).GetMethod("GetExpectedColumns", BindingFlags.Static | BindingFlags.NonPublic);
@@ -109,23 +106,24 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Arrange: Simulate an old V0 database
                 conn.Execute($"CREATE TABLE Services ({string.Join(", ", colDefs)});");
 
-                // Insert duplicates to trigger the duplicate grouping branch
-                string insertTemplate = $"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ";
-                conn.Execute($"{insertTemplate} ({string.Join(", ", insertVals1)});");
-                conn.Execute($"{insertTemplate} ({string.Join(", ", insertVals2)});");
-                conn.Execute($"{insertTemplate} ({string.Join(", ", insertVals3)});");
+                // Insert duplicates out of chronological order to explicitly verify MIN(Id) behavior.
+                // Row 1 (Id=1): TestService, Row 2 (Id=2): testservice, Row 3 (Id=3): TESTSERVICE.
+                conn.Execute($"{insertTemplate(insertCols)} ({string.Join(", ", insertVals1)});");
+                conn.Execute($"{insertTemplate(insertCols)} ({string.Join(", ", insertVals2)});");
+                conn.Execute($"{insertTemplate(insertCols)} ({string.Join(", ", insertVals3)});");
 
                 // Create the legacy non-unique index to trigger the index replacement branch
                 conn.Execute("CREATE INDEX idx_services_name_lower ON Services(LOWER(Name));");
 
                 // Act
+                // Trigger migration, executing MIN(Id) evaluation to clean up duplicates deterministically
                 SQLiteDbInitializer.Initialize(conn);
 
                 // Assert
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
                 Assert.True(version >= 5);
 
-                // Verify Deduplication (only the oldest ID should remain)
+                // Verify Deduplication (the absolute smallest historical record ID=1 must win)
                 var services = conn.Query("SELECT Id FROM Services;").ToList();
                 Assert.Single(services);
                 Assert.Equal(1L, (long)services[0].Id);
@@ -142,38 +140,74 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             }
         }
 
+        private string insertTemplate(List<string> insertCols) =>
+            $"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ";
+
         #endregion
 
         #region V4 Rebuild & Helper Skip Branches
 
         [Fact]
-        public void Initialize_Version3Database_WithOrphanColumn_LogsAndRebuildsTable()
+        public void Initialize_Version3Database_WithOrphanColumn_PreservesOrphanDataInBackupTable()
         {
             using (var conn = CreateConnection())
             {
-
                 // Arrange: Set DB exactly to V3 state
                 conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY, Version INTEGER);");
                 conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 3);");
 
-                // Include an orphan column to trigger the `orphansBeforeRebuild.Count > 0` branch in ApplyVersion4
-                conn.Execute(@"
-                CREATE TABLE Services (
-                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    Name TEXT NOT NULL,
-                    OldOrphanData TEXT
-                );
-            ");
+                // Access internal definition engines to construct a schema matching v3 validation blocks
+                var getSqlType = typeof(SQLiteDbInitializer).GetMethod("GetSqlType", BindingFlags.Static | BindingFlags.NonPublic);
+                var getExpectedCols = typeof(SQLiteDbInitializer).GetMethod("GetExpectedColumns", BindingFlags.Static | BindingFlags.NonPublic);
+                var expectedCols = (IEnumerable<string>)getExpectedCols!.Invoke(null, null)!;
+
+                // Base columns required to trace the setup and trigger the orphan branch
+                var colDefs = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT NOT NULL", "OldOrphanData TEXT" };
+                var insertCols = new List<string> { "Name", "OldOrphanData" };
+                var insertVals = new List<string> { "'LegacyAgent'", "'CriticalConfigToken_XYZ'" };
+
+                // Dynamically append expected columns that enforce strict NOT NULL constraints to prevent insertion failures
+                foreach (var col in expectedCols)
+                {
+                    if (col.Equals("Name", StringComparison.OrdinalIgnoreCase)) continue;
+
+                    string sqlType = (string)getSqlType!.Invoke(null, new object[] { col })!;
+                    if (sqlType.IndexOf("NOT NULL", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                        sqlType.IndexOf("DEFAULT", StringComparison.OrdinalIgnoreCase) < 0)
+                    {
+                        colDefs.Add($"{col} {sqlType}");
+                        insertCols.Add(col);
+
+                        // Seed safe dummy fallback values matching the structural type requirement
+                        string seedValue = sqlType.IndexOf("TEXT", StringComparison.OrdinalIgnoreCase) >= 0 ? "'Dummy'" : "0";
+                        insertVals.Add(seedValue);
+                    }
+                }
+
+                // Create the mock table with structurally accurate schema constraints
+                conn.Execute($"CREATE TABLE Services ({string.Join(", ", colDefs)});");
+                conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals)});");
 
                 // Act
+                // Triggers ApplyVersion4 table-rebuild execution path
                 SQLiteDbInitializer.Initialize(conn);
 
                 // Assert
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
                 Assert.True(version >= 4);
 
+                // 1. Verify the production active production table was rebuilt clean without the orphan
                 var columns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();
-                Assert.DoesNotContain("OldOrphanData", columns); // Ensure rebuild dropped it safely
+                Assert.DoesNotContain("OldOrphanData", columns);
+
+                // 2. Confirms backup side-table exists and retains original structure
+                var tables = conn.Query<string>("SELECT name FROM sqlite_master WHERE type='table';").ToList();
+                Assert.Contains("Services_orphans_v4", tables);
+
+                // 3. Confirm exact values and binding Id keys survived the drop sequence completely
+                var orphanData = conn.QuerySingle("SELECT Id, OldOrphanData FROM Services_orphans_v4;");
+                Assert.Equal(1L, (long)orphanData.Id);
+                Assert.Equal("CriticalConfigToken_XYZ", (string)orphanData.OldOrphanData);
             }
         }
 
@@ -182,7 +216,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             using (var conn = CreateConnection())
             {
-
                 // Arrange: Set DB to V1 state
                 conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY, Version INTEGER);");
                 conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 1);");
@@ -191,12 +224,12 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Lacks 'EnableRotation' (triggers Rename source missing branch)
                 // Has 'RecoveryOnCleanExit' already (triggers AddColumn skip branch)
                 conn.Execute(@"
-                CREATE TABLE Services (
-                    Id INTEGER PRIMARY KEY, 
-                    EnableSizeRotation INTEGER,
-                    RecoveryOnCleanExit INTEGER
-                );
-            ");
+                    CREATE TABLE Services (
+                        Id INTEGER PRIMARY KEY, 
+                        EnableSizeRotation INTEGER,
+                        RecoveryOnCleanExit INTEGER
+                    );
+                ");
 
                 // Act
                 SQLiteDbInitializer.Initialize(conn);
@@ -241,7 +274,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             using (var conn = CreateConnection())
             {
-
                 // Step 1: Perform a full baseline initialization to get the perfect expected schema.
                 SQLiteDbInitializer.Initialize(conn);
                 var expectedColumns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();

@@ -438,7 +438,7 @@ namespace Servy.Infrastructure.Data
                 columnDefinitions.Add($"{col} {GetSqlType(col)}");
             }
 
-            var createTableSql = $"CREATE TABLE Services_v4 (\n    {string.Join(",\n    ", columnDefinitions)}\n);";
+            var createTableSql = $"CREATE TABLE IF NOT EXISTS Services_v4 (\n    {string.Join(",\n    ", columnDefinitions)}\n);";
             connection.Execute(createTableSql, transaction: transaction);
 
             // --- Extract only the columns that actually exist in the old table ---
@@ -453,9 +453,20 @@ namespace Servy.Infrastructure.Data
             var orphansBeforeRebuild = existingColumns
                 .Where(c => !expectedColumns.Contains(c, StringComparer.OrdinalIgnoreCase) && !"Id".Equals(c, StringComparison.OrdinalIgnoreCase))
                 .ToList();
+
             if (orphansBeforeRebuild.Count > 0)
             {
-                Logger.Error($"ApplyVersion4: about to drop orphan column(s) '{string.Join(", ", orphansBeforeRebuild)}'. Data in these columns will be permanently lost. If this is a renamed column, add a RenameColumnIfExists migration BEFORE v4 to preserve the data.");
+                // Stash the orphan column values in a side table inside the same transaction
+                // so the operator can recover the data even though the live schema no longer references it.
+                // Added 'IF NOT EXISTS' to ensure structural idempotency if migrations are re-evaluated.
+                var orphanList = string.Join(", ", orphansBeforeRebuild);
+                var idList = string.Join(", ", new[] { "Id" }.Concat(orphansBeforeRebuild));
+
+                connection.Execute(
+                    $"CREATE TABLE IF NOT EXISTS Services_orphans_v4 AS SELECT {idList} FROM Services;",
+                    transaction: transaction);
+
+                Logger.Warn($"ApplyVersion4: orphan column(s) '{orphanList}' were preserved in 'Services_orphans_v4' for manual recovery. Drop that table once you have verified the data is no longer needed.");
             }
 
             var columnsToCopy = new List<string> { "Id" };
@@ -468,11 +479,11 @@ namespace Servy.Infrastructure.Data
             connection.Execute(copyDataSql, transaction: transaction);
 
             // Swap the tables
-            connection.Execute("DROP TABLE Services;", transaction: transaction);
+            connection.Execute("DROP TABLE IF EXISTS Services;", transaction: transaction);
             connection.Execute("ALTER TABLE Services_v4 RENAME TO Services;", transaction: transaction);
 
             // Re-create the functional unique index because SQLite drops indexes when the parent table is dropped
-            connection.Execute("CREATE UNIQUE INDEX idx_services_name_lower ON Services(LOWER(Name));", transaction: transaction);
+            connection.Execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_lower ON Services(LOWER(Name));", transaction: transaction);
 
             Logger.Info("Database successfully migrated to Version 4.");
         }
