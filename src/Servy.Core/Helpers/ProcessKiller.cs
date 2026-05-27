@@ -17,15 +17,30 @@ namespace Servy.Core.Helpers
         #region Safety Guardrails
 
         /// <summary>
-        /// A safelist of critical Windows processes that should never be terminated, even if they are holding file locks or are part of a target process tree.
+        /// A safelist of critical Windows processes that should never be terminated, even if they 
+        /// are holding file locks or are part of a target process tree.
         /// </summary>
+        /// <remarks>
+        /// NOTE: This list must be updated when Windows introduces new kernel-pseudo-host processes 
+        /// (e.g., future virtualization services or hypervisor hosts).
+        /// </remarks>
         private static readonly HashSet<string> CriticalSystemProcesses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
+            // Core Legacy Processes
             "system", "idle", "csrss", "lsass", "wininit", "services",
             "winlogon", "smss", "svchost", "explorer", "runtimebroker",
             "dwm", "fontdrvhost", "audiodg", "MsMpEng", "MsSense", "LsaIso",
             "WUDFHost", "wmiprvse", "conhost", "taskhostw", "sihost",
-            "ctfmon", "dllhost", "searchindexer", "searchhost"
+            "ctfmon", "dllhost", "searchindexer", "searchhost",
+
+            // Modern Win10/11+ Pseudo-System Processes
+            "Registry",
+            "MemCompression",
+            "Secure System",
+
+            // Virtualization & Container Hosts
+            "vmcompute",      // Hyper-V Host Compute Service (Orchestrates VMs)
+            "vmms"            // Hyper-V Virtual Machine Management Service
         };
 
         /// <summary>
