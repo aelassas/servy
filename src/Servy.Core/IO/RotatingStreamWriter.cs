@@ -458,10 +458,10 @@ namespace Servy.Core.IO
             }
             catch (Exception ex)
             {
-                _consecutiveDeletionFailures++;
-                Logger.Warn($"Failed to enumerate rotated log files in '{directory}': {ex.Message}. Consecutive failures: {_consecutiveDeletionFailures}");
-                if (_consecutiveDeletionFailures >= AppConfig.LogRotationDeletionFailureEscalationThreshold)
-                    Logger.Error($"Persistent failure to enforce log rotation limit for '{_file.FullName}' (consecutive failures: {_consecutiveDeletionFailures}, max retained: {_maxRotations}). Disk space growth is no longer bounded.");
+                int currentFailures = Interlocked.Increment(ref _consecutiveDeletionFailures);
+                Logger.Warn($"Failed to enumerate rotated log files in '{directory}': {ex.Message}. Consecutive failures: {currentFailures}");
+                if (currentFailures >= AppConfig.LogRotationDeletionFailureEscalationThreshold)
+                    Logger.Error($"Persistent failure to enforce log rotation limit for '{_file.FullName}' (consecutive failures: {currentFailures}, max retained: {_maxRotations}). Disk space growth is no longer bounded.");
                 return;
             }
 
@@ -505,7 +505,7 @@ namespace Servy.Core.IO
             if (rotatedFiles.Count <= _maxRotations)
             {
                 // Reset counter if we are successfully within limits
-                _consecutiveDeletionFailures = 0;
+                Interlocked.Exchange(ref _consecutiveDeletionFailures, 0);
                 return;
             }
 
@@ -514,17 +514,17 @@ namespace Servy.Core.IO
                 try
                 {
                     File.Delete(file);
-                    _consecutiveDeletionFailures = 0; // Reset on any successful deletion
+                    Interlocked.Exchange(ref _consecutiveDeletionFailures, 0); // Reset on any successful deletion
                 }
                 catch (Exception ex)
                 {
-                    _consecutiveDeletionFailures++;
-                    Logger.Warn($"Failed to delete old log file '{file}': {ex.Message}. Consecutive failures: {_consecutiveDeletionFailures}");
+                    int currentFailures = Interlocked.Increment(ref _consecutiveDeletionFailures);
+                    Logger.Warn($"Failed to delete old log file '{file}': {ex.Message}. Consecutive failures: {currentFailures}");
 
                     // If we hit a threshold (e.g., 10), we log a more severe error to alert operators.
-                    if (_consecutiveDeletionFailures >= AppConfig.LogRotationDeletionFailureEscalationThreshold)
+                    if (currentFailures >= AppConfig.LogRotationDeletionFailureEscalationThreshold)
                     {
-                        Logger.Error($"Persistent failure to enforce log rotation limit for '{_file.FullName}' (consecutive failures: {_consecutiveDeletionFailures}, max retained: {_maxRotations}). Disk space growth is no longer bounded.");
+                        Logger.Error($"Persistent failure to enforce log rotation limit for '{_file.FullName}' (consecutive failures: {currentFailures}, max retained: {_maxRotations}). Disk space growth is no longer bounded.");
                     }
                 }
             }
