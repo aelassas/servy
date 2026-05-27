@@ -6,6 +6,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace Servy.Core.Logging
@@ -26,6 +27,19 @@ namespace Servy.Core.Logging
         /// Logs folder path.
         /// </summary>
         public static readonly string LogsPath = Path.Combine(AppConfig.ProgramDataPath, "logs");
+
+        /// <summary>
+        /// Matches any sequence of standard or Unicode line terminators
+        /// </summary>
+        private static readonly Regex LineBreakingRegex = new Regex(@"\r\n|[\r\n\u0085\u2028\u2029]",
+            RegexOptions.Compiled,
+            AppConfig.InputRegexTimeout);
+
+        /// <summary>
+        /// Matches non-printable vertical control spaces that shouldn't act as delimiters
+        /// </summary>
+        private static readonly Regex VerticalControlRegex = new Regex(@"[\v\f]", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
+
 
         /// <summary>
         /// The maximum number of fallback log writes allowed per process lifetime.
@@ -415,15 +429,14 @@ namespace Servy.Core.Logging
                         : level.ToString().ToUpperInvariant(); // Fallback for safety
 
                     // Sanitize message into a single-line representation for better scannability
-                    var sanitizedMessage = message
-                        .Replace("\r", "")
-                        .Replace("\n", " ; ")
-                        .Trim();
+                    var sanitizedMessage = LineBreakingRegex.Replace(message, " ; ");
+                    sanitizedMessage = VerticalControlRegex.Replace(sanitizedMessage, " ");
+                    sanitizedMessage = sanitizedMessage.Trim();
 
                     // Format: [2026-05-06 08:58:20+01:00] [INFO] Message text OR [2026-05-06 08:58:20Z] [INFO] Message text
                     var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
                     string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
-                    string logEntry = $"[{now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}{tzMarker}] [{levelName}] {sanitizedMessage}";
+                    string logEntry = $"[{now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}{tzMarker}] [{levelName}] | {sanitizedMessage}";
 
                     _writer.WriteLine(logEntry);
                 }
@@ -509,10 +522,9 @@ namespace Servy.Core.Logging
                 if (!string.IsNullOrWhiteSpace(current.StackTrace))
                 {
                     // Sanitize the stack trace for single-line output
-                    var sanitizedStack = current.StackTrace
-                        .Replace("\r", "")
-                        .Replace("\n", " ; ")
-                        .Trim();
+                    var sanitizedStack = LineBreakingRegex.Replace(current.StackTrace, " ; ");
+                    sanitizedStack = VerticalControlRegex.Replace(sanitizedStack, " ");
+                    sanitizedStack = sanitizedStack.Trim();
 
                     sb.Append(" (at ").Append(sanitizedStack).Append(')');
                 }
