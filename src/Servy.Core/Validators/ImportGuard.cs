@@ -169,9 +169,13 @@ namespace Servy.Core.Validators
             int firstDotIndex = fileName.IndexOf('.');
             string firstSegment = firstDotIndex >= 0 ? fileName.Substring(0, firstDotIndex) : fileName;
 
-            if (ReservedNames.ReservedDeviceNames.Contains(firstSegment))
+            // Strip trailing spaces, periods, and tabs to match Win32's internal 
+            // normalization behavior before checking the reserved device registry hash-set.
+            string normalizedSegment = firstSegment.TrimEnd(' ', '.', '\t');
+
+            if (ReservedNames.ReservedDeviceNames.Contains(normalizedSegment))
             {
-                var errorMsg = string.Format(Strings.Msg_SecurityReservedDeviceName, firstSegment);
+                var errorMsg = string.Format(Strings.Msg_SecurityReservedDeviceName, normalizedSegment);
                 Logger.Error(errorMsg);
                 return PathSecurityResult.Fail(errorMsg);
             }
