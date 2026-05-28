@@ -46,8 +46,25 @@ runs:
           throw "dotnet-install.ps1 signature check failed: $($sig.Status). The file may be compromised or unsigned."
         }
         
-        if ($sig.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation') {
-          throw "dotnet-install.ps1 signature subject mismatch. Expected 'Microsoft Corporation', got: $($sig.SignerCertificate.Subject)"
+        # Use structured X500 distinguished name parsing to isolate the organization attribute
+        # directly, preventing unanchored string injection or DN-aliasing exploits.
+        $cert = $sig.SignerCertificate
+        $x500Name = New-Object System.Security.Cryptography.X509Certificates.X500DistinguishedName($cert.SubjectName)
+        
+        # Extract RDN components cleanly using the .NET crypto API format
+        $decodedSubject = $x500Name.Format($true) # Returns newline-delimited RDN entries
+        
+        # Validate that 'O=Microsoft Corporation' exists exactly as an independent structural attribute line
+        $isMatch = $false
+        foreach ($line in ($decodedSubject -split "`n")) {
+          if ($line.Trim() -eq "O=Microsoft Corporation") {
+            $isMatch = $true
+            break
+          }
+        }
+
+        if (-not $isMatch) {
+          throw "Security Exception: dotnet-install.ps1 signature organization attribute mismatch. Expected exact 'O=Microsoft Corporation' token field mapping."
         }
         Write-Host "Signature verified successfully."
         
