@@ -418,9 +418,13 @@ namespace Servy.Service.Helpers
         {
             try
             {
-                using (_processHelper.Start(new ProcessStartInfo
+                var shutdownExe = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.System),
+                    "shutdown.exe");
+
+                using (var process = _processHelper.Start(new ProcessStartInfo
                 {
-                    FileName = "shutdown",
+                    FileName = shutdownExe,
                     Arguments = "/r /t 0 /f",
                     CreateNoWindow = true,
                     UseShellExecute = false
@@ -429,6 +433,10 @@ namespace Servy.Service.Helpers
                     // The using block ensures the native process handle is closed 
                     // immediately after the process is launched, preventing a 
                     // handle leak in the calling application.
+                    if (process == null)
+                    {
+                        logger?.Error("Failed to launch shutdown.exe for RestartComputer; no process was started.");
+                    }
                 }
             }
             catch (Exception ex)
