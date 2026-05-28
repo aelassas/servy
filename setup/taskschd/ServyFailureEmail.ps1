@@ -219,11 +219,12 @@ function Send-NotificationEmail {
   # --- CRYPTOGRAPHIC HARDENING (Issue #2078 Mitigation) ---
   # Pin TLS to prevent silent downgrade to broken protocols (SSL3/TLS1.0) on older Windows host defaults.
   try {
-      [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-      # Tls13 only on .NET 4.8+; tolerate older runtimes without throwing an exception
+      # Build the explicit allow-list from scratch instead of OR-ing onto the runtime default.
+      $allowed = [Net.SecurityProtocolType]::Tls12
       if ([enum]::IsDefined([Net.SecurityProtocolType], 'Tls13')) {
-          [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls13
+          $allowed = $allowed -bor [Net.SecurityProtocolType]::Tls13
       }
+      [Net.ServicePointManager]::SecurityProtocol = $allowed
   } catch {
       Write-Warning "ServyFailureEmail: Could not pin explicit TLS version; relying on system environment defaults. $_"
   }
