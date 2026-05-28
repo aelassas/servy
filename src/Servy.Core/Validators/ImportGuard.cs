@@ -53,58 +53,13 @@ namespace Servy.Core.Validators
     public static class ImportGuard
     {
         /// <summary>
-        /// Validates that a configuration file exists, stays within a safe size threshold, and returns a structured validation result.
-        /// </summary>
-        /// <param name="path">The file system path to evaluate.</param>
-        /// <param name="maxFileSizeMb">The maximum allowed size in MB.</param>
-        /// <param name="sizeLimitFormat">The localized format string for the size error (expects {0} for path).</param>
-        /// <returns>A <see cref="PathSecurityResult"/> containing a secure path token on success, or an explicit error message on failure.</returns>
-        public static PathSecurityResult ValidatePathAndSize(
-            string path,
-            int maxFileSizeMb,
-            string sizeLimitFormat)
-        {
-            string fullPath;
-            try
-            {
-                // Canonicalize path and validate characters
-                fullPath = Path.GetFullPath(path);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Invalid path provided for file size validation: {path}", ex);
-                return PathSecurityResult.Fail(Strings.Msg_InvalidPath);
-            }
-
-            var fileInfo = new FileInfo(fullPath);
-
-            // 1. Existence Check
-            if (!fileInfo.Exists)
-            {
-                var errorMsg = string.Format(Strings.Msg_ImportFileNotFound, fullPath);
-                Logger.Error(errorMsg);
-                return PathSecurityResult.Fail(errorMsg);
-            }
-
-            // 2. Size Guard (Safety threshold)
-            if (fileInfo.Length > AppConfig.ToBytes(maxFileSizeMb))
-            {
-                var errorMsg = string.Format(sizeLimitFormat, fullPath);
-                Logger.Error(errorMsg);
-                return PathSecurityResult.Fail(errorMsg);
-            }
-
-            // Success: Return the sealed token wrapping the evaluated path
-            return PathSecurityResult.Success(fullPath);
-        }
-
-        /// <summary>
         /// Enforces defense-in-depth security guards against path traversal, UNC bypasses, and unauthorized system reads.
+        /// Validates that a configuration file exists, is secure, and stays within a safe size threshold, and returns a structured validation result.
         /// </summary>
         /// <param name="path">The file path to validate.</param>
         /// <param name="content">Outputs the validated full path if successful; otherwise, null.</param>
         /// <returns>A strongly-typed result containing the secure path token on success, or a rejection reason on failure.</returns>
-        public static PathSecurityResult ValidatePathSecurity(string path, out string? content)
+        public static PathSecurityResult ValidatePathSecurityAndSize(string path, out string? content)
         {
             content = null;
             string fullPath;
@@ -229,6 +184,13 @@ namespace Servy.Core.Validators
             {
                 using (var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
+                    if (fileStream.Length > AppConfig.MaxConfigFileSizeBytes)
+                    {
+                        var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, fullPath);
+                        Logger.Error(errorMsg);
+                        return PathSecurityResult.Fail(errorMsg);
+                    }
+
                     var safeHandle = fileStream.SafeFileHandle;
 
                     if (safeHandle.IsInvalid)

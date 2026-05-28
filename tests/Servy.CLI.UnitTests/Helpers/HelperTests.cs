@@ -2,15 +2,39 @@
 using Servy.CLI.Enums;
 using Servy.CLI.Helpers;
 using Servy.CLI.Models;
+using System.IO;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Servy.CLI.UnitTests.Helpers
 {
-    // Dummy class to test Verb attribute retrieval
     [Verb("testverb", HelpText = "Test verb")]
     internal class TestOptions { }
 
     public class HelperTests
     {
+        // Helper to capture Console output
+        private void RunTestWithConsoleCapture(Action testAction)
+        {
+            using (var swOut = new StringWriter())
+            using (var swErr = new StringWriter())
+            {
+                var oldOut = Console.Out;
+                var oldErr = Console.Error;
+                try
+                {
+                    Console.SetOut(swOut);
+                    Console.SetError(swErr);
+                    testAction();
+                }
+                finally
+                {
+                    Console.SetOut(oldOut);
+                    Console.SetError(oldErr);
+                }
+            }
+        }
+
         [Fact]
         public void GetVerbName_ValidOptionsClass_ReturnsName()
         {
@@ -36,28 +60,49 @@ namespace Servy.CLI.UnitTests.Helpers
         [Fact]
         public void PrintAndReturn_SuccessResult_PrintsGreenMessage()
         {
-            // Fix: Use static factory method instead of private constructor
-            var result = CommandResult.Ok("Success!");
-            int exitCode = Helper.PrintAndReturn(result);
-            Assert.Equal(0, exitCode);
+            RunTestWithConsoleCapture(() =>
+            {
+                var result = CommandResult.Ok("Success!");
+                int exitCode = Helper.PrintAndReturn(result);
+                Assert.Equal(0, exitCode);
+            });
         }
 
         [Fact]
         public void PrintAndReturn_FailureResult_PrintsRedMessage()
         {
-            // Fix: Use static factory method instead of private constructor
-            var result = CommandResult.Fail("Error!", 1);
-            int exitCode = Helper.PrintAndReturn(result);
-            Assert.Equal(1, exitCode);
+            RunTestWithConsoleCapture(() =>
+            {
+                var result = CommandResult.Fail("Error!", 1);
+                int exitCode = Helper.PrintAndReturn(result);
+                Assert.Equal(1, exitCode);
+            });
         }
 
         [Fact]
         public async Task PrintAndReturnAsync_ReturnsExitCode()
         {
-            // Fix: Use static factory method instead of private constructor
-            var task = Task.FromResult(CommandResult.Ok("Async"));
-            int exitCode = await Helper.PrintAndReturnAsync(task);
-            Assert.Equal(0, exitCode);
+            // Use local capture within the async method
+            using (var swOut = new StringWriter())
+            using (var swErr = new StringWriter())
+            {
+                var oldOut = Console.Out;
+                var oldErr = Console.Error;
+                Console.SetOut(swOut);
+                Console.SetError(swErr);
+
+                try
+                {
+                    var task = Task.FromResult(CommandResult.Ok("Async"));
+                    int exitCode = await Helper.PrintAndReturnAsync(task);
+                    Assert.Equal(0, exitCode);
+                }
+                finally
+                {
+                    Console.SetOut(oldOut);
+                    Console.SetError(oldErr);
+                }
+            }
         }
 
         [Theory]

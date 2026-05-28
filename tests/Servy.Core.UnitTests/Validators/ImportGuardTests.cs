@@ -22,75 +22,6 @@ namespace Servy.Core.UnitTests.Validators
             }
         }
 
-        #region ValidatePathAndSize Tests
-
-        [Fact]
-        public void ValidatePathAndSize_NullOrEmptyPath_ReturnsInvalidPathError()
-        {
-            // Act
-            var result = ImportGuard.ValidatePathAndSize(string.Empty, 5, "Size Limit: {0}");
-
-            // Assert
-            Assert.False(result.IsValid);
-            Assert.Null(result.ValidPath);
-            Assert.NotNull(result.ErrorMessage);
-            // Validates that it hit the ArgumentException inside Path.GetFullPath
-        }
-
-        [Fact]
-        public void ValidatePathAndSize_FileDoesNotExist_ReturnsFileNotFoundError()
-        {
-            // Arrange
-            string nonExistentPath = Path.Combine(_tempDirectory, "does_not_exist.json");
-
-            // Act
-            var result = ImportGuard.ValidatePathAndSize(nonExistentPath, 5, "Size Limit: {0}");
-
-            // Assert
-            Assert.False(result.IsValid);
-            Assert.Null(result.ValidPath);
-            Assert.NotNull(result.ErrorMessage);
-        }
-
-        [Fact]
-        public void ValidatePathAndSize_FileExceedsMaxSize_ReturnsSizeLimitError()
-        {
-            // Arrange
-            string filePath = Path.Combine(_tempDirectory, "large_config.json");
-            File.WriteAllBytes(filePath, new byte[1024 * 1024 * 2]); // Create 2MB file
-
-            // Assume maxFileSizeMb is 1
-            int maxMb = 1;
-            string format = "File {0} is too large.";
-
-            // Act
-            var result = ImportGuard.ValidatePathAndSize(filePath, maxMb, format);
-
-            // Assert
-            Assert.False(result.IsValid);
-            Assert.Null(result.ValidPath);
-            Assert.Equal(string.Format(format, filePath), result.ErrorMessage);
-        }
-
-        [Fact]
-        public void ValidatePathAndSize_ValidFile_ReturnsSuccessWithResolvedPath()
-        {
-            // Arrange
-            string filePath = Path.Combine(_tempDirectory, "valid_config.json");
-            File.WriteAllText(filePath, "{}"); // Valid small file
-
-            // Act
-            var result = ImportGuard.ValidatePathAndSize(filePath, 5, "Limit: {0}");
-
-            // Assert
-            Assert.True(result.IsValid);
-            Assert.NotNull(result.ValidPath);
-            Assert.Equal(filePath, result.ValidPath!.ResolvedPath);
-            Assert.Null(result.ErrorMessage);
-        }
-
-        #endregion
-
         #region ValidatePathSecurity Tests
 
         [Fact]
@@ -100,7 +31,7 @@ namespace Servy.Core.UnitTests.Validators
             string invalidPath = new string(Path.GetInvalidPathChars());
 
             // Act
-            var result = ImportGuard.ValidatePathSecurity(invalidPath, out string? content);
+            var result = ImportGuard.ValidatePathSecurityAndSize(invalidPath, out string? content);
 
             // Assert
             Assert.False(result.IsValid);
@@ -114,7 +45,7 @@ namespace Servy.Core.UnitTests.Validators
         public void ValidatePathSecurity_UncPath_ReturnsFail(string uncPath)
         {
             // Act
-            var result = ImportGuard.ValidatePathSecurity(uncPath, out string? content);
+            var result = ImportGuard.ValidatePathSecurityAndSize(uncPath, out string? content);
 
             // Assert
             Assert.False(result.IsValid);
@@ -133,7 +64,7 @@ namespace Servy.Core.UnitTests.Validators
             string filePath = fileName;
 
             // Act
-            var result = ImportGuard.ValidatePathSecurity(filePath, out string? content);
+            var result = ImportGuard.ValidatePathSecurityAndSize(filePath, out string? content);
 
             // Assert
             Assert.False(result.IsValid);
@@ -160,7 +91,7 @@ namespace Servy.Core.UnitTests.Validators
             string filePath = Path.Combine(protectedDir, "win_config.json");
 
             // Act
-            var result = ImportGuard.ValidatePathSecurity(filePath, out string? content);
+            var result = ImportGuard.ValidatePathSecurityAndSize(filePath, out string? content);
 
             // Assert
             Assert.False(result.IsValid);
@@ -179,7 +110,7 @@ namespace Servy.Core.UnitTests.Validators
             string filePath = Path.Combine(_tempDirectory, fileName);
 
             // Act
-            var result = ImportGuard.ValidatePathSecurity(filePath, out string? content);
+            var result = ImportGuard.ValidatePathSecurityAndSize(filePath, out string? content);
 
             // Assert
             Assert.False(result.IsValid);
@@ -196,7 +127,7 @@ namespace Servy.Core.UnitTests.Validators
             File.WriteAllText(filePath, "{ \"setting\": 1 }");
 
             // Act
-            var result = ImportGuard.ValidatePathSecurity(filePath, out string? content);
+            var result = ImportGuard.ValidatePathSecurityAndSize(filePath, out string? content);
 
             // Assert
             Assert.True(result.IsValid);
@@ -216,7 +147,7 @@ namespace Servy.Core.UnitTests.Validators
             string filePath = Path.Combine(_tempDirectory, "phantom_config.xml");
 
             // Act
-            var result = ImportGuard.ValidatePathSecurity(filePath, out string? content);
+            var result = ImportGuard.ValidatePathSecurityAndSize(filePath, out string? content);
 
             // Assert
             Assert.False(result.IsValid);
@@ -252,7 +183,7 @@ namespace Servy.Core.UnitTests.Validators
             }
 
             // Act
-            var result = ImportGuard.ValidatePathSecurity(symlinkPath, out string? content);
+            var result = ImportGuard.ValidatePathSecurityAndSize(symlinkPath, out string? content);
 
             // Assert
             Assert.False(result.IsValid);

@@ -2,19 +2,16 @@
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
-using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Mappers;
-using Servy.Core.Native;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Core.Validators;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Text;
 
 namespace Servy.CLI.Commands
 {
@@ -87,7 +84,7 @@ namespace Servy.CLI.Commands
 
                 // ROBUSTNESS: Delegate the complex path canonicalization, UNC blocking, and 
                 // defense-in-depth symlink/junction guard checks to the centralized ImportGuard.
-                var securityResult = ImportGuard.ValidatePathSecurity(opts.Path, out string? content);
+                var securityResult = ImportGuard.ValidatePathSecurityAndSize(opts.Path, out string? content);
                 if (!securityResult.IsValid || content == null)
                 {
                     Logger.Error(securityResult.ErrorMessage!);
@@ -96,20 +93,6 @@ namespace Servy.CLI.Commands
 
                 // Extract the fully resolved, safe path token
                 string fullPath = securityResult.ValidPath!.ResolvedPath;
-
-                // Validate existence and size limits against the hardened path
-                var fileInfo = new FileInfo(fullPath);
-                if (!fileInfo.Exists)
-                {
-                    return CommandResult.Fail($"[Import{configFileType}] File no longer present: {fullPath}");
-                }
-
-                if (fileInfo.Length > AppConfig.MaxConfigFileSizeBytes)
-                {
-                    var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, fullPath);
-                    Logger.Error(errorMsg);
-                    return CommandResult.Fail(errorMsg);
-                }
 
                 // Process file based on its type using the validated fullPath
                 CommandResult result;
