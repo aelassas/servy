@@ -229,42 +229,43 @@ namespace Servy.Core.Validators
                 {
                     var safeHandle = fileStream.SafeFileHandle;
 
-                    // Replaced nativeHandle != NativeMethods.INVALID_HANDLE_VALUE
-                    if (!safeHandle.IsInvalid)
+                    if (safeHandle.IsInvalid)
                     {
-                        uint requiredSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, null!, 0, NativeMethods.VOLUME_NAME_DOS);
+                        return PathSecurityResult.Fail(Strings.Msg_SecurityHandleInvalid);
+                    }
 
-                        if (requiredSize > 0)
+                    uint requiredSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, null!, 0, NativeMethods.VOLUME_NAME_DOS);
+
+                    if (requiredSize > 0)
+                    {
+                        var pathBuilder = new StringBuilder((int)requiredSize);
+                        uint resultSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, pathBuilder, requiredSize, NativeMethods.VOLUME_NAME_DOS);
+
+                        if (resultSize > 0)
                         {
-                            var pathBuilder = new StringBuilder((int)requiredSize);
-                            uint resultSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, pathBuilder, requiredSize, NativeMethods.VOLUME_NAME_DOS);
+                            string finalPathName = pathBuilder.ToString();
+                            string normalizedPath = finalPathName;
+                            bool unwrappedUnc = false;
 
-                            if (resultSize > 0)
+                            if (normalizedPath.StartsWith(@"\\?\UNC\", StringComparison.OrdinalIgnoreCase))
                             {
-                                string finalPathName = pathBuilder.ToString();
-                                string normalizedPath = finalPathName;
-                                bool unwrappedUnc = false;
+                                normalizedPath = @"\\" + normalizedPath.Substring(@"\\?\UNC\".Length);
+                                unwrappedUnc = true;
+                            }
+                            else if (normalizedPath.StartsWith(@"\\?\", StringComparison.Ordinal))
+                            {
+                                normalizedPath = normalizedPath.Substring(4);
+                            }
 
-                                if (normalizedPath.StartsWith(@"\\?\UNC\", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    normalizedPath = @"\\" + normalizedPath.Substring(@"\\?\UNC\".Length);
-                                    unwrappedUnc = true;
-                                }
-                                else if (normalizedPath.StartsWith(@"\\?\", StringComparison.Ordinal))
-                                {
-                                    normalizedPath = normalizedPath.Substring(4);
-                                }
+                            bool finalIsUnc = unwrappedUnc || (Uri.TryCreate(normalizedPath, UriKind.Absolute, out var finalUri) && finalUri.IsUnc);
 
-                                bool finalIsUnc = unwrappedUnc || (Uri.TryCreate(normalizedPath, UriKind.Absolute, out var finalUri) && finalUri.IsUnc);
-
-                                if (unwrappedUnc ||
-                                    normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
-                                    finalIsUnc)
-                                {
-                                    var errorMsg = Strings.Msg_SecurityResolvedUncDestination;
-                                    Logger.Error(errorMsg);
-                                    return PathSecurityResult.Fail(errorMsg);
-                                }
+                            if (unwrappedUnc ||
+                                normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
+                                finalIsUnc)
+                            {
+                                var errorMsg = Strings.Msg_SecurityResolvedUncDestination;
+                                Logger.Error(errorMsg);
+                                return PathSecurityResult.Fail(errorMsg);
                             }
                         }
                     }

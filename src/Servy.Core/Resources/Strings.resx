@@ -247,6 +247,9 @@
   <data name="Msg_SecurityResolvedUncDestination" xml:space="preserve">
     <value>Security Alert: Resolved file target points directly to a UNC destination. Import aborted.</value>
   </data>
+  <data name="Msg_SecurityHandleInvalid" xml:space="preserve">
+    <value>Security: Could not obtain a SafeFileHandle for the target.</value>
+  </data>
   <data name="Msg_SecurityHandleValidationFailed" xml:space="preserve">
     <value>Security Guard Failure: Target file handle validation rejected. {0}</value>
   </data>
