@@ -159,15 +159,15 @@ function Send-NotificationEmail {
   }
 
   $smtpServer = $configRoot.Server
-  $from       = $configRoot.From
-  $to         = $configRoot.To
+  $from        = $configRoot.From
+  $to          = $configRoot.To
 
   $rawPort    = ([string]$configRoot.Port).Trim()
   $rawUseSsl  = ([string]$configRoot.UseSsl).Trim()
   $rawTimeout = ([string]$configRoot.TimeoutMs).Trim()
   
   # 2. Safe Port Resolution (Prevents [int]$null becoming 0)
-  $smtpPort = if ($rawPort    -match '^\d+$')         { [int]$rawPort }    else { 0 }
+  $smtpPort = if ($rawPort    -match '^\d+$')          { [int]$rawPort }    else { 0 }
   
   # 3. Safe SSL Preference Resolution (Case-insensitive, defaults to true)
   # LOGIC: Casts to string and trims whitespace to prevent parsing errors. 
@@ -175,7 +175,7 @@ function Send-NotificationEmail {
   $useSsl = if ($rawUseSsl  -match '^(?i)(false|0)$') { $false }        else { $true }
 
   # 4. Safe Timeout Resolution (Defaults to 30000ms / 30s)
-  $timeout = if ($rawTimeout -match '^\d+$')          { [int]$rawTimeout } else { 30000 }
+  $timeout = if ($rawTimeout -match '^\d+$')           { [int]$rawTimeout } else { 30000 }
 
   $credPath = Join-Path $scriptDir "smtp-cred.xml"
   $emailRegex = '^[^@]+@[^@]+\.[^@]+$'
@@ -214,6 +214,18 @@ function Send-NotificationEmail {
   if (-not (Test-Path $credPath)) {
     Write-FallbackError -Message "ServyFailureEmail: Credential file not found at '$credPath'. Skipping email." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
     return 'PermanentFailure'
+  }
+
+  # --- CRYPTOGRAPHIC HARDENING (Issue #2078 Mitigation) ---
+  # Pin TLS to prevent silent downgrade to broken protocols (SSL3/TLS1.0) on older Windows host defaults.
+  try {
+      [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+      # Tls13 only on .NET 4.8+; tolerate older runtimes without throwing an exception
+      if ([enum]::IsDefined([Net.SecurityProtocolType], 'Tls13')) {
+          [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls13
+      }
+  } catch {
+      Write-Warning "ServyFailureEmail: Could not pin explicit TLS version; relying on system environment defaults. $_"
   }
 
   # --- EXECUTION ---
