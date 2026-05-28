@@ -214,60 +214,62 @@ namespace Servy.CLI.Commands
                 {
                     var safeHandle = fileStream.SafeFileHandle;
 
-                    if (!safeHandle.IsInvalid)
+                    if (safeHandle.IsInvalid)
                     {
-                        // Determine buffer size required
-                        uint requiredSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, null, 0, NativeMethods.VOLUME_NAME_DOS);
+                        throw new SecurityException("Security Guard Failure: Could not obtain a SafeFileHandle for the destination.");
+                    }
 
-                        if (requiredSize > 0)
+                    // Determine buffer size required
+                    uint requiredSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, null, 0, NativeMethods.VOLUME_NAME_DOS);
+
+                    if (requiredSize > 0)
+                    {
+                        // Allocate buffer and retrieve the final physical path representation
+                        var pathBuilder = new StringBuilder((int)requiredSize);
+                        uint resultSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, pathBuilder, requiredSize, NativeMethods.VOLUME_NAME_DOS);
+
+                        if (resultSize > 0)
                         {
-                            // Allocate buffer and retrieve the final physical path representation
-                            var pathBuilder = new StringBuilder((int)requiredSize);
-                            uint resultSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, pathBuilder, requiredSize, NativeMethods.VOLUME_NAME_DOS);
+                            string finalPathName = pathBuilder.ToString();
 
-                            if (resultSize > 0)
+                            // NORMALIZE: Clean up extended device namespaces safely to track backends accurately
+                            string normalizedPath = finalPathName;
+                            bool unwrappedUnc = false;
+
+                            if (normalizedPath.StartsWith(@"\\?\UNC\", StringComparison.OrdinalIgnoreCase))
                             {
-                                string finalPathName = pathBuilder.ToString();
+                                // Reconstruct the explicit double-backslash structural layout for accurate evaluation
+                                normalizedPath = @"\\" + normalizedPath.Substring(@"\\?\UNC\".Length);
+                                unwrappedUnc = true;
+                            }
+                            else if (normalizedPath.StartsWith(@"\\?\", StringComparison.Ordinal))
+                            {
+                                // Strip standard local volume namespace tags (e.g. \\?\C:\... -> C:\...)
+                                normalizedPath = normalizedPath.Substring(4);
+                            }
 
-                                // NORMALIZE: Clean up extended device namespaces safely to track backends accurately
-                                string normalizedPath = finalPathName;
-                                bool unwrappedUnc = false;
+                            bool finalIsUnc = unwrappedUnc || (Uri.TryCreate(normalizedPath, UriKind.Absolute, out var finalUri) && finalUri.IsUnc);
 
-                                if (normalizedPath.StartsWith(@"\\?\UNC\", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    // Reconstruct the explicit double-backslash structural layout for accurate evaluation
-                                    normalizedPath = @"\\" + normalizedPath.Substring(@"\\?\UNC\".Length);
-                                    unwrappedUnc = true;
-                                }
-                                else if (normalizedPath.StartsWith(@"\\?\", StringComparison.Ordinal))
-                                {
-                                    // Strip standard local volume namespace tags (e.g. \\?\C:\... -> C:\...)
-                                    normalizedPath = normalizedPath.Substring(4);
-                                }
+                            // Now check the normalized path
+                            if (unwrappedUnc ||
+                                normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
+                                finalIsUnc)
+                            {
+                                throw new SecurityException("Security Alert: Resolved file target points directly to a UNC destination. Export aborted.");
+                            }
 
-                                bool finalIsUnc = unwrappedUnc || (Uri.TryCreate(normalizedPath, UriKind.Absolute, out var finalUri) && finalUri.IsUnc);
+                            // NEW: re-check protected folders against the RESOLVED path
+                            var resolvedViolation = protectedFolders.FirstOrDefault(folder =>
+                                !string.IsNullOrEmpty(folder) &&
+                                normalizedPath.StartsWith(
+                                    folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
+                                    StringComparison.OrdinalIgnoreCase));
 
-                                // Now check the normalized path
-                                if (unwrappedUnc ||
-                                    normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) ||
-                                    finalIsUnc)
-                                {
-                                    throw new SecurityException("Security Alert: Resolved file target points directly to a UNC destination. Export aborted.");
-                                }
-
-                                // NEW: re-check protected folders against the RESOLVED path
-                                var resolvedViolation = protectedFolders.FirstOrDefault(folder =>
-                                    !string.IsNullOrEmpty(folder) &&
-                                    normalizedPath.StartsWith(
-                                        folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
-                                        StringComparison.OrdinalIgnoreCase));
-
-                                if (resolvedViolation != null)
-                                {
-                                    throw new SecurityException(
-                                        $"Access Denied: Resolved file target points into protected system directory '{resolvedViolation}'. Export aborted."
-                                        );
-                                }
+                            if (resolvedViolation != null)
+                            {
+                                throw new SecurityException(
+                                    $"Access Denied: Resolved file target points into protected system directory '{resolvedViolation}'. Export aborted."
+                                    );
                             }
                         }
                     }
