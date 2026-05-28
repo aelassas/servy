@@ -21,7 +21,8 @@ namespace Servy.Core.Security
         /// </param>
         /// <remarks>
         /// <para>
-        /// This method acts as a security enforcement point. If the directory does not exist, it is created.
+        /// This method acts as a security enforcement point. If the directory does not exist, it is created
+        /// atomically with the intended security descriptor to eliminate race conditions.
         /// It then retrieves the current access control list (ACL) and applies the logic defined in 
         /// <see cref="ApplySecurityRules"/>.
         /// </para>
@@ -38,41 +39,76 @@ namespace Servy.Core.Security
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("Path cannot be null or empty.", nameof(path));
 
-            // Create the directory if it doesn't exist, or reference the existing one.
-            // Note: The race window between creation and hardening is mitigated by the 
-            // explicit ACE purge inside ApplySecurityRules.
-            DirectoryInfo dirInfo = !Directory.Exists(path)
-                ? Directory.CreateDirectory(path)
-                : new DirectoryInfo(path);
-
-            try
+            SecurityIdentifier? currentUserSid = null;
+            using (var identity = WindowsIdentity.GetCurrent())
             {
-                // CRITICAL: Explicitly request only the Access rules (DACL).
-                // Default behavior fetches Owner and Group. A non-admin account cannot 
-                // persist Owner/Group back to the filesystem, causing an UnauthorizedAccessException.
-                var security = dirInfo.GetAccessControl(AccessControlSections.Access);
-
-                SecurityIdentifier? currentUserSid = null;
-                using (var identity = WindowsIdentity.GetCurrent())
-                {
-                    currentUserSid = identity.User;
-                }
-
-                // Apply the hardened rules.
-                ApplySecurityRules(security, currentUserSid, breakInheritance);
-
-                dirInfo.SetAccessControl(security);
+                currentUserSid = identity.User;
             }
-            catch (UnauthorizedAccessException ex) when (!IsAdministrator() && !breakInheritance)
+
+            if (!Directory.Exists(path))
             {
-                // GRACEFUL FALLBACK: 
-                // If we are a non-admin service account managing a child folder, the Root Vault 
-                // (parent folder) was already secured by the Administrator during installation.
-                // Because breakInheritance is false, the OS is already enforcing security via 
-                // inheritance, making it safe to proceed without crashing the service.
-                Logger.Warn(
-                    $"Could not write hardened ACL on '{path}' as non-admin. " +
-                    $"Falling back to inherited permissions from parent. Verify parent vault is secured. ({ex.Message})");
+                // ATOMIC CREATION: Create the directory securely with the descriptor applied on execution.
+                // Using atomic creation eliminates the race window between directory creation 
+                // and security enforcement. The directory never exists with inherited broad permissions.
+                try
+                {
+                    var ds = new DirectorySecurity();
+
+                    if (breakInheritance)
+                    {
+                        // SetAccessRuleProtection(isProtected, preserveInheritance)
+                        // false = do not preserve inherited rules
+                        ds.SetAccessRuleProtection(true, false);
+                    }
+
+                    // Apply the hardened rules to the descriptor before creation.
+                    ApplySecurityRules(ds, currentUserSid, breakInheritance);
+
+                    // Create the directory with the hardened security descriptor in a single operation.
+                    FileSystemAclExtensions.CreateDirectory(ds, path);
+                }
+                catch (UnauthorizedAccessException ex) when (!IsAdministrator() && !breakInheritance)
+                {
+                    // GRACEFUL FALLBACK: 
+                    // If we are a non-admin service account managing a child folder, the Root Vault 
+                    // (parent folder) was already secured by the Administrator during installation.
+                    // Because breakInheritance is false, the OS is already enforcing security via 
+                    // inheritance, making it safe to proceed without crashing the service.
+                    Logger.Warn(
+                        $"Could not atomically create hardened directory '{path}' as non-admin. " +
+                        $"Falling back to standard environmental creation rules. Verify parent vault is secured. ({ex.Message})");
+                }
+            }
+            else
+            {
+                // EXISTING DIRECTORY: Reference the existing one and harden in-place.
+                // Note: The hardening pass purges Allow ACEs for broad groups and Deny ACEs 
+                // for required accounts, neutralizing malicious squatting attempts.
+                try
+                {
+                    DirectoryInfo dirInfo = new DirectoryInfo(path);
+
+                    // CRITICAL: Explicitly request only the Access rules (DACL).
+                    // Default behavior fetches Owner and Group. A non-admin account cannot 
+                    // persist Owner/Group back to the filesystem, causing an UnauthorizedAccessException.
+                    var security = dirInfo.GetAccessControl(AccessControlSections.Access);
+
+                    // Apply the hardened rules.
+                    ApplySecurityRules(security, currentUserSid, breakInheritance);
+
+                    dirInfo.SetAccessControl(security);
+                }
+                catch (UnauthorizedAccessException ex) when (!IsAdministrator() && !breakInheritance)
+                {
+                    // GRACEFUL FALLBACK: 
+                    // If we are a non-admin service account managing a child folder, the Root Vault 
+                    // (parent folder) was already secured by the Administrator during installation.
+                    // Because breakInheritance is false, the OS is already enforcing security via 
+                    // inheritance, making it safe to proceed without crashing the service.
+                    Logger.Warn(
+                        $"Could not write hardened ACL on '{path}' as non-admin. " +
+                        $"Falling back to inherited permissions from parent. Verify parent vault is secured. ({ex.Message})");
+                }
             }
         }
 
@@ -106,6 +142,12 @@ namespace Servy.Core.Security
         /// </item>
         /// <item>
         /// <description>
+        /// **Anti-Squatting Purge:** Explicitly removes any <c>Deny</c> rules for <c>Administrators</c> and 
+        /// <c>Local System</c> (and the current user) to prevent Denial-of-Service via directory squatting.
+        /// </description>
+        /// </item>
+        /// <item>
+        /// <description>
         /// **Mandatory Access:** Grants <c>Full Control</c> to <c>Administrators</c> and <c>Local System</c>.
         /// </description>
         /// </item>
@@ -132,29 +174,39 @@ namespace Servy.Core.Security
                 security.SetAccessRuleProtection(isProtected: false, preserveInheritance: true);
             }
 
-            // 2. Define the broad groups that cause the LPE vulnerability
+            // 2. Define SIDs
             var builtinUsersSid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);            // Users
             var authenticatedUsersSid = new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null); // Authenticated Users
             var everyoneSid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);                       // Everyone
 
-            // 3. PURGE: Remove explicit/manual GRANTS for dangerous groups while preserving explicit DENY rules
+            var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+            var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+
+            // 3. PURGE: Remove explicit/manual GRANTS for dangerous groups AND explicit DENY rules for critical accounts
             // Extract only explicit, non-inherited access rules to audit the DACL modifications safely
             var explicitRules = security.GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier));
 
             foreach (FileSystemAccessRule rule in explicitRules)
             {
+                // Purge Allow rules for broad, unprivileged groups
                 if (rule.AccessControlType == AccessControlType.Allow &&
                     (rule.IdentityReference.Equals(builtinUsersSid) ||
                      rule.IdentityReference.Equals(authenticatedUsersSid) ||
                      rule.IdentityReference.Equals(everyoneSid)))
                 {
-                    // Safely remove the explicit Allow rule without disturbing explicit Deny entries
+                    security.RemoveAccessRule(rule);
+                }
+
+                // Purge Deny rules targeting required operational accounts (Anti-squatting)
+                if (rule.AccessControlType == AccessControlType.Deny &&
+                    (rule.IdentityReference.Equals(adminSid) ||
+                     rule.IdentityReference.Equals(systemSid) ||
+                     (currentUserSid != null && rule.IdentityReference.Equals(currentUserSid))))
+                {
                     security.RemoveAccessRule(rule);
                 }
             }
 
-            var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
-            var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
             var accessFlags = InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit;
 
             // 4. Add mandatory high-privilege rules
