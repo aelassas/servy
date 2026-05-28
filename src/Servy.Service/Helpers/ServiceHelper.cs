@@ -70,7 +70,8 @@ namespace Servy.Service.Helpers
         /// </summary>
         /// <remarks>
         /// Added support for quoted values and preserved separators.
-        /// The value pattern handles both quoted strings and standard tokens.
+        /// The value pattern handles both quoted strings and standard tokens, including
+        /// multi-word values that do not look like subsequent CLI flags.
         /// </remarks>
         private static readonly Regex MaskingRegex = new Regex(
             // 1. Keyword: Negative lookarounds allow _, ., and - as valid boundaries without consuming them
@@ -85,10 +86,10 @@ namespace Servy.Service.Helpers
                 @"(?:""[^""]*""|'[^']*'|(?:[^\s""']+(?:\s+(?![\-/]+[a-zA-Z])[^\s""']+)*))" +
                 @"|" +
                 // BRANCH B: Space Separator
-                // Strictly consumes only a single unquoted word to prevent over-masking 
-                // subsequent commands (e.g., protects 'run' in "--password secret run")
+                // Consumes unquoted strings, supporting multi-word values (e.g., "my secret pass")
+                // but stops consuming if it detects a subsequent CLI flag.
                 @"(\s+)(?![\-/]+[a-zA-Z])" +
-                @"(?:""[^""]*""|'[^']*'|[^\s""']+)" +
+                @"(?:""[^""]*""|'[^']*'|(?:[^\s""']+(?:\s+(?![\-/]+[a-zA-Z])[^\s""']+)*))" +
             @")",
             RegexOptions.Compiled,
             AppConfig.InputRegexTimeout);
