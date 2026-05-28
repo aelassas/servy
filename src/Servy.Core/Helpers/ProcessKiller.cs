@@ -144,11 +144,17 @@ namespace Servy.Core.Helpers
 
                         DateTime childStart = SafeStartTime(child);
 
+                        // If we cannot establish the temporal bounds of either process,
+                        // fail-safe by refusing to execute the kill to protect recycled system nodes.
+                        if (parentStartTime == DateTime.MinValue || childStart == DateTime.MinValue)
+                        {
+                            Logger.Warn($"WalkAndKillChildren: Skipping PID {childPid}. Could not establish clear temporal identity for PID-reuse guard.");
+                            continue;
+                        }
+
                         // Identity check: Ensures we don't kill a process that recycled a PID 
                         // from a target that died before this operation started.
-                        if (parentStartTime != DateTime.MinValue
-                            && childStart != DateTime.MinValue
-                            && childStart < parentStartTime.AddSeconds(-AppConfig.PidReuseToleranceSeconds))
+                        if (childStart < parentStartTime.AddSeconds(-AppConfig.PidReuseToleranceSeconds))
                             continue;
 
                         // Depth-First Recursion: Kill the leaves of the tree first.
@@ -502,7 +508,7 @@ namespace Servy.Core.Helpers
                     // keep MinValue if reading StartTime fails due to transient access limits
                 }
 
-                // ROBUSTNESS FIX: Perform temporal identity validation BEFORE walking up the ancestor tree.
+                // ROBUSTNESS: Perform temporal identity validation BEFORE walking up the ancestor tree.
                 // This isolates PID recycling exploits at the boundary and blocks the walk from leaking into unrelated trees.
                 try
                 {
@@ -510,14 +516,27 @@ namespace Servy.Core.Helpers
                     // to completely eliminate the PID-recycling exploit window.
                     DateTime exactStartTime = parentStartTime == DateTime.MinValue ? parentProcess.StartTime : parentStartTime;
 
-                    if (childStartTime != DateTime.MinValue && exactStartTime != DateTime.MinValue
-                        && exactStartTime > childStartTime.AddSeconds(AppConfig.PidReuseToleranceSeconds))
+                    // If temporal attributes are inaccessible (exactStartTime or childStartTime is MinValue),
+                    // abort the upward walk immediately. This eliminates the "kill blindly" fallback loop.
+                    if (childStartTime == DateTime.MinValue || exactStartTime == DateTime.MinValue)
+                    {
+                        Logger.Warn($"KillParentProcesses: Aborting upward tree walk at parent PID {parentId}. Incomplete temporal identity metrics.");
+                        return;
+                    }
+
+                    if (exactStartTime > childStartTime.AddSeconds(AppConfig.PidReuseToleranceSeconds))
                     {
                         Logger.Debug($"Aborting parent tree walk: PID {parentId} has been recycled (started after child).");
                         return;
                     }
                 }
-                catch (Win32Exception) { /* Handle access denied on StartTime, proceed with caution */ }
+                catch (Win32Exception)
+                {
+                    // If a Win32 Access Denied exception is thrown here during direct live verification, 
+                    // we must fail closed and abort immediately rather than risking blind tree termination.
+                    Logger.Warn($"KillParentProcesses: Access Denied establishing live temporal identity for parent PID {parentId}. Aborting walk.");
+                    return;
+                }
 
                 // Move up further first via post-order traversal - pass real anchor and the visited set
                 // Safe to recurse now that the immediate parent identity context has been definitively verified.
