@@ -38,7 +38,7 @@ function Protect-SensitiveString {
     # A collection of keywords used to identify potentially sensitive information.
     #
     # WARNING: keep in sync with the parity twin in:
-    #   src/Servy.Service/Helpers/ServiceHelper.cs (SensitiveKeyWords) — same keyword-pattern masker.
+    #   src/Servy.Service/Helpers/ServiceHelper.cs (SensitiveKeyWords) - same keyword-pattern masker.
     #
     # NOTE: src/Servy.CLI/Servy.psm1 (Format-SecureLogMessage) is a SEPARATE mechanism that
     # masks CLI option values (--password=…) and is kept in sync with the [Sensitive]
