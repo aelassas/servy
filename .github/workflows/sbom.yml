@@ -131,7 +131,7 @@ jobs:
           # ----------------------------------------------------
 
           # Continue with the .NET tool installation using the verified local package source
-          dotnet tool install --global CycloneDX --version $env:CYCLONEDX_VERSION --source $toolPkgDir --ignore-failed-sources
+          dotnet tool install --global CycloneDX --version $env:CYCLONEDX_VERSION --source $toolPkgDir
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
 
       - name: Generate SBOM
