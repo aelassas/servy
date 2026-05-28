@@ -115,6 +115,8 @@ jobs:
           Add-Content -Path $env:GITHUB_PATH -Value $cliDir
 
           # --- SECURITY CHECK: SHA256 PINNING FOR .NET TOOL ---
+          # We verify the CycloneDX nupkg itself. To ensure transitive dependencies 
+          # are also verified/pinned, we utilize an isolated NuGet.config below.
           Write-Host "Downloading CycloneDX .NET Tool package for verification..."
           $toolPkgUri = "https://www.nuget.org/api/v2/package/CycloneDX/$env:CYCLONEDX_VERSION"
           $toolPkgDir = "$env:USERPROFILE\cyclonedx-tool"
@@ -128,10 +130,21 @@ jobs:
               throw "Security Breach: CycloneDX .NET Tool hash mismatch! Expected: $($env:CYCLONEDX_TOOL_HASH), Got: $actualToolHash"
           }
           Write-Host "Tool package checksum verified successfully."
-          # ----------------------------------------------------
+          
+          # --- ISOLATION: Enforce local source only ---
+          $nugetConfig = @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="LocalVerified" value="$toolPkgDir" />
+            </packageSources>
+          </configuration>
+          "@
+          $nugetConfig | Set-Content -Path "$toolPkgDir\nuget.config"
 
-          # Continue with the .NET tool installation using the verified local package source
-          dotnet tool install --global CycloneDX --version $env:CYCLONEDX_VERSION --source $toolPkgDir
+          # Continue with the .NET tool installation using the isolated source configuration
+          dotnet tool install --global CycloneDX --version $env:CYCLONEDX_VERSION --configfile "$toolPkgDir\nuget.config"
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
 
       - name: Generate SBOM
