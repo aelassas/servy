@@ -9,8 +9,17 @@ namespace Servy.Core.UnitTests.Config
     /// </summary>
     public class PowerShellConfigSyncTests
     {
-        [Fact]
-        public void ServyPsm1_PasswordEnvVar_MatchesAppConfigConstant()
+        [Theory]
+        [InlineData("ServyPasswordEnvVar", AppConfig.PasswordEnvVarName)]
+        [InlineData("ServyProcessParametersEnvVar", AppConfig.ProcessParametersEnvVarName)]
+        [InlineData("ServyEnvironmentVariablesEnvVar", AppConfig.EnvironmentVariablesEnvVarName)]
+        [InlineData("ServyFailureProgramParametersEnvVar", AppConfig.FailureProgramParametersEnvVarName)]
+        [InlineData("ServyPreLaunchParametersEnvVar", AppConfig.PreLaunchParametersEnvVarName)]
+        [InlineData("ServyPreLaunchEnvironmentVariablesEnvVar", AppConfig.PreLaunchEnvironmentVariablesEnvVarName)]
+        [InlineData("ServyPostLaunchParametersEnvVar", AppConfig.PostLaunchParametersEnvVarName)]
+        [InlineData("ServyPreStopParametersEnvVar", AppConfig.PreStopParametersEnvVarName)]
+        [InlineData("ServyPostStopParametersEnvVar", AppConfig.PostStopParametersEnvVarName)]
+        public void ServyPsm1_SensitiveEnvVars_MatchAppConfigConstants(string scriptVarName, string expectedEnvVarName)
         {
             // Arrange
             string startDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -22,17 +31,17 @@ namespace Servy.Core.UnitTests.Config
             string psm1Path = Path.Combine(repoRoot, "src", "Servy.CLI", "Servy.psm1");
             Assert.True(File.Exists(psm1Path), $"PowerShell module not found at expected path: {psm1Path}");
 
-            string expectedEnvVarName = AppConfig.PasswordEnvVarName;
-
             // Act
             string scriptContent = File.ReadAllText(psm1Path);
 
-            // Regex to find: $script:ServyPasswordEnvVar = 'SERVY_PASSWORD' (handles single/double quotes and whitespace)
-            var regex = new Regex(@"\$script:ServyPasswordEnvVar\s*=\s*['""]([^'""]+)['""]", RegexOptions.IgnoreCase);
+            // Regex to locate the specific script-scoped variable mapping assignment dynamically
+            // e.g., $script:ServyPasswordEnvVar = 'SERVY_PASSWORD'
+            string pattern = @"\$script:" + Regex.Escape(scriptVarName) + @"\s*=\s*['""]([^'""]+)['""]";
+            var regex = new Regex(pattern, RegexOptions.IgnoreCase);
             var match = regex.Match(scriptContent);
 
             // Assert
-            Assert.True(match.Success, "Could not find the assignment for '$script:ServyPasswordEnvVar' in Servy.psm1. Did the variable name change?");
+            Assert.True(match.Success, $"Could not find the assignment for '$script:{scriptVarName}' in Servy.psm1. Has the script variable structure deviated?");
 
             string actualEnvVarName = match.Groups[1].Value;
 

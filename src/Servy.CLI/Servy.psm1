@@ -32,12 +32,20 @@ $script:ServyMaxBufferChars = 1048576
 # Uses Atomic Groups (?>...) to prevent Catastrophic Backtracking (ReDoS) on overlapping escape branches.
 $script:EnvVarValidationPattern = '^([^= ]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*))(; ?[^= ]+=(?>(?:\\=|\\;|\\"|\\\\|[^;])*))*;?$'
 
-# Specifies the name of the environment variable used to securely pass the user password from the CLI.
-# Using an environment variable prevents sensitive credentials from being exposed in plain text 
+# Specifies the name of the environment variables used to securely pass data from the CLI.
+# Using environment variables prevents sensitive credentials and parameters from being exposed in plain text 
 # within command-line history, logs, or system process lists.
 #
-# SYNC WITH: src/Servy.Core/Config/AppConfig.cs (PasswordEnvVarName)
+# SYNC WITH: src/Servy.Core/Config/AppConfig.cs
 $script:ServyPasswordEnvVar = 'SERVY_PASSWORD'
+$script:ServyProcessParametersEnvVar = 'SERVY_PROCESS_PARAMETERS'
+$script:ServyEnvironmentVariablesEnvVar = 'SERVY_ENVIRONMENT_VARIABLES'
+$script:ServyFailureProgramParametersEnvVar = 'SERVY_FAILURE_PROGRAM_PARAMETERS'
+$script:ServyPreLaunchParametersEnvVar = 'SERVY_PRE_LAUNCH_PARAMETERS'
+$script:ServyPreLaunchEnvironmentVariablesEnvVar = 'SERVY_PRE_LAUNCH_ENVIRONMENT_VARIABLES'
+$script:ServyPostLaunchParametersEnvVar = 'SERVY_POST_LAUNCH_PARAMETERS'
+$script:ServyPreStopParametersEnvVar = 'SERVY_PRE_STOP_PARAMETERS'
+$script:ServyPostStopParametersEnvVar = 'SERVY_POST_STOP_PARAMETERS'
 
 $script:ServyPollIntervalMs = 50
 $script:ServyDrainTimeoutMs = 5000
@@ -148,6 +156,35 @@ function Add-Arg {
   }
 
   return $list
+}
+
+function Resolve-SecureParameter {
+  <#
+    .SYNOPSIS
+        Resolves a sensitive plain-text parameter by checking explicit CLI inputs first, 
+        then falling back to the system environment variables.
+
+    .DESCRIPTION
+        This function safely extracts sensitive configuration parameters (like connection strings 
+        or pre-launch variables) by prioritizing explicit user input via $PSBoundParameters. 
+        If the parameter was omitted from the command line, it gracefully falls back to checking 
+        the active process environment dictionary to ensure existing variables aren't ignored.
+  #>
+  param(
+      [hashtable] $TargetEnv,
+      [string] $ParamName,
+      [string] $EnvVarName,
+      [System.Collections.IDictionary] $BoundParams
+  )
+  
+  if ($BoundParams.Contains($ParamName)) {
+      $TargetEnv[$EnvVarName] = $BoundParams[$ParamName]
+  } else {
+      $envValue = [System.Environment]::GetEnvironmentVariable($EnvVarName, 'Process')
+      if (-not [string]::IsNullOrEmpty($envValue)) {
+          $TargetEnv[$EnvVarName] = $envValue
+      }
+  }
 }
 
 function Format-SecureLogMessage {
@@ -1160,13 +1197,14 @@ function Install-ServyService {
   $argsList = @()
 
   # 1. Explicit Parameter Mapping: CLI Flag => PowerShell Parameter Name
+  # NOTE: Non-password sensitive parameters have been removed from the mapping and are 
+  # handled exclusively via environment variables to ensure memory safety and avoid CLI argument leaks.
   $paramMapping = @{
       "--name"                     = "Name"
       "--displayName"              = "DisplayName"
       "--path"                     = "Path"
       "--description"              = "Description"
       "--startupDir"               = "StartupDir"
-      "--params"                   = "Params"
       "--startupType"              = "StartupType"
       "--priority"                 = "Priority"
       "--stdout"                   = "Stdout"
@@ -1182,28 +1220,21 @@ function Install-ServyService {
       "--maxRestartAttempts"       = "MaxRestartAttempts"
       "--failureProgramPath"       = "FailureProgramPath"
       "--failureProgramStartupDir" = "FailureProgramStartupDir"
-      "--failureProgramParams"     = "FailureProgramParams"
-      "--envVars"                  = "EnvVars"
       "--deps"                     = "Deps"
       "--user"                     = "User"
       "--preLaunchPath"            = "PreLaunchPath"
       "--preLaunchStartupDir"      = "PreLaunchStartupDir"
-      "--preLaunchParams"          = "PreLaunchParams"
-      "--preLaunchEnv"             = "PreLaunchEnv"
       "--preLaunchStdout"          = "PreLaunchStdout"
       "--preLaunchStderr"          = "PreLaunchStderr"
       "--preLaunchTimeout"         = "PreLaunchTimeout"
       "--preLaunchRetryAttempts"   = "PreLaunchRetryAttempts"
       "--postLaunchPath"           = "PostLaunchPath"
       "--postLaunchStartupDir"     = "PostLaunchStartupDir"
-      "--postLaunchParams"         = "PostLaunchParams"
       "--preStopPath"              = "PreStopPath"
       "--preStopStartupDir"        = "PreStopStartupDir"
-      "--preStopParams"            = "PreStopParams"
       "--preStopTimeout"           = "PreStopTimeout"
       "--postStopPath"             = "PostStopPath"
       "--postStopStartupDir"       = "PostStopStartupDir"
-      "--postStopParams"           = "PostStopParams"
   }
 
   # 2. Iterate through mapping to build arguments
@@ -1231,11 +1262,25 @@ function Install-ServyService {
   if ($EnableDebugLogs)                        { $argsList = Add-Arg $argsList "--debug" -Flag }
   if ($PreStopLogAsError)                      { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }
 
-  # 4. Secure Password Marshaling (Memory Safety)
-  $plainPassword = $null
+  # 4. Secure Parameter Marshaling (Memory Safety & Env Var Injection)
   $secureEnv = @{}
-  
-  if ($null -ne $Password) {
+
+  # Safely inject the plain text string sensitive parameters into the environment array using the shared helper.
+  # This guarantees that explicit parameters are used if provided, but if omitted, pre-existing environment 
+  # variables are not ignored.
+  Resolve-SecureParameter -TargetEnv $secureEnv -ParamName 'Params' -EnvVarName $script:ServyProcessParametersEnvVar -BoundParams $PSBoundParameters
+  Resolve-SecureParameter -TargetEnv $secureEnv -ParamName 'EnvVars' -EnvVarName $script:ServyEnvironmentVariablesEnvVar -BoundParams $PSBoundParameters
+  Resolve-SecureParameter -TargetEnv $secureEnv -ParamName 'FailureProgramParams' -EnvVarName $script:ServyFailureProgramParametersEnvVar -BoundParams $PSBoundParameters
+  Resolve-SecureParameter -TargetEnv $secureEnv -ParamName 'PreLaunchParams' -EnvVarName $script:ServyPreLaunchParametersEnvVar -BoundParams $PSBoundParameters
+  Resolve-SecureParameter -TargetEnv $secureEnv -ParamName 'PreLaunchEnv' -EnvVarName $script:ServyPreLaunchEnvironmentVariablesEnvVar -BoundParams $PSBoundParameters
+  Resolve-SecureParameter -TargetEnv $secureEnv -ParamName 'PostLaunchParams' -EnvVarName $script:ServyPostLaunchParametersEnvVar -BoundParams $PSBoundParameters
+  Resolve-SecureParameter -TargetEnv $secureEnv -ParamName 'PreStopParams' -EnvVarName $script:ServyPreStopParametersEnvVar -BoundParams $PSBoundParameters
+  Resolve-SecureParameter -TargetEnv $secureEnv -ParamName 'PostStopParams' -EnvVarName $script:ServyPostStopParametersEnvVar -BoundParams $PSBoundParameters
+
+  # Passwords require specific unmanaged memory extraction directly from the SecureString struct.
+  # If a CLI parameter wasn't provided, it cleanly falls back to extracting the active environment variable.
+  $plainPassword = $null
+  if ($PSBoundParameters.ContainsKey('Password') -and $null -ne $Password) {
       # SecureString -> Unmanaged BSTR
       $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
       try {
@@ -1251,9 +1296,8 @@ function Install-ServyService {
           [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
       }
   }
-  # Fallback: If no parameter was provided, manually grab the session's env var 
-  # to ensure it is passed into the CLI's process block.
   else {
+      # Fallback: manually grab the session's env var 
       $envValue = [System.Environment]::GetEnvironmentVariable($script:ServyPasswordEnvVar, 'Process')
       if (-not [string]::IsNullOrEmpty($envValue)) {
           $secureEnv[$script:ServyPasswordEnvVar] = $envValue
@@ -1267,8 +1311,22 @@ function Install-ServyService {
   finally {
       # Explicitly clear managed references to prevent sensitive data lingering in the heap
       $plainPassword = $null
-      if ($secureEnv.ContainsKey($script:ServyPasswordEnvVar)) {
-          $secureEnv[$script:ServyPasswordEnvVar] = $null
+      
+      # Clear sensitive environment variables from the hashtable structure
+      foreach ($key in @(
+        $script:ServyPasswordEnvVar, 
+        $script:ServyProcessParametersEnvVar, 
+        $script:ServyEnvironmentVariablesEnvVar, 
+        $script:ServyFailureProgramParametersEnvVar, 
+        $script:ServyPreLaunchParametersEnvVar, 
+        $script:ServyPreLaunchEnvironmentVariablesEnvVar, 
+        $script:ServyPostLaunchParametersEnvVar, 
+        $script:ServyPreStopParametersEnvVar, 
+        $script:ServyPostStopParametersEnvVar
+      )) {
+          if ($secureEnv.ContainsKey($key)) {
+              $secureEnv[$key] = $null
+          }
       }
       
       # Help GC by clearing the ArrayList

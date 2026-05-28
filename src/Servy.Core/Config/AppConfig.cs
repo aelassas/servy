@@ -1303,6 +1303,88 @@ namespace Servy.Core.Config
         public const string PasswordEnvVarName = "SERVY_PASSWORD";
 
         /// <summary>
+        /// Specifies the name of the environment variable used to securely pass process parameters from the CLI.
+        /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyProcessParametersEnvVar)
+        /// </summary>
+        /// <remarks>
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// within command-line history, logs, or system process lists.
+        /// </remarks>
+        public const string ProcessParametersEnvVarName = "SERVY_PROCESS_PARAMETERS";
+
+        /// <summary>
+        /// Specifies the name of the environment variable used to securely pass environment variables from the CLI.
+        /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyEnvironmentVariablesEnvVar)
+        /// </summary>
+        /// <remarks>
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// within command-line history, logs, or system process lists.
+        /// </remarks>
+        public const string EnvironmentVariablesEnvVarName = "SERVY_ENVIRONMENT_VARIABLES";
+
+        /// <summary>
+        /// Specifies the name of the environment variable used to securely pass failure program parameters from the CLI.
+        /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyFailureProgramParametersEnvVar)
+        /// </summary>
+        /// <remarks>
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// within command-line history, logs, or system process lists.
+        /// </remarks>
+        public const string FailureProgramParametersEnvVarName = "SERVY_FAILURE_PROGRAM_PARAMETERS";
+
+        /// <summary>
+        /// Specifies the name of the environment variable used to securely pass pre-launch parameters from the CLI.
+        /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyPreLaunchParametersEnvVar)
+        /// </summary>
+        /// <remarks>
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// within command-line history, logs, or system process lists.
+        /// </remarks>
+        public const string PreLaunchParametersEnvVarName = "SERVY_PRE_LAUNCH_PARAMETERS";
+
+        /// <summary>
+        /// Specifies the name of the environment variable used to securely pass pre-launch environment variables from the CLI.
+        /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyPreLaunchEnvironmentVariablesEnvVar)
+        /// </summary>
+        /// <remarks>
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// within command-line history, logs, or system process lists.
+        /// </remarks>
+        public const string PreLaunchEnvironmentVariablesEnvVarName = "SERVY_PRE_LAUNCH_ENVIRONMENT_VARIABLES";
+
+        /// <summary>
+        /// Specifies the name of the environment variable used to securely pass post-launch parameters from the CLI.
+        /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyPostLaunchParametersEnvVar)
+        /// </summary>
+        /// <remarks>
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// within command-line history, logs, or system process lists.
+        /// </remarks>
+        public const string PostLaunchParametersEnvVarName = "SERVY_POST_LAUNCH_PARAMETERS";
+
+        /// <summary>
+        /// Specifies the name of the environment variable used to securely pass pre-stop parameters from the CLI.
+        /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyPreStopParametersEnvVar)
+        /// </summary>
+        /// <remarks>
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// within command-line history, logs, or system process lists.
+        /// </remarks>
+        public const string PreStopParametersEnvVarName = "SERVY_PRE_STOP_PARAMETERS";
+
+        /// <summary>
+        /// Specifies the name of the environment variable used to securely pass post-stop parameters from the CLI.
+        /// SYNC WITH: src/Servy.CLI/Servy.psm1 ($script:ServyPostStopParametersEnvVar)
+        /// </summary>
+        /// <remarks>
+        /// Using an environment variable prevents sensitive credentials from being exposed in plain text 
+        /// within command-line history, logs, or system process lists.
+        /// </remarks>
+        public const string PostStopParametersEnvVarName = "SERVY_POST_STOP_PARAMETERS";
+
+
+
+        /// <summary>
         /// Controls whether the system will process legacy v1 (unauthenticated) ciphertexts.
         /// </summary>
         /// <remarks>
