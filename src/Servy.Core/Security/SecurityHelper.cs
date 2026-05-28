@@ -26,7 +26,7 @@ namespace Servy.Core.Security
         /// <see cref="ApplySecurityRules"/>.
         /// </para>
         /// <para>
-        /// By default, it breaks inheritance to ensure that broad permissions from parent folders (like <c>C:\ProgramData</c>) 
+        /// By default, it breaks inheritance to ensure that broad permissions from parent folders (like <c>%ProgramData%</c>) 
         /// do not compromise the Servy data store.
         /// </para>
         /// </remarks>
@@ -122,7 +122,7 @@ namespace Servy.Core.Security
             // 1. Manage Inheritance Boundaries
             if (breakInheritance)
             {
-                // Root Vault: Block permissions from flowing down from C:\ProgramData
+                // Root Vault: Block permissions from flowing down from %ProgramData%
                 security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
             }
             else
@@ -137,10 +137,21 @@ namespace Servy.Core.Security
             var authenticatedUsersSid = new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null); // Authenticated Users
             var everyoneSid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);                       // Everyone
 
-            // 3. PURGE: Remove explicit/manual grants for dangerous groups
-            security.PurgeAccessRules(builtinUsersSid);
-            security.PurgeAccessRules(authenticatedUsersSid);
-            security.PurgeAccessRules(everyoneSid);
+            // 3. PURGE: Remove explicit/manual GRANTS for dangerous groups while preserving explicit DENY rules
+            // Extract only explicit, non-inherited access rules to audit the DACL modifications safely
+            var explicitRules = security.GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier));
+
+            foreach (FileSystemAccessRule rule in explicitRules)
+            {
+                if (rule.AccessControlType == AccessControlType.Allow &&
+                    (rule.IdentityReference.Equals(builtinUsersSid) ||
+                     rule.IdentityReference.Equals(authenticatedUsersSid) ||
+                     rule.IdentityReference.Equals(everyoneSid)))
+                {
+                    // Safely remove the explicit Allow rule without disturbing explicit Deny entries
+                    security.RemoveAccessRule(rule);
+                }
+            }
 
             var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
             var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
