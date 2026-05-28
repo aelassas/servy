@@ -340,7 +340,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             _mockProcessHelper
                 .Setup(p => p.Start(It.Is<ProcessStartInfo>(psi =>
-                    psi.FileName == "shutdown" &&
+                    psi.FileName.Contains("shutdown.exe") &&
                     psi.Arguments == "/r /t 0 /f" &&
                     psi.CreateNoWindow == true &&
                     psi.UseShellExecute == false)))
