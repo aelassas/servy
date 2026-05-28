@@ -65,11 +65,31 @@ namespace Servy.Service.Helpers
 
             // --- Runtime Injection & Hijack Vectors ---
             
-            // .NET Injection (Legacy & Modern CoreCLR)
+            // .NET & CLR Runtime Injection / Diagnostics (Legacy & Modern CoreCLR)
             "COR_ENABLE_PROFILING", "COR_PROFILER", "COR_PROFILER_PATH",
             "CORECLR_ENABLE_PROFILING", "CORECLR_PROFILER", "CORECLR_PROFILER_PATH",
             "DOTNET_STARTUP_HOOKS", "DOTNET_ROOT", "DOTNET_ROOT(x86)", "DOTNET_HOST_PATH",
             "DOTNET_BUNDLE_EXTRACT_BASE_DIR", "DOTNET_ADDITIONAL_DEPS", "DOTNET_SHARED_STORE",
+            
+            // Modern Diagnostic Attach Surfaces
+            "DOTNET_DiagnosticPorts",          "COMPlus_DiagnosticPorts",
+            "DOTNET_EnableDiagnostics",        "COMPlus_EnableDiagnostics",
+            "DOTNET_EnableDiagnostics_IPC",    "COMPlus_EnableDiagnostics_IPC",
+            "DOTNET_EnableDiagnostics_Profiler","COMPlus_EnableDiagnostics_Profiler",
+            "DOTNET_EnableEventPipe",          "COMPlus_EnableEventPipe",
+            
+            // Runtime Custom Component Loading & Assembly Layout Adjustments
+            "DOTNET_GCName",                   "COMPlus_GCName",
+            "DOTNET_GCPath",                   "COMPlus_GCPath",
+            "DOTNET_LegacyHostPolicy",         "COMPlus_LegacyHostPolicy",
+            "DOTNET_LegacyTransform",          "COMPlus_LegacyTransform",
+            "DOTNET_PerfMapEnabled",           "COMPlus_PerfMapEnabled",
+            "DOTNET_ZapDisable",               "COMPlus_ZapDisable",
+            
+            // MiniDump Storage Layout Targets (Prevents sensitive memory leakage redirection)
+            "DOTNET_DbgEnableMiniDump",        "COMPlus_DbgEnableMiniDump",
+            "DOTNET_DbgMiniDumpName",          "COMPlus_DbgMiniDumpName",
+            "DOTNET_DbgMiniDumpType",          "COMPlus_DbgMiniDumpType",
   
             // Java Injection - Covers direct java.exe (TOOL_OPTIONS) and common shell-wrapper launchers (OPTS)
             "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "JAVA_OPTS", "JAVA_OPTIONS",
