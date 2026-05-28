@@ -57,13 +57,18 @@ namespace Servy.Core.Security
             try
             {
                 masterKey = protectedKeyProvider.GetKey();
-                v1StaticIv = protectedKeyProvider.GetIV();
 
                 _v2EncryptionKey = DeriveHkdf(masterKey, HkdfSalt, "V2_AES_ENCRYPTION");
                 _v2HmacKey = DeriveHkdf(masterKey, HkdfSalt, "V2_HMAC_AUTHENTICATION");
 
-                _v1MasterKey = (byte[])masterKey.Clone();
-                _v1StaticIv = (byte[])v1StaticIv.Clone();
+                // Const-gated branch allows compiler to strip key cloning 
+                // and eliminate unneeded DPAPI I/O when AllowLegacyV1Decryption is false.
+                if (AppConfig.AllowLegacyV1Decryption)
+                {
+                    v1StaticIv = protectedKeyProvider.GetIV();
+                    _v1MasterKey = (byte[])masterKey.Clone();
+                    _v1StaticIv = (byte[])v1StaticIv.Clone();
+                }
             }
             catch
             {
