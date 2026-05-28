@@ -765,8 +765,8 @@ namespace Servy.Manager.Services
             try
             {
                 // 1. Defense-in-depth: Run the security guards FIRST before touching the disk via size validation
-                var guardResult = ImportGuard.ValidatePathSecurity(path);
-                if (!guardResult.IsValid || guardResult.ValidPath == null)
+                var guardResult = ImportGuard.ValidatePathSecurity(path, out string content);
+                if (!guardResult.IsValid || guardResult.ValidPath == null || content == null)
                 {
                     await _messageBoxService.ShowErrorAsync(guardResult.ErrorMessage, AppConfig.Caption);
                     return;
@@ -783,7 +783,6 @@ namespace Servy.Manager.Services
                     return;
                 }
 
-                var content = File.ReadAllText(guardResult.ValidPath.ResolvedPath);
                 var validation = validateContent(content);
                 if (!validation.IsValid)
                 {

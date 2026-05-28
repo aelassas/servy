@@ -104,9 +104,11 @@ namespace Servy.Core.Validators
         /// Enforces defense-in-depth security guards against path traversal, UNC bypasses, and unauthorized system reads.
         /// </summary>
         /// <param name="path">The file path to validate.</param>
+        /// <param name="content">Outputs the validated full path if successful; otherwise, null.</param>
         /// <returns>A strongly-typed result containing the secure path token on success, or a rejection reason on failure.</returns>
-        public static PathSecurityResult ValidatePathSecurity(string path)
+        public static PathSecurityResult ValidatePathSecurity(string path, out string content)
         {
+            content = null;
             string fullPath;
             try
             {
@@ -271,6 +273,10 @@ namespace Servy.Core.Validators
                             }
                         }
                     }
+
+                    // Success: Set content output and return validated path token
+                    using (var sr = new StreamReader(fileStream)) content = sr.ReadToEnd();
+                    return PathSecurityResult.Success(fullPath);
                 }
             }
             catch (Exception ex)
@@ -279,9 +285,6 @@ namespace Servy.Core.Validators
                 Logger.Error(errorMsg);
                 return PathSecurityResult.Fail(errorMsg);
             }
-
-            // Success: Return the sealed token wrapping the evaluated path
-            return PathSecurityResult.Success(fullPath);
         }
     }
 }

@@ -470,7 +470,7 @@ namespace Servy.UnitTests.Services
 
             _xmlServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
 
-            var task = sut.ImportXmlConfig(CancellationToken.None);
+            var task = sut.ImportXmlConfig();
             if (task != null) await task;
 
             if (File.Exists(path)) File.Delete(path);
@@ -510,7 +510,7 @@ namespace Servy.UnitTests.Services
             _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
 
             // Act
-            var task = sut.ImportJsonConfig(CancellationToken.None);
+            var task = sut.ImportJsonConfig();
             if (task != null) await task;
 
             // Teardown
@@ -526,7 +526,7 @@ namespace Servy.UnitTests.Services
             var sut = CreateSut();
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(string.Empty);
 
-            sut.ImportXmlConfig(CancellationToken.None);
+            sut.ImportXmlConfig();
 
             _messageBoxService.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }

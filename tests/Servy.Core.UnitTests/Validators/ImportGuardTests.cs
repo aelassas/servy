@@ -1,9 +1,7 @@
-﻿using System;
+﻿using Servy.Core.Validators;
+using System;
 using System.IO;
 using Xunit;
-using Servy.Core.Validators;
-using Servy.Core.Config;
-using Servy.Core.Resources;
 
 namespace Servy.Core.UnitTests.Validators
 {
@@ -105,11 +103,12 @@ namespace Servy.Core.UnitTests.Validators
             string invalidPath = new string(Path.GetInvalidPathChars());
 
             // Act
-            var result = ImportGuard.ValidatePathSecurity(invalidPath);
+            var result = ImportGuard.ValidatePathSecurity(invalidPath, out string content);
 
             // Assert
             Assert.False(result.IsValid);
             Assert.NotNull(result.ErrorMessage);
+            Assert.Null(content);
         }
 
         [Theory]
@@ -118,11 +117,12 @@ namespace Servy.Core.UnitTests.Validators
         public void ValidatePathSecurity_UncPath_ReturnsFail(string uncPath)
         {
             // Act
-            var result = ImportGuard.ValidatePathSecurity(uncPath);
+            var result = ImportGuard.ValidatePathSecurity(uncPath, out string content);
 
             // Assert
             Assert.False(result.IsValid);
             Assert.NotNull(result.ErrorMessage);
+            Assert.Null(content);
             // Verifies the Infiltration Guard (UNC Path Block) triggers
         }
 
@@ -136,11 +136,12 @@ namespace Servy.Core.UnitTests.Validators
             string filePath = fileName;
 
             // Act
-            var result = ImportGuard.ValidatePathSecurity(filePath);
+            var result = ImportGuard.ValidatePathSecurity(filePath, out string content);
 
             // Assert
             Assert.False(result.IsValid);
             Assert.NotNull(result.ErrorMessage);
+            Assert.Null(content);
 
             // ROBUSTNESS: .NET Framework 4.8 and .NET 10.0 canonicalize DOS device names differently.
             // - .NET 10.0: Path.GetFullPath("COM1.json") -> "D:\a\...\COM1.json". Hits the DOS Guard.
@@ -162,12 +163,13 @@ namespace Servy.Core.UnitTests.Validators
             string filePath = Path.Combine(protectedDir, "win_config.json");
 
             // Act
-            var result = ImportGuard.ValidatePathSecurity(filePath);
+            var result = ImportGuard.ValidatePathSecurity(filePath, out string content);
 
             // Assert
             Assert.False(result.IsValid);
             Assert.NotNull(result.ErrorMessage);
             Assert.Contains(protectedDir, result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+            Assert.Null(content);
         }
 
         [Theory]
@@ -180,12 +182,13 @@ namespace Servy.Core.UnitTests.Validators
             string filePath = Path.Combine(_tempDirectory, fileName);
 
             // Act
-            var result = ImportGuard.ValidatePathSecurity(filePath);
+            var result = ImportGuard.ValidatePathSecurity(filePath, out string content);
 
             // Assert
             Assert.False(result.IsValid);
             Assert.NotNull(result.ErrorMessage);
             Assert.Contains(Path.GetExtension(fileName).ToLowerInvariant(), result.ErrorMessage);
+            Assert.Null(content);
         }
 
         [Fact]
@@ -196,13 +199,15 @@ namespace Servy.Core.UnitTests.Validators
             File.WriteAllText(filePath, "{ \"setting\": 1 }");
 
             // Act
-            var result = ImportGuard.ValidatePathSecurity(filePath);
+            var result = ImportGuard.ValidatePathSecurity(filePath, out string content);
 
             // Assert
             Assert.True(result.IsValid);
             Assert.NotNull(result.ValidPath);
             Assert.Equal(filePath, result.ValidPath.ResolvedPath);
             Assert.Null(result.ErrorMessage);
+            Assert.NotNull(content);
+            Assert.NotEmpty(content);
         }
 
         [Fact]
@@ -214,11 +219,12 @@ namespace Servy.Core.UnitTests.Validators
             string filePath = Path.Combine(_tempDirectory, "phantom_config.xml");
 
             // Act
-            var result = ImportGuard.ValidatePathSecurity(filePath);
+            var result = ImportGuard.ValidatePathSecurity(filePath, out string content);
 
             // Assert
             Assert.False(result.IsValid);
             Assert.NotNull(result.ErrorMessage);
+            Assert.Null(content);
             // Expecting the FileNotFoundException caught by the broad try/catch around the Handle Resolution
         }
 
@@ -249,11 +255,13 @@ namespace Servy.Core.UnitTests.Validators
             }
 
             // Act
-            var result = ImportGuard.ValidatePathSecurity(symlinkPath);
+            var result = ImportGuard.ValidatePathSecurity(symlinkPath, out string content);
 
             // Assert
             Assert.False(result.IsValid);
             Assert.NotNull(result.ErrorMessage);
+            Assert.Null(content);
+            // Validates that the Reparse Point Guard catches file-level symbolic links
         }
 
         // Native helper method for .NET 4.8 compatibility
