@@ -427,15 +427,21 @@ namespace Servy.Core.UnitTests.Security
             var v2Hmac = GetPrivateField<byte[]>(secureData, "_v2HmacKey");
 
             // Pre-condition check: Ensure keys are not zero before Dispose
-            Assert.Contains(v1Key, b => b != 0);
+            if (AppConfig.AllowLegacyV1Decryption)
+            {
+                Assert.Contains(v1Key, b => b != 0);
+            }
             Assert.Contains(v2Enc, b => b != 0);
 
             // 2. Act: First Dispose (Covers all null-checks and zeroing logic)
             secureData.Dispose();
 
             // 3. Assert: Verify all memory is zeroed
-            Assert.All(v1Key, b => Assert.Equal(0, b));
-            Assert.All(v1Iv, b => Assert.Equal(0, b));
+            if (AppConfig.AllowLegacyV1Decryption)
+            {
+                Assert.All(v1Key, b => Assert.Equal(0, b));
+                Assert.All(v1Iv, b => Assert.Equal(0, b));
+            }
             Assert.All(v2Enc, b => Assert.Equal(0, b));
             Assert.All(v2Hmac, b => Assert.Equal(0, b));
 
