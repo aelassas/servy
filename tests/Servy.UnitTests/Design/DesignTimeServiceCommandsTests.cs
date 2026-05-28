@@ -24,8 +24,8 @@ namespace Servy.UnitTests.Design
             {
                 await commands.ExportXmlConfig("password");
                 await commands.ExportJsonConfig("password");
-                await commands.ImportXmlConfig(TestContext.Current.CancellationToken);
-                await commands.ImportJsonConfig(TestContext.Current.CancellationToken);
+                await commands.ImportXmlConfig();
+                await commands.ImportJsonConfig();
                 await commands.OpenManager();
             });
 

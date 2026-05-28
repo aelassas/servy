@@ -346,24 +346,22 @@ namespace Servy.Services
                 Strings.ExportJson_Success);
 
         ///<inheritdoc/>
-        public Task ImportXmlConfig(CancellationToken cancellationToken = default) =>
+        public Task ImportXmlConfig() =>
             ImportConfigAsync(
                 _dialogService.OpenXml,
                 (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
                 (content) => _xmlServiceSerializer.Deserialize(content),
                 "XML",
-                Strings.Msg_FailedToLoadXml,
-                cancellationToken);
+                Strings.Msg_FailedToLoadXml);
 
         ///<inheritdoc/>
-        public Task ImportJsonConfig(CancellationToken cancellationToken = default) =>
+        public Task ImportJsonConfig() =>
             ImportConfigAsync(
                 _dialogService.OpenJson,
                 (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
                 (content) => _jsonServiceSerializer.Deserialize(content),
                 "JSON",
-                Strings.Msg_FailedToLoadJson,
-                cancellationToken);
+                Strings.Msg_FailedToLoadJson);
 
         ///<inheritdoc/>
         public async Task OpenManager()
@@ -544,7 +542,6 @@ namespace Servy.Services
         /// <param name="deserialize">A delegate that converts the raw file content into a <see cref="ServiceDto"/>.</param>
         /// <param name="formatName">A display-friendly name of the format (e.g., "XML", "JSON") used for logging.</param>
         /// <param name="loadErrorMessage">The localized message to display if the file content cannot be mapped to the DTO.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task representing the asynchronous import operation.</returns>
         /// <remarks>
         /// The import process follows a multi-stage security gate:
@@ -558,8 +555,7 @@ namespace Servy.Services
             Func<string, (bool IsValid, string? ErrorMsg)> validateContent,
             Func<string, ServiceDto?> deserialize,
             string formatName,
-            string loadErrorMessage,
-            CancellationToken cancellationToken)
+            string loadErrorMessage)
         {
             try
             {
@@ -567,8 +563,8 @@ namespace Servy.Services
                 if (string.IsNullOrEmpty(path)) return;
 
                 // 1. Defense-in-depth: Run the security guards FIRST before touching the disk via size validation
-                var guardResult = ImportGuard.ValidatePathSecurity(path);
-                if (!guardResult.IsValid || guardResult.ValidPath == null)
+                var guardResult = ImportGuard.ValidatePathSecurity(path, out string? content);
+                if (!guardResult.IsValid || guardResult.ValidPath == null || content == null)
                 {
                     await _messageBoxService.ShowErrorAsync(guardResult.ErrorMessage, Caption);
                     return;
@@ -585,7 +581,6 @@ namespace Servy.Services
                     return;
                 }
 
-                var content = await File.ReadAllTextAsync(guardResult.ValidPath.ResolvedPath, cancellationToken);
                 var validation = validateContent(content);
                 if (!validation.IsValid)
                 {

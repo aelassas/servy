@@ -341,13 +341,13 @@ namespace Servy.UnitTests.ViewModels
 
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(path);
 
-            _serviceCommandsMock.Setup(d => d.ImportXmlConfig(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _serviceCommandsMock.Setup(d => d.ImportXmlConfig()).Returns(Task.CompletedTask);
 
             // Act
             await _viewModel.ImportXmlCommand.ExecuteAsync(null);
 
             // Assert
-            _serviceCommandsMock.Verify(m => m.ImportXmlConfig(It.IsAny<CancellationToken>()), Times.Once);
+            _serviceCommandsMock.Verify(m => m.ImportXmlConfig(), Times.Once);
         }
     }
 }

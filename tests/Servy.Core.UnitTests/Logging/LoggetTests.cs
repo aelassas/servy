@@ -336,7 +336,7 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Contains("Z] [INFO]", lines[0]);
 
             // Validate the second log entry uses the local timezone offset (e.g., +02:00 or -05:00)
-            Assert.Matches(@"[+-]\d{2}:\d{2}\] \[INFO\]", lines[1]);
+            Assert.Matches(@"[+-]\d{2}:\d{2}\] \[INFO\] \|", lines[1]);
         }
 
         #endregion

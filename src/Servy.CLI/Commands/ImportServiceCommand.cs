@@ -87,8 +87,8 @@ namespace Servy.CLI.Commands
 
                 // ROBUSTNESS: Delegate the complex path canonicalization, UNC blocking, and 
                 // defense-in-depth symlink/junction guard checks to the centralized ImportGuard.
-                var securityResult = ImportGuard.ValidatePathSecurity(opts.Path);
-                if (!securityResult.IsValid)
+                var securityResult = ImportGuard.ValidatePathSecurity(opts.Path, out string? content);
+                if (!securityResult.IsValid || content == null)
                 {
                     Logger.Error(securityResult.ErrorMessage!);
                     return CommandResult.Fail(securityResult.ErrorMessage!);
@@ -117,10 +117,10 @@ namespace Servy.CLI.Commands
                 switch (configFileType)
                 {
                     case ConfigFileType.Xml:
-                        result = await ProcessXmlAsync(opts, fullPath, cancellationToken: cancellationToken);
+                        result = await ProcessXmlAsync(opts, content, cancellationToken: cancellationToken);
                         break;
                     case ConfigFileType.Json:
-                        result = await ProcessJsonAsync(opts, fullPath, cancellationToken: cancellationToken);
+                        result = await ProcessJsonAsync(opts, content, cancellationToken: cancellationToken);
                         break;
                     default:
                         result = CommandResult.Fail(string.Format(Strings.Msg_UnsupportedFileType, configFileType));
@@ -145,15 +145,16 @@ namespace Servy.CLI.Commands
         /// Validates and imports an XML service configuration file.
         /// </summary>
         /// <param name="opts">Import service options.</param>
+        /// <param name="content">The content of the XML configuration file.</param>
         /// <param name="cancellationToken">Optional cancellation token</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        private Task<CommandResult> ProcessXmlAsync(ImportServiceOptions opts, string fullPath, CancellationToken cancellationToken = default)
+        private Task<CommandResult> ProcessXmlAsync(ImportServiceOptions opts, string content, CancellationToken cancellationToken = default)
         {
             return ProcessImportInternalAsync(
                 opts,
-                fullPath,
+                content,
                 "XML",
-                content => _xmlServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
+                xmlContent => _xmlServiceValidator.TryValidate(xmlContent, out var err) ? (true, null) : (false, err),
                 dto => _serviceRepository.UpsertAsync(
                         dto, 
                         preserveExistingRuntimeState: true, 
@@ -168,16 +169,17 @@ namespace Servy.CLI.Commands
         /// Validates and imports a JSON service configuration file.
         /// </summary>
         /// <param name="opts">Import service options.</param>
+        /// <param name="content">The content of the JSON configuration file.</param>
         /// <param name="cancellationToken">Optional cancellation token</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
         [SuppressMessage("Trimming", "IL2026", Justification = "Awaiting full trimming support")]
-        private Task<CommandResult> ProcessJsonAsync(ImportServiceOptions opts, string fullPath, CancellationToken cancellationToken = default)
+        private Task<CommandResult> ProcessJsonAsync(ImportServiceOptions opts, string content, CancellationToken cancellationToken = default)
         {
             return ProcessImportInternalAsync(
                 opts,
-                fullPath,
+                content,
                 "JSON",
-                content => _jsonServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
+                jsonContent => _jsonServiceValidator.TryValidate(jsonContent, out var err) ? (true, null) : (false, err),
                 dto => _serviceRepository.UpsertAsync(
                         dto,
                         preserveExistingRuntimeState: true,
@@ -193,15 +195,13 @@ namespace Servy.CLI.Commands
         /// </summary>
         private async Task<CommandResult> ProcessImportInternalAsync(
              ImportServiceOptions opts,
-             string fullPath,
+             string content,
              string formatName,
              Func<string, (bool Valid, string? Error)> validator,
              Func<ServiceDto, Task<int>> repoImporter,
              Func<string, ServiceDto?> deserializer,
              CancellationToken cancellationToken = default)
         {
-            var content = await File.ReadAllTextAsync(fullPath, cancellationToken);
-
             // 1. Format Validation
             var (isValid, error) = validator(content);
             if (!isValid)
