@@ -37,7 +37,7 @@ namespace Servy.Core.Security
         /// <list type="number">
         /// <item><description>Retrieves the raw master keying material from the <paramref name="protectedKeyProvider"/>.</description></item>
         /// <item><description>Uses HKDF (RFC 5869) to derive independent sub-keys for AES encryption and HMAC authentication.</description></item>
-        /// <item><description>Clones the master key for legacy v1 support.</description></item>
+        /// <item><description>Conditionally clones the master key for legacy v1 support if explicitly allowed by configuration.</description></item>
         /// <item><description>Security Critical: Immediately clears the temporary <c>masterKey</c> buffer using <see cref="CryptographicOperations.ZeroMemory(Array)"/> to ensure the raw secret does not linger in memory.</description></item>
         /// </list>
         /// </remarks>
@@ -53,17 +53,22 @@ namespace Servy.Core.Security
             try
             {
                 masterKey = protectedKeyProvider.GetKey();
-                v1StaticIv = protectedKeyProvider.GetIV();
 
                 _v2EncryptionKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, masterKey, 32, HkdfSalt, Encoding.UTF8.GetBytes("V2_AES_ENCRYPTION"));
                 _v2HmacKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, masterKey, 32, HkdfSalt, Encoding.UTF8.GetBytes("V2_HMAC_AUTHENTICATION"));
 
-                _v1MasterKey = (byte[])masterKey.Clone();
-                _v1StaticIv = (byte[])v1StaticIv.Clone();
+                // Const-gated branch allows compiler to strip key cloning 
+                // and eliminate unneeded DPAPI I/O when AllowLegacyV1Decryption is false.
+                if (AppConfig.AllowLegacyV1Decryption)
+                {
+                    v1StaticIv = protectedKeyProvider.GetIV();
+                    _v1MasterKey = (byte[])masterKey.Clone();
+                    _v1StaticIv = (byte[])v1StaticIv.Clone();
+                }
             }
             catch
             {
-                // FIX: Symmetrical fallback cleaning for half-constructed instance field allocations
+                // Symmetrical fallback cleaning for half-constructed instance field allocations
                 if (_v2EncryptionKey != null) CryptographicOperations.ZeroMemory(_v2EncryptionKey);
                 if (_v2HmacKey != null) CryptographicOperations.ZeroMemory(_v2HmacKey);
                 if (_v1MasterKey != null) CryptographicOperations.ZeroMemory(_v1MasterKey);
