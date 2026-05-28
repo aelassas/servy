@@ -3,6 +3,7 @@ using Servy.CLI.Models;
 using Servy.CLI.Resources;
 using Servy.CLI.Validators;
 using Servy.Core.Config;
+using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
@@ -52,11 +53,17 @@ namespace Servy.CLI.Commands
                 // Pre-flight elevation check
                 SecurityHelper.EnsureAdministrator();
 
-                // SECURITY FIX: Prioritize command line option (for backward compatibility/testing), 
-                // but fall back to the secure environment variable.
-                opts.Password = !string.IsNullOrEmpty(opts.Password)
-                                ? opts.Password
-                                : Environment.GetEnvironmentVariable(AppConfig.PasswordEnvVarName);
+                // SECURITY: Read sensitive values from environment variables first, 
+                // falling back to command line options to prevent credential leakage.
+                opts.Password = GetSecureValue(opts.Password, AppConfig.PasswordEnvVarName);
+                opts.ProcessParameters = GetSecureValue(opts.ProcessParameters, AppConfig.ProcessParametersEnvVarName);
+                opts.EnvironmentVariables = GetSecureValue(opts.EnvironmentVariables, AppConfig.EnvironmentVariablesEnvVarName);
+                opts.FailureProgramParameters = GetSecureValue(opts.FailureProgramParameters, AppConfig.FailureProgramParametersEnvVarName);
+                opts.PreLaunchParameters = GetSecureValue(opts.PreLaunchParameters, AppConfig.PreLaunchParametersEnvVarName);
+                opts.PreLaunchEnvironmentVariables = GetSecureValue(opts.PreLaunchEnvironmentVariables, AppConfig.PreLaunchEnvironmentVariablesEnvVarName);
+                opts.PostLaunchParameters = GetSecureValue(opts.PostLaunchParameters, AppConfig.PostLaunchParametersEnvVarName);
+                opts.PreStopParameters = GetSecureValue(opts.PreStopParameters, AppConfig.PreStopParametersEnvVarName);
+                opts.PostStopParameters = GetSecureValue(opts.PostStopParameters, AppConfig.PostStopParametersEnvVarName);
 
                 // Validate options
                 var validation = _validator.Validate(opts);
@@ -183,6 +190,15 @@ namespace Servy.CLI.Commands
                     return res.ToFailure();
                 }
             });
+        }
+
+        /// <summary>
+        /// Helper method to securely resolve sensitive fields by prioritizing environment variables over CLI options.
+        /// </summary>
+        private static string GetSecureValue(string optionValue, string envVarName)
+        {
+            var envValue = Environment.GetEnvironmentVariable(envVarName);
+            return !string.IsNullOrEmpty(envValue) ? envValue : optionValue;
         }
     }
 }

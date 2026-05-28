@@ -48,8 +48,13 @@ namespace Servy.CLI.Options
         /// Gets or sets additional command-line parameters for the process.
         /// Optional.
         /// </summary>
+        /// <remarks>
+        /// Passing parameters via CLI flags is insecure as they are visible 
+        /// in process listings and shell history. Use the <see cref="AppConfig.ProcessParametersEnvVarName"/> environment 
+        /// variable instead.
+        /// </remarks>
         [Sensitive]
-        [Option("params", HelpText = "Additional parameters for the process. Supports environment variable expansion, example: --params=\"%ProgramData%\\MyApp\" --params=\"%MY_VAR%\\bin\"")]
+        [Option("params", HelpText = "Additional parameters for the process. Supports environment variable expansion, example: --params=\"%ProgramData%\\MyApp\" --params=\"%MY_VAR%\\bin\". SECURITY WARNING: Use the " + AppConfig.ProcessParametersEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
         public string ProcessParameters { get; set; }
 
         /// <summary>
@@ -220,16 +225,26 @@ namespace Servy.CLI.Options
         /// Gets or sets additional command-line parameters for the failure program.
         /// Optional.
         /// </summary>
+        /// <remarks>
+        /// Passing parameters via CLI flags is insecure as they are visible 
+        /// in process listings and shell history. Use the <see cref="AppConfig.FailureProgramParametersEnvVarName"/> environment 
+        /// variable instead.
+        /// </remarks>
         [Sensitive]
-        [Option("failureProgramParams", HelpText = "Additional parameters for the failure program.")]
+        [Option("failureProgramParams", HelpText = "Additional parameters for the failure program. SECURITY WARNING: Use the " + AppConfig.FailureProgramParametersEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
         public string FailureProgramParameters { get; set; }
 
         /// <summary>
         /// Gets or sets environment variables for the process.
         /// Optional.
         /// </summary>
+        /// <remarks>
+        /// Passing environment variables via CLI flags is insecure as they are visible 
+        /// in process listings and shell history. Use the <see cref="AppConfig.EnvironmentVariablesEnvVarName"/> environment 
+        /// variable instead.
+        /// </remarks>
         [Sensitive]
-        [Option("envVars", HelpText = "Environment variables for the process. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';' and \\\\ to escape '\\'. Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin")]
+        [Option("envVars", HelpText = "Environment variables for the process. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';' and \\\\ to escape '\\'. Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin. SECURITY WARNING: Use the " + AppConfig.EnvironmentVariablesEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
         public string EnvironmentVariables { get; set; }
 
         /// <summary>
@@ -283,16 +298,26 @@ namespace Servy.CLI.Options
         /// Gets or sets additional parameters for the pre-launch executable.
         /// Optional.
         /// </summary>
+        /// <remarks>
+        /// Passing parameters via CLI flags is insecure as they are visible 
+        /// in process listings and shell history. Use the <see cref="AppConfig.PreLaunchParametersEnvVarName"/> environment 
+        /// variable instead.
+        /// </remarks>
         [Sensitive]
-        [Option("preLaunchParams", HelpText = "Additional parameters for the pre-launch executable.")]
+        [Option("preLaunchParams", HelpText = "Additional parameters for the pre-launch executable. SECURITY WARNING: Use the " + AppConfig.PreLaunchParametersEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
         public string PreLaunchParameters { get; set; }
 
         /// <summary>
         /// Gets or sets environment variables for the pre-launch executable.
         /// Optional.
         /// </summary>
+        /// <remarks>
+        /// Passing environment variables via CLI flags is insecure as they are visible 
+        /// in process listings and shell history. Use the <see cref="AppConfig.PreLaunchEnvironmentVariablesEnvVarName"/> environment 
+        /// variable instead.
+        /// </remarks>
         [Sensitive]
-        [Option("preLaunchEnv", HelpText = "Environment variables for the pre-launch executable. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';' and \\\\ to escape '\\'. Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin")]
+        [Option("preLaunchEnv", HelpText = "Environment variables for the pre-launch executable. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';' and \\\\ to escape '\\'. Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin. SECURITY WARNING: Use the " + AppConfig.PreLaunchEnvironmentVariablesEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
         public string PreLaunchEnvironmentVariables { get; set; }
 
         /// <summary>
@@ -349,8 +374,13 @@ namespace Servy.CLI.Options
         /// Gets or sets additional parameters for the post-launch executable.
         /// Optional.
         /// </summary>
+        /// <remarks>
+        /// Passing parameters via CLI flags is insecure as they are visible 
+        /// in process listings and shell history. Use the <see cref="AppConfig.PostLaunchParametersEnvVarName"/> environment 
+        /// variable instead.
+        /// </remarks>
         [Sensitive]
-        [Option("postLaunchParams", HelpText = "Additional parameters for the post-launch executable.")]
+        [Option("postLaunchParams", HelpText = "Additional parameters for the post-launch executable. SECURITY WARNING: Use the " + AppConfig.PostLaunchParametersEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
         public string PostLaunchParameters { get; set; }
 
         /// <summary>
@@ -395,8 +425,13 @@ namespace Servy.CLI.Options
         /// Gets or sets additional parameters for the pre-stop executable.
         /// Optional.
         /// </summary>
+        /// <remarks>
+        /// Passing parameters via CLI flags is insecure as they are visible 
+        /// in process listings and shell history. Use the <see cref="AppConfig.PreStopParametersEnvVarName"/> environment 
+        /// variable instead.
+        /// </remarks>
         [Sensitive]
-        [Option("preStopParams", HelpText = "Additional parameters for the pre-stop executable.")]
+        [Option("preStopParams", HelpText = "Additional parameters for the pre-stop executable. SECURITY WARNING: Use the " + AppConfig.PreStopParametersEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
         public string PreStopParameters { get; set; }
 
         /// <summary>
@@ -431,8 +466,13 @@ namespace Servy.CLI.Options
         /// Gets or sets additional parameters for the post-stop executable.
         /// Optional.
         /// </summary>
+        /// <remarks>
+        /// Passing parameters via CLI flags is insecure as they are visible 
+        /// in process listings and shell history. Use the <see cref="AppConfig.PostStopParametersEnvVarName"/> environment 
+        /// variable instead.
+        /// </remarks>
         [Sensitive]
-        [Option("postStopParams", HelpText = "Additional parameters for the post-stop executable.")]
+        [Option("postStopParams", HelpText = "Additional parameters for the post-stop executable. SECURITY WARNING: Use the " + AppConfig.PostStopParametersEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
         public string PostStopParameters { get; set; }
     }
 }
