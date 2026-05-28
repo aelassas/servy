@@ -37,7 +37,7 @@ namespace Servy.Manager.Services
         /// <summary>
         /// Per-service locking mechanism to prevent Head-of-Line blocking.
         /// </summary>
-        private readonly ConcurrentDictionary<string, SemaphoreSlim> _serviceLocks = new ConcurrentDictionary<string, SemaphoreSlim>(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, Lazy<SemaphoreSlim>> _serviceLocks = new ConcurrentDictionary<string, Lazy<SemaphoreSlim>>(StringComparer.OrdinalIgnoreCase);
 
         private bool _isDisposed;
 
@@ -131,7 +131,10 @@ namespace Servy.Manager.Services
             // Evicting a semaphore while other threads might be concurrently calling GetOrAdd 
             // introduces a race condition where multiple threads can acquire different 
             // semaphore instances for the same service key, violating mutual exclusion.
-            var sem = _serviceLocks.GetOrAdd(serviceName, _ => new SemaphoreSlim(1, 1));
+            var sem = _serviceLocks.GetOrAdd(
+                serviceName,
+                _ => new Lazy<SemaphoreSlim>(() => new SemaphoreSlim(1, 1), LazyThreadSafetyMode.ExecutionAndPublication)
+                ).Value;
 
             await sem.WaitAsync(cancellationToken);
             try
@@ -543,7 +546,7 @@ namespace Servy.Manager.Services
                 {
                     try
                     {
-                        sem.Dispose();
+                        sem.Value.Dispose();
                     }
                     catch (Exception ex)
                     {
