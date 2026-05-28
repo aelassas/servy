@@ -37,9 +37,12 @@ function Protect-SensitiveString {
 
     # A collection of keywords used to identify potentially sensitive information.
     #
-    # WARNING: keep in sync with:
-    #   src/Servy.Service/Helpers/ServiceHelper.cs (SensitiveKeyWords)
-    #   src/Servy.CLI/Servy.psm1 (Format-SecureLogMessage)
+    # WARNING: keep in sync with the parity twin in:
+    #   src/Servy.Service/Helpers/ServiceHelper.cs (SensitiveKeyWords) — same keyword-pattern masker.
+    #
+    # NOTE: src/Servy.CLI/Servy.psm1 (Format-SecureLogMessage) is a SEPARATE mechanism that
+    # masks CLI option values (--password=…) and is kept in sync with the [Sensitive]
+    # attribute on CLI option properties, not with this keyword list.
     $sensitiveKeys = @(
         # --- Core Credentials ---
         "PASSWORD", "PWD", "PASSPHRASE", "PIN", "USERPWD",
