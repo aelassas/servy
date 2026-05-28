@@ -611,7 +611,7 @@ namespace Servy.Service
             string baseSegment = leadingSegment.TrimStart('_');
 
             // Only escape if the underlying base keyword is an actual hardware reserved name
-            if (ReservedNames.ReservedDeviceNames.Contains(baseSegment, StringComparer.OrdinalIgnoreCase))
+            if (ReservedNames.ReservedDeviceNames.Contains(baseSegment))
             {
                 // Count how many leading underscores the user already had in their input segment
                 int existingUnderscores = leadingSegment.Length - baseSegment.Length;
