@@ -92,7 +92,7 @@ namespace Servy.CLI.Commands
 
                 // ROBUSTNESS: Delegate the complex path canonicalization, UNC blocking, and 
                 // defense-in-depth symlink/junction guard checks to the centralized ImportGuard.
-                var securityResult = ImportGuard.ValidatePathSecurity(opts.Path, out string content);
+                var securityResult = ImportGuard.ValidatePathSecurityAndSize(opts.Path, out string content);
                 if (!securityResult.IsValid || content == null)
                 {
                     Logger.Error(securityResult.ErrorMessage);
@@ -101,20 +101,6 @@ namespace Servy.CLI.Commands
 
                 // Extract the fully resolved, safe path token
                 string fullPath = securityResult.ValidPath.ResolvedPath;
-
-                // Validate existence and size limits against the hardened path
-                var fileInfo = new FileInfo(fullPath);
-                if (!fileInfo.Exists)
-                {
-                    return CommandResult.Fail($"[Import{configFileType}] File no longer present: {fullPath}");
-                }
-
-                if (fileInfo.Length > AppConfig.MaxConfigFileSizeBytes)
-                {
-                    var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, fullPath);
-                    Logger.Error(errorMsg);
-                    return CommandResult.Fail(errorMsg);
-                }
 
                 // Process file based on its type using the validated fullPath
                 CommandResult result;

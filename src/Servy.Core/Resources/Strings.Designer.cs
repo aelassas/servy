@@ -115,6 +115,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Configuration file &apos;{0}&apos; exceeds maximum size (10 MB)..
+        /// </summary>
+        public static string Msg_ConfigSizeLimitReached {
+            get {
+                return ResourceManager.GetString("Msg_ConfigSizeLimitReached", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Dependency &apos;{0}&apos; is not accessible (Access Denied)..
         /// </summary>
         public static string Msg_DependencyAccessDenied {
