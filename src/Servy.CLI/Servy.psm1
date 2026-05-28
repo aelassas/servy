@@ -179,7 +179,7 @@ function Format-SecureLogMessage {
 
   # Define all CLI parameters that may contain sensitive data or injected variables
   # WARNING: This list must be kept in sync with the CLI sensitive options.
-  # Any C# option property ending in *Params, *Env, *envVars or starting with password* 
+  # Any C# option property ending in *Params, *Env, *envVars or starting with password*
   # MUST be decorated with the [Sensitive] attribute and listed here. 
   # This is enforced by unit tests in Servy.CLI.UnitTests.
   $sensitiveFields = @(
@@ -213,7 +213,8 @@ function Format-SecureLogMessage {
   $Text = [regex]::Replace($Text, $patternSingle, '$1''***''')
 
   # 3. Unquoted positional values (using negative lookahead to prevent matching quote boundaries)
-  $patternUnquoted = '(?i)(--(?:' + $fieldsRegex + ')[=\s]+)(?![''"])\S+'
+  # FIX FOR #1992: Consume multi-word segments until the next '--' parameter switch block or EOL sequence.
+  $patternUnquoted = '(?i)(--(?:' + $fieldsRegex + ')[=\s]+)(?![''"])(?:(?!\s+--|$).)+'
   $Text = [regex]::Replace($Text, $patternUnquoted, '$1"***"')
 
   return $Text

@@ -68,6 +68,8 @@ function Protect-SensitiveString {
     $keyPattern = [string]::Join('|', ($sensitiveKeys | ForEach-Object { [regex]::Escape($_) }))
     
     # Constructed safely using concatenation to avoid multi-line string whitespace issues
+    # FIX FOR #2056: Updated Branch B unquoted-value lookahead group logic to properly consume 
+    # multi-word unquoted segments until a legitimate command flag delimiter boundary.
     $regexPattern = "(?i)(?<![a-zA-Z0-9])($keyPattern)(?![a-zA-Z0-9])" +
         "(?:" +
             # BRANCH A: Explicit Separators (:, =, /)
@@ -76,7 +78,7 @@ function Protect-SensitiveString {
             "|" +
             # BRANCH B: Space Separator
             "(\s+)(?![\-/]+[a-zA-Z])" +
-            "(?:`"[^`"]*`"|'[^']*'|[^\s`"']+)" +
+            "(?:`"[^`"]*`"|'[^']*'|(?:[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*))" +
         ")"
 
     $maskingRegex = New-Object System.Text.RegularExpressions.Regex (
