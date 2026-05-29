@@ -190,7 +190,10 @@ namespace Servy.Core.Security
 
             foreach (FileSystemAccessRule rule in explicitRules)
             {
-                // Purge Allow rules for broad, unprivileged groups
+                // Purge Allow rules for broad, unprivileged groups. 
+                // NOTE: We intentionally preserve explicit 'Allow' rules for other principals (e.g., custom service accounts),
+                // otherwise a user could never run a service under a custom account, as CreateSecureDirectory
+                // is invoked during service start, desktop app and manager startup, and CLI operations.
                 if (rule.AccessControlType == AccessControlType.Allow &&
                     (rule.IdentityReference.Equals(builtinUsersSid) ||
                      rule.IdentityReference.Equals(authenticatedUsersSid) ||
