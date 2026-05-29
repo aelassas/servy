@@ -3,6 +3,7 @@
   <assembly fullname="Servy.Core">
     <type fullname="Servy.Core.DTOs.*" preserve="all" />
   </assembly>
+  <assembly fullname="System.Collections.Immutable" preserve="all" />
   <assembly fullname="System.Security.Claims" preserve="all" />
   <assembly fullname="System.Security.Principal.Windows" preserve="all" />
   <assembly fullname="System.Security.AccessControl" preserve="all" />
