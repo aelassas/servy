@@ -62,7 +62,9 @@ namespace Servy.Core.IntegrationTests.Helpers
                 var assembly = Assembly.GetExecutingAssembly();
                 // Resource names usually follow: ProjectNamespace.Folder.FileName.Extension
                 // Update "Servy.Core.IntegrationTests" to match the actual test project namespace if different.
-                string resourceName = "Servy.Core.IntegrationTests.Resources.handle64.exe";
+                // Dynamically select the resource manifest lookup string matching the target platform asset
+                string targetFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "handle64a.exe" : "handle64.exe";
+                string resourceName = $"Servy.Core.IntegrationTests.Resources.{targetFileName}";
 
                 using (Stream? resourceStream = assembly.GetManifestResourceStream(resourceName))
                 {
