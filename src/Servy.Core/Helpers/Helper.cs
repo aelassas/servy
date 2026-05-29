@@ -350,8 +350,8 @@ namespace Servy.Core.Helpers
         /// <param name="writeContent">A delegate that receives a <see cref="Stream"/> to write the actual file content.</param>
         /// <param name="ct">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous write operation.</returns>
-        public static Task WriteFileAtomicAsync(string path, Func<Stream, Task> writeContent, CancellationToken ct = default)
-            => WriteFileAtomicCore(path, async fs => await writeContent(fs), ct).AsTask();
+        public static Task WriteFileAtomicAsync(string path, Func<Stream, CancellationToken, Task> writeContent, CancellationToken ct = default)
+            => WriteFileAtomicCore(path, async (fs, t) => await writeContent(fs, t).ConfigureAwait(false), ct).AsTask();
 
         /// <summary>
         /// Writes content to a file atomically by writing to a temporary file first and then performing an atomic move.
@@ -412,7 +412,10 @@ namespace Servy.Core.Helpers
                         retries--;
                         Logger.Debug($"WriteFileAtomic retrying after transient '{ex.GetType().Name}': {ex.Message} (retries left: {retries})");
                         // Synchronous pause to allow external locks to be released.
-                        Thread.Sleep(AppConfig.WriteFileAtomicRetryDelayMs);
+                        if (cancellationToken.WaitHandle.WaitOne(AppConfig.WriteFileAtomicRetryDelayMs))
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                        }
                     }
                 }
             }
@@ -431,7 +434,7 @@ namespace Servy.Core.Helpers
         /// <param name="writer">An asynchronous function that receives a <see cref="Stream"/> to write content.</param>
         /// <param name="cancellationToken">An optional cancellation token to abort the operation.</param>
         /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
-        private static async ValueTask WriteFileAtomicCore(string path, Func<Stream, ValueTask> writer, CancellationToken cancellationToken = default)
+        private static async ValueTask WriteFileAtomicCore(string path, Func<Stream, CancellationToken, ValueTask> writer, CancellationToken cancellationToken = default)
         {
             var dir = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(dir))
@@ -455,7 +458,7 @@ namespace Servy.Core.Helpers
                 using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     // ConfigureAwait(false) is used here as we do not require the captured synchronization context.
-                    await writer(fs).ConfigureAwait(false);
+                    await writer(fs, cancellationToken).ConfigureAwait(false);
                     await fs.FlushAsync(cancellationToken).ConfigureAwait(false);
                 }
 

@@ -282,7 +282,14 @@ namespace Servy.Infrastructure.Data
                 foreach (var dto in list)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    DecryptDto(dto);
+                    try
+                    {
+                        DecryptDto(dto);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        HandleCorruptServiceDecryption(dto, ex);
+                    }
                 }
             }
 
@@ -298,10 +305,10 @@ namespace Servy.Infrastructure.Data
             }
 
             var sql = @"
-                SELECT * FROM Services 
-                WHERE LOWER(Name)        LIKE LOWER(@Pattern) ESCAPE '\' 
-                   OR LOWER(Description) LIKE LOWER(@Pattern) ESCAPE '\' 
-                ORDER BY Name COLLATE NOCASE ASC;";
+        SELECT * FROM Services 
+        WHERE LOWER(Name)       LIKE LOWER(@Pattern) ESCAPE '\' 
+           OR LOWER(Description) LIKE LOWER(@Pattern) ESCAPE '\' 
+        ORDER BY Name COLLATE NOCASE ASC;";
 
             var escapedKeyword = keyword.Trim()
                 .Replace(@"\", @"\\")
@@ -318,7 +325,14 @@ namespace Servy.Infrastructure.Data
                 foreach (var dto in list)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    DecryptDto(dto);
+                    try
+                    {
+                        DecryptDto(dto);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        HandleCorruptServiceDecryption(dto, ex);
+                    }
                 }
             }
 
@@ -575,6 +589,33 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         private string? DecryptIfPresent(string? value)
             => string.IsNullOrWhiteSpace(value) ? value : _secureData.Decrypt(value);
+
+        /// <summary>
+        /// Gracefully handles individual record decryption failures to isolate data corruption.
+        /// This prevents a single invalid row from poisoning multi-record queries.
+        /// </summary>
+        private void HandleCorruptServiceDecryption(ServiceDto dto, InvalidOperationException ex)
+        {
+            // Capture the original root cause name if available for actionable diagnostic feedback
+            string rootCauseName = ex.InnerException?.GetType().Name ?? "CryptographicException";
+
+            // Explicitly update descriptions to flag the target record in the UI
+            dto.Description = $"[DECRYPTION FAILED: {rootCauseName}] The record's key or payload payload is corrupt. " +
+                              $"Original Description: {dto.Description}";
+
+            // Centralized scrub loop using the pre-existing reflection schema to safely strip poison data
+            foreach (var field in SensitiveFields)
+            {
+                try
+                {
+                    field.Set(dto, null);
+                }
+                catch (Exception internalEx)
+                {
+                    Logger.Warn($"Could not safely sanitize corrupted field '{field.Name}' for service '{dto.Name}': {internalEx.Message}");
+                }
+            }
+        }
 
         #endregion
     }

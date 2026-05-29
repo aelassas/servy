@@ -932,7 +932,10 @@ namespace Servy.Core.Services
                     {
                         // We do not wrap this body in a try/finally for service.Dispose() anymore,
                         // as it is handled by the outer block to prevent cancellation leaks.
-                        if (cancellationToken.IsCancellationRequested) return;
+
+                        // This lets Parallel.ForEach surface a single OperationCanceledException
+                        // to the caller and guarantees the caller never sees a partial-but-successful
+                        cancellationToken.ThrowIfCancellationRequested();
 
                         ServiceInfo info = new ServiceInfo
                         {

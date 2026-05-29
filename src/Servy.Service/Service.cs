@@ -463,6 +463,29 @@ namespace Servy.Service
                 // Set up service logging
                 HandleLogWriters(options);
 
+                // ROBUSTNESS: Instantiating the new CTS *before* updating the field ensures that
+                // concurrent background tasks checking the token never experience a temporary 'null' window.
+                // We create this early so that pre-launch processes can observe teardown requests.
+                var cts = new CancellationTokenSource();
+                var oldCts = Interlocked.Exchange(ref _cancellationSource, cts);
+
+                if (oldCts != null)
+                {
+                    try
+                    {
+                        oldCts.Cancel();
+                    }
+                    catch (ObjectDisposedException) { /* already disposed */ }
+                    catch (AggregateException ex)
+                    {
+                        _logger?.Warn($"Exception(s) raised during CTS cancellation: {ex.Message}");
+                    }
+                    finally
+                    {
+                        oldCts.Dispose();
+                    }
+                }
+
                 // Run pre-launch process if configured
                 if (!StartPreLaunchProcess(options))
                 {
@@ -673,13 +696,14 @@ namespace Servy.Service
         {
             await Helper.WriteFileAtomicAsync(
                 _restartAttemptsFile!,
-                async fs =>
+                async (fs, ct) =>
                 {
                     // Use BOM-less UTF8 and leaveOpen to allow the atomic helper 
                     // to manage the final FileStream lifecycle.
                     using (var sw = new StreamWriter(fs, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
                     {
-                        await sw.WriteAsync(attempts.ToString(CultureInfo.InvariantCulture));
+                        // Pass the 'ct' to the WriteAsync overload
+                        await sw.WriteAsync(attempts.ToString(CultureInfo.InvariantCulture).AsMemory(), ct);
                     }
                 },
                 ct);
@@ -820,7 +844,7 @@ namespace Servy.Service
                     _logger?.Warn(
                         $"Detection window ({detectionWindowSeconds}s) exceeds the reset cap ({cap}s); " +
                         $"the configured ConditionalResetMaxThresholdSeconds will be ignored for this service.");
-                
+
                     resetThresholdSeconds = detectionWindowSeconds;
                 }
                 else
@@ -1010,6 +1034,13 @@ namespace Servy.Service
 
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
+                // Short-circuit check before starting an attempt
+                if (_isTearingDown || (_cancellationSource?.IsCancellationRequested == true))
+                {
+                    LogIssue("Pre-launch process aborted due to service teardown.");
+                    return false;
+                }
+
                 _logger?.Info($"Starting pre-launch process (attempt {attempt}/{maxAttempts})...");
 
                 try
@@ -1042,8 +1073,28 @@ namespace Servy.Service
                     int elapsed = 0;
                     while (elapsed < delayMs)
                     {
+                        // Token/Teardown-aware short-circuit
+                        if (_isTearingDown || (_cancellationSource?.IsCancellationRequested == true))
+                        {
+                            LogIssue("Pre-launch process aborted during back-off wait due to service teardown.");
+                            return false;
+                        }
+
                         int slice = Math.Min(_waitChunkMs, delayMs - elapsed);
-                        Thread.Sleep(slice);
+
+                        if (_cancellationSource != null)
+                        {
+                            // If the wait handle is signaled, cancellation is requested
+                            if (_cancellationSource.Token.WaitHandle.WaitOne(slice))
+                            {
+                                LogIssue("Pre-launch process aborted during back-off wait due to service teardown.");
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            Thread.Sleep(slice);
+                        }
 
                         // Pulse the SCM during the wait so the service is not killed by timeout.
                         _serviceHelper.RequestAdditionalTime(this, _scmAdditionalTimeMs, _logger);
@@ -1251,35 +1302,14 @@ namespace Servy.Service
             }
 
             // Fire and forget the post-launch script when process confirmed running
-            // ROBUSTNESS: Instantiating the new CTS *before* updating the field ensures that
-            // concurrent background tasks checking the token never experience a temporary 'null' window.
-            var cts = new CancellationTokenSource();
-            var oldCts = Interlocked.Exchange(ref _cancellationSource, cts);
-
-            if (oldCts != null)
-            {
-                try
-                {
-                    oldCts.Cancel();
-                }
-                catch (ObjectDisposedException) { /* already disposed */ }
-                catch (AggregateException ex)
-                {
-                    _logger?.Warn($"Exception(s) raised during CTS cancellation: {ex.Message}");
-                }
-                finally
-                {
-                    oldCts.Dispose();
-                }
-            }
-
             var capturedProcess = _childProcess;
-            var capturedCts = cts;
+            var capturedToken = _cancellationSource?.Token ?? CancellationToken.None;
+
             Task.Run(async () =>
             {
                 try
                 {
-                    if (await capturedProcess.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(_options!.StartTimeoutInSeconds), capturedCts.Token))
+                    if (await capturedProcess.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(_options!.StartTimeoutInSeconds), capturedToken))
                     {
                         StartPostLaunchProcess();
                     }
@@ -1293,7 +1323,7 @@ namespace Servy.Service
                 {
                     _logger?.Error("Unexpected error in post-launch action.", ex);
                 }
-            }, cts.Token);
+            }, capturedToken);
         }
 
         /// <summary>
@@ -1617,7 +1647,7 @@ namespace Servy.Service
                 // Move the await INSIDE the boundary. 
                 // If teardown disposes the semaphore while we are suspended here, 
                 // the ObjectDisposedException will be caught by our handler.
-                await _healthCheckSemaphore.WaitAsync();
+                await _healthCheckSemaphore.WaitAsync(_cancellationSource?.Token ?? CancellationToken.None);
 
                 try
                 {
@@ -1684,6 +1714,10 @@ namespace Servy.Service
             catch (ObjectDisposedException)
             {
                 _logger?.Info("OnProcessExited: Semaphore disposed during wait. Teardown in progress.");
+            }
+            catch (OperationCanceledException)
+            {
+                _logger?.Info("OnProcessExited: Process exit cancelled. Teardown in progress.");
             }
             catch (Exception ex)
             {
@@ -1812,7 +1846,22 @@ namespace Servy.Service
                 bool shouldStop = false;
                 int currentAttempts = 0;
 
-                await _healthCheckSemaphore.WaitAsync();
+                try
+                {
+                    await _healthCheckSemaphore.WaitAsync(_cancellationSource?.Token ?? CancellationToken.None);
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Teardown in progress; abandon recovery quietly.
+                    _logger?.Info("InitiateRecoveryAsync: Semaphore disposed during wait. Teardown in progress.");
+                    return;
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger?.Info("InitiateRecoveryAsync: Wait cancelled. Teardown in progress.");
+                    return;
+                }
+
                 try
                 {
                     // Guard: prevent concurrent recovery attempts
@@ -1960,7 +2009,22 @@ namespace Servy.Service
                 bool performStabilityCheck = false;
 
                 // 1. FAST ASYNCHRONOUS LOCK: Only evaluate memory state
-                await _healthCheckSemaphore.WaitAsync();
+                try
+                {
+                    await _healthCheckSemaphore.WaitAsync(_cancellationSource?.Token ?? CancellationToken.None);
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Teardown in progress; abandon recovery quietly.
+                    _logger?.Info("CheckHealth: Semaphore disposed during wait. Teardown in progress.");
+                    return;
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger?.Info("CheckHealth: health check cancelled. Teardown in progress.");
+                    return;
+                }
+
                 try
                 {
                     // Double-check: If we are already recovering, exit immediately

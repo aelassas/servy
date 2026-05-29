@@ -245,8 +245,8 @@ namespace Servy.Core.Helpers
             // Determine the baseline: map to the configured value only if it exceeds our mandatory floor
             int baseline = configuredTimeout.HasValue && configuredTimeout.Value > floor ? configuredTimeout.Value : floor;
 
-            // Add the SCM communication safety buffer and any pre-launch execution time
-            int total = baseline + AppConfig.ScmTimeoutBufferSeconds + preLaunchTimeoutSeconds;
+            // Add the SCM communication safety buffer and any pre-launch execution time, but cap the total at the absolute maximum to prevent overflow and unreasonable waits.
+            int total = Math.Min(baseline + AppConfig.ScmTimeoutBufferSeconds + preLaunchTimeoutSeconds, AppConfig.MaxStartTimeout);
 
             return total;
         }
@@ -265,9 +265,13 @@ namespace Servy.Core.Helpers
             int floor = AppConfig.DefaultStopTimeout;
 
             // Determine the baseline: highest of configured or historical duration (respecting the floor)
+            int previousCapped = previousStopTimeout.HasValue
+                ? Math.Min(previousStopTimeout.Value, AppConfig.MaxStopTimeout)
+                : floor;
+
             int baseline = Math.Max(
                 configuredTimeout.HasValue && configuredTimeout.Value > floor ? configuredTimeout.Value : floor,
-                previousStopTimeout ?? floor);
+                previousCapped);
 
             // Add the configurable OS/SCM buffer and the pre-stop hook duration
             int total = baseline + AppConfig.ScmTimeoutBufferSeconds + preStopTimeout;

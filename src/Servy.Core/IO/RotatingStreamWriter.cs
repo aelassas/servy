@@ -465,6 +465,16 @@ namespace Servy.Core.IO
                 return;
             }
 
+            Func<string, DateTime> orderingClock;
+            if (_useLocalTimeForRotation)
+            {
+                orderingClock = File.GetLastWriteTime;
+            }
+            else
+            {
+                orderingClock = File.GetLastWriteTimeUtc;
+            }
+
             var rotatedFiles = allPotentialFiles
                 .Where(f =>
                 {
@@ -499,7 +509,7 @@ namespace Servy.Core.IO
                     // 4. Strictly validate the middle portion against the expected rotation format
                     return _rotatedTimestampRegex.IsMatch(middle);
                 })
-                .OrderByDescending(File.GetLastWriteTime)
+                .OrderByDescending(orderingClock)
                 .ToList();
 
             if (rotatedFiles.Count <= _maxRotations)

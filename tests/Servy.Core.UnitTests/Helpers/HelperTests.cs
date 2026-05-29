@@ -700,10 +700,10 @@ namespace Servy.Core.UnitTests.Helpers
             try
             {
                 // Act: Uses WriteFileAtomicCore internally
-                await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream) =>
+                await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
                 {
                     byte[] data = Encoding.UTF8.GetBytes("atomic-async-test-48");
-                    await stream.WriteAsync(data, 0, data.Length);
+                    await stream.WriteAsync(data, 0, data.Length, TestContext.Current.CancellationToken);
                 }, TestContext.Current.CancellationToken);
 
                 // Assert
@@ -733,10 +733,10 @@ namespace Servy.Core.UnitTests.Helpers
             try
             {
                 // Act: Core logic calls Directory.CreateDirectory
-                await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream) =>
+                await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
                 {
                     byte[] data = Encoding.UTF8.GetBytes("nesting-test");
-                    await stream.WriteAsync(data, 0, data.Length);
+                    await stream.WriteAsync(data, 0, data.Length, TestContext.Current.CancellationToken);
                 }, TestContext.Current.CancellationToken);
 
                 // Assert
