@@ -106,7 +106,7 @@ foreach ($project in $projects) {
     $publishScript = Join-Path $project "publish.ps1"
     
     if (Test-Path $publishScript) {
-        & $publishScript -BuildConfiguration $BuildConfiguration -Tfm $Tfm
+        & $publishScript -BuildConfiguration $BuildConfiguration -Tfm $Tfm -Runtime $Runtime
         Assert-LastExitCode "$publishScript failed"
     }
     else {

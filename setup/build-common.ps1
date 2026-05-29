@@ -77,7 +77,7 @@ function Invoke-StandardPublish {
     
     if (Test-Path $publishResScript) {
         Write-Host "=== Running publish-res-$resSuffix.ps1 ===" -ForegroundColor Cyan
-        & $publishResScript -Tfm $Tfm
+        & $publishResScript -Tfm $Tfm -Runtime $Runtime
         Assert-LastExitCode "publish-res-$resSuffix.ps1 failed"
         Write-Host "=== Completed publish-res-$resSuffix.ps1 ===`n"
     }
