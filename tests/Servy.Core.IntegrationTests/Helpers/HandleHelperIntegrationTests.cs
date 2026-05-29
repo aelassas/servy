@@ -32,9 +32,28 @@ namespace Servy.Core.IntegrationTests.Helpers
             }
             else
             {
-                // A dummy run ensures the driver is extracted and loaded 
-                // before the actual timing-sensitive tests run.
-                HandleHelper.GetProcessesUsingFile(_handleExePath, Path.GetTempPath());
+                // FIX: Instead of scanning the entire temp folder (which blocks or causes high IO wait on ARM64 workers),
+                // spin up a lightweight, isolated temp file specifically to fulfill the warm-up check safely.
+                string warmUpFile = Path.Combine(Path.GetTempPath(), $"ServyWarmup_{Guid.NewGuid()}.tmp");
+                try
+                {
+                    File.WriteAllText(warmUpFile, "Warmup Content");
+
+                    // The underlying HandleHelper implementation now safely includes /accepteula natively,
+                    // guaranteeing this warm-up execution pass never hangs headlessly on initialization.
+                    HandleHelper.GetProcessesUsingFile(_handleExePath, warmUpFile);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"WARNING: Handle warm-up execution pass failed: {ex.Message}");
+                }
+                finally
+                {
+                    if (File.Exists(warmUpFile))
+                    {
+                        try { File.Delete(warmUpFile); } catch { /* Stifled */ }
+                    }
+                }
             }
         }
 
