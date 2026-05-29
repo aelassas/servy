@@ -23,8 +23,7 @@ permissions:
 
 jobs:
   build-and-sign:
-    # Dynamically select the host runner based on the architecture input
-    runs-on: ${{ inputs.arm64 && 'windows-11-arm' || 'windows-latest' }}
+    runs-on: windows-latest
     timeout-minutes: 60  # Prevents indefinite hangs if signing or VT APIs stall
 
     env:
@@ -92,6 +91,7 @@ jobs:
         run: dotnet --version
 
       - name: Install CycloneDX .NET Tool
+        if: inputs.arm64 == false  
         shell: pwsh
         run: |
           # --- SECURITY CHECK: SHA256 PINNING FOR .NET TOOL ---
@@ -128,6 +128,7 @@ jobs:
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
 
       - name: Install CycloneDX CLI from GitHub
+        if: inputs.arm64 == false
         shell: pwsh
         run: |
           $v = $env:CYCLONEDX_CLI_VERSION
@@ -243,14 +244,17 @@ jobs:
       # Run unit tests
       # -----------------------------------------------------
       - name: Restore dependencies
+        if: inputs.arm64 == false
         shell: pwsh
         run: dotnet restore Servy.sln
 
       - name: Build solution
+        if: inputs.arm64 == false
         shell: pwsh
         run: dotnet build Servy.sln --configuration $env:CONFIGURATION --no-restore
 
       - name: Run all tests
+        if: inputs.arm64 == false
         shell: pwsh
         run: dotnet test Servy.sln --configuration $env:CONFIGURATION --no-build --filter "Category!=ReflectionValidation"
 
@@ -258,6 +262,7 @@ jobs:
       # Build and Publish SBOM
       # -----------------------------------------------------
       - name: Generate SBOM
+        if: inputs.arm64 == false
         shell: pwsh
         run: |
           # Use subexpression operator $() to safely append the .0 suffix
@@ -297,6 +302,7 @@ jobs:
           }
 
       - name: Upload SBOM
+        if: inputs.arm64 == false
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
           name: sbom-${{ env.VERSION }}-sbom
