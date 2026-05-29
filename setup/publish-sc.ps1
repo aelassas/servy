@@ -39,7 +39,7 @@ if (Test-Path $configPath) {
     if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
     if (-not $Version) { $Version = $buildConfig.Version }
     $BuildConfiguration = $buildConfig.BuildConfiguration
-    $Runtime = $buildConfig.Runtime
+    $Runtime = $buildConfig.Runtime.Trim()
 } else {
     throw "Central build configuration not found at $configPath"
 }
@@ -61,10 +61,11 @@ $managerDir = Join-Path $rootDir "src\Servy.Manager"
 
 # Define paths as strings. Do not resolve them yet.
 $signPath      = Join-Path $rootDir "setup\signpath.ps1"
-$issFile       = Join-Path $scriptDir "servy.iss"
-$packageFolder = Join-Path $scriptDir "servy-$Version-x64-portable"
+$issFile       = Join-Path $scriptDir $(if ($Runtime -eq "win-arm64") { "servy-arm64.iss" } else { "servy.iss" })
+$arch          = if ($Runtime -eq "win-arm64") { "arm64" } else { "x64" }
+$packageFolder = Join-Path $scriptDir "servy-$Version-$arch-portable"
 $outputZip     = "$packageFolder.7z"
-$installerPath = Join-Path $rootDir "setup\servy-$Version-x64-installer.exe"
+$installerPath = Join-Path $rootDir "setup\servy-$Version-$arch-installer.exe"
 
 # ---------------------------------------------------------
 # Tool Discovery & Initialization
