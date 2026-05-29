@@ -83,7 +83,7 @@ namespace Servy.Core.Services
         public ServiceDependencyNode GetDependencies()
         {
             // Tracks the current branch from root to leaf to detect deep cycles
-            var currentPath = new List<string>();
+            var currentPath = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             // Tracks services that have already been fully resolved across ANY branch
             var fullyExpanded = new Dictionary<string, ServiceDependencyNode>(StringComparer.OrdinalIgnoreCase);
@@ -99,7 +99,7 @@ namespace Servy.Core.Services
         /// The internal name of the service whose dependencies are resolved.
         /// </param>
         /// <param name="currentPath">
-        /// A list tracking the specific path from root to leaf to detect and prevent cyclic dependencies.
+        /// A hash set tracking the specific path from root to leaf to detect and prevent cyclic dependencies.
         /// </param>
         /// <param name="fullyExpanded">
         /// A dictionary of service names to already fully expanded nodes, used to prevent 
@@ -110,10 +110,10 @@ namespace Servy.Core.Services
         /// and its dependencies. If a cycle is detected, a placeholder
         /// node is returned.
         /// </returns>
-        private static ServiceDependencyNode BuildDependencyTree(string serviceName, List<string> currentPath, Dictionary<string, ServiceDependencyNode> fullyExpanded)
+        private static ServiceDependencyNode BuildDependencyTree(string serviceName, HashSet<string> currentPath, Dictionary<string, ServiceDependencyNode> fullyExpanded)
         {
             // 1. Detect Cycle in the CURRENT branch
-            var isCycle = currentPath.Contains(serviceName, StringComparer.OrdinalIgnoreCase);
+            var isCycle = currentPath.Contains(serviceName);
 
             // 2. Check if we've already built the subtree for this service elsewhere
             // We only return the cached subtree if this isn't a cycle in the current path.
@@ -185,7 +185,7 @@ namespace Servy.Core.Services
                     {
                         // 5. BACKTRACK: Ensure the service is always removed from the current path,
                         // preventing path corruption for sibling nodes if an exception occurred.
-                        currentPath.RemoveAt(currentPath.Count - 1);
+                        currentPath.Remove(serviceName);
                     }
 
                     return node;
