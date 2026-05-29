@@ -4,30 +4,40 @@
 # Builds all Servy components using the modern .NET SDK, signs all executables using SignPath,
 # builds the installer, creates the portable 7z archive, and uploads all signed artifacts.
 #
-# This build targets Windows 10, Windows 11, and Windows Server (x64) editions. It provides 
-# better performance, runtime features, trimming, and overall modern platform support.
+# Supports both x64 (Windows 10/11/Server) and native ARM64 architectures via dispatch input.
 # ==========================================================================================
 
 name: publish
 
 on:
   workflow_dispatch:
+    inputs:
+      arm64:
+        description: 'Build for ARM64 architecture natively'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   build-and-sign:
-    runs-on: windows-latest
+    # Dynamically select the host runner based on the architecture input
+    runs-on: ${{ inputs.arm64 && 'windows-arm64' || 'windows-latest' }}
     timeout-minutes: 60  # Prevents indefinite hangs if signing or VT APIs stall
 
     env:
       ROOT_DIR: ${{ github.workspace }}
       CONFIGURATION: Release
-      RUNTIME: win-x64
       TFM: net10.0-windows
       ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
       CYCLONEDX_VERSION: "6.2.0"
+      
+      # Dynamic Environment Variables based on selected architecture
+      RUNTIME: ${{ inputs.arm64 && 'win-arm64' || 'win-x64' }}
+      ARCH: ${{ inputs.arm64 && 'arm64' || 'x64' }}
+      ISS_FILE: ${{ inputs.arm64 && 'setup\servy-arm64.iss' || 'setup\servy.iss' }}
       
       # Binary Version & Checksum Pins
       CYCLONEDX_TOOL_HASH: "3473525381eee02a649b75bbf5b4f0ffa66112f62917aff798fed196e290a884" # the actual SHA256 hash of the CycloneDX nupkg
@@ -140,7 +150,6 @@ jobs:
           Write-Host "Verifying SHA256 checksum of CycloneDX CLI..."
           $actualHash = (Get-FileHash $outPath -Algorithm SHA256).Hash
           
-          # -ne in PowerShell is inherently case-insensitive
           if ($actualHash -ne $env:CYCLONEDX_CLI_HASH) {
               throw "Security Breach: CycloneDX CLI hash mismatch! Expected: $($env:CYCLONEDX_CLI_HASH), Got: $actualHash"
           }
@@ -169,7 +178,6 @@ jobs:
           Write-Host "Verifying SHA256 checksum of Inno Setup..."
           $actualHash = (Get-FileHash $installer -Algorithm SHA256).Hash
           
-          # -ne in PowerShell is inherently case-insensitive
           if ($actualHash -ne $expectedHash) {
               throw "Security Breach: Inno Setup hash mismatch! Expected: $expectedHash, Got: $actualHash"
           }
@@ -209,7 +217,6 @@ jobs:
           Write-Host "Verifying SHA256 checksum of 7-Zip..."
           $actualHash = (Get-FileHash $installer -Algorithm SHA256).Hash
                 
-          # -ne in PowerShell is inherently case-insensitive
           if ($actualHash -ne $env:SEVEN_ZIP_HASH) {
               throw "Security Breach: 7-Zip hash mismatch! Expected: $($env:SEVEN_ZIP_HASH), Got: $actualHash"
           }
@@ -569,7 +576,7 @@ jobs:
       - name: Build unsigned installer
         shell: pwsh
         run: |
-          & "$env:ISCC" "setup\servy.iss" /DMyAppVersion=$env:VERSION
+          & "$env:ISCC" "$env:ISS_FILE" /DMyAppVersion=$env:VERSION
 
       # -----------------------------------------------------
       # SIGN installer
@@ -577,8 +584,8 @@ jobs:
       - name: Prepare unsigned installer for signing
         shell: pwsh
         run: |
-          $originalPath = "setup/servy-$env:VERSION-x64-installer.exe"
-          $signPathName = "servy-x64-installer.exe"
+          $originalPath = "setup/servy-$env:VERSION-$env:ARCH-installer.exe"
+          $signPathName = "servy-$env:ARCH-installer.exe"
           $unsignedDir = "unsigned_installer_staging"
           $signPathTarget = "$unsignedDir/$signPathName"
           
@@ -596,7 +603,7 @@ jobs:
         id: unsigned-installer
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
-          name: unsigned-installer
+          name: unsigned-installer-${{ env.ARCH }}
           path: ${{ env.UNSIGNED_INSTALLER_PATH }}
           if-no-files-found: error
           retention-days: 1
@@ -616,9 +623,9 @@ jobs:
       - name: Prepare signed installer for release
         shell: pwsh
         run: |
-          $source = "$env:SIGNED_INSTALLER_DIR/servy-x64-installer.exe"
+          $source = "$env:SIGNED_INSTALLER_DIR/servy-$env:ARCH-installer.exe"
           $targetDir = "release_installer_staging"
-          $targetPath = "$targetDir/servy-$env:VERSION-x64-installer.exe"
+          $targetPath = "$targetDir/servy-$env:VERSION-$env:ARCH-installer.exe"
           
           if (-not (Test-Path $source)) { throw "Signed installer not found: $source" }
           
@@ -631,7 +638,7 @@ jobs:
       - name: Upload signed installer
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
-          name: signed-installer
+          name: signed-installer-${{ env.ARCH }}
           path: ${{ env.FINAL_INSTALLER_PATH }}
           if-no-files-found: error
           retention-days: 1
@@ -642,7 +649,7 @@ jobs:
       - name: Build portable 7z package
         shell: pwsh
         run: |
-          $name = "servy-$env:VERSION-x64-portable"
+          $name = "servy-$env:VERSION-$env:ARCH-portable"
           $pkg = "$name"
           New-Item -ItemType Directory -Force -Path $pkg | Out-Null
 
@@ -677,7 +684,7 @@ jobs:
 
                   # Ensure the subdirectory exists in the staging folder
                   if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
-            
+              
                   Copy-Item -Path $_.FullName -Destination $target -Force
               }
 
@@ -699,8 +706,8 @@ jobs:
       - name: Upload portable package
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
-          name: portable-7z
-          path: servy-${{ env.VERSION }}-x64-portable.7z
+          name: portable-${{ env.ARCH }}-7z
+          path: servy-${{ env.VERSION }}-${{ env.ARCH }}-portable.7z
           if-no-files-found: error
           retention-days: 1
 
@@ -734,7 +741,7 @@ jobs:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
           sha256: true
           file_globs: | 
-            servy-${{ env.VERSION }}-x64-portable.7z
+            servy-${{ env.VERSION }}-${{ env.ARCH }}-portable.7z
 
       - name: Check VT Status
         if: steps.vt_portable.outcome == 'failure'

@@ -313,7 +313,7 @@ namespace Servy.Manager.UnitTests.Services
 #if DEBUG
             // CRITICAL FIX: Bypass the Directory.Exists check for DEBUG builds
             // by ensuring the expected directory actually exists in the test environment.
-            var debugDir = Path.GetFullPath(Servy.Core.Config.AppConfig.ServyServiceManagerDebugFolder);
+            var debugDir = Path.GetFullPath(Core.Config.AppConfig.ServyServiceManagerDebugFolder);
             try
             {
                 if (!Directory.Exists(debugDir))
