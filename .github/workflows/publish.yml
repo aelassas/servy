@@ -24,7 +24,7 @@ permissions:
 jobs:
   build-and-sign:
     # Dynamically select the host runner based on the architecture input
-    runs-on: ${{ inputs.arm64 && 'windows-arm64' || 'windows-latest' }}
+    runs-on: ${{ inputs.arm64 && 'windows-11-arm' || 'windows-latest' }}
     timeout-minutes: 60  # Prevents indefinite hangs if signing or VT APIs stall
 
     env:

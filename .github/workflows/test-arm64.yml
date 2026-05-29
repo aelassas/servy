@@ -21,7 +21,7 @@ jobs:
   test:
     name: Test on Windows ARM64
     # Targeted flag for native ARM64 Windows host execution
-    runs-on: windows-arm64
+    runs-on: windows-11-arm
 
     env:
       REPORTGENERATOR_VERSION: "5.5.10"
