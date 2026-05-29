@@ -72,7 +72,7 @@ namespace Servy.Core.Helpers
                 RedirectStandardError = true, // We redirect this, so we MUST drain it
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                Arguments = $"{Helper.Quote(filePath)} /accepteula"
+                Arguments = $"/accepteula {Helper.Quote(filePath)}"
             };
 
             using (var process = new Process { StartInfo = psi })
