@@ -26,22 +26,27 @@ namespace Servy.Core.EnvironmentVariables
         {
             var segments = new List<string>();
             var sb = new StringBuilder();
+            int backslashRun = 0;
 
             for (int i = 0; i < input.Length; i++)
             {
                 char c = input[i];
+                bool isEscaped = (backslashRun & 1) == 1;
+
                 if (delimiters.Contains(c))
                 {
                     // If not escaped, split here
-                    if (!IsEscapedAt(input, i))
+                    if (!isEscaped)
                     {
                         segments.Add(sb.ToString());
                         sb.Clear();
+                        backslashRun = 0; // Delimiter resets the running count
                         continue;
                     }
                 }
 
                 sb.Append(c);
+                backslashRun = (c == '\\') ? backslashRun + 1 : 0;
             }
 
             segments.Add(sb.ToString());
@@ -56,16 +61,23 @@ namespace Servy.Core.EnvironmentVariables
         /// <returns>The zero-based index of the first unescaped occurrence of the specified character, or negative one if not found.</returns>
         public static int IndexOfUnescapedChar(string str, char ch)
         {
+            int backslashRun = 0;
+
             for (int i = 0; i < str.Length; i++)
             {
-                if (str[i] == ch)
+                char c = str[i];
+                bool isEscaped = (backslashRun & 1) == 1;
+
+                if (c == ch)
                 {
                     // If not escaped, return the index
-                    if (!IsEscapedAt(str, i))
+                    if (!isEscaped)
                     {
                         return i;
                     }
                 }
+
+                backslashRun = (c == '\\') ? backslashRun + 1 : 0;
             }
 
             return -1;
@@ -80,17 +92,23 @@ namespace Servy.Core.EnvironmentVariables
         public static int CountUnescapedChar(string str, char ch)
         {
             int count = 0;
+            int backslashRun = 0;
 
             for (int i = 0; i < str.Length; i++)
             {
-                if (str[i] == ch)
+                char c = str[i];
+                bool isEscaped = (backslashRun & 1) == 1;
+
+                if (c == ch)
                 {
                     // If not escaped, count it
-                    if (!IsEscapedAt(str, i))
+                    if (!isEscaped)
                     {
                         count++;
                     }
                 }
+
+                backslashRun = (c == '\\') ? backslashRun + 1 : 0;
             }
 
             return count;
