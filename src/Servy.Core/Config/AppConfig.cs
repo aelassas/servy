@@ -2,6 +2,7 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace Servy.Core.Config
 {
@@ -95,12 +96,23 @@ namespace Servy.Core.Config
         /// The default file name of the Sysinternals Handle executable used to detect
         /// processes holding handles to files. Typically <c>handle64.exe</c> on 64-bit systems.
         /// </summary>
-        public static readonly string HandleExeFileName = "handle64";
+        public static readonly string HandleExeX64FileName = "handle64";
 
         /// <summary>
-        /// Gets the full file name of the Sysinternals Handle executable, including the ".exe" extension.
+        /// Gets the full file name of the Sysinternals Handle executable (x64), including the ".exe" extension.
         /// </summary>
-        public static readonly string HandleExe = $"{HandleExeFileName}.exe";
+        public static readonly string HandleExeX64 = $"{HandleExeX64FileName}.exe";
+
+        /// <summary>
+        /// The default file name of the Sysinternals Handle executable used to detect
+        /// processes holding handles to files. Typically <c>handle64a.exe</c> on ARM64 systems.
+        /// </summary>
+        public static readonly string HandleExeARM64FileName = "handle64a";
+
+        /// <summary>
+        /// Gets the full file name of the Sysinternals Handle executable (ARM64), including the ".exe" extension.
+        /// </summary>
+        public static readonly string HandleExeARM64 = $"{HandleExeARM64FileName}.exe";
 
         /// <summary>
         /// The file name of the Servy.Core assembly (without extension).
@@ -1404,7 +1416,8 @@ namespace Servy.Core.Config
         /// in RELEASE mode, it looks in the ProgramData folder.
         /// </summary>
         /// <returns>The full path to the Handle executable.</returns>
-        public static string GetHandleExePath() => ResolveExe(HandleExeFileName);
+        public static string GetHandleExePath() =>
+            ResolveExe(RuntimeInformation.OSArchitecture == Architecture.Arm64 ? HandleExeARM64FileName : HandleExeX64FileName);
 
         /// <summary>
         /// Gets the absolute path to the Servy CLI service executable.

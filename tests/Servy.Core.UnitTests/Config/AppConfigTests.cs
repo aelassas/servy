@@ -53,7 +53,7 @@ namespace Servy.Core.UnitTests.Config
         {
             var path = AppConfig.GetHandleExePath();
             Assert.False(string.IsNullOrWhiteSpace(path));
-            Assert.EndsWith(AppConfig.HandleExe, path);
+            Assert.EndsWith(AppConfig.HandleExeX64, path);
         }
 
         [Fact]

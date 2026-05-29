@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Helpers;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace Servy.Core.IntegrationTests.Helpers
 {
@@ -11,8 +12,10 @@ namespace Servy.Core.IntegrationTests.Helpers
     [CollectionDefinition("HandleHelperIntegrationTests", DisableParallelization = true)]
     public class HandleHelperIntegrationTests : IDisposable
     {
-        // FIX: Make the path and extraction state static so it only initializes once per test run
-        private static readonly string _handleExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64.exe");
+        // Dynamically select the native Sysinternals binary based on runtime architecture
+        private static readonly string _handleExePath = RuntimeInformation.OSArchitecture == Architecture.Arm64
+            ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64a.exe")
+            : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64.exe");
         private static readonly object _extractionLock = new object();
         private static bool _isExtracted = false;
 
@@ -28,32 +31,13 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             if (!File.Exists(_handleExePath))
             {
-                Debug.WriteLine($"WARNING: handle64.exe not found and extraction failed at {_handleExePath}");
+                Debug.WriteLine($"WARNING: {_handleExePath} not found and extraction failed");
             }
             else
             {
-                // FIX: Instead of scanning the entire temp folder (which blocks or causes high IO wait on ARM64 workers),
-                // spin up a lightweight, isolated temp file specifically to fulfill the warm-up check safely.
-                string warmUpFile = Path.Combine(Path.GetTempPath(), $"ServyWarmup_{Guid.NewGuid()}.tmp");
-                try
-                {
-                    File.WriteAllText(warmUpFile, "Warmup Content");
-
-                    // The underlying HandleHelper implementation now safely includes /accepteula natively,
-                    // guaranteeing this warm-up execution pass never hangs headlessly on initialization.
-                    HandleHelper.GetProcessesUsingFile(_handleExePath, warmUpFile);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"WARNING: Handle warm-up execution pass failed: {ex.Message}");
-                }
-                finally
-                {
-                    if (File.Exists(warmUpFile))
-                    {
-                        try { File.Delete(warmUpFile); } catch { /* Stifled */ }
-                    }
-                }
+                // A dummy run ensures the driver is extracted and loaded 
+                // before the actual timing-sensitive tests run.
+                HandleHelper.GetProcessesUsingFile(_handleExePath, Path.GetTempPath());
             }
         }
 
