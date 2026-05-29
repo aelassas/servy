@@ -566,7 +566,16 @@ namespace Servy.Service.ProcessManagement
                     // the CTRL + C signal will not be received by processes within
                     // the specified process group.
                     // So passing the specific process group ID instead of 0 will not work.
-                    _ = GenerateConsoleCtrlEvent(CtrlEvents.CTRL_C_EVENT, 0);
+                    if (!GenerateConsoleCtrlEvent(CtrlEvents.CTRL_C_EVENT, 0))
+                    {
+                        int error = Marshal.GetLastWin32Error();
+                        _logger?.Warn(
+                            $"GenerateConsoleCtrlEvent failed for '{process.Format()}': " +
+                            $"{new Win32Exception(error).Message} (Error: {error}). " +
+                            $"Falling through to CloseMainWindow / force-kill.");
+                        return false;
+                    }
+
                     _logger?.Info($"Sent Ctrl+C to process '{process.Format()}'.");
                 }
                 finally

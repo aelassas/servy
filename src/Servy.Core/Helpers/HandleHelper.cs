@@ -118,10 +118,11 @@ namespace Servy.Core.Helpers
                 string error = errorBuilder.ToString();
 
                 // Sysinternals handle.exe returns exit code 1 when it successfully executes but finds no handles.
-                MatchCollection matches;
+                List<Match> matches;
                 try
                 {
-                    matches = HandleOutputRegex.Matches(output);
+                    // ToList() forces synchronous evaluation under the timeout
+                    matches = HandleOutputRegex.Matches(output).Cast<Match>().ToList();
                 }
                 catch (RegexMatchTimeoutException ex)
                 {

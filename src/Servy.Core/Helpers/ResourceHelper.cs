@@ -17,6 +17,8 @@ namespace Servy.Core.Helpers
     /// </summary>
     public class ResourceHelper
     {
+        private const int BufferSize = 81920; // 80 KB buffer size for stream copying
+
         private readonly IServiceHelper _serviceHelper;
         private readonly IProcessKiller _processKiller;
 
@@ -100,7 +102,7 @@ namespace Servy.Core.Helpers
                         if (!TerminateBlockingProcesses(extension, targetFileName, targetPath))
                             return false;
 
-                        await Helper.WriteFileAtomicAsync(targetPath, resourceStream.CopyToAsync);
+                        await Helper.WriteFileAtomicAsync(targetPath, (s, t) => resourceStream.CopyToAsync(s, BufferSize, t));
                         copyDone = true; // File write succeeded natively within the execution path
                     }
                     finally
@@ -320,7 +322,7 @@ namespace Servy.Core.Helpers
                                     continue;
                                 }
 
-                                await Helper.WriteFileAtomicAsync(resourceItem.TargetPath, resourceStream.CopyToAsync);
+                                await Helper.WriteFileAtomicAsync(resourceItem.TargetPath, (s, t) => resourceStream.CopyToAsync(s, BufferSize, t));
                                 Logger.Info($"Successfully copied embedded resource '{resourceItem.ResourceName}' to '{resourceItem.TargetPath}'.");
                             }
                         }

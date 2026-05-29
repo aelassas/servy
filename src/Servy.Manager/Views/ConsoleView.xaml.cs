@@ -155,13 +155,12 @@ namespace Servy.Manager.Views
             }), DispatcherPriority.DataBind);
         }
 
-
         /// <summary>
         /// Copies the currently selected log lines in the ListBox to the system clipboard.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The event data.</param>
-        private void CopyMenuItem_Click(object sender, RoutedEventArgs e)
+        private async void CopyMenuItem_Click(object sender, RoutedEventArgs e)
         {
             var selected = LogList.SelectedItems
                                   .OfType<LogLine>()
@@ -177,6 +176,8 @@ namespace Servy.Manager.Views
             {
                 try
                 {
+                    // Since this async void event handler initiates on the UI thread,
+                    // this direct execution safely targets the required STA clipboard context.
                     Clipboard.SetText(text);
                     return;
                 }
@@ -184,7 +185,11 @@ namespace Servy.Manager.Views
                 catch (ExternalException) { /* generic Win32 failure */ }
 
                 if (i < Core.Config.AppConfig.ClipboardComMaxRetries - 1)
-                    Thread.Sleep(Core.Config.AppConfig.ClipboardComRetryDelayMs);
+                {
+                    // Yield control back to the WPF dispatcher queue thread pump. 
+                    // This allows UI paint commands and input requests to flow normally while waiting to retry.
+                    await Task.Delay(Core.Config.AppConfig.ClipboardComRetryDelayMs);
+                }
             }
 
             Logger.Warn($"Failed to copy {selected.Count} log line(s) to clipboard after {Core.Config.AppConfig.ClipboardComMaxRetries} attempts.");

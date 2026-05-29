@@ -450,6 +450,29 @@ namespace Servy.Service
                 // Set up service logging
                 HandleLogWriters(options);
 
+                // ROBUSTNESS: Instantiating the new CTS *before* updating the field ensures that
+                // concurrent background tasks checking the token never experience a temporary 'null' window.
+                // We create this early so that pre-launch processes can observe teardown requests.
+                var cts = new CancellationTokenSource();
+                var oldCts = Interlocked.Exchange(ref _cancellationSource, cts);
+
+                if (oldCts != null)
+                {
+                    try
+                    {
+                        oldCts.Cancel();
+                    }
+                    catch (ObjectDisposedException) { /* already disposed */ }
+                    catch (AggregateException ex)
+                    {
+                        _logger?.Warn($"Exception(s) raised during CTS cancellation: {ex.Message}");
+                    }
+                    finally
+                    {
+                        oldCts.Dispose();
+                    }
+                }
+
                 // Run pre-launch process if configured
                 if (!StartPreLaunchProcess(options))
                 {
@@ -958,6 +981,13 @@ namespace Servy.Service
 
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
+                // Short-circuit check before starting an attempt
+                if (_isTearingDown || (_cancellationSource?.IsCancellationRequested == true))
+                {
+                    LogIssue("Pre-launch process aborted due to service teardown.");
+                    return false;
+                }
+
                 _logger?.Info($"Starting pre-launch process (attempt {attempt}/{maxAttempts})...");
 
                 try
@@ -990,8 +1020,28 @@ namespace Servy.Service
                     int elapsed = 0;
                     while (elapsed < delayMs)
                     {
+                        // Token/Teardown-aware short-circuit
+                        if (_isTearingDown || (_cancellationSource?.IsCancellationRequested == true))
+                        {
+                            LogIssue("Pre-launch process aborted during back-off wait due to service teardown.");
+                            return false;
+                        }
+
                         int slice = Math.Min(_waitChunkMs, delayMs - elapsed);
-                        Thread.Sleep(slice);
+
+                        if (_cancellationSource != null)
+                        {
+                            // If the wait handle is signaled, cancellation is requested
+                            if (_cancellationSource.Token.WaitHandle.WaitOne(slice))
+                            {
+                                LogIssue("Pre-launch process aborted during back-off wait due to service teardown.");
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            Thread.Sleep(slice);
+                        }
 
                         // Pulse the SCM during the wait so the service is not killed by timeout.
                         _serviceHelper.RequestAdditionalTime(this, _scmAdditionalTimeMs, _logger);
@@ -1199,35 +1249,14 @@ namespace Servy.Service
             }
 
             // Fire and forget the post-launch script when process confirmed running
-            // ROBUSTNESS: Instantiating the new CTS *before* updating the field ensures that
-            // concurrent background tasks checking the token never experience a temporary 'null' window.
-            var cts = new CancellationTokenSource();
-            var oldCts = Interlocked.Exchange(ref _cancellationSource, cts);
-
-            if (oldCts != null)
-            {
-                try
-                {
-                    oldCts.Cancel();
-                }
-                catch (ObjectDisposedException) { /* already disposed */ }
-                catch (AggregateException ex)
-                {
-                    _logger?.Warn($"Exception(s) raised during CTS cancellation: {ex.Message}");
-                }
-                finally
-                {
-                    oldCts.Dispose();
-                }
-            }
-
             var capturedProcess = _childProcess;
-            var capturedCts = cts;
+            var capturedToken = _cancellationSource?.Token ?? CancellationToken.None;
+
             Task.Run(async () =>
             {
                 try
                 {
-                    if (await capturedProcess.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(_options.StartTimeoutInSeconds), capturedCts.Token))
+                    if (await capturedProcess.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(_options.StartTimeoutInSeconds), capturedToken))
                     {
                         StartPostLaunchProcess();
                     }
@@ -1241,7 +1270,7 @@ namespace Servy.Service
                 {
                     _logger?.Error("Unexpected error in post-launch action.", ex);
                 }
-            }, cts.Token);
+            }, capturedToken);
         }
 
         /// <summary>

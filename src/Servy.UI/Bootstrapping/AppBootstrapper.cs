@@ -46,6 +46,7 @@ namespace Servy.UI.Bootstrapping
         private FileSystemWatcher _availabilityWatcher;
         private FileSystemEventHandler _availabilityChangedHandler;
         private RenamedEventHandler _availabilityRenamedHandler;
+        private ErrorEventHandler _availabilityErrorHandler;
         private readonly CancellationTokenSource _appLifetimeCts = new CancellationTokenSource();
         private DateTime _lastErrorDialogShown = DateTime.MinValue;
         private string _lastErrorDialogMessage = string.Empty;
@@ -476,6 +477,13 @@ namespace Servy.UI.Bootstrapping
 
                     _availabilityChangedHandler = (s, e) => UpdateAvailabilityState(targetAppPublishPath, updateAvailabilityCallback, app);
                     _availabilityRenamedHandler = (s, e) => UpdateAvailabilityState(targetAppPublishPath, updateAvailabilityCallback, app);
+                    _availabilityErrorHandler = (s, e) =>
+                    {
+                        var ex = e.GetException();
+                        Logger.Warn($"FileSystemWatcher for {fileName} entered an error state: {ex?.GetType().Name} - {ex?.Message}", ex);
+                        // Re-sync UI with the actual on-disk state
+                        UpdateAvailabilityState(targetAppPublishPath, updateAvailabilityCallback, app);
+                    };
 
                     _availabilityWatcher.Created += _availabilityChangedHandler;
                     _availabilityWatcher.Deleted += _availabilityChangedHandler;
@@ -483,11 +491,7 @@ namespace Servy.UI.Bootstrapping
                     _availabilityWatcher.Renamed += _availabilityRenamedHandler;
 
                     // Log unexpected buffer overflows, but we no longer rely on this for directory renames
-                    _availabilityWatcher.Error += (s, e) =>
-                    {
-                        var ex = e.GetException();
-                        Logger.Warn($"FileSystemWatcher for {fileName} entered an error state: {ex?.GetType().Name} - {ex?.Message}", ex);
-                    };
+                    _availabilityWatcher.Error += _availabilityErrorHandler;
 
                     _availabilityWatcher.EnableRaisingEvents = true;   // arm last
 
@@ -559,6 +563,11 @@ namespace Servy.UI.Bootstrapping
                 if (_availabilityRenamedHandler != null)
                 {
                     _availabilityWatcher.Renamed -= _availabilityRenamedHandler;
+                }
+
+                if(_availabilityErrorHandler != null)
+                {
+                    _availabilityWatcher.Error -= _availabilityErrorHandler;
                 }
 
                 _availabilityWatcher.Dispose();
