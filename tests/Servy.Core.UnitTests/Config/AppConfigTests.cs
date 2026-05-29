@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Config;
+using System.Runtime.InteropServices;
 
 namespace Servy.Core.UnitTests.Config
 {
@@ -53,7 +54,7 @@ namespace Servy.Core.UnitTests.Config
         {
             var path = AppConfig.GetHandleExePath();
             Assert.False(string.IsNullOrWhiteSpace(path));
-            Assert.EndsWith(AppConfig.HandleExeX64, path);
+            Assert.EndsWith(RuntimeInformation.OSArchitecture == Architecture.Arm64 ? AppConfig.HandleExeARM64 : AppConfig.HandleExeX64, path);
         }
 
         [Fact]
