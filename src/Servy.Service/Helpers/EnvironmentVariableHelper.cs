@@ -246,8 +246,9 @@ namespace Servy.Service.Helpers
             string encodedInput = input.Replace("%%", PercentEscapeToken);
 
             // Since 'expandedEnv' is already resolved to a fixed point by the dictionary builder,
-            // only one pass is needed here.
-            string result = ExpandWithDictionary(encodedInput, expandedEnv, null);
+            // only one pass is needed here. We pass 'protectInjectedValues: true' so that any literal 
+            // '%' characters injected from the dictionary aren't accidentally re-expanded by the OS.
+            string result = ExpandWithDictionary(encodedInput, expandedEnv, null, protectInjectedValues: true);
             result = Environment.ExpandEnvironmentVariables(result);
 
             // Decode '%%' protection token back to a single literal '%'
@@ -262,8 +263,9 @@ namespace Servy.Service.Helpers
         /// <param name="value">The string to expand.</param>
         /// <param name="variables">The dictionary of environment variables to use during expansion.</param>
         /// <param name="currentKey">The specific variable key currently being expanded, if any.</param>
+        /// <param name="protectInjectedValues">If true, encodes '%' in the substituted values to prevent later OS expansion.</param>
         /// <returns>The expanded string.</returns>
-        private static string ExpandWithDictionary(string value, IDictionary<string, string> variables, string currentKey = null)
+        private static string ExpandWithDictionary(string value, IDictionary<string, string> variables, string currentKey = null, bool protectInjectedValues = false)
         {
             if (string.IsNullOrEmpty(value))
                 return value;
@@ -309,11 +311,15 @@ namespace Servy.Service.Helpers
                     }
                 }
 
+                // If requested, protect any '%' in the finalized replacement value so it survives 
+                // subsequent OS expansion without being re-evaluated.
+                string safeReplacement = protectInjectedValues ? replacement.Replace("%", PercentEscapeToken) : replacement;
+
                 int index = 0;
                 while ((index = expanded.IndexOf(token, index, StringComparison.OrdinalIgnoreCase)) >= 0)
                 {
-                    expanded = expanded.Substring(0, index) + replacement + expanded.Substring(index + token.Length);
-                    index += replacement.Length; // move past the inserted value
+                    expanded = expanded.Substring(0, index) + safeReplacement + expanded.Substring(index + token.Length);
+                    index += safeReplacement.Length; // move past the inserted value
 
                     // Inline length guard to prevent memory exhaustion
                     if (expanded.Length > AppConfig.MaxEnvVarExpandedLength)

@@ -247,6 +247,54 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.Equal("100% of %MY_CUSTOM% is Value", result);
         }
 
+        [Fact]
+        public void ExpandEnvironmentVariables_InjectedLiteralPercentVar_PreventsOSReExpansion()
+        {
+            // Arrange
+            // User sets a custom variable to literally equal "%PATH%" using the escape sequence
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "CUSTOM_LITERAL", Value = "%%PATH%%" }
+            };
+            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Verify the dictionary baseline is correct: contains literal "%PATH%"
+            Assert.Equal("%PATH%", expandedEnv["CUSTOM_LITERAL"]);
+
+            // Act
+            // Reference that custom variable inside an input string template.
+            // The string overload should substitute "%CUSTOM_LITERAL%" with "%PATH%",
+            // but MUST NOT allow the underlying OS layer to expand "%PATH%" into the full system path string.
+            string input = "Value=%CUSTOM_LITERAL%";
+            string result = EnvironmentVariableHelper.ExpandEnvironmentVariables(input, expandedEnv);
+
+            // Assert
+            Assert.Equal("Value=%PATH%", result);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_InjectedLiteralPercentVar_MaintainsSystemPlaceholderResolution()
+        {
+            // Arrange
+            // Set up a custom environment variable containing an escaped system variable name 
+            // sitting right next to an unescaped, live cross-referenced system placeholder.
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "MIXED_BAG", Value = "Escaped=%%SystemRoot%%, Real=%SystemRoot%" }
+            };
+            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Act
+            string input = "Result->%MIXED_BAG%";
+            string result = EnvironmentVariableHelper.ExpandEnvironmentVariables(input, expandedEnv);
+
+            // Assert
+            string expectedSystemRoot = Environment.GetEnvironmentVariable("SystemRoot") ?? "C:\\Windows";
+            string expectedString = $"Result->Escaped=%SystemRoot%, Real={expectedSystemRoot}";
+
+            Assert.Equal(expectedString, result);
+        }
+
         #endregion
 
         #region Self-Referencing and Cycle Paths
