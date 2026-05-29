@@ -70,8 +70,12 @@ namespace Servy.Core.Helpers
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            psi.ArgumentList.Add(filePath);
+
+            // NOTE: The /accepteula flag must be appended as the first positional parameter.
+            // If the target file path occupies the primary position index, handle.exe occasionally 
+            // evaluates the target scope prematurely and skips subsequent license parameters.
             psi.ArgumentList.Add("/accepteula");
+            psi.ArgumentList.Add(filePath);
 
             using (var process = new Process { StartInfo = psi })
             {

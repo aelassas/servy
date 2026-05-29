@@ -1,12 +1,13 @@
-﻿# ===========================================
-# GitHub Actions Workflow - Test
-# -------------------------------------------
-# Runs tests for all Servy projects on push
-# to the main branch. Generates code coverage for
-# core components, merges Cobertura reports, and
-# uploads results to Codecov and Coveralls.
-# ===========================================
+﻿# ==========================================================================================
+# GitHub Actions Workflow - Test Matrix
+# ------------------------------------------------------------------------------------------
+# Runs comprehensive test suites for all Servy projects natively across both x64 and 
+# ARM64 platforms. Only the x64 execution node generates, compiles, and submits 
+# aggregated Cobertura coverage data to Codecov and Coveralls metrics platforms.
+# ==========================================================================================
+
 name: test
+
 on:
   push:
     branches:
@@ -19,7 +20,19 @@ permissions:
 
 jobs:
   test:
-    runs-on: windows-latest
+    name: Test (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            arch: x64
+            upload_coverage: true
+          - os: windows-11-arm
+            arch: ARM64
+            upload_coverage: false
+
+    runs-on: ${{ matrix.os }}
 
     env:
       REPORTGENERATOR_VERSION: "5.5.10"
@@ -63,12 +76,9 @@ jobs:
           $failed = $false
 
           foreach ($proj in $testProjects) {
-              # Extract the project name to ensure unique output folders              
               $projName = [System.IO.Path]::GetFileNameWithoutExtension($proj.Path)
               Write-Host "Running tests for $projName..." -ForegroundColor Cyan
               
-              # Construct the arguments array              
-              # FIX: Added $projName to the results-directory to completely prevent coverage overwriting collisions              
               $dotnetArgs = @(
                   'test', $proj.Path,
                   '--configuration', 'Debug',
@@ -77,19 +87,14 @@ jobs:
                   '--results-directory', "./TestResults/$($proj.Dir)/$projName"
               )
               
-              # Add filter if present                            
               if ($proj.Filter) { $dotnetArgs += @('--filter', $proj.Filter) }
               
-              # Add Coverage Formats and the Exclude filter for Servy.Testing   
-              # FIX: Added wildcards to exclude all Unit and Integration tests from being instrumented              
-              # UPDATED: Added **/*.xaml and **/*.xaml.cs to the Exclude configuration
               $dotnetArgs += @(
                   '--',
                   'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura',
                   'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=[*.UnitTests]*,[*.IntegrationTests]*,[Servy.Testing]*,**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/obj/**/*'
               )
 
-              # Execute the command securely using splatting                            
               & dotnet @dotnetArgs
               
               if ($LASTEXITCODE -ne 0) { 
@@ -109,10 +114,12 @@ jobs:
       - name: Run all tests (Release)
         run: dotnet test Servy.sln --configuration Release --no-build --filter "Category!=ReflectionValidation"
 
+      # -----------------------------------------------------
+      # Coverage Report Merging (x64 Only Context)
+      # -----------------------------------------------------
       - name: Merge and normalize coverage paths (PowerShell)
         shell: pwsh
-        # We use always() here so coverage is merged and uploaded even if a test failed above.                
-        if: always() 
+        if: always() && matrix.upload_coverage == true
         run: |
           $workspace = $env:GITHUB_WORKSPACE
           $fixedDir = Join-Path $workspace "TestResults\fixed"
@@ -121,27 +128,16 @@ jobs:
           $coverageFiles = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml"
           if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
 
-          # Path to local .NET SDK                    
           $dotnet = "$env:RUNNER_TEMP\dotnet\dotnet.exe"
-
-          # Create a temp folder for local tools                    
           $localTools = "$env:RUNNER_TEMP\localtools"
           if (-Not (Test-Path $localTools)) { New-Item -ItemType Directory -Path $localTools | Out-Null }
 
-          # Initialize a temporary local tool manifest                    
           & $dotnet new tool-manifest --force --output $localTools
 
-          # Install reportgenerator as a local tool                    
           Push-Location $localTools
           & $dotnet tool install dotnet-reportgenerator-globaltool --version $env:REPORTGENERATOR_VERSION
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-          if ($LASTEXITCODE -ne 0) {
-              Write-Error "reportgenerator install failed (exit $LASTEXITCODE)"
-              exit $LASTEXITCODE
-          }
-
-          # Run reportgenerator via dotnet CLI from local manifest          
-          # FIX: Wrapped arguments containing semicolons (;) in double-quotes so PowerShell parses them correctly          
           $joinedReports = $coverageFiles.FullName -join ';'
           & $dotnet tool run reportgenerator `
               "-reports:$joinedReports" `
@@ -151,18 +147,14 @@ jobs:
               -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/obj/**/*"
           Pop-Location
 
-          # Normalize filename paths dynamically for ALL Servy projects                    
           $mergedFile = Join-Path $fixedDir "Cobertura.xml"
           $content = Get-Content $mergedFile -Raw
           $content = [regex]::Replace($content, 'filename="([^"]*)"', {
               param($match)
               $origPath = $match.Groups[1].Value -replace '\\', '/'
-              
-              # This regex dynamically matches any project folder starting with 'Servy'                            
               if ($origPath -match 'src/(Servy[^/]*)/(.*)') {
                   return "filename=`"src/$($matches[1])/$($matches[2])`""
-              }
-              else {
+              } else {
                   return "filename=`"$origPath`""
               }
           })
@@ -171,13 +163,15 @@ jobs:
           $content | Out-File -FilePath $normalizedFile -Encoding utf8
 
           if (-Not (Test-Path $normalizedFile)) { Write-Error "$normalizedFile not found"; exit 1 }
-
           Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml" | Where-Object { $_.FullName -ne $normalizedFile } | Remove-Item
 
+      # -----------------------------------------------------
+      # Third-Party Metrics Tracking Uploads (x64 Only Context)
+      # -----------------------------------------------------
       - name: Upload coverage to Codecov
         id: codecov
         uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe #v5.5.4
-        if: always()
+        if: always() && matrix.upload_coverage == true
         with:
           token: ${{ secrets.CODECOV_TOKEN }}          
           files: TestResults/fixed/coverage.cobertura.xml
@@ -188,7 +182,7 @@ jobs:
           commit_parent: ${{ github.event.before }}         
           
       - name: Notify Codecov Status in case of failure
-        if: always() && steps.codecov.outcome != 'success'
+        if: always() && matrix.upload_coverage == true && steps.codecov.outcome != 'success'
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b #v7.1.0
         with:
           script: |
@@ -198,7 +192,6 @@ jobs:
               labels: 'codecov-tracking',
               state: 'open'
             });
-            
             for (const issue of issues.data) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -211,7 +204,7 @@ jobs:
       - name: Upload coverage to Coveralls
         id: coveralls
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b #v2.36
-        if: always()
+        if: always() && matrix.upload_coverage == true
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           base-path: ${{ github.workspace }}
@@ -223,7 +216,7 @@ jobs:
           COVERALLS_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
 
       - name: Notify Coveralls Status in case of failure
-        if: always() && steps.coveralls.outcome != 'success'
+        if: always() && matrix.upload_coverage == true && steps.coveralls.outcome != 'success'
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b #v7.1.0
         with:
           script: |
@@ -233,7 +226,6 @@ jobs:
               labels: 'coveralls-tracking',
               state: 'open'
             });
-            
             for (const issue of issues.data) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,

@@ -52,7 +52,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{8E91
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{9FEDDCAA-5911-471B-94CC-9913899B5AD7}"
 	ProjectSection(SolutionItems) = preProject
-		.github\workflows\build-arm64.yml = .github\workflows\build-arm64.yml
 		.github\workflows\build.yml = .github\workflows\build.yml
 		.github\workflows\bump-version.yml = .github\workflows\bump-version.yml
 		.github\workflows\changelog.yml = .github\workflows\changelog.yml
@@ -65,7 +64,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\scoop.yml = .github\workflows\scoop.yml
 		.github\workflows\security.yml = .github\workflows\security.yml
 		.github\workflows\sonar.yml = .github\workflows\sonar.yml
-		.github\workflows\test-arm64.yml = .github\workflows\test-arm64.yml
 		.github\workflows\test.yml = .github\workflows\test.yml
 		.github\workflows\wiki.yml = .github\workflows\wiki.yml
 		.github\workflows\winget.yml = .github\workflows\winget.yml
