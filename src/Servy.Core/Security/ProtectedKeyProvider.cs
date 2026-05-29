@@ -510,12 +510,7 @@ namespace Servy.Core.Security
         /// <returns>A random byte array.</returns>
         private static byte[] GenerateRandomBytes(int length)
         {
-            var buffer = new byte[length];
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(buffer);
-            }
-            return buffer;
+            return RandomNumberGenerator.GetBytes(length);
         }
 
         /// <summary>
