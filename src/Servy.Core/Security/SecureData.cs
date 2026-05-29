@@ -12,6 +12,9 @@ namespace Servy.Core.Security
     /// </summary>
     public class SecureData : ISecureData
     {
+        private static readonly byte[] HkdfV2EncInfo = Encoding.UTF8.GetBytes("V2_AES_ENCRYPTION");
+        private static readonly byte[] HkdfV2HmacInfo = Encoding.UTF8.GetBytes("V2_HMAC_AUTHENTICATION");
+
         private readonly byte[] _v1MasterKey;
         private readonly byte[] _v1StaticIv;
         private readonly byte[] _v2EncryptionKey;
@@ -54,8 +57,8 @@ namespace Servy.Core.Security
             {
                 masterKey = protectedKeyProvider.GetKey();
 
-                _v2EncryptionKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, masterKey, 32, HkdfSalt, Encoding.UTF8.GetBytes("V2_AES_ENCRYPTION"));
-                _v2HmacKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, masterKey, 32, HkdfSalt, Encoding.UTF8.GetBytes("V2_HMAC_AUTHENTICATION"));
+                _v2EncryptionKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, masterKey, 32, HkdfSalt, HkdfV2EncInfo);
+                _v2HmacKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, masterKey, 32, HkdfSalt, HkdfV2HmacInfo);
 
                 // Const-gated branch allows compiler to strip key cloning 
                 // and eliminate unneeded DPAPI I/O when AllowLegacyV1Decryption is false.
