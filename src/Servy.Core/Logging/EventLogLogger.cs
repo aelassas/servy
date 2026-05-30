@@ -390,6 +390,7 @@ namespace Servy.Core.Logging
             /// <inheritdoc/>
             public void SetIsEventLogEnabled(bool isEnabled)
             {
+                if (isEnabled) _parent.SetIsEventLogEnabled(true);   // self-heal via parent
                 _isEventLogEnabled = isEnabled;
             }
 

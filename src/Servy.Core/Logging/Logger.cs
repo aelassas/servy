@@ -3,6 +3,7 @@ using Servy.Core.Enums;
 using Servy.Core.IO;
 using Servy.Core.Security;
 using System.Globalization;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -493,7 +494,8 @@ namespace Servy.Core.Logging
         }
 
         /// <summary>
-        /// Formats an exception into a scannable, single-line representation with depth and length limits.
+        /// Formats an exception into a scannable, single-line representation with depth and length limits,
+        /// handling multi-exception trees (like AggregateException and ReflectionTypeLoadException) completely.
         /// </summary>
         /// <param name="ex">The exception to format.</param>
         /// <returns>A formatted string with frame separators instead of newlines.</returns>
@@ -502,15 +504,35 @@ namespace Servy.Core.Logging
             if (ex == null) return string.Empty;
 
             var sb = new StringBuilder();
-            var current = ex;
-            int processedDepth = 0;
 
-            while (current != null && processedDepth < AppConfig.LoggerMaxInnerExceptionDepth)
+            // Stack tracking for true tree traversal
+            var nodeStack = new Stack<(Exception Exception, int Depth)>();
+            nodeStack.Push((ex, 0));
+
+            int currentStructuralDepth = 0;
+
+            while (nodeStack.Count > 0)
             {
-                if (processedDepth > 0)
+                var (current, depth) = nodeStack.Pop();
+
+                if (current == null || depth >= AppConfig.LoggerMaxInnerExceptionDepth)
+                {
+                    continue;
+                }
+
+                // Close structural context tags if we drop down to a shallower/sibling path
+                while (currentStructuralDepth > depth)
+                {
+                    sb.Append(']');
+                    currentStructuralDepth--;
+                }
+
+                if (currentStructuralDepth > 0)
                 {
                     sb.Append(" [Inner -> ");
                 }
+
+                currentStructuralDepth = depth + 1;
 
                 // Append the core exception details
                 sb.Append(current.GetType().Name).Append(": ").Append(current.Message);
@@ -529,7 +551,7 @@ namespace Servy.Core.Logging
                 if (sb.Length > AppConfig.LoggerMaxFormattedExceptionLength)
                 {
                     const string truncMarker = "... [truncated]";
-                    int reserved = truncMarker.Length + processedDepth; // reserve room for the marker and ']' chars too
+                    int reserved = truncMarker.Length + currentStructuralDepth;
                     int target = Math.Max(0, AppConfig.LoggerMaxFormattedExceptionLength - reserved);
 
                     // Avoid splitting a UTF-16 surrogate pair
@@ -540,18 +562,46 @@ namespace Servy.Core.Logging
 
                     sb.Length = target;
                     sb.Append(truncMarker);
-                    for (int i = 1; i < processedDepth; i++) sb.Append(']');
+                    while (currentStructuralDepth > 1)
+                    {
+                        sb.Append(']');
+                        currentStructuralDepth--;
+                    }
                     return sb.ToString();
                 }
 
-                current = current.InnerException;
-                processedDepth++;
+                // Push child exceptions onto the execution stack in reverse order to preserve 
+                // canonical chronological sequence (Left-to-Right evaluation) during Pop phases.
+                if (current is AggregateException agg)
+                {
+                    for (int i = agg.InnerExceptions.Count - 1; i >= 0; i--)
+                    {
+                        nodeStack.Push((agg.InnerExceptions[i], currentStructuralDepth));
+                    }
+                }
+                else if (current is ReflectionTypeLoadException tl && tl.LoaderExceptions != null)
+                {
+                    for (int i = tl.LoaderExceptions.Length - 1; i >= 0; i--)
+                    {
+                        // Assign to a local variable to let the compiler safely infer nullability clearance
+                        Exception? loaderEx = tl.LoaderExceptions[i];
+                        if (loaderEx != null)
+                        {
+                            nodeStack.Push((loaderEx, currentStructuralDepth));
+                        }
+                    }
+                }
+                else if (current.InnerException != null)
+                {
+                    nodeStack.Push((current.InnerException, currentStructuralDepth));
+                }
             }
 
-            // Append closing brackets for all opened [Inner -> tags
-            for (int i = 1; i < processedDepth; i++)
+            // Close any outstanding structural contextual tracking tags safely
+            while (currentStructuralDepth > 1)
             {
                 sb.Append(']');
+                currentStructuralDepth--;
             }
 
             return sb.ToString();

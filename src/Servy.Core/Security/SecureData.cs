@@ -356,7 +356,12 @@ namespace Servy.Core.Security
         {
             // 1. DECODING: Convert Base64 back to raw bytes
             // Note: This remains the primary allocation in the decryption path.
-            byte[] combined = Convert.FromBase64String(payload);
+            byte[] combined;
+            try { combined = Convert.FromBase64String(payload); }
+            catch (FormatException ex)
+            {
+                throw new SecureDataIntegrityException("V2 payload is not valid Base64 (corrupted or tampered).", ex);
+            }
 
             try
             {

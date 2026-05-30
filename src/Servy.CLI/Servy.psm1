@@ -454,7 +454,8 @@ function Invoke-ServyCli {
     if (-not $hasExited) {
       $killed = $false
       try {
-        $process.Kill()
+        # Kill the entire process tree, not just the immediate CLI process
+        & taskkill.exe /T /F /PID $process.Id 2>&1 | Out-Null
         $process.WaitForExit($script:ServyDrainTimeoutMs)
         $killed = $process.HasExited
         if ($killed) { [void]$process.WaitForExit() }
@@ -1290,9 +1291,14 @@ function Install-ServyService {
           if ($null -ne $plainPassword -and $plainPassword.Length -gt 0) {
               $secureEnv[$script:ServyPasswordEnvVar] = $plainPassword
           }
+          # If marshalling resulted in an empty string but the SecureString had data,
+          # we treat this as a critical failure.
+          elseif ($Password.Length -gt 0) {
+              throw "Password parameter was provided but marshalling produced an empty value; refusing to call CLI without the credential."
+          }
       }
       finally {
-          # CRITICAL: Manual zero-out of the unmanaged memory buffer
+          # CRITICAL: Ensure memory is freed even if the throw occurs
           [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
       }
   }

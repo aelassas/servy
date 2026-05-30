@@ -78,7 +78,7 @@ namespace Servy.Core.Native
             }
 
             // The pattern allows for 'NT AUTHORITY\Account', 'DOMAIN\Account', or '.\Account'
-            const string pattern = @"^(?:[\w\s\.\-]+|\.)\\[\w\s\.@!\-]+\$?$";
+            const string pattern = @"^(?:[\w \.\-]+|\.)\\[\w \.@!\-]+\$?$";
             var isGmsa = string.IsNullOrEmpty(password) && username.EndsWith('$');
 
             // LOGIC: 

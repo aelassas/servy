@@ -312,7 +312,7 @@ namespace Servy.Core.UnitTests.Security
             // Act & Assert
             // We expect a FormatException (from Base64 decoding) or a 
             // SecureDataIntegrityException if you chose to wrap it.
-            Assert.Throws<FormatException>(() => sp.Decrypt(tampered));
+            Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(tampered));
         }
 
         [Fact]
@@ -328,7 +328,7 @@ namespace Servy.Core.UnitTests.Security
             var ex = Assert.Throws<System.Reflection.TargetInvocationException>(() =>
                 method!.Invoke(sp, new object[] { invalidBase64 }));
 
-            Assert.IsType<FormatException>(ex.InnerException);
+            Assert.IsType<SecureDataIntegrityException>(ex.InnerException);
         }
 
         [Fact]

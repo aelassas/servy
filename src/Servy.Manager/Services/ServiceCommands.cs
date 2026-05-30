@@ -266,7 +266,7 @@ namespace Servy.Manager.Services
             {
                 try
                 {
-                    var exists = _serviceManager.IsServiceInstalled(service.Name);
+                    var exists = await Task.Run(() => _serviceManager.IsServiceInstalled(service.Name), cancellationToken);
 
                     if (exists)
                     {
@@ -613,7 +613,7 @@ namespace Servy.Manager.Services
                     {
                         errorMessage = Strings.Msg_ServiceNotFound;
                     }
-                    else if (checkDisabled && _serviceManager.GetServiceStartupType(service.Name) == ServiceStartType.Disabled)
+                    else if (checkDisabled && await Task.Run(() => _serviceManager.GetServiceStartupType(service.Name), cancellationToken) == ServiceStartType.Disabled)
                     {
                         errorMessage = Strings.Msg_ServiceDisabledError;
                     }

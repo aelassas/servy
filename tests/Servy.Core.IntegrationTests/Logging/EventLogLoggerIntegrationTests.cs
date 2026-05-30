@@ -157,7 +157,7 @@ namespace Servy.Core.Logging.IntegrationTests
         #region ScopedEventLogLogger Tests
 
         [Fact]
-        public void ScopedLogger_InheritsSettings_ButCanOverrideThemIndependently()
+        public void ScopedLogger_InheritsSettings_ButCanOverrideIsEventLogEnabled()
         {
             string source = GenerateSourceName();
             using (var rootLogger = new EventLogLogger(source, LogLevel.Error, false))
@@ -168,13 +168,13 @@ namespace Servy.Core.Logging.IntegrationTests
                 // Assert initial inheritance
                 Assert.Equal("Scope1", scopedLogger.Prefix);
 
-                // Act - Change scope settings independently
+                // Act - Change scope settings
                 scopedLogger.SetLogLevel(LogLevel.Debug);
                 scopedLogger.SetIsEventLogEnabled(true);
 
-                // Assert Independence
-                // The parent's state must remain unchanged
-                Assert.False(rootLogger.IsEventLogEnabled);
+                // Assert
+                // The parent's state must change
+                Assert.True(rootLogger.IsEventLogEnabled);
 
                 // Run logs through the scope to ensure all internal bypassing methods work
                 var ex = new Exception("Scope Ex");
