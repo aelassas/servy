@@ -268,6 +268,118 @@ namespace Servy.Core.UnitTests.Logging
             Assert.False(hasDanglingSurrogate, "Truncation split a UTF-16 surrogate pair.");
         }
 
+        [Fact]
+        public void FormatException_UnrollsAggregateExceptionSiblings_InCorrectChronologicalOrder()
+        {
+            // Arrange
+            var exceptionA = new TimeoutException("Task A timed out");
+            var exceptionB = new InvalidOperationException("Task B state invalid");
+
+            // Wrap them inside a standard task framework composite exception
+            var aggEx = new AggregateException("Batch process failed", exceptionA, exceptionB);
+
+            Logger.Initialize(_testFileName);
+
+            // Act
+            Logger.Error("Aggregate processing fault", aggEx);
+            Logger.Shutdown();
+
+            // Assert
+            string content = File.ReadAllText(_fullLogPath);
+
+            // 1. Verify that the parent context is logged
+            Assert.Contains("AggregateException: Batch process failed", content);
+
+            // 2. Verify that BOTH sibling exceptions are logged via the stack walk rather than just the first one
+            Assert.Contains("[Inner -> TimeoutException: Task A timed out]", content);
+            Assert.Contains("[Inner -> InvalidOperationException: Task B state invalid]", content);
+
+            // 3. Verify chronological order: Task A (left sibling) must be logged BEFORE Task B (right sibling)
+            int indexA = content.IndexOf("Task A timed out");
+            int indexB = content.IndexOf("Task B state invalid");
+
+            Assert.True(indexA < indexB, "AggregateException siblings were not preserved in their chronological declaration order.");
+        }
+
+        [Fact]
+        public void FormatException_UnrollsReflectionTypeLoadException_HandlesNullAndNonNullLoaderExceptions()
+        {
+            // Arrange
+            var validLoaderEx = new TypeLoadException("Could not load assembly Servy.Service");
+
+            // ReflectionTypeLoadException maps errors array explicitly to its internal LoaderExceptions property.
+            // We add an explicit null element inside to ensure our loop's safety check ignores it.
+            var loaderExceptions = new Exception[] { null, validLoaderEx };
+            var classes = new Type[] { typeof(string) };
+
+            var typeLoadEx = new ReflectionTypeLoadException(classes, loaderExceptions, "Type scanning failed across boundary");
+
+            Logger.Initialize(_testFileName);
+
+            // Act
+            Logger.Error("Reflection execution pass", typeLoadEx);
+            Logger.Shutdown();
+
+            // Assert
+            string content = File.ReadAllText(_fullLogPath);
+
+            // 1. Verify parent exception metadata is preserved
+            Assert.Contains("ReflectionTypeLoadException: Type scanning failed across boundary", content);
+
+            // 2. Verify that the non-null loader error is extracted, unrolled, and enclosed correctly
+            Assert.Contains("[Inner -> TypeLoadException: Could not load assembly Servy.Service]", content);
+
+            // 3. Structural validation: Verify brackets balance correctly for a single inner element match
+            Assert.Contains("TypeLoadException: Could not load assembly Servy.Service]", content);
+            Assert.DoesNotContain("TypeLoadException: Could not load assembly Servy.Service]]", content);
+        }
+
+        [Fact]
+        public void FormatException_RespectsMaxInnerExceptionDepthLimit_PreventsInfiniteLoopHangs()
+        {
+            // Arrange
+            // Clear out any structural inheritance by starting from a clean base exception
+            var currentEx = new Exception("Root Exception Context");
+
+            // Build the chain downwards: the Root exception contains Inner1, which contains Inner2, etc.
+            // We create exactly enough depth to overflow the threshold safely
+            int targetOverflow = AppConfig.LoggerMaxInnerExceptionDepth + 5;
+            for (int i = 1; i <= targetOverflow; i++)
+            {
+                currentEx = new Exception($"Depth level {i} wrapper", currentEx);
+            }
+
+            Logger.Initialize(_testFileName);
+
+            // Act
+            Logger.Error("Deeply nested exception test", currentEx);
+            Logger.Shutdown();
+
+            // Assert
+            string content = File.ReadAllText(_fullLogPath);
+
+            // 1. Verify the outermost exception wrapper is captured cleanly
+            Assert.Contains($"Exception: Depth level {targetOverflow} wrapper", content);
+
+            // 2. Verify that the deepest "Root" text was dropped because it exceeded the depth safety cutoff
+            Assert.DoesNotContain("Root Exception Context", content);
+
+            // 3. Isolate the exact formatted exception text segment to avoid picking up layout brackets
+            int exceptionMessageIndex = content.IndexOf("Deeply nested exception test");
+            string exceptionSegment = content.Substring(exceptionMessageIndex).TrimEnd();
+
+            // 4. Calculate depth by counting structural depth tracking brackets inside the exception block
+            int innerBracketCount = exceptionSegment.Split(new[] { "[Inner -> " }, StringSplitOptions.None).Length - 1;
+            int closingBracketCount = exceptionSegment.Split(']').Length - 1;
+
+            // The formatted string should never unroll more blocks than the max depth allowed
+            Assert.True(innerBracketCount < AppConfig.LoggerMaxInnerExceptionDepth,
+                $"Exception unroller processed more inner loops than allowed. Counted: {innerBracketCount}");
+
+            // The closing structural brackets must match the opened inner markers exactly
+            Assert.Equal(innerBracketCount, closingBracketCount);
+        }
+
         #endregion
 
         #region Dynamic Configuration Setters Tests

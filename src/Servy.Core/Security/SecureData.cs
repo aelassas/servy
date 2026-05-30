@@ -359,7 +359,13 @@ namespace Servy.Core.Security
         /// </exception>
         private string DecryptV2(string payload)
         {
-            byte[] combined = Convert.FromBase64String(payload);
+            byte[] combined;
+            try { combined = Convert.FromBase64String(payload); }
+            catch (FormatException ex)
+            {
+                throw new SecureDataIntegrityException("V2 payload is not valid Base64 (corrupted or tampered).", ex);
+            }
+
             if (combined.Length < (IvSize + HmacSize))
                 throw new SecureDataIntegrityException("V2 payload length is insufficient.");
 

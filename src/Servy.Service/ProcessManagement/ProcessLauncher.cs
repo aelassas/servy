@@ -136,9 +136,15 @@ namespace Servy.Service.ProcessManagement
                 && normalizedErr != null
                 && string.Equals(normalizedOut, normalizedErr, StringComparison.OrdinalIgnoreCase);
 
+            bool processStarted = false;
             try
             {
-                process.Start();
+                if (!process.Start())
+                {
+                    throw new InvalidOperationException(
+                        $"Process.Start returned false for '{options.ExecutablePath}' (no process resource started).");
+                }
+                processStarted = true;
 
                 // 6. Handle execution mode
                 if (options.FireAndForget)
@@ -304,7 +310,7 @@ namespace Servy.Service.ProcessManagement
 
                 // ROBUSTNESS: If we didn't successfully return ownership, the process is orphaned.
                 // We must kill the process tree before disposing the wrapper to avoid leaking child processes.
-                if (!returnedOwnership && process != null)
+                if (!returnedOwnership && processStarted && process != null)
                 {
                     try
                     {

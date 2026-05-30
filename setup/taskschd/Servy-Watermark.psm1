@@ -116,54 +116,77 @@ function Update-Watermark {
     $maxRetries = 5
     $retryDelayMs = 200
 
+    # Define explicit temporary paths in the same directory to execute an atomic NTFS swap
+    $tempFile   = "$TimestampFile.new"
+    $backupFile = "$TimestampFile.bak"
+
     for ($attempt = 1; $attempt -le $maxRetries; $attempt++) {
         $fs = $null
         $reader = $null
         $writer = $null
         try {
-            # 1. Acquire exclusive lock to make the read+compare+write atomic across all processes
-            $fs = [System.IO.File]::Open($TimestampFile, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
-            
-            # Prevent PowerShell from writing a UTF-8 BOM on every file rewrite
-            $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+            # Initialize state checks
             $shouldWrite = $true
 
-            # Read current file text to catch concurrent updates from other script instances
-            # leaveOpen=$true prevents the reader from closing the underlying $fs
-            $reader = New-Object System.IO.StreamReader($fs, $utf8NoBom, $false, 1024, $true)
-            $currentFileContent = $reader.ReadToEnd().Trim()
-            $reader.Dispose()
-            $reader = $null
+            # 1. Atomic Read/Compare Phase: Safely evaluate if the watermark needs advancing
+            if (Test-Path $TimestampFile) {
+                $fs = [System.IO.File]::Open($TimestampFile, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+                $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+                $reader = New-Object System.IO.StreamReader($fs, $utf8NoBom, $false, 1024, $true)
+                $currentFileContent = $reader.ReadToEnd().Trim()
+                $reader.Dispose()
+                $reader = $null
+                $fs.Dispose()
+                $fs = $null
 
-            if (-not [string]::IsNullOrWhiteSpace($currentFileContent)) {
-                try {
-                    $fileTimestamp = [DateTime]::ParseExact(
-                        $currentFileContent,
-                        'o',
-                        [System.Globalization.CultureInfo]::InvariantCulture,
-                        [System.Globalization.DateTimeStyles]::RoundtripKind
-                    )
-                    if ($newestTimestamp -le $fileTimestamp) {
-                        $shouldWrite = $false
+                if (-not [string]::IsNullOrWhiteSpace($currentFileContent)) {
+                    try {
+                        $fileTimestamp = [DateTime]::ParseExact(
+                            $currentFileContent,
+                            'o',
+                            [System.Globalization.CultureInfo]::InvariantCulture,
+                            [System.Globalization.DateTimeStyles]::RoundtripKind
+                        )
+                        if ($newestTimestamp -le $fileTimestamp) {
+                            $shouldWrite = $false
+                        }
+                    } catch {
+                        # If file is corrupt or unparseable, overwrite it to heal state boundary
+                        Write-Warning "Could not parse current timestamp file during update check. Overwriting to heal file."
                     }
-                } catch {
-                    # If file is locked, corrupt (e.g. previous NULL char bug), or unparseable, overwrite it
-                    Write-Warning "Could not parse current timestamp file during update check. Overwriting to heal file."
                 }
             }
 
-            # 2. Write to file only if necessary, explicitly forcing BOM-less UTF8
+            # 2. Atomic CAS Write Phase: Write to staging space, then commit atomically
             if ($shouldWrite) {
-                $fs.Position = 0
-                $fs.SetLength(0) # Truncate the file before writing the new content
-
-                # leaveOpen=$true prevents the writer from closing the underlying $fs during GC
+                $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+                
+                # Write to isolated temporary storage file first
+                $fs = [System.IO.File]::Open($tempFile, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
                 $writer = New-Object System.IO.StreamWriter($fs, $utf8NoBom, 1024, $true)
                 $writer.Write($timestampString)
-                $writer.Dispose() # Implicitly flushes the buffer to the file stream boundary
+                $writer.Dispose()
                 $writer = $null
-                
-                Write-Verbose "Timestamp updated to: $timestampString"
+                $fs.Dispose()
+                $fs = $null
+
+                # Commit changes atomically. 
+                if (Test-Path $tempFile) {
+                    # PATH CONFORMANCE: Convert all paths to explicit absolute forms.
+                    # Instead of $null, we provide a valid, conforming backup path string ($absoluteBackup) 
+                    # to keep the underlying Win32 subsystem happy under .NET Framework 4.8 / PS 5.1.
+                    $absoluteTemp      = [System.IO.Path]::GetFullPath($tempFile)
+                    $absoluteTimestamp = [System.IO.Path]::GetFullPath($TimestampFile)
+                    $absoluteBackup    = [System.IO.Path]::GetFullPath($backupFile)
+
+                    if (Test-Path $absoluteTimestamp) {
+                        [System.IO.File]::Replace($absoluteTemp, $absoluteTimestamp, $absoluteBackup)
+                    } else {
+                        # First run scenario: The target file doesn't exist yet, so a basic Move is safe and atomic.
+                        [System.IO.File]::Move($absoluteTemp, $absoluteTimestamp)
+                    }
+                    Write-Verbose "Timestamp updated atomically to: $timestampString"
+                }
             }
 
             break # Success, exit retry loop
@@ -174,9 +197,8 @@ function Update-Watermark {
                 continue
             }
             
-            # If we exhausted retries, process as a normal error
-            # Bypass EventLog to prevent feedback loops. Record locally only.
-            $errorMessage = "Failed to update timestamp file (Lock timeout): $($_.Exception.Message)"
+            # ESCALATED ERROR: Explicitly inform operator that watermark update failed and duplicate notices may fire
+            $errorMessage = "CRITICAL: Watermark update lost due to persistent lock contention. Duplicate notifications will follow for this time slice. Error: $($_.Exception.Message)"
             Write-Warning "ServyWatermark: $errorMessage"
             
             if ($ScriptDir) {
@@ -202,10 +224,14 @@ function Update-Watermark {
             }
             break # Exit loop for non-IO exceptions
         } finally {
-            # Safely release the active handles and buffers
+            # Safely release active tracking handles, files, and staging contexts
             if ($null -ne $writer) { try { $writer.Dispose() } catch {} }
             if ($null -ne $reader) { try { $reader.Dispose() } catch {} }
-            if ($null -ne $fs)     { $fs.Dispose() }
+            if ($null -ne $fs)     { try { $fs.Dispose() }     catch {} }
+            
+            # Post-swap cleanup: Scrub both transient staging and backup assets from disk
+            if (Test-Path $tempFile)   { try { Remove-Item $tempFile -Force }   catch {} }
+            if (Test-Path $backupFile) { try { Remove-Item $backupFile -Force } catch {} }
         }
     }
 }
