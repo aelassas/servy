@@ -6,7 +6,6 @@ using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Services;
 using Servy.UI.ViewModels;
-using System.Collections.ObjectModel;
 
 namespace Servy.Manager.ViewModels
 {
@@ -152,8 +151,7 @@ namespace Servy.Manager.ViewModels
             var oldCts = Interlocked.Exchange(ref _serviceSearchCts, newCts);
             if (oldCts != null)
             {
-                oldCts.Cancel();
-                oldCts.Dispose();
+                Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
 
             var token = newCts.Token;

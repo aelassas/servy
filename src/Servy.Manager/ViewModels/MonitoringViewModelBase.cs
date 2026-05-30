@@ -151,8 +151,7 @@ namespace Servy.Manager.ViewModels
             var oldCts = Interlocked.Exchange(ref _monitoringCts, newCts);
             if (oldCts != null)
             {
-                oldCts.Cancel();
-                oldCts.Dispose();
+                Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
         }
 

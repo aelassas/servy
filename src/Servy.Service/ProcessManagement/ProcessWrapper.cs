@@ -215,7 +215,7 @@ namespace Servy.Service.ProcessManagement
         public bool? Stop(int timeoutMs)
         {
             ThrowIfDisposed();
-            return TryStopGracefullyOrKill(_process, timeoutMs, timeoutMs);
+            return TryStopGracefullyOrKill(_process, timeoutMs: timeoutMs, postKillWaitMs: AppConfig.DefaultDescendantPostKillWaitMs);
         }
 
         /// <summary>

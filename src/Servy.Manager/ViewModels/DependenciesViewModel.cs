@@ -324,8 +324,7 @@ namespace Servy.Manager.ViewModels
 
             if (oldCts != null)
             {
-                oldCts.Cancel();
-                oldCts.Dispose();
+                Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
 
             var token = newCts.Token;

@@ -5,6 +5,7 @@ using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System.Diagnostics;
+using System.Security;
 
 namespace Servy.Service.CommandLine
 {
@@ -165,7 +166,7 @@ namespace Servy.Service.CommandLine
             {
                 return EnvironmentVariableParser.Parse(raw ?? string.Empty);
             }
-            catch (FormatException ex)
+            catch (Exception ex) when (ex is FormatException || ex is ArgumentException || ex is ArgumentOutOfRangeException)
             {
                 Logger.Error(
                     $"Service '{serviceName}': stored {fieldName} value is malformed and could not be parsed " +
@@ -183,7 +184,11 @@ namespace Servy.Service.CommandLine
             {
                 return processHelper.ResolvePath(rawPath ?? string.Empty) ?? string.Empty;
             }
-            catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
+            catch (Exception ex) when (ex is InvalidOperationException
+            || ex is ArgumentException
+            || ex is NotSupportedException
+            || ex is PathTooLongException
+            || ex is SecurityException)
             {
                 Logger.Error(
                     $"Service '{serviceName}': stored {fieldName} location resolution failed or is invalid " +

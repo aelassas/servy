@@ -49,6 +49,22 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("C:\\my..folder\\path", true)]    // Legitimate ".." inside a folder name
         [InlineData("C:\\folder\\file..txt", true)]   // Legitimate ".." inside a file name
         [InlineData("C:\\valid\\path\\..", false)]    // Traversal segment at the very end
+
+        // COVERS: Filename-invalid characters in the file name segment
+        [InlineData("C:\\logs\\app<bad>.log", false)]  // Less-than '<' in filename
+        [InlineData("C:\\logs\\app>bad>.log", false)]  // Greater-than '>' in filename
+        [InlineData("C:\\logs\\app*.log", false)]      // Wildcard '*' in filename
+        [InlineData("C:\\logs\\app?.log", false)]      // Wildcard '?' in filename
+        [InlineData("C:\\logs\\app\"bad\".log", false)] // Quote '"' in filename
+
+        // COVERS: Filename-invalid characters in intermediate directory segments
+        [InlineData("C:\\bad<dir>\\app.log", false)]   // Less-than '<' in directory segment
+        [InlineData("C:\\bad|dir\\app.log", false)]    // Pipe '|' in directory segment
+        [InlineData("C:\\bad?dir\\app.log", false)]    // Wildcard '?' in directory segment
+
+        // COVERS: Misplaced colons (Win32 streams syntax validation)
+        [InlineData("C:\\logs\\file:name.log", false)] // Colon inside a sub-directory or file segment
+        [InlineData("C:relative\\path.log", false)]   // Drive-relative path (fails absolute constraint)
         public void IsValidPath_VariousInputs_ReturnsExpected(string? path, bool expected)
         {
             // Act

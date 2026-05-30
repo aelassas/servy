@@ -507,8 +507,7 @@ namespace Servy.Manager.ViewModels
             var oldCts = Interlocked.Exchange(ref _cts, newCts);
             if (oldCts != null)
             {
-                oldCts.Cancel();
-                oldCts.Dispose();
+                Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
 
             var token = newCts.Token;
@@ -735,8 +734,7 @@ namespace Servy.Manager.ViewModels
             var oldCts = Interlocked.Exchange(ref _cts, null);
             if (oldCts != null)
             {
-                oldCts.Cancel();
-                oldCts.Dispose();
+                Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
 
             if (_refreshTimer != null)

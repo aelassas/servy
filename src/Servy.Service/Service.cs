@@ -1727,6 +1727,7 @@ namespace Servy.Service
             // Helper local function to handle the asynchronous wait and safety checks
             async Task ScheduleRecoveryAsync(int delay)
             {
+                bool recoveryTriggered = false;
                 try
                 {
                     // Use the cancellation token to allow the delay to be aborted during service shutdown
@@ -1736,7 +1737,7 @@ namespace Servy.Service
                     if (!_isTearingDown && !_disposed)
                     {
                         await InitiateRecoveryAsync();
-                        return; // Successfully handed off to the recovery orchestrator
+                        recoveryTriggered = true; // Successfully handed off to the recovery orchestrator
                     }
                 }
                 catch (OperationCanceledException)
@@ -1747,10 +1748,35 @@ namespace Servy.Service
                 {
                     _logger?.Error($"Unexpected error during scheduled recovery: {ex.Message}");
                 }
-
-                // SAFETY RESET: If we reach this line, InitiateRecoveryAsync was skipped
-                // or the delay threw an exception. We MUST clear the gatekeeper flag.
-                _isRecovering = false;
+                finally
+                {
+                    // SAFETY RESET: If we reach this line, InitiateRecoveryAsync was skipped
+                    // or the delay threw an exception. We MUST clear the gatekeeper flag.
+                    // Only reset if we didn't hand off to the orchestrator.
+                    // If we hand off, InitiateRecoveryAsync() is responsible for managing the state.
+                    if (!recoveryTriggered)
+                    {
+                        if (!recoveryTriggered)
+                        {
+                            // Use the token here to ensure we don't block shutdown if contention is high
+                            var ct = _cancellationSource?.Token ?? CancellationToken.None;
+                            try
+                            {
+                                await _healthCheckSemaphore.WaitAsync(ct);
+                                try { _isRecovering = false; }
+                                finally { _healthCheckSemaphore.Release(); }
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                _logger?.Info("ScheduleRecoveryAsync: Cleanup cancelled; service shutting down.");
+                            }
+                            catch (ObjectDisposedException)
+                            {
+                                _logger?.Info("ScheduleRecoveryAsync: Semaphore disposed; cleanup abandoned.");
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -2349,15 +2375,14 @@ namespace Servy.Service
                     {
                         _disposed = true;
 
-                        _cancellationSource?.Dispose();
+                        try { _cancellationSource?.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _cancellationSource failed: {ex.Message}"); }
                         _cancellationSource = null;
 
-                        _secureData?.Dispose();
-                        _protectedKeyProvider?.Dispose();
-                        _dbContext?.Dispose();
-
-                        _fileSemaphore?.Dispose();
-                        _healthCheckSemaphore?.Dispose();
+                        try { _secureData?.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _secureData failed: {ex.Message}"); }
+                        try { _protectedKeyProvider?.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _protectedKeyProvider failed: {ex.Message}"); }
+                        try { _dbContext?.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _dbContext failed: {ex.Message}"); }
+                        try { _fileSemaphore.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _fileSemaphore failed: {ex.Message}"); }
+                        try { _healthCheckSemaphore.Dispose(); } catch (Exception ex) { _logger?.Warn($"Disposing _healthCheckSemaphore failed: {ex.Message}"); }
                     }
                 }
             }
@@ -2492,10 +2517,17 @@ namespace Servy.Service
                 try
                 {
                     // Dispose output writers for stdout and stderr streams
-                    _stdoutWriter?.Dispose();
-                    if (!ReferenceEquals(_stderrWriter, _stdoutWriter)) _stderrWriter?.Dispose();
-                    _stdoutWriter = null;
-                    _stderrWriter = null;
+                    var stdout = Interlocked.Exchange(ref _stdoutWriter, null);
+                    var stderr = Interlocked.Exchange(ref _stderrWriter, null);
+
+                    try { stdout?.Dispose(); }
+                    catch (Exception ex) { _logger?.Warn($"Failed to dispose stdout writer: {ex.Message}"); }
+
+                    if (!ReferenceEquals(stderr, stdout))
+                    {
+                        try { stderr?.Dispose(); }
+                        catch (Exception ex) { _logger?.Warn($"Failed to dispose stderr writer: {ex.Message}"); }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -2848,21 +2880,19 @@ namespace Servy.Service
         {
             if (_trackedHooks == null) return;
 
-            try
+            foreach (var hook in _trackedHooks)
             {
-                foreach (var hook in _trackedHooks)
+                // Safely dispose each hook to release native handles
+                try { hook?.Dispose(); }
+                catch (Exception ex)
                 {
-                    // Safely dispose each hook to release native handles
-                    hook?.Dispose();
+                    _logger?.Warn($"Failed to dispose tracked hook: {ex.Message}");
                 }
+            }
 
-                // Clear the collection while still under the lock
-                _trackedHooks.Clear();
-            }
-            catch (Exception ex)
-            {
-                _logger?.Error($"Error during hooks cleanup: {ex.Message}");
-            }
+            // Clear the collection while still under the lock
+            try { _trackedHooks.Clear(); }
+            catch (Exception ex) { _logger?.Warn($"Failed to clear tracked hooks: {ex.Message}"); }
         }
 
         /// <summary>

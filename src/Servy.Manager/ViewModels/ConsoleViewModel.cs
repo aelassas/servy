@@ -61,11 +61,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public event Action<bool>? RequestScroll;
 
-        /// <summary>
-        /// Event to signal the view to capture its state.
-        /// </summary>
-        public event Action<bool>? RequestStatePreservation;
-
         #endregion
 
         #region Properties - Log Data
@@ -317,8 +312,7 @@ namespace Servy.Manager.ViewModels
             var oldCts = Interlocked.Exchange(ref _logFilterCts, newCts);
             if (oldCts != null)
             {
-                oldCts.Cancel();
-                oldCts.Dispose();
+                Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
 
             var token = newCts.Token;
@@ -400,8 +394,7 @@ namespace Servy.Manager.ViewModels
                 var oldCts = Interlocked.Exchange(ref _tailingCts, newCts);
                 if (oldCts != null)
                 {
-                    oldCts.Cancel();
-                    oldCts.Dispose();
+                    Helpers.Helper.CancelAndDisposeSafely(oldCts);
                 }
                 var token = newCts.Token;
 
@@ -519,18 +512,12 @@ namespace Servy.Manager.ViewModels
                     // ONLY add the lines if this tailer still belongs to the ACTIVE session
                     if (sessionId != _currentSessionId) return;
 
-                    // Signal the View to "Look at the selection now!"
-                    RequestStatePreservation?.Invoke(true);
-
                     // HARD STOP: do not mutate collection while user is selecting
                     if (_isSelectionActive)
                         return;
 
                     RawLines.AddRange(lines);
                     RawLines.TrimToSize(_maxLines);
-
-                    // Signal the View to "Restore it now!"
-                    RequestStatePreservation?.Invoke(false);
 
                     RequestScroll?.Invoke(false);
                 }, DispatcherPriority.Background);
@@ -654,6 +641,10 @@ namespace Servy.Manager.ViewModels
                         oldFilterCts.Cancel();
                         oldFilterCts.Dispose();
                     }
+
+                    // 4. Clear event invocation lists so the View can be collected even if it
+                    // forgot to unsubscribe (and so stray ticks don't reach a disposed View).
+                    RequestScroll = null;
                 }
 
                 base.Dispose(disposing);
