@@ -39,7 +39,7 @@ namespace Servy.Manager.Services
         /// </summary>
         private readonly ConcurrentDictionary<string, Lazy<SemaphoreSlim>> _serviceLocks = new ConcurrentDictionary<string, Lazy<SemaphoreSlim>>(StringComparer.OrdinalIgnoreCase);
 
-        private bool _isDisposed;
+        private int _isDisposed = 0; // 0 = false, 1 = true
 
         #region Private Fields
 
@@ -534,32 +534,28 @@ namespace Servy.Manager.Services
         /// </param>
         protected virtual void Dispose(bool disposing)
         {
-            if (_isDisposed)
+            // Atomic guard: Only the first caller proceeds to disposal
+            if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
             {
                 return;
             }
 
             if (disposing)
             {
-                // Free managed objects here
                 foreach (var sem in _serviceLocks.Values)
                 {
                     try
                     {
+                        // Semaphores are now exclusively owned by the disposal path
                         sem.Value.Dispose();
                     }
                     catch (Exception ex)
                     {
-                        // Fail-silent on disposal to prevent crash during shutdown
                         Logger.Error("Error disposing semaphore during ServiceCommands teardown.", ex);
                     }
                 }
                 _serviceLocks.Clear();
             }
-
-            // Free unmanaged objects here (if any)
-
-            _isDisposed = true;
         }
 
         #endregion

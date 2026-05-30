@@ -117,18 +117,11 @@ namespace Servy.Restarter
             }
             finally
             {
-                // Standard teardown
-                secureData?.Dispose();              // dispose consumer first
-                protectedKeyProvider?.Dispose();    // then the provider it built on
-
-                dbContext?.Dispose();
-
-                // ScopedLogger (proxy) disposal is a no-op, but included for pattern consistency.
-                scopedLogger?.Dispose();
-
-                // rootLogger actually disposes the unmanaged EventLog handle.
-                rootLogger?.Dispose();
-
+                try { secureData?.Dispose(); } catch (Exception ex) { Logger.Warn("Failed to dispose SecureData.", ex); }
+                try { protectedKeyProvider?.Dispose(); } catch (Exception ex) { Logger.Warn("Failed to dispose ProtectedKeyProvider.", ex); }
+                try { dbContext?.Dispose(); } catch (Exception ex) { Logger.Warn("Failed to dispose AppDbContext.", ex); }
+                try { scopedLogger?.Dispose(); } catch (Exception ex) { Logger.Warn("Failed to dispose scoped logger.", ex); }
+                try { rootLogger?.Dispose(); } catch (Exception ex) { Logger.Warn("Failed to dispose root EventLogLogger.", ex); }
 
                 Logger.Shutdown();
             }

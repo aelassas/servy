@@ -131,6 +131,7 @@
     <Compile Include="Converters\StartupTypeConverter.cs" />
     <Compile Include="Converters\StatusConverter.cs" />
     <Compile Include="Design\DesignTimeMocks.cs" />
+    <Compile Include="Helpers\Helper.cs" />
     <Compile Include="Models\ConsoleService.cs" />
     <Compile Include="Models\DependencyService.cs" />
     <Compile Include="Models\LogLine.cs" />
@@ -288,6 +289,7 @@
       <Name>Servy.UI</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

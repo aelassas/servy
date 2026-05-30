@@ -49,6 +49,7 @@ namespace Servy.Core.Data
 
         /// <summary>
         /// Asynchronously inserts or updates a collection of services in the database.
+        /// Preserves runtime state and credentials for each incoming DTO.
         /// </summary>
         /// <param name="services">The collection of <see cref="ServiceDto"/> objects to be persisted.</param>
         /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>

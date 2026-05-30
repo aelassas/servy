@@ -33,8 +33,12 @@ namespace Servy.Core.Helpers
         /// </remarks>
         private static readonly char[] InvalidServiceChars = new[] { '\\', '/', ':', '*', '?', '"', '<', '>', '|' };
 
+        // Cache the invalid characters to avoid array allocations on high-frequency validation calls
+        private static readonly char[] InvalidPathChars = Path.GetInvalidPathChars();
+        private static readonly char[] InvalidFileNameChars = Path.GetInvalidFileNameChars();
+
         /// <summary>
-        /// Checks if the provided path is valid.
+        /// Checks if the provided path is valid, absolute, and free of invalid directory or filename characters.
         /// </summary>
         /// <param name="path">The path to validate.</param>
         /// <returns>True if the path is valid, otherwise false.</returns>
@@ -45,26 +49,52 @@ namespace Servy.Core.Helpers
                 return false;
             }
 
-            if (path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Any(s => s == "..")) // no directory traversal
+            // 1. Directory Traversal Defense
+            var segments = path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (segments.Any(s => s == ".."))
             {
                 return false;
             }
 
             try
             {
-                // Check for invalid characters
-                if (path.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
+                // 2. Base Path Constraint Check
+                if (path.IndexOfAny(InvalidPathChars) >= 0)
                 {
                     return false;
                 }
 
-                // Check if the path is absolute
+                // 3. Absolute Path Enforcement
                 if (!IsAbsolute(path))
                 {
                     return false;
                 }
 
-                // Try to normalize the path (throws if invalid)
+                // 4. ROBUSTNESS: Validate individual segments against filename restrictions.
+                // We skip the first segment if it represents the drive root (e.g., "C:") to preserve the colon ':'.
+                for (int i = 0; i < segments.Length; i++)
+                {
+                    var segment = segments[i];
+
+                    if (string.IsNullOrEmpty(segment))
+                    {
+                        continue;
+                    }
+
+                    // If it's the first segment and looks like a drive specifier (e.g., "C:"), skip filename validation
+                    if (i == 0 && segment.Length == 2 && segment[1] == ':' && char.IsLetter(segment[0]))
+                    {
+                        continue;
+                    }
+
+                    // Every sub-directory name and the final file name must conform to strict naming rules
+                    if (segment.IndexOfAny(InvalidFileNameChars) >= 0)
+                    {
+                        return false;
+                    }
+                }
+
+                // 5. Final Win32 Normalization Pass (validates lengths, formatting, and permissions)
                 _ = Path.GetFullPath(path);
 
                 return true;

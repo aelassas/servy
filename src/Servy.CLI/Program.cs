@@ -293,12 +293,24 @@ namespace Servy.CLI
                 }
                 finally
                 {
-                    _secureData?.Dispose();
-                    protectedKeyProvider?.Dispose();
-                    dbContext?.Dispose();
-                    Logger.Shutdown();
+                    TryRun(() => _secureData?.Dispose(), nameof(_secureData));
+                    TryRun(() => protectedKeyProvider?.Dispose(), nameof(protectedKeyProvider));
+                    TryRun(() => dbContext?.Dispose(), nameof(dbContext));
+                    TryRun(Logger.Shutdown, nameof(Logger.Shutdown));
                 }
             }
+        }
+
+        /// <summary>
+        /// Attempts to execute a cleanup action, suppressing any exceptions to ensure 
+        /// the teardown process proceeds.
+        /// </summary>
+        /// <param name="action">The delegate containing the cleanup logic to execute.</param>
+        /// <param name="name">The descriptive name of the component for logging purposes.</param>
+        private static void TryRun(Action action, string name)
+        {
+            try { action(); }
+            catch (Exception ex) { Logger.Warn($"{name} cleanup failed.", ex); }
         }
 
         /// <summary>

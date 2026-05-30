@@ -10,7 +10,6 @@ using Servy.UI.Helpers;
 using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
@@ -333,8 +332,7 @@ namespace Servy.Manager.ViewModels
 
             if (oldCts != null)
             {
-                oldCts.Cancel();
-                oldCts.Dispose();
+                Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
 
             var token = newCts.Token;
