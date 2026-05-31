@@ -2155,7 +2155,7 @@ namespace Servy.Core.UnitTests.Services
                 .Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
                 .Returns(new QueryConfigDelegate((SafeServiceHandle h, IntPtr buf, int size, out int bytesNeeded) =>
                 {
-                    bytesNeeded = 123;
+                    bytesNeeded = 1;
                     return true;
                 }));
 
@@ -2163,7 +2163,7 @@ namespace Servy.Core.UnitTests.Services
                 Setup(x => x.QueryServiceConfig2(It.IsAny<SafeServiceHandle>(), SERVICE_CONFIG_DESCRIPTION, It.IsAny<IntPtr>(), It.IsAny<int>(), ref It.Ref<int>.IsAny))
                 .Returns(new QueryConfig2Delegate((SafeServiceHandle h, uint dwInfoLevel, IntPtr lpBuffer, int size, ref int bytesNeeded) =>
                 {
-                    bytesNeeded = 123;
+                    bytesNeeded = 1;
                     return true;
                 }));
 
@@ -2178,7 +2178,7 @@ namespace Servy.Core.UnitTests.Services
                  {
                      // Branch Coverage: This forces the 'if (ok && info.fDelayedAutostart)' 
                      // condition to evaluate to true.
-                     req = 123;
+                     req = 1;
                      info.fDelayedAutostart = true;
                      return true; // ok = true
                  }));
@@ -2221,7 +2221,7 @@ namespace Servy.Core.UnitTests.Services
                 .Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
                 .Returns(new QueryConfigDelegate((SafeServiceHandle h, IntPtr buf, int size, out int bytesNeeded) =>
                 {
-                    bytesNeeded = 123;
+                    bytesNeeded = 1;
                     return true;
                 }));
 
@@ -2238,7 +2238,7 @@ namespace Servy.Core.UnitTests.Services
                     if (buf == IntPtr.Zero)
                     {
                         // Step 1: Provide the required size
-                        req = 123;
+                        req = 1;
                         return false;
                     }
 
@@ -2286,7 +2286,7 @@ namespace Servy.Core.UnitTests.Services
                 .Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
                 .Returns(new QueryConfigDelegate((SafeServiceHandle h, IntPtr buf, int size, out int bytesNeeded) =>
                 {
-                    bytesNeeded = 123;
+                    bytesNeeded = 1;
                     return true;
                 }));
 
@@ -2303,7 +2303,7 @@ namespace Servy.Core.UnitTests.Services
                 {
                     if (buf == IntPtr.Zero)
                     {
-                        req = 123; // Just enough for the struct itself
+                        req = 1; // Just enough for the struct itself
                         return false;
                     }
 
