@@ -80,6 +80,42 @@ namespace Servy.Core.Helpers
                         if (sc.Status == ServiceControllerStatus.Running)
                             continue;
 
+                        var service = await _serviceRepository.GetByNameAsync(serviceName, decrypt: false, cancellationToken: cancellationToken);
+                        if (service == null)
+                        {
+                            throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
+                        }
+
+                        // ROBUSTNESS: Leverage the symmetric helper method instead of nested ternary operations
+                        int preLaunchTimeout = string.IsNullOrEmpty(service.PreLaunchExecutablePath)
+                            ? 0
+                            : (service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds);
+
+                        int timeout = CalculateStartTimeout(service.StartTimeout, preLaunchTimeout);
+                        var waitTime = TimeSpan.FromSeconds(timeout);
+
+                        // --- ROBUSTNESS FIX: Settle In-Flight Transitional Pending States ---
+                        // If a service is transitioning (e.g., StopPending from a prior failure/command), 
+                        // wait for it to land on a terminal state before deciding whether to issue Start or Continue.
+                        var stopwatch = Stopwatch.StartNew();
+                        while (sc.Status == ServiceControllerStatus.StopPending ||
+                               sc.Status == ServiceControllerStatus.PausePending ||
+                               sc.Status == ServiceControllerStatus.StartPending ||
+                               sc.Status == ServiceControllerStatus.ContinuePending)
+                        {
+                            if (stopwatch.Elapsed > waitTime)
+                                throw new System.ServiceProcess.TimeoutException();
+
+                            cancellationToken.ThrowIfCancellationRequested();
+                            await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
+                            sc.Refresh();
+                        }
+
+                        // If the settled state turned out to be Running, we are good to go
+                        if (sc.Status == ServiceControllerStatus.Running)
+                            continue;
+
+                        // Now safely evaluate stable states and issue control commands
                         try
                         {
                             if (sc.Status == ServiceControllerStatus.Stopped)
@@ -100,22 +136,7 @@ namespace Servy.Core.Helpers
                             }
                         }
 
-                        var service = await _serviceRepository.GetByNameAsync(serviceName, decrypt: false, cancellationToken: cancellationToken);
-                        if (service == null)
-                        {
-                            throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
-                        }
-
-                        // ROBUSTNESS: Leverage the symmetric helper method instead of nested ternary operations
-                        int preLaunchTimeout = string.IsNullOrEmpty(service.PreLaunchExecutablePath)
-                            ? 0
-                            : (service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds);
-
-                        int timeout = CalculateStartTimeout(service.StartTimeout, preLaunchTimeout);
-                        var waitTime = TimeSpan.FromSeconds(timeout);
-
                         // This blocks until the service is Started or the waitTime expires
-                        var stopwatch = Stopwatch.StartNew();
                         while (sc.Status != ServiceControllerStatus.Running)
                         {
                             if (stopwatch.Elapsed > waitTime)

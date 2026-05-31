@@ -320,14 +320,13 @@ namespace Servy.Manager.ViewModels
         {
             // 1. Thread-safe atomic swap to cancel any existing load operation
             var newCts = new CancellationTokenSource();
+            var token = newCts.Token;
             var oldCts = Interlocked.Exchange(ref _loadTreeCts, newCts);
 
             if (oldCts != null)
             {
                 Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
-
-            var token = newCts.Token;
 
             try
             {

@@ -143,7 +143,7 @@ Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyCont
                 }
             }
 
-            $tagPattern = "(<$tag>)[^<]*(</$tag>)"
+            $tagPattern = "(<$tag(?:\s+[^>]*)?>)[^<]*(</$tag>)"
             $tagMatches = [regex]::Matches($content, $tagPattern)
         
             if ($tagMatches.Count -gt 0) {

@@ -469,6 +469,17 @@ namespace Servy.Infrastructure.Data
                 Logger.Warn($"ApplyVersion4: orphan column(s) '{orphanList}' were preserved in 'Services_orphans_v4' for manual recovery. Drop that table once you have verified the data is no longer needed.");
             }
 
+            // Snapshot existing dependent objects (indexes, triggers, views) before dropping the table.
+            // Exclude 'idx_services_name_lower' since it is explicitly recreated down below.
+            // Automatically skips system auto-indexes where SQL is NULL.
+            var dependents = connection.Query<(string Type, string Name, string Sql)>(
+                @"SELECT type, name, sql FROM sqlite_master 
+                  WHERE tbl_name = 'Services' 
+                    AND type IN ('index', 'trigger', 'view') 
+                    AND sql IS NOT NULL 
+                    AND name <> 'idx_services_name_lower';",
+                transaction: transaction).ToList();
+
             var columnsToCopy = new List<string> { "Id" };
             columnsToCopy.AddRange(expectedColumns.Where(existingColumns.Contains));
 
@@ -484,6 +495,21 @@ namespace Servy.Infrastructure.Data
 
             // Re-create the functional unique index because SQLite drops indexes when the parent table is dropped
             connection.Execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_lower ON Services(LOWER(Name));", transaction: transaction);
+
+            // Re-create all snapshot dependent indexes, triggers, and views
+            foreach (var dependent in dependents)
+            {
+                try
+                {
+                    connection.Execute(dependent.Sql, transaction: transaction);
+                    Logger.Debug($"Successfully restored dependent {dependent.Type}: '{dependent.Name}' during table rebuild.");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Failed to restore dependent {dependent.Type} '{dependent.Name}'. Statement: {dependent.Sql}", ex);
+                    throw;
+                }
+            }
 
             Logger.Info("Database successfully migrated to Version 4.");
         }

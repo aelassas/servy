@@ -19,7 +19,7 @@
   <data name="SecurityWarningMessage" xml:space="preserve">
     <value>Servy requires administrative privileges to manage system services.</value>
   </data>
-  
+
   <data name="SqliteVersionWarningTitle" xml:space="preserve">
     <value>Security Alert</value>
   </data>
@@ -147,7 +147,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>* Required fields</value>
   </data>
 
-  
+
   <data name="Dialog_SelectStdoutFile" xml:space="preserve">
     <value>Select standard output file</value>
   </data>
@@ -491,7 +491,7 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Info_StopTimeout" xml:space="preserve">
     <value>The timeout in seconds to wait for the process to exit.</value>
   </data>
-  
+
   <!-- Pre-Stop -->
   <data name="Info_PreStop" xml:space="preserve">
     <value>Configure an optional script or executable to run before the main service stops. Use it for graceful shutdown tasks such as notifying external systems or draining resources. The pre-stop process runs synchronously and extends the service stop timeout while running, unless the timeout is set to 0.</value>
@@ -530,5 +530,7 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Msg_ArgumentsLengthReached" xml:space="preserve">
     <value>Arguments exceed the Windows command-line limit of {0} characters.</value>
   </data>
-
+  <data name="Msg_ManagerAppLaunchFailed" xml:space="preserve">
+    <value>Failed to launch the Manager application.</value>
+  </data>
 </root>

@@ -85,13 +85,15 @@ namespace Servy.Core.Services
 
                 if (startDate.HasValue)
                 {
-                    var startUtc = startDate.Value.Date.ToUniversalTime();
+                    var localMidnight = DateTime.SpecifyKind(startDate.Value.Date, DateTimeKind.Local);
+                    var startUtc = localMidnight.ToUniversalTime();
                     systemFilters.Add($"TimeCreated[@SystemTime >= '{startUtc:o}']");
                 }
 
                 if (endDate.HasValue)
                 {
-                    var endUtc = endDate.Value.Date.AddDays(1).AddTicks(-1).ToUniversalTime();
+                    var localEnd = DateTime.SpecifyKind(endDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Local);
+                    var endUtc = localEnd.ToUniversalTime();
                     systemFilters.Add($"TimeCreated[@SystemTime <= '{endUtc:o}']");
                 }
 

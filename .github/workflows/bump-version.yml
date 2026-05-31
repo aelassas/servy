@@ -120,6 +120,10 @@ jobs:
           
           git update-index --chmod=+x ./bump-version.ps1
           ./bump-version.ps1 -Version $env:NEXT_VERSION
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "bump-version.ps1 failed with exit $LASTEXITCODE"
+              exit $LASTEXITCODE
+          }
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
           # git status --porcelain detects untracked, modified, and deleted files.
@@ -142,6 +146,10 @@ jobs:
           
           git update-index --chmod=+x ./bump-version.ps1
           ./bump-version.ps1 -Version $env:NEXT_VERSION
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "bump-version.ps1 failed with exit $LASTEXITCODE"
+              exit $LASTEXITCODE
+          }
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
           # Using porcelain check consistently to prevent silent skips on net48.

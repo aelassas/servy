@@ -288,10 +288,10 @@ namespace Servy.Service.UnitTests.Helpers
 
             var mockLog = new Mock<IServyLogger>();
             bool startActionInvoked = false;
-            Action<string, string, string, List<EnvironmentVariable>> startAction = (exe, args, dir, env) => startActionInvoked = true;
+            Action<string, string, string, List<EnvironmentVariable>, CancellationToken> startAction = (exe, args, dir, env, ct) => startActionInvoked = true;
 
             // Act
-            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000);
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, TestContext.Current.CancellationToken);
 
             // Assert
             mockProcess.Verify(p => p.Stop(1000), Times.Once);
@@ -312,10 +312,10 @@ namespace Servy.Service.UnitTests.Helpers
 
             var mockLog = new Mock<IServyLogger>();
             bool startActionInvoked = false;
-            Action<string, string, string, List<EnvironmentVariable>> startAction = (exe, args, dir, env) => startActionInvoked = true;
+            Action<string, string, string, List<EnvironmentVariable>, CancellationToken> startAction = (exe, args, dir, env, ct) => startActionInvoked = true;
 
             // Act
-            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000);
+            _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000, TestContext.Current.CancellationToken);
 
             // Assert
             mockLog.Verify(l => l.Error(It.Is<string>(s => s.Contains("proceeding with launch anyway")), It.IsAny<UnauthorizedAccessException>()), Times.Once);

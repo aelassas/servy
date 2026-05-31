@@ -53,12 +53,24 @@ namespace Servy.UI
         {
             if (items == null) return;
 
-            foreach (var item in items)
-            {
-                Items.Add(item);
-            }
+            bool wasModified = false;
 
-            RaiseResetNotifications();
+            try
+            {
+                foreach (var item in items)
+                {
+                    Items.Add(item);
+                    wasModified = true;
+                }
+            }
+            finally
+            {
+                // Only trigger the reset notification if we actually added items
+                if (wasModified)
+                {
+                    RaiseResetNotifications();
+                }
+            }
         }
 
         /// <summary>
@@ -78,21 +90,33 @@ namespace Servy.UI
             int removeCount = Items.Count - maxItems;
             if (removeCount <= 0) return;
 
-            // Using RemoveRange is O(n) instead of O(n^2) for multiple RemoveAt(0) calls.
-            if (Items is List<T> list)
+            // Use a flag to ensure we only notify if we actually modified the collection
+            bool wasModified = false;
+
+            try
             {
-                list.RemoveRange(0, removeCount);
-            }
-            else
-            {
-                // Fallback for non-List implementations, though ObservableCollection uses List by default
-                for (int i = 0; i < removeCount; i++)
+                if (Items is List<T> list)
                 {
-                    Items.RemoveAt(0);
+                    list.RemoveRange(0, removeCount);
+                    wasModified = true;
+                }
+                else
+                {
+                    for (int i = 0; i < removeCount; i++)
+                    {
+                        Items.RemoveAt(0);
+                        wasModified = true;
+                    }
                 }
             }
-
-            RaiseResetNotifications();
+            finally
+            {
+                // Only trigger the reset notification if we actually removed items
+                if (wasModified)
+                {
+                    RaiseResetNotifications();
+                }
+            }
         }
 
         /// <summary>

@@ -63,12 +63,7 @@ namespace Servy.Core.Logging
             return new ServyEventLogEntry
             {
                 EventId = evt.Id,
-                // Avoid implicit conversion from DateTime.MinValue.
-                // We treat the event timestamp as local on this OS and fallback directly to DateTimeOffset.MinValue 
-                // to prevent ArgumentOutOfRangeException in positive-offset time zones.
-                Time = evt.TimeCreated.HasValue
-                    ? new DateTimeOffset(evt.TimeCreated.Value)
-                    : DateTimeOffset.MinValue,
+                Time = SafeToOffset(evt.TimeCreated),
                 Level = ParseLevel(evt.Level ?? 0),
                 ProviderName = evt.ProviderName,
                 Message = message,
@@ -111,6 +106,29 @@ namespace Servy.Core.Logging
                     Logger.Debug($"Unknown event log level '{level}' encountered; collapsing to Information.");
                     return EventLogLevel.Information;
             }
+        }
+
+        /// <summary>
+        /// Safely converts a nullable <see cref="DateTime"/> to a <see cref="DateTimeOffset"/>.
+        /// </summary>
+        /// <param name="raw">The source <see cref="DateTime"/> to convert.</param>
+        /// <returns>
+        /// The converted <see cref="DateTimeOffset"/>; or <see cref="DateTimeOffset.MinValue"/> if the input is null.
+        /// </returns>
+        /// <remarks>
+        /// .evtx timestamps are persisted as UTC FILETIMEs. This method explicitly coerces the input 
+        /// <see cref="DateTimeKind"/> to <see cref="DateTimeKind.Utc"/> before conversion to prevent 
+        /// local-offset arithmetic, which can trigger an <see cref="ArgumentOutOfRangeException"/> 
+        /// for values approaching <see cref="DateTime.MinValue"/>.
+        /// </remarks>
+        private static DateTimeOffset SafeToOffset(DateTime? raw)
+        {
+            if (!raw.HasValue) return DateTimeOffset.MinValue;
+
+            // .evtx timestamps are persisted as UTC FILETIMEs; coerce Kind to remove the
+            // local-offset arithmetic that overflows for near-MinValue inputs.
+            var utc = DateTime.SpecifyKind(raw.Value, DateTimeKind.Utc);
+            return new DateTimeOffset(utc, TimeSpan.Zero);
         }
     }
 }

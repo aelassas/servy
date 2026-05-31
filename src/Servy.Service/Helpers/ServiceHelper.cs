@@ -277,13 +277,14 @@ namespace Servy.Service.Helpers
         /// <inheritdoc />
         public void RestartProcess(
                     IProcessWrapper process,
-                    Action<string, string, string, List<EnvironmentVariable>> startProcess,
+                    Action<string, string, string, List<EnvironmentVariable>, CancellationToken> startProcess,
                     string realExePath,
                     string realArgs,
                     string workingDir,
                     List<EnvironmentVariable> environmentVariables,
                     IServyLogger logger,
-                    int stopTimeoutMs)
+                    int stopTimeoutMs,
+                    CancellationToken cancellationToken = default)
         {
             if (startProcess == null) throw new ArgumentNullException(nameof(startProcess));
 
@@ -330,7 +331,7 @@ namespace Servy.Service.Helpers
                     }
                 }
 
-                startProcess?.Invoke(realExePath, realArgs, workingDir, environmentVariables);
+                startProcess?.Invoke(realExePath, realArgs, workingDir, environmentVariables, cancellationToken);
 
                 logger?.Info("Process restarted.");
             }
