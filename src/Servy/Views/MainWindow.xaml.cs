@@ -76,8 +76,6 @@ namespace Servy.Views
                 Logger.Error("Error killing child processes.", ex);
             }
 
-            Logger.Shutdown();
-
             base.OnClosed(e);
         }
 

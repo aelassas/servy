@@ -635,16 +635,6 @@ namespace Servy.Manager.Views
                 Logger.Error("Error during ViewModel cleanup in OnClosed.", ex);
             }
 
-            // 3. Shutdown logging subsystem
-            try
-            {
-                Logger.Shutdown();
-            }
-            catch
-            {
-                // Fail-silent on logger shutdown
-            }
-
             base.OnClosed(e);
         }
 
