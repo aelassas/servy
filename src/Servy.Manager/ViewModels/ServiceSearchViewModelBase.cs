@@ -25,10 +25,10 @@ namespace Servy.Manager.ViewModels
     {
         #region Private fields
 
-        private bool _disposedValue;
         private string _searchText;
         private string _searchButtonText = Strings.Button_Search;
         private bool _isBusy;
+        private int _isDisposed = 0; // 0 = false, 1 = true
 
         #endregion
 
@@ -151,6 +151,12 @@ namespace Servy.Manager.ViewModels
                 return;
             }
 
+            // LIFECYCLE GATE: Bail immediately if the ViewModel has already initiated teardown
+            if (Volatile.Read(ref _isDisposed) != 0)
+            {
+                return;
+            }
+
             var newCts = new CancellationTokenSource();
             var oldCts = Interlocked.Exchange(ref _serviceSearchCts, newCts);
             if (oldCts != null)
@@ -158,7 +164,25 @@ namespace Servy.Manager.ViewModels
                 Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
 
-            var token = newCts.Token;
+            CancellationToken token;
+            try
+            {
+                // RACING DISPOSE CHECK: Capture token safely. If a racing Dispose pulled this 
+                // instance out from under us and processed it, this will throw an ObjectDisposedException.
+                token = newCts.Token;
+
+                // Re-verify global disposal state immediately after the swap to handle tight race windows
+                if (Volatile.Read(ref _isDisposed) != 0)
+                {
+                    Helpers.Helper.CancelAndDisposeSafely(newCts);
+                    return;
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // Captured CTS was cancelled and disposed mid-swap by a racing Dispose thread. Exit cleanly.
+                return;
+            }
 
             try
             {
@@ -200,18 +224,21 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         protected virtual void Dispose(bool disposing)
         {
-            if (!_disposedValue)
+            // Convert flag to atomic int and trip it FIRST 
+            // before cleaning tokens. This forces any racing search threads to immediately self-terminate.
+            if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
             {
-                if (disposing)
+                return;
+            }
+
+            if (disposing)
+            {
+                var oldSearchCts = Interlocked.Exchange(ref _serviceSearchCts, null);
+                if (oldSearchCts != null)
                 {
-                    var oldSearchCts = Interlocked.Exchange(ref _serviceSearchCts, null);
-                    if (oldSearchCts != null)
-                    {
-                        oldSearchCts.Cancel();
-                        oldSearchCts.Dispose();
-                    }
+                    // Defer directly to the shared safe-teardown infrastructure tool
+                    Helpers.Helper.CancelAndDisposeSafely(oldSearchCts);
                 }
-                _disposedValue = true;
             }
         }
 

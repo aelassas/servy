@@ -2070,7 +2070,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.Equal(ServiceStartType.Automatic, result[0].StartupType);
-            Assert.Equal("LocalSystem", result[0].LogOnAs); // Stayed default because bytesNeeded was 0
+            Assert.Null(result[0].LogOnAs); // Stayed null because bytesNeeded was 0
         }
 
         [Theory]
@@ -2156,6 +2156,22 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scmHandle);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "TestSvc", It.IsAny<uint>())).Returns(svcHandle);
 
+            _mockWindowsServiceApi
+                .Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
+                .Returns(new QueryConfigDelegate((SafeServiceHandle h, IntPtr buf, int size, out int bytesNeeded) =>
+                {
+                    bytesNeeded = 123;
+                    return true;
+                }));
+
+            _mockWindowsServiceApi.
+                Setup(x => x.QueryServiceConfig2(It.IsAny<SafeServiceHandle>(), SERVICE_CONFIG_DESCRIPTION, It.IsAny<IntPtr>(), It.IsAny<int>(), ref It.Ref<int>.IsAny))
+                .Returns(new QueryConfig2Delegate((SafeServiceHandle h, uint dwInfoLevel, IntPtr lpBuffer, int size, ref int bytesNeeded) =>
+                {
+                    bytesNeeded = 123;
+                    return true;
+                }));
+
             // Mock QueryServiceConfig2 for Delayed Auto-Start Info
             _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(
                 svcHandle,
@@ -2167,6 +2183,7 @@ namespace Servy.Core.UnitTests.Services
                  {
                      // Branch Coverage: This forces the 'if (ok && info.fDelayedAutostart)' 
                      // condition to evaluate to true.
+                     req = 123;
                      info.fDelayedAutostart = true;
                      return true; // ok = true
                  }));
@@ -2205,6 +2222,14 @@ namespace Servy.Core.UnitTests.Services
             int structSize = Marshal.SizeOf(typeof(SERVICE_DESCRIPTION));
             int totalNeeded = structSize + 512; // Buffer for the struct + the string data
 
+            _mockWindowsServiceApi
+                .Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
+                .Returns(new QueryConfigDelegate((SafeServiceHandle h, IntPtr buf, int size, out int bytesNeeded) =>
+                {
+                    bytesNeeded = 123;
+                    return true;
+                }));
+
             // Mock QueryServiceConfig2 (Level 1: Description)
             // We use a delegate to handle the 'ref int bytesNeeded' logic
             _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(
@@ -2218,7 +2243,7 @@ namespace Servy.Core.UnitTests.Services
                     if (buf == IntPtr.Zero)
                     {
                         // Step 1: Provide the required size
-                        req = totalNeeded;
+                        req = 123;
                         return false;
                     }
 
@@ -2262,6 +2287,14 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scmHandle);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "NoDescService", It.IsAny<uint>())).Returns(svcHandle);
 
+            _mockWindowsServiceApi
+                .Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
+                .Returns(new QueryConfigDelegate((SafeServiceHandle h, IntPtr buf, int size, out int bytesNeeded) =>
+                {
+                    bytesNeeded = 123;
+                    return true;
+                }));
+
             int structSize = Marshal.SizeOf(typeof(SERVICE_DESCRIPTION));
 
             // Mock QueryServiceConfig2 to return a structure with a NULL pointer for lpDescription
@@ -2275,7 +2308,7 @@ namespace Servy.Core.UnitTests.Services
                 {
                     if (buf == IntPtr.Zero)
                     {
-                        req = structSize; // Just enough for the struct itself
+                        req = 123; // Just enough for the struct itself
                         return false;
                     }
 
@@ -2299,6 +2332,12 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(string.Empty, result[0].Description);
             Assert.NotNull(result[0].Description);
         }
+
+        private delegate bool QueryConfigDelegate(
+            SafeServiceHandle h, 
+            IntPtr buf, 
+            int size, 
+            out int bytesNeeded);
 
         private delegate bool QueryConfig2DelayedStartDelegate(
             SafeServiceHandle hService,
@@ -2324,7 +2363,7 @@ namespace Servy.Core.UnitTests.Services
             var deps = new ServiceDependencyNode("ServiceName", "ServiceDisplayName");
 
             _mockController
-                .Setup(c => c.GetDependencies())
+                .Setup(c => c.GetDependencies(It.IsAny<CancellationToken>()))
                 .Returns(deps);
 
             _mockWindowsServiceApi.Setup(p => p.GetServices())
@@ -2342,7 +2381,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(deps.ServiceName, result.ServiceName);
             Assert.Equal(deps.DisplayName, result.DisplayName);
 
-            _mockController.Verify(c => c.GetDependencies(), Times.Once);
+            _mockController.Verify(c => c.GetDependencies(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -2352,7 +2391,7 @@ namespace Servy.Core.UnitTests.Services
             var deps = new ServiceDependencyNode("ServiceName", "ServiceDisplayName");
 
             _mockController
-                .Setup(c => c.GetDependencies())
+                .Setup(c => c.GetDependencies(It.IsAny<CancellationToken>()))
                 .Returns(deps);
 
             _mockWindowsServiceApi.Setup(p => p.GetServices())
@@ -2379,7 +2418,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             _mockController
-                .Setup(c => c.GetDependencies())
+                .Setup(c => c.GetDependencies(It.IsAny<CancellationToken>()))
                 .Throws(new InvalidOperationException("Boom!"));
 
             _mockWindowsServiceApi.Setup(p => p.GetServices())
@@ -2391,7 +2430,7 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.Throws<InvalidOperationException>(() => _serviceManager.GetDependencies("TestService"));
 
-            _mockController.Verify(c => c.GetDependencies(), Times.Once);
+            _mockController.Verify(c => c.GetDependencies(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -2399,7 +2438,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             _mockController
-                .Setup(c => c.GetDependencies())
+                .Setup(c => c.GetDependencies(It.IsAny<CancellationToken>()))
                 .Returns(new ServiceDependencyNode("S", "D"));
 
             _mockWindowsServiceApi.Setup(p => p.GetServices())

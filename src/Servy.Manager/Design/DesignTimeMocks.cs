@@ -38,7 +38,7 @@ namespace Servy.Manager.Design
             return Task.FromResult(true);
         }
 
-        public Task ConfigureServiceAsync(Service service) => Task.CompletedTask;
+        public Task ConfigureServiceAsync(Service service, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
         public Task<bool> InstallServiceAsync(Service service, CancellationToken cancellationToken = default)
         {

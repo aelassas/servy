@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ServiceProcess;
+using System.Threading;
 
 namespace Servy.Core.Services
 {
@@ -49,10 +50,11 @@ namespace Servy.Core.Services
         /// <summary>
         /// Builds and returns the dependency tree for a service.
         /// </summary>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests while building the dependency tree.</param>
         /// <returns>
         /// The root node representing the service and its recursive
         /// dependency hierarchy.
         /// </returns>
-        ServiceDependencyNode GetDependencies();
+        ServiceDependencyNode GetDependencies(CancellationToken cancellationToken = default);
     }
 }

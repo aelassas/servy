@@ -313,7 +313,7 @@ namespace Servy.UnitTests.Services
             var sut = CreateSut();
             var serviceName = "TestService";
 
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName)).Returns(true);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
 
             await sut.UninstallService(serviceName);
 
@@ -326,7 +326,7 @@ namespace Servy.UnitTests.Services
             var sut = CreateSut();
             var serviceName = "TestService";
 
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName)).Returns(true);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Automatic);
 
             await sut.StartService(serviceName);
@@ -340,7 +340,7 @@ namespace Servy.UnitTests.Services
             var sut = CreateSut();
             var serviceName = "TestService";
 
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName)).Returns(true);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
 
             await sut.StopService(serviceName);
 
@@ -353,7 +353,7 @@ namespace Servy.UnitTests.Services
             var sut = CreateSut();
             var serviceName = "TestService";
 
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName)).Returns(true);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
             _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Automatic);
 
             await sut.RestartService(serviceName);

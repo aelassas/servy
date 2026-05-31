@@ -142,7 +142,7 @@ namespace Servy.UI.Design
         /// <summary>
         /// Returns false for design-time checks to simplify the initial layout.
         /// </summary>
-        public bool IsServiceInstalled(string serviceName) => false;
+        public bool IsServiceInstalled(string serviceName, CancellationToken cancellationToken = default) => false;
 
         /// <summary>
         /// Returns Manual startup type as a safe default for design-time.
@@ -159,7 +159,7 @@ namespace Servy.UI.Design
         /// <summary>
         /// Returns null to avoid recursive dependency resolution during design-time.
         /// </summary>
-        public ServiceDependencyNode GetDependencies(string serviceName) => null;
+        public ServiceDependencyNode GetDependencies(string serviceName, CancellationToken cancellationToken = default) => null;
     }
 
     /// <summary>

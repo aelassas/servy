@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.ServiceProcess;
+using System.Threading;
 
 namespace Servy.Core.Services
 {
@@ -83,15 +84,17 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc/>
-        public ServiceDependencyNode GetDependencies()
+        public ServiceDependencyNode GetDependencies(CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             // Tracks the current branch from root to leaf to detect deep cycles
             var currentPath = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             // Tracks services that have already been fully resolved across ANY branch
             var fullyExpanded = new Dictionary<string, ServiceDependencyNode>(StringComparer.OrdinalIgnoreCase);
 
-            return BuildDependencyTree(_serviceName, currentPath, fullyExpanded);
+            return BuildDependencyTree(_serviceName, currentPath, fullyExpanded, cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -108,13 +111,20 @@ namespace Servy.Core.Services
         /// A dictionary of service names to already fully expanded nodes, used to prevent 
         /// redundant SCM queries and properly populate shared/diamond dependency paths.
         /// </param>
+        /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
         /// <returns>
         /// A <see cref="ServiceDependencyNode"/> representing the service
         /// and its dependencies. If a cycle is detected, a placeholder
         /// node is returned.
         /// </returns>
-        private static ServiceDependencyNode BuildDependencyTree(string serviceName, HashSet<string> currentPath, Dictionary<string, ServiceDependencyNode> fullyExpanded)
+        private static ServiceDependencyNode BuildDependencyTree(
+            string serviceName,
+            HashSet<string> currentPath,
+            Dictionary<string, ServiceDependencyNode> fullyExpanded,
+            CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             // 1. Detect Cycle in the CURRENT branch
             var isCycle = currentPath.Contains(serviceName);
 
@@ -158,7 +168,8 @@ namespace Servy.Core.Services
                         {
                             foreach (var dep in deps)
                             {
-                                childNodes.Add(BuildDependencyTree(dep.ServiceName, currentPath, fullyExpanded));
+                                cancellationToken.ThrowIfCancellationRequested();
+                                childNodes.Add(BuildDependencyTree(dep.ServiceName, currentPath, fullyExpanded, cancellationToken));
                             }
                         }
                         finally
@@ -178,6 +189,7 @@ namespace Servy.Core.Services
                         var sortedChildren = childNodes.OrderBy(n => n.DisplayName, StringComparer.OrdinalIgnoreCase);
                         foreach (var child in sortedChildren)
                         {
+                            cancellationToken.ThrowIfCancellationRequested();
                             node.Dependencies.Add(child);
                         }
 

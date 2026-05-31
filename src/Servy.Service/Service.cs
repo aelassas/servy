@@ -1765,9 +1765,12 @@ namespace Servy.Service
         /// </remarks>
         private void InitiateRecovery()
         {
+            // Tracks if we actually succeeded in executing a terminal action.
+            bool recoveryActionSucceeded = false;
             // We use this flag to decide if the gate should reopen.
             // For Reboot/RestartService, the gate should stay closed forever for this instance.
             bool shouldReopenGate = true;
+
             try
             {
                 bool shouldStop = false;
@@ -1818,17 +1821,25 @@ namespace Servy.Service
 
                 try
                 {
-                    // The actual logic (RestartService, RestartProcess, etc.)
+                    // Execute the action and mark success only if no exception occurred
                     ExecuteRecoveryAction(currentAttempts);
+                    recoveryActionSucceeded = true;
                 }
                 catch (Exception ex)
                 {
                     _logger?.Error($"Critical error during recovery execution: {ex.Message}");
+                    // recoveryActionSucceeded remains false
                 }
             }
             finally
             {
-                if (shouldReopenGate) _isRecovering = false;
+                // REOPEN GATE IF:
+                // 1. The action wasn't meant to be terminal (shouldReopenGate is true) OR
+                // 2. The terminal action failed (recoveryActionSucceeded is false)
+                if (shouldReopenGate || !recoveryActionSucceeded)
+                {
+                    _isRecovering = false;
+                }
             }
         }
 

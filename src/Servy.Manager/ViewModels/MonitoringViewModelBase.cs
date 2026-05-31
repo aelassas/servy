@@ -198,6 +198,20 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
+        /// Safely retrieves the current monitoring cancellation token.
+        /// If the monitoring source has not been initialized, returns <see cref="CancellationToken.None"/>.
+        /// If the source has been disposed, returns a pre-cancelled token to safely prevent new operations.
+        /// </summary>
+        /// <returns>A valid <see cref="CancellationToken"/> linked to the current monitoring lifecycle.</returns>
+        protected CancellationToken GetCurrentMonitoringToken()
+        {
+            var cts = Volatile.Read(ref _monitoringCts);
+            if (cts == null) return CancellationToken.None;
+            try { return cts.Token; }
+            catch (ObjectDisposedException) { return new CancellationToken(canceled: true); }
+        }
+
+        /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// Explicitly unhooks timer events to prevent <see cref="DispatcherTimer"/> memory leaks.
         /// </summary>
@@ -214,8 +228,7 @@ namespace Servy.Manager.ViewModels
                     var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
                     if (oldMonitoringCts != null)
                     {
-                        oldMonitoringCts.Cancel();
-                        oldMonitoringCts.Dispose();
+                        Helpers.Helper.CancelAndDisposeSafely(oldMonitoringCts);
                     }
 
                     if (_timer != null)

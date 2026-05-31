@@ -325,7 +325,7 @@ namespace Servy.Manager.UnitTests.Services
             catch { /* Ignore creation errors if running in restricted environments */ }
 #endif
             // 1. Bypass Service Exists check
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled(service.Name)).Returns(false);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(service.Name, It.IsAny<CancellationToken>())).Returns(false);
 
             // 2. Provide Domain Object
             _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
