@@ -242,7 +242,7 @@ namespace Servy.Manager.UnitTests.Services
             _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceDto { Name = service.Name });
 
-            await sut.ConfigureServiceAsync(service);
+            await sut.ConfigureServiceAsync(service, TestContext.Current.CancellationToken);
 
             _appConfigMock.Verify(c => c.DesktopAppPublishPath, Times.AtLeastOnce);
 
@@ -325,7 +325,7 @@ namespace Servy.Manager.UnitTests.Services
 #endif
 
             // 1. Bypass Service Exists check
-            _serviceManagerMock.Setup(m => m.IsServiceInstalled(service.Name)).Returns(false);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(service.Name, It.IsAny<CancellationToken>())).Returns(false);
 
             // 2. Provide Domain Object
             _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))

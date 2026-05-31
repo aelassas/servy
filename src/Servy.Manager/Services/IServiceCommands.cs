@@ -49,7 +49,8 @@ namespace Servy.Manager.Services
         /// Opens the configuration app for the specified service.
         /// </summary>
         /// <param name="service">The service to configure.</param>
-        Task ConfigureServiceAsync(Service? service);
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        Task ConfigureServiceAsync(Service? service, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Installs the specified service, optionally using a custom wrapper executable directory.

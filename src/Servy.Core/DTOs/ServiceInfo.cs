@@ -29,7 +29,7 @@ namespace Servy.Core.DTOs
         /// Gets or sets the user account under which the service runs.
         /// Defaults to <c>LocalSystem</c> if not specified.
         /// </summary>
-        public string LogOnAs { get; set; }
+        public string? LogOnAs { get; set; }
 
         /// <summary>
         /// Gets or sets the description of the service.

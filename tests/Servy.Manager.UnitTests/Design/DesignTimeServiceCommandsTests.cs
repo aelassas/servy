@@ -27,7 +27,7 @@ namespace Servy.Manager.UnitTests.Design
             // Act & Assert - Task and Dispose methods
             var exception = await Record.ExceptionAsync(async () =>
             {
-                await commands.ConfigureServiceAsync(testService);
+                await commands.ConfigureServiceAsync(testService, TestContext.Current.CancellationToken);
                 await commands.ExportServiceToXmlAsync(testService);
                 await commands.ExportServiceToJsonAsync(testService);
                 await commands.ImportXmlConfigAsync(TestContext.Current.CancellationToken);

@@ -80,12 +80,12 @@ namespace Servy.UI.UnitTests.Design
 
             // Status branches
             Assert.Equal(ServiceControllerStatus.Stopped, manager.GetServiceStatus("test", cancellationToken: ct));
-            Assert.False(manager.IsServiceInstalled("test"));
+            Assert.False(manager.IsServiceInstalled("test", TestContext.Current.CancellationToken));
             Assert.Equal(ServiceStartType.Manual, manager.GetServiceStartupType("test", cancellationToken: ct));
 
             // Collection branches
             Assert.Empty(manager.GetAllServices(cancellationToken: ct));
-            Assert.Null(manager.GetDependencies("test"));
+            Assert.Null(manager.GetDependencies("test", TestContext.Current.CancellationToken));
         }
 
         #endregion

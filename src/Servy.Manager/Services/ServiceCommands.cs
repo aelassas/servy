@@ -200,7 +200,7 @@ namespace Servy.Manager.Services
                 cancellationToken: cancellationToken);
 
         /// <inheritdoc />
-        public async Task ConfigureServiceAsync(Service? service)
+        public async Task ConfigureServiceAsync(Service? service, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -234,7 +234,7 @@ namespace Servy.Manager.Services
                         return;
                     }
 
-                    var serviceDomain = await GetServiceDomain(service.Name);
+                    var serviceDomain = await GetServiceDomain(service.Name, cancellationToken);
                     if (serviceDomain == null)
                     {
                         await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
@@ -277,7 +277,7 @@ namespace Servy.Manager.Services
 
                     }
 
-                    var serviceDomain = await GetServiceDomain(service.Name);
+                    var serviceDomain = await GetServiceDomain(service.Name, cancellationToken);
                     if (serviceDomain == null)
                     {
                         await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
@@ -329,7 +329,7 @@ namespace Servy.Manager.Services
                     var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_UninstallServiceConfirm, AppConfig.Caption);
                     if (!confirm) return false;
 
-                    var serviceDomain = await GetServiceDomain(service.Name);
+                    var serviceDomain = await GetServiceDomain(service.Name, cancellationToken);
                     if (serviceDomain == null)
                     {
                         await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
@@ -371,7 +371,7 @@ namespace Servy.Manager.Services
                     var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, AppConfig.Caption);
                     if (!confirm) return false;
 
-                    var serviceDomain = await GetServiceDomain(service.Name);
+                    var serviceDomain = await GetServiceDomain(service.Name, cancellationToken);
                     if (serviceDomain == null)
                     {
                         await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
@@ -603,7 +603,7 @@ namespace Servy.Manager.Services
 
                 try
                 {
-                    var serviceDomain = await GetServiceDomain(service.Name);
+                    var serviceDomain = await GetServiceDomain(service.Name, cancellationToken);
                     if (serviceDomain == null)
                     {
                         errorMessage = Strings.Msg_ServiceNotFound;
@@ -652,10 +652,11 @@ namespace Servy.Manager.Services
         /// Retrieves the domain representation of a service by its name.
         /// </summary>
         /// <param name="serviceName">The name of the service.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The domain service if found; otherwise, <c>null</c>.</returns>
-        private async Task<Core.Domain.Service?> GetServiceDomain(string serviceName)
+        private async Task<Core.Domain.Service?> GetServiceDomain(string serviceName, CancellationToken cancellationToken = default)
         {
-            var serviceDto = await _serviceRepository.GetByNameAsync(serviceName, decrypt: true);
+            var serviceDto = await _serviceRepository.GetByNameAsync(serviceName, decrypt: true, cancellationToken: cancellationToken);
 
             // If the service is not in the repository, we must return null 
             // to allow callers to show the "Service Not Found" message.

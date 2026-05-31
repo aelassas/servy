@@ -430,15 +430,7 @@ namespace Servy.Manager.ViewModels
             var oldCts = Interlocked.Exchange(ref _cancellationTokenSource, null);
             if (oldCts != null)
             {
-                try
-                {
-                    oldCts.Cancel();
-                }
-                catch (ObjectDisposedException) { /* Already gone */ }
-                finally
-                {
-                    oldCts.Dispose();
-                }
+                Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
         }
 

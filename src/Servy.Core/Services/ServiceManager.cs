@@ -822,10 +822,12 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public bool IsServiceInstalled(string? serviceName)
+        public bool IsServiceInstalled(string? serviceName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             return _windowsServiceApi.GetServices()
                             .Any(s => s.ServiceName.Equals(serviceName, StringComparison.OrdinalIgnoreCase));
@@ -942,7 +944,7 @@ namespace Servy.Core.Services
                             Name = service.ServiceName,
                             Status = MapStatus(service.Status),
                             StartupType = MapStartupType(service),
-                            LogOnAs = ServiceAccounts.LocalSystem,
+                            LogOnAs = null,
                             Description = string.Empty,
                         };
 
@@ -995,19 +997,21 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc/>
-        public ServiceDependencyNode? GetDependencies(string? serviceName)
+        public ServiceDependencyNode? GetDependencies(string? serviceName, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
 
-            if (!IsServiceInstalled(serviceName))
+            if (!IsServiceInstalled(serviceName, cancellationToken))
             {
                 return null; // legitimate: not installed
             }
 
             using (var sc = _controllerFactory(serviceName))
             {
-                return sc.GetDependencies(); // let exceptions propagate; UI can show "Failed to query: ..."
+                return sc.GetDependencies(cancellationToken); // let exceptions propagate; UI can show "Failed to query: ..."
             }
         }
 
@@ -1038,7 +1042,7 @@ namespace Servy.Core.Services
                 // we skip the subsequent calls to keep the loop moving.
 
                 ct.ThrowIfCancellationRequested();
-                info.LogOnAs = GetServiceUser(svcHandle) ?? info.LogOnAs;
+                info.LogOnAs = GetServiceUser(svcHandle) ?? ServiceAccounts.LocalSystem;  // confirmed null = LocalSystem (Win32 default)
 
                 ct.ThrowIfCancellationRequested();
                 info.Description = GetServiceDescription(svcHandle) ?? string.Empty;
@@ -1056,11 +1060,26 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="svcHandle">A valid handle to the target Windows service.</param>
         /// <returns>The account string or <c>null</c> if it couldn't be retrieved.</returns>
+        /// <exception cref="Win32Exception">Thrown when the Win32 subsystem encounters an infrastructural or security impediment.</exception>
         private string? GetServiceUser(SafeServiceHandle svcHandle)
         {
             int bytesNeeded = 0;
+
+            // Invoke Pass 1: Size-Probe using an intentional null destination pointer
             _windowsServiceApi.QueryServiceConfig(svcHandle, IntPtr.Zero, 0, out bytesNeeded);
-            if (bytesNeeded <= 0) return null;
+
+            // Intercept the native error state immediately before any subsequent C# evaluations occur
+            int errorCode = _win32ErrorProvider.GetLastWin32Error();
+
+            if (bytesNeeded <= 0)
+            {
+                if (errorCode != ERROR_INSUFFICIENT_BUFFER)
+                {
+                    Logger.Warn($"QueryServiceConfig size probe failed for account configuration. Win32 Error Code: {errorCode}");
+                    throw new Win32Exception(errorCode);
+                }
+                return null;
+            }
 
             IntPtr ptr = Marshal.AllocHGlobal(bytesNeeded);
             try
@@ -1070,7 +1089,9 @@ namespace Servy.Core.Services
                     var config = Marshal.PtrToStructure<QUERY_SERVICE_CONFIG>(ptr);
                     return Marshal.PtrToStringAuto(config.lpServiceStartName);
                 }
-                return null;
+
+                int callErrorCode = _win32ErrorProvider.GetLastWin32Error();
+                throw new Win32Exception(callErrorCode);
             }
             finally
             {
@@ -1137,11 +1158,28 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="svcHandle">A valid handle to the target Windows service.</param>
         /// <returns>The service description string or <c>null</c> if none exists.</returns>
+        /// <exception cref="Win32Exception">Thrown when the Win32 subsystem encounters an infrastructural or security impediment.</exception>
         private string? GetServiceDescription(SafeServiceHandle svcHandle)
         {
             int bytesNeeded = 0;
+
+            // Invoke Pass 1: Size-Probe using an intentional null destination pointer
             _windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, IntPtr.Zero, 0, ref bytesNeeded);
-            if (bytesNeeded <= 0) return null;
+
+            // Intercept the native error state immediately before any subsequent C# evaluations occur
+            int errorCode = _win32ErrorProvider.GetLastWin32Error();
+
+            if (bytesNeeded <= 0)
+            {
+                // If it failed because there's truly no data, or if it's an expected condition, return null.
+                // Otherwise, treat non-buffer-size errors as structural failures.
+                if (errorCode != ERROR_INSUFFICIENT_BUFFER)
+                {
+                    Logger.Warn($"QueryServiceConfig2 size probe failed for description. Win32 Error Code: {errorCode}");
+                    throw new Win32Exception(errorCode);
+                }
+                return null;
+            }
 
             IntPtr ptr = Marshal.AllocHGlobal(bytesNeeded);
             try
@@ -1151,7 +1189,9 @@ namespace Servy.Core.Services
                     var descStruct = Marshal.PtrToStructure<SERVICE_DESCRIPTION>(ptr);
                     return Marshal.PtrToStringAuto(descStruct.lpDescription);
                 }
-                return null;
+
+                int callErrorCode = _win32ErrorProvider.GetLastWin32Error();
+                throw new Win32Exception(callErrorCode);
             }
             finally
             {

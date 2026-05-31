@@ -1035,6 +1035,12 @@ namespace Servy.Core.Config
         /// </summary>
         public const int ConditionalResetMaxThresholdSeconds = 3600;
 
+        /// <summary>
+        /// The maximum time, in milliseconds, that a logging thread will wait for an 
+        /// in-flight log file rotation to complete before timing out and dropping the entry.
+        /// </summary>
+        public const int LogRotationWaitTimeoutMs = 15_000;
+
         #endregion
 
         #region Manager Configuration Bounds

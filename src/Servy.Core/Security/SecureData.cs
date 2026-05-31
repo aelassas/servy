@@ -15,8 +15,8 @@ namespace Servy.Core.Security
         private static readonly byte[] HkdfV2EncInfo = Encoding.UTF8.GetBytes("V2_AES_ENCRYPTION");
         private static readonly byte[] HkdfV2HmacInfo = Encoding.UTF8.GetBytes("V2_HMAC_AUTHENTICATION");
 
-        private readonly byte[] _v1MasterKey;
-        private readonly byte[] _v1StaticIv;
+        private readonly byte[]? _v1MasterKey;
+        private readonly byte[]? _v1StaticIv;
         private readonly byte[] _v2EncryptionKey;
         private readonly byte[] _v2HmacKey;
         private int _disposed;
@@ -320,8 +320,8 @@ namespace Servy.Core.Security
             {
                 using (var aes = Aes.Create())
                 {
-                    aes.Key = _v1MasterKey;
-                    aes.IV = _v1StaticIv;
+                    aes.Key = _v1MasterKey!;
+                    aes.IV = _v1StaticIv!;
 
                     using (var decryptor = aes.CreateDecryptor())
                     using (var ms = new MemoryStream(cipherBytes))

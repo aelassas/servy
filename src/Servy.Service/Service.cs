@@ -1864,9 +1864,12 @@ namespace Servy.Service
         /// </remarks>
         private async Task InitiateRecoveryAsync()
         {
+            // Tracks if we actually succeeded in executing a terminal action.
+            bool recoveryActionSucceeded = false;
             // We use this flag to decide if the gate should reopen.
             // For Reboot/RestartService, the gate should stay closed forever for this instance.
             bool shouldReopenGate = true;
+
             try
             {
                 bool shouldStop = false;
@@ -1901,7 +1904,7 @@ namespace Servy.Service
                         if (currentAttempts >= _maxRestartAttempts)
                         {
                             _logger?.Error($"Maximum restart attempts reached ({_maxRestartAttempts}). Stopping service.");
-                            await SaveRestartAttemptsAsync(0); // Reset for next manual start
+                            await SaveRestartAttemptsAsync(0);  // Reset for next manual start
                             shouldStop = true;
                         }
                         else
@@ -1917,6 +1920,7 @@ namespace Servy.Service
                         _failedChecks = 0;
                         _isRecovering = true; // Set flag to block other health checks: GATE CLOSED
 
+                        // Determine if we *intend* to lock the gate forever
                         // If the action is terminal for this process instance, don't reopen the gate.
                         if (_recoveryAction == RecoveryAction.RestartComputer ||
                             _recoveryAction == RecoveryAction.RestartService)
@@ -1940,17 +1944,25 @@ namespace Servy.Service
 
                 try
                 {
-                    // The actual logic (RestartService, RestartProcess, etc.)
+                    // Execute the action and mark success only if no exception occurred
                     ExecuteRecoveryAction(currentAttempts);
+                    recoveryActionSucceeded = true;
                 }
                 catch (Exception ex)
                 {
                     _logger?.Error($"Critical error during recovery execution: {ex.Message}");
+                    // recoveryActionSucceeded remains false
                 }
             }
             finally
             {
-                if (shouldReopenGate) _isRecovering = false;
+                // REOPEN GATE IF:
+                // 1. The action wasn't meant to be terminal (shouldReopenGate is true) OR
+                // 2. The terminal action failed (recoveryActionSucceeded is false)
+                if (shouldReopenGate || !recoveryActionSucceeded)
+                {
+                    _isRecovering = false;
+                }
             }
         }
 

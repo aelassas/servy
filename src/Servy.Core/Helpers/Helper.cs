@@ -419,7 +419,7 @@ namespace Servy.Core.Helpers
                 {
                     writeContent(fs);
                     // Explicitly flush to disk to ensure data integrity before the move operation.
-                    fs.Flush();
+                    fs.Flush(flushToDisk: true);
                 }
 
                 // Remove attributes that would prevent the move operation from succeeding.
@@ -490,6 +490,7 @@ namespace Servy.Core.Helpers
                     // ConfigureAwait(false) is used here as we do not require the captured synchronization context.
                     await writer(fs, cancellationToken).ConfigureAwait(false);
                     await fs.FlushAsync(cancellationToken).ConfigureAwait(false);
+                    fs.Flush(flushToDisk: true);   // forces FlushFileBuffers; cheap if already flushed
                 }
 
                 // Ensure the existing file isn't Read-Only, which causes Error 5

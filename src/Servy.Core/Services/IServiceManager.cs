@@ -88,11 +88,12 @@ namespace Servy.Core.Services
         /// Determines whether a Windows service with the specified name is currently installed on the local machine.
         /// </summary>
         /// <param name="serviceName">The unique internal name of the Windows service to check.</param>
+        /// <param name="cancellationToken">Optional cancellation token for the installation check.</param>
         /// <returns>
         /// <c>true</c> if a service with the specified name exists in the SCM; 
         /// otherwise, <c>false</c>.
         /// </returns>
-        bool IsServiceInstalled(string? serviceName);
+        bool IsServiceInstalled(string? serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the startup configuration type (e.g., Automatic, Manual, Disabled) of a Windows service.
@@ -115,9 +116,10 @@ namespace Servy.Core.Services
         /// Gets the dependency tree for the specified Windows service, including both services this service depends on and services that depend on this service.
         /// </summary>
         /// <param name="serviceName">The unique internal name of the service.</param>
+        /// <param name="cancellationToken">Optional cancellation token for the dependency query.</param>
         /// <returns>
         /// A <see cref="ServiceDependencyNode"/> representing the recursive dependency hierarchy, or <c>null</c> if the service could not be found or dependencies could not be resolved.
         /// </returns>
-        ServiceDependencyNode? GetDependencies(string? serviceName);
+        ServiceDependencyNode? GetDependencies(string? serviceName, CancellationToken cancellationToken = default);
     }
 }

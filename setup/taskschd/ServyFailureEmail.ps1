@@ -178,7 +178,7 @@ function Send-NotificationEmail {
   $timeout = if ($rawTimeout -match '^\d+$')           { [int]$rawTimeout } else { 30000 }
 
   $credPath = Join-Path $scriptDir "smtp-cred.xml"
-  $emailRegex = '^[^@]+@[^@]+\.[^@]+$'
+  $emailRegex = '^[^@\s]+@[^@\s]+\.[^@\s]+$' # Definition of the single address format validation rule
 
   # --- VALIDATION GATE (Permanent Failures) ---
   
@@ -206,10 +206,22 @@ function Send-NotificationEmail {
     return 'PermanentFailure'
   }
 
-  if ($to -notmatch $emailRegex) {
-    Write-FallbackError -Message "ServyFailureEmail: Invalid 'To' email format ($to) in smtp-config.xml." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+# --- ROBUSTNESS: Parse and accommodate multi-recipient address fields ---
+# Split the input on commas or semicolons, trimming surrounding whitespace automatically
+$toList = $to -split '\s*[,;]\s*' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+if ($toList.Count -eq 0) {
+    Write-FallbackError -Message "ServyFailureEmail: The 'To' field evaluates to empty in smtp-config.xml." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
     return 'PermanentFailure'
-  }
+}
+
+# Validate each split address block individually against the single-address regex gate
+foreach ($addr in $toList) {
+    if ($addr -notmatch $emailRegex) {
+        Write-FallbackError -Message "ServyFailureEmail: Invalid 'To' email format ($addr) in smtp-config.xml. Multi-recipient lists must be separated by commas or semicolons." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+        return 'PermanentFailure'
+    }
+}
 
   if (-not (Test-Path $credPath)) {
     Write-FallbackError -Message "ServyFailureEmail: Credential file not found at '$credPath'. Skipping email." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
@@ -240,7 +252,10 @@ function Send-NotificationEmail {
 
     $mailMessage = New-Object System.Net.Mail.MailMessage
     $mailMessage.From = $from
-    $mailMessage.To.Add($to)
+    # Safely load the validated addresses into the MailAddressCollection array
+    foreach ($addr in $toList) {
+        $mailMessage.To.Add($addr)
+    }
     $mailMessage.Subject = $Subject
     $mailMessage.Body = $Body
     $mailMessage.IsBodyHtml = $true

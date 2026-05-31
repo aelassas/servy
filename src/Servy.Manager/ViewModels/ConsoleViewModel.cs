@@ -242,7 +242,7 @@ namespace Servy.Manager.ViewModels
         /// <inheritdoc/>
         protected override async Task OnTickAsync()
         {
-            var token = _monitoringCts?.Token ?? CancellationToken.None;
+            var token = GetCurrentMonitoringToken();
 
             var currentSelection = SelectedService;
             if (currentSelection == null)

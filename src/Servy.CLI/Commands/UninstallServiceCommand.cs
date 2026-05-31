@@ -61,7 +61,7 @@ namespace Servy.CLI.Commands
                 if (res.IsSuccess)
                 {
                     // 1. Data Persistence: Remove the service record from the repository
-                    await _serviceRepository.DeleteAsync(opts.ServiceName);
+                    await _serviceRepository.DeleteAsync(opts.ServiceName, cancellationToken);
 
                     // 2. Localized Success Output
                     var successMsg = string.Format(Strings.Msg_UninstallSuccess, opts.ServiceName);

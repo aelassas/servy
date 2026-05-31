@@ -507,7 +507,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var dummyService = new Service();
 
                 await vm.ConfigureCommand.ExecuteAsync(dummyService);
-                _serviceCommandsMock.Verify(c => c.ConfigureServiceAsync(dummyService), Times.Once);
+                _serviceCommandsMock.Verify(c => c.ConfigureServiceAsync(dummyService, It.IsAny<CancellationToken>()), Times.Once);
 
                 await vm.ImportXmlCommand.ExecuteAsync(null);
                 _serviceCommandsMock.Verify(c => c.ImportXmlConfigAsync(It.IsAny<CancellationToken>()), Times.Once);

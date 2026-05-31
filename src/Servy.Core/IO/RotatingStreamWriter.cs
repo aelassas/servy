@@ -190,8 +190,21 @@ namespace Servy.Core.IO
                 // while the physical File.Move is taking place.
                 while (_rotationInProgress)
                 {
-                    // Releases the lock and sleeps until Monitor.PulseAll is called
-                    Monitor.Wait(_lock);
+                    // ROBUSTNESS: Use the timed overload of Monitor.Wait to prevent permanent threads freezes
+                    // if PerformPhysicalRotation deadlocks or drops its PulseAll invocation.
+                    if (!Monitor.Wait(_lock, AppConfig.LogRotationWaitTimeoutMs))
+                    {
+                        // The rotation attempt timed out. We break out of the lock loop to prevent thread pool 
+                        // exhaustion across stdout/stderr worker streams.
+                        Logger.Error(
+                            $"Log rotation lock timed out after {AppConfig.LogRotationWaitTimeoutMs}ms. " +
+                            "Assuming rotation stalled. Forcefully resetting state gate to drop current line.");
+
+                        // Forceful safety recovery: clear the gate so the system doesn't permanently deadlock
+                        _rotationInProgress = false;
+                        Monitor.PulseAll(_lock);
+                        break;
+                    }
                 }
 
                 // Check disposal *after* waking up, in case Dispose was called while we waited
@@ -204,11 +217,14 @@ namespace Servy.Core.IO
                 }
 
                 // Execute the provided write action (Write or WriteLine)
-                writeAction(_writer!);
+                if (_writer != null)
+                {
+                    writeAction(_writer);
 
-                // AutoFlush is true in InitializeWriter, but explicit flush ensures 
-                // the FileInfo.Length is accurate for the next CheckRotation call.
-                _writer!.Flush();
+                    // AutoFlush is true in InitializeWriter, but explicit flush ensures 
+                    // the FileInfo.Length is accurate for the next CheckRotation call.
+                    _writer.Flush();
+                }
 
                 // 2. Check if we need to rotate
                 (pathToRotate, targetRotatedPath) = CheckRotation();
