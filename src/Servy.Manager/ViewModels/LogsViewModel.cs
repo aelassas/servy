@@ -324,6 +324,7 @@ namespace Servy.Manager.ViewModels
 
             // 1. Create the new token for THIS specific search
             var newCts = new CancellationTokenSource();
+            var token = newCts.Token;
 
             // 2. Atomic swap: the "Lazy" part. 
             // If _cancellationTokenSource was null, oldCts is null.
@@ -335,7 +336,6 @@ namespace Servy.Manager.ViewModels
                 Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
 
-            var token = newCts.Token;
 
             try
             {

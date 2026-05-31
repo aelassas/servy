@@ -135,13 +135,14 @@ namespace Servy.Service.UnitTests
             // Verify the helper was actually called to perform the restart
             helper.Verify(h => h.RestartProcess(
                 It.IsAny<IProcessWrapper>(),
-                It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
+                It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<List<EnvironmentVariable>>(),
                 It.IsAny<IServyLogger>(),
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -166,13 +167,14 @@ namespace Servy.Service.UnitTests
             helper.Setup(h =>
                 h.RestartProcess(
                     It.IsAny<IProcessWrapper>(),
-                    It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
+                    It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<List<EnvironmentVariable>>(),
                     It.IsAny<IServyLogger>(),
-                    It.IsAny<int>()))
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()))
                 .Verifiable();
 
             helper.Setup(h => h.RestartService(It.IsAny<IServyLogger>(), It.IsAny<string>())).Verifiable();
@@ -205,13 +207,14 @@ namespace Servy.Service.UnitTests
                     case RecoveryAction.RestartProcess:
                         helper.Verify(h => h.RestartProcess(
                             It.IsAny<IProcessWrapper>(),
-                            It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
+                            It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
                             It.IsAny<string>(),
                             It.IsAny<string>(),
                             It.IsAny<string>(),
                             It.IsAny<List<EnvironmentVariable>>(),
                             It.IsAny<IServyLogger>(),
-                            It.IsAny<int>()), Times.Once);
+                            It.IsAny<int>(),
+                            It.IsAny<CancellationToken>()), Times.Once);
                         break;
                     case RecoveryAction.RestartService:
                         helper.Verify(h => h.RestartService(It.IsAny<IServyLogger>(), service.ServiceName), Times.Once);
@@ -267,10 +270,11 @@ namespace Servy.Service.UnitTests
             // This signal forces the test runner to wait for the background threads
             var recoveryTriggered = new TaskCompletionSource<bool>();
 
-            helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
+            helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
                          It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                         It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>()))
-                  .Callback(() => {
+                         It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                  .Callback(() =>
+                  {
                       // 1. Mark process as healthy to prevent trailing threads from starting a second failure cycle
                       processHasExited = false;
 
@@ -321,9 +325,9 @@ namespace Servy.Service.UnitTests
             // Assert
             logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed")), It.IsAny<Exception>()), Times.Exactly(3));
 
-            helper.Verify(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
+            helper.Verify(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
                           It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                          It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>()),
+                          It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                           Times.Once);
         }
 

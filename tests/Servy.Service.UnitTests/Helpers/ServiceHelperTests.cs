@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.ServiceProcess;
+using System.Threading;
 using Xunit;
 using ServiceHelper = Servy.Service.Helpers.ServiceHelper;
 
@@ -289,7 +290,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             var mockLog = new Mock<IServyLogger>();
             bool startActionInvoked = false;
-            Action<string, string, string, List<EnvironmentVariable>> startAction = (exe, args, dir, env) => startActionInvoked = true;
+            Action<string, string, string, List<EnvironmentVariable>, CancellationToken> startAction = (exe, args, dir, env, ct) => startActionInvoked = true;
 
             // Act
             _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000);
@@ -313,7 +314,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             var mockLog = new Mock<IServyLogger>();
             bool startActionInvoked = false;
-            Action<string, string, string, List<EnvironmentVariable>> startAction = (exe, args, dir, env) => startActionInvoked = true;
+            Action<string, string, string, List<EnvironmentVariable>, CancellationToken> startAction = (exe, args, dir, env, ct) => startActionInvoked = true;
 
             // Act
             _helper.RestartProcess(mockProcess.Object, startAction, "exe", "args", "dir", new List<EnvironmentVariable>(), mockLog.Object, 1000);

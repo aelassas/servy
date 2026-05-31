@@ -10,9 +10,8 @@
 
 namespace Servy.Resources {
     using System;
-    using System.Diagnostics.CodeAnalysis;
-
-
+    
+    
     /// <summary>
     ///   Une classe de ressource fortement typée destinée, entre autres, à la consultation des chaînes localisées.
     /// </summary>
@@ -23,7 +22,6 @@ namespace Servy.Resources {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "18.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [ExcludeFromCodeCoverage]
     public class Strings {
         
         private static global::System.Resources.ResourceManager resourceMan;
@@ -1068,6 +1066,15 @@ namespace Servy.Resources {
         public static string Msg_InvalidWrapperExePath {
             get {
                 return ResourceManager.GetString("Msg_InvalidWrapperExePath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Failed to launch the Manager application..
+        /// </summary>
+        public static string Msg_ManagerAppLaunchFailed {
+            get {
+                return ResourceManager.GetString("Msg_ManagerAppLaunchFailed", resourceCulture);
             }
         }
         

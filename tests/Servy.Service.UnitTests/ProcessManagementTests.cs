@@ -11,6 +11,7 @@ using Servy.Service.Validation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using Xunit;
 using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 
@@ -77,7 +78,7 @@ namespace Servy.Service.UnitTests
 
             processFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>())).Returns(mockProcess.Object);
 
-            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>());
+            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>(), CancellationToken.None);
 
             var childProcess = service.GetChildProcess();
             Assert.NotNull(childProcess);

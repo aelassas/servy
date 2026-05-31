@@ -6,6 +6,7 @@ using Servy.Service.ProcessManagement;
 using System;
 using System.Collections.Generic;
 using System.ServiceProcess;
+using System.Threading;
 
 namespace Servy.Service.Helpers
 {
@@ -94,15 +95,17 @@ namespace Servy.Service.Helpers
         /// <param name="environmentVariables">Environment variables.</param>
         /// <param name="logger">Logger instance.</param>
         /// <param name="stopTimeoutMs">Timeout in milliseconds to wait for the process to stop.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         void RestartProcess(
             IProcessWrapper process,
-            Action<string, string, string, List<EnvironmentVariable>> startProcess,
+            Action<string, string, string, List<EnvironmentVariable>, CancellationToken> startProcess,
             string realExePath,
             string realArgs,
             string workingDir,
             List<EnvironmentVariable> environmentVariables,
             IServyLogger logger,
-            int stopTimeoutMs);
+            int stopTimeoutMs,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Attempts to restart the Windows service associated with the current process.

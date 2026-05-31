@@ -410,12 +410,25 @@ namespace Servy.Manager.Utils
 
                 // 2. CRITICAL: Cancel the internal token to instantly kill the while-loop 
                 // and release any active FileStreams or Task.Delays.
-                if (!_disposeCts.IsCancellationRequested)
+                try
                 {
-                    _disposeCts.Cancel();
+                    if (!_disposeCts.IsCancellationRequested)
+                    {
+                        _disposeCts.Cancel();
+                    }
                 }
-
-                _disposeCts.Dispose();
+                catch (Exception ex)
+                {
+                    Logger.Debug($"LogTailer.Dispose: _disposeCts.Cancel() threw ({ex.Message}); proceeding to Dispose.");
+                }
+                finally
+                {
+                    try { _disposeCts.Dispose(); }
+                    catch (Exception ex)
+                    {
+                        Logger.Debug($"LogTailer.Dispose: _disposeCts.Dispose() threw ({ex.Message}); ignoring.");
+                    }
+                }
             }
         }
     }

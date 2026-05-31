@@ -454,6 +454,12 @@ namespace Servy.Service
                 // concurrent background tasks checking the token never experience a temporary 'null' window.
                 // We create this early so that pre-launch processes can observe teardown requests.
                 var cts = new CancellationTokenSource();
+
+                // ROBUSTNESS: Capture the token structure immediately while the CTS instance is guaranteed alive.
+                // This shields the fire-and-forget task from throwing an ObjectDisposedException if a rapid 
+                // recovery cycle or crash loop invokes Interlocked.Exchange and disposes 'cts' down the line.
+                var capturedToken = cts.Token;
+
                 var oldCts = Interlocked.Exchange(ref _cancellationSource, cts);
 
                 if (oldCts != null)
@@ -482,7 +488,7 @@ namespace Servy.Service
                 }
 
                 // Start the monitored main process
-                StartMonitoredProcess(options);
+                StartMonitoredProcess(options, capturedToken);
 
                 // Reset restart attempts on service start to avoid blocking recovery
                 if (_recoveryActionEnabled)
@@ -1136,9 +1142,10 @@ namespace Servy.Service
         /// Also sets the process priority accordingly.
         /// </summary>
         /// <param name="options">The start options containing executable details and priority.</param>
-        private void StartMonitoredProcess(StartOptions options)
+        /// <param name="token">The cancellation token for the operation.</param>
+        private void StartMonitoredProcess(StartOptions options, CancellationToken token)
         {
-            StartProcess(options.ExecutablePath, options.ExecutableArgs, options.WorkingDirectory, options.EnvironmentVariables);
+            StartProcess(options.ExecutablePath, options.ExecutableArgs, options.WorkingDirectory, options.EnvironmentVariables, token);
             SetProcessPriority(options.Priority);
         }
 
@@ -1150,7 +1157,13 @@ namespace Servy.Service
         /// <param name="realArgs">The arguments to pass to the executable.</param>
         /// <param name="workingDir">The working directory for the process.</param>
         /// <param name="environmentVariables">Environment variables to pass to the process.</param>
-        private void StartProcess(string realExePath, string realArgs, string workingDir, List<EnvironmentVariable> environmentVariables)
+        /// <param name="token">The cancellation token for the operation.</param>
+        private void StartProcess(
+            string realExePath,
+            string realArgs, 
+            string workingDir,
+            List<EnvironmentVariable> environmentVariables,
+            CancellationToken token = default)
         {
             _ = AllocConsole(); // inherited
             _ = SetConsoleCtrlHandler(null, false); // inherited
@@ -1161,7 +1174,7 @@ namespace Servy.Service
             _realExePath = realExePath;
             _realArgs = expandedArgs;
             _workingDir = workingDir;
-            _environmentVariables = environmentVariables;
+            _environmentVariables = environmentVariables ?? new List<EnvironmentVariable>();
 
             var enableConsoleUI = _options?.EnableConsoleUI == true;
 
@@ -1250,7 +1263,7 @@ namespace Servy.Service
 
             // Fire and forget the post-launch script when process confirmed running
             var capturedProcess = _childProcess;
-            var capturedToken = _cancellationSource?.Token ?? CancellationToken.None;
+            var capturedToken = token;
 
             Task.Run(async () =>
             {
@@ -1872,7 +1885,8 @@ namespace Servy.Service
                             _workingDir,
                             _environmentVariables,
                             _logger,
-                            ClampTimeout(_options?.StopTimeoutInSeconds ?? AppConfig.DefaultStopTimeout)
+                            ClampTimeout(_options?.StopTimeoutInSeconds ?? AppConfig.DefaultStopTimeout),
+                            _cancellationSource?.Token ?? CancellationToken.None
                         );
                         break;
 
@@ -2051,6 +2065,7 @@ namespace Servy.Service
                 // (SafeKillProcess) enforces an absolute, stopwatch-backed timeout limit.
                 int interval = 2000;
 
+                bool teardownSucceeded = false;
                 try
                 {
                     while (!stopTask.Wait(interval))
@@ -2058,6 +2073,7 @@ namespace Servy.Service
                         _checkPoint++;
                         UpdateServiceStatus(SERVICE_STOP_PENDING, AppConfig.PreShutdownWaitHintMs);
                     }
+                    teardownSucceeded = stopTask.Status == TaskStatus.RanToCompletion && stopTask.Result;
                 }
                 catch (AggregateException ex)
                 {
@@ -2065,7 +2081,15 @@ namespace Servy.Service
                 }
 
                 // 3. Final Signal: Inform the SCM that the service has successfully reached the STOPPED state.
-                _logger?.Info("Pre-Shutdown handling complete. Setting SERVICE_STOPPED.");
+                if (teardownSucceeded)
+                {
+                    _logger?.Info("Pre-Shutdown handling complete. Setting SERVICE_STOPPED.");
+                }
+                else
+                {
+                    _logger?.Error("Pre-Shutdown teardown reported failure; signaling SERVICE_STOPPED with non-zero exit code so SCM records the failure.");
+                    if (ExitCode == 0) ExitCode = 1066; // ERROR_SERVICE_SPECIFIC_ERROR
+                }
                 UpdateServiceStatus(SERVICE_STOPPED, 0);
 
                 // 4. SHUTDOWN LOGGER LAST

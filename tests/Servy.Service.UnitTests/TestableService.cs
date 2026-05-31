@@ -13,13 +13,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Threading;
 using System.Timers;
 
 namespace Servy.Service.UnitTests
 {
     public class TestableService : Service
     {
-        private Action<string, string, string, List<EnvironmentVariable>> _startProcessOverride;
+        private Action<string, string, string, List<EnvironmentVariable>, CancellationToken> _startProcessOverride;
         private Action _terminateChildProcessesOverride;
 
         /// <summary>
@@ -118,7 +119,7 @@ namespace Servy.Service.UnitTests
         public void InvokeOnProcessExited(object sender, EventArgs e) =>
             ServiceReflection.OnProcessExitedMethod.Invoke(this, new object[] { sender, e });
 
-        public void OverrideStartProcess(Action<string, string, string, List<EnvironmentVariable>> startProcess)
+        public void OverrideStartProcess(Action<string, string, string, List<EnvironmentVariable>, CancellationToken> startProcess)
         {
             _startProcessOverride = startProcess;
         }
@@ -133,15 +134,15 @@ namespace Servy.Service.UnitTests
             (IProcessWrapper)ServiceReflection.ChildProcessField.GetValue(this);
 
         // Expose StartProcess protected method and allow override logic
-        public void InvokeStartProcess(string exePath, string args, string workingDir, List<EnvironmentVariable> environmentVariables)
+        public void InvokeStartProcess(string exePath, string args, string workingDir, List<EnvironmentVariable> environmentVariables, CancellationToken cancellationToken)
         {
             if (_startProcessOverride != null)
             {
-                _startProcessOverride(exePath, args, workingDir, environmentVariables);
+                _startProcessOverride(exePath, args, workingDir, environmentVariables, cancellationToken);
             }
             else
             {
-                ServiceReflection.StartProcessMethod.Invoke(this, new object[] { exePath, args, workingDir, environmentVariables });
+                ServiceReflection.StartProcessMethod.Invoke(this, new object[] { exePath, args, workingDir, environmentVariables, cancellationToken });
             }
         }
 

@@ -503,13 +503,12 @@ namespace Servy.Manager.ViewModels
         {
             // Thread-safe CTS swap
             var newCts = new CancellationTokenSource();
+            var token = newCts.Token;
             var oldCts = Interlocked.Exchange(ref _cts, newCts);
             if (oldCts != null)
             {
                 Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
-
-            var token = newCts.Token;
 
             try
             {

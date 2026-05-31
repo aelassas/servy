@@ -140,7 +140,7 @@ namespace Servy.Services
                 return false;
             }
 
-            if (_serviceManager.IsServiceInstalled(dto.Name))
+            if (_serviceManager.IsServiceInstalled(dto.Name, cancellationToken))
             {
                 var confirmExists = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ServiceAlreadyExists, Caption);
                 if (!confirmExists)
@@ -265,7 +265,7 @@ namespace Servy.Services
                 return false;
             }
 
-            var exists = _serviceManager.IsServiceInstalled(serviceName);
+            var exists = _serviceManager.IsServiceInstalled(serviceName, cancellationToken);
             if (!exists)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
@@ -311,7 +311,8 @@ namespace Servy.Services
                 serviceName,
                 (name) => _serviceManager.StartServiceAsync(name, logSuccessfulStart: true, cancellationToken: cancellationToken),
                 Strings.Msg_ServiceStarted,
-                checkDisabled: true);
+                checkDisabled: true,
+                cancellationToken: cancellationToken);
 
         /// <inheritdoc />
         public Task<bool> StopService(string serviceName, CancellationToken cancellationToken = default) =>
@@ -319,7 +320,8 @@ namespace Servy.Services
                 serviceName,
                 (name) => _serviceManager.StopServiceAsync(name, logSuccessfulStop: true, cancellationToken: cancellationToken),
                 Strings.Msg_ServiceStopped,
-                checkDisabled: false);
+                checkDisabled: false,
+                cancellationToken: cancellationToken);
 
         /// <inheritdoc />
         public Task<bool> RestartService(string serviceName, CancellationToken cancellationToken = default) =>
@@ -327,7 +329,8 @@ namespace Servy.Services
                 serviceName,
                 (name) => _serviceManager.RestartServiceAsync(name, logSuccessfulRestart: true, cancellationToken: cancellationToken),
                 Strings.Msg_ServiceRestarted,
-                checkDisabled: true);
+                checkDisabled: true,
+                cancellationToken: cancellationToken);
 
         ///<inheritdoc/>
         public Task ExportXmlConfig(string confirmPassword) =>
@@ -376,22 +379,30 @@ namespace Servy.Services
 
             var forceFlag = _appConfig.ForceSoftwareRendering ? $" {AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
 
-            using (var process = new Process
+            try
             {
-                StartInfo = new ProcessStartInfo
+
+                using (var process = new Process
                 {
-                    FileName = _appConfig.ManagerAppPublishPath,
-                    UseShellExecute = true,
-                    Arguments = $"\"false\"{forceFlag}", // Pass false to skip splash screen
-                }
-            })
-            {
-                if (!process.Start())
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = _appConfig.ManagerAppPublishPath,
+                        UseShellExecute = true,
+                        Arguments = $"\"false\"{forceFlag}", // Pass false to skip splash screen
+                    }
+                })
                 {
-                    Logger.Warn($"Failed to start external process {_appConfig.ManagerAppPublishPath}.");
+                    if (!process.Start())
+                    {
+                        Logger.Warn($"Failed to start external process {_appConfig.ManagerAppPublishPath}.");
+                    }
                 }
             }
-
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to start Manager app at {_appConfig.ManagerAppPublishPath}.", ex);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_ManagerAppLaunchFailed, Caption);
+            }
         }
 
         #endregion
@@ -409,6 +420,7 @@ namespace Servy.Services
         /// if the operation completes successfully.</param>
         /// <param name="checkDisabled">If <c>true</c>, the method will verify that the service is not 
         /// in a 'Disabled' state before attempting the operation.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests during asynchronous operations.</param>
         /// <returns>
         /// A task that represents the asynchronous operation. The task result is <c>true</c> 
         /// if the service operation and all associated UI feedback completed successfully; 
@@ -422,7 +434,8 @@ namespace Servy.Services
             string serviceName,
             Func<string, Task<OperationResult>> operation,
             string successMessage,
-            bool checkDisabled)
+            bool checkDisabled,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -430,13 +443,13 @@ namespace Servy.Services
 
                 if (!await IsServiceNameValid(serviceName)) return false;
 
-                if (!_serviceManager.IsServiceInstalled(serviceName))
+                if (!_serviceManager.IsServiceInstalled(serviceName, cancellationToken))
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
                     return false;
                 }
 
-                if (checkDisabled && _serviceManager.GetServiceStartupType(serviceName) == ServiceStartType.Disabled)
+                if (checkDisabled && _serviceManager.GetServiceStartupType(serviceName, cancellationToken) == ServiceStartType.Disabled)
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, Caption);
                     return false;
