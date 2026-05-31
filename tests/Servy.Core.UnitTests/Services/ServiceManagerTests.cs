@@ -2460,13 +2460,13 @@ namespace Servy.Core.UnitTests.Services
 
         private static SafeScmHandle CreateScmHandle(int value = 1)
         {
-            // 1. Invoke the default constructor via reflection
             var handle = (SafeScmHandle)Activator.CreateInstance(typeof(SafeScmHandle), true);
-
-            // 2. Safely set the handle value using the protected SetHandle method
-            // We cast the int to IntPtr here
             var setHandleMethod = typeof(SafeHandle).GetMethod("SetHandle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            setHandleMethod?.Invoke(handle, new object[] { (IntPtr)value });
+
+            // If the test explicitly passes 0, keep it as IntPtr.Zero so handle.IsInvalid evaluates to true.
+            // Otherwise, allocate valid unmanaged space to prevent native Access Violations (0xC0000005) on Dispose.
+            IntPtr ptrToInject = (value == 0) ? IntPtr.Zero : Marshal.AllocHGlobal(64);
+            setHandleMethod?.Invoke(handle, new object[] { ptrToInject });
 
             return handle;
         }
@@ -2474,9 +2474,11 @@ namespace Servy.Core.UnitTests.Services
         private static SafeServiceHandle CreateServiceHandle(int value = 1)
         {
             var handle = (SafeServiceHandle)Activator.CreateInstance(typeof(SafeServiceHandle), true);
-
             var setHandleMethod = typeof(SafeHandle).GetMethod("SetHandle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            setHandleMethod?.Invoke(handle, new object[] { (IntPtr)value });
+
+            // Same rule for service handles: 0 translates directly to an invalid IntPtr.Zero handle wrapper.
+            IntPtr ptrToInject = (value == 0) ? IntPtr.Zero : Marshal.AllocHGlobal(64);
+            setHandleMethod?.Invoke(handle, new object[] { ptrToInject });
 
             return handle;
         }
