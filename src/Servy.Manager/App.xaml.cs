@@ -403,12 +403,13 @@ namespace Servy.Manager
         {
             try
             {
-                _bootstrapper.OnExit(e);
+                _bootstrapper.OnExit(e); // disposal warnings still logged
             }
             finally
             {
                 (Services as IDisposable)?.Dispose();
                 Services = null; // clear the static reference for test hosts
+                try { Logger.Shutdown(); } catch { /* fail-silent */ }
                 base.OnExit(e);
             }
         }
