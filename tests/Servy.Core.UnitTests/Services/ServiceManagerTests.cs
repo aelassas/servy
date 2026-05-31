@@ -2148,22 +2148,55 @@ namespace Servy.Core.UnitTests.Services
             mockSvc.Setup(s => s.StartType).Returns(ServiceStartMode.Automatic); // Required to enter delayed check
 
             _mockServiceControllerProvider.Setup(p => p.GetServices()).Returns(new[] { mockSvc.Object });
-            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>())).Returns(scmHandle);
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scmHandle);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "TestSvc", It.IsAny<uint>())).Returns(svcHandle);
 
+            // FIX: Robust simulation of the dual-pass QueryServiceConfig pattern
+            int configStructSize = Marshal.SizeOf<QUERY_SERVICE_CONFIG>();
             _mockWindowsServiceApi
                 .Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
                 .Returns(new QueryConfigDelegate((SafeServiceHandle h, IntPtr buf, int size, out int bytesNeeded) =>
                 {
-                    bytesNeeded = 123;
+                    if (buf == IntPtr.Zero)
+                    {
+                        bytesNeeded = configStructSize;
+                        return false; // Win32 size-probe behavior
+                    }
+
+                    // Zero out the structure memory block so it doesn't contain garbage unmanaged pointers
+                    var zeroedConfig = new QUERY_SERVICE_CONFIG
+                    {
+                        lpServiceStartName = IntPtr.Zero,
+                        lpBinaryPathName = IntPtr.Zero,
+                        lpDependencies = IntPtr.Zero,
+                        lpDisplayName = IntPtr.Zero,
+                        lpLoadOrderGroup = IntPtr.Zero
+                    };
+
+                    Marshal.StructureToPtr(zeroedConfig, buf, false);
+                    bytesNeeded = size;
                     return true;
                 }));
 
+            // FIX: Robust simulation of the dual-pass QueryServiceConfig2 pattern for descriptions
+            int descStructSize = Marshal.SizeOf<SERVICE_DESCRIPTION>();
             _mockWindowsServiceApi.
                 Setup(x => x.QueryServiceConfig2(It.IsAny<SafeServiceHandle>(), SERVICE_CONFIG_DESCRIPTION, It.IsAny<IntPtr>(), It.IsAny<int>(), ref It.Ref<int>.IsAny))
-                .Returns(new QueryConfig2Delegate((SafeServiceHandle h, uint dwInfoLevel, IntPtr lpBuffer, int size, ref int bytesNeeded) =>
+                .Returns(new QueryConfig2Delegate((SafeServiceHandle h, uint dwInfoLevel, IntPtr buf, int size, ref int bytesNeeded) =>
                 {
-                    bytesNeeded = 123;
+                    if (buf == IntPtr.Zero)
+                    {
+                        bytesNeeded = descStructSize;
+                        return false; // Win32 size-probe behavior
+                    }
+
+                    var zeroedDesc = new SERVICE_DESCRIPTION
+                    {
+                        lpDescription = IntPtr.Zero // Explicitly safe null string pointer
+                    };
+
+                    Marshal.StructureToPtr(zeroedDesc, buf, false);
+                    bytesNeeded = size;
                     return true;
                 }));
 
@@ -2176,9 +2209,7 @@ namespace Servy.Core.UnitTests.Services
                 ref It.Ref<int>.IsAny))
                  .Returns(new QueryConfig2DelayedStartDelegate((SafeServiceHandle h, uint lvl, ref SERVICE_DELAYED_AUTO_START_INFO info, int sz, ref int req) =>
                  {
-                     // Branch Coverage: This forces the 'if (ok && info.fDelayedAutostart)' 
-                     // condition to evaluate to true.
-                     req = 123;
+                     req = Marshal.SizeOf<SERVICE_DELAYED_AUTO_START_INFO>();
                      info.fDelayedAutostart = true;
                      return true; // ok = true
                  }));
@@ -2187,6 +2218,7 @@ namespace Servy.Core.UnitTests.Services
             var result = _serviceManager.GetAllServices(CancellationToken.None);
 
             // Assert
+            Assert.Single(result);
             Assert.Equal(ServiceStartType.AutomaticDelayedStart, result[0].StartupType);
         }
 
@@ -2201,12 +2233,11 @@ namespace Servy.Core.UnitTests.Services
 
             _mockServiceControllerProvider.Setup(p => p.GetServices()).Returns(new[] { mockSvc.Object });
 
-            // Use factory functions for handles to prevent disposal issues in Parallel.ForEach
             var scmHandle = CreateScmHandle(1);
             var svcHandle = CreateServiceHandle(2);
 
             _mockWindowsServiceApi
-                .Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>()))
+                .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(() => scmHandle);
 
             _mockWindowsServiceApi
@@ -2215,21 +2246,39 @@ namespace Servy.Core.UnitTests.Services
 
             const string expectedDescription = "This is a mocked service description.";
             int structSize = Marshal.SizeOf(typeof(SERVICE_DESCRIPTION));
-            int totalNeeded = structSize + 512; // Buffer for the struct + the string data
+            // Calculate exact space needed for the layout structure plus the null-terminated unicode string array
+            int totalNeeded = structSize + ((expectedDescription.Length + 1) * 2);
 
+            // FIX: Prevent QueryServiceConfig pass 1 from throwing an AccessViolationException
+            int configStructSize = Marshal.SizeOf<QUERY_SERVICE_CONFIG>();
             _mockWindowsServiceApi
                 .Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
                 .Returns(new QueryConfigDelegate((SafeServiceHandle h, IntPtr buf, int size, out int bytesNeeded) =>
                 {
-                    bytesNeeded = 123;
+                    if (buf == IntPtr.Zero)
+                    {
+                        bytesNeeded = configStructSize;
+                        return false; // Real Win32 size-probe behavior
+                    }
+
+                    var zeroedConfig = new QUERY_SERVICE_CONFIG
+                    {
+                        lpServiceStartName = IntPtr.Zero,
+                        lpBinaryPathName = IntPtr.Zero,
+                        lpDependencies = IntPtr.Zero,
+                        lpDisplayName = IntPtr.Zero,
+                        lpLoadOrderGroup = IntPtr.Zero
+                    };
+
+                    Marshal.StructureToPtr(zeroedConfig, buf, false);
+                    bytesNeeded = size;
                     return true;
                 }));
 
             // Mock QueryServiceConfig2 (Level 1: Description)
-            // We use a delegate to handle the 'ref int bytesNeeded' logic
             _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(
-                It.IsAny<SafeServiceHandle>(), // Loose matching
-                NativeMethods.SERVICE_CONFIG_DESCRIPTION, // Ensure you use the correct constant
+                It.IsAny<SafeServiceHandle>(),
+                NativeMethods.SERVICE_CONFIG_DESCRIPTION,
                 It.IsAny<IntPtr>(),
                 It.IsAny<int>(),
                 ref It.Ref<int>.IsAny))
@@ -2237,15 +2286,20 @@ namespace Servy.Core.UnitTests.Services
                 {
                     if (buf == IntPtr.Zero)
                     {
-                        // Step 1: Provide the required size
-                        req = 123;
-                        return false;
+                        req = totalNeeded;
+                        return false; // Real Win32 size-probe behavior
                     }
 
-                    // Step 2: Write the structure into the allocated memory
+                    // FIX: Safe contiguous unmanaged writing without leaking AllocHGlobal blocks
+                    // Append the actual string array payload directly after the structure boundary block
+                    IntPtr stringTargetPtr = IntPtr.Add(buf, structSize);
+                    Marshal.Copy(expectedDescription.ToCharArray(), 0, stringTargetPtr, expectedDescription.Length);
+                    // Add the null terminator character manually at the end of the target span
+                    Marshal.WriteInt16(IntPtr.Add(stringTargetPtr, expectedDescription.Length * 2), 0);
+
                     var descStruct = new SERVICE_DESCRIPTION
                     {
-                        lpDescription = Marshal.StringToHGlobalAuto(expectedDescription)
+                        lpDescription = stringTargetPtr // Points safely inside the allocated 'buf' block
                     };
 
                     Marshal.StructureToPtr(descStruct, buf, false);
@@ -2261,8 +2315,6 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(expectedDescription, result[0].Description);
 
             // Verify cleanup
-            // We check the handle state instead of verifying the IWindowsServiceApi mock 
-            // because SafeHandle.Dispose() calls the native CloseServiceHandle directly, bypassing Moq.
             Assert.True(svcHandle.IsClosed, "Service handle was not disposed.");
             Assert.True(scmHandle.IsClosed, "SCM handle was not disposed.");
         }
@@ -2279,14 +2331,33 @@ namespace Servy.Core.UnitTests.Services
             mockSvc.Setup(s => s.StartType).Returns(ServiceStartMode.Manual);
 
             _mockServiceControllerProvider.Setup(p => p.GetServices()).Returns(new[] { mockSvc.Object });
-            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>())).Returns(scmHandle);
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scmHandle);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "NoDescService", It.IsAny<uint>())).Returns(svcHandle);
 
+            // FIX: Robust simulation of the dual-pass QueryServiceConfig pattern
+            int configStructSize = Marshal.SizeOf<QUERY_SERVICE_CONFIG>();
             _mockWindowsServiceApi
                 .Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
                 .Returns(new QueryConfigDelegate((SafeServiceHandle h, IntPtr buf, int size, out int bytesNeeded) =>
                 {
-                    bytesNeeded = 123;
+                    if (buf == IntPtr.Zero)
+                    {
+                        bytesNeeded = configStructSize;
+                        return false; // Win32 behavior: return false on size probes
+                    }
+
+                    // Zero out the structure memory block so it doesn't contain garbage unmanaged data pointers
+                    var zeroedConfig = new QUERY_SERVICE_CONFIG
+                    {
+                        lpServiceStartName = IntPtr.Zero, // Explicitly safe null string pointer
+                        lpBinaryPathName = IntPtr.Zero,
+                        lpDependencies = IntPtr.Zero,
+                        lpDisplayName = IntPtr.Zero,
+                        lpLoadOrderGroup = IntPtr.Zero
+                    };
+
+                    Marshal.StructureToPtr(zeroedConfig, buf, false);
+                    bytesNeeded = size;
                     return true;
                 }));
 
@@ -2303,14 +2374,13 @@ namespace Servy.Core.UnitTests.Services
                 {
                     if (buf == IntPtr.Zero)
                     {
-                        req = 123; // Just enough for the struct itself
+                        req = structSize;
                         return false;
                     }
 
-                    // Step 2: Write a structure where lpDescription is IntPtr.Zero
                     var descStruct = new SERVICE_DESCRIPTION
                     {
-                        lpDescription = IntPtr.Zero // <--- This triggers the '?? string.Empty' branch
+                        lpDescription = IntPtr.Zero // Triggers the '?? string.Empty' branch
                     };
 
                     Marshal.StructureToPtr(descStruct, buf, false);
@@ -2323,7 +2393,6 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.Single(result);
-            // This verifies the '?? string.Empty' logic worked
             Assert.Equal(string.Empty, result[0].Description);
             Assert.NotNull(result[0].Description);
         }
