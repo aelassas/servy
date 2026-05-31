@@ -946,7 +946,7 @@ function Install-ServyService {
             -Priority "Normal" `
             -Stdout "C:\Logs\MyService.out.log" `
             -Stderr "C:\Logs\MyService.err.log" `
-            -EnableRotation `
+            -EnableSizeRotation `
             -RotationSize 10 `
             -MaxRotations 0 `
             -EnableHealth `
