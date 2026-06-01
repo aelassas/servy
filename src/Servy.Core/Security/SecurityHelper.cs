@@ -56,13 +56,6 @@ namespace Servy.Core.Security
                 {
                     var ds = new DirectorySecurity();
 
-                    if (breakInheritance)
-                    {
-                        // SetAccessRuleProtection(isProtected, preserveInheritance)
-                        // false = do not preserve inherited rules
-                        ds.SetAccessRuleProtection(true, false);
-                    }
-
                     // Apply the hardened rules to the descriptor before creation.
                     ApplySecurityRules(ds, currentUserSid, breakInheritance);
 
