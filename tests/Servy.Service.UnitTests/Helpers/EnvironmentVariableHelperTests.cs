@@ -314,8 +314,10 @@ namespace Servy.Service.UnitTests.Helpers
             var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
 
             // Assert
+            // The fixed-point engine safely halts and leaves the unresolvable macro boundaries intact.
+            // Due to isolated snapshot routing, each variable cleanly retains its fallback cycle token state.
             Assert.Equal("%CYCLE_A%", expanded["CYCLE_A"]);
-            Assert.Equal("%CYCLE_A%", expanded["CYCLE_B"]);
+            Assert.Equal("%CYCLE_B%", expanded["CYCLE_B"]);
         }
 
         [Fact]
@@ -606,6 +608,40 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.True(resultValue.All(c => c == 'C'), "The output string must contain only sanitized baseline padding values.");
             Assert.DoesNotContain("\uFFFD", resultValue, StringComparison.Ordinal);
             Assert.DoesNotContain("_SERVY_ESC_PERCENT_", resultValue);
+        }
+
+        #endregion
+
+        #region Injected Literal Percent
+
+        [Fact]
+        public void ExpandEnvironmentVariables_InjectedLiteralPercentContent_DoesNotTriggerOsReExpansion()
+        {
+            // Arrange: Tests Issue #2300
+            // We set up a custom variable that evaluates to a literal '%'.
+            // When referenced inside another variable surrounding a real system variable keyword,
+            // the resulting literal token sequence (e.g., %SystemRoot%) must NOT be expanded 
+            // by the Step 4 OS-level execution layer.
+            string systemRootValue = Environment.GetEnvironmentVariable("SystemRoot");
+            Assert.False(string.IsNullOrEmpty(systemRootValue), "Precondition failed: SystemRoot OS variable is not set.");
+
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "PERCENT", Value = "%" },
+                new EnvironmentVariable { Name = "LITERAL_MSG", Value = "%PERCENT%SystemRoot%PERCENT%" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            string resultValue = expanded["LITERAL_MSG"];
+
+            // SSoT Parity Validation: The dictionary-builder must match the string-overload behavior.
+            // The literal string text '%SystemRoot%' should remain completely intact as a user literal,
+            // instead of aggressively expanding into the machine's actual system directory path (e.g., C:\Windows).
+            Assert.Equal("%SystemRoot%", resultValue);
+            Assert.NotEqual(systemRootValue, resultValue);
         }
 
         #endregion

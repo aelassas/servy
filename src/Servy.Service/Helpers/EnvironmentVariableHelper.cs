@@ -144,10 +144,18 @@ namespace Servy.Service.Helpers
         {
             var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+            // Isolate custom definitions from system environmental maps to prevent cross-contamination
+            var customSnapshot = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var systemEnv = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
             // 1. Load System Environment
             foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
             {
-                result[(string)entry.Key] = (string)entry.Value;
+                string key = (string)entry.Key;
+                string val = (string)entry.Value;
+
+                result[key] = val;
+                systemEnv[key] = val;
             }
 
             // 2. Merge Custom Variables with SECURITY CHECK & ESCAPE PROTECTION
@@ -166,12 +174,13 @@ namespace Servy.Service.Helpers
 
                     // Encode '%%' into a temporary token to prevent the expansion engine 
                     // from treating escaped percent signs as variable boundaries.
-                    result[envVar.Name] = envVar.Value?.Replace("%%", PercentEscapeToken);
+                    string sanitizedValue = envVar.Value?.Replace("%%", PercentEscapeToken);
+                    result[envVar.Name] = sanitizedValue;
+                    customSnapshot[envVar.Name] = sanitizedValue;
                 }
             }
 
             // 3. Recursive Expansion (Multi-pass Fixed-Point Resolution)
-            // We use ToList() to avoid "Collection was modified" exceptions
             bool changed;
             int pass = 0;
 
@@ -179,15 +188,18 @@ namespace Servy.Service.Helpers
             {
                 changed = false;
 
-                // Snapshot the current state to prevent cascading mutations during a single pass
-                var snapshot = result.ToDictionary(k => k.Key, k => k.Value, StringComparer.OrdinalIgnoreCase);
+                // Create an isolated pass snapshot that strictly contains custom variable targets.
+                // This ensures that ExpandWithDictionary won't evaluate system keys mid-pass.
+                var passSnapshot = customSnapshot.ToDictionary(k => k.Key, k => k.Value, StringComparer.OrdinalIgnoreCase);
 
-                foreach (var key in result.Keys.ToList())
+                foreach (var key in customSnapshot.Keys.ToList())
                 {
                     string original = result[key];
                     if (string.IsNullOrEmpty(original)) continue;
 
-                    string expanded = ExpandWithDictionary(original, snapshot, key);
+                    // Pass protectInjectedValues: true here so any literal '%' evaluated from custom variables
+                    // is instantly masked as PercentEscapeToken, blocking it from parsing as a variable on Pass 2.
+                    string expanded = ExpandWithDictionary(original, passSnapshot, key, protectInjectedValues: true);
 
                     // Exponential growth guard
                     if (expanded != null && expanded.Length > AppConfig.MaxEnvVarExpandedLength)
@@ -201,6 +213,7 @@ namespace Servy.Service.Helpers
                     if (!string.Equals(original, expanded, StringComparison.Ordinal))
                     {
                         result[key] = expanded;
+                        customSnapshot[key] = expanded; // Keep isolation dictionary in sync
                         changed = true;
                     }
                 }
@@ -214,10 +227,15 @@ namespace Servy.Service.Helpers
                 Logger.Warn("Environment variable expansion reached maximum pass limit. Indirect circular reference detected (e.g., A=%B%, B=%A%).");
             }
 
-            // 4. Final layer: Apply OS-level expansion for any remaining unmapped system placeholders
-            foreach (var key in result.Keys.Where(k => !string.IsNullOrEmpty(result[k])).ToList())
+            // 4. Final layer: Apply System-level expansion for any remaining unmapped system placeholders
+            foreach (var key in customSnapshot.Keys)
             {
-                result[key] = Environment.ExpandEnvironmentVariables(result[key]);
+                if (string.IsNullOrEmpty(result[key])) continue;
+
+                // Safely expand remaining real system placeholders (e.g. %ProgramData%) without touching 
+                // protected tokens. We use protectInjectedValues: true to shelter any nested percentage content.
+                string systemExpanded = ExpandWithDictionary(result[key], systemEnv, null, protectInjectedValues: true);
+                result[key] = Environment.ExpandEnvironmentVariables(systemExpanded);
             }
 
             // 5. Decode escaped percentages: Collapse the protective token into a literal '%'
