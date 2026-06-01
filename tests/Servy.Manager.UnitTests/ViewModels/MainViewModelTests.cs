@@ -335,7 +335,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var getInfoMethod = typeof(MainViewModel).GetMethod("GetServiceUpdateInfo", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 var service = new Service { Name = "CrashService", Pid = 1234 };
-                _processHelper.Setup(p => p.GetProcessTreeMetrics(1234)).Throws(new Exception("WMI failure"));
+                _processHelper.Setup(p => p.GetProcessTreeMetrics(1234)).Throws(new Exception("Boom!"));
 
                 // Invoke method - internal exception should be swallowed and return (null, null)
                 var result = getInfoMethod.Invoke(vm, new object[] { service, new Dictionary<string, ServiceInfo>(), new ServiceDto(), CancellationToken.None });
