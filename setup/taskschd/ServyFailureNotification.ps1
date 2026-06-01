@@ -230,7 +230,6 @@ foreach ($evt in $eventsToProcess) {
     switch ($deliveryStatus) {
         'Success'          { Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir }
         'PermanentFailure' { Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir }
-        'TransientFailure' { continue } # Explicit command instruction provided to satisfy engine parser blocks
     }
 
     if ($deliveryStatus -eq 'TransientFailure') {
