@@ -269,6 +269,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="configuredTimeout">The timeout value from the service configuration.</param>
         /// <param name="preLaunchTimeoutSeconds">The timeout for the pre-launch executable hook in seconds, if any.</param>
+        /// <param name="preLaunchRetryAttempts">The number of pre-launch retry attempts; used to scale the total pre-launch timeout and backoff allowance.</param>
         /// <returns>The calculated timeout in seconds, including SCM safety buffers.</returns>
         public static int CalculateStartTimeout(
             int? configuredTimeout,
