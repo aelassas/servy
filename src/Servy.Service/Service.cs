@@ -1443,7 +1443,7 @@ namespace Servy.Service
 
             try
             {
-                // 1. Prepare Environment and
+                // 1. Prepare Environment and Arguments
                 var args = _options.FailureProgramArgs ?? string.Empty;
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.FailureProgramWorkingDirectory)
