@@ -4,7 +4,7 @@ namespace Servy.Core.Config
 {
     /// <summary>
     /// Contains the internal account names utilized by the Windows Service Control Manager (SCM). 
-    /// These values represent the raw strings returned by WMI and the Win32 API, which are distinct from the localized display names used in the user interface.
+    /// These values represent the raw strings returned by the Win32 Service Control Manager API, which are distinct from the localized display names used in the user interface.
     /// </summary>
     public static class ServiceAccounts
     {
