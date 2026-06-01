@@ -191,6 +191,20 @@ namespace Servy.Service.Helpers
                     {
                         Logger.Warn($"Expansion of '{key}' exceeded {AppConfig.MaxEnvVarExpandedLength} characters. Truncating to prevent memory exhaustion.");
                         expanded = expanded.Substring(0, AppConfig.MaxEnvVarExpandedLength);
+
+                        // ROBUSTNESS: Check if the raw truncation point split a PercentEscapeToken.
+                        // Look backward up to the token's total length for the signature marker.
+                        int tailStart = expanded.LastIndexOf('\uFFFD');
+                        if (tailStart >= 0 && (expanded.Length - tailStart) < PercentEscapeToken.Length)
+                        {
+                            int lastFullIndex = expanded.LastIndexOf(PercentEscapeToken, StringComparison.Ordinal);
+
+                            // If this marker isn't part of a complete token, it's a structural fragment from the cut
+                            if (lastFullIndex != tailStart)
+                            {
+                                expanded = expanded.Substring(0, tailStart);
+                            }
+                        }
                     }
 
                     if (!string.Equals(original, expanded, StringComparison.Ordinal))
