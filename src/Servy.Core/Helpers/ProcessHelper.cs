@@ -16,15 +16,6 @@ namespace Servy.Core.Helpers
     /// </summary>
     public class ProcessHelper : IProcessHelper
     {
-        /// <summary>
-        /// Unexpanded Environment Variable Regex.
-        /// Matches standard Windows environment variable syntax (e.g., %SystemRoot%).
-        /// </summary>
-        private static readonly Regex UnexpandedEnvVarRegex = new Regex(
-            @"%[A-Za-z0-9_]+%",
-            RegexOptions.Compiled,
-            AppConfig.InputRegexTimeout);
-
         private long _lastPruneTicks = DateTime.MinValue.Ticks;
         
         /// <summary>
