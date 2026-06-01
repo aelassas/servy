@@ -126,7 +126,9 @@ function Show-Notification {
     }
 
     if ($null -eq $titleNode -or $null -eq $bodyNode) {
-        throw "Unsupported Toast XML structure: Could not locate text nodes for Title or Body."
+        # ROBUSTNESS: Schema structure mismatches are unrecoverable; classify as a permanent failure.
+        Write-FallbackError -Message "ServyToast: Unsupported Toast XML structure. Could not locate text nodes for Title or Body." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+        return 'PermanentFailure'
     }
 
     # Append content
@@ -148,15 +150,17 @@ function Show-Notification {
     # --- ROBUSTNESS: PRE-FLIGHT NOTIFICATION ENVIRONMENT PROBE ---
     # Verify app notification permissions and OS-level Focus Assist/DND status before staging execution.
     # If notifications are suppressed globally or scoped away via policy, fail-fast to save the watermark.
+    $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("PowerShell")
     try {
-        $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("PowerShell")
         if ($notifier.Setting -ne [Windows.UI.Notifications.NotificationSetting]::Enabled) {
             $settingState = $notifier.Setting.ToString()
-            Write-FallbackError -Message "ServyToast: Notification delivery aborted due to platform settings suppression ($settingState). Holding watermark loop." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
-            return $false
+            Write-FallbackError -Message "ServyToast: Notification delivery aborted due to platform settings suppression ($settingState). Skipping watermark advance." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+            
+            # ROBUSTNESS: Treat configuration blocks as structural permanent failures to prevent head-of-line blocking loops.
+            return 'PermanentFailure'
         }
     } catch {
-        # Fall back gracefully to standard delivery if metadata setting probes are restricted
+        # Setting probe restricted; proceed with delivery anyway.
     }
 
     # Track synchronous platform failures safely via local reference tracking blocks.
@@ -179,11 +183,16 @@ function Show-Notification {
         Start-Sleep -Milliseconds 50
     }
 
-    return (-not $failedRef.Value)
+    if ($failedRef.Value) {
+        return 'TransientFailure'
+    }
+
+    return 'Success'
   } catch {
+    # System path drops or memory boundaries represent runtime environmental/transient errors
     $syncError = "ServyToast: Notification path failed. Details: $($_.Exception.Message)"
     Write-FallbackError -Message $syncError -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
-    return $false
+    return 'TransientFailure'
   }
 }
 
@@ -208,19 +217,24 @@ if ($null -eq $eventsToProcess) {
 foreach ($evt in $eventsToProcess) {
     $parsed = ConvertFrom-ServyEventMessage -Message $evt.Message
 
-    # Show the notification
-    $delivered = Show-Notification -ServiceName $parsed.ServiceName `
-                                   -LogText $parsed.LogText `
-                                   -TimeCreated $evt.TimeCreated `
-                                   -scriptDir $scriptDir `
-                                   -FallbackLogFile $fallbackLogFile
+    # Show the notification and capture the tri-state delivery resolution
+    $deliveryStatus = Show-Notification -ServiceName $parsed.ServiceName `
+                                        -LogText $parsed.LogText `
+                                        -TimeCreated $evt.TimeCreated `
+                                        -scriptDir $scriptDir `
+                                        -FallbackLogFile $fallbackLogFile
     
-    if ($delivered) {
-        # Track this timestamp as successfully processed
-        Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir
-    } else {
-        # Stop processing so the next run retries from this event
-        Write-Host "Notification failed. Halting queue processing."
+    # ROBUSTNESS: Re-architected watermarking filter path to match ServyFailureEmail.ps1.
+    # Advance the event queue timestamp pointer for either clear success or permanent, unfixable configuration blocks.
+    # Only break the processing loop without modifying the index watermark on clear TransientFailure states.
+    switch ($deliveryStatus) {
+        'Success'          { Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir }
+        'PermanentFailure' { Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir }
+        'TransientFailure' { continue } # Explicit command instruction provided to satisfy engine parser blocks
+    }
+
+    if ($deliveryStatus -eq 'TransientFailure') {
+        Write-Host "Notification failed due to a transient condition. Halting queue processing for retry."
         break
     }
     
