@@ -2684,7 +2684,7 @@ namespace Servy.Service
         /// <param name="result">The result of the stop operation:
         /// <see langword="true"/> if the process stopped gracefully;
         /// <see langword="false"/> if the process was forcefully terminated;
-        /// <see langword="null"/> if the process had already exited before the stop sequence ran (or if the stop sequence timed out).</param>
+        /// <see langword="null"/> if the process had already exited before the stop sequence ran.</param>
 		private void HandleStopResult(IProcessWrapper process, bool? result)
         {
             var message = string.Empty;

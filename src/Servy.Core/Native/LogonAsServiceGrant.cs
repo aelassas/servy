@@ -164,15 +164,9 @@ namespace Servy.Core.Native
                         Logger.Warn($"LsaFreeMemory failed to release unmanaged account rights buffer. (NTSTATUS 0x{freeStatus:X})");
                     }
                 }
-                if (policy != IntPtr.Zero)
-                {
-                    // Apply the same defensive rule check to LsaClose for complete hygiene
-                    int closeStatus = LsaClose(policy);
-                    if (closeStatus != 0)
-                    {
-                        Logger.Warn($"LsaClose failed to safely release the Local Security Authority policy handle. (NTSTATUS 0x{closeStatus:X})");
-                    }
-                }
+
+                // Apply the same defensive rule check to LsaClose for complete hygiene
+                SafeLsaClose(policy, "account rights check");
             }
         }
 
@@ -194,7 +188,7 @@ namespace Servy.Core.Native
                 };
 
                 // Request only the minimal rights required to add account privileges.
-                // POLICY_LOOKUP_NAMES:   To resolve SIDs/Names.
+                // POLICY_LOOKUP_NAMES: To resolve SIDs/Names.
                 // POLICY_CREATE_ACCOUNT: To create the account entry in LSA if it doesn't exist.
                 // POLICY_ASSIGN_PRIVILEGE: Required specifically by LsaAddAccountRights.
                 uint accessMask = POLICY_ACCESS.POLICY_LOOKUP_NAMES |
@@ -241,9 +235,25 @@ namespace Servy.Core.Native
                 {
                     Marshal.FreeHGlobal(buffer);
                 }
-                if (policy != IntPtr.Zero)
+
+                // Apply the same defensive rule check to LsaClose for complete hygiene
+                SafeLsaClose(policy, "privilege assignment");
+            }
+        }
+
+        /// <summary>
+        /// Safely closes a Local Security Authority (LSA) policy handle and logs a warning on failure.
+        /// </summary>
+        /// <param name="policy">The unmanaged LSA policy handle to close.</param>
+        /// <param name="context">The contextual description of the operation invoking the close routine.</param>
+        private static void SafeLsaClose(IntPtr policy, string context)
+        {
+            if (policy != IntPtr.Zero)
+            {
+                int closeStatus = LsaClose(policy);
+                if (closeStatus != 0)
                 {
-                    LsaClose(policy);
+                    Logger.Warn($"LsaClose failed to safely release the Local Security Authority policy handle during {context}. (NTSTATUS 0x{closeStatus:X})");
                 }
             }
         }

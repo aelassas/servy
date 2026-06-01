@@ -21,7 +21,7 @@
         /// </summary>
         /// <remarks>
         /// <b>Internal sentinel.</b> This is NOT a valid Win32 <c>dwStartType</c>. 
-        /// To implement this, the service must first be set to <see cref="AutoStart"/> 
+        /// To implement this, the service must first be set to <see cref="Automatic"/> 
         /// via <c>ChangeServiceConfig</c>, followed by a separate call to 
         /// <c>ChangeServiceConfig2</c> using <c>SERVICE_CONFIG_DELAYED_AUTO_START_INFO</c>.
         /// </remarks>

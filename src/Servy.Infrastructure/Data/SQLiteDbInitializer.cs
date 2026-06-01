@@ -149,8 +149,9 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Final reconciliation step that ensures the database schema matches the 
-        /// Single Source of Truth (SqlConstants), even if explicit migrations were missed.
+        /// Final reconciliation step that ensures missing columns from the
+        /// Single Source of Truth (SqlConstants) are added to the schema. 
+        /// Detects and logs type drift and orphan columns for manual review.
         /// </summary>
         /// <param name="connection">The active database connection.</param>
         /// <param name="currentVersion">The schema version detected after migrations.</param>
@@ -173,7 +174,7 @@ namespace Servy.Infrastructure.Data
                 expectedColumns.Add(key);
             }
 
-            // 1. Detect and Add Missing Columns (Self-Healing)
+            // 1. Detect and Add Missing Columns (Auto-add only)
             var missing = expectedColumns.Where(c => !existingColumns.Contains(c)).ToList();
 
             if (missing.Count > 0)
@@ -201,7 +202,7 @@ namespace Servy.Infrastructure.Data
                 }
             }
 
-            // 2. Detect Orphaned Columns (Removed or Renamed)
+            // 2. Detect Orphaned Columns (Present in DB, but not in SqlConstants)
             var orphans = existingColumns
                 .Except(expectedColumns, StringComparer.OrdinalIgnoreCase)
                 .ToList();

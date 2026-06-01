@@ -385,7 +385,11 @@ namespace Servy.Service.ProcessManagement
             // Matches 'python', 'pythonw', 'python2', 'python3', or 'python3.x' patterns.
             bool isPython;
             try { isPython = PythonExeRegex.IsMatch(fileNameOnly); }
-            catch (RegexMatchTimeoutException) { isPython = false; }
+            catch (RegexMatchTimeoutException ex)
+            {
+                Logger.Warn($"ApplyLanguageFixes: Python detection regex timed out on '{fileNameOnly}' ({ex.Message}); assuming not Python.");
+                isPython = false;
+            }
 
             if (isPython)
             {

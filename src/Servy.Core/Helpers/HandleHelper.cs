@@ -106,7 +106,14 @@ namespace Servy.Core.Helpers
                         Logger.Warn($"Failed to kill handle.exe after timeout (PID {process.Id}): {killEx.Message}");
                     }
 
-                    process.WaitForExit(AppConfig.HandleExeKillDrainTimeoutMs); // best-effort drain; we already have a TimeoutException coming
+                    // ROBUSTNESS: Bound first to avoid an unkillable process tree hang.
+                    // If the OS successfully tears down the target process tree layout within the drain limit,
+                    // invoke the unbounded version to safely flush out outstanding in-flight async stream events
+                    // before reading the errorBuilder buffer contents.
+                    if (process.WaitForExit(AppConfig.HandleExeKillDrainTimeoutMs))
+                    {
+                        process.WaitForExit();
+                    }
 
                     throw new TimeoutException($"handle.exe timed out. Stderr: {errorBuilder}");
                 }

@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Servy.Core.Services
+﻿namespace Servy.Core.Services
 {
     /// <summary>
     /// Represents information about a Windows service, including its service name
-    /// and display name. This class is used by <see cref="IWindowsServiceProvider"/>
+    /// and display name. This class is used by <see cref="IWindowsServiceApi"/>
     /// to abstract service details for testing and querying purposes.
     /// </summary>
     public class WindowsServiceInfo
@@ -25,5 +19,4 @@ namespace Servy.Core.Services
         /// </summary>
         public string DisplayName { get; set; } = string.Empty;
     }
-
 }

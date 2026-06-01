@@ -44,7 +44,7 @@ namespace Servy.Core.Data
         /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout).</param>
         /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>The number of affected records.</returns>
+        /// <returns>The ID of the upserted service.</returns>
         Task<int> UpsertAsync(ServiceDto service, bool preserveExistingRuntimeState, bool preserveExistingCredentials, CancellationToken cancellationToken = default);
 
         /// <summary>
