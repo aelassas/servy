@@ -175,17 +175,13 @@ namespace Servy.Core.Logging
 
                 string logPath = Path.Combine(LogsPath, _fileName);
 
-                // ATOMIC TEARDOWN:
-                // Capture the reference, nullify the static field, then dispose.
-                // This ensures waiting threads or 'fast-path' checks see null immediately.
-                var oldWriter = _writer;
-                _writer = null;
-                oldWriter?.Dispose();
-
                 // Convert MB to Bytes for the underlying writer
                 long rotationSizeInBytes = AppConfig.ToBytes(_logRotationSizeMB);
 
-                _writer = new RotatingStreamWriter(
+                // ROBUSTNESS: Instantiate the new stream writer in local space first.
+                // This keeps the old writer online and fully serviceable for incoming logs 
+                // until the new resource is ready, eliminating the volatile null race window.
+                var newWriter = new RotatingStreamWriter(
                     path: logPath,
                     enableSizeRotation: true,
                     rotationSizeInBytes: rotationSizeInBytes,
@@ -194,6 +190,13 @@ namespace Servy.Core.Logging
                     maxRotations: _maxBackupLogFiles,
                     useLocalTimeForRotation: _useLocalTimeForRotation
                 );
+
+                // ATOMIC SWAP: Capture the old writer context under lock, swap references, 
+                // and then cleanly tear down the legacy handle.
+                var oldWriter = _writer;
+                _writer = newWriter;
+
+                oldWriter?.Dispose();
 
                 // Primary writer just came back online; allow another fallback budget.
                 Interlocked.Exchange(ref _initFallbackWriteCount, 0);

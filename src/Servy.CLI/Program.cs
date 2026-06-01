@@ -194,7 +194,8 @@ namespace Servy.CLI
                         // Copy service executable from embedded resources
                         if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe", true, true))
                         {
-                            Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIExe}");
+                            throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyServiceCLIExe}'. " +
+                                "CLI cannot start safely - see file log for details.");
                         }
 
                         // Copy Sysinternals from embedded resources

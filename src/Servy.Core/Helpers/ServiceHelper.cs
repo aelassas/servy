@@ -197,10 +197,22 @@ namespace Servy.Core.Helpers
                         if (sc.Status == ServiceControllerStatus.Stopped)
                             continue;
 
-                        // Only call Stop() if it's not already trying to stop
-                        if (sc.Status != ServiceControllerStatus.StopPending)
+                        try
                         {
-                            sc.Stop();
+                            // Only call Stop() if it's not already trying to stop
+                            if (sc.Status != ServiceControllerStatus.StopPending)
+                            {
+                                sc.Stop();
+                            }
+                        }
+                        catch (InvalidOperationException)
+                        {
+                            sc.Refresh();
+                            if (sc.Status != ServiceControllerStatus.Stopped && sc.Status != ServiceControllerStatus.StopPending)
+                            {
+                                throw;
+                            }
+                            // else: service is already stopped or stopping - no-op
                         }
 
                         var service = await _serviceRepository.GetByNameAsync(serviceName, decrypt: false, cancellationToken: cancellationToken);

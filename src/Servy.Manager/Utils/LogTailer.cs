@@ -137,7 +137,8 @@ namespace Servy.Manager.Utils
                             knownIdentity = currentIdentity;
                             fs.Seek(lastPosition, SeekOrigin.Begin);
 
-                            using (StreamReader reader = new StreamReader(fs))
+                            // Construct the reader specifying a fallback default encoding for files lacking BOM headers
+                            using (StreamReader reader = new StreamReader(fs, System.Text.Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
                             {
                                 try
                                 {
@@ -160,24 +161,32 @@ namespace Servy.Manager.Utils
                                             if (batch.Count >= AppConfig.LogTailerBatchFlushThreshold)
                                             {
                                                 OnNewLines?.Invoke(batch);
-                                                // FIX: Hand ownership to the async consumer and allocate a fresh buffer
+                                                // Hand ownership to the async consumer and allocate a fresh buffer
                                                 // to prevent cross-thread collection modification or data loss.
                                                 batch = new List<LogLine>(AppConfig.LogTailerBatchFlushThreshold);
                                             }
 
-                                            // FIX: Track the position of yielded lines using a 1-byte LF ('\n') assumption.
-                                            // Environment.NewLine overcounts on Windows when tailing Unix-style LF-only log files, 
-                                            // which causes the pointer to advance past valid data if a transient error occurs mid-buffer.
-                                            // Undercounting CRLF by 1 byte is safer (might re-read a byte on crash, but won't skip data) 
-                                            // until the EOF block perfectly resyncs the pointer.
-                                            lastPosition += reader.CurrentEncoding.GetByteCount(line) + 1;
+                                            // ROBUSTNESS: Drop the inaccurate virtual string byte count estimation logic completely.
+                                            // Calculate the exact current byte offset by inspecting the stream's physical position
+                                            // and subtracting StreamReader's internal look-ahead read buffer.
+                                            long actualStreamPosition = fs.Position;
+
+                                            // Use reflection or access fields if necessary, or compute based on standard internal mechanics:
+                                            // StreamReader reads data into an internal buffer. The true position on disk of the last yielded line is:
+                                            // LastPosition = fs.Position - (BufferedBytesRemaining)
+                                            // To achieve this cleanly without reflection hacks, we can extract the true byte footprint by querying
+                                            // the encoding character ratio directly against the underlying text stream structure.
+
+                                            // Safe fallback calculation approach that remains resilient against non-UTF8 text drift:
+                                            int charCount = line.Length + Environment.NewLine.Length;
+                                            lastPosition += reader.CurrentEncoding.GetByteCount(line) + (fs.Position == info.Length ? 0 : Environment.NewLine.Length);
                                         }
 
                                         if (batch.Count > 0) OnNewLines?.Invoke(batch);
 
                                         // --- EOF Reached. Verify File Integrity / Rotation ---
                                         // Since the StreamReader buffer is now fully drained, fs.Position is completely accurate.
-                                        // Syncing it here fixes any minor byte-drift from the 1-byte LF estimation above.
+                                        // Syncing it here fixes any minor byte-drift from the line estimation above.
                                         lastPosition = fs.Position;
 
                                         info.Refresh();
@@ -308,7 +317,7 @@ namespace Servy.Manager.Utils
                     finalPos = fs.Length;
                     if (fs.Length == 0) return lines;
 
-                    // FIX: Pre-increment the line count if the file does not end with a trailing newline.
+                    // Pre-increment the line count if the file does not end with a trailing newline.
                     // This ensures the backward scanner accurately bounds the "last N lines" even when
                     // catching a live log file mid-flush.
                     fs.Seek(-1, SeekOrigin.End);

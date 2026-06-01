@@ -347,7 +347,7 @@ namespace Servy.Infrastructure.Data
 
             // --- ROBUSTNESS: Defensively resolve duplicate LOWER(Name) groups before enforcing UNIQUE constraints ---
             // This prevents migration failure crashes (SQLite Error 19: UNIQUE constraint failed) when upgrading legacy DBs.
-            // FIX: Using MIN(Id) ensures deterministic selection of the oldest record, avoiding GROUP_CONCAT non-determinism.
+            // Using MIN(Id) ensures deterministic selection of the oldest record, avoiding GROUP_CONCAT non-determinism.
             var duplicates = connection.Query(@"
                 SELECT LOWER(Name) AS LowerName, COUNT(*) AS Count, MIN(Id) AS KeepId
                 FROM Services

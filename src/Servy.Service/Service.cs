@@ -119,7 +119,6 @@ namespace Servy.Service
         private IStreamWriter? _stdoutWriter;
         private IStreamWriter? _stderrWriter;
         private ITimer? _healthCheckTimer;
-        private int _heartbeatIntervalSeconds;
         private int _maxFailedChecks;
         private int _failedChecks = 0;
         private RecoveryAction _recoveryAction;
@@ -437,6 +436,8 @@ namespace Servy.Service
                 _serviceName = options.ServiceName;
                 _recoveryActionEnabled = options.EnableHealthMonitoring && options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None;
                 _maxRestartAttempts = options.MaxRestartAttempts;
+                _maxFailedChecks = options.MaxFailedChecks;
+                _recoveryAction = options.RecoveryAction;
 
                 // Request timeout for startup to accommodate slow process
                 if (_options.StartTimeoutInSeconds > AppConfig.ScmStartupRequestThresholdSeconds) // Use a lower threshold to be safe
@@ -1774,13 +1775,9 @@ namespace Servy.Service
         /// <param name="options">The start options containing health check configuration.</param>
         private void SetupHealthMonitoring(StartOptions options)
         {
-            _heartbeatIntervalSeconds = options.HeartbeatInterval;
-            _maxFailedChecks = options.MaxFailedChecks;
-            _recoveryAction = options.RecoveryAction;
-
             if (options.EnableHealthMonitoring && options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None)
             {
-                _healthCheckTimer = _timerFactory.Create(_heartbeatIntervalSeconds * 1000.0);
+                _healthCheckTimer = _timerFactory.Create(options.HeartbeatInterval * 1000.0);
                 _healthCheckTimer.Elapsed += CheckHealth;
                 _healthCheckTimer.AutoReset = true;
                 _healthCheckTimer.Start();
@@ -1913,51 +1910,44 @@ namespace Servy.Service
         /// </remarks>
         private void ExecuteRecoveryAction(int attemptCount)
         {
-            try
+            _logger?.Warn($"Performing recovery action '{_recoveryAction}' ({attemptCount}/{(_maxRestartAttempts > 0 ? _maxRestartAttempts.ToString() : "unlimited")}).");
+
+            switch (_recoveryAction)
             {
-                _logger?.Warn($"Performing recovery action '{_recoveryAction}' ({attemptCount}/{(_maxRestartAttempts > 0 ? _maxRestartAttempts.ToString() : "unlimited")}).");
+                case RecoveryAction.RestartService:
+                    _serviceHelper.RestartService(_logger!, _serviceName!);
+                    break;
 
-                switch (_recoveryAction)
-                {
-                    case RecoveryAction.RestartService:
-                        _serviceHelper.RestartService(_logger!, _serviceName!);
-                        break;
+                case RecoveryAction.RestartProcess:
+                    _serviceHelper.RestartProcess(
+                        _childProcess!,
+                        StartProcess,
+                        _realExePath!,
+                        _realArgs!,
+                        _workingDir!,
+                        _environmentVariables,
+                        _logger!,
+                        ClampTimeout(_options?.StopTimeoutInSeconds ?? AppConfig.DefaultStopTimeout),
+                        _cancellationSource?.Token ?? CancellationToken.None
+                    );
+                    break;
 
-                    case RecoveryAction.RestartProcess:
-                        _serviceHelper.RestartProcess(
-                            _childProcess!,
-                            StartProcess,
-                            _realExePath!,
-                            _realArgs!,
-                            _workingDir!,
-                            _environmentVariables,
-                            _logger!,
-                            ClampTimeout(_options?.StopTimeoutInSeconds ?? AppConfig.DefaultStopTimeout),
-                            _cancellationSource?.Token ?? CancellationToken.None
-                        );
-                        break;
+                case RecoveryAction.RestartComputer:
+                    try
+                    {
+                        _isRebooting = true;
+                        _serviceHelper.RestartComputer(_logger!);
+                    }
+                    catch
+                    {
+                        _isRebooting = false; // reboot didn't happen; allow recovery/teardown to continue
+                        throw;
+                    }
+                    break;
 
-                    case RecoveryAction.RestartComputer:
-                        try
-                        {
-                            _isRebooting = true;
-                            _serviceHelper.RestartComputer(_logger!);
-                        }
-                        catch
-                        {
-                            _isRebooting = false; // reboot didn't happen; allow recovery/teardown to continue
-                            throw;
-                        }
-                        break;
-
-                    default:
-                        _logger?.Info($"Recovery action '{_recoveryAction}' requires no specific logic.");
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger?.Error($"Error during recovery execution: {ex.Message}");
+                default:
+                    _logger?.Info($"Recovery action '{_recoveryAction}' requires no specific logic.");
+                    break;
             }
         }
 
@@ -2606,7 +2596,7 @@ namespace Servy.Service
         /// </param>
         private void SafeKillProcess(IProcessWrapper process, int timeoutMs)
         {
-            // FIX: Remove `|| process.HasExited` so we always clean up orphans
+            // Remove `|| process.HasExited` so we always clean up orphans
             if (process == null) return;
 
             try
@@ -2634,7 +2624,7 @@ namespace Servy.Service
                 int childCount = 0;
                 try
                 {
-                    // FIX: Use GetAllDescendants to scan the entire deep tree instead of just Level 1
+                    // Use GetAllDescendants to scan the entire deep tree instead of just Level 1
                     var initialChildren = ProcessExtensions.GetAllDescendants(parentPid, parentStartTime);
                     childCount = initialChildren.Count;
 
@@ -2663,7 +2653,7 @@ namespace Servy.Service
 
                 Task<bool?> stopTask = Task.Run(() =>
                 {
-                    // FIX: Send Ctrl+C to the root wrapper first. 
+                    // Send Ctrl+C to the root wrapper first. 
                     // This natively broadcasts the signal to all console-sharing children (like Python).
                     _logger?.Info("Signaling main wrapper process (broadcasts to console group)...");
                     bool? mainExitedGracefully;
@@ -2676,7 +2666,7 @@ namespace Servy.Service
                         mainExitedGracefully = process.Stop(timeoutMs);
                     }
 
-                    // FIX: Clean up descendants afterward. 
+                    // Clean up descendants afterward. 
                     // Thanks to native P/Invoke, we can still trace children even if the parent exited instantly.
                     _logger?.Info($"Initiating descendant cleanup for PID {parentPid}...");
                     process.StopDescendants(parentPid, parentStartTime, timeoutMs);

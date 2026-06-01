@@ -137,7 +137,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public async Task WaitForExitOrTimeoutAsync_StaysAlive_ReturnsTrue()
         {
-            // FIX: Replaced 'ping' with PowerShell's Start-Sleep for reliable headless execution
+            // Replaced 'ping' with PowerShell's Start-Sleep for reliable headless execution
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             {
                 wrapper.Start();
@@ -170,7 +170,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public async Task WaitForExitOrTimeoutAsync_Cancellation_ThrowsTaskCanceledException()
         {
-            // FIX: Updated to use PowerShell here as well for consistency
+            // Updated to use PowerShell here as well for consistency
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             using (var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500)))
             {

@@ -106,6 +106,7 @@ function Show-Notification {
   try {
     # Load WinRT assemblies
     [void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
+    [void][Windows.UI.Notifications.NotificationSetting, Windows.UI.Notifications, ContentType = WindowsRuntime]
         
     $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent(
       [Windows.UI.Notifications.ToastTemplateType]::ToastText02
@@ -144,6 +145,20 @@ function Show-Notification {
     $toast.Group = "Servy" # cluster all Servy toasts together
     $toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes($ToastExpirationMinutes)
 
+    # --- ROBUSTNESS: PRE-FLIGHT NOTIFICATION ENVIRONMENT PROBE ---
+    # Verify app notification permissions and OS-level Focus Assist/DND status before staging execution.
+    # If notifications are suppressed globally or scoped away via policy, fail-fast to save the watermark.
+    try {
+        $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("PowerShell")
+        if ($notifier.Setting -ne [Windows.UI.Notifications.NotificationSetting]::Enabled) {
+            $settingState = $notifier.Setting.ToString()
+            Write-FallbackError -Message "ServyToast: Notification delivery aborted due to platform settings suppression ($settingState). Holding watermark loop." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+            return $false
+        }
+    } catch {
+        # Fall back gracefully to standard delivery if metadata setting probes are restricted
+    }
+
     # Track synchronous platform failures safely via local reference tracking blocks.
     $failedRef = [ref]$false
 
@@ -154,13 +169,12 @@ function Show-Notification {
         Write-FallbackError -Message "ServyToast: Delivery failed (0x$($evtArgs.ErrorCode.ToString('X')))." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
       })
 
-    $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("PowerShell")
     $notifier.Show($toast)
     
     # ROBUSTNESS: Block execution and loop to await synchronous platform failures.
-    # WinRT validation drops (malformed configurations, disabled notification permissions, Focus Assist)
-    # trigger the add_Failed handler within 100-500ms bounds.
-    $deadline = [DateTime]::UtcNow.AddMilliseconds(750)
+    # Extended safety deadline window from 750ms to 2000ms to absorb heavy asynchronous
+    # system load anomalies, ensuring late-firing WinRT callbacks are reliably captured.
+    $deadline = [DateTime]::UtcNow.AddMilliseconds(2000)
     while ([DateTime]::UtcNow -lt $deadline -and -not $failedRef.Value) {
         Start-Sleep -Milliseconds 50
     }

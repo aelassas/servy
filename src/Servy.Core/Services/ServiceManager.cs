@@ -428,7 +428,23 @@ namespace Servy.Core.Services
                                         return OperationResult.Failure($"Failed to open service '{options.ServiceName}' for configuration update. Error code: {err}");
                                     }
 
-                                    // 1. Update Delayed Auto-start
+                                    // 1. Update Pre-shutdown Timeout for existing service
+                                    // This ensures that updates to StopTimeout or PreStopTimeout are reflected in the OS SCM.
+                                    var preShutdownSuccess = EnablePreShutdown(existingServiceHandle, finalTimeoutMs);
+                                    if (preShutdownSuccess)
+                                    {
+                                        Logger.Info($"Pre-shutdown timeout updated to {totalWaitTime} seconds for existing service '{options.ServiceName}'.");
+                                    }
+                                    else
+                                    {
+                                        // UpdateServiceConfig and ChangeServiceConfig2 have already mutated OS state.
+                                        // We explicitly reject the state run and notify that manual structural reconciliation is required.
+                                        string errorMsg = $"CRITICAL STATE DRIFT: Failed to update pre-shutdown timeout for existing service '{options.ServiceName}'. Core properties were modified but advanced configurations failed. The Servy database remains un-updated. Run re-installation immediately to prevent shutdown data corruption.";
+                                        Logger.Error(errorMsg);
+                                        return OperationResult.Failure(errorMsg);
+                                    }
+
+                                    // 2. Update Delayed Auto-start
                                     var delayedAutostart = options.StartType == ServiceStartType.AutomaticDelayedStart;
                                     var success = ChangeServiceConfig2(existingServiceHandle, delayedAutostart);
 
@@ -438,22 +454,9 @@ namespace Servy.Core.Services
                                     }
                                     else
                                     {
-                                        string errorMsg = $"Failed to set delayed auto-start for existing service '{options.ServiceName}'.";
-                                        Logger.Error(errorMsg);
-                                        return OperationResult.Failure(errorMsg);
-                                    }
-
-                                    // 2. Update Pre-shutdown Timeout for existing service
-                                    // This ensures that updates to StopTimeout or PreStopTimeout are reflected in the OS SCM.
-                                    var preShutdownSuccess = EnablePreShutdown(existingServiceHandle, finalTimeoutMs);
-                                    if (preShutdownSuccess)
-                                    {
-                                        Logger.Info($"Pre-shutdown timeout updated to {totalWaitTime} seconds for existing service '{options.ServiceName}'.");
-                                    }
-                                    else
-                                    {
-                                        // We treat this as a failure because an incorrect timeout can lead to data corruption during shutdown.
-                                        string errorMsg = $"Failed to update pre-shutdown timeout for existing service '{options.ServiceName}'.";
+                                        // UpdateServiceConfig has already committed baseline mutations to the SCM.
+                                        // We escalate the diagnostic error to alert operators that the system is now out of sync.
+                                        string errorMsg = $"CRITICAL STATE DRIFT: Failed to set delayed auto-start for existing service '{options.ServiceName}'. SCM configuration is now in an inconsistent state and database synchronization was aborted. Please re-run the full installer context to repair.";
                                         Logger.Error(errorMsg);
                                         return OperationResult.Failure(errorMsg);
                                     }

@@ -981,7 +981,7 @@ namespace Servy.Core.UnitTests.IO
                 // 1. Trip breaker manually
                 SetPrivateField(writer, "_rotationDisabled", true);
 
-                // FIX: Set the cooldown to the future so the self-healing logic 
+                // Set the cooldown to the future so the self-healing logic 
                 // doesn't immediately reset the breaker to false.
                 SetPrivateField(writer, "_disabledCooldownUntil", DateTime.Now.AddMinutes(10));
 

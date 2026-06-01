@@ -91,10 +91,23 @@ namespace Servy.UI.Services
                     var latestVersion = Helper.ParseVersion(tagName);
                     var currentVersion = Helper.ParseVersion(AppConfig.Version);
 
+                    // ROBUSTNESS: Intercept parsing failures on the incoming repository release tag.
+                    // If the string format cannot be resolved, warn the technical operator and output 
+                    // a clear message instead of silently displaying a misleading "No updates available" dialog.
+                    if (latestVersion == null)
+                    {
+                        Logger.Warn($"Update check encountered an unparseable or unrecognized remote release tag format: '{tagName}'.");
+                        string parseErrorMessage = string.Format(Strings.Msg_UpdateCheckInvalidTag, tagName);
+                        await _messageBoxService.ShowErrorAsync(parseErrorMessage, caption);
+                        return;
+                    }
+
                     // ROBUSTNESS: Normalize both Version instances to 4 components before executing comparison.
                     // This prevents false positives caused by System.Version evaluating missing fields (-1) as less than 0.
                     var normalizedLatest = NormalizeVersion(latestVersion);
-                    var normalizedCurrent = NormalizeVersion(currentVersion);
+
+                    // Fall back to a blank version array if the assembly definition configuration is malformed
+                    var normalizedCurrent = NormalizeVersion(currentVersion ?? new Version(0, 0, 0, 0));
 
                     if (normalizedLatest > normalizedCurrent)
                     {

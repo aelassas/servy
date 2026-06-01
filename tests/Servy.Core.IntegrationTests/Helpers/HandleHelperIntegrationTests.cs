@@ -49,7 +49,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Fast path: if already extracted in this process, skip immediately
             if (_isExtracted || File.Exists(_handleExePath)) return;
 
-            // FIX: Static lock prevents multiple class instances from extracting simultaneously
+            // Static lock prevents multiple class instances from extracting simultaneously
             lock (_extractionLock)
             {
                 // Double-check pattern: the file might have been created while we waited for the lock
@@ -95,12 +95,12 @@ namespace Servy.Core.IntegrationTests.Helpers
         {
             try
             {
-                // FIX: If the file somehow exists but _isExtracted was false, 
+                // If the file somehow exists but _isExtracted was false, 
                 // FileMode.Create would fail if another process is even just reading it.
                 // We only write if the file isn't physically there.
                 if (File.Exists(_handleExePath)) return;
 
-                // FIX: Added FileShare.ReadWrite. On CI, Antivirus or Windows Indexer 
+                // Added FileShare.ReadWrite. On CI, Antivirus or Windows Indexer 
                 // often grab handles the millisecond a file is created.
                 using (FileStream fileStream = new FileStream(_handleExePath, FileMode.CreateNew, FileAccess.Write, FileShare.ReadWrite))
                 {
@@ -133,7 +133,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 }
             }
 
-            // FIX: DO NOT delete handle64.exe here.
+            // DO NOT delete handle64.exe here.
             // Deleting an executable while another test's constructor is initializing causes the IOException.
             // Leaving it in the bin folder is completely safe for integration tests.
         }
