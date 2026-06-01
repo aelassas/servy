@@ -79,9 +79,9 @@ namespace Servy.UI
         /// </summary>
         /// <param name="maxItems">The maximum number of items allowed in the collection.</param>
         /// <remarks>
-        /// In .NET Framework 4.8, the internal <see cref="ObservableCollection{T}.Items"/> collection is a 
-        /// <see cref="List{T}"/>. This method uses <see cref="List{T}.RemoveRange"/> for O(n) performance 
-        /// instead of O(n²) for multiple <see cref="Collection{T}.RemoveAt"/> calls.
+        /// On .NET (net10.0-windows), the internal <see cref="ObservableCollection{T}.Items"/> collection
+        /// is a <see cref="List{T}"/>. This method uses <see cref="List{T}.RemoveRange"/> for O(n)
+        /// performance instead of O(n²) for repeated <see cref="Collection{T}.RemoveAt"/> calls.
         /// </remarks>
         public void TrimToSize(int maxItems)
         {
