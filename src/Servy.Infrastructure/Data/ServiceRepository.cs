@@ -232,7 +232,7 @@ namespace Servy.Infrastructure.Data
             var cmd = new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken);
             var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(cmd);
 
-            if (decrypt) DecryptDto(dto);
+            if (decrypt) try { DecryptDto(dto); } catch (InvalidOperationException ex) { HandleCorruptServiceDecryption(dto, ex); }
             return dto;
         }
 
@@ -244,7 +244,7 @@ namespace Servy.Infrastructure.Data
             var cmd = new CommandDefinition(sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
             var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(cmd);
 
-            if (decrypt) DecryptDto(dto);
+            if (decrypt) try { DecryptDto(dto); } catch (InvalidOperationException ex) { HandleCorruptServiceDecryption(dto, ex); }
             return dto;
         }
 
@@ -255,7 +255,7 @@ namespace Servy.Infrastructure.Data
             const string sql = "SELECT * FROM Services WHERE LOWER(Name) = LOWER(@Name);";
             var dto = _dapper.QuerySingleOrDefault<ServiceDto>(sql, new { Name = name.Trim() });
 
-            if (decrypt) DecryptDto(dto);
+            if (decrypt) try { DecryptDto(dto); } catch (InvalidOperationException ex) { HandleCorruptServiceDecryption(dto, ex); }
             return dto;
         }
 
@@ -604,8 +604,10 @@ namespace Servy.Infrastructure.Data
         /// Gracefully handles individual record decryption failures to isolate data corruption.
         /// This prevents a single invalid row from poisoning multi-record queries.
         /// </summary>
-        private void HandleCorruptServiceDecryption(ServiceDto dto, InvalidOperationException ex)
+        private void HandleCorruptServiceDecryption(ServiceDto? dto, InvalidOperationException ex)
         {
+            if (dto == null) return;
+
             // Capture the original root cause name if available for actionable diagnostic feedback
             string rootCauseName = ex.InnerException?.GetType().Name ?? "CryptographicException";
 
