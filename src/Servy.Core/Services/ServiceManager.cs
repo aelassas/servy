@@ -565,28 +565,6 @@ namespace Servy.Core.Services
                         return OperationResult.Failure($"Failed to open service '{serviceName}' for uninstallation. It may not exist.");
                     }
 
-                    // Standardize start type before stopping to prevent auto-restart attempts during deletion.
-                    // We now capture and check the result of this call.
-                    bool configSuccess = _windowsServiceApi.ChangeServiceConfig(
-                        serviceHandle,
-                        SERVICE_NO_CHANGE,
-                        SERVICE_DEMAND_START,
-                        SERVICE_NO_CHANGE,
-                        null,
-                        null,
-                        IntPtr.Zero,
-                        null,
-                        null,
-                        null,
-                        null);
-
-                    if (!configSuccess)
-                    {
-                        // We log this as a warning rather than a failure, as we can still attempt 
-                        // the stop and delete commands, but it's important for diagnostic visibility.
-                        Logger.Warn($"Failed to standardize start type before uninstall for '{serviceName}': Win32 Error {_win32ErrorProvider.GetLastWin32Error()}");
-                    }
-
                     // Trigger the stop command
                     var status = new SERVICE_STATUS();
                     if (!_windowsServiceApi.ControlService(serviceHandle, SERVICE_CONTROL_STOP, ref status))
@@ -621,6 +599,29 @@ namespace Servy.Core.Services
                             Logger.Warn(msg);
                             return OperationResult.Failure(msg);
                         }
+                    }
+
+                    // ROBUSTNESS: Standardize start type *only after* confirming the service is completely stopped.
+                    // This guarantees that if the wait loop times out or throws a cancellation exception above, 
+                    // the original SCM startup configuration remains unaltered, eliminating the manual-start downgrade trap.
+                    bool configSuccess = _windowsServiceApi.ChangeServiceConfig(
+                        serviceHandle,
+                        SERVICE_NO_CHANGE,
+                        SERVICE_DEMAND_START,
+                        SERVICE_NO_CHANGE,
+                        null,
+                        null,
+                        IntPtr.Zero,
+                        null,
+                        null,
+                        null,
+                        null);
+
+                    if (!configSuccess)
+                    {
+                        // We log this as a warning rather than a failure, as we can still attempt 
+                        // the delete command, but it's important for diagnostic visibility.
+                        Logger.Warn($"Failed to standardize start type before uninstall for '{serviceName}': Win32 Error {_win32ErrorProvider.GetLastWin32Error()}");
                     }
 
                     // 3. Final safety check before committing the permanent 'Delete'

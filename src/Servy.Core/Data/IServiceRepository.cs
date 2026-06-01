@@ -58,17 +58,8 @@ namespace Servy.Core.Data
         /// This method iterates through the collection and executes individual upsert commands. 
         /// </para>
         /// <para>
-        /// The entire batch is executed within an explicit transaction (BeginTransaction/Commit),
-        /// so either every row is upserted or none are. On exception the transaction is disposed
-        /// without commit and partial writes are rolled back.
-        /// </para>
-        /// <para>
         /// After the database write, the method attempts to synchronize the auto-incremented 
         /// IDs back to the original <see cref="ServiceDto"/> objects in chunks.
-        /// </para>
-        /// <para>
-        /// <b>Security:</b> Sensitive data within each <see cref="ServiceDto"/> (such as passwords) 
-        /// is automatically encrypted before being committed to the database.
         /// </para>
         /// </remarks>
         Task<int> UpsertBatchAsync(IEnumerable<ServiceDto> services, CancellationToken cancellationToken = default);

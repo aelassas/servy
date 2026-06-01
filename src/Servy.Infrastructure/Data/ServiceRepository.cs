@@ -145,6 +145,16 @@ namespace Servy.Infrastructure.Data
             // 1. Create encrypted clones for database storage
             var encryptedServices = serviceList.Select(CreateEncryptedClone).ToList();
 
+            // Preserve runtime state and credentials for each incoming DTO
+            foreach (var dto in encryptedServices)
+            {
+                await PatchRuntimeStateAsync(
+                    incoming: dto,
+                    preserveExistingRuntimeState: true,
+                    preserveExistingCredentials: true,
+                    cancellationToken: cancellationToken);
+            }
+
             var sql = $@"
                 INSERT INTO Services ({SqlConstants.InsertColumns}) 
                 VALUES ({SqlConstants.InsertValues})
@@ -155,16 +165,6 @@ namespace Servy.Infrastructure.Data
             // This prevents concurrent mutations from creating skewed or missing ID references.
             using (var tx = _dapper.BeginTransaction())
             {
-                // Preserve runtime state and credentials for each incoming DTO
-                foreach (var dto in encryptedServices)
-                {
-                    await PatchRuntimeStateAsync(
-                        incoming: dto,
-                        preserveExistingRuntimeState: true,
-                        preserveExistingCredentials: true,
-                        cancellationToken: cancellationToken);
-                }
-
                 // 2. Execute the batch upsert within the transaction scope 
                 var affectedRows = await _dapper.ExecuteAsync(sql, encryptedServices, transaction: tx, cancellationToken: cancellationToken);
 

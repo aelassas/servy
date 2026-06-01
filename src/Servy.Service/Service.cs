@@ -1161,17 +1161,21 @@ namespace Servy.Service
             // Only create stderr writer if a path is provided
             if (!string.IsNullOrWhiteSpace(options.StdErrPath))
             {
-                // If stderr path equals stdout path (explicitly), use the same writer
-                if (_stdoutWriter != null &&
-                    !string.IsNullOrWhiteSpace(options.StdOutPath) &&
-                    string.Equals(Helper.Canonicalise(options.StdErrPath), Helper.Canonicalise(options.StdOutPath), StringComparison.OrdinalIgnoreCase))
+                if (_stdoutWriter != null && !string.IsNullOrWhiteSpace(options.StdOutPath) &&
+                    _pathValidator.IsValidPath(options.StdErrPath) &&
+                    _pathValidator.IsValidPath(options.StdOutPath))
                 {
-                    _stderrWriter = _stdoutWriter;
+                    var canonStdErr = Helper.Canonicalise(options.StdErrPath);
+                    var canonStdOut = Helper.Canonicalise(options.StdOutPath);
+
+                    // If stderr path equals stdout path (explicitly), use the same writer
+                    if (string.Equals(canonStdErr, canonStdOut, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _stderrWriter = _stdoutWriter;
+                        return;
+                    }
                 }
-                else
-                {
-                    _stderrWriter = CreateWriter(options.StdErrPath);
-                }
+                _stderrWriter = CreateWriter(options.StdErrPath);
             }
         }
 

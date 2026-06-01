@@ -29,7 +29,7 @@ namespace Servy.Core.Logging
         /// <summary>
         /// Matches any sequence of standard or Unicode line terminators
         /// </summary>
-        private static readonly Regex LineBreakingRegex = new Regex(@"\r\n|[\r\n\u0085\u2028\u2029]", 
+        private static readonly Regex LineBreakingRegex = new Regex(@"\r\n|[\r\n\u0085\u2028\u2029]",
             RegexOptions.Compiled,
             AppConfig.InputRegexTimeout);
 
@@ -64,6 +64,10 @@ namespace Servy.Core.Logging
         // Counters to limit fallback file growth
         private static int _initFallbackWriteCount = 0;
         private static int _logFallbackWriteCount = 0;
+
+        // DEADLOCK GUARD: Tracks if the current thread is already actively processing a Log() request.
+        [ThreadStatic]
+        private static bool _isLogging;
 
         /// <summary>
         /// Pre-computed, uppercase string representations of LogLevels.
@@ -414,8 +418,32 @@ namespace Servy.Core.Logging
 
             if (string.IsNullOrEmpty(message)) return;
 
+            // DEADLOCK GUARD: If the underlying RotatingStreamWriter calls Logger.Warn/Error
+            // during its rotation loop, it will synchronously re-enter this method on the same thread.
+            // Sending it back to _writer.WriteLine will hit Monitor.Wait and permanently hang the thread.
+            // Short-circuit the loop and write directly to the fallback file.
+            if (_isLogging)
+            {
+                try
+                {
+                    if (Interlocked.Increment(ref _logFallbackWriteCount) <= MaxFallbackWrites)
+                    {
+                        EnsureLogsDir();
+                        var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+                        string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
+                        File.AppendAllText(Path.Combine(LogsPath, "LoggerWriteErrors.log"),
+                            $"[{now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}{tzMarker}] RE-ENTRANT LOGGER AVOIDED: {message}{Environment.NewLine}");
+                    }
+                }
+                catch { /* fail-silent */ }
+                return;
+            }
+
             try
             {
+                // Lock current thread context to block underlying I/O wrappers from calling back here
+                _isLogging = true;
+
                 lock (_lock)
                 {
                     // 2. Double-check: Correctly see either null or the NEW writer.
@@ -454,6 +482,11 @@ namespace Servy.Core.Logging
                     }
                 }
                 catch { /* truly fail-silent only as last resort */ }
+            }
+            finally
+            {
+                // Release context so next authentic log on this thread proceeds
+                _isLogging = false;
             }
         }
 

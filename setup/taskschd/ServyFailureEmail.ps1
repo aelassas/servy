@@ -282,11 +282,17 @@ foreach ($addr in $toList) {
       # Malformed e-mail address slipped past validation - never going to succeed.
       Write-FallbackError -Message "ServyFailureEmail: Permanent format failure: $($_.Exception.Message)" -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
       return 'PermanentFailure'
-  } catch {
-      # Network drops, timeouts, etc. - try again next run.
-      $errorMsg = "ServyFailureEmail: Transient failure to $to. Error: $($_.Exception.Message)"
+  } catch [System.IO.IOException], [System.Net.WebException], [System.Net.Sockets.SocketException], [System.TimeoutException] {
+      # ROBUSTNESS: Explicitly isolate known transient/retryable physical infrastructure and network faults.
+      $errorMsg = "ServyFailureEmail: Transient network I/O failure to $to. Error: $($_.Exception.Message)"
       Write-FallbackError -Message $errorMsg -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
       return 'TransientFailure'
+  } catch {
+      # ROBUSTNESS: Treat unrecognized structural errors (e.g. ArgumentException on CRLF header injection) 
+      # as permanent failures to ensure a corrupted log payload cannot block the entire pipeline execution loop.
+      $errorMsg = "ServyFailureEmail: Unexpected permanent script failure to $to. Type: $($_.Exception.GetType().FullName). Error: $($_.Exception.Message)"
+      Write-FallbackError -Message $errorMsg -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+      return 'PermanentFailure'
   } finally {
       if ($null -ne $mailMessage) { $mailMessage.Dispose() }
       if ($null -ne $smtp) { $smtp.Dispose() }
@@ -331,6 +337,10 @@ foreach ($evt in $eventsToProcess) {
   # Scrub the subject using the raw service name (masker handles this internally)
   $subject = "Servy - $($parsed.ServiceName) Failure"
   $subject = Protect-SensitiveString -Text $subject
+  
+  # ROBUSTNESS FIX: Sanitise the subject string value of CR/LF injection characters
+  # explicitly to block .NET ArgumentException errors at the MailMessage property setter stage.
+  $subject = $subject -replace "[\r\n]", ' '
 
   # Build the HTML body using the safe, pre-masked segments
   $body = "A failure has been detected in service '$safeServiceName'." + 

@@ -43,7 +43,7 @@ param(
     [Parameter(Mandatory = $true, Position = 0)]
     [ValidatePattern("^\d+\.\d+$")]
     [string]$Version,
-
+    [string]$SdkPatch = "100",
     [switch]$DryRun
 )
 
@@ -164,8 +164,8 @@ Update-Files -Files @($actionFile) -Pattern $actionPattern -Replacement $actionR
 $globalJsonFile = Join-Path $baseDir "global.json"
 if (Test-Path $globalJsonFile) {
     # Captures the JSON property context and ensures we do not cross boundaries or break numerical groupings
-    $globalJsonPattern = '("version"\s*:\s*")\d+\.\d+'
-    $globalJsonReplacement = "`${1}$Version"
+    $globalJsonPattern     = '("version"\s*:\s*")\d+\.\d+\.\d+'
+    $globalJsonReplacement = "`${1}$Version.$SdkPatch"
     
     Update-Files -Files @($globalJsonFile) -Pattern $globalJsonPattern -Replacement $globalJsonReplacement -DryRun:$DryRun
 }
