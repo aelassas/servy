@@ -209,9 +209,13 @@ namespace Servy.Manager.ViewModels
             }
             finally
             {
-                _cursorService.ResetCursor();
-                IsBusy = false;
-                SearchButtonText = Strings.Button_Search;
+                // Only the current (non-superseded) search owns the shared UI state.
+                if (ReferenceEquals(Volatile.Read(ref _serviceSearchCts), newCts))
+                {
+                    _cursorService.ResetCursor();
+                    IsBusy = false;
+                    SearchButtonText = Strings.Button_Search;
+                }
             }
         }
 

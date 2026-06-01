@@ -358,7 +358,10 @@ namespace Servy.Manager.ViewModels
             }
             finally
             {
-                IsBusy = false;
+                if (ReferenceEquals(Volatile.Read(ref _loadTreeCts), newCts))
+                {
+                    IsBusy = false;
+                }
             }
         }
 
