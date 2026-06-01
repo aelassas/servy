@@ -421,9 +421,6 @@ namespace Servy.Core.Helpers
                     fs.Flush(flushToDisk: true);
                 }
 
-                // Remove attributes that would prevent the move operation from succeeding.
-                PrepareDestinationForMove(path);
-
                 // Standard retry logic to handle transient "Access Denied" errors (Win32 Error 5).
                 // This is commonly caused by Antivirus or Indexing services locking the newly created .tmp file.
                 int retries = AppConfig.WriteFileAtomicMaxRetries;
@@ -432,6 +429,9 @@ namespace Servy.Core.Helpers
                     cancellationToken.ThrowIfCancellationRequested();
                     try
                     {
+                        // Remove attributes that would prevent the move operation from succeeding.
+                        PrepareDestinationForMove(path);
+
                         // On NTFS, moving within the same volume is an atomic metadata operation.
                         NativeMethodsHelpers.AtomicSecureMove(tmp, path);
                         break;
@@ -492,15 +492,15 @@ namespace Servy.Core.Helpers
                     fs.Flush(flushToDisk: true);   // forces FlushFileBuffers; cheap if already flushed
                 }
 
-                // Ensure the existing file isn't Read-Only, which causes Error 5
-                PrepareDestinationForMove(path);
-
                 int retries = AppConfig.WriteFileAtomicMaxRetries;
                 while (true)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     try
                     {
+                        // Ensure the existing file isn't Read-Only, which causes Error 5
+                        PrepareDestinationForMove(path);
+
                         // On NTFS, moving within the same volume is an atomic metadata operation.
                         NativeMethodsHelpers.AtomicSecureMove(tmp, path);
                         break;

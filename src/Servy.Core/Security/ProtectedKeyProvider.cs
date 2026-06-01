@@ -441,16 +441,19 @@ namespace Servy.Core.Security
                 }
 
                 // Encrypt data with DPAPI using the machine-specific key and additional entropy.
-                byte[] dynamicEntropy = MachineEntropy.Value;
-
                 // DataProtectionScope is usually LocalMachine for services
+                byte[] dynamicEntropy = MachineEntropy.Value;
                 encrypted = ProtectedData.Protect(data, dynamicEntropy, DataProtectionScope);
 
-                var tempPath = Helper.GetUniqueTempPath(path);
+                // ROBUSTNESS: Switch from Helper.GetUniqueTempPath(path) to a stable, deterministic staging name.
+                // Because this path is strictly executed within a global system mutex in GetOrGenerate, multiple
+                // concurrent writers cannot clash. If a previous run crashes before File.Move, the next execution path
+                // will cleanly overwrite and self-heal the orphaned staging file instead of leaving it indefinitely.
+                var tempPath = $"{path}.staging.tmp";
 
                 try
                 {
-                    // Write to a temporary file first
+                    // Write to a temporary file first (will naturally overwrite any stale orphan from a prior hard crash)
                     File.WriteAllBytes(tempPath, encrypted);
 
                     // Apply explicit file-level ACLs to the temp file

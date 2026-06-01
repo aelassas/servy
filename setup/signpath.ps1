@@ -214,6 +214,11 @@ try {
         $commonParams.ArtifactConfigurationSlug = $artifactConfigurationSlug
     }
 
+    if (Test-Path $signedPath) {
+        Write-Warning "Removing stale artifact from previous run: $signedPath"
+        Remove-Item -Force $signedPath
+    }
+
     $signingRequestId = Submit-SigningRequest @commonParams
     Write-Host "Signing request completed: $signingRequestId"
 }
