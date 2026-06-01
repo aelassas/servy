@@ -615,7 +615,7 @@ namespace Servy.Infrastructure.Data
             string rootCauseName = ex.InnerException?.GetType().Name ?? "CryptographicException";
 
             // Explicitly update descriptions to flag the target record in the UI
-            dto.Description = $"[DECRYPTION FAILED: {rootCauseName}] The record's key or payload payload is corrupt. " +
+            dto.Description = $"[DECRYPTION FAILED: {rootCauseName}] The record's key or payload is corrupt. " +
                               $"Original Description: {dto.Description}";
 
             // Centralized scrub loop using the pre-existing reflection schema to safely strip poison data
