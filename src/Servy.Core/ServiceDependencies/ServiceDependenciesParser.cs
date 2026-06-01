@@ -32,7 +32,7 @@
         /// - Duplicate dependency names are removed (case-insensitive).  
         /// - Passing <c>null</c> or an empty string will clear all dependencies.  
         /// </remarks>
-        public static string? Parse(string? input)
+        public static string Parse(string? input)
         {
             if (string.IsNullOrWhiteSpace(input))
                 return NoDependencies;

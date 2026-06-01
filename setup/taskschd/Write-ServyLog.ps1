@@ -17,8 +17,12 @@ function Write-ServyLog {
         # We use a SHA256 hash to ensure the Mutex name is unique to the file but avoids Win32 
         # invalid Mutex characters (like backslashes) or path length limits.
         $sha = [System.Security.Cryptography.SHA256]::Create()
-        $hashBytes = $sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($absPath.ToLowerInvariant()))
-        $hashString = [System.BitConverter]::ToString($hashBytes).Replace('-', '')
+        try {
+            $hashBytes  = $sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($absPath.ToLowerInvariant()))
+            $hashString = [System.BitConverter]::ToString($hashBytes).Replace('-', '')
+        } finally {
+            $sha.Dispose()
+        }
         $mutexName = "Global\ServyLog_$hashString"
         
         $mutex = New-Object System.Threading.Mutex($false, $mutexName)
@@ -26,7 +30,14 @@ function Write-ServyLog {
 
         try {
             # Wait up to 1 second for the lock to clear high-contention traffic jams
-            $hasLock = $mutex.WaitOne(1000)
+            try {
+                $hasLock = $mutex.WaitOne(1000)
+            }
+            catch [System.Threading.AbandonedMutexException] {
+                # Previous owner was killed mid-write; we now own the mutex. Proceed.
+                $hasLock = $true
+                Write-Warning "Servy Logging: recovered an abandoned log mutex for $absPath."
+            }
             if (-not $hasLock) {
                 # Fail gracefully: log a warning to the console so the admin knows 
                 # why the file was skipped, but allow the calling task to proceed.
