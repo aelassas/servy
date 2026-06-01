@@ -21,14 +21,6 @@ namespace Servy.Core.Helpers
     /// </summary>
     public class ProcessHelper : IProcessHelper
     {
-        /// <summary>
-        /// Unexpanded Enironment Variable Regex.
-        /// </summary>
-        private static readonly Regex UnexpandedEnvVarRegex = new Regex(
-            @"%[^%]+%",
-            RegexOptions.Compiled,
-            AppConfig.InputRegexTimeout);
-
         private long _lastPruneTicks = DateTime.MinValue.Ticks;
 
         /// <summary>
