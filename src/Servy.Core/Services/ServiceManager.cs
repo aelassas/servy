@@ -280,226 +280,234 @@ namespace Servy.Core.Services
                     );
 
                     int createServiceError = _win32ErrorProvider.GetLastWin32Error();
+                    bool serviceCreated = serviceHandle != null && !serviceHandle.IsInvalid;
 
-                    // Persist service in database
-                    var dto = new ServiceDto
-                    {
-                        Name = options.ServiceName,
-                        DisplayName = !string.IsNullOrWhiteSpace(options.DisplayName) ? displayName : null,
-                        Description = options.Description,
-                        ExecutablePath = options.RealExePath,
-                        StartupDirectory = options.WorkingDirectory,
-                        Parameters = options.RealArgs,
-                        StartupType = (int)options.StartType,
-                        Priority = (int)options.ProcessPriority,
-                        EnableConsoleUI = options.EnableConsoleUI,
-                        StdoutPath = options.StdoutPath,
-                        StderrPath = options.StderrPath,
-                        EnableSizeRotation = options.EnableSizeRotation,
-                        RotationSize = (int)(options.RotationSizeInBytes / AppConfig.BytesInMegabyte),
-                        EnableDateRotation = options.EnableDateRotation,
-                        DateRotationType = (int)options.DateRotationType,
-                        MaxRotations = options.MaxRotations,
-                        UseLocalTimeForRotation = options.UseLocalTimeForRotation,
-                        EnableHealthMonitoring = options.EnableHealthMonitoring,
-                        HeartbeatInterval = options.HeartbeatInterval,
-                        MaxFailedChecks = options.MaxFailedChecks,
-                        RecoveryAction = (int)options.RecoveryAction,
-                        RecoveryOnCleanExit = options.RecoveryOnCleanExit,
-                        MaxRestartAttempts = options.MaxRestartAttempts,
-                        FailureProgramPath = options.FailureProgramPath,
-                        FailureProgramStartupDirectory = options.FailureProgramWorkingDirectory,
-                        FailureProgramParameters = options.FailureProgramArgs,
-                        EnvironmentVariables = options.EnvironmentVariables,
-                        ServiceDependencies = options.ServiceDependencies,
-                        RunAsLocalSystem = string.IsNullOrWhiteSpace(options.Username),
-                        UserAccount = options.Username,
-                        Password = options.Password,
-                        PreLaunchExecutablePath = options.PreLaunchExePath,
-                        PreLaunchStartupDirectory = options.PreLaunchWorkingDirectory,
-                        PreLaunchParameters = options.PreLaunchArgs,
-                        PreLaunchEnvironmentVariables = options.PreLaunchEnvironmentVariables,
-                        PreLaunchStdoutPath = options.PreLaunchStdoutPath,
-                        PreLaunchStderrPath = options.PreLaunchStderrPath,
-                        PreLaunchTimeoutSeconds = options.PreLaunchTimeout,
-                        PreLaunchRetryAttempts = options.PreLaunchRetryAttempts,
-                        PreLaunchIgnoreFailure = options.PreLaunchIgnoreFailure,
-                        PostLaunchExecutablePath = options.PostLaunchExePath,
-                        PostLaunchStartupDirectory = options.PostLaunchWorkingDirectory,
-                        PostLaunchParameters = options.PostLaunchArgs,
-                        EnableDebugLogs = options.EnableDebugLogs,
-                        StartTimeout = options.StartTimeout,
-                        StopTimeout = options.StopTimeout,
-                        PreStopExecutablePath = options.PreStopExePath,
-                        PreStopStartupDirectory = options.PreStopWorkingDirectory,
-                        PreStopParameters = options.PreStopArgs,
-                        PreStopTimeoutSeconds = options.PreStopTimeout,
-                        PreStopLogAsError = options.PreStopLogAsError,
-                        PostStopExecutablePath = options.PostStopExePath,
-                        PostStopStartupDirectory = options.PostStopWorkingDirectory,
-                        PostStopParameters = options.PostStopArgs,
-                    };
-
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: false, cancellationToken);
-                    dto.Pid = serviceDto?.Pid;
-
-                    var totalWaitTime = (options.StopTimeout.HasValue && options.StopTimeout.Value > AppConfig.ScmStopTimeoutFloorSeconds
-                        ? options.StopTimeout.Value : AppConfig.ScmStopTimeoutFloorSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                    var previousWaitTime = (serviceDto?.PreviousStopTimeout != null && serviceDto.PreviousStopTimeout.Value > AppConfig.ScmStopTimeoutFloorSeconds
-                        ? serviceDto.PreviousStopTimeout.Value : AppConfig.ScmStopTimeoutFloorSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                    totalWaitTime = Math.Max(totalWaitTime, previousWaitTime);
-
-                    if (!string.IsNullOrEmpty(options.PreStopExePath))
-                    {
-                        totalWaitTime += options.PreStopTimeout ?? AppConfig.DefaultPreStopTimeoutSeconds;
-                    }
-                    uint finalTimeoutMs = (uint)totalWaitTime * 1000;
-
-                    if (serviceHandle != null && !serviceHandle.IsInvalid)
-                    {
-                        var enablePreShutdownConfigSuccess = EnablePreShutdown(serviceHandle, finalTimeoutMs);
-
-                        if (enablePreShutdownConfigSuccess)
-                        {
-                            Logger.Info($"Pre-shutdown enabled with timeout of {totalWaitTime} seconds for service '{options.ServiceName}' during installation.");
-                        }
-                        else
-                        {
-                            string errorMsg = $"Failed to enable pre-shutdown for service '{options.ServiceName}' during installation. Rolling back creation.";
-                            Logger.Error(errorMsg);
-                            if (!_windowsServiceApi.DeleteService(serviceHandle))
-                            {
-                                int rollbackErr = _win32ErrorProvider.GetLastWin32Error();
-                                Logger.Error($"Rollback failed: DeleteService returned false for '{options.ServiceName}'. Win32 error: {rollbackErr}. Manual cleanup may be required.");
-                            }
-                            return OperationResult.Failure(errorMsg);
-                        }
-
-                        if (options.StartType == ServiceStartType.AutomaticDelayedStart)
-                        {
-                            var delayedAutoStartConfigSuccess = ChangeServiceConfig2(serviceHandle, true);
-
-                            if (!delayedAutoStartConfigSuccess)
-                            {
-                                string errorMsg = $"Failed to set delayed auto-start for service '{options.ServiceName}' during installation. Rolling back creation.";
-                                Logger.Error(errorMsg);
-                                if (!_windowsServiceApi.DeleteService(serviceHandle))
-                                {
-                                    int rollbackErr = _win32ErrorProvider.GetLastWin32Error();
-                                    Logger.Error($"Rollback failed: DeleteService returned false for '{options.ServiceName}'. Win32 error: {rollbackErr}. Manual cleanup may be required.");
-                                }
-                                return OperationResult.Failure(errorMsg);
-                            }
-                            else
-                            {
-                                Logger.Info($"Delayed auto-start enabled for service '{options.ServiceName}' during installation.");
-                            }
-                        }
-                    }
-
-                    if (serviceHandle == null || serviceHandle.IsInvalid)
-                    {
-                        var isInstalled = IsServiceInstalled(options.ServiceName);
-                        if (isInstalled)
-                        {
-                            cancellationToken.ThrowIfCancellationRequested();
-                            UpdateServiceConfig(
-                                scmHandle: scmHandle,
-                                serviceName: options.ServiceName,
-                                description: options.Description,
-                                binPath: binPath,
-                                startType: options.StartType,
-                                username: lpServiceStartName,
-                                password: lpPassword,
-                                lpDependencies: lpDependencies,
-                                displayName: displayName
-                            );
-
-                            // Open the existing service for configuration updates (delayed start and pre-shutdown)
-                            using (var existingServiceHandle = _windowsServiceApi.OpenService(
-                                scmHandle,
-                                options.ServiceName,
-                                SERVICE_CHANGE_CONFIG))
-                            {
-                                if (existingServiceHandle.IsInvalid)
-                                {
-                                    var err = _win32ErrorProvider.GetLastWin32Error();
-                                    Logger.Error($"Failed to open service '{options.ServiceName}' for config update. Win32 error: {err}");
-                                    return OperationResult.Failure($"Failed to open service '{options.ServiceName}' for configuration update. Error code: {err}");
-                                }
-
-                                // 1. Update Delayed Auto-start
-                                var delayedAutostart = options.StartType == ServiceStartType.AutomaticDelayedStart;
-                                var success = ChangeServiceConfig2(existingServiceHandle, delayedAutostart);
-
-                                if (success)
-                                {
-                                    Logger.Info($"Delayed auto-start {(delayedAutostart ? "enabled" : "disabled")} for existing service '{options.ServiceName}'.");
-                                }
-                                else
-                                {
-                                    string errorMsg = $"Failed to set delayed auto-start for existing service '{options.ServiceName}'.";
-                                    Logger.Error(errorMsg);
-                                    return OperationResult.Failure(errorMsg);
-                                }
-
-                                // 2. Fix (#962): Update Pre-shutdown Timeout for existing service
-                                // This ensures that updates to StopTimeout or PreStopTimeout are reflected in the OS SCM.
-                                var preShutdownSuccess = EnablePreShutdown(existingServiceHandle, finalTimeoutMs);
-                                if (preShutdownSuccess)
-                                {
-                                    Logger.Info($"Pre-shutdown timeout updated to {totalWaitTime} seconds for existing service '{options.ServiceName}'.");
-                                }
-                                else
-                                {
-                                    // We treat this as a failure because an incorrect timeout can lead to data corruption during shutdown.
-                                    string errorMsg = $"Failed to update pre-shutdown timeout for existing service '{options.ServiceName}'.";
-                                    Logger.Error(errorMsg);
-                                    return OperationResult.Failure(errorMsg);
-                                }
-                            }
-
-                            cancellationToken.ThrowIfCancellationRequested();
-                            await _serviceRepository.UpsertAsync(
-                                dto,
-                                preserveExistingRuntimeState: true,
-                                preserveExistingCredentials: false,
-                                cancellationToken);
-                            Logger.Info($"Service '{options.ServiceName}' already exists. Updated its configuration.");
-                            return OperationResult.Success();
-                        }
-
-                        string creationErrorMsg = $"Failed to create service '{options.ServiceName}'. Win32 error: {createServiceError}";
-                        Logger.Error(creationErrorMsg);
-                        return OperationResult.Failure(creationErrorMsg);
-                    }
+                    // ROBUSTNESS: Establish a comprehensive try/catch/finally sequence immediately 
+                    // following native creation. This guarantees cleanup upon cancellation or async IO exceptions.
+                    bool needsRollback = false;
 
                     try
                     {
+                        // Persist service in database
+                        var dto = new ServiceDto
+                        {
+                            Name = options.ServiceName,
+                            DisplayName = !string.IsNullOrWhiteSpace(options.DisplayName) ? displayName : null,
+                            Description = options.Description,
+                            ExecutablePath = options.RealExePath,
+                            StartupDirectory = options.WorkingDirectory,
+                            Parameters = options.RealArgs,
+                            StartupType = (int)options.StartType,
+                            Priority = (int)options.ProcessPriority,
+                            EnableConsoleUI = options.EnableConsoleUI,
+                            StdoutPath = options.StdoutPath,
+                            StderrPath = options.StderrPath,
+                            EnableSizeRotation = options.EnableSizeRotation,
+                            RotationSize = (int)(options.RotationSizeInBytes / AppConfig.BytesInMegabyte),
+                            EnableDateRotation = options.EnableDateRotation,
+                            DateRotationType = (int)options.DateRotationType,
+                            MaxRotations = options.MaxRotations,
+                            UseLocalTimeForRotation = options.UseLocalTimeForRotation,
+                            EnableHealthMonitoring = options.EnableHealthMonitoring,
+                            HeartbeatInterval = options.HeartbeatInterval,
+                            MaxFailedChecks = options.MaxFailedChecks,
+                            RecoveryAction = (int)options.RecoveryAction,
+                            RecoveryOnCleanExit = options.RecoveryOnCleanExit,
+                            MaxRestartAttempts = options.MaxRestartAttempts,
+                            FailureProgramPath = options.FailureProgramPath,
+                            FailureProgramStartupDirectory = options.FailureProgramWorkingDirectory,
+                            FailureProgramParameters = options.FailureProgramArgs,
+                            EnvironmentVariables = options.EnvironmentVariables,
+                            ServiceDependencies = options.ServiceDependencies,
+                            RunAsLocalSystem = string.IsNullOrWhiteSpace(options.Username),
+                            UserAccount = options.Username,
+                            Password = options.Password,
+                            PreLaunchExecutablePath = options.PreLaunchExePath,
+                            PreLaunchStartupDirectory = options.PreLaunchWorkingDirectory,
+                            PreLaunchParameters = options.PreLaunchArgs,
+                            PreLaunchEnvironmentVariables = options.PreLaunchEnvironmentVariables,
+                            PreLaunchStdoutPath = options.PreLaunchStdoutPath,
+                            PreLaunchStderrPath = options.PreLaunchStderrPath,
+                            PreLaunchTimeoutSeconds = options.PreLaunchTimeout,
+                            PreLaunchRetryAttempts = options.PreLaunchRetryAttempts,
+                            PreLaunchIgnoreFailure = options.PreLaunchIgnoreFailure,
+                            PostLaunchExecutablePath = options.PostLaunchExePath,
+                            PostLaunchStartupDirectory = options.PostLaunchWorkingDirectory,
+                            PostLaunchParameters = options.PostLaunchArgs,
+                            EnableDebugLogs = options.EnableDebugLogs,
+                            StartTimeout = options.StartTimeout,
+                            StopTimeout = options.StopTimeout,
+                            PreStopExecutablePath = options.PreStopExePath,
+                            PreStopStartupDirectory = options.PreStopWorkingDirectory,
+                            PreStopParameters = options.PreStopArgs,
+                            PreStopTimeoutSeconds = options.PreStopTimeout,
+                            PreStopLogAsError = options.PreStopLogAsError,
+                            PostStopExecutablePath = options.PostStopExePath,
+                            PostStopStartupDirectory = options.PostStopWorkingDirectory,
+                            PostStopParameters = options.PostStopArgs,
+                        };
+
                         cancellationToken.ThrowIfCancellationRequested();
-                        SetServiceDescription(serviceHandle, options.Description);
+                        var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: false, cancellationToken);
+                        dto.Pid = serviceDto?.Pid;
+
+                        var totalWaitTime = (options.StopTimeout.HasValue && options.StopTimeout.Value > AppConfig.ScmStopTimeoutFloorSeconds
+                            ? options.StopTimeout.Value : AppConfig.ScmStopTimeoutFloorSeconds) + AppConfig.ScmTimeoutBufferSeconds;
+                        var previousWaitTime = (serviceDto?.PreviousStopTimeout != null && serviceDto.PreviousStopTimeout.Value > AppConfig.ScmStopTimeoutFloorSeconds
+                            ? serviceDto.PreviousStopTimeout.Value : AppConfig.ScmStopTimeoutFloorSeconds) + AppConfig.ScmTimeoutBufferSeconds;
+                        totalWaitTime = Math.Max(totalWaitTime, previousWaitTime);
+
+                        if (!string.IsNullOrEmpty(options.PreStopExePath))
+                        {
+                            totalWaitTime += options.PreStopTimeout ?? AppConfig.DefaultPreStopTimeoutSeconds;
+                        }
+                        uint finalTimeoutMs = (uint)totalWaitTime * 1000;
+
+                        if (serviceCreated)
+                        {
+                            var enablePreShutdownConfigSuccess = EnablePreShutdown(serviceHandle!, finalTimeoutMs);
+
+                            if (enablePreShutdownConfigSuccess)
+                            {
+                                Logger.Info($"Pre-shutdown enabled with timeout of {totalWaitTime} seconds for service '{options.ServiceName}' during installation.");
+                            }
+                            else
+                            {
+                                string errorMsg = $"Failed to enable pre-shutdown for service '{options.ServiceName}' during installation. Rolling back creation.";
+                                Logger.Error(errorMsg);
+                                needsRollback = true;
+                                return OperationResult.Failure(errorMsg);
+                            }
+
+                            if (options.StartType == ServiceStartType.AutomaticDelayedStart)
+                            {
+                                var delayedAutoStartConfigSuccess = ChangeServiceConfig2(serviceHandle!, true);
+
+                                if (!delayedAutoStartConfigSuccess)
+                                {
+                                    string errorMsg = $"Failed to set delayed auto-start for service '{options.ServiceName}' during installation. Rolling back creation.";
+                                    Logger.Error(errorMsg);
+                                    needsRollback = true;
+                                    return OperationResult.Failure(errorMsg);
+                                }
+                                else
+                                {
+                                    Logger.Info($"Delayed auto-start enabled for service '{options.ServiceName}' during installation.");
+                                }
+                            }
+                        }
+
+                        if (!serviceCreated)
+                        {
+                            var isInstalled = IsServiceInstalled(options.ServiceName);
+                            if (isInstalled)
+                            {
+                                cancellationToken.ThrowIfCancellationRequested();
+                                UpdateServiceConfig(
+                                    scmHandle: scmHandle,
+                                    serviceName: options.ServiceName,
+                                    description: options.Description,
+                                    binPath: binPath,
+                                    startType: options.StartType,
+                                    username: lpServiceStartName,
+                                    password: lpPassword,
+                                    lpDependencies: lpDependencies,
+                                    displayName: displayName
+                                );
+
+                                // Open the existing service for configuration updates (delayed start and pre-shutdown)
+                                using (var existingServiceHandle = _windowsServiceApi.OpenService(
+                                    scmHandle,
+                                    options.ServiceName,
+                                    SERVICE_CHANGE_CONFIG))
+                                {
+                                    if (existingServiceHandle.IsInvalid)
+                                    {
+                                        var err = _win32ErrorProvider.GetLastWin32Error();
+                                        Logger.Error($"Failed to open service '{options.ServiceName}' for config update. Win32 error: {err}");
+                                        return OperationResult.Failure($"Failed to open service '{options.ServiceName}' for configuration update. Error code: {err}");
+                                    }
+
+                                    // 1. Update Delayed Auto-start
+                                    var delayedAutostart = options.StartType == ServiceStartType.AutomaticDelayedStart;
+                                    var success = ChangeServiceConfig2(existingServiceHandle, delayedAutostart);
+
+                                    if (success)
+                                    {
+                                        Logger.Info($"Delayed auto-start {(delayedAutostart ? "enabled" : "disabled")} for existing service '{options.ServiceName}'.");
+                                    }
+                                    else
+                                    {
+                                        string errorMsg = $"Failed to set delayed auto-start for existing service '{options.ServiceName}'.";
+                                        Logger.Error(errorMsg);
+                                        return OperationResult.Failure(errorMsg);
+                                    }
+
+                                    // 2. Update Pre-shutdown Timeout for existing service
+                                    // This ensures that updates to StopTimeout or PreStopTimeout are reflected in the OS SCM.
+                                    var preShutdownSuccess = EnablePreShutdown(existingServiceHandle, finalTimeoutMs);
+                                    if (preShutdownSuccess)
+                                    {
+                                        Logger.Info($"Pre-shutdown timeout updated to {totalWaitTime} seconds for existing service '{options.ServiceName}'.");
+                                    }
+                                    else
+                                    {
+                                        // We treat this as a failure because an incorrect timeout can lead to data corruption during shutdown.
+                                        string errorMsg = $"Failed to update pre-shutdown timeout for existing service '{options.ServiceName}'.";
+                                        Logger.Error(errorMsg);
+                                        return OperationResult.Failure(errorMsg);
+                                    }
+                                }
+
+                                cancellationToken.ThrowIfCancellationRequested();
+                                await _serviceRepository.UpsertAsync(
+                                    dto,
+                                    preserveExistingRuntimeState: true,
+                                    preserveExistingCredentials: false,
+                                    cancellationToken);
+                                Logger.Info($"Service '{options.ServiceName}' already exists. Updated its configuration.");
+                                return OperationResult.Success();
+                            }
+
+                            string creationErrorMsg = $"Failed to create service '{options.ServiceName}'. Win32 error: {createServiceError}";
+                            Logger.Error(creationErrorMsg);
+                            return OperationResult.Failure(creationErrorMsg);
+                        }
+
+                        cancellationToken.ThrowIfCancellationRequested();
+                        SetServiceDescription(serviceHandle!, options.Description);
                         await _serviceRepository.UpsertAsync(
                             dto,
                             preserveExistingRuntimeState: false,
                             preserveExistingCredentials: false,
                             cancellationToken); // New service: update runtime state in db (PID, ActiveStdoutPath, ActiveStderrPath)
+
                         Logger.Info($"Service '{options.ServiceName}' installed successfully.");
                         return OperationResult.Success();
                     }
                     catch
                     {
-                        // Best-effort rollback: undo CreateService so the user isn't left with a half-installed orphan
-                        try
-                        {
-                            if (!_windowsServiceApi.DeleteService(serviceHandle))
-                                Logger.Error($"Rollback failed after post-create error: DeleteService returned false for '{options.ServiceName}'. Win32 error: {_win32ErrorProvider.GetLastWin32Error()}");
-                        }
-                        catch (Exception delEx)
-                        {
-                            Logger.Error($"Rollback raised an exception for '{options.ServiceName}'.", delEx);
-                        }
+                        needsRollback = true;
                         throw;
+                    }
+                    finally
+                    {
+                        // Collapsed rollback handler: cleans up upon explicit Failure returns OR unhandled exceptions
+                        if (needsRollback && serviceCreated && serviceHandle != null && !serviceHandle.IsInvalid)
+                        {
+                            try
+                            {
+                                if (!_windowsServiceApi.DeleteService(serviceHandle))
+                                {
+                                    int rollbackErr = _win32ErrorProvider.GetLastWin32Error();
+                                    Logger.Error($"Rollback failed: DeleteService returned false for '{options.ServiceName}'. Win32 error: {rollbackErr}. Manual cleanup may be required.");
+                                }
+                            }
+                            catch (Exception delEx)
+                            {
+                                Logger.Error($"Rollback raised an exception for '{options.ServiceName}'.", delEx);
+                            }
+                        }
                     }
                 }
                 finally
@@ -509,6 +517,11 @@ namespace Servy.Core.Services
                         serviceHandle.Dispose();
                     }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Info($"Installation of '{options.ServiceName}' was cancelled by the user.");
+                throw;
             }
             catch (Exception ex)
             {

@@ -129,15 +129,19 @@ jobs:
 
           while (-not $pushSuccess -and $retryCount -lt $maxRetries) {
               try {
+                  # 1. Clean up any leftover state from a previous failed attempt
+                  git rebase --abort 2>$null
+                  git merge  --abort 2>$null
+
                   Write-Host "Attempting to push (Attempt $($retryCount + 1))..."
         
-                  # 1. Pull latest changes
+                  # 2. Pull latest changes
                   git pull --rebase=merges --autostash origin main
                   if ($LASTEXITCODE -ne 0) { 
                       throw "git pull failed with exit code $LASTEXITCODE" 
                   }
 
-                  # 2. Push to main
+                  # 3. Push to main
                   git push origin HEAD:main
                   if ($LASTEXITCODE -ne 0) { 
                       throw "git push failed with exit code $LASTEXITCODE" 

@@ -69,7 +69,7 @@ namespace Servy.Core.Validators
             {
                 dto = Parse(content);
             }
-            // ROBUSTNESS FIX: Match the specific structural exception type or an InvalidOperationException 
+            // ROBUSTNESS: Match the specific structural exception type or an InvalidOperationException 
             // that encapsulates the structural exception as an InnerException (common with XmlSerializer).
             // This prevents the first catch from consuming unrelated exceptions when TException is narrowed.
             catch (Exception ex) when (ex is TException || (ex is InvalidOperationException && ex.InnerException is TException))

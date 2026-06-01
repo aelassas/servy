@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Config;
+using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.Helpers;
@@ -76,8 +77,7 @@ namespace Servy.Service.ProcessManagement
             }
 
             // 1. Resolve environment variables and arguments
-            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.EnvironmentVariables);
-            var finalArgs = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.Arguments ?? string.Empty, expandedEnv);
+            var (expandedEnv, finalArgs) = Helpers.ProcessHelper.ExpandAndAudit(options.EnvironmentVariables, options.Arguments ?? string.Empty, logger);
 
             // 2. Configure ProcessStartInfo with service-safe defaults
             var redirectOutput = !options.EnableConsoleUI && options.RedirectToWriters && !options.FireAndForget;
@@ -444,6 +444,5 @@ namespace Servy.Service.ProcessManagement
                 psi.Environment[key] = value;
             }
         }
-
     }
 }

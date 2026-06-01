@@ -91,10 +91,10 @@ namespace Servy.Core.Helpers
                             ? 0
                             : (service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds);
 
-                        int timeout = CalculateStartTimeout(service.StartTimeout, preLaunchTimeout);
+                        int timeout = CalculateStartTimeout(service.StartTimeout, preLaunchTimeout, service.PreLaunchRetryAttempts ?? 0);
                         var waitTime = TimeSpan.FromSeconds(timeout);
 
-                        // --- ROBUSTNESS FIX: Settle In-Flight Transitional Pending States ---
+                        // --- ROBUSTNESS: Settle In-Flight Transitional Pending States ---
                         // If a service is transitioning (e.g., StopPending from a prior failure/command), 
                         // wait for it to land on a terminal state before deciding whether to issue Start or Continue.
                         var stopwatch = Stopwatch.StartNew();
@@ -258,18 +258,27 @@ namespace Servy.Core.Helpers
         /// <param name="configuredTimeout">The timeout value from the service configuration.</param>
         /// <param name="preLaunchTimeoutSeconds">The timeout for the pre-launch executable hook in seconds, if any.</param>
         /// <returns>The calculated timeout in seconds, including SCM safety buffers.</returns>
-        public static int CalculateStartTimeout(int? configuredTimeout, int preLaunchTimeoutSeconds = 0)
+        public static int CalculateStartTimeout(
+            int? configuredTimeout,
+            int preLaunchTimeoutSeconds = 0,
+            int preLaunchRetryAttempts = 0)
         {
-            // Standardize the floor using the default service start timeout
             int floor = AppConfig.DefaultServiceStartTimeoutSeconds;
+            int baseline = configuredTimeout.HasValue && configuredTimeout.Value > floor
+                           ? configuredTimeout.Value
+                           : floor;
 
-            // Determine the baseline: map to the configured value only if it exceeds our mandatory floor
-            int baseline = configuredTimeout.HasValue && configuredTimeout.Value > floor ? configuredTimeout.Value : floor;
+            int attempts = Math.Max(0, preLaunchRetryAttempts) + 1;
+            int totalPreLaunch = checked(attempts * preLaunchTimeoutSeconds);
+            int totalBackoff = 0;
+            for (int i = 1; i < attempts; i++)
+            {
+                totalBackoff += Math.Min(
+                    (i * AppConfig.PreLaunchRetryInitialDelayMs) / 1000,
+                    AppConfig.PreLaunchRetryMaxDelayMs / 1000);
+            }
 
-            // Add the SCM communication safety buffer and any pre-launch execution time, but cap the total at the absolute maximum to prevent overflow and unreasonable waits.
-            int total = Math.Min(baseline + AppConfig.ScmTimeoutBufferSeconds + preLaunchTimeoutSeconds, AppConfig.MaxStartTimeout);
-
-            return total;
+            return baseline + AppConfig.ScmTimeoutBufferSeconds + totalPreLaunch + totalBackoff;
         }
 
         /// <summary>

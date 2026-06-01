@@ -52,6 +52,10 @@ namespace Servy.UI.Commands
             {
                 await ExecuteAsync(parameter);
             }
+            catch (OperationCanceledException)
+            {
+                // Expected - user cancelled or a newer command superseded this one.
+            }
             catch (Exception ex)
             {
                 // Log and surface - never let an async void exception escape into the dispatcher.

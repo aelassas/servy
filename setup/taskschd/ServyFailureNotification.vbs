@@ -11,4 +11,6 @@ ps1Path = fso.BuildPath(scriptDir, "ServyFailureNotification.ps1")
 
 ' Execute PowerShell hidden (-WindowStyle Hidden) and bypass policy
 ' We use triple-quotes to handle potential spaces in the install path
-shell.Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & ps1Path & """", 0, True
+Dim exitCode
+exitCode = shell.Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & ps1Path & """", 0, True
+WScript.Quit exitCode

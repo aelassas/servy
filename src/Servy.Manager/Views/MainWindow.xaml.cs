@@ -261,6 +261,10 @@ namespace Servy.Manager.Views
                         await HandleLogsTabSelected(vm, perfVm, consoleVm, dependenciesVM, logsVm);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // Expected - a newer tab navigation or search has superseded this one.
+            }
             catch (Exception ex)
             {
                 // Prioritize the UI notification service, falling back to static logging if initialization failed
@@ -677,6 +681,10 @@ namespace Servy.Manager.Views
             try
             {
                 await action();
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected - a newer user action has superseded this one, so we can silently exit without logging.
             }
             catch (Exception ex)
             {

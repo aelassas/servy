@@ -79,16 +79,8 @@ function Build-Installer {
             }
         }
         catch {
-            # Filter transient lock states out from hard script errors.
-            # Inno Setup returns exit code 1 for command-line/compile errors and 2 for internal execution crashes.
-            # We want to fail fast for definite configuration bugs, but catch access denials or unexpected native execution loops (-1).
-            $isTransient = ($LASTEXITCODE -eq -1) -or 
-                           ($_.Exception.Message -match 'being used by another process|access is denied|antivirus')
-
-            if (-not $isTransient) {
-                throw "Inno Setup failed with non-transient error: $_"
-            }
-
+            # Treat any non-zero exit as potentially transient for the first few retries.
+            # This avoids the complex and unreliable string-parsing logic.
             if ($currentAttempt -lt $MaxRetry) {
                 # Now this will actually execute and wait for the AV lock to release
                 Write-Warning "Inno Setup failed (likely AV lock). Waiting $($RetryDelaySeconds)s before retry..."

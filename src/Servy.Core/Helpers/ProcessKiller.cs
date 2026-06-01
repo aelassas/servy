@@ -417,7 +417,7 @@ namespace Servy.Core.Helpers
                 {
                     if (procInfo.ProcessId <= 0) continue;
 
-                    // FIX: Using IsCriticalProcess ensures handle.exe output (with .exe) is correctly validated against the safelist
+                    // Using IsCriticalProcess ensures handle.exe output (with .exe) is correctly validated against the safelist
                     if (IsCriticalProcess(procInfo.ProcessName))
                     {
                         Logger.Warn($"Skipping kill request for critical system process: {procInfo.ProcessName} (PID {procInfo.ProcessId})");
@@ -426,7 +426,7 @@ namespace Servy.Core.Helpers
                     }
 
                     // Surgical Kill by PID
-                    if (!KillProcessTreeAndParents(procInfo.ProcessId))
+                    if (!KillProcessTreeAndParents(procInfo.ProcessId, killParents: false))
                     {
                         Logger.Error($"Failed to kill process {procInfo.ProcessName} (PID {procInfo.ProcessId}).");
                         success = false;
@@ -529,6 +529,11 @@ namespace Servy.Core.Helpers
                         Logger.Debug($"Aborting parent tree walk: PID {parentId} has been recycled (started after child).");
                         return;
                     }
+
+                    // Promote the verified, re-read live value to the outer tracking scope variable.
+                    // This prevents passing DateTime.MinValue down into subsequent post-order traversals,
+                    // ensuring grandparent and ancestor process contexts validate cleanly.
+                    parentStartTime = exactStartTime;
                 }
                 catch (Win32Exception)
                 {
