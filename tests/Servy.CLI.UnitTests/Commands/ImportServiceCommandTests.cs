@@ -150,7 +150,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             var opts = new ImportServiceOptions { ConfigFileType = "json", Path = path };
 
-            // FIX: Pass the exact error message the test expects to prove the mock is working
+            // Pass the exact error message the test expects to prove the mock is working
             MockJsonValidator(false, "Executable path is required");
 
             // Act

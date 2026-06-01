@@ -45,7 +45,7 @@ namespace Servy.Testing
                     // Initialize the Dispatcher for the STA thread
                     var dispatcher = Dispatcher.CurrentDispatcher;
 
-                    // FIX: Queue the test execution onto the STA thread's dispatcher.
+                    // Queue the test execution onto the STA thread's dispatcher.
                     // This guarantees that Dispatcher.CurrentDispatcher inside the test 
                     // resolves to THIS dispatcher, which has an active message pump.
                     dispatcher.InvokeAsync(async () =>

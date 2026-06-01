@@ -12,6 +12,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Versioning;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,6 +23,13 @@ namespace Servy.Core.Helpers
     /// </summary>
     public static class Helper
     {
+        // SEMVER REGEX GATE: Matches the valid leading numeric blocks major[.minor[.build[.revision]]]
+        // and safely isolates trailing metadata or pre-release suffixes (-rc.1, +build) to prevent parsing crashes.
+        private static readonly Regex VersionSanitizationRegex = new Regex(
+            @"^([0-9]+(?:\.[0-9]+){0,3})",
+            RegexOptions.Compiled,
+            AppConfig.InputRegexTimeout);
+
         /// <summary>
         /// A predefined array of characters that are forbidden in Windows Service names.
         /// </summary>
@@ -270,27 +278,30 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Helper method to convert a version string like "v1.2" or "1.2.3" into a comparable System.Version object.
-        /// Returns a default Version (0.0) if the input is invalid or cannot be parsed.
+        /// Parses a string representation of a version identifier into a nullable <see cref="Version"/> object.
+        /// Accounts for leading 'v' characters as well as complex SemVer pre-release or metadata strings.
         /// </summary>
-        /// <param name="version">Version string in the format "v1.2", "1.2", or "1.2.3".</param>
-        /// <returns>The parsed System.Version, or 0.0 on failure.</returns>
+        /// <param name="version">The raw version string to evaluate.</param>
+        /// <returns>A valid <see cref="Version"/> object if parsing succeeds; otherwise, <see langword="null"/>.</returns>
         public static Version ParseVersion(string version)
         {
             if (string.IsNullOrWhiteSpace(version))
-                return new Version(0, 0);
+                return null;
 
-            // Remove leading 'v' or 'V'
+            // Trim leading v/V characters commonly found in production Git tags
             version = version.TrimStart('v', 'V');
 
-            // Version.TryParse requires at least a Major.Minor format to succeed.
-            if (Version.TryParse(version, out Version parsedVersion))
+            // Pre-clean string payload to separate standard numbers from SemVer pre-release strings or build annotations
+            var match = VersionSanitizationRegex.Match(version);
+            if (match.Success)
             {
-                return parsedVersion;
+                version = match.Groups[1].Value;
             }
 
-            // Fallback for invalid inputs
-            return new Version(0, 0);
+            if (Version.TryParse(version, out Version parsedVersion))
+                return parsedVersion;
+
+            return null; // Return null to indicate parsing failure to upstream business components
         }
 
         /// <summary>

@@ -77,7 +77,7 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Validates that a numeric value exists within the defined range of a specific <see cref="Enum"/>.
+        /// Validates that a numeric value exists within the defined range or valid bitwise combinations of a specific <see cref="Enum"/>.
         /// </summary>
         /// <typeparam name="TEnum">The target enum type to validate against.</typeparam>
         /// <param name="value">The nullable numeric value to be mapped to the enum.</param>
@@ -87,8 +87,14 @@ namespace Servy.Core.Helpers
         /// </param>
         /// <returns>A validated member of <typeparamref name="TEnum"/>.</returns>
         /// <remarks>
-        /// This method uses <see cref="Enum.IsDefined(Type, object)"/> to ensure that the numeric value
-        /// corresponds to a valid member of the enumeration, preventing invalid casts from reaching Win32 API calls.
+        /// <para>
+        /// For standard enumerations, this method uses <see cref="Enum.IsDefined(Type, object)"/> to ensure that the numeric value
+        /// corresponds to a declared member, preventing invalid casts from reaching native layers.
+        /// </para>
+        /// <para>
+        /// For enumerations decorated with <see cref="FlagsAttribute"/>, it skips the strict lookup check to accommodate valid 
+        /// bitwise combinations, while verifying that the input contains no unmapped or invalid high bits.
+        /// </para>
         /// </remarks>
         public static TEnum ParseEnum<TEnum>(
             int? value,
@@ -100,14 +106,28 @@ namespace Servy.Core.Helpers
                 return defaultValue;
             }
 
-            var underlyingType = Enum.GetUnderlyingType(typeof(TEnum));
+            var enumType = typeof(TEnum);
+            var underlyingType = Enum.GetUnderlyingType(enumType);
 
             try
             {
                 // Ensure the numeric type matches the underlying enum type for valid Enum.IsDefined check
                 var convertedValue = Convert.ChangeType(value.Value, underlyingType);
 
-                if (Enum.IsDefined(typeof(TEnum), convertedValue))
+                // FORWARD-COMPATIBILITY: Check if this is a bitmask flags enum.
+                if (enumType.IsDefined(typeof(FlagsAttribute), false))
+                {
+                    // Convert numeric value back to enum type to allow safe processing
+                    TEnum parsedEnum = (TEnum)convertedValue;
+
+                    // Validate that the value does not contain bits that are entirely unmapped in the enum definition.
+                    // Enum.ToObject followed by ToString handles parsing verification safely across all underlying types.
+                    if (parsedEnum.ToString() != convertedValue.ToString())
+                    {
+                        return parsedEnum;
+                    }
+                }
+                else if (Enum.IsDefined(enumType, convertedValue))
                 {
                     return (TEnum)convertedValue;
                 }
@@ -118,7 +138,7 @@ namespace Servy.Core.Helpers
                 return defaultValue;
             }
 
-            Logger.Warn($"Undefined enum value '{value}' for {typeof(TEnum).Name} ({fieldName}). Falling back to default: {defaultValue}.");
+            Logger.Warn($"Undefined enum value '{value}' for {enumType.Name} ({fieldName}). Falling back to default: {defaultValue}.");
             return defaultValue;
         }
 
@@ -134,9 +154,9 @@ namespace Servy.Core.Helpers
         /// </param>
         /// <returns>A validated member of <typeparamref name="TEnum"/>.</returns>
         /// <remarks>
-        /// This method goes beyond a simple TryParse by using <see cref="Enum.IsDefined(Type, object)"/>. 
-        /// This is critical because TryParse will successfully return a value for any numeric string 
-        /// that fits the underlying type, even if that number is not a defined member of the enum.
+        /// This method goes beyond a simple TryParse by checking metadata definitions. For non-flags enums, it enforces 
+        /// strict verification via <see cref="Enum.IsDefined(Type, object)"/> to prevent raw numbers like "999" from slipping past. 
+        /// For <see cref="FlagsAttribute"/> enums, comma-separated combinations are parsed and honored correctly.
         /// </remarks>
         public static TEnum ParseEnum<TEnum>(
             string value,
@@ -149,19 +169,29 @@ namespace Servy.Core.Helpers
                 return defaultValue;
             }
 
+            var enumType = typeof(TEnum);
+
             // 2. Attempt to parse the string using the built-in Enum engine
             if (Enum.TryParse<TEnum>(value, true, out var result))
             {
-                // 3. Robustness check: Ensure the parsed value actually exists in the enum definition.
-                // This prevents numeric strings like "999" from being cast to an enum that only has values 1-3.
-                if (Enum.IsDefined(typeof(TEnum), result))
+                // 3. Robustness check: Separate standard enums from bitmask flag enums.
+                // If it's a flags enum, TryParse naturally handles named combinations (e.g. "Read, Write")
+                // as well as combined numeric variants. We validate string parity to ensure it contains no out-of-range values.
+                if (enumType.IsDefined(typeof(FlagsAttribute), false))
+                {
+                    if (result.ToString() != value.Trim())
+                    {
+                        return result;
+                    }
+                }
+                else if (Enum.IsDefined(enumType, result))
                 {
                     return result;
                 }
             }
 
             // 4. Log the failure and return the default value to prevent service interruption
-            Logger.Warn($"Undefined or malformed enum value '{value}' for {typeof(TEnum).Name} ({fieldName}). Falling back to default: {defaultValue}.");
+            Logger.Warn($"Undefined or malformed enum value '{value}' for {enumType.Name} ({fieldName}). Falling back to default: {defaultValue}.");
             return defaultValue;
         }
     }

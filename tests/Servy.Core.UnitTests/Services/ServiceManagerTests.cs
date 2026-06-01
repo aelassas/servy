@@ -2156,7 +2156,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scmHandle);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "TestSvc", It.IsAny<uint>())).Returns(svcHandle);
 
-            // FIX: Robust simulation of the dual-pass QueryServiceConfig pattern
+            // Robust simulation of the dual-pass QueryServiceConfig pattern
             int configStructSize = Marshal.SizeOf<QUERY_SERVICE_CONFIG>();
             _mockWindowsServiceApi
                 .Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
@@ -2183,7 +2183,7 @@ namespace Servy.Core.UnitTests.Services
                     return true;
                 }));
 
-            // FIX: Robust simulation of the dual-pass QueryServiceConfig2 pattern for descriptions
+            // Robust simulation of the dual-pass QueryServiceConfig2 pattern for descriptions
             int descStructSize = Marshal.SizeOf<SERVICE_DESCRIPTION>();
             _mockWindowsServiceApi.
                 Setup(x => x.QueryServiceConfig2(It.IsAny<SafeServiceHandle>(), SERVICE_CONFIG_DESCRIPTION, It.IsAny<IntPtr>(), It.IsAny<int>(), ref It.Ref<int>.IsAny))
@@ -2254,7 +2254,7 @@ namespace Servy.Core.UnitTests.Services
             // Calculate exact space needed for the layout structure plus the null-terminated unicode string array
             int totalNeeded = structSize + ((expectedDescription.Length + 1) * 2);
 
-            // FIX: Prevent QueryServiceConfig pass 1 from throwing an AccessViolationException
+            // Prevent QueryServiceConfig pass 1 from throwing an AccessViolationException
             int configStructSize = Marshal.SizeOf<QUERY_SERVICE_CONFIG>();
             _mockWindowsServiceApi
                 .Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
@@ -2295,7 +2295,7 @@ namespace Servy.Core.UnitTests.Services
                         return false; // Real Win32 size-probe behavior
                     }
 
-                    // FIX: Safe contiguous unmanaged writing without leaking AllocHGlobal blocks
+                    // Safe contiguous unmanaged writing without leaking AllocHGlobal blocks
                     // Append the actual string array payload directly after the structure boundary block
                     IntPtr stringTargetPtr = IntPtr.Add(buf, structSize);
                     Marshal.Copy(expectedDescription.ToCharArray(), 0, stringTargetPtr, expectedDescription.Length);
@@ -2339,7 +2339,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scmHandle);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "NoDescService", It.IsAny<uint>())).Returns(svcHandle);
 
-            // FIX: Robust simulation of the dual-pass QueryServiceConfig pattern
+            // Robust simulation of the dual-pass QueryServiceConfig pattern
             int configStructSize = Marshal.SizeOf<QUERY_SERVICE_CONFIG>();
             _mockWindowsServiceApi
                 .Setup(x => x.QueryServiceConfig(It.IsAny<SafeServiceHandle>(), It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))

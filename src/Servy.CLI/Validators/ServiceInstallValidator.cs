@@ -183,23 +183,48 @@ namespace Servy.CLI.Validators
         /// <summary>
         /// Attempts to parse a string value into an enumeration of type <typeparamref name="T"/>.
         /// </summary>
-        /// <typeparam name="T">The enumeration type. Must be a value type.</typeparam>
+        /// <typeparam name="T">The enumeration type. Must be a valid <see cref="Enum"/> value type.</typeparam>
         /// <param name="val">The string value to parse.</param>
         /// <param name="propertyName">The name of the property being mapped, used for error reporting.</param>
         /// <param name="error">A reference to an error string. If an error already exists, the method returns early. If parsing fails, this reference is updated with a formatted error message containing valid options.</param>
         /// <returns>The integer representation of the enum value if successful; otherwise, <see langword="null"/>.</returns>
-        private static int? MapEnum<T>(string val, string propertyName, ref string error) where T : struct
+        /// <remarks>
+        /// This method dynamically accounts for standard enumerations as well as bitmask combinations decorated with 
+        /// <see cref="FlagsAttribute"/>, ensuring unmapped bits are rejected without breaking composite flag parsing.
+        /// </remarks>
+        private static int? MapEnum<T>(string val, string propertyName, ref string error) where T : struct, Enum
         {
             if (error != null || string.IsNullOrWhiteSpace(val)) return null;
 
-            if (Enum.TryParse<T>(val, true, out T result) && Enum.IsDefined(typeof(T), result))
+            var enumType = typeof(T);
+
+            if (Enum.TryParse<T>(val, true, out T result))
             {
-                // Use Convert.ToInt32 to avoid InvalidCastException during unboxing
-                return Convert.ToInt32(result);
+                // Check if the enum is a bitmask [Flags] layout
+                if (enumType.IsDefined(typeof(FlagsAttribute), false))
+                {
+                    // If the string contains unmapped or anonymous bits, ToString() drops back 
+                    // to displaying a raw number. Comparing it against the normalized text 
+                    // detects out-of-range flag corruption cleanly without allocations.
+                    var underlyingValue = Convert.ChangeType(result, Enum.GetUnderlyingType(enumType)).ToString();
+                    if (result.ToString() != underlyingValue)
+                    {
+                        return Convert.ToInt32(result);
+                    }
+                }
+                else if (Enum.IsDefined(enumType, result))
+                {
+                    return Convert.ToInt32(result);
+                }
             }
 
+            // Determine formatting nomenclature for the error options list
+            string optionsList = enumType.IsDefined(typeof(FlagsAttribute), false)
+                ? string.Join(" | ", Enum.GetNames(enumType))
+                : string.Join(", ", Enum.GetNames(enumType));
+
             error = string.Format("Invalid value for {0}: '{1}'. Valid options: {2}",
-                GetOptionName(propertyName), val, string.Join(", ", Enum.GetNames(typeof(T))));
+                GetOptionName(propertyName), val, optionsList);
             return null;
         }
 

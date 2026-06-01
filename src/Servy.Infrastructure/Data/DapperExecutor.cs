@@ -331,7 +331,7 @@ namespace Servy.Infrastructure.Data
 
             return await ExecuteWithRetryAsync(async (ct) =>
             {
-                // FIX: Rebuild the CommandDefinition inside the lambda so it captures the per-attempt cancellation token 'ct'
+                // Rebuild the CommandDefinition inside the lambda so it captures the per-attempt cancellation token 'ct'
                 var command = new CommandDefinition(sql, param, actualTx, cancellationToken: ct);
 
                 if (actualTx != null)
@@ -356,7 +356,7 @@ namespace Servy.Infrastructure.Data
 
             var result = await ExecuteWithRetryAsync(async (ct) =>
             {
-                // FIX: Rebuild the CommandDefinition inside the lambda so it captures the per-attempt cancellation token 'ct'
+                // Rebuild the CommandDefinition inside the lambda so it captures the per-attempt cancellation token 'ct'
                 var command = new CommandDefinition(sql, param, actualTx, cancellationToken: ct);
 
                 if (actualTx != null)
@@ -381,7 +381,7 @@ namespace Servy.Infrastructure.Data
 
             return await ExecuteWithRetryAsync(async (ct) =>
             {
-                // FIX: Re-bind the CommandDefinition here to ensure Dapper uses the correct local iteration token 'ct' and the unwrapped transaction
+                // Re-bind the CommandDefinition here to ensure Dapper uses the correct local iteration token 'ct' and the unwrapped transaction
                 var cmd = new CommandDefinition(
                     command.CommandText,
                     command.Parameters,
@@ -429,7 +429,7 @@ namespace Servy.Infrastructure.Data
 
             return await ExecuteWithRetryAsync(async (ct) =>
             {
-                // FIX: Re-bind the CommandDefinition here to ensure Dapper uses the correct local iteration token 'ct' and the unwrapped transaction
+                // Re-bind the CommandDefinition here to ensure Dapper uses the correct local iteration token 'ct' and the unwrapped transaction
                 var cmd = new CommandDefinition(
                     command.CommandText,
                     command.Parameters,

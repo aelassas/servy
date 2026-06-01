@@ -278,7 +278,7 @@ namespace Servy.Core.Native
                     {
                         fs.Seek(0, SeekOrigin.Begin);
 
-                        // FIX: Buffer size is configurable via AppConfig to get past common log headers/prologues.
+                        // Buffer size is configurable via AppConfig to get past common log headers/prologues.
                         // We also incorporate fs.Length to differentiate rotated logs that have identical prefixes but different sizes.
                         byte[] buffer = new byte[AppConfig.FileIdentityPrefixBytes];
                         int read = fs.Read(buffer, 0, buffer.Length);

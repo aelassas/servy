@@ -19,6 +19,10 @@
   <data name="Msg_NoUpdatesAvailable" xml:space="preserve">
     <value>No updates currently available.</value>
   </data>
+  <data name="Msg_UpdateCheckInvalidTag" xml:space="preserve">
+    <value>The update check completed successfully, but the latest release identifier format could not be processed safely: '{0}'. Please inspect the project release page manually.</value>
+    <comment>Displayed when the remote tag_name cannot be parsed into a deterministic .NET Version sequence.</comment>
+  </data>
   <data name="Msg_UpdateAvailablePrompt" xml:space="preserve">
     <value>A new version of Servy is available. Do you want to download it?</value>
   </data>

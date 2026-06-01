@@ -56,7 +56,7 @@ namespace Servy.Core.Validators
             }
 
             // Prevent Memory Exhaustion / DoS
-            // FIX: Convert to byte count for accurate protection against multibyte UTF-8 payloads
+            // Convert to byte count for accurate protection against multibyte UTF-8 payloads
             long byteLength = Encoding.UTF8.GetByteCount(content);
             if (byteLength > AppConfig.MaxConfigFileSizeBytes)
             {

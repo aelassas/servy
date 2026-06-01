@@ -103,7 +103,7 @@ namespace Servy.Manager.UnitTests.Services
             var dto = new ServiceDto { Name = "MyService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
             var json = JsonConvert.SerializeObject(dto);
 
-            // FIX: Change extension from .tmp to .json to pass ValidatePathSecurity
+            // Change extension from .tmp to .json to pass ValidatePathSecurity
             var baseTempFile = Path.GetTempFileName();
             var tempFile = Path.ChangeExtension(baseTempFile, ".json");
 
@@ -167,7 +167,7 @@ namespace Servy.Manager.UnitTests.Services
 
             var serializer = new System.Xml.Serialization.XmlSerializer(typeof(ServiceDto));
 
-            // FIX: Change extension from .tmp to .xml to pass ValidatePathSecurity
+            // Change extension from .tmp to .xml to pass ValidatePathSecurity
             var baseTempFile = Path.GetTempFileName();
             var tempFile = Path.ChangeExtension(baseTempFile, ".xml");
 

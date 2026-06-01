@@ -421,7 +421,7 @@ namespace Servy.Core.Helpers
                 {
                     if (procInfo.ProcessId <= 0) continue;
 
-                    // FIX: Using IsCriticalProcess ensures handle.exe output (with .exe) is correctly validated against the safelist
+                    // Using IsCriticalProcess ensures handle.exe output (with .exe) is correctly validated against the safelist
                     if (IsCriticalProcess(procInfo.ProcessName))
                     {
                         Logger.Warn($"Skipping kill request for critical system process: {procInfo.ProcessName} (PID {procInfo.ProcessId})");

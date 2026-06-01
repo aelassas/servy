@@ -98,7 +98,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Start_SynchronousTimeout_ThrowsTimeoutException_AndLogsCorrectly()
         {
-            // FIX: Use PowerShell with a long sleep to guarantee the timeout is hit 
+            // Use PowerShell with a long sleep to guarantee the timeout is hit 
             // before the process can exit naturally or be killed by EDR.
             var optionsError = CreateOptions("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\"", fireAndForget: false, timeoutMs: 500);
             optionsError.WaitChunkMs = 100;
@@ -183,7 +183,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             options.TimeoutMs = timeoutMs;
             options.WaitChunkMs = 100;
 
-            // FIX: Use correct List type for EnvironmentVariables
+            // Use correct List type for EnvironmentVariables
             options.EnvironmentVariables = new List<Servy.Core.EnvironmentVariables.EnvironmentVariable>();
 
             return options;

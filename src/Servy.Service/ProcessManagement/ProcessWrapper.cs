@@ -509,7 +509,7 @@ namespace Servy.Service.ProcessManagement
             // so the only correct execution model is one-at-a-time.
             lock (ConsoleStateLock)
             {
-                // FIX: ALWAYS free the console first to prevent stale locks from previous iterations
+                // ALWAYS free the console first to prevent stale locks from previous iterations
                 _ = FreeConsole();
 
                 if (!AttachConsole(process.Id))

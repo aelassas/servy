@@ -445,7 +445,7 @@ namespace Servy.UnitTests.Services
         {
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
 
-            // FIX: Ensure the temporary test file path ends with an authorized extension (.xml)
+            // Ensure the temporary test file path ends with an authorized extension (.xml)
             var baseTempPath = Path.GetTempFileName();
             var path = Path.ChangeExtension(baseTempPath, ".xml");
 
@@ -484,7 +484,7 @@ namespace Servy.UnitTests.Services
             // Arrange
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
 
-            // FIX: Ensure the temporary test file path ends with an authorized extension (.json)
+            // Ensure the temporary test file path ends with an authorized extension (.json)
             var baseTempPath = Path.GetTempFileName();
             var path = Path.ChangeExtension(baseTempPath, ".json");
 

@@ -316,7 +316,7 @@ namespace Servy.UI.Design
         /// <returns>A task containing <c>default(T)</c>.</returns>
         public Task<T> InvokeAsync<T>(Func<T> callback)
         {
-            // FIX: Task.FromResult requires a value. 
+            // Task.FromResult requires a value. 
             // Returning default(T) allows the caller to proceed without a NullReferenceException.
             return Task.FromResult(default(T));
         }

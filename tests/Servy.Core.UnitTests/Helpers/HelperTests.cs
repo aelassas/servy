@@ -237,14 +237,23 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("1.2.3", "1.2.3")]
         [InlineData("V3.4.5", "3.4.5")]
         [InlineData("2.0", "2.0")]
-        [InlineData("v1.10", "1.10")] // Proves 1.10 > 1.9 logic is fixed
-        [InlineData("v1", "0.0")]     // Fallback case
-        [InlineData("invalid", "0.0")]
-        [InlineData("1.x.0", "0.0")]
+        [InlineData("v1.10", "1.10")]
+        // --- NEW TEST CASES ---
+        [InlineData("v1.2.3-rc.1", "1.2.3")]   // SemVer pre-release suffix
+        [InlineData("v1.2.3+build.42", "1.2.3")] // SemVer build metadata
+        [InlineData("8.3-stable", "8.3")]      // Common non-standard suffix
+        [InlineData("v2026.5.25", "2026.5.25")] // Date-based tags
+        [InlineData("2026.05.25", "2026.5.25")] // Leading zeros in segments
+                                                // --- EDGE CASES ---
+        [InlineData("1.2.3.4", "1.2.3.4")]     // 4-part versioning
+        [InlineData("", null)]                 // New null contract
+        [InlineData("   ", null)]              // Whitespace handling
+        [InlineData("invalid", null)]          // New null contract
+        [InlineData("1.x.0", null)]            // Invalid structure
         public void ParseVersion_ReturnsExpectedVersion(string version, string expectedVersionString)
         {
             // Arrange
-            var expected = Version.Parse(expectedVersionString);
+            var expected = expectedVersionString != null ? Version.Parse(expectedVersionString) : null;
 
             // Act
             var result = Helper.ParseVersion(version);

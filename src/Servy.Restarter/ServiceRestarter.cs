@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Config;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.ServiceProcess;
 using System.Threading;
@@ -29,15 +30,42 @@ namespace Servy.Restarter
                 var stopwatch = Stopwatch.StartNew();
 
                 // 1. Settle: If Pending, wait for it to reach a stable state first
-                while (IsPendingState(controller.Status))
+                while (true)
                 {
+                    ServiceControllerStatus current;
+                    try
+                    {
+                        current = controller.Status;
+                        if (!IsPendingState(current)) break;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // ROBUSTNESS: Service was uninstalled or marked for deletion mid-flight. 
+                        // There is no longer an active handle to manage or restart; exit cleanly.
+                        return;
+                    }
+
                     var remaining = timeout - stopwatch.Elapsed;
                     if (remaining <= TimeSpan.Zero)
-                        throw new System.TimeoutException($"Service '{serviceName}' stuck in {controller.Status} state.");
+                        throw new System.TimeoutException($"Service '{serviceName}' stuck in {current} state.");
 
                     var sleepFor = (int)Math.Min(AppConfig.ServiceRestarterPollIntervalMs, remaining.TotalMilliseconds);
                     if (sleepFor > 0) Thread.Sleep(sleepFor);
-                    controller.Refresh();
+
+                    try
+                    {
+                        controller.Refresh();
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // ROBUSTNESS: Handle disappearance during the refresh cycle.
+                        return;
+                    }
+                    catch (Win32Exception)
+                    {
+                        // ROBUSTNESS: Handle native SCM teardowns (e.g. ERROR_SERVICE_DOES_NOT_EXIST).
+                        return;
+                    }
                 }
 
                 // 2. Stop phase

@@ -63,8 +63,8 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 #v4.3.0
         with:
           path: ${{ runner.temp }}\scanner
-          key: ${{ runner.os }}-sonar-scanner
-          restore-keys: ${{ runner.os }}-sonar-scanner
+          key: ${{ runner.os }}-sonar-scanner-${{ env.SONAR_SCANNER_VERSION }}
+          restore-keys: ${{ runner.os }}-sonar-scanner-
 
       # 7. Install Scanner (The dotnet-tool wrapper still works great for MSBuild analysis)
       - name: Install SonarCloud scanner
