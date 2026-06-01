@@ -86,25 +86,30 @@ namespace Servy.Restarter
                 }
 
                 // 3. Start phase
-                controller.Refresh();
-                if (controller.Status != ServiceControllerStatus.Running)
+                try
                 {
-                    try
-                    {
-                        controller.Start();
-                        var remaining = timeout - stopwatch.Elapsed;
-                        if (remaining <= TimeSpan.Zero)
-                            throw new System.TimeoutException(
-                                $"Timeout expired while waiting for service '{serviceName}' to reach Running. " +
-                                "The Start command was issued; the service may still complete the transition.");
+                    controller.Refresh();
+                    if (controller.Status == ServiceControllerStatus.Running)
+                        return; // already running, nothing to do
+                }
+                catch (InvalidOperationException) { return; }
+                catch (Win32Exception) { return; }
 
-                        controller.WaitForStatus(ServiceControllerStatus.Running, remaining);
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        // Fallback: If it transitioned to Pending between our check and the call
-                        HandleTransitionalError(serviceName, controller, ServiceControllerStatus.Running, timeout - stopwatch.Elapsed);
-                    }
+                try
+                {
+                    controller.Start();
+                    var remaining = timeout - stopwatch.Elapsed;
+                    if (remaining <= TimeSpan.Zero)
+                        throw new System.TimeoutException(
+                            $"Timeout expired while waiting for service '{serviceName}' to reach Running. " +
+                            "The Start command was issued; the service may still complete the transition.");
+
+                    controller.WaitForStatus(ServiceControllerStatus.Running, remaining);
+                }
+                catch (InvalidOperationException)
+                {
+                    // Fallback: If it transitioned to Pending between our check and the call
+                    HandleTransitionalError(serviceName, controller, ServiceControllerStatus.Running, timeout - stopwatch.Elapsed);
                 }
             }
         }

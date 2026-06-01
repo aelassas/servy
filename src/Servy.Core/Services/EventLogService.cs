@@ -103,7 +103,10 @@ namespace Servy.Core.Services
                 IEnumerable<ServyEventLogEntry> records;
                 try
                 {
-                    var eventQuery = new EventLogQuery(AppConfig.EventLogName, PathType.LogName, query);
+                    var eventQuery = new EventLogQuery(AppConfig.EventLogName, PathType.LogName, query)
+                    {
+                        ReverseDirection = true   // newest events first, so the MaxResults cap keeps the most recent
+                    };
 
                     // This is where the service handle is requested and the query is validated
                     records = _reader.ReadEvents(eventQuery, AppConfig.EventLogMaxResults * AppConfig.EventLogPrefetchCushion); // Generous cushion

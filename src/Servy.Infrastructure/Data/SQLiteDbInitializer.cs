@@ -180,18 +180,8 @@ namespace Servy.Infrastructure.Data
 
                 foreach (var col in missing)
                 {
-                    string baseDefinition = GetSqlType(col); // e.g., "TEXT NOT NULL" or "INTEGER NOT NULL DEFAULT 0"
-
-                    // ROBUSTNESS: Handle the SQLite ALTER TABLE NOT NULL constraint restriction.
-                    // SQLite prohibits adding a NOT NULL column without a default value constraint to an existing table.
-                    // If 'NOT NULL' is present but 'DEFAULT' is absent, append an intuitive type-safe default mapping.
-                    if (baseDefinition.IndexOf("NOT NULL", StringComparison.OrdinalIgnoreCase) >= 0 &&
-                        baseDefinition.IndexOf("DEFAULT", StringComparison.OrdinalIgnoreCase) < 0)
-                    {
-                        string affinityToken = baseDefinition.Split(SplitWhitespaceChars, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
-                        string inferredDefault = string.Equals(affinityToken, "TEXT", StringComparison.OrdinalIgnoreCase) ? "DEFAULT ''" : "DEFAULT 0";
-                        baseDefinition = $"{baseDefinition} {inferredDefault}";
-                    }
+                    // ROBUSTNESS: Ensure column definitions satisfy SQLite ALTER TABLE structural constraints
+                    string baseDefinition = EnsureAlterableDefinition(GetSqlType(col));
 
                     // Core keys shouldn't hit this path dynamically, but we use GetSqlType for standard columns
                     connection.Execute($"ALTER TABLE Services ADD COLUMN {col} {baseDefinition};", transaction: transaction);
@@ -399,7 +389,10 @@ namespace Servy.Infrastructure.Data
             foreach (var col in missingColumns)
             {
                 Logger.Info($"Migrating database: Adding column '{col}' to 'Services' table.");
-                connection.Execute($"ALTER TABLE Services ADD COLUMN {col} {GetSqlType(col)};", transaction: transaction);
+
+                // ROBUSTNESS: Normalize the DDL definition to ensure backward compatibility for legacy non-empty databases
+                string safeType = EnsureAlterableDefinition(GetSqlType(col));
+                connection.Execute($"ALTER TABLE Services ADD COLUMN {col} {safeType};", transaction: transaction);
             }
 
             Logger.Info("Legacy database successfully migrated to Version 1.");
@@ -536,7 +529,8 @@ namespace Servy.Infrastructure.Data
 
             if (!existing.Contains(columnName))
             {
-                var sqlType = GetSqlType(columnName);   // SSoT via [SqlColumn]
+                // ROBUSTNESS: Ensure type-safe defaults are applied defensively via the helper
+                var sqlType = EnsureAlterableDefinition(GetSqlType(columnName));   // SSoT via [SqlColumn]
                 Logger.Info($"Migrating database to Version {version}: Adding '{columnName}' column.");
                 conn.Execute($"ALTER TABLE Services ADD COLUMN {columnName} {sqlType};", transaction: tx);
                 Logger.Info($"Database successfully migrated to Version {version}.");
@@ -597,6 +591,25 @@ namespace Servy.Infrastructure.Data
             throw new InvalidOperationException(
                 $"Column '{columnName}' is defined in SqlConstants but lacks an [SqlColumn] attribute in ServiceDto. " +
                 "Add the attribute to the DTO property to prevent schema drift.");
+        }
+
+        /// <summary>
+        /// Standardizes column schemas intended for execution inside an ALTER TABLE ADD COLUMN statement.
+        /// Defends against SQLite restrictions prohibiting NOT NULL column creation on existing non-empty tables by inferring type-safe defaults.
+        /// </summary>
+        /// <param name="definition">The raw SQL configuration schema string sourced from GetSqlType.</param>
+        /// <returns>A validated schema definition string containing safety-net DEFAULT constraints where required.</returns>
+        private static string EnsureAlterableDefinition(string definition)
+        {
+            if (definition.IndexOf("NOT NULL", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                definition.IndexOf("DEFAULT", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                string affinityToken = definition.Split(SplitWhitespaceChars, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+                string inferredDefault = string.Equals(affinityToken, "TEXT", StringComparison.OrdinalIgnoreCase) ? "DEFAULT ''" : "DEFAULT 0";
+                return $"{definition} {inferredDefault}";
+            }
+
+            return definition;
         }
     }
 }
