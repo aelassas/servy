@@ -383,7 +383,8 @@ namespace Servy.Core.Domain
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
-        /// <c>true</c> if the service was successfully started; otherwise, <c>false</c>.
+        /// An <see cref="OperationResult"/> describing whether the start succeeded
+        /// (<see cref="OperationResult.Success"/>) along with any failure context.
         /// </returns>
         public async Task<OperationResult> Start(CancellationToken cancellationToken = default)
         {
@@ -395,7 +396,8 @@ namespace Servy.Core.Domain
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
-        /// <c>true</c> if the service was successfully stopped; otherwise, <c>false</c>.
+        /// An <see cref="OperationResult"/> describing whether the stop succeeded
+        /// (<see cref="OperationResult.Success"/>) along with any failure context.
         /// </returns>
         public async Task<OperationResult> Stop(CancellationToken cancellationToken = default)
         {
@@ -407,7 +409,8 @@ namespace Servy.Core.Domain
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
-        /// <c>true</c> if the service was successfully restarted; otherwise, <c>false</c>.
+        /// An <see cref="OperationResult"/> describing whether the restart succeeded
+        /// (<see cref="OperationResult.Success"/>) along with any failure context.
         /// </returns>
         public async Task<OperationResult> Restart(CancellationToken cancellationToken = default)
         {
@@ -470,8 +473,8 @@ namespace Servy.Core.Domain
         /// </remarks>
         /// <returns>
         /// A task that represents the asynchronous install operation. The task result 
-        /// is <c>true</c> if the service was successfully installed or updated; 
-        /// otherwise, <c>false</c>.
+        /// is <see cref="OperationResult"/> describing whether the install succeeded
+        /// (<see cref="OperationResult.Success"/>) along with any failure context.
         /// </returns>
         /// <param name="wrapperExeDir">Wrapper exe parent directory.</param>
         /// <param name="isCLI">Indicates if install is from the CLI.</param>
@@ -574,8 +577,8 @@ namespace Servy.Core.Domain
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// A task that represents the asynchronous uninstall operation. The task result 
-        /// is <c>true</c> if the service was successfully uninstalled; otherwise, <c>false</c>.
-        /// </returns>
+        /// is <see cref="OperationResult"/> describing whether the uninstall succeeded
+        /// (<see cref="OperationResult.Success"/>) along with any failure context.
         /// <exception cref="ArgumentNullException">
         /// Thrown if <see cref="Name"/> is null or empty.
         /// </exception>

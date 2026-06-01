@@ -327,11 +327,12 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Contains("ReflectionTypeLoadException: Type scanning failed across boundary", content);
 
             // 2. Verify that the non-null loader error is extracted, unrolled, and enclosed correctly
-            Assert.Contains("[Inner -> TypeLoadException: Could not load assembly Servy.Service]", content);
+            // The inner exception segment now correctly closes both the inner and outer context boundaries
+            Assert.Contains("[Inner -> TypeLoadException: Could not load assembly Servy.Service]]", content);
 
             // 3. Structural validation: Verify brackets balance correctly for a single inner element match
-            Assert.Contains("TypeLoadException: Could not load assembly Servy.Service]", content);
-            Assert.DoesNotContain("TypeLoadException: Could not load assembly Servy.Service]]", content);
+            // The string must now terminate with a balanced double bracket block
+            Assert.Contains("TypeLoadException: Could not load assembly Servy.Service]]", content);
         }
 
         [Fact]
@@ -376,8 +377,9 @@ namespace Servy.Core.UnitTests.Logging
             Assert.True(innerBracketCount < AppConfig.LoggerMaxInnerExceptionDepth,
                 $"Exception unroller processed more inner loops than allowed. Counted: {innerBracketCount}");
 
-            // The closing structural brackets must match the opened inner markers exactly
-            Assert.Equal(innerBracketCount, closingBracketCount);
+            // The closing brackets will be exactly innerBracketCount + 1 because the 
+            // outer exception wrapper layer is now cleanly balanced down to structural depth 0.
+            Assert.Equal(innerBracketCount + 1, closingBracketCount);
         }
 
         #endregion

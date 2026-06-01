@@ -134,12 +134,12 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Desktop App Release Folder.
         /// </summary>
-        public static readonly string ServyDesktopAppReleaseFolder = Path.Combine(RepoRoot, "src", "Servy", "bin", "Release", TargetFramework, "win-x64");
+        public static readonly string ServyDesktopAppReleaseFolder = Path.Combine(RepoRoot, "src", "Servy", "bin", "Release", TargetFramework, RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "win-arm64" : "win-x64");
 
         /// <summary>
         /// Servy Service Debug Folder (Manager).
         /// </summary>
-        public static readonly string ServyServiceManagerDebugFolder = Path.Combine(RepoRoot, "src", "Servy.Manager", "bin", "Debug", TargetFramework, "win-x64");
+        public static readonly string ServyServiceManagerDebugFolder = Path.Combine(RepoRoot, "src", "Servy.Manager", "bin", "Debug", TargetFramework);
 
         /// <summary>
         /// Servy Desktop App Publish Path.
@@ -149,7 +149,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Manager Release Folder.
         /// </summary>
-        public static readonly string ServyManagerReleaseFolder = Path.Combine(RepoRoot, "src", "Servy.Manager", "bin", "Release", TargetFramework, "win-x64");
+        public static readonly string ServyManagerReleaseFolder = Path.Combine(RepoRoot, "src", "Servy.Manager", "bin", "Release", TargetFramework, RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "win-arm64" : "win-x64");
 
         /// <summary>
         /// Servy Manager App Publish Path.

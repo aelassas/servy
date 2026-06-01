@@ -562,7 +562,10 @@ namespace Servy.Core.Logging
 
                     sb.Length = target;
                     sb.Append(truncMarker);
-                    while (currentStructuralDepth > 1)
+
+                    // Process until depth reaches 0 to explicitly close all outstanding open contexts 
+                    // and guarantee log scannability/regex parser safety during truncation events.
+                    while (currentStructuralDepth > 0)
                     {
                         sb.Append(']');
                         currentStructuralDepth--;
@@ -598,7 +601,7 @@ namespace Servy.Core.Logging
             }
 
             // Close any outstanding structural contextual tracking tags safely
-            while (currentStructuralDepth > 1)
+            while (currentStructuralDepth > 0)
             {
                 sb.Append(']');
                 currentStructuralDepth--;
