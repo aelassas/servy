@@ -208,6 +208,76 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
+        /// Safely executes an action delegate within a cross-process system mutex mapped to a specific filesystem path.
+        /// Ensures synchronization between Session 0 System processes and Interactive user instances.
+        /// </summary>
+        private void RunUnderMutex(string path, Action action)
+        {
+            // Compute a deterministic FNV-1a stable hash of the path to avoid process-randomized string.GetHashCode() anomalies
+            uint stableHash = 2166136261;
+            foreach (char c in path.ToLowerInvariant())
+            {
+                stableHash = (stableHash ^ c) * 16777619;
+            }
+            var mutexName = $@"Global\Servy.ProtectedKeyProvider:{stableHash:X8}";
+
+            Mutex mutex;
+            try
+            {
+                // Configure explicit DACL rules to permit cross-process and cross-session synchronization.
+                // This ensures both the Session 0 SYSTEM service and the interactive user Manager share the exact same lock.
+                var mutexSecurity = new MutexSecurity();
+
+                // Allow everyone (WorldSid) to Synchronize and Modify (Release) the shared Mutex
+                var accessRule = new MutexAccessRule(
+                    new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+                    MutexRights.Synchronize | MutexRights.Modify,
+                    AccessControlType.Allow);
+
+                mutexSecurity.AddAccessRule(accessRule);
+
+                // Use MutexAcl to atomically instantiate the named system mutex with security descriptors applied
+                mutex = MutexAcl.Create(initiallyOwned: false, mutexName, out _, mutexSecurity);
+            }
+            catch (Exception ex)
+            {
+                // Fail fast: We must not silently fall back to a per-session Local\ namespace, 
+                // as doing so bypasses cross-session synchronization and risks key corruption.
+                Logger.Error($"CRITICAL: Failed to allocate global synchronization mutex '{mutexName}'. Cross-process execution aborted.", ex);
+                throw new System.Security.SecurityException($"Could not establish cross-session lock boundary: {ex.Message}", ex);
+            }
+
+            using (mutex)
+            {
+                bool owned = false;
+                try
+                {
+                    try
+                    {
+                        owned = mutex.WaitOne(TimeSpan.FromSeconds(30));
+                    }
+                    catch (AbandonedMutexException)
+                    {
+                        // Prior owner died while holding the mutex. We still own it; just log and proceed.
+                        owned = true;
+                        Logger.Warn($"Mutex '{mutexName}' was abandoned by a previous owner. Continuing with ownership.");
+                    }
+
+                    if (!owned)
+                    {
+                        throw new TimeoutException($"Timed out waiting for cross-process lock on {path}");
+                    }
+
+                    action();
+                }
+                finally
+                {
+                    if (owned) mutex.ReleaseMutex();
+                }
+            }
+        }
+
+        /// <summary>
         /// Retrieves the protected bytes from the specified file path, or generates new ones if the file is missing.
         /// Supports backward compatibility by falling back to no-entropy decryption.
         /// </summary>
@@ -229,72 +299,19 @@ namespace Servy.Core.Security
             // Double-check locking pattern to ensure only one process or thread generates the file
             if (!File.Exists(path))
             {
-                // Compute a deterministic FNV-1a stable hash of the path to avoid process-randomized string.GetHashCode() anomalies
-                uint stableHash = 2166136261;
-                foreach (char c in path.ToLowerInvariant())
+                byte[] generatedData = null;
+                RunUnderMutex(path, () =>
                 {
-                    stableHash = (stableHash ^ c) * 16777619;
-                }
-                var mutexName = $@"Global\Servy.ProtectedKeyProvider:{stableHash:X8}";
-
-                Mutex mutex;
-                try
-                {
-                    // Configure explicit DACL rules to permit cross-process and cross-session synchronization.
-                    // This ensures both the Session 0 SYSTEM service and the interactive user Manager share the exact same lock.
-                    var mutexSecurity = new MutexSecurity();
-
-                    // Allow everyone (WorldSid) to Synchronize and Modify (Release) the shared Mutex
-                    var accessRule = new MutexAccessRule(
-                        new SecurityIdentifier(WellKnownSidType.WorldSid, null),
-                        MutexRights.Synchronize | MutexRights.Modify,
-                        AccessControlType.Allow);
-
-                    mutexSecurity.AddAccessRule(accessRule);
-
-                    // Use MutexAcl to atomically instantiate the named system mutex with security descriptors applied
-                    mutex = MutexAcl.Create(initiallyOwned: false, mutexName, out _, mutexSecurity);
-                }
-                catch (Exception ex)
-                {
-                    // Fail fast: We must not silently fall back to a per-session Local\ namespace, 
-                    // as doing so bypasses cross-session synchronization and risks key corruption.
-                    Logger.Error($"CRITICAL: Failed to allocate global synchronization mutex '{mutexName}'. Key generation aborted.", ex);
-                    throw new System.Security.SecurityException($"Could not establish cross-session lock boundary for key initialization: {ex.Message}", ex);
-                }
-
-                using (mutex)
-                {
-                    bool owned = false;
-                    try
+                    if (!File.Exists(path))
                     {
-                        try
-                        {
-                            owned = mutex.WaitOne(TimeSpan.FromSeconds(30));
-                        }
-                        catch (AbandonedMutexException)
-                        {
-                            // Prior owner died while holding the mutex. We still own it; just log and proceed.
-                            owned = true;
-                            Logger.Warn($"Mutex '{mutexName}' was abandoned by a previous owner (likely a Servy process killed during key generation). Continuing with ownership.");
-                        }
-
-                        if (!owned)
-                        {
-                            throw new TimeoutException($"Timed out waiting for cross-process lock on {path}");
-                        }
-
-                        if (!File.Exists(path))
-                        {
-                            var data = GenerateRandomBytes(length);
-                            SaveProtected(path, data);
-                            return data;
-                        }
+                        generatedData = GenerateRandomBytes(length);
+                        SaveProtected(path, generatedData);
                     }
-                    finally
-                    {
-                        if (owned) mutex.ReleaseMutex();
-                    }
+                });
+
+                if (generatedData != null)
+                {
+                    return generatedData;
                 }
             }
 
@@ -355,8 +372,14 @@ namespace Servy.Core.Security
 
                     try
                     {
-                        // 3. Automatic Migration: Re-save with the new machine-unique entropy
-                        SaveProtected(path, decryptedData);
+                        // 3. Automatic Migration: Re-save with the new machine-unique entropy.
+                        // ROBUSTNESS: Ensure the upgrade save executes within the exact same global 
+                        // named mutex namespace as the generation loop. This prevents staging file (.tmp)
+                        // naming collisions when multiple services attempt to migrate the same legacy file concurrently.
+                        RunUnderMutex(path, () =>
+                        {
+                            SaveProtected(path, decryptedData);
+                        });
 
                         // Success: Clear any previous failure noise
                         MigrationFailureCounts.TryRemove(path, out _);
@@ -420,6 +443,12 @@ namespace Servy.Core.Security
         /// </summary>
         /// <param name="path">The full file path to store the protected data.</param>
         /// <param name="data">The plaintext data to protect.</param>
+        /// <remarks>
+        /// <para>
+        /// <b>Architectural Warning:</b> This method must be executed within the boundaries of the <c>Global\</c> 
+        /// named mutex established by <see cref="RunUnderMutex"/>. 
+        /// </para>
+        /// </remarks>
         [ExcludeFromCodeCoverage]
         private void SaveProtected(string path, byte[] data)
         {
@@ -446,7 +475,7 @@ namespace Servy.Core.Security
                 encrypted = ProtectedData.Protect(data, dynamicEntropy, DataProtectionScope);
 
                 // ROBUSTNESS: Switch from Helper.GetUniqueTempPath(path) to a stable, deterministic staging name.
-                // Because this path is strictly executed within a global system mutex in GetOrGenerate, multiple
+                // Because this path is strictly executed within a global system mutex (enforced by RunUnderMutex), multiple
                 // concurrent writers cannot clash. If a previous run crashes before File.Move, the next execution path
                 // will cleanly overwrite and self-heal the orphaned staging file instead of leaving it indefinitely.
                 var tempPath = $"{path}.staging.tmp";

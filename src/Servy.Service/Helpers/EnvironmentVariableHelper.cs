@@ -193,21 +193,9 @@ namespace Servy.Service.Helpers
                     if (expanded != null && expanded.Length > AppConfig.MaxEnvVarExpandedLength)
                     {
                         Logger.Warn($"Expansion of '{key}' exceeded {AppConfig.MaxEnvVarExpandedLength} characters. Truncating to prevent memory exhaustion.");
-                        expanded = expanded.Substring(0, AppConfig.MaxEnvVarExpandedLength);
 
-                        // Check if the raw truncation point split a PercentEscapeToken.
-                        // Look backward up to the token's total length for the signature marker.
-                        int tailStart = expanded.LastIndexOf('\uFFFD');
-                        if (tailStart >= 0 && (expanded.Length - tailStart) < PercentEscapeToken.Length)
-                        {
-                            int lastFullIndex = expanded.LastIndexOf(PercentEscapeToken, StringComparison.Ordinal);
-
-                            // If this marker isn't part of a complete token, it's a structural fragment from the cut
-                            if (lastFullIndex != tailStart)
-                            {
-                                expanded = expanded.Substring(0, tailStart);
-                            }
-                        }
+                        // Pass to the robust boundary trimmer to ensure no escape tokens are fragmented
+                        expanded = TrimToSafeBoundary(expanded, AppConfig.MaxEnvVarExpandedLength);
                     }
 
                     if (!string.Equals(original, expanded, StringComparison.Ordinal))
@@ -356,31 +344,31 @@ namespace Servy.Service.Helpers
         /// <returns>A clean, validated string guaranteed to contain no corrupt sentinel marker fragments.</returns>
         private static string TrimToSafeBoundary(string value, int maxLength)
         {
-            if (value == null) return string.Empty;
+            if (string.IsNullOrEmpty(value)) return string.Empty;
             if (value.Length <= maxLength) return value;
 
-            // Apply baseline string truncation step
-            string truncated = value.Substring(0, maxLength);
+            // We must check if the strict truncation boundary (maxLength) cuts directly through 
+            // a PercentEscapeToken. Since the token is exactly 21 characters long, we only need 
+            // to inspect indices where a token could start and subsequently straddle the cut-line.
+            int startBound = Math.Max(0, maxLength - PercentEscapeToken.Length + 1);
 
-            // ROBUSTNESS: Scan backwards across a window equal to the maximum possible size of the sentinel string.
-            // If the truncation boundary falls directly within a PercentEscapeToken layout block, we roll back 
-            // the truncation index marker to the step prior to the token's initial character entry site.
-            int scanWindowStart = Math.Max(0, maxLength - PercentEscapeToken.Length);
-            int tokenIndex = truncated.LastIndexOf(PercentEscapeToken.Substring(0, 1), StringComparison.Ordinal);
-
-            if (tokenIndex >= scanWindowStart)
+            for (int i = startBound; i < maxLength; i++)
             {
-                // Verify if the matching index location matches a genuine partial token overlap
-                string segmentToTest = value.Substring(tokenIndex);
-                if (segmentToTest.StartsWith(PercentEscapeToken, StringComparison.Ordinal) ||
-                    PercentEscapeToken.StartsWith(segmentToTest.Substring(0, maxLength - tokenIndex), StringComparison.Ordinal))
+                // Ensure the remaining string is long enough to contain the full token for comparison
+                if (value.Length - i >= PercentEscapeToken.Length)
                 {
-                    Logger.Info($"Detected partial sentinel escape sequence split at boundary position {tokenIndex}. Rolling back allocation window.");
-                    truncated = truncated.Substring(0, tokenIndex);
+                    // If a complete token starts at index 'i' (before maxLength) but requires 
+                    // characters beyond 'maxLength' to finish, it straddles the boundary.
+                    if (string.Compare(value, i, PercentEscapeToken, 0, PercentEscapeToken.Length, StringComparison.Ordinal) == 0)
+                    {
+                        Logger.Info($"Detected partial sentinel escape sequence split at boundary position {i}. Rolling back allocation window.");
+                        return value.Substring(0, i);
+                    }
                 }
             }
 
-            return truncated;
+            // If no token straddles the line, a standard hard truncation is perfectly safe.
+            return value.Substring(0, maxLength);
         }
     }
 }

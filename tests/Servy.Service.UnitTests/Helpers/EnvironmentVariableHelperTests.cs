@@ -4,6 +4,7 @@ using Servy.Service.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Xunit;
 
 namespace Servy.Service.UnitTests.Helpers
@@ -506,6 +507,105 @@ namespace Servy.Service.UnitTests.Helpers
 
             // Assert
             Assert.Equal("SafeValue", expanded["CUSTOM_APP_SETTING"]);
+        }
+
+        #endregion
+
+        #region Size Limitations and Truncation Sentinel Guard Paths
+
+        [Fact]
+        public void ExpandEnvironmentVariables_TruncationLandsExactlyOnTokenEnd_PreservesIntactToken()
+        {
+            // Arrange: Tests Issue #2273 (Outer guard validation)
+            int maxLen = AppConfig.MaxEnvVarExpandedLength;
+            string token = "\uFFFD_SERVY_ESC_PERCENT_\uFFFD"; // 21 chars
+
+            // Allocate a payload that will expand perfectly to fill the tail space.
+            // We want: Pad (variable) + Token (21) + Extra (1) = maxLen + 1
+            // Let's make a base variable containing a large string block.
+            string largeChunk = new string('A', maxLen - 100); // 32668 chars
+
+            // The remainder needed to hit exactly (maxLen + 1) when combined with the token and an extra char:
+            // 32768 + 1 - 32668 - 21 - 1 = 79 chars.
+            string fineTuningPad = new string('A', 79);
+
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "LARGE_BLOCK", Value = largeChunk },
+                // This composition remains small (under maxLen) during initialization,
+                // avoiding the inline guard and forcing the outer loop to manage the truncation point.
+                new EnvironmentVariable { Name = "OVERFLOW_VAR", Value = "%LARGE_BLOCK%" + fineTuningPad + token + "X" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            string resultValue = expanded["OVERFLOW_VAR"];
+
+            // The outer look-behind filter should acknowledge the token is completely intact,
+            // ignore it, and let Step 5 safely collapse it to '%'.
+            Assert.True(resultValue.EndsWith("%"), $"Expected string to end with collapsed escape character '%' but got trailing value: {resultValue.Substring(resultValue.Length - 5)}");
+            Assert.DoesNotContain("_SERVY_ESC_PERCENT_", resultValue);
+            Assert.Equal(maxLen - token.Length + 1, resultValue.Length);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_TruncationSplitsToken_RollsBackToCleanBoundary()
+        {
+            // Arrange: Tests Issue #2267 & #2273 (Token fragmentation outer protection)
+            int maxLen = AppConfig.MaxEnvVarExpandedLength;
+            string token = "\uFFFD_SERVY_ESC_PERCENT_\uFFFD"; // 21 chars
+
+            // Align the token so that the truncation line (maxLen) cuts directly through its center
+            int prefixLength = maxLen - (token.Length / 2);
+            string targetPayload = new string('B', prefixLength) + token + "ExtendedContent";
+
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "FRAGMENT_VAR", Value = targetPayload }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            string resultValue = expanded["FRAGMENT_VAR"];
+
+            // The rollback should discard the partial token entirely, meaning the string 
+            // should safely shorten past maxLen and contain only the baseline padding characters.
+            Assert.True(resultValue.Length < maxLen, $"Expected string length ({resultValue.Length}) to be less than MaxLength ({maxLen}) due to fragment rollback.");
+            Assert.True(resultValue.All(c => c == 'B'), "The string should only contain the padding prefix characters after rolling back.");
+            Assert.DoesNotContain("\uFFFD", resultValue, StringComparison.Ordinal);
+            Assert.DoesNotContain("_SERVY_ESC_PERCENT_", resultValue);
+        }
+
+        [Fact]
+        public void ExpandWithDictionary_DirectPublicOverloadCall_AppliesInlineTokenSanitization()
+        {
+            // Arrange: Tests Issue #2267 (Inline guard isolation)
+            int maxLen = AppConfig.MaxEnvVarExpandedLength;
+            string token = "\uFFFD_SERVY_ESC_PERCENT_\uFFFD"; // 21 chars
+
+            // Position the split boundary within the internal dictionary lookup runner
+            int prefixLength = maxLen - (token.Length / 2);
+            string largePayload = new string('C', prefixLength) + token + "OverflowContent";
+
+            var dictionaryContext = new Dictionary<string, string>
+            {
+                { "TRIGGER_VAR", largePayload }
+            };
+
+            // Act
+            // Force an inline token replacement truncation by referencing our massive variable definition
+            var resultValue = EnvironmentVariableHelper.ExpandEnvironmentVariables("%TRIGGER_VAR%", dictionaryContext);
+
+            // Assert
+            // The output should be safely sanitized of broken tokens even when bypassing parent macro loops
+            Assert.True(resultValue.Length < maxLen, "The internal inline guard within ExpandWithDictionary should trigger and discard the split token.");
+            Assert.True(resultValue.All(c => c == 'C'), "The output string must contain only sanitized baseline padding values.");
+            Assert.DoesNotContain("\uFFFD", resultValue, StringComparison.Ordinal);
+            Assert.DoesNotContain("_SERVY_ESC_PERCENT_", resultValue);
         }
 
         #endregion

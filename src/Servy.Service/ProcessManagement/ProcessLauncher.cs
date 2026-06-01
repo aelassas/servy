@@ -308,26 +308,24 @@ namespace Servy.Service.ProcessManagement
                     catch (Exception ex) { logger.Warn($"Failed to dispose stderr writer: {ex.Message}"); }
                 }
 
-                // ROBUSTNESS: If we didn't successfully return ownership, the process is orphaned.
-                // We must kill the process tree before disposing the wrapper to avoid leaking child processes.
-                if (!returnedOwnership && processStarted && process != null)
+                if (!returnedOwnership && process != null)
                 {
                     try
                     {
+                        // ROBUSTNESS: If we didn't successfully return ownership, the process is orphaned.
+                        // We must kill the process tree before disposing the wrapper to avoid leaking child processes.
                         // Check if the process actually started and is still running.
                         // process.Start() is the first entry in the try block; if any subsequent logic throws,
                         // we must ensure the child does not remain active and unsupervised.
-                        if (!process.HasExited)
-                        {
+                        if (processStarted && !process.HasExited)
                             process.Kill(true);
-                        }
                     }
                     catch (Exception killEx)
                     {
                         // Log but don't rethrow, as we need the original exception to propagate.
                         logger.Warn($"Failed to kill orphaned child after launch failure: {killEx.Message}");
                     }
-                    process.Dispose();
+                    process.Dispose();   // always dispose the wrapper we own
                 }
             }
         }

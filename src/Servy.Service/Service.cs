@@ -1368,8 +1368,10 @@ namespace Servy.Service
 
         /// <summary>
         /// Executes the configured failure program if specified in the service options.
-        /// This is intended to be called when the main child process fails to start or when
-        /// all recovery action retries have failed.
+        /// This is invoked when the child process exits with a non-zero code while recovery
+        /// is disabled, or after all recovery attempts have been exhausted
+        /// (restartAttempts >= MaxRestartAttempts). It is NOT invoked when the main child
+        /// process fails to start - that path stops the service without running the failure program.
         /// </summary>
         /// <remarks>
         /// The failure program path, arguments, and working directory are taken from
