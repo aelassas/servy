@@ -123,6 +123,7 @@
     <Compile Include="HealthCheckTests.cs" />
     <Compile Include="HelperOverride.cs" />
     <Compile Include="Helpers\EnvironmentVariableHelperTests.cs" />
+    <Compile Include="Helpers\ProcessHelperTests.cs" />
     <Compile Include="ProcessManagementTests.cs" />
     <Compile Include="Helpers\ServiceHelperTests.cs" />
     <Compile Include="ProcessManagement\HookTests.cs" />

@@ -206,6 +206,7 @@ namespace Servy.CLI.Commands
             // Belt-and-braces: Open the file exclusively, verify the underlying volume path, and ONLY THEN write.
             // This intercepts DFS referrals, iSCSI mounts, and complex subst mappings before data leaves the box.
             bool createdByUs = !File.Exists(fullPath);
+            bool committed = false;
             try
             {
                 // Open with OpenOrCreate so the file content is NOT truncated or modified upon opening.
@@ -281,6 +282,7 @@ namespace Servy.CLI.Commands
                         sw.Write(content);
                         sw.Flush();
                         fileStream.SetLength(fileStream.Position); // truncate any stale tail
+                        committed = true;
                     }
                 }
             }
@@ -289,18 +291,22 @@ namespace Servy.CLI.Commands
                 // Already a precise, intentionally-thrown guard message - let it propagate.
                 throw;
             }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                throw new IOException($"Failed to write export file '{fullPath}': {ex.Message}", ex);
+            }
             catch (Exception ex)
             {
-                // The stream is inherently closed upon exception due to the using block unwinding.
-                // We wipe the 0-byte empty file footprint off the disk to ensure no artifacts are left on unauthorized volumes.
-                if (createdByUs)
-                {
-                    try { File.Delete(fullPath); } catch { /* ignored */ }
-                }
-
                 throw new SecurityException(
                     $"Security Guard Failure: Target file handle validation rejected. {ex.Message}",
                     ex);   // preserve the inner exception for diagnostics
+            }
+            finally
+            {
+                if (!committed && createdByUs)
+                {
+                    try { File.Delete(fullPath); } catch { /* ignored */ }
+                }
             }
         }
     }

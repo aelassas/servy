@@ -21,15 +21,11 @@ namespace Servy.Core.Logging
                 int processedCount = 0;
 
                 // Use a nullable EventRecord and wrap the entire loop body in 'using'
-                for (EventRecord evt = reader.ReadEvent(); evt != null; evt = reader.ReadEvent())
+                for (EventRecord evt = reader.ReadEvent(); evt != null && processedCount < maxReadCount; evt = reader.ReadEvent())
                 {
                     using (evt)
                     {
-                        // Check the limit inside the using block so 'evt' is disposed on break
-                        if (processedCount >= maxReadCount) yield break;
-
                         ServyEventLogEntry dto = MapToDto(evt);
-
                         processedCount++;
                         yield return dto;
                     }
@@ -52,24 +48,21 @@ namespace Servy.Core.Logging
         /// </returns>
         private static ServyEventLogEntry MapToDto(EventRecord evt)
         {
+            int eventId = 0;
+            DateTimeOffset time = DateTimeOffset.MinValue;
+            EventLogLevel level = EventLogLevel.Information;
+            string provider = null;
             string message;
-            try
-            {
-                message = evt.FormatDescription() ?? string.Empty;
-            }
-            catch (Exception ex) when (ex is EventLogException || ex is InvalidOperationException)
-            {
-                message = $"<unavailable: {ex.Message}>";
-            }
 
-            return new ServyEventLogEntry
-            {
-                EventId = evt.Id,
-                Time = SafeToOffset(evt.TimeCreated),
-                Level = ParseLevel(evt.Level ?? 0),
-                ProviderName = evt.ProviderName,
-                Message = message,
-            };
+            try { eventId = evt.Id; } catch (EventLogException) { /* leave default */ }
+            try { time = SafeToOffset(evt.TimeCreated); } catch (EventLogException) { /* leave default */ }
+            try { level = ParseLevel(evt.Level ?? 0); } catch (EventLogException) { /* leave default */ }
+            try { provider = evt.ProviderName; } catch (EventLogException) { provider = "<unavailable>"; }
+
+            try { message = evt.FormatDescription() ?? string.Empty; }
+            catch (Exception ex) when (ex is EventLogException || ex is InvalidOperationException) { message = $"<unavailable: {ex.Message}>"; }
+
+            return new ServyEventLogEntry { EventId = eventId, Time = time, Level = level, ProviderName = provider, Message = message };
         }
 
         /// <summary>

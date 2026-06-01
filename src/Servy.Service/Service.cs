@@ -37,19 +37,6 @@ namespace Servy.Service
 {
     public partial class Service : ServiceBase, IDisposable
     {
-        #region Static Fields
-
-        /// <summary>
-        /// Compiled regex to identify standard environment variable placeholders.
-        /// Includes a match timeout to prevent ReDoS attacks.
-        /// </summary>
-        private static readonly Regex EnvVarPlaceholderRegex = new Regex(
-            @"(%[a-zA-Z_][a-zA-Z0-9_]*%)",
-            RegexOptions.Compiled,
-            AppConfig.InputRegexTimeout); // 200ms is generous for this pattern
-
-        #endregion
-
         #region Enums
 
         /// <summary>
@@ -869,10 +856,8 @@ namespace Servy.Service
 
             // 1. Prepare configuration and shared options
             var vars = options.PreLaunchEnvironmentVariables ?? options.EnvironmentVariables;
-            var (expandedEnv, args) = ExpandAndAudit(
-                vars,
-                options.PreLaunchExecutableArgs ?? string.Empty,
-                "Pre-Launch");
+            var args = options.PreLaunchExecutableArgs ?? string.Empty;
+
             var workingDir = string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory)
                 ? options.WorkingDirectory
                 : options.PreLaunchWorkingDirectory;
@@ -1160,7 +1145,7 @@ namespace Servy.Service
         /// <param name="token">The cancellation token for the operation.</param>
         private void StartProcess(
             string realExePath,
-            string realArgs, 
+            string realArgs,
             string workingDir,
             List<EnvironmentVariable> environmentVariables,
             CancellationToken token = default)
@@ -1169,7 +1154,7 @@ namespace Servy.Service
             _ = SetConsoleCtrlHandler(null, false); // inherited
             _ = SetConsoleOutputCP(CP_UTF8);
 
-            var (expandedEnv, expandedArgs) = ExpandAndAudit(environmentVariables, realArgs, "StartProcess");
+            var (expandedEnv, expandedArgs) = Helpers.ProcessHelper.ExpandAndAudit(environmentVariables, realArgs, _logger, "StartProcess");
 
             _realExePath = realExePath;
             _realArgs = expandedArgs;
@@ -1287,36 +1272,6 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Expands environment variables and command-line arguments, auditing both for unexpanded placeholders.
-        /// </summary>
-        /// <param name="vars">The list of environment variables to expand.</param>
-        /// <param name="rawArgs">The raw command-line arguments to expand.</param>
-        /// <param name="contextPrefix">An optional prefix for logging (e.g., "Pre-Launch", "Post-Stop").</param>
-        /// <returns>A tuple containing the expanded environment dictionary and the expanded arguments string.</returns>
-        private (Dictionary<string, string> env, string expandedArgs) ExpandAndAudit(
-            List<EnvironmentVariable> vars, string rawArgs, string contextPrefix = "")
-        {
-            string prefix = string.IsNullOrWhiteSpace(contextPrefix) ? string.Empty : $"[{contextPrefix}] ";
-
-            // 1. Expand environment variables list
-            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
-
-            // 2. Audit expanded variables for leftover placeholders
-            foreach (var kvp in expandedEnv)
-            {
-                LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"{prefix}Environment Variable '{kvp.Key}'");
-            }
-
-            // 3. Expand command-line arguments using the expanded environment
-            var expandedArgs = EnvironmentVariableHelper.ExpandEnvironmentVariables(rawArgs, expandedEnv);
-
-            // 4. Audit arguments for leftover placeholders
-            LogUnexpandedPlaceholders(expandedArgs, $"{prefix}Arguments");
-
-            return (expandedEnv, expandedArgs);
-        }
-
-        /// <summary>
         /// Cleans up the child process object if it fails to start, ensuring event handlers 
         /// are detached and the object is disposed before it can cause secondary exceptions.
         /// </summary>
@@ -1369,11 +1324,7 @@ namespace Servy.Service
             try
             {
                 // 1. Prepare Environment and Arguments
-                var (_, args) = ExpandAndAudit(
-                    _options.EnvironmentVariables,
-                    _options.PostLaunchExecutableArgs ?? string.Empty,
-                    "Post-Launch"
-                 );
+                var args = _options.PostLaunchExecutableArgs ?? string.Empty;
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.PostLaunchWorkingDirectory)
                     ? Path.GetDirectoryName(_options.PostLaunchExecutablePath) ?? string.Empty
@@ -1433,11 +1384,7 @@ namespace Servy.Service
             try
             {
                 // 1. Prepare Environment and Arguments
-                var (_, args) = ExpandAndAudit(
-                    _options.EnvironmentVariables,
-                    _options.FailureProgramArgs ?? string.Empty,
-                    "Failure-Program"
-                    );
+                var args = _options.FailureProgramArgs ?? string.Empty;
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.FailureProgramWorkingDirectory)
                     ? Path.GetDirectoryName(_options.FailureProgramPath) ?? string.Empty
@@ -1468,33 +1415,6 @@ namespace Servy.Service
             catch (Exception ex)
             {
                 _logger?.Error("Failed to run failure program.", ex);
-            }
-        }
-
-        /// <summary>
-        /// Logs a warning for any unexpanded environment variable placeholders found in the given string.
-        /// </summary>
-        /// <param name="input">The string to inspect.</param>
-        /// <param name="context">The descriptive context (e.g., "Arguments").</param>
-        private void LogUnexpandedPlaceholders(string input, string context)
-        {
-            if (string.IsNullOrEmpty(input))
-                return;
-
-            try
-            {
-                var matches = EnvVarPlaceholderRegex.Matches(input);
-
-                foreach (Match match in matches)
-                {
-                    string placeholder = match.Value;
-                    _logger?.Warn($"Unexpanded environment variable {placeholder} in {context}");
-                }
-            }
-            catch (RegexMatchTimeoutException ex)
-            {
-                // Log that the check itself timed out to avoid silent failure
-                _logger?.Error($"Regex timeout while inspecting placeholders in {context}. Input length: {input.Length}", ex);
             }
         }
 
@@ -1594,7 +1514,7 @@ namespace Servy.Service
         {
             if (_isTearingDown || _disposed || _isRebooting) return;
 
-            _logger?.Warn("Child process exit detected via event.");
+            _logger?.Info("Child process exit detected via event.");
             ClearProcessState();
 
             bool needsRecovery = false;
@@ -2048,6 +1968,7 @@ namespace Servy.Service
                     finally
                     {
                         var code = Environment.ExitCode != 0 ? Environment.ExitCode : 1;
+                        FlushAndShutdownLogger();
                         Environment.Exit(code);
                     }
                     return;
@@ -2461,11 +2382,7 @@ namespace Servy.Service
             try
             {
                 // 1. Prepare Environment and Arguments
-                var (_, args) = ExpandAndAudit(
-                            options.EnvironmentVariables,
-                            options.PreStopExecutableArgs ?? string.Empty,
-                            "Pre-Stop"
-                        );
+                var args = options.PreStopExecutableArgs ?? string.Empty;
 
                 // 2. Configure Launch Options
                 var effectiveTimeoutMs = ClampTimeout(_options.PreStopTimeoutInSeconds);
@@ -2711,11 +2628,7 @@ namespace Servy.Service
             try
             {
                 // 1. Prepare Environment and Arguments
-                var (_, args) = ExpandAndAudit(
-                            _options.EnvironmentVariables,
-                            _options.PostStopExecutableArgs ?? string.Empty,
-                            "Post-Stop"
-                        );
+                var args = _options.PostStopExecutableArgs ?? string.Empty;
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.PostStopWorkingDirectory)
                     ? Path.GetDirectoryName(_options.PostStopExecutablePath) ?? string.Empty

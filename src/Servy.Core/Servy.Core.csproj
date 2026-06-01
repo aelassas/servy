@@ -143,6 +143,8 @@
     <Compile Include="Native\NativeMethodsHelpers.cs" />
     <Compile Include="Native\SafeWinProcessHandle.cs" />
     <Compile Include="Native\Toolhelp32Snapshot.cs" />
+    <Compile Include="RegexWrapper\IRegexWrapper.cs" />
+    <Compile Include="RegexWrapper\RegexWrapper.cs" />
     <Compile Include="Resources\Strings.Designer.cs">
       <DependentUpon>Strings.resx</DependentUpon>
       <AutoGen>True</AutoGen>
@@ -218,6 +220,7 @@
       <LastGenOutput>Strings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugType>portable</DebugType>

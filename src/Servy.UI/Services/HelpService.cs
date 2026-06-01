@@ -77,8 +77,8 @@ namespace Servy.UI.Services
             {
                 // 10 seconds is the ideal 'patience window' for a manual UI trigger
                 using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(AppConfig.UpdateCheckTimeoutSeconds)))
+                using (var response = await _httpClient.GetAsync(AppConfig.LatestReleaseApiUrl, cts.Token))
                 {
-                    var response = await _httpClient.GetAsync(AppConfig.LatestReleaseApiUrl, cts.Token);
                     response.EnsureSuccessStatusCode();
 
                     var content = await response.Content.ReadAsStringAsync();
