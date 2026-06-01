@@ -328,6 +328,7 @@ jobs:
               -f $tfm `
               -o $publishDir `
               --force `
+              --self-contained true `
               /p:DeleteExistingFiles=true
 
       # -----------------------------------------------------
@@ -379,6 +380,7 @@ jobs:
               -f $tfm `
               -o $publishDir `
               --force `
+              --self-contained true `
               /p:DeleteExistingFiles=true
 
       # -----------------------------------------------------
@@ -441,6 +443,7 @@ jobs:
               -f $tfm `
               -o $publishDir `
               --force `
+              --self-contained true `
               /p:DeleteExistingFiles=true
 
       # -----------------------------------------------------
@@ -492,6 +495,7 @@ jobs:
               -f $tfm `
               -o $publishDir `
               --force `
+              --self-contained true `
               /p:DeleteExistingFiles=true
 
       # -----------------------------------------------------
@@ -543,6 +547,7 @@ jobs:
               -f $tfm `
               -o $publishDir `
               --force `
+              --self-contained true `
               /p:DeleteExistingFiles=true
 
       # -----------------------------------------------------

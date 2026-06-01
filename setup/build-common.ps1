@@ -128,6 +128,7 @@ function Invoke-StandardPublish {
             & dotnet publish $projectPath `
                 -c $BuildConfiguration `
                 -r $Runtime `
+                --self-contained true `
                 --force `
                 /p:DeleteExistingFiles=true
         }
