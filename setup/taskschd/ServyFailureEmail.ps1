@@ -206,22 +206,22 @@ function Send-NotificationEmail {
     return 'PermanentFailure'
   }
 
-# --- ROBUSTNESS: Parse and accommodate multi-recipient address fields ---
-# Split the input on commas or semicolons, trimming surrounding whitespace automatically
-$toList = $to -split '\s*[,;]\s*' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+  # --- ROBUSTNESS: Parse and accommodate multi-recipient address fields ---
+  # Split the input on commas or semicolons, trimming surrounding whitespace automatically
+  $toList = $to -split '\s*[,;]\s*' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
 
-if ($toList.Count -eq 0) {
-    Write-FallbackError -Message "ServyFailureEmail: The 'To' field evaluates to empty in smtp-config.xml." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
-    return 'PermanentFailure'
-}
+  if ($toList.Count -eq 0) {
+      Write-FallbackError -Message "ServyFailureEmail: The 'To' field evaluates to empty in smtp-config.xml." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+      return 'PermanentFailure'
+  }
 
-# Validate each split address block individually against the single-address regex gate
-foreach ($addr in $toList) {
-    if ($addr -notmatch $emailRegex) {
-        Write-FallbackError -Message "ServyFailureEmail: Invalid 'To' email format ($addr) in smtp-config.xml. Multi-recipient lists must be separated by commas or semicolons." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
-        return 'PermanentFailure'
-    }
-}
+  # Validate each split address block individually against the single-address regex gate
+  foreach ($addr in $toList) {
+      if ($addr -notmatch $emailRegex) {
+          Write-FallbackError -Message "ServyFailureEmail: Invalid 'To' email format ($addr) in smtp-config.xml. Multi-recipient lists must be separated by commas or semicolons." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+          return 'PermanentFailure'
+      }
+  }
 
   if (-not (Test-Path $credPath)) {
     Write-FallbackError -Message "ServyFailureEmail: Credential file not found at '$credPath'. Skipping email." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
