@@ -627,7 +627,7 @@ jobs:
           signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-installer.outputs.artifact-id }}'
-          artifact-configuration-slug: 'servy-installer'
+          artifact-configuration-slug: 'servy-installer-${{ env.ARCH }}'
           wait-for-completion: true
           output-artifact-directory: ${{ env.SIGNED_INSTALLER_DIR }}
 

@@ -177,7 +177,7 @@ function Resolve-SecureParameter {
       [System.Collections.IDictionary] $BoundParams
   )
   
-  if ($BoundParams.Contains($ParamName)) {
+  if ($BoundParams.ContainsKey($ParamName)) {
       $TargetEnv[$EnvVarName] = $BoundParams[$ParamName]
   } else {
       $envValue = [System.Environment]::GetEnvironmentVariable($EnvVarName, 'Process')
