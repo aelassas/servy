@@ -83,10 +83,10 @@ namespace Servy.Core.Logging
         {
             switch (level)
             {
-                case 0: // LogAlways - explicit "always emit" sentinel, treat as informational
-                    return EventLogLevel.Information;
-                case 1:  // Critical - fold into Error to match the filter contract
-                    return EventLogLevel.Error;
+                case 0:
+                    return EventLogLevel.Information; // LogAlways - explicit "always emit" sentinel, treat as informational
+                case 1:
+                    return EventLogLevel.Error; // Critical - fold into Error to match the filter contract
                 case 2:
                     return EventLogLevel.Error;
                 case 3:
@@ -94,7 +94,7 @@ namespace Servy.Core.Logging
                 case 4:
                     return EventLogLevel.Information;
                 case 5:
-                    return EventLogLevel.Verbose;
+                    return EventLogLevel.Information; // Verbose - fold into Information to match the filter contract
                 default:
                     // Log the unknown level at a debug level to assist in future triage 
                     // without flooding production logs.
