@@ -1777,7 +1777,7 @@ namespace Servy.Service
         /// <param name="options">The start options containing health check configuration.</param>
         private void SetupHealthMonitoring(StartOptions options)
         {
-            if (options.EnableHealthMonitoring && options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None)
+            if (_recoveryActionEnabled)
             {
                 _healthCheckTimer = _timerFactory.Create(options.HeartbeatInterval * 1000.0);
                 _healthCheckTimer.Elapsed += CheckHealth;
@@ -2874,7 +2874,7 @@ namespace Servy.Service
                 FlushAndShutdownLogger();
             }
 
-            // 2. Call the base class implementation to complete the chain
+            // 3. Call the base class implementation to complete the chain
             base.Dispose(disposing);
         }
 

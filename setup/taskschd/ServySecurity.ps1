@@ -8,8 +8,9 @@
     configuration keys or environment variable names without destroying the 
     surrounding text or original separators. 
     
-    Maintained in strict parity with the Servy.Core C# MaskingRegex implementation 
-    to ensure logs and email notifications have identical redaction behavior.
+    Maintained in strict parity with the Servy.Service C# MaskingRegex implementation 
+    (src/Servy.Service/Helpers/ServiceHelper.cs) to ensure logs and email notifications 
+    have identical redaction behavior.
 
 .PARAMETER Text
     The raw string (e.g., an email body, notification text, or log message) to be scrubbed.

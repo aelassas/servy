@@ -1010,18 +1010,18 @@ function Install-ServyService {
     [switch] $EnableConsoleUI,
 
     # Logging
-    [ValidateScript({ 
+    [ValidateScript({
         $parent = Split-Path $_ -Parent
-        if (Test-Path $parent -PathType Container) { $true } 
-        else { throw "Parent directory for Stdout does not exist: $parent" } 
-      })]
+        if ([string]::IsNullOrEmpty($parent)) { return $true }
+        Test-Path $parent -PathType Container
+    })]
     [string] $Stdout,
 
-    [ValidateScript({ 
+    [ValidateScript({
         $parent = Split-Path $_ -Parent
-        if (Test-Path $parent -PathType Container) { $true } 
-        else { throw "Parent directory for Stderr does not exist: $parent" } 
-      })]
+        if ([string]::IsNullOrEmpty($parent)) { return $true }
+        Test-Path $parent -PathType Container
+    })]
     [string] $Stderr,
 
     # Timeouts
@@ -1081,9 +1081,10 @@ function Install-ServyService {
 
     [string] $FailureProgramParams,
 
-    # Environment and Dependencies
-    # Individual cap set to 28,000 to leave room for other CLI arguments within 
-    # the global Windows 32,767 character limit.
+    # Cap the value length to keep the injected environment variable well within the
+    # per-variable Windows environment-block limit (~32,767 chars). NOTE: this value is
+    # passed to the CLI via an environment variable (see Resolve-SecureParameter), not on
+    # the command line, so it does not count against the command-line length budget.
     [ValidateLength(0, 28000)]
     [ValidateScript({ $_ -match $script:EnvVarValidationPattern })]
     [string] $EnvVars,
@@ -1117,18 +1118,18 @@ function Install-ServyService {
     [ValidateScript({ $_ -match $script:EnvVarValidationPattern })]
     [string] $PreLaunchEnv,
 
-    [ValidateScript({ 
+    [ValidateScript({
         $parent = Split-Path $_ -Parent
-        if (Test-Path $parent -PathType Container) { $true } 
-        else { throw "Parent directory for PreLaunchStdout does not exist: $parent" } 
-      })]
+        if ([string]::IsNullOrEmpty($parent)) { return $true }
+        Test-Path $parent -PathType Container
+    })]
     [string] $PreLaunchStdout,
 
-    [ValidateScript({ 
+    [ValidateScript({
         $parent = Split-Path $_ -Parent
-        if (Test-Path $parent -PathType Container) { $true } 
-        else { throw "Parent directory for PreLaunchStderr does not exist: $parent" } 
-      })]
+        if ([string]::IsNullOrEmpty($parent)) { return $true }
+        Test-Path $parent -PathType Container
+    })]
     [string] $PreLaunchStderr,
 
     [ValidateRange(0, 86400)]

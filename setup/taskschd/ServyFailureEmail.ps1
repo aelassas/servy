@@ -64,7 +64,7 @@ foreach ($dep in $requiredDependencies) {
         
         # 1. Attempt to log to Event Log for administrator visibility
         try {
-            # exported variables from a module that has fundamentally failed to load.
+            # Best-effort: the 'Servy' event source may not be registered, so guard with try/catch.
             Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_DEPENDENCY_ERROR `
                 -EntryType Error -Message $errorMsg -ErrorAction Stop
         } catch {
