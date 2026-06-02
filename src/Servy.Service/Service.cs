@@ -2217,6 +2217,15 @@ namespace Servy.Service
                     return;
                 }
 
+                int win32ExitCode = 0;
+                int specificExitCode = 0;
+                if (state == SERVICE_STOPPED && ExitCode != 0)
+                {
+                    // ERROR_SERVICE_SPECIFIC_ERROR tells SCM to read dwServiceSpecificExitCode
+                    win32ExitCode = 1066; // ERROR_SERVICE_SPECIFIC_ERROR
+                    specificExitCode = ExitCode;
+                }
+
                 // Construct the Win32 status structure.
                 SERVICE_STATUS status = new SERVICE_STATUS
                 {
@@ -2226,8 +2235,8 @@ namespace Servy.Service
                     dwControlsAccepted = state == SERVICE_STOPPED
                         ? 0
                         : (SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_PRESHUTDOWN),
-                    dwWin32ExitCode = 0,
-                    dwServiceSpecificExitCode = 0,
+                    dwWin32ExitCode = win32ExitCode,
+                    dwServiceSpecificExitCode = specificExitCode,
                     dwCheckPoint = (int)_checkPoint,
                     dwWaitHint = waitHint
                 };
