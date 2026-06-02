@@ -91,7 +91,7 @@ jobs:
         run: dotnet --version
 
       - name: Install CycloneDX .NET Tool
-        if: inputs.arm64 == false  
+        if: ${{ inputs.arm64 == false }}
         shell: pwsh
         run: |
           # --- SECURITY CHECK: SHA256 PINNING FOR .NET TOOL ---
@@ -128,7 +128,7 @@ jobs:
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
 
       - name: Install CycloneDX CLI from GitHub
-        if: inputs.arm64 == false
+        if: ${{ inputs.arm64 == false }}
         shell: pwsh
         run: |
           $v = $env:CYCLONEDX_CLI_VERSION
@@ -244,17 +244,17 @@ jobs:
       # Run unit tests
       # -----------------------------------------------------
       - name: Restore dependencies
-        if: inputs.arm64 == false
+        if: ${{ inputs.arm64 == false }}
         shell: pwsh
         run: dotnet restore Servy.sln
 
       - name: Build solution
-        if: inputs.arm64 == false
+        if: ${{ inputs.arm64 == false }}
         shell: pwsh
         run: dotnet build Servy.sln --configuration $env:CONFIGURATION --no-restore
 
       - name: Run all tests
-        if: inputs.arm64 == false
+        if: ${{ inputs.arm64 == false }}
         shell: pwsh
         run: dotnet test Servy.sln --configuration $env:CONFIGURATION --no-build --filter "Category!=ReflectionValidation"
 
@@ -262,7 +262,7 @@ jobs:
       # Build and Publish SBOM
       # -----------------------------------------------------
       - name: Generate SBOM
-        if: inputs.arm64 == false
+        if: ${{ inputs.arm64 == false }}
         shell: pwsh
         run: |
           # Use subexpression operator $() to safely append the .0 suffix
@@ -302,7 +302,7 @@ jobs:
           }
 
       - name: Upload SBOM
-        if: inputs.arm64 == false
+        if: ${{ inputs.arm64 == false }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
           name: sbom-${{ env.VERSION }}-sbom
@@ -726,6 +726,7 @@ jobs:
       # Scan with VirusTotal
       # -----------------------------------------------------
       - name: Scan Signed Installer with VirusTotal
+        if: ${{ inputs.arm64 == false }}
         id: vt_installer
         uses: cssnr/virustotal-action@e2d194486614b28c3cf884f4bf13e39cac959b8d #v1.7.0
         continue-on-error: true # Don't kill the whole CI if VT is down
@@ -733,27 +734,27 @@ jobs:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
           sha256: true
           # Dynamically grab the exact path generated during the release prep
-          file_globs: |
-            ${{ env.FINAL_INSTALLER_PATH }}
+          file_globs: ${{ env.FINAL_INSTALLER_PATH }}
 
-      - name: Check VT Status
-        if: steps.vt_installer.outcome == 'failure'
+      - name: Check Installer VT Status
+        if: ${{ inputs.arm64 == false && steps.vt_installer.outcome == 'failure' }}
         run: echo "::warning::VirusTotal scan for installer failed or timed out."
 
       - name: Cool down API
+        if: ${{ inputs.arm64 == false }}
         run: Start-Sleep -s 15
         shell: pwsh
 
       - name: Scan Portable Package with VirusTotal
+        if: ${{ inputs.arm64 == false }}
         id: vt_portable
         uses: cssnr/virustotal-action@e2d194486614b28c3cf884f4bf13e39cac959b8d #v1.7.0
         continue-on-error: true # Don't kill the whole CI if VT is down
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
           sha256: true
-          file_globs: | 
-            servy-${{ env.VERSION }}-${{ env.ARCH }}-portable.7z
+          file_globs: servy-${{ env.VERSION }}-${{ env.ARCH }}-portable.7z
 
-      - name: Check VT Status
-        if: steps.vt_portable.outcome == 'failure'
-        run: echo "::warning::VirusTotal scan for portable failed or timed out."
+      - name: Check Portable VT Status
+        if: ${{ inputs.arm64 == false && steps.vt_portable.outcome == 'failure' }}
+        run: echo "::warning::VirusTotal scan for portable package failed or timed out."
