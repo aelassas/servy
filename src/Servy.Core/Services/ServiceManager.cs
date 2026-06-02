@@ -1,5 +1,4 @@
-﻿using Microsoft.Win32;
-using Servy.Core.Common;
+﻿using Servy.Core.Common;
 using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
@@ -111,7 +110,7 @@ namespace Servy.Core.Services
                 bool result = _windowsServiceApi.ChangeServiceConfig(
                     hService: serviceHandle,
                     dwServiceType: SERVICE_WIN32_OWN_PROCESS,
-                    dwStartType: (uint)(startType == ServiceStartType.AutomaticDelayedStart ? ServiceStartType.Automatic : startType),
+                    dwStartType: ToScmStartType(startType),
                     dwErrorControl: SERVICE_ERROR_NORMAL,
                     lpBinaryPathName: binPath,
                     lpLoadOrderGroup: null,
@@ -274,7 +273,7 @@ namespace Servy.Core.Services
                         lpDisplayName: displayName,
                         dwDesiredAccess: SERVICE_START | SERVICE_STOP | SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG | SERVICE_DELETE,
                         dwServiceType: SERVICE_WIN32_OWN_PROCESS,
-                        dwStartType: (uint)(options.StartType == ServiceStartType.AutomaticDelayedStart ? ServiceStartType.Automatic : options.StartType),
+                        dwStartType: ToScmStartType(options.StartType),
                         dwErrorControl: SERVICE_ERROR_NORMAL,
                         lpBinaryPathName: binPath,
                         lpLoadOrderGroup: null,
@@ -1236,6 +1235,21 @@ namespace Servy.Core.Services
                 structSize,
                 ref bytesNeeded) && info.fDelayedAutostart;
         }
+
+        /// <summary>
+        /// Maps a <see cref="ServiceStartType"/> to its corresponding Windows Service Control Manager (SCM) 
+        /// constant value for the <c>CreateService</c> API.
+        /// </summary>
+        /// <remarks>
+        /// The SCM does not have a native "Delayed Start" type; instead, the delayed property is 
+        /// managed as a separate configuration change after service creation. This helper 
+        /// coerces <see cref="ServiceStartType.AutomaticDelayedStart"/> to <see cref="ServiceStartType.Automatic"/> 
+        /// to ensure the service is created with the correct base start mode.
+        /// </remarks>
+        /// <param name="t">The <see cref="ServiceStartType"/> requested by the configuration.</param>
+        /// <returns>The unsigned integer representation compatible with the Windows API.</returns>
+        private static uint ToScmStartType(ServiceStartType t) =>
+            (uint)(t == ServiceStartType.AutomaticDelayedStart ? ServiceStartType.Automatic : t);
 
         #endregion
     }

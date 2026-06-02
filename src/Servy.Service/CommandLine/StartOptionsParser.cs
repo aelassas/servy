@@ -179,7 +179,8 @@ namespace Servy.Service.CommandLine
         }
 
         /// <summary>
-        /// Safely intercepts exceptional expansion and path mapping scenarios, continuing with basic empty values to preserve SCM initialization contracts.
+        /// Safely intercepts exceptional expansion and path-mapping scenarios. On failure it falls back to the
+        /// original unresolved path string (rather than aborting) to preserve SCM initialization contracts.
         /// </summary>
         private static string SafeResolvePath(IProcessHelper processHelper, string rawPath, string fieldName, string serviceName)
         {

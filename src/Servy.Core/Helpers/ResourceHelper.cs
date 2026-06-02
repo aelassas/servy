@@ -474,21 +474,21 @@ namespace Servy.Core.Helpers
             if (File.Exists(targetPath))
             {
                 DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
-                DateTime embeddedResourceTime = GetHostProcessLastWriteTimeUTC();
+                DateTime hostExeWriteTime = GetHostProcessLastWriteTimeUTC();
 
-                if (embeddedResourceTime == DateTime.MinValue)
+                if (hostExeWriteTime == DateTime.MinValue)
                 {
                     Logger.Warn("Last write time of the host process executable is equal to DateTime.MinValue, "
                         + $"resource re-extraction will be skipped this session until the existing file '{fileName}' is removed.");
                 }
 
                 Logger.Debug($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
-                Logger.Debug($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");
+                Logger.Debug($"Host executable (deployment proxy) for '{resourceName}' last write time: {hostExeWriteTime.ToLocalTime():G}");
 
                 // Only copy if the embedded resource is newer by more than DeltaMinutes
-                bool shouldCopy = embeddedResourceTime > existingFileTime.AddMinutes(AppConfig.ResourceStalenessThresholdMinutes);
+                bool shouldCopy = hostExeWriteTime > existingFileTime.AddMinutes(AppConfig.ResourceStalenessThresholdMinutes);
 
-                if (!shouldCopy && embeddedResourceTime > existingFileTime)
+                if (!shouldCopy && hostExeWriteTime > existingFileTime)
                 {
                     Logger.Debug($"Embedded resource '{resourceName}' is newer, but within the {AppConfig.ResourceStalenessThresholdMinutes}-minute delta. Skipping copy.");
                 }

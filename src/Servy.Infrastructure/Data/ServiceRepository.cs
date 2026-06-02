@@ -237,7 +237,7 @@ namespace Servy.Infrastructure.Data
             var cmd = new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken);
             var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(cmd);
 
-            if (decrypt) try { DecryptDto(dto); } catch (InvalidOperationException ex) { HandleCorruptServiceDecryption(dto, ex); }
+            if (decrypt) SafeDecrypt(dto);
             return dto;
         }
 
@@ -249,7 +249,7 @@ namespace Servy.Infrastructure.Data
             var cmd = new CommandDefinition(sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
             var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(cmd);
 
-            if (decrypt) try { DecryptDto(dto); } catch (InvalidOperationException ex) { HandleCorruptServiceDecryption(dto, ex); }
+            if (decrypt) SafeDecrypt(dto);
             return dto;
         }
 
@@ -260,7 +260,7 @@ namespace Servy.Infrastructure.Data
             const string sql = "SELECT * FROM Services WHERE LOWER(Name) = LOWER(@Name);";
             var dto = _dapper.QuerySingleOrDefault<ServiceDto>(sql, new { Name = name.Trim() });
 
-            if (decrypt) try { DecryptDto(dto); } catch (InvalidOperationException ex) { HandleCorruptServiceDecryption(dto, ex); }
+            if (decrypt) SafeDecrypt(dto);
             return dto;
         }
 
@@ -292,21 +292,7 @@ namespace Servy.Infrastructure.Data
             var cmd = new CommandDefinition(sql, cancellationToken: cancellationToken);
             var list = await _dapper.QueryAsync<ServiceDto>(cmd);
 
-            if (decrypt)
-            {
-                foreach (var dto in list)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    try
-                    {
-                        DecryptDto(dto);
-                    }
-                    catch (InvalidOperationException ex)
-                    {
-                        HandleCorruptServiceDecryption(dto, ex);
-                    }
-                }
-            }
+            if (decrypt) SafeDecryptAll(list, cancellationToken);
 
             return list;
         }
@@ -335,21 +321,7 @@ namespace Servy.Infrastructure.Data
             var cmd = new CommandDefinition(sql, new { Pattern = pattern }, cancellationToken: cancellationToken);
             var list = (await _dapper.QueryAsync<ServiceDto>(cmd)).ToList();
 
-            if (decrypt)
-            {
-                foreach (var dto in list)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    try
-                    {
-                        DecryptDto(dto);
-                    }
-                    catch (InvalidOperationException ex)
-                    {
-                        HandleCorruptServiceDecryption(dto, ex);
-                    }
-                }
-            }
+            if (decrypt) SafeDecryptAll(list, cancellationToken);
 
             return list;
         }
@@ -437,6 +409,35 @@ namespace Servy.Infrastructure.Data
         #endregion
 
         #region Private Helpers
+
+        /// <summary>
+        /// Safely attempts decryption on a single DTO, channeling errors to isolation logic.
+        /// </summary>
+        private void SafeDecrypt(ServiceDto dto)
+        {
+            if (dto == null) return;
+
+            try
+            {
+                DecryptDto(dto);
+            }
+            catch (InvalidOperationException ex)
+            {
+                HandleCorruptServiceDecryption(dto, ex);
+            }
+        }
+
+        /// <summary>
+        /// Iterates over a collection of DTOs, validating cancellation boundaries and executing safe field isolation.
+        /// </summary>
+        private void SafeDecryptAll(IEnumerable<ServiceDto> list, CancellationToken cancellationToken)
+        {
+            foreach (var dto in list)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                SafeDecrypt(dto);
+            }
+        }
 
         /// <summary>
         /// Retrieves the existing runtime state from the database and applies it to the incoming DTO.
@@ -529,7 +530,6 @@ namespace Servy.Infrastructure.Data
                 incoming.UserAccount = existing.UserAccount;
                 incoming.Password = existing.Password;
             }
-
         }
 
         /// <summary>
