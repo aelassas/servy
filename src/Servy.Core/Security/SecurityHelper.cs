@@ -147,7 +147,7 @@ namespace Servy.Core.Security
         /// <item>
         /// <description>
         /// **Operational Continuity:** Grants <c>Full Control</c> to the current process user if they 
-        /// are not already part of the System or Admin groups.
+        /// are not the LocalSystem account.
         /// </description>
         /// </item>
         /// </list>

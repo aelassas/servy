@@ -198,7 +198,7 @@ namespace Servy.Core.IO
                         // exhaustion across stdout/stderr worker streams.
                         Logger.Error(
                             $"Log rotation lock timed out after {AppConfig.LogRotationWaitTimeoutMs}ms. " +
-                            "Assuming rotation stalled. Forcefully resetting state gate to drop current line.");
+                            "Assuming rotation stalled. Forcefully resetting state gate and proceeding to write the current line.");
 
                         // Forceful safety recovery: clear the gate so the system doesn't permanently deadlock
                         _rotationInProgress = false;

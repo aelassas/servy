@@ -1041,6 +1041,13 @@ namespace Servy.Core.Config
         /// </summary>
         public const int LogRotationWaitTimeoutMs = 15_000;
 
+        /// <summary>
+        /// Defines the maximum Process ID (PID) value reserved for critical Windows system processes 
+        /// (e.g., Idle at 0, System at 4). These IDs must never be targeted for termination 
+        /// to avoid system-level instability or accidental kernel-space interference.
+        /// </summary>
+        public const int MaxReservedSystemPid = 4;
+
         #endregion
 
         #region Manager Configuration Bounds

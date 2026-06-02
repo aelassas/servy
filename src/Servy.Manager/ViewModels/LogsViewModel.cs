@@ -8,7 +8,6 @@ using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Helpers;
 using Servy.UI.Services;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -174,7 +173,6 @@ namespace Servy.Manager.ViewModels
                     _toDate = value;
                     FromDateMaxDate = value?.Date;
                     OnPropertyChanged(nameof(ToDate));
-                    OnPropertyChanged(nameof(FromDateMaxDate));
                 }
             }
         }

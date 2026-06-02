@@ -165,28 +165,12 @@ namespace Servy.Manager.Utils
                                                 // to prevent cross-thread collection modification or data loss.
                                                 batch = new List<LogLine>(AppConfig.LogTailerBatchFlushThreshold);
                                             }
-
-                                            // ROBUSTNESS: Drop the inaccurate virtual string byte count estimation logic completely.
-                                            // Calculate the exact current byte offset by inspecting the stream's physical position
-                                            // and subtracting StreamReader's internal look-ahead read buffer.
-                                            long actualStreamPosition = fs.Position;
-
-                                            // Use reflection or access fields if necessary, or compute based on standard internal mechanics:
-                                            // StreamReader reads data into an internal buffer. The true position on disk of the last yielded line is:
-                                            // LastPosition = fs.Position - (BufferedBytesRemaining)
-                                            // To achieve this cleanly without reflection hacks, we can extract the true byte footprint by querying
-                                            // the encoding character ratio directly against the underlying text stream structure.
-
-                                            // Safe fallback calculation approach that remains resilient against non-UTF8 text drift:
-                                            int charCount = line.Length + Environment.NewLine.Length;
-                                            lastPosition += reader.CurrentEncoding.GetByteCount(line) + (fs.Position == info.Length ? 0 : Environment.NewLine.Length);
                                         }
 
                                         if (batch.Count > 0) OnNewLines?.Invoke(batch);
 
                                         // --- EOF Reached. Verify File Integrity / Rotation ---
                                         // Since the StreamReader buffer is now fully drained, fs.Position is completely accurate.
-                                        // Syncing it here fixes any minor byte-drift from the line estimation above.
                                         lastPosition = fs.Position;
 
                                         info.Refresh();

@@ -136,7 +136,10 @@ namespace Servy.Core.Security
                 // (which the caller might eventually zero out) doesn't mutate our cache.
                 cacheField = (byte[])decrypted.Clone();
 
-                return decrypted;
+                // CODE PARITY: Return a clone directly from the initialized cache field.
+                // This enforces literal parity with the XML documentation contract and guarantees 
+                // both paths exhibit identical, symmetric array allocation behavior.
+                return (byte[])cacheField.Clone();
             }
         }
 

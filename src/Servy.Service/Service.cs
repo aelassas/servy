@@ -1912,7 +1912,12 @@ namespace Servy.Service
         /// </remarks>
         private void ExecuteRecoveryAction(int attemptCount)
         {
-            _logger?.Warn($"Performing recovery action '{_recoveryAction}' ({attemptCount}/{(_maxRestartAttempts > 0 ? _maxRestartAttempts.ToString() : "unlimited")}).");
+            // LOGGING: Omit the attempt counter in unlimited mode to prevent displaying a misleading '0'.
+            string attemptStatus = _maxRestartAttempts > 0
+                ? $"({attemptCount}/{_maxRestartAttempts})"
+                : "(unlimited)";
+
+            _logger?.Warn($"Performing recovery action '{_recoveryAction}' {attemptStatus}.");
 
             switch (_recoveryAction)
             {
