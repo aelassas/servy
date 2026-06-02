@@ -38,6 +38,7 @@ namespace Servy.Service.UnitTests
             public static readonly FieldInfo FailedChecksField = GetField("_failedChecks");
             public static readonly FieldInfo MaxRestartAttemptsField = GetField("_maxRestartAttempts");
             public static readonly FieldInfo ServiceNameField = GetField("_serviceName");
+            public static readonly FieldInfo RecoveryActionEnabledField = GetField("_recoveryActionEnabled");
 
             public static readonly MethodInfo HandleLogWritersMethod = GetMethod("HandleLogWriters");
             public static readonly MethodInfo SetupHealthMonitoringMethod = GetMethod("SetupHealthMonitoring");
@@ -47,6 +48,7 @@ namespace Servy.Service.UnitTests
             public static readonly MethodInfo OnProcessExitedMethod = GetMethod("OnProcessExited");
             public static readonly MethodInfo StartProcessMethod = GetMethod("StartProcess");
             public static readonly MethodInfo SafeKillProcessMethod = GetMethod("SafeKillProcess");
+
 
             private static FieldInfo GetField(string name) =>
                 typeof(Service).GetField(name, Flags)
@@ -149,5 +151,9 @@ namespace Servy.Service.UnitTests
         // Expose SafeKillProcess protected method
         public void InvokeSafeKillProcess(IProcessWrapper process) =>
             ServiceReflection.SafeKillProcessMethod.Invoke(this, new object[] { process, 5000 });
+
+        // Forces the state of the private backer field '_recoveryActionEnabled' via reflection.
+        public void SetRecoveryActionEnabled(bool enabled) =>
+            ServiceReflection.RecoveryActionEnabledField.SetValue(this, enabled);
     }
 }

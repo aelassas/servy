@@ -885,22 +885,9 @@ namespace Servy.Core.Services
                             {
                                 using (var svcHandle = _windowsServiceApi.OpenService(scmHandle, serviceName, SERVICE_QUERY_CONFIG))
                                 {
-                                    if (!svcHandle.IsInvalid)
+                                    if (!svcHandle.IsInvalid && IsDelayedStart(svcHandle))
                                     {
-                                        var info = new SERVICE_DELAYED_AUTO_START_INFO();
-                                        int bytesNeeded = 0;
-
-                                        bool ok = _windowsServiceApi.QueryServiceConfig2(
-                                            svcHandle,
-                                            SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
-                                            ref info,
-                                            Marshal.SizeOf(typeof(SERVICE_DELAYED_AUTO_START_INFO)),
-                                            ref bytesNeeded);
-
-                                        if (ok && info.fDelayedAutostart)
-                                        {
-                                            startupType = ServiceStartType.AutomaticDelayedStart;
-                                        }
+                                        startupType = ServiceStartType.AutomaticDelayedStart;
                                     }
                                 }
                             }

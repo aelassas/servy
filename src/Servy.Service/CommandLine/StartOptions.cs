@@ -194,7 +194,9 @@ namespace Servy.Service.CommandLine
 
         /// <summary>
         /// Gets or sets a value indicating whether debug logs are enabled.
-        /// When enabled, environment variables and process parameters are recorded in the Windows Event Log. 
+        /// When enabled, environment variables and process parameters are recorded in the local
+        /// log file at <c>%ProgramData%\Servy\logs\Servy.Service.log</c>. Sensitive data is
+        /// never written to the Windows Event Log or shown by the CLI / PowerShell module.
         /// Not recommended for production environments, as these logs may contain sensitive information.
         /// </summary>
         public bool EnableDebugLogs { get; set; } = false;

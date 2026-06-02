@@ -178,7 +178,6 @@ namespace Servy.Manager.ViewModels
                     _toDate = value;
                     FromDateMaxDate = value?.Date;
                     OnPropertyChanged(nameof(ToDate));
-                    OnPropertyChanged(nameof(FromDateMaxDate));
                 }
             }
         }

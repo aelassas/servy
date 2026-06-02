@@ -72,7 +72,7 @@ namespace Servy.Core.Helpers
         private bool IsProtected(int pid, string processName, HashSet<int> protectedPids)
         {
             // Protection for system-level PIDs and the Servy process chain
-            if (pid <= 4 || protectedPids.Contains(pid)) return true;
+            if (pid <= AppConfig.MaxReservedSystemPid || protectedPids.Contains(pid)) return true;
 
             return IsCriticalProcess(processName);
         }
@@ -130,7 +130,7 @@ namespace Servy.Core.Helpers
 
             foreach (int childPid in childrenPids)
             {
-                if (childPid == selfPid || childPid <= 4) continue;
+                if (childPid == selfPid || childPid <= AppConfig.MaxReservedSystemPid) continue;
 
                 if (!visited.Add(childPid))
                 {
@@ -476,7 +476,7 @@ namespace Servy.Core.Helpers
             int parentId = node.ParentId;
 
             // Stop at System/Idle or if the parent is part of the current execution chain
-            if (parentId <= 4 || protectedPids.Contains(parentId)) return;
+            if (parentId <= AppConfig.MaxReservedSystemPid || protectedPids.Contains(parentId)) return;
 
             if (!snapshot.TryGetValue(parentId, out var parentNode)) return;
 
@@ -592,7 +592,7 @@ namespace Servy.Core.Helpers
                 while (snapshot.TryGetValue(currentSearchPid, out var node))
                 {
                     int parentId = node.ParentId;
-                    if (parentId <= 4) break;
+                    if (parentId <= AppConfig.MaxReservedSystemPid) break;
                     if (!ancestors.Add(parentId)) break; // Prevent infinite loops
                     currentSearchPid = parentId;
                 }
