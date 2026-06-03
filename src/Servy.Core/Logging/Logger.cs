@@ -42,7 +42,6 @@ namespace Servy.Core.Logging
         /// </summary>
         private static readonly Regex VerticalControlRegex = new Regex(@"[\v\f]", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
-
         /// <summary>
         /// The maximum number of fallback log writes allowed per process lifetime.
         /// Prevents unbounded growth of fallback log files if the primary logger continuously fails.
@@ -215,10 +214,8 @@ namespace Servy.Core.Logging
                     if (Interlocked.Increment(ref _initFallbackWriteCount) <= MaxFallbackWrites)
                     {
                         EnsureLogsDir();
-                        var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
-                        string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
                         File.AppendAllText(Path.Combine(LogsPath, "LoggerInitializationErrors.log"),
-                            $"[{now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}{tzMarker}] Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");
+                            $"{FormatTimestampPrefix()} Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");
                     }
                 }
                 catch
@@ -437,10 +434,8 @@ namespace Servy.Core.Logging
                     if (Interlocked.Increment(ref _logFallbackWriteCount) <= MaxFallbackWrites)
                     {
                         EnsureLogsDir();
-                        var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
-                        string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
                         File.AppendAllText(Path.Combine(LogsPath, "LoggerWriteErrors.log"),
-                            $"[{now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}{tzMarker}] RE-ENTRANT LOGGER AVOIDED: {message}{Environment.NewLine}");
+                            $"{FormatTimestampPrefix()} RE-ENTRANT LOGGER AVOIDED: {message}{Environment.NewLine}");
                     }
                 }
                 catch { /* fail-silent */ }
@@ -467,9 +462,7 @@ namespace Servy.Core.Logging
                     sanitizedMessage = sanitizedMessage.Trim();
 
                     // Format: [2026-05-06 08:58:20+01:00] [INFO] Message text OR [2026-05-06 08:58:20Z] [INFO] Message text
-                    var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
-                    string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
-                    string logEntry = $"[{now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}{tzMarker}] [{levelName}] | {sanitizedMessage}";
+                    string logEntry = $"{FormatTimestampPrefix()} [{levelName}] | {sanitizedMessage}";
 
                     _writer.WriteLine(logEntry);
                 }
@@ -483,10 +476,8 @@ namespace Servy.Core.Logging
                     if (Interlocked.Increment(ref _logFallbackWriteCount) <= MaxFallbackWrites)
                     {
                         EnsureLogsDir();
-                        var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
-                        string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
                         File.AppendAllText(Path.Combine(LogsPath, "LoggerWriteErrors.log"),
-                            $"[{now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}{tzMarker}] Failed to write log entry: {ex.Message}{Environment.NewLine}");
+                            $"{FormatTimestampPrefix()} Failed to write log entry: {ex.Message}{Environment.NewLine}");
                     }
                 }
                 catch { /* truly fail-silent only as last resort */ }
@@ -649,6 +640,22 @@ namespace Servy.Core.Logging
             }
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Generates a standardized timestamp prefix for log entries based on the current rotation configuration.
+        /// </summary>
+        /// <remarks>
+        /// The prefix format is <c>[yyyy-MM-dd HH:mm:ss.fff{tz}]</c>. 
+        /// If <see cref="_useLocalTimeForRotation"/> is true, the local timezone offset is appended; 
+        /// otherwise, the UTC "Z" marker is used.
+        /// </remarks>
+        /// <returns>A formatted string containing the current high-precision timestamp and timezone indicator.</returns>
+        private static string FormatTimestampPrefix()
+        {
+            var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+            string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
+            return $"[{now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}{tzMarker}]";
         }
 
         #endregion

@@ -71,6 +71,15 @@ namespace Servy.Core.Services
         /// <summary>Maximum number of restart attempts if the service fails.</summary>
         public int MaxRestartAttempts { get; set; } = AppConfig.DefaultMaxRestartAttempts;
 
+        /// <summary>Failure program path.</summary>
+        public string FailureProgramPath { get; set; }
+
+        /// <summary>Failure program working directory.</summary>
+        public string FailureProgramWorkingDirectory { get; set; }
+
+        /// <summary>Failure program parameters.</summary>
+        public string FailureProgramArgs { get; set; }
+
         /// <summary>Environment variables.</summary>
         public string EnvironmentVariables { get; set; }
 
@@ -109,15 +118,6 @@ namespace Servy.Core.Services
 
         /// <summary>Ignore failure and start service even if pre-launch script fails.</summary>
         public bool PreLaunchIgnoreFailure { get; set; } = AppConfig.DefaultPreLaunchIgnoreFailure;
-
-        /// <summary>Failure program path.</summary>
-        public string FailureProgramPath { get; set; }
-
-        /// <summary>Failure program working directory.</summary>
-        public string FailureProgramWorkingDirectory { get; set; }
-
-        /// <summary>Failure program parameters.</summary>
-        public string FailureProgramArgs { get; set; }
 
         /// <summary>Post-launch script exe path.</summary>
         public string PostLaunchExePath { get; set; }

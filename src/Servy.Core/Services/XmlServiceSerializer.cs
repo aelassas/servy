@@ -76,7 +76,7 @@ namespace Servy.Core.Services
                 var settings = new XmlWriterSettings
                 {
                     Indent = true,
-                    Encoding = Encoding.UTF8
+                    Encoding = new UTF8Encoding(false), // UTF-8 without BOM
                 };
 
                 // Use the custom Utf8StringWriter to ensure the XML preamble declares 'utf-8' correctly.

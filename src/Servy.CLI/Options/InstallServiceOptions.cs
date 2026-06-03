@@ -54,7 +54,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("params", HelpText = "Additional parameters for the process. Supports environment variable expansion, example: --params=\"%ProgramData%\\MyApp\" --params=\"%MY_VAR%\\bin\". SECURITY WARNING: Use the " + AppConfig.ProcessParametersEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
+        [Option("params", HelpText = "Additional parameters for the process. Supports environment variable expansion, example: --params=\"%ProgramData%\\MyApp\" --params=\"%MY_VAR%\\bin\". SECURITY WARNING: Use the " + AppConfig.ProcessParametersEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
         public string ProcessParameters { get; set; }
 
         /// <summary>
@@ -216,9 +216,9 @@ namespace Servy.CLI.Options
 
         /// <summary>
         /// Gets or sets the failure program startup directory.
-        /// Optional. Defaults to the failure program directory.
+        /// Optional. If not set, defaults to the service working directory.
         /// </summary>
-        [Option("failureProgramStartupDir", HelpText = "Specifies the directory in which the failure program will start. Defaults to the failure program directory. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
+        [Option("failureProgramStartupDir", HelpText = "Specifies the directory in which the failure program will start. If not set, defaults to the service working directory. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
         public string FailureProgramStartupDir { get; set; }
 
         /// <summary>
@@ -231,7 +231,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("failureProgramParams", HelpText = "Additional parameters for the failure program. SECURITY WARNING: Use the " + AppConfig.FailureProgramParametersEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
+        [Option("failureProgramParams", HelpText = "Additional parameters for the failure program. SECURITY WARNING: Use the " + AppConfig.FailureProgramParametersEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
         public string FailureProgramParameters { get; set; }
 
         /// <summary>
@@ -244,7 +244,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("envVars", HelpText = "Environment variables for the process. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';' and \\\\ to escape '\\'. Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin. SECURITY WARNING: Use the " + AppConfig.EnvironmentVariablesEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
+        [Option("envVars", HelpText = "Environment variables for the process. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';' and \\\\ to escape '\\'. Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin. SECURITY WARNING: Use the " + AppConfig.EnvironmentVariablesEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
         public string EnvironmentVariables { get; set; }
 
         /// <summary>
@@ -289,9 +289,9 @@ namespace Servy.CLI.Options
 
         /// <summary>
         /// Gets or sets the pre-launch startup directory.
-        /// Optional. Defaults to the service working directory.
+        /// Optional. If not set, defaults to the service working directory.
         /// </summary>
-        [Option("preLaunchStartupDir", HelpText = "Specifies the directory in which the pre-launch executable will start. Defaults to the service working directory. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
+        [Option("preLaunchStartupDir", HelpText = "Specifies the directory in which the pre-launch executable will start. If not set, defaults to the service working directory. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
         public string PreLaunchStartupDir { get; set; }
 
         /// <summary>
@@ -304,7 +304,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("preLaunchParams", HelpText = "Additional parameters for the pre-launch executable. SECURITY WARNING: Use the " + AppConfig.PreLaunchParametersEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
+        [Option("preLaunchParams", HelpText = "Additional parameters for the pre-launch executable. SECURITY WARNING: Use the " + AppConfig.PreLaunchParametersEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
         public string PreLaunchParameters { get; set; }
 
         /// <summary>
@@ -317,7 +317,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("preLaunchEnv", HelpText = "Environment variables for the pre-launch executable. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';' and \\\\ to escape '\\'. Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin. SECURITY WARNING: Use the " + AppConfig.PreLaunchEnvironmentVariablesEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
+        [Option("preLaunchEnv", HelpText = "Environment variables for the pre-launch executable. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';' and \\\\ to escape '\\'. Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin. SECURITY WARNING: Use the " + AppConfig.PreLaunchEnvironmentVariablesEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
         public string PreLaunchEnvironmentVariables { get; set; }
 
         /// <summary>
@@ -365,9 +365,9 @@ namespace Servy.CLI.Options
 
         /// <summary>
         /// Gets or sets the post-launch startup directory.
-        /// Optional. Defaults to the service working directory.
+        /// Optional. If not set, defaults to the service working directory.
         /// </summary>
-        [Option("postLaunchStartupDir", HelpText = "Specifies the directory in which the post-launch executable will start. Defaults to the directory of the post-launch program. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
+        [Option("postLaunchStartupDir", HelpText = "Specifies the directory in which the post-launch executable will start. If not set, defaults to the service working directory. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
         public string PostLaunchStartupDir { get; set; }
 
         /// <summary>
@@ -380,7 +380,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("postLaunchParams", HelpText = "Additional parameters for the post-launch executable. SECURITY WARNING: Use the " + AppConfig.PostLaunchParametersEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
+        [Option("postLaunchParams", HelpText = "Additional parameters for the post-launch executable. SECURITY WARNING: Use the " + AppConfig.PostLaunchParametersEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
         public string PostLaunchParameters { get; set; }
 
         /// <summary>
@@ -416,9 +416,9 @@ namespace Servy.CLI.Options
 
         /// <summary>
         /// Gets or sets the pre-stop startup directory.
-        /// Optional. Defaults to the service working directory.
+        /// Optional. If not set, defaults to the service working directory.
         /// </summary>
-        [Option("preStopStartupDir", HelpText = "Specifies the directory in which the pre-stop executable will start. Defaults to the directory of the pre-stop program. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
+        [Option("preStopStartupDir", HelpText = "Specifies the directory in which the pre-stop executable will start. If not set, defaults to the service working directory. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
         public string PreStopStartupDir { get; set; }
 
         /// <summary>
@@ -431,7 +431,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("preStopParams", HelpText = "Additional parameters for the pre-stop executable. SECURITY WARNING: Use the " + AppConfig.PreStopParametersEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
+        [Option("preStopParams", HelpText = "Additional parameters for the pre-stop executable. SECURITY WARNING: Use the " + AppConfig.PreStopParametersEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
         public string PreStopParameters { get; set; }
 
         /// <summary>
@@ -457,9 +457,9 @@ namespace Servy.CLI.Options
 
         /// <summary>
         /// Gets or sets the post-stop startup directory.
-        /// Optional. Defaults to the service working directory.
+        /// Optional. If not set, defaults to the service working directory.
         /// </summary>
-        [Option("postStopStartupDir", HelpText = "Specifies the directory in which the post-stop executable will start. Defaults to the directory of the post-stop program. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
+        [Option("postStopStartupDir", HelpText = "Specifies the directory in which the post-stop executable will start. If not set, defaults to the service working directory. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
         public string PostStopStartupDir { get; set; }
 
         /// <summary>
@@ -472,7 +472,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("postStopParams", HelpText = "Additional parameters for the post-stop executable. SECURITY WARNING: Use the " + AppConfig.PostStopParametersEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
+        [Option("postStopParams", HelpText = "Additional parameters for the post-stop executable. SECURITY WARNING: Use the " + AppConfig.PostStopParametersEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
         public string PostStopParameters { get; set; }
     }
 }
