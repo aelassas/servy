@@ -5,6 +5,11 @@
 # builds the installer, creates the portable 7z archive, and uploads all signed artifacts.
 #
 # Supports both x64 (Windows 10/11/Server) and native ARM64 architectures via dispatch input.
+# ARM64 builds are fully verified via dedicated ARM64 test matrices: build.yml verifies build 
+# compatibility, and test.yml verifies both unit tests and integration tests.
+#
+# Both x64 and ARM64 pipelines generate full CycloneDX Software Bills of Materials (SBOM),
+# executing cross-architecture dependency graph mapping directly on the windows-latest host.
 # ==========================================================================================
 
 name: publish
@@ -91,7 +96,6 @@ jobs:
         run: dotnet --version
 
       - name: Install CycloneDX .NET Tool
-        if: ${{ inputs.arm64 == false }}
         shell: pwsh
         run: |
           # --- SECURITY CHECK: SHA256 PINNING FOR .NET TOOL ---
@@ -128,7 +132,6 @@ jobs:
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
 
       - name: Install CycloneDX CLI from GitHub
-        if: ${{ inputs.arm64 == false }}
         shell: pwsh
         run: |
           $v = $env:CYCLONEDX_CLI_VERSION
@@ -243,6 +246,9 @@ jobs:
       # -----------------------------------------------------
       # Run unit tests
       # -----------------------------------------------------
+      # NOTE: Tests are skipped here for ARM64 because they are fully 
+      # covered by the dedicated ARM64 test matrices in test.yml.
+      # -----------------------------------------------------
       - name: Restore dependencies
         if: ${{ inputs.arm64 == false }}
         shell: pwsh
@@ -262,7 +268,6 @@ jobs:
       # Build and Publish SBOM
       # -----------------------------------------------------
       - name: Generate SBOM
-        if: ${{ inputs.arm64 == false }}
         shell: pwsh
         run: |
           # Use subexpression operator $() to safely append the .0 suffix
@@ -302,7 +307,6 @@ jobs:
           }
 
       - name: Upload SBOM
-        if: ${{ inputs.arm64 == false }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
           name: sbom-${{ env.VERSION }}-sbom
