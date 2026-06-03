@@ -66,9 +66,11 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData("true", true)]
         [InlineData("True", true)]
+        [InlineData("  TRUE  ", true)] // Verifies trimming behavior
         [InlineData("false", false)]
         [InlineData("False", false)]
-        public void ParseBool_ValidInput_ReturnsParsedValue(string input, bool expected)
+        [InlineData("FALSE", false)]
+        public void ParseBool_ValidStandardInput_ReturnsParsedValue(string input, bool expected)
         {
             // Act
             var result = ConfigParser.ParseBool(input, !expected);
@@ -77,14 +79,47 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(expected, result);
         }
 
-        [Fact]
-        public void ParseBool_InvalidInput_ReturnsDefault()
+        [Theory]
+        [InlineData("1", true)]
+        [InlineData("yes", true)]
+        [InlineData("Yes", true)]
+        [InlineData("YES", true)]
+        [InlineData("y", true)]
+        [InlineData("Y", true)]
+        [InlineData("on", true)]
+        [InlineData("On", true)]
+        [InlineData("ON", true)]
+        [InlineData("0", false)]
+        [InlineData("no", false)]
+        [InlineData("No", false)]
+        [InlineData("NO", false)]
+        [InlineData("n", false)]
+        [InlineData("N", false)]
+        [InlineData("off", false)]
+        [InlineData("Off", false)]
+        [InlineData("OFF", false)]
+        [InlineData("  yes  ", true)] // Verifies trimming on alias variants
+        public void ParseBool_ValidSemanticAliases_ReturnsParsedValue(string input, bool expected)
         {
             // Act
-            var result = ConfigParser.ParseBool("Maybe", true);
+            var result = ConfigParser.ParseBool(input, !expected);
 
             // Assert
-            Assert.True(result);
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("Maybe", true, true)]
+        [InlineData("Maybe", false, false)]
+        [InlineData("2", true, true)]
+        [InlineData("none", false, false)]
+        public void ParseBool_InvalidInput_ReturnsDefault(string input, bool @default, bool expected)
+        {
+            // Act
+            var result = ConfigParser.ParseBool(input, @default);
+
+            // Assert
+            Assert.Equal(expected, result);
         }
 
         #endregion

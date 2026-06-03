@@ -41,16 +41,16 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(null, false)]
         [InlineData("", false)]
         [InlineData("   ", false)]
-        [InlineData("..\\somepath", false)]           // Explicit directory traversal at start
-        [InlineData("C:\\valid\\path.txt", true)]     // Valid absolute path (Windows style)
-        [InlineData("C:/valid/path.txt", true)]       // Valid absolute path (forward slash)
-        [InlineData("relative\\path", false)]         // Relative path (not rooted)
-        [InlineData("C:\\invalid|path", false)]       // Invalid character '|'
-        [InlineData("C:\\valid\\..\\path", false)]    // Contains traversal segment ".."
-        [InlineData("C:\\", true)]                    // Root path
-        [InlineData("C:\\my..folder\\path", true)]    // Legitimate ".." inside a folder name
-        [InlineData("C:\\folder\\file..txt", true)]   // Legitimate ".." inside a file name
-        [InlineData("C:\\valid\\path\\..", false)]    // Traversal segment at the very end
+        [InlineData("..\\somepath", false)]            // Explicit directory traversal at start
+        [InlineData("C:\\valid\\path.txt", true)]      // Valid absolute path (Windows style)
+        [InlineData("C:/valid/path.txt", true)]        // Valid absolute path (forward slash)
+        [InlineData("relative\\path", false)]          // Relative path (not rooted)
+        [InlineData("C:\\invalid|path", false)]        // Invalid character '|'
+        [InlineData("C:\\valid\\..\\path", false)]     // Contains traversal segment ".."
+        [InlineData("C:\\", true)]                     // Root path
+        [InlineData("C:\\my..folder\\path", true)]     // Legitimate ".." inside a folder name
+        [InlineData("C:\\folder\\file..txt", true)]    // Legitimate ".." inside a file name
+        [InlineData("C:\\valid\\path\\..", false)]     // Traversal segment at the very end
 
         // COVERS: Filename-invalid characters in the file name segment
         [InlineData("C:\\logs\\app<bad>.log", false)]  // Less-than '<' in filename
@@ -222,7 +222,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(@"\""", @"\\""")]                    // Single backslash + quote - doubled before quote
         [InlineData(@"\\\""", @"\\\\\\""")]              // Multiple backslashes before quote
         [InlineData(@"Mix\ed\\\""Case", @"Mix\ed\\\\\\""Case")] // Mixed case: normal + before quote
-        [InlineData("abc\0def", @"abc\0def")]           // Contains null char -> replaced with literal "\0"
+        [InlineData("abc\0def", @"abc\0def")]            // Contains null char -> replaced with literal "\0"
         public void EscapeBackslashes_ShouldEscapeCorrectly(string input, string expected)
         {
             // Act
@@ -725,6 +725,19 @@ namespace Servy.Core.UnitTests.Helpers
                 process.StartInfo.UseShellExecute = false;
                 process.Start();
                 process.WaitForExit();
+
+                // Throw if the process fails instead of silently continuing
+                if (process.ExitCode != 0)
+                {
+                    throw new IOException($"mklink failed with exit code {process.ExitCode}");
+                }
+            }
+
+            // Explicitly verify the junction was created and carries the correct reparse point attribute
+            var dirInfo = new DirectoryInfo(junctionPath);
+            if (!dirInfo.Exists || (dirInfo.Attributes & FileAttributes.ReparsePoint) == 0)
+            {
+                throw new IOException($"Junction validation failed at {junctionPath}. It may have been created as a standard directory.");
             }
         }
 
@@ -830,9 +843,21 @@ namespace Servy.Core.UnitTests.Helpers
 
             try
             {
-                // In modern .NET, passing recursive: false to Delete() on a reparse point
-                // safely unlinks it without deleting anything inside the targeted directory.
-                Directory.Delete(linkPath, recursive: false);
+                var attributes = File.GetAttributes(linkPath);
+
+                // Check if the folder is actually a reparse point. 
+                // If the test setup failed and accidentally created a standard directory,
+                // we must use recursive deletion to clear it safely for the next retry loop.
+                if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
+                {
+                    // In modern .NET, passing recursive: false to Delete() on a reparse point
+                    // safely unlinks it without deleting anything inside the targeted directory.
+                    Directory.Delete(linkPath, recursive: false);
+                }
+                else
+                {
+                    Directory.Delete(linkPath, recursive: true);
+                }
             }
             catch (Exception ex)
             {

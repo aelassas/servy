@@ -133,9 +133,10 @@ namespace Servy.Core.Services
 
                 foreach (var evt in records)
                 {
-                    //
-                    // records is a fully-materialized DTO sequence; no lifecycle concerns here.
-                    //
+                    // records is a lazy iterator over the underlying EventLogReader; the foreach's
+                    // hidden enumerator disposal will cascade through to EventLogReader.ReadEvents
+                    // and dispose the EventLog handle on break/exception. Avoid holding 'records'
+                    // past this loop.
                     token.ThrowIfCancellationRequested();
 
                     var message = evt.Message ?? string.Empty;
@@ -148,8 +149,7 @@ namespace Servy.Core.Services
                         continue;
 
                     // 2. Formatting Check: Ensure it follows the Servy log pattern [Service] Message
-                    if (message.IndexOf("[", StringComparison.OrdinalIgnoreCase) < 0 ||
-                        message.IndexOf("]", StringComparison.OrdinalIgnoreCase) < 0)
+                    if (!message.Contains('[') || !message.Contains(']'))
                         continue;
 
                     // 3. Optional keyword filter

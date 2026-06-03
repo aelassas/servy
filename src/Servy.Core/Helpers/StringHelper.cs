@@ -85,7 +85,7 @@ namespace Servy.Core.Helpers
         /// Formats service dependencies by replacing semicolons with newlines.
         /// </summary>
         /// <param name="deps">The semicolon-separated list of service dependencies.</param>
-        /// <returns>A string with each dependency on a separate line, or null if input is null.</returns>
+        /// <returns>A string with each dependency on a separate line; <see cref="string.Empty"/> when <paramref name="deps"/> is null or empty.</returns>
         public static string FormatServiceDependencies(string deps)
         {
             if (string.IsNullOrEmpty(deps)) return string.Empty;
@@ -122,12 +122,6 @@ namespace Servy.Core.Helpers
                         break;
                     case '"':
                         sb.Append("\\\"");
-                        break;
-                    case '\r':
-                        sb.Append(@"\r");
-                        break;
-                    case '\n':
-                        sb.Append(@"\n");
                         break;
                     default:
                         sb.Append(ch);
