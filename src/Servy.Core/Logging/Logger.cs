@@ -583,7 +583,10 @@ namespace Servy.Core.Logging
                 if (sb.Length > AppConfig.LoggerMaxFormattedExceptionLength)
                 {
                     const string truncMarker = "... [truncated]";
-                    int reserved = truncMarker.Length + currentStructuralDepth;
+
+                    // The structural depth tracks depth+1 so we offset it back by 1.
+                    int reservedBrackets = Math.Max(0, currentStructuralDepth - 1);
+                    int reserved = truncMarker.Length + reservedBrackets;
                     int target = Math.Max(0, AppConfig.LoggerMaxFormattedExceptionLength - reserved);
 
                     // Avoid splitting a UTF-16 surrogate pair
@@ -595,9 +598,9 @@ namespace Servy.Core.Logging
                     sb.Length = target;
                     sb.Append(truncMarker);
 
-                    // Process until depth reaches 0 to explicitly close all outstanding open contexts 
+                    // Process until depth reaches 1 to explicitly close all outstanding open contexts 
                     // and guarantee log scannability/regex parser safety during truncation events.
-                    while (currentStructuralDepth > 0)
+                    while (currentStructuralDepth > 1)
                     {
                         sb.Append(']');
                         currentStructuralDepth--;
@@ -633,7 +636,8 @@ namespace Servy.Core.Logging
             }
 
             // Close any outstanding structural contextual tracking tags safely
-            while (currentStructuralDepth > 0)
+            // Because the root element does not emit an open bracket, we halt closing loops at depth 1.
+            while (currentStructuralDepth > 1)
             {
                 sb.Append(']');
                 currentStructuralDepth--;
