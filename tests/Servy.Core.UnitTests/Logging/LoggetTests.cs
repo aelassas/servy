@@ -1,12 +1,7 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
-using System;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using Xunit;
 
 namespace Servy.Core.UnitTests.Logging
 {
@@ -327,12 +322,83 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Contains("ReflectionTypeLoadException: Type scanning failed across boundary", content);
 
             // 2. Verify that the non-null loader error is extracted, unrolled, and enclosed correctly
-            // The inner exception segment now correctly closes both the inner and outer context boundaries
-            Assert.Contains("[Inner -> TypeLoadException: Could not load assembly Servy.Service]]", content);
+            // The inner exception segment now correctly closes the inner context boundary without stray characters
+            Assert.Contains("[Inner -> TypeLoadException: Could not load assembly Servy.Service]", content);
 
             // 3. Structural validation: Verify brackets balance correctly for a single inner element match
-            // The string must now terminate with a balanced double bracket block
-            Assert.Contains("TypeLoadException: Could not load assembly Servy.Service]]", content);
+            // The string must now terminate with a balanced single bracket block
+            Assert.Contains("TypeLoadException: Could not load assembly Servy.Service]", content);
+        }
+
+        [Fact]
+        public void FormatException_WithThreeInnerExceptions_BalancesBracketsPerfectly()
+        {
+            // Arrange
+            Exception ex;
+            try
+            {
+                try
+                {
+                    try
+                    {
+                        try
+                        {
+                            throw new TimeoutException("Third inner level fault");
+                        }
+                        catch (Exception level3)
+                        {
+                            throw new ArgumentException("Second inner level fault", level3);
+                        }
+                    }
+                    catch (Exception level2)
+                    {
+                        throw new InvalidOperationException("First inner level fault", level2);
+                    }
+                }
+                catch (Exception level1)
+                {
+                    throw new Exception("Root level context", level1);
+                }
+            }
+            catch (Exception caught)
+            {
+                ex = caught;
+            }
+
+            Logger.Initialize(_testFileName);
+
+            // Act
+            Logger.Error("Nested chain execution pass", ex);
+            Logger.Shutdown();
+
+            // Assert
+            string content = File.ReadAllText(_fullLogPath);
+
+            // Verify all exception types and messages are preserved in the single-line string
+            Assert.Contains("Exception: Root level context", content);
+            Assert.Contains("[Inner -> InvalidOperationException: First inner level fault", content);
+            Assert.Contains("[Inner -> ArgumentException: Second inner level fault", content);
+            Assert.Contains("[Inner -> TimeoutException: Third inner level fault", content);
+
+            // Isolate the exception text block to run structural calculations
+            int msgIndex = content.IndexOf("Nested chain execution pass");
+            string exceptionSegment = content.Substring(msgIndex).TrimEnd();
+
+            // Calculate bracket balance
+            int openTokensCount = exceptionSegment.Split(new[] { "[Inner -> " }, StringSplitOptions.None).Length - 1;
+            int closeBracketsCount = exceptionSegment.Split(']').Length - 1;
+
+            // ASSERTIONS:
+            // 1. There must be exactly 3 "[Inner -> " opened tokens.
+            Assert.Equal(3, openTokensCount);
+
+            // 2. The number of closing brackets must match the number of opened ones.
+            Assert.Equal(openTokensCount, closeBracketsCount);
+
+            // 3. FIXED: The structural brackets close out the entire string block 
+            // after the final exception's stack trace context.
+            Assert.EndsWith("]]]", exceptionSegment);
+            Assert.Contains("Third inner level fault (at ", exceptionSegment);
         }
 
         [Fact]
@@ -377,9 +443,9 @@ namespace Servy.Core.UnitTests.Logging
             Assert.True(innerBracketCount < AppConfig.LoggerMaxInnerExceptionDepth,
                 $"Exception unroller processed more inner loops than allowed. Counted: {innerBracketCount}");
 
-            // The closing brackets will be exactly innerBracketCount + 1 because the 
-            // outer exception wrapper layer is now cleanly balanced down to structural depth 0.
-            Assert.Equal(innerBracketCount + 1, closingBracketCount);
+            // The closing brackets will be exactly innerBracketCount because the 
+            // structural depth 0 root exception correctly skips closing tags.
+            Assert.Equal(innerBracketCount, closingBracketCount);
         }
 
         #endregion
