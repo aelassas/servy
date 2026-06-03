@@ -62,14 +62,16 @@ function Get-ServyLastErrors {
   }
   $errors = @()
   
-  # "Filter Left" - let the Event Log service handle the time filtering natively
-  if ($LastProcessed) {
-      $filter.StartTime = $LastProcessed
-  }
-
   try {
-      # Get-WinEvent requires Vista/2008+ (Event Log 6.0 API)
-      $errors = @(Get-WinEvent -FilterHashtable $filter -ErrorAction Stop)
+      # "Filter Left" - let the Event Log service handle the time filtering natively
+      if ($LastProcessed) {
+          $filter.StartTime = $LastProcessed
+          # Get-WinEvent requires Vista/2008+ (Event Log 6.0 API)
+          $errors = @(Get-WinEvent -FilterHashtable $filter -ErrorAction Stop)
+      } else {
+          # First run: only the most recent event is used downstream
+          $errors = @(Get-WinEvent -FilterHashtable $filter -MaxEvents 1 -ErrorAction Stop)
+      }
   }
   catch {
     # Language-agnostic check: relies on the internal Error ID rather than translated text

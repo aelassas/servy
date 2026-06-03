@@ -81,8 +81,9 @@ function Read-Watermark {
     $lastProcessed = $null
     if (Test-Path $TimestampFile) {
         try {
+            $raw = (Get-Content $TimestampFile -Raw -ErrorAction Stop)
             $lastProcessed = [DateTime]::ParseExact(
-                (Get-Content $TimestampFile -ErrorAction Stop),
+                $raw.Trim(),
                 'o',
                 [System.Globalization.CultureInfo]::InvariantCulture,
                 [System.Globalization.DateTimeStyles]::RoundtripKind
