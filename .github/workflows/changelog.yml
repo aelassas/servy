@@ -66,11 +66,6 @@ jobs:
               exit 0
           }
 
-          if ($null -eq $releases -or $releases.Count -eq 0) {
-              Write-Host "No releases found. Exiting."
-              exit 0
-          }
-
           Function Get-ReleaseEntry {
               param($Release, $PrevRelease)
 

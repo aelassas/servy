@@ -215,13 +215,12 @@ namespace Servy.Core.Native
         [StructLayout(LayoutKind.Sequential)]
         public struct PROCESS_BASIC_INFORMATION
         {
-            public IntPtr Reserved1;
+            public IntPtr Reserved1;       // ExitStatus
             public IntPtr PebBaseAddress;
-            public IntPtr Reserved2_0;
-            private readonly IntPtr Reserved2_1;
-            private readonly IntPtr Reserved2_2;
+            public IntPtr Reserved2_0;     // AffinityMask
+            public IntPtr Reserved2_1;     // BasePriority
             public IntPtr UniqueProcessId;
-            public IntPtr InheritedFromUniqueProcessId;
+            public IntPtr InheritedFromUniqueProcessId; // Reserved3
         }
 
         /// <summary>Defines common process access rights.</summary>

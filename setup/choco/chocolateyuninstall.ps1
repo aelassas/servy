@@ -26,16 +26,15 @@ foreach ($key in $uninstallKeys) {
     # Strip surrounding quotes and trim any trailing arguments
     if ($raw -match '^"([^"]+)"\s*(.*)$') {
         $file      = $matches[1]
-        $extraArgs = $matches[2]
     } else {
         # Unquoted - take everything up to the first space as the path
         $parts     = $raw -split ' ', 2
         $file      = $parts[0]
-        $extraArgs = if ($parts.Length -gt 1) { $parts[1] } else { '' }
     }
 
     if (Test-Path $file) {
-        Uninstall-ChocolateyPackage $packageName $installerType '/VERYSILENT /NORESTART /SUPPRESSMSGBOXES' $file
+        $silentArgs = '/VERYSILENT /NORESTART /SUPPRESSMSGBOXES'
+        Uninstall-ChocolateyPackage $packageName $installerType $silentArgs $file
     } else {
         Write-Warning "Uninstaller binary not found at '$file' for $($key.DisplayName)."
     }

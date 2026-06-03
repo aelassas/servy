@@ -232,7 +232,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Optional. Defaults to the failure program directory..
+        ///   Recherche une chaîne localisée semblable à Optional. If not set, defaults to the service working directory..
         /// </summary>
         public static string Info_FailureProgramStartupDirectory {
             get {
@@ -268,7 +268,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Optional. If not set, defaults to the directory of the post-launch program..
+        ///   Recherche une chaîne localisée semblable à Optional. If not set, defaults to the service working directory..
         /// </summary>
         public static string Info_PostLaunchStartupDirectory {
             get {
@@ -286,7 +286,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Optional. If not set, defaults to the directory of the post-stop program..
+        ///   Recherche une chaîne localisée semblable à Optional. If not set, defaults to the service working directory..
         /// </summary>
         public static string Info_PostStopStartupDirectory {
             get {
@@ -304,7 +304,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Optional. Defaults to the service working directory..
+        ///   Recherche une chaîne localisée semblable à Optional. If not set, defaults to the service working directory..
         /// </summary>
         public static string Info_PreLaunchStartupDirectory {
             get {
@@ -331,7 +331,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Optional. If not set, defaults to the directory of the pre-stop program..
+        ///   Recherche une chaîne localisée semblable à Optional. If not set, defaults to the service working directory..
         /// </summary>
         public static string Info_PreStopStartupDirectory {
             get {

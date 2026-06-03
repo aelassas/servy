@@ -108,12 +108,18 @@ Get-Content $configPath | ForEach-Object {
         $key = $matches[1].Trim().ToUpperInvariant()
         $val = $matches[2]
 
-        # Strip inline comments (require leading whitespace so '#' inside structural tokens is preserved)
-        $val = ($val -replace '\s+#.*$', '').Trim()
-
-        # Strip surrounding quotes if present
-        if ($val -match '^"(.*)"$' -or $val -match "^'(.*)'$") { 
-            $val = $matches[1] 
+        # CONFIG PARSER: Handle inline comments and structural quotes in order of precedence.
+        # Group 1 handles a quoted value followed by an optional trailing inline comment.
+        # Group 2 handles a standard quoted value with no trailing comment.
+        if ($val -match '^"([^"]*)"(?:\s*#.*)?$') {
+            $val = $matches[1]
+        }
+        elif ($val -match "^'([^']*)'(?:\s*#.*)?$") {
+            $val = $matches[1]
+        }
+        else {
+            # Fallback for completely unquoted values: safe to strip inline comments normally.
+            $val = ($val -replace '\s+#.*$', '').Trim()
         }
 
         $config[$key] = $val

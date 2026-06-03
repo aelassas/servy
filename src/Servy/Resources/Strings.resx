@@ -302,7 +302,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Configure a script or executable to run when the process fails to start. If health monitoring is disabled, the program will run when the process fails to start. If health monitoring is enabled, the program will only run after all configured recovery action retries have failed.</value>
   </data>
   <data name="Info_FailureProgramStartupDirectory" xml:space="preserve">
-    <value>Optional. Defaults to the failure program directory.</value>
+    <value>Optional. If not set, defaults to the service working directory.</value>
   </data>
 
   <!-- Environment Variables -->
@@ -352,7 +352,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Process Path</value>
   </data>
   <data name="Info_PreLaunchStartupDirectory" xml:space="preserve">
-    <value>Optional. Defaults to the service working directory.</value>
+    <value>Optional. If not set, defaults to the service working directory.</value>
   </data>
   <data name="Label_PreLaunchTimeoutSeconds" xml:space="preserve">
     <value>Timeout</value>
@@ -466,7 +466,7 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
 
   <data name="Info_PostLaunchStartupDirectory" xml:space="preserve">
-    <value>Optional. If not set, defaults to the directory of the post-launch program.</value>
+    <value>Optional. If not set, defaults to the service working directory.</value>
   </data>
 
   <!--Debug-Logs-->
@@ -497,7 +497,7 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Configure an optional script or executable to run before the main service stops. Use it for graceful shutdown tasks such as notifying external systems or draining resources. The pre-stop process runs synchronously and extends the service stop timeout while running, unless the timeout is set to 0.</value>
   </data>
   <data name="Info_PreStopStartupDirectory" xml:space="preserve">
-    <value>Optional. If not set, defaults to the directory of the pre-stop program.</value>
+    <value>Optional. If not set, defaults to the service working directory.</value>
   </data>
   <data name="Label_PreStopTimeoutSeconds" xml:space="preserve">
     <value>Timeout</value>
@@ -514,7 +514,7 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Configure an optional script or executable to run after the wrapped process and all of its child processes have exited. The post-stop process is started in fire-and-forget mode and does not block service shutdown.</value>
   </data>
   <data name="Info_PostStopStartupDirectory" xml:space="preserve">
-    <value>Optional. If not set, defaults to the directory of the post-stop program.</value>
+    <value>Optional. If not set, defaults to the service working directory.</value>
   </data>
 
   <!--Miscellaneous-->

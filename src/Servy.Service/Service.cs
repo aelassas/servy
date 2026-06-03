@@ -1383,7 +1383,7 @@ namespace Servy.Service
                 var args = _options.PostLaunchExecutableArgs ?? string.Empty;
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.PostLaunchWorkingDirectory)
-                    ? Path.GetDirectoryName(_options.PostLaunchExecutablePath) ?? string.Empty
+                    ? _options.WorkingDirectory
                     : _options.PostLaunchWorkingDirectory;
 
                 // 2. Configure Launch Options
@@ -1445,7 +1445,7 @@ namespace Servy.Service
                 var args = _options.FailureProgramArgs ?? string.Empty;
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.FailureProgramWorkingDirectory)
-                    ? Path.GetDirectoryName(_options.FailureProgramPath) ?? string.Empty
+                    ? _options.WorkingDirectory
                     : _options.FailureProgramWorkingDirectory;
 
                 // 2. Configure Launch Options
@@ -2518,7 +2518,7 @@ namespace Servy.Service
         /// <returns><see langword="true"/> if the process succeeded or failures are ignored; otherwise <see langword="false"/>.</returns>
         private bool StartPreStopProcess(StartOptions options)
         {
-            if (string.IsNullOrWhiteSpace(options.PreStopExecutablePath))
+            if (_options == null || string.IsNullOrWhiteSpace(options.PreStopExecutablePath))
             {
                 _logger?.Info("No pre-stop executable configured. Skipping.");
                 return true;
@@ -2543,13 +2543,18 @@ namespace Servy.Service
                 // 1. Prepare Environment and Arguments
                 var args = options.PreStopExecutableArgs ?? string.Empty;
 
+                var workingDir = string.IsNullOrWhiteSpace(_options.PreStopWorkingDirectory)
+                    ? _options.WorkingDirectory
+                    : _options.PreStopWorkingDirectory;
+
                 // 2. Configure Launch Options
                 var effectiveTimeoutMs = ClampTimeout(options.PreStopTimeoutInSeconds);
+
                 var launchOptions = new ProcessLaunchOptions
                 {
                     ExecutablePath = options.PreStopExecutablePath,
                     Arguments = args,
-                    WorkingDirectory = string.IsNullOrWhiteSpace(options.PreStopWorkingDirectory) ? options.WorkingDirectory : options.PreStopWorkingDirectory,
+                    WorkingDirectory = workingDir,
                     EnvironmentVariables = options.EnvironmentVariables,
                     FireAndForget = (effectiveTimeoutMs == 0),
                     TimeoutMs = effectiveTimeoutMs,
@@ -2791,7 +2796,7 @@ namespace Servy.Service
                 var args = _options.PostStopExecutableArgs ?? string.Empty;
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.PostStopWorkingDirectory)
-                    ? Path.GetDirectoryName(_options.PostStopExecutablePath) ?? string.Empty
+                    ? _options.WorkingDirectory
                     : _options.PostStopWorkingDirectory;
 
                 // 2. Configure Launch Options

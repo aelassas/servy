@@ -5,6 +5,6 @@ param(
 )
 
 $setupScript = Join-Path $PSScriptRoot "..\..\setup\publish-res.ps1"
-$targetFolder = Join-Path $PSScriptRoot "..\Servy.Service\Resources"
+$targetFolder = Join-Path $PSScriptRoot "Resources"
 
 & $setupScript -ProjectName "Servy.Restarter" -TargetResourcesFolder $targetFolder -Configuration "Debug" -Tfm $Tfm -Runtime $Runtime
