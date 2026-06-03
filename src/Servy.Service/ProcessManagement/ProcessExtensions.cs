@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.InteropServices;
 
 namespace Servy.Service.ProcessManagement
 {
@@ -28,7 +27,7 @@ namespace Servy.Service.ProcessManagement
             }
             catch (InvalidOperationException)
             {
-                try { return $"({process.Id})"; } catch { return "(Exited Process)"; }
+                try { return $"(PID {process.Id})"; } catch { return "(Exited Process)"; }
             }
             catch (Win32Exception)
             {

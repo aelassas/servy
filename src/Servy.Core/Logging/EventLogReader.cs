@@ -77,7 +77,8 @@ namespace Servy.Core.Logging
         /// Maps Windows Event Log levels into the application's <see cref="EventLogLevel"/> taxonomy.
         /// Note: Critical (level 1) is intentionally folded into <see cref="EventLogLevel.Error"/>
         /// because the consuming filter contract (see LogsViewModel.GetLogLevels) does not surface
-        /// a distinct Critical bucket. Verbose is preserved.
+        /// a distinct Critical bucket. Verbose is folded into <see cref="EventLogLevel.Information"/> 
+        /// to match the filter contract.
         /// </remarks>
         public static EventLogLevel ParseLevel(byte level)
         {

@@ -16,7 +16,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal("wuauserv", node.ServiceName);
             Assert.Equal("Windows Update", node.DisplayName);
             Assert.True(node.IsRunning);
-            Assert.True(node.IsCycle);
+            Assert.True(node.IsCyclic);
             Assert.True(node.IsExpanded);
             Assert.NotNull(node.Dependencies);
             Assert.Empty(node.Dependencies);

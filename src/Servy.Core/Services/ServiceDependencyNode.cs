@@ -71,7 +71,7 @@ namespace Servy.Core.Services
         /// Gets a value indicating whether this node represents a circular dependency 
         /// that has already appeared higher in the current branch of the tree.
         /// </summary>
-        public bool IsCycle { get; }
+        public bool IsCyclic { get; }
 
         #endregion
 
@@ -92,7 +92,7 @@ namespace Servy.Core.Services
             ServiceName = serviceName ?? throw new ArgumentNullException(nameof(serviceName));
             DisplayName = displayName;
             IsRunning = isRunning;
-            IsCycle = isCycle;
+            IsCyclic = isCycle;
         }
 
         #endregion
