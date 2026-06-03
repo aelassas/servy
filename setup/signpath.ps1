@@ -114,7 +114,7 @@ Get-Content $configPath | ForEach-Object {
         if ($val -match '^"([^"]*)"(?:\s*#.*)?$') {
             $val = $matches[1]
         }
-        elif ($val -match "^'([^']*)'(?:\s*#.*)?$") {
+        elseif ($val -match "^'([^']*)'(?:\s*#.*)?$") {
             $val = $matches[1]
         }
         else {
@@ -130,6 +130,7 @@ Get-Content $configPath | ForEach-Object {
 # CHECK SIGN FLAG
 # ----------------------------------------------------------
 $signFlag = $config["SIGN"]
+Write-Host "signFlag=$signFlag"
 if ($signFlag -ine "true") {
     Write-Host "SIGN is not true in $configPath. Skipping signing."
     return
