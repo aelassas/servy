@@ -157,7 +157,7 @@ function Show-Notification {
             Write-FallbackError -Message "ServyToast: Notification delivery aborted due to platform settings suppression ($settingState). Skipping watermark advance." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
             
             # ROBUSTNESS: Treat configuration blocks as structural permanent failures to prevent head-of-line blocking loops.
-            return 'PermanentFailure'
+            return 'TransientFailure'
         }
     } catch {
         # Setting probe restricted; proceed with delivery anyway.
@@ -165,12 +165,16 @@ function Show-Notification {
 
     # Track synchronous platform failures safely via local reference tracking blocks.
     $failedRef = [ref]$false
+    $failCode  = [ref]([int]0)
 
     # Event Handlers (Async Error Capture)
+    # ROBUSTNESS: WinRT fires the toast failure asynchronously on an external threadpool thread that 
+    # lacks a PowerShell runspace. Avoid calling any cmdlets inside the scriptblock handler to 
+    # prevent RunspaceAvailability exceptions; capture primitive types across the boundary instead.
     $null = $toast.add_Failed({
         param($evtSender, $evtArgs)
         $failedRef.Value = $true
-        Write-FallbackError -Message "ServyToast: Delivery failed (0x$($evtArgs.ErrorCode.ToString('X')))." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+        $failCode.Value  = [int]$evtArgs.ErrorCode
       })
 
     $notifier.Show($toast)
@@ -184,6 +188,7 @@ function Show-Notification {
     }
 
     if ($failedRef.Value) {
+        Write-FallbackError -Message ("ServyToast: Delivery failed (0x{0:X})." -f $failCode.Value) -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
         return 'TransientFailure'
     }
 

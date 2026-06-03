@@ -1089,7 +1089,7 @@ function Install-ServyService {
     [ValidateScript({ $_ -match $script:EnvVarValidationPattern })]
     [string] $EnvVars,
 
-    [ValidatePattern('^[a-zA-Z0-9_.\s;-]+$')]
+    [ValidatePattern('^[a-zA-Z0-9_.\s;$-]+$')]
     [string] $Deps,
 
     # Identity

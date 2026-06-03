@@ -18,9 +18,18 @@ namespace Servy.Core.Logging
             {
                 int processedCount = 0;
 
-                // Use a nullable EventRecord and wrap the entire loop body in 'using'
-                for (EventRecord? evt = reader.ReadEvent(); evt != null && processedCount < maxReadCount; evt = reader.ReadEvent())
+                // Explicit count constraint evaluation at the gate prevents 
+                // reading the (maxReadCount + 1)th record entirely.
+                while (processedCount < maxReadCount)
                 {
+                    EventRecord? evt = reader.ReadEvent();
+                    if (evt == null)
+                    {
+                        yield break;
+                    }
+
+                    // Enforces immediate context disposal of the native EVT_HANDLE 
+                    // as soon as the mapped data transfer object is yielded.
                     using (evt)
                     {
                         ServyEventLogEntry dto = MapToDto(evt);

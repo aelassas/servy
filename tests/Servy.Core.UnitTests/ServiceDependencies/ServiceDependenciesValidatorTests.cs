@@ -68,22 +68,24 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [Fact]
         public void Validate_NameWithSpecialCharacters_ReturnsFalse()
         {
-            var result = ServiceDependenciesValidator.Validate("Service$", out var errors);
+            // Changed from '$' to '@' to ensure invalid characters are still rejected correctly
+            var result = ServiceDependenciesValidator.Validate("Service@Name", out var errors);
 
             Assert.False(result);
-            Assert.Contains(errors, e => e.Contains("Service$"));
+            Assert.Contains(errors, e => e.Contains("Service@Name"));
         }
 
         [Fact]
         public void Validate_MixedValidAndInvalidNames_ReturnsFalse()
         {
-            var input = "GoodService;Bad Service;Another$Bad";
+            // 'MSSQL$SQLEXPRESS' is now treated as valid, while 'Bad Service' and 'Another@Bad' fail
+            var input = "MSSQL$SQLEXPRESS;Bad Service;Another@Bad";
             var result = ServiceDependenciesValidator.Validate(input, out var errors);
 
             Assert.False(result);
             Assert.Equal(2, errors.Count);
             Assert.Contains(errors, e => e.Contains("Bad Service"));
-            Assert.Contains(errors, e => e.Contains("Another$Bad"));
+            Assert.Contains(errors, e => e.Contains("Another@Bad"));
         }
 
         [Fact]
@@ -109,7 +111,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [Fact]
         public void Validate_AllInvalidNames_ReturnsFalse()
         {
-            var input = "Bad Service;Another$One;With@Symbol";
+            var input = "Bad Service;Another#One;With@Symbol";
             var result = ServiceDependenciesValidator.Validate(input, out var errors);
 
             Assert.False(result);
@@ -127,6 +129,16 @@ namespace Servy.Core.UnitTests.ServiceDependencies
 
             // Assert
             Assert.True(result); // or whatever is expected when valid
+        }
+
+        [Fact]
+        public void Validate_SingleValidServiceNameWithDollarSign_ReturnsTrue()
+        {
+            // Verifies fix for SQL Server Named Instances (e.g., MSSQL$SQLEXPRESS)
+            var result = ServiceDependenciesValidator.Validate("MSSQL$SQLEXPRESS", out var errors);
+
+            Assert.True(result);
+            Assert.Empty(errors);
         }
     }
 }

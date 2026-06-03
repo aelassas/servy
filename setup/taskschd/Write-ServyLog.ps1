@@ -23,9 +23,14 @@ function Write-ServyLog {
         } finally {
             $sha.Dispose()
         }
-        $mutexName = "Global\ServyLog_$hashString"
         
-        $mutex = New-Object System.Threading.Mutex($false, $mutexName)
+        
+        try {
+            $mutex = New-Object System.Threading.Mutex($false, "Global\ServyLog_$hashString")
+        } catch [System.UnauthorizedAccessException] {
+            # Standard users lack SeCreateGlobalPrivilege; per-session coordination is enough here.
+            $mutex = New-Object System.Threading.Mutex($false, "Local\ServyLog_$hashString")
+        }
         $hasLock = $false
 
         try {
