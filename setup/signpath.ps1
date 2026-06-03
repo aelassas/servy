@@ -114,7 +114,7 @@ Get-Content $configPath | ForEach-Object {
         if ($val -match '^"([^"]*)"(?:\s*#.*)?$') {
             $val = $matches[1]
         }
-        elif ($val -match "^'([^']*)'(?:\s*#.*)?$") {
+        elseif ($val -match "^'([^']*)'(?:\s*#.*)?$") {
             $val = $matches[1]
         }
         else {
