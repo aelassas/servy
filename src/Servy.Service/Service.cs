@@ -1694,24 +1694,21 @@ namespace Servy.Service
                     // If we hand off, InitiateRecoveryAsync() is responsible for managing the state.
                     if (!recoveryTriggered)
                     {
-                        if (!recoveryTriggered)
+                        // Use the token here to ensure we don't block shutdown if contention is high
+                        var ct = _cancellationSource?.Token ?? CancellationToken.None;
+                        try
                         {
-                            // Use the token here to ensure we don't block shutdown if contention is high
-                            var ct = _cancellationSource?.Token ?? CancellationToken.None;
-                            try
-                            {
-                                await _healthCheckSemaphore.WaitAsync(ct);
-                                try { _isRecovering = false; }
-                                finally { _healthCheckSemaphore.Release(); }
-                            }
-                            catch (OperationCanceledException)
-                            {
-                                _logger?.Info("ScheduleRecoveryAsync: Cleanup cancelled; service shutting down.");
-                            }
-                            catch (ObjectDisposedException)
-                            {
-                                _logger?.Info("ScheduleRecoveryAsync: Semaphore disposed; cleanup abandoned.");
-                            }
+                            await _healthCheckSemaphore.WaitAsync(ct);
+                            try { _isRecovering = false; }
+                            finally { _healthCheckSemaphore.Release(); }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            _logger?.Info("ScheduleRecoveryAsync: Cleanup cancelled; service shutting down.");
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                            _logger?.Info("ScheduleRecoveryAsync: Semaphore disposed; cleanup abandoned.");
                         }
                     }
                 }

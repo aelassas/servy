@@ -30,7 +30,7 @@ namespace Servy.UI.Converters
         /// <param name="targetType">The type to convert to (ignored).</param>
         /// <param name="parameter">Optional parameter (ignored).</param>
         /// <param name="culture">The culture to use in the converter (ignored).</param>
-        /// <returns>The inverted boolean value if <paramref name="value"/> is a bool; otherwise <c>true</c>.</returns>
+        /// <returns>The inverted boolean value if <paramref name="value"/> is a bool; otherwise <see cref="Binding.DoNothing"/>.</returns>
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is bool b) return !b;

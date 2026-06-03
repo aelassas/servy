@@ -57,11 +57,11 @@ namespace Servy.Core.Validators
         /// Validates that a configuration file exists, is secure, and stays within a safe size threshold, and returns a structured validation result.
         /// </summary>
         /// <param name="path">The file path to validate.</param>
-        /// <param name="content">Outputs the validated full path if successful; otherwise, null.</param>
+        /// <param name="fileContent">On success, outputs the full text content read from the validated file; otherwise, null.</param>
         /// <returns>A strongly-typed result containing the secure path token on success, or a rejection reason on failure.</returns>
-        public static PathSecurityResult ValidatePathSecurityAndSize(string path, out string? content)
+        public static PathSecurityResult ValidatePathSecurityAndSize(string path, out string? fileContent)
         {
-            content = null;
+            fileContent = null;
             string fullPath;
             try
             {
@@ -235,7 +235,7 @@ namespace Servy.Core.Validators
                     }
 
                     // Success: Set content output and return validated path token
-                    using (var sr = new StreamReader(fileStream)) content = sr.ReadToEnd();
+                    using (var sr = new StreamReader(fileStream)) fileContent = sr.ReadToEnd();
                     return PathSecurityResult.Success(fullPath);
                 }
             }

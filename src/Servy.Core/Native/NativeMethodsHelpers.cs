@@ -286,7 +286,7 @@ namespace Servy.Core.Native
                             {
                                 sha256.AppendData(buffer, 0, read);
 
-                                // Length-domain separator so 'AB' + 4-byte-len cannot collide with 'A' + 'B' + 4-byte-len.
+                                // Length-domain separator so 'AB' + 8-byte little-endian length cannot collide with 'A' + 'B' + 8-byte little-endian length.
                                 sha256.AppendData(BitConverter.GetBytes(fs.Length));
 
                                 byte[] hashBytes = sha256.GetHashAndReset();

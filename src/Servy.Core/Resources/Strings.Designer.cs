@@ -160,6 +160,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Environment variable &apos;{0}&apos; contains a forbidden newline character. Multi-line values are not supported..
+        /// </summary>
+        public static string Msg_EnvironmentVariableForbiddenNewline {
+            get {
+                return ResourceManager.GetString("Msg_EnvironmentVariableForbiddenNewline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Environment variable key cannot be empty..
         /// </summary>
         public static string Msg_EnvironmentVariableKeyEmpty {

@@ -122,11 +122,11 @@ namespace Servy.Core.Services
             cancellationToken.ThrowIfCancellationRequested();
 
             // 1. Detect Cycle in the CURRENT branch
-            var isCycle = currentPath.Contains(serviceName);
+            var isCyclic = currentPath.Contains(serviceName);
 
             // 2. Check if we've already built the subtree for this service elsewhere
             // We only return the cached subtree if this isn't a cycle in the current path.
-            if (!isCycle && fullyExpanded.TryGetValue(serviceName, out var cachedNode))
+            if (!isCyclic && fullyExpanded.TryGetValue(serviceName, out var cachedNode))
             {
                 // Re-use the existing populated node reference for diamond dependencies.
                 return cachedNode;
@@ -142,11 +142,11 @@ namespace Servy.Core.Services
                         service.ServiceName,
                         service.DisplayName,
                         isRunning,
-                        isCycle
+                        isCyclic
                     );
 
                     // Stop recursing if it's a cycle
-                    if (isCycle) return node;
+                    if (isCyclic) return node;
 
                     // 3. Add to path before diving deeper
                     currentPath.Add(serviceName);
@@ -189,8 +189,14 @@ namespace Servy.Core.Services
                             node.Dependencies.Add(child);
                         }
 
-                        // Mark globally as fully expanded by caching the completed node
-                        fullyExpanded[serviceName] = node;
+                        // MEMOIZATION REUSE: Evaluate if any descendant down this newly constructed 
+                        // subtree flagged a cycle tracking placeholder. If an explicit cycle placeholder exists, 
+                        // this subtree structure is path-dependent and cannot safely be stored globally.
+                        if (!HasCyclicDescendant(node))
+                        {
+                            // Mark globally as fully expanded by caching the completed node only if completely cycle-free
+                            fullyExpanded[serviceName] = node;
+                        }
                     }
                     finally
                     {
@@ -212,6 +218,22 @@ namespace Servy.Core.Services
                 Logger.Warn($"Win32 error resolving dependency '{serviceName}'.", ex);
                 return new ServiceDependencyNode(serviceName, string.Format(Strings.Msg_DependencyAccessDenied, serviceName), false, false);
             }
+        }
+
+        /// <summary>
+        /// Traverses the built tree reference recursively to inspect for nested cyclic path placeholders.
+        /// </summary>
+        private static bool HasCyclicDescendant(ServiceDependencyNode node)
+        {
+            if (node == null) return false;
+            if (node.IsCyclic) return true;
+
+            foreach (var child in node.Dependencies)
+            {
+                if (HasCyclicDescendant(child)) return true;
+            }
+
+            return false;
         }
 
         /// <inheritdoc/>

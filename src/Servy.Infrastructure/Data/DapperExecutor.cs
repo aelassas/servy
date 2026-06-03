@@ -231,9 +231,10 @@ namespace Servy.Infrastructure.Data
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
+            var actualTx = Unwrap(transaction);
+
             return ExecuteWithRetry(() =>
             {
-                var actualTx = Unwrap(transaction);
                 if (actualTx != null)
                 {
                     return actualTx.Connection!.ExecuteScalar<T>(sql, param, actualTx);
@@ -252,9 +253,10 @@ namespace Servy.Infrastructure.Data
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
+            var actualTx = Unwrap(transaction);
+
             return ExecuteWithRetry(() =>
             {
-                var actualTx = Unwrap(transaction);
                 if (actualTx != null)
                 {
                     return actualTx.Connection!.Execute(sql, param, actualTx);
@@ -273,9 +275,10 @@ namespace Servy.Infrastructure.Data
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
+            var actualTx = Unwrap(transaction);
+
             return ExecuteWithRetry(() =>
             {
-                var actualTx = Unwrap(transaction);
                 if (actualTx != null)
                 {
                     return actualTx.Connection!.Query<T>(sql, param, actualTx);
@@ -294,9 +297,10 @@ namespace Servy.Infrastructure.Data
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
+            var actualTx = Unwrap(transaction);
+
             return ExecuteWithRetry(() =>
             {
-                var actualTx = Unwrap(transaction);
                 if (actualTx != null)
                 {
                     return actualTx.Connection!.QuerySingleOrDefault<T>(sql, param, actualTx);

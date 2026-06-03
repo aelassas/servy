@@ -24,7 +24,7 @@ namespace Servy.Service.ProcessManagement
             }
             catch (InvalidOperationException)
             {
-                try { return $"({process.Id})"; } catch { return "(Exited Process)"; }
+                try { return $"(PID {process.Id})"; } catch { return "(Exited Process)"; }
             }
             catch (Win32Exception)
             {

@@ -957,8 +957,8 @@ function Install-ServyService {
 
    .NOTES
         DEVELOPER NOTE: Parameter Naming Convention
-        The dynamic argument builder in this function relies on a 1:1 mapping between 
-        PowerShell parameter names and Servy CLI flag names. 
+        New value-bearing parameters must be added to the $paramMapping table (CLI-flag => PS-parameter-name).
+        Switches are handled in the flags block; sensitive values via Resolve-SecureParameter.
         
         Example: 
         CLI Flag: "--startupDir" -> PS Parameter: "$StartupDir"

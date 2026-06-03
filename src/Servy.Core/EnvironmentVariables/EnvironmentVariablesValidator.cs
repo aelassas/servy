@@ -32,24 +32,66 @@ namespace Servy.Core.EnvironmentVariables
                 if (string.IsNullOrWhiteSpace(variable))
                     continue;
 
-                // Optimization: Use IndexOfUnescapedChar directly to perform existence check and 
-                // locate the delimiter in a single pass, matching the parser's pattern.
-                int idx = EscapedTokenizer.IndexOfUnescapedChar(variable, '=');
-
-                if (idx < 0)
+                // Call the centralized grammar rule validation engine to guarantee parity with Parser checks
+                if (!ProcessAndValidateRecord(variable, out _, out _, out errorMessage))
                 {
-                    errorMessage = Strings.Msg_EnvironmentVariableMissingEquals;
                     return false;
                 }
+            }
 
-                // Extract key and trim
-                string key = variable.Substring(0, idx).Trim();
+            return true;
+        }
 
-                if (string.IsNullOrEmpty(key))
-                {
-                    errorMessage = Strings.Msg_EnvironmentVariableKeyEmpty;
-                    return false;
-                }
+        /// <summary>
+        /// Shared syntax validation block used by both Validator and Parser to guarantee alignment.
+        /// </summary>
+        internal static bool ProcessAndValidateRecord(string part, out string key, out string value, out string errorMessage)
+        {
+            key = string.Empty;
+            value = string.Empty;
+            errorMessage = string.Empty;
+
+            // Find first unescaped '='
+            int eqIdx = EscapedTokenizer.IndexOfUnescapedChar(part, '=');
+            if (eqIdx < 0)
+            {
+                errorMessage = Strings.Msg_EnvironmentVariableMissingEquals;
+                return false;
+            }
+
+            // Extract raw key and value substrings
+            var rawKey = part.Substring(0, eqIdx);
+            var rawValue = part.Substring(eqIdx + 1);
+
+            key = EscapedTokenizer.Unescape(rawKey).Trim();
+
+            if (string.IsNullOrEmpty(key))
+            {
+                errorMessage = Strings.Msg_EnvironmentVariableKeyEmpty;
+                return false;
+            }
+
+            // 1. Trim whitespace first to expose structural quotes
+            var trimmedValue = rawValue.Trim();
+
+            // 2. Remove surrounding quotes ONLY. By doing this BEFORE unescaping, 
+            // we allow users to pass escaped quotes (e.g., \"hello\") that bypass this 
+            // structural strip and survive into the final value.
+            if (trimmedValue.Length >= 2
+               && trimmedValue[0] == '"'
+               && trimmedValue[trimmedValue.Length - 1] == '"'
+               && !EscapedTokenizer.IsEscapedAt(trimmedValue, trimmedValue.Length - 1))
+            {
+                trimmedValue = trimmedValue.Substring(1, trimmedValue.Length - 2);
+            }
+
+            // 3. Finally, unescape the inner content
+            value = EscapedTokenizer.Unescape(trimmedValue);
+
+            if (value.Contains("\n") || value.Contains("\r"))
+            {
+                errorMessage = string.Format(Strings.Msg_EnvironmentVariableForbiddenNewline, key);
+                return false;
             }
 
             return true;
