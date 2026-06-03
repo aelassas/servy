@@ -12,11 +12,11 @@ namespace Servy.Core.EnvironmentVariables
         /// Checks that each variable contains at least one unescaped equals character, and that the variable key before the equals sign is not empty.
         /// </summary>
         /// <param name="environmentVariables">The raw environment variables string to validate.</param>
-        /// <param name="errorMessage">When validation fails, contains the error message describing the issue; otherwise, an empty string.</param>
+        /// <param name="errors">When validation fails, contains the error messages describing the issues; otherwise, an empty list.</param>
         /// <returns>A boolean value indicating true if the input is valid, or false if format violations were detected.</returns>
-        public static bool Validate(string? environmentVariables, out string errorMessage)
+        public static bool Validate(string? environmentVariables, out List<string> errors)
         {
-            errorMessage = string.Empty;
+            errors = new List<string>();
             if (string.IsNullOrWhiteSpace(environmentVariables))
             {
                 // No error if empty
@@ -33,13 +33,13 @@ namespace Servy.Core.EnvironmentVariables
                     continue;
 
                 // Call the centralized grammar rule validation engine to guarantee parity with Parser checks
-                if (!ProcessAndValidateRecord(variable, out _, out _, out errorMessage))
+                if (!ProcessAndValidateRecord(variable, out _, out _, out string errorMessage))
                 {
-                    return false;
+                    errors.Add(errorMessage);
                 }
             }
 
-            return true;
+            return errors.Count == 0;
         }
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace Servy.Core.EnvironmentVariables
             var rawKey = part.Substring(0, eqIdx);
             var rawValue = part.Substring(eqIdx + 1);
 
-            key = EscapedTokenizer.Unescape(rawKey).Trim();
+            key = EscapedTokenizer.Unescape(rawKey.Trim());
 
             if (string.IsNullOrEmpty(key))
             {

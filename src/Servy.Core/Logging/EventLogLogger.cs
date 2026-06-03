@@ -51,7 +51,9 @@ namespace Servy.Core.Logging
             _source = source;
             _isEventLogEnabled = isEventLogEnabled;
             _currentLogLevel = (int)level;
-            Prefix = prefix; // Immutable assignment
+
+            // Enforce clean layout validation if a top-level global instance prefix is supplied.
+            Prefix = string.IsNullOrWhiteSpace(prefix) ? null : $"[{prefix.Trim()}]";
 
             if (_isEventLogEnabled)
             {
@@ -93,8 +95,21 @@ namespace Servy.Core.Logging
         /// <inheritdoc/>
         public IServyLogger CreateScoped(string prefix)
         {
-            // Inherit the parent's settings but apply the new immutable prefix.
-            return new ScopedEventLogLogger(this, prefix);
+            if (string.IsNullOrWhiteSpace(prefix))
+            {
+                return this;
+            }
+
+            // Apply explicit structural bracket aggregation rules starting from the initial parent pass.
+            string sanitizedSegment = ScopedEventLogLogger.SanitizePrefixSegment(prefix);
+            string combined = string.IsNullOrWhiteSpace(Prefix)
+                ? $"[{sanitizedSegment}]"
+                : $"{Prefix} [{sanitizedSegment}]";
+
+            var scope = new ScopedEventLogLogger(this, combined);
+            scope.SetLogLevel((LogLevel)_currentLogLevel);
+            scope.SetIsEventLogEnabled(_isEventLogEnabled);
+            return scope;
         }
 
         /// <inheritdoc/>
@@ -282,7 +297,7 @@ namespace Servy.Core.Logging
         protected virtual string Format(string message)
         {
             // Since Prefix is now immutable, this is thread-safe.
-            return string.IsNullOrWhiteSpace(Prefix) ? message : $"[{Prefix}] {message}";
+            return string.IsNullOrWhiteSpace(Prefix) ? message : $"{Prefix} {message}";
         }
 
         #endregion
@@ -318,7 +333,7 @@ namespace Servy.Core.Logging
 
                 // Inherit current snapshot of settings from parent
                 _currentLogLevel = parent._currentLogLevel;
-                _isEventLogEnabled = parent._isEventLogEnabled;
+                _isEventLogEnabled = parent.IsEventLogEnabled;
             }
 
             /// <inheritdoc/>
@@ -326,8 +341,8 @@ namespace Servy.Core.Logging
             {
                 if ((LogLevel)_currentLogLevel <= LogLevel.Debug)
                 {
-                    // Bypass _parent.Debug() to avoid the parent's level filter.
-                    var fullMessage = _parent.Format(Format(ex != null ? $"{message}\n{ex}" : message));
+                    // Clean structural alignment logic bypassing double parent formatting calculations
+                    var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
                     Logger.Debug(fullMessage);
                 }
             }
@@ -337,7 +352,7 @@ namespace Servy.Core.Logging
             {
                 if ((LogLevel)_currentLogLevel <= LogLevel.Info)
                 {
-                    var fullMessage = _parent.Format(Format(ex != null ? $"{message}\n{ex}" : message));
+                    var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
 
                     if (_isEventLogEnabled)
                     {
@@ -354,7 +369,7 @@ namespace Servy.Core.Logging
             {
                 if ((LogLevel)_currentLogLevel <= LogLevel.Warn)
                 {
-                    var fullMessage = _parent.Format(Format(ex != null ? $"{message}\n{ex}" : message));
+                    var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
 
                     if (_isEventLogEnabled)
                     {
@@ -370,7 +385,7 @@ namespace Servy.Core.Logging
             {
                 if ((LogLevel)_currentLogLevel <= LogLevel.Error)
                 {
-                    var fullMessage = _parent.Format(Format(ex != null ? $"{message}\n{ex}" : message));
+                    var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
 
                     if (_isEventLogEnabled)
                     {
@@ -402,8 +417,20 @@ namespace Servy.Core.Logging
             /// <inheritdoc/>
             public IServyLogger CreateScoped(string prefix)
             {
-                // Create a new scope that inherits THIS scope's current settings
-                var combined = string.IsNullOrWhiteSpace(Prefix) ? prefix : $"{Prefix}] [{prefix}";
+                if (string.IsNullOrWhiteSpace(prefix))
+                {
+                    return this;
+                }
+
+                // Sanitize the segment to prevent user-supplied brackets from breaking log text token parsing.
+                string sanitizedSegment = SanitizePrefixSegment(prefix);
+
+                // Build the compound prefix token directly with explicit bracket boundaries per segment 
+                // instead of relying on structural "bracket-balancing" string manipulation tricks.
+                string combined = string.IsNullOrWhiteSpace(Prefix)
+                    ? $"[{sanitizedSegment}]"
+                    : $"{Prefix} [{sanitizedSegment}]";
+
                 var scope = new ScopedEventLogLogger(_parent, combined);
                 scope.SetLogLevel((LogLevel)_currentLogLevel);
                 scope.SetIsEventLogEnabled(_isEventLogEnabled);
@@ -411,13 +438,24 @@ namespace Servy.Core.Logging
             }
 
             /// <summary>
-            /// Formats a log message by prepending the <see cref="Prefix"/> if it is set.
+            /// Replaces nested or structural bracket symbols with parenthetical characters to guarantee string tokenization integrity.
+            /// </summary>
+            internal static string SanitizePrefixSegment(string segment)
+            {
+                if (string.IsNullOrWhiteSpace(segment)) return string.Empty;
+                return segment.Replace('[', '(').Replace(']', ')').Trim();
+            }
+
+            /// <summary>
+            /// Formats a log message by prepending the pre-constructed <see cref="Prefix"/> if it is set.
             /// </summary>
             /// <param name="message">The original log message.</param>
-            /// <returns>The formatted message with prefix if available.</returns>
+            /// <returns>The formatted message with structural prefixes if available.</returns>
             private string Format(string message)
             {
-                return string.IsNullOrWhiteSpace(Prefix) ? message : $"[{Prefix}] {message}";
+                // Prefix is now pre-wrapped safely in its own bracket sets (e.g., "[A]" or "[A] [B]")
+                // so Format simply appends it directly without performing outer re-wrapping logic.
+                return string.IsNullOrWhiteSpace(Prefix) ? message : $"{Prefix} {message}";
             }
         }
 

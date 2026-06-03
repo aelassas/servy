@@ -45,6 +45,7 @@ namespace Servy.Core.Helpers
 
         /// <summary>
         /// Attempts to parse a string into a boolean. 
+        /// Supports standard .NET booleans alongside common config-file semantic variants ('1', '0', 'yes', 'no', 'on', 'off', 'y', 'n').
         /// Logs a warning and returns the default value if the input is malformed.
         /// </summary>
         /// <param name="rawValue">The raw string value to be parsed.</param>
@@ -64,10 +65,28 @@ namespace Servy.Core.Helpers
                 return defaultValue;
             }
 
+            string sanitized = rawValue.Trim();
+
             // .NET's bool.TryParse handles common "True"/"False" strings (case-insensitive).
-            if (bool.TryParse(rawValue, out var result))
+            if (bool.TryParse(sanitized, out var result))
             {
                 return result;
+            }
+
+            // Fall back to evaluating common environment, human-edited, and cross-platform config aliases
+            switch (sanitized.ToLowerInvariant())
+            {
+                case "1":
+                case "yes":
+                case "y":
+                case "on":
+                    return true;
+
+                case "0":
+                case "no":
+                case "n":
+                case "off":
+                    return false;
             }
 
             // Consistent with Servy's diagnostic patterns to ensure misconfigured services are easily triaged.

@@ -32,6 +32,20 @@ namespace Servy.Core.Logging.IntegrationTests
         }
 
         [Fact]
+        public void Constructor_WithGlobalPrefix_WrapsInBrackets()
+        {
+            string source = GenerateSourceName();
+
+            // Act
+            using (var logger = new EventLogLogger(source, LogLevel.Info, false, "GlobalEngine"))
+            {
+                // Assert
+                // Parent should automatically encapsulate its internal prefix in standard brackets
+                Assert.Equal("[GlobalEngine]", logger.Prefix);
+            }
+        }
+
+        [Fact]
         public void SetIsEventLogEnabled_TogglesStateAndHandlesCorrectly()
         {
             if (!_isElevated) return;
@@ -106,7 +120,7 @@ namespace Servy.Core.Logging.IntegrationTests
                 logger.Error("Error msg", null);
 
                 // No exceptions thrown means branches were safely evaluated
-                Assert.Equal("TestPrefix", logger.Prefix);
+                Assert.Equal("[TestPrefix]", logger.Prefix);
             }
         }
 
@@ -157,6 +171,21 @@ namespace Servy.Core.Logging.IntegrationTests
         #region ScopedEventLogLogger Tests
 
         [Fact]
+        public void ScopedLogger_EmptyOrWhitespacePrefix_ReturnsSameInstanceWithoutAllocation()
+        {
+            string source = GenerateSourceName();
+            using (var rootLogger = new EventLogLogger(source, LogLevel.Info, false))
+            {
+                var scope1 = rootLogger.CreateScoped("   ");
+                var scope2 = rootLogger.CreateScoped(null!);
+
+                // Assert immutability pass-through optimization behavior
+                Assert.Same(rootLogger, scope1);
+                Assert.Same(rootLogger, scope2);
+            }
+        }
+
+        [Fact]
         public void ScopedLogger_InheritsSettings_ButCanOverrideIsEventLogEnabled()
         {
             string source = GenerateSourceName();
@@ -165,8 +194,8 @@ namespace Servy.Core.Logging.IntegrationTests
                 // Act
                 var scopedLogger = rootLogger.CreateScoped("Scope1");
 
-                // Assert initial inheritance
-                Assert.Equal("Scope1", scopedLogger.Prefix);
+                // Assert initial inheritance and immediate bracket tracking on the first pass
+                Assert.Equal("[Scope1]", scopedLogger.Prefix);
 
                 // Act - Change scope settings
                 scopedLogger.SetLogLevel(LogLevel.Debug);
@@ -199,11 +228,29 @@ namespace Servy.Core.Logging.IntegrationTests
                 var level2Scope = level1Scope.CreateScoped("L2"); // Scoped -> Scoped
 
                 // Assert
-                // When a scoped logger creates a child scope, it combines them: "L1] [L2"
-                Assert.Equal("L1] [L2", level2Scope.Prefix);
+                // When a scoped logger creates a child scope, it combines them cleanly with brackets: "[Root] [L1] [L2]"
+                Assert.Equal("[Root] [L1] [L2]", level2Scope.Prefix);
 
-                // Ensure it runs log formatting gracefully
+                // Ensure it runs log formatting gracefully without duplicate processing crashes
                 Exception? ex = Record.Exception(() => level2Scope.Info("Nested Log"));
+                Assert.Null(ex);
+            }
+        }
+
+        [Fact]
+        public void ScopedLogger_WhenPrefixContainsBrackets_SanitizesToParentheses()
+        {
+            string source = GenerateSourceName();
+            using (var rootLogger = new EventLogLogger(source, LogLevel.Info, false, "Root"))
+            {
+                // Act: Consumer passes custom bracketted contexts explicitly
+                var scopedLogger = rootLogger.CreateScoped("[WexflowContext]");
+
+                // Assert
+                // The inner brackets must be rewritten as parentheses to maintain structural integrity
+                Assert.Equal("[Root] [(WexflowContext)]", scopedLogger.Prefix);
+
+                Exception? ex = Record.Exception(() => scopedLogger.Info("Sanitized output logic test"));
                 Assert.Null(ex);
             }
         }
@@ -233,7 +280,7 @@ namespace Servy.Core.Logging.IntegrationTests
                         EventLog.DeleteEventSource(source);
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     // Suppress locking errors if the EventLog service is slow to release handles during test teardown
                     // Log the failure but don't crash the test runner. 

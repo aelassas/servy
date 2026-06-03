@@ -429,7 +429,7 @@ namespace Servy.Core.Domain
         /// </returns>
         public ServiceControllerStatus? GetStatus(CancellationToken cancellationToken = default)
         {
-            if (IsInstalled())
+            if (IsInstalled(cancellationToken))
             {
                 var status = _serviceManager.GetServiceStatus(Name, cancellationToken);
                 return status;
@@ -440,24 +440,26 @@ namespace Servy.Core.Domain
         /// <summary>
         /// Determines whether the Windows service represented by this instance is installed.
         /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// <c>true</c> if the service is installed; otherwise, <c>false</c>.
         /// </returns>
-        public bool IsInstalled()
+        public bool IsInstalled(CancellationToken cancellationToken = default)
         {
-            return _serviceManager.IsServiceInstalled(Name);
+            return _serviceManager.IsServiceInstalled(Name, cancellationToken);
         }
 
         /// <summary>
         /// Gets the configured startup type of the Windows service represented by this instance.
         /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// A <see cref="ServiceStartType"/> value representing the startup type,
         /// or <c>null</c> if the service is not installed or the startup type cannot be determined.
         /// </returns>
-        public ServiceStartType? GetServiceStartupType()
+        public ServiceStartType? GetServiceStartupType(CancellationToken cancellationToken = default)
         {
-            return _serviceManager.GetServiceStartupType(Name);
+            return _serviceManager.GetServiceStartupType(Name, cancellationToken);
         }
 
         /// <summary>

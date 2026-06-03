@@ -1,7 +1,6 @@
 ﻿using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Resources;
-using System.Reflection;
 
 namespace Servy.Core.UnitTests.EnvironmentVariables
 {
@@ -10,155 +9,155 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [Fact]
         public void Validate_EmptyInput_ReturnsTrue()
         {
-            string error;
+            List<string> error;
             var result = EnvironmentVariablesValidator.Validate("", out error);
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
         public void Validate_OnlyWhitespaceInput_ReturnsTrue()
         {
-            string error;
-            var result = EnvironmentVariablesValidator.Validate("   \r\n\t  ", out error);
+            List<string> error;
+            var result = EnvironmentVariablesValidator.Validate("   \r\n\t   ", out error);
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
         public void Validate_SingleValidVariable_ReturnsTrue()
         {
-            string error;
+            List<string> error;
             var result = EnvironmentVariablesValidator.Validate("KEY=VALUE", out error);
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
         public void Validate_MultipleVariablesSeparatedBySemicolon_ReturnsTrue()
         {
-            string error;
+            List<string> error;
             var result = EnvironmentVariablesValidator.Validate("KEY1=VAL1;KEY2=VAL2", out error);
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
         public void Validate_MultipleVariablesSeparatedByNewLines_ReturnsTrue()
         {
-            string error;
+            List<string> error;
             var input = "KEY1=VAL1\r\nKEY2=VAL2\nKEY3=VAL3";
             var result = EnvironmentVariablesValidator.Validate(input, out error);
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
         public void Validate_MultipleVariablesMixedDelimiters_ReturnsTrue()
         {
-            string error;
+            List<string> error;
             var input = "KEY1=VAL1;KEY2=VAL2\r\nKEY3=VAL3\nKEY4=VAL4";
             var result = EnvironmentVariablesValidator.Validate(input, out error);
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
         public void Validate_VariableWithEscapedEqualsInKey_ReturnsTrue()
         {
-            string error;
+            List<string> error;
             var input = @"KEY\=PART=VALUE";
             var result = EnvironmentVariablesValidator.Validate(input, out error);
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
         public void Validate_VariableWithEscapedSemicolonInKey_ReturnsTrue()
         {
-            string error;
+            List<string> error;
             var input = @"KEY\;PART=VALUE";
             var result = EnvironmentVariablesValidator.Validate(input, out error);
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
         public void Validate_VariableWithEscapedBackslashInKey_ReturnsTrue()
         {
-            string error;
+            List<string> error;
             var input = @"KEY\\PART=VALUE";
             var result = EnvironmentVariablesValidator.Validate(input, out error);
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
         public void Validate_VariableWithEscapedEqualsInValue_ReturnsTrue()
         {
-            string error;
+            List<string> error;
             var input = @"KEY=VALUE\=PART";
             var result = EnvironmentVariablesValidator.Validate(input, out error);
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
         public void Validate_VariableWithEscapedSemicolonInValue_ReturnsTrue()
         {
-            string error;
+            List<string> error;
             var input = @"KEY=VALUE\;PART";
             var result = EnvironmentVariablesValidator.Validate(input, out error);
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
         public void Validate_VariableWithEscapedBackslashInValue_ReturnsTrue()
         {
-            string error;
+            List<string> error;
             var input = @"KEY=VALUE\\PART";
             var result = EnvironmentVariablesValidator.Validate(input, out error);
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
         public void Validate_VariableMissingEquals_ReturnsFalse()
         {
-            string error;
+            List<string> error;
             var result = EnvironmentVariablesValidator.Validate("NOVALUE", out error);
             Assert.False(result);
-            Assert.Equal(Strings.Msg_EnvironmentVariableMissingEquals, error);
+            Assert.Contains(error, e => e.Contains(Strings.Msg_EnvironmentVariableMissingEquals));
         }
 
         [Fact]
         public void Validate_VariableWithEmptyKey_ReturnsFalse()
         {
-            string error;
+            List<string> error;
             var result = EnvironmentVariablesValidator.Validate("=VALUE", out error);
             Assert.False(result);
-            Assert.Equal(Strings.Msg_EnvironmentVariableKeyEmpty, error);
+            Assert.Contains(error, e => e.Contains(Strings.Msg_EnvironmentVariableKeyEmpty));
         }
 
         [Fact]
         public void Validate_IgnoresEmptySegments()
         {
-            string error;
+            List<string> error;
             var result = EnvironmentVariablesValidator.Validate("KEY1=VAL1;;KEY2=VAL2;", out error);
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
         public void Validate_VariableWithMultipleEqualsButOnlyOneUnescaped_ReturnsTrue()
         {
-            string error;
+            List<string> error;
             // The first '=' unescaped is counted, others escaped by backslash
             var input = @"KEY1=VAL\=UE";
             var result = EnvironmentVariablesValidator.Validate(input, out error);
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
@@ -221,49 +220,48 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         {
             // Scenario: Connection Strings and Base64 often have multiple '='.
             // Validator should allow this as long as the first '=' provides a valid key.
-            string error;
+            List<string> error;
             var input = "CONN=Server=localhost;Database=Test;TOKEN=SGVsbG8==;";
             var result = EnvironmentVariablesValidator.Validate(input, out error);
 
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
         public void Validate_VariableWithNoUnescapedEquals_ReturnsFalse()
         {
             // Scenario: All equals signs are escaped, so there is no key/value separator.
-            string error;
+            List<string> error;
             var input = @"KEY\=VALUE;KEY2\=VALUE2";
             var result = EnvironmentVariablesValidator.Validate(input, out error);
 
             Assert.False(result);
-            // Updated to match the refined error message
-            Assert.Contains(Strings.Msg_EnvironmentVariableMissingEquals, error);
+            Assert.Contains(error, e => e.Contains(Strings.Msg_EnvironmentVariableMissingEquals));
         }
 
         [Fact]
         public void Validate_VariableWithWhitespaceKey_ReturnsFalse()
         {
             // Scenario: Key consists only of whitespace before the first '='.
-            string error;
+            List<string> error;
             var input = "   =VALUE";
             var result = EnvironmentVariablesValidator.Validate(input, out error);
 
             Assert.False(result);
-            Assert.Contains(Strings.Msg_EnvironmentVariableKeyEmpty, error, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(error, e => e.Contains(Strings.Msg_EnvironmentVariableKeyEmpty));
         }
 
         [Fact]
         public void Validate_Base64Value_ReturnsTrue()
         {
             // Scenario: Base64 padding uses '=' which shouldn't require escaping in the value field.
-            string error;
+            List<string> error;
             var input = "VAR=SGVsbG8gd29ybGQ=";
             var result = EnvironmentVariablesValidator.Validate(input, out error);
 
             Assert.True(result);
-            Assert.Equal(string.Empty, error);
+            Assert.Empty(error);
         }
 
         [Fact]
@@ -271,11 +269,12 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         {
             // Scenario: Mix of escaped backslashes and delimiters.
             // "KEY\\" (escaped backslash) + "=" (unescaped separator) + "VAL"
-            string error;
+            List<string> error;
             var input = @"KEY\\=VAL";
             var result = EnvironmentVariablesValidator.Validate(input, out error);
 
             Assert.True(result);
+            Assert.Empty(error);
         }
 
         [Fact]
@@ -292,8 +291,9 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             // The serialization must explicitly present the escaped sequences back out to prevent line truncation
             Assert.Contains(@"MULTILINE_KEY=line1\\nline2", formatted);
 
-            bool isValid = EnvironmentVariablesValidator.Validate(formatted, out string error);
-            Assert.True(isValid, $"Validator rejected formatted output with error: {error}");
+            List<string> error;
+            bool isValid = EnvironmentVariablesValidator.Validate(formatted, out error);
+            Assert.True(isValid, $"Validator rejected formatted output with errors count: {error.Count}");
         }
 
         [Fact]
@@ -304,12 +304,12 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             string corruptedInput = "KEY=line1\nline2_with_no_equals";
 
             // Act
-            bool isValid = EnvironmentVariablesValidator.Validate(corruptedInput, out string errorMessage);
+            List<string> errorMessages;
+            bool isValid = EnvironmentVariablesValidator.Validate(corruptedInput, out errorMessages);
 
             // Assert
             Assert.False(isValid);
-            Assert.False(string.IsNullOrEmpty(errorMessage));
+            Assert.NotEmpty(errorMessages);
         }
-
     }
 }

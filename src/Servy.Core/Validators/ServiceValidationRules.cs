@@ -131,18 +131,18 @@ namespace Servy.Core.Validators
             }
 
             // Environment & Dependencies
-            if (!EnvironmentVariablesValidator.Validate(StringHelper.NormalizeString(dto.EnvironmentVariables), out var envErrorMsg))
-                result.Errors.Add(envErrorMsg);
+            if (!EnvironmentVariablesValidator.Validate(StringHelper.NormalizeString(dto.EnvironmentVariables), out var envErrors))
+                result.Errors.AddRange(envErrors);
             if (!ServiceDependenciesValidator.Validate(StringHelper.NormalizeString(dto.ServiceDependencies), out var depsErrors))
-                foreach (var msg in depsErrors) result.Errors.Add(msg);
+                result.Errors.AddRange(depsErrors);
 
             // Pre-Launch
             if (!string.IsNullOrWhiteSpace(dto.PreLaunchExecutablePath) && !_processHelper.ValidatePath(dto.PreLaunchExecutablePath))
                 result.Errors.Add(Strings.Msg_InvalidPreLaunchPath);
             if (!string.IsNullOrWhiteSpace(dto.PreLaunchStartupDirectory) && !_processHelper.ValidatePath(dto.PreLaunchStartupDirectory, false))
                 result.Errors.Add(Strings.Msg_InvalidPreLaunchStartupDirectory);
-            if (!EnvironmentVariablesValidator.Validate(StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables), out var preLaunchEnvErrorMsg))
-                result.Errors.Add(preLaunchEnvErrorMsg);
+            if (!EnvironmentVariablesValidator.Validate(StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables), out var preLaunchEnvErrors))
+                result.Errors.AddRange(preLaunchEnvErrors);
             if (!string.IsNullOrWhiteSpace(dto.PreLaunchStdoutPath) && !Helper.IsValidPath(dto.PreLaunchStdoutPath))
                 result.Errors.Add(Strings.Msg_InvalidPreLaunchStdoutPath);
             if (!string.IsNullOrWhiteSpace(dto.PreLaunchStderrPath) && !Helper.IsValidPath(dto.PreLaunchStderrPath))
