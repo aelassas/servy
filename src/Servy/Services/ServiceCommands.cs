@@ -177,7 +177,7 @@ namespace Servy.Services
                     StderrPath = dto.StderrPath,
                     EnableSizeRotation = dto.EnableSizeRotation ?? AppConfig.DefaultEnableSizeRotation,
                     RotationSizeInBytes = rotationSizeValue,
-                    MaxRotations = dto.MaxRotations,
+                    MaxRotations = dto.MaxRotations ?? AppConfig.DefaultMaxRotations,
                     EnableDateRotation = dto.EnableDateRotation ?? AppConfig.DefaultEnableDateRotation,
                     DateRotationType = (DateRotationType)(dto.DateRotationType ?? (int)AppConfig.DefaultDateRotationType),
                     UseLocalTimeForRotation = dto.UseLocalTimeForRotation ?? AppConfig.DefaultUseLocalTimeForRotation,
@@ -210,14 +210,14 @@ namespace Servy.Services
                     PostLaunchWorkingDirectory = dto.PostLaunchStartupDirectory,
                     PostLaunchArgs = dto.PostLaunchParameters,
 
-                    StartTimeout = dto.StartTimeout,
-                    StopTimeout = dto.StopTimeout,
+                    StartTimeout = dto.StartTimeout ?? AppConfig.DefaultStartTimeout,
+                    StopTimeout = dto.StopTimeout ?? AppConfig.DefaultStopTimeout,
 
                     PreStopExePath = dto.PreStopExecutablePath,
                     PreStopWorkingDirectory = dto.PreStopStartupDirectory,
                     PreStopArgs = dto.PreStopParameters,
-                    PreStopTimeout = dto.PreStopTimeoutSeconds,
-                    PreStopLogAsError = dto.PreStopLogAsError,
+                    PreStopTimeout = dto.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds,
+                    PreStopLogAsError = dto.PreStopLogAsError ?? AppConfig.DefaultPreStopLogAsError,
 
                     PostStopExePath = dto.PostStopExecutablePath,
                     PostStopWorkingDirectory = dto.PostStopStartupDirectory,

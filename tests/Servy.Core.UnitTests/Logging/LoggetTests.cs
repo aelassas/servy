@@ -183,6 +183,11 @@ namespace Servy.Core.UnitTests.Logging
         public void Log_SanitizesMessage_MaintainsSingleLineContract(string rawMessage, string expectedFragment)
         {
             // Arrange
+            // Ensure any old test file artifacts are completely wiped before starting
+            if (File.Exists(_fullLogPath))
+            {
+                File.Delete(_fullLogPath);
+            }
             Logger.Initialize(_testFileName);
 
             // Act
@@ -505,6 +510,12 @@ namespace Servy.Core.UnitTests.Logging
         public void SetUseLocalTimeForRotation_UpdatesTimestampTimezoneFormat()
         {
             // Arrange
+            // Ensure any old test file artifacts are completely wiped before starting
+            if (File.Exists(_fullLogPath))
+            {
+                File.Delete(_fullLogPath);
+            }
+
             Logger.Initialize(_testFileName, useLocalTimeForRotation: false);
 
             // Act
@@ -515,6 +526,9 @@ namespace Servy.Core.UnitTests.Logging
 
             // Assert
             string[] lines = File.ReadAllLines(_fullLogPath);
+
+            // Ensure we captured exactly two distinct lines to prevent out-of-bounds or trailing noise
+            Assert.True(lines.Length >= 2, $"Expected at least 2 log lines, but found {lines.Length}");
 
             // Validate the first log entry uses UTC "Z" marker
             Assert.Contains("Z] [INFO]", lines[0]);

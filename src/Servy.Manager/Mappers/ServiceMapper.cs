@@ -117,10 +117,10 @@ namespace Servy.Manager.Mappers
             if (ServiceAccounts.LocalSystemAliases.Contains(userSession))
                 return AppConfig.LocalSystem;
 
-            if (userSession.Equals(ServiceAccounts.LocalService, StringComparison.OrdinalIgnoreCase))
+            if (ServiceAccounts.LocalServiceAliases.Contains(userSession))
                 return AppConfig.LocalService;
 
-            if (userSession.Equals(ServiceAccounts.NetworkService, StringComparison.OrdinalIgnoreCase))
+            if (ServiceAccounts.NetworkServiceAliases.Contains(userSession))
                 return AppConfig.NetworkService;
 
             return userSession;

@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Logging;
+using Servy.Core.Native;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,10 +9,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using System.Threading;
-using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Helpers
 {
@@ -80,43 +78,8 @@ namespace Servy.Core.Helpers
                 return tree;
             }
 
-            var parentToChildren = new Dictionary<int, List<int>>();
-            IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-
-            // Defensiveness: Handle both known failure returns for CreateToolhelp32Snapshot
-            if (snapshot == INVALID_HANDLE_VALUE || snapshot == IntPtr.Zero)
-            {
-                int err = Marshal.GetLastWin32Error();
-                Logger.Warn($"GetProcessTree: CreateToolhelp32Snapshot failed (Win32 {err}) - returning root PID only; descendant metrics will be missing.");
-                return tree;
-            }
-
-            try
-            {
-                PROCESSENTRY32 procEntry = new PROCESSENTRY32();
-                procEntry.dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32));
-
-                if (Process32First(snapshot, ref procEntry))
-                {
-                    do
-                    {
-                        int pid = (int)procEntry.th32ProcessID;
-                        int parentPid = (int)procEntry.th32ParentProcessID;
-
-                        if (!parentToChildren.TryGetValue(parentPid, out var children))
-                        {
-                            children = new List<int>();
-                            parentToChildren[parentPid] = children;
-                        }
-                        children.Add(pid);
-
-                    } while (Process32Next(snapshot, ref procEntry));
-                }
-            }
-            finally
-            {
-                CloseHandle(snapshot);
-            }
+            // Leverage centralized Toolhelp32 helper to ensure consistent snapshots and avoid logic duplication bugs.
+            var (_, parentToChildren) = Toolhelp32Snapshot.BuildSnapshotAndChildMap();
 
             // Map each validated process to its confirmed start time to ensure temporal checking down the tree
             var processStartTimes = new Dictionary<int, DateTime> { { rootPid, rootStartTime } };

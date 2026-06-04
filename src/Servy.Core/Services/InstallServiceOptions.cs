@@ -135,7 +135,7 @@ namespace Servy.Core.Services
         public string DisplayName { get; set; }
 
         /// <summary>The maximum number of rotated log file to keep. Set to 0 for unlimited.</summary>
-        public int? MaxRotations { get; set; } = AppConfig.DefaultMaxRotations;
+        public int MaxRotations { get; set; } = AppConfig.DefaultMaxRotations;
 
         /// <summary>Enables rotation based on the date interval specified by <paramref name="dateRotationType"/>.</summary>
         public bool EnableDateRotation { get; set; } = AppConfig.DefaultEnableDateRotation;
@@ -144,10 +144,10 @@ namespace Servy.Core.Services
         public DateRotationType DateRotationType { get; set; } = AppConfig.DefaultDateRotationType;
 
         /// <summary>The timeout in seconds to wait for the process to start successfully before considering the startup as failed.</summary>
-        public int? StartTimeout { get; set; } = AppConfig.DefaultStartTimeout;
+        public int StartTimeout { get; set; } = AppConfig.DefaultStartTimeout;
 
         /// <summary>The timeout in seconds to wait for the process to exit.</summary>
-        public int? StopTimeout { get; set; } = AppConfig.DefaultStopTimeout;
+        public int StopTimeout { get; set; } = AppConfig.DefaultStopTimeout;
 
         /// <summary>The path to an executable that runs before the service stops.</summary>
         public string PreStopExePath { get; set; }
@@ -159,10 +159,10 @@ namespace Servy.Core.Services
         public string PreStopArgs { get; set; }
 
         /// <summary>The maximum time in seconds to wait for the pre-stop executable to complete.</summary>
-        public int? PreStopTimeout { get; set; } = AppConfig.DefaultPreStopTimeoutSeconds;
+        public int PreStopTimeout { get; set; } = AppConfig.DefaultPreStopTimeoutSeconds;
 
         /// <summary>A flag to log pre-stop failure as error.</summary>
-        public bool? PreStopLogAsError { get; set; } = AppConfig.DefaultPreStopLogAsError;
+        public bool PreStopLogAsError { get; set; } = AppConfig.DefaultPreStopLogAsError;
 
         /// <summary>The path to an executable that runs after the service stops.</summary>
         public string PostStopExePath { get; set; }

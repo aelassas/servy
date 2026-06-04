@@ -31,5 +31,21 @@ namespace Servy.Core.Config
             StringComparer.OrdinalIgnoreCase,
             "LocalSystem", @".\LocalSystem", @"NT AUTHORITY\SYSTEM", "SYSTEM"
         );
+
+        /// <summary>
+        /// A collection of well-known alias strings representing the 'LocalService' account,
+        /// used for normalizing service configuration security identifiers.
+        /// </summary>
+        public static readonly ImmutableHashSet<string> LocalServiceAliases = ImmutableHashSet.Create(
+            StringComparer.OrdinalIgnoreCase,
+            "LocalService", @".\LocalService", @"NT AUTHORITY\LocalService");
+
+        /// <summary>
+        /// A collection of well-known alias strings representing the 'NetworkService' account,
+        /// used for normalizing service configuration security identifiers.
+        /// </summary>
+        public static readonly ImmutableHashSet<string> NetworkServiceAliases = ImmutableHashSet.Create(
+            StringComparer.OrdinalIgnoreCase,
+            "NetworkService", @".\NetworkService", @"NT AUTHORITY\NetworkService");
     }
 }

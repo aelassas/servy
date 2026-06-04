@@ -167,13 +167,6 @@ namespace Servy.UI.Design
     /// </summary>
     public class DesignTimeHelpService : IHelpService
     {
-        // Standard void no-ops
-        public void OpenDocumentation() { /* no-op */ }
-        public void OpenAboutDialog() { /* no-op */ }
-
-        // Standard Task no-ops
-        public Task CheckUpdatesAsync() => Task.CompletedTask;
-
         /// <summary>
         /// No-op implementation for opening documentation with a specific caption.
         /// </summary>

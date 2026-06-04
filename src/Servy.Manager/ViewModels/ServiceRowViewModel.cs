@@ -40,7 +40,7 @@ namespace Servy.Manager.ViewModels
 
             StartCommand = new AsyncCommand(
                 StartServiceAsync,
-                _ => CanExecuteServiceCommand(_) && Service?.IsInstalled == true && Service?.Status != ServiceStatus.Running,
+                _ => CanExecuteServiceCommand(_) && Service?.IsInstalled == true && Service?.Status == ServiceStatus.Stopped,
                 name: nameof(StartCommand));
             StopCommand = new AsyncCommand(StopServiceAsync,
                 _ => CanExecuteServiceCommand(_) && Service?.IsInstalled == true && Service?.Status == ServiceStatus.Running,

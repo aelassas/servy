@@ -148,6 +148,16 @@ namespace Servy.Core.Helpers
                             if (stopwatch.Elapsed > waitTime)
                                 throw new System.ServiceProcess.TimeoutException();
 
+                            // FAST FAIL: A service that successfully started would never re-enter Stopped.
+                            // Seeing Stopped here means the wrapped process crashed during OnStart.
+                            // First-iteration grace avoids false-positives before SCM applies StartPending status.
+                            if (sc.Status == ServiceControllerStatus.Stopped && stopwatch.ElapsedMilliseconds > AppConfig.ScmPollIntervalMs)
+                            {
+                                throw new InvalidOperationException(
+                                    $"Service '{serviceName}' entered Stopped state during start. " +
+                                    "The supervised process likely failed immediately (check the Windows Event Log and the service's stderr log).");
+                            }
+
                             cancellationToken.ThrowIfCancellationRequested();
                             await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
                             sc.Refresh();

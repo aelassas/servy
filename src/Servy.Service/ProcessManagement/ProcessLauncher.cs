@@ -1,8 +1,6 @@
 ﻿using Servy.Core.Config;
-using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Service.Helpers;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -40,10 +38,10 @@ namespace Servy.Service.ProcessManagement
 
         /// <summary>
         /// Matches canonical Python launcher executable names strictly.
-        /// Evaluates patterns such as 'python', 'pythonw', 'python2', 'python3', or 'python3.x' without capturing arbitrary prefixes.
+        /// Evaluates patterns such as 'python', 'pythonw', 'python2', 'python3', 'python3.x' 'py', or 'pyw' without capturing arbitrary prefixes.
         /// </summary>
         private static readonly Regex PythonExeRegex = new Regex(
-            @"^python(w|\d+(\.\d+)?)?$",
+             @"^(python(w|\d+(\.\d+)?)?|pyw?)$",
             RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
             AppConfig.InputRegexTimeout);
 
