@@ -199,7 +199,7 @@ namespace Servy.Manager.ViewModels
             IUiDispatcher uiDispatcher
             ) : base(cursorService, uiDispatcher, serviceCommands)
         {
-            _serviceRepository = serviceRepository;
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null, name: nameof(CopyPidCommand));
             ClearSelectionCommand = new RelayCommand<object>(_ => SetSelectionActive(false));

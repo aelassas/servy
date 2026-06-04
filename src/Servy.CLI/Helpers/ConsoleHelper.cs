@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Config;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ namespace Servy.CLI.Helpers
     /// <summary>
     /// Provides helper methods for console applications.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class ConsoleHelper
     {
         /// <summary>

@@ -132,11 +132,13 @@
     <Compile Include="Converters\StatusConverterTests.cs" />
     <Compile Include="Design\DesignTimeServiceCommandsTests.cs" />
     <Compile Include="Mappers\ServiceMapperTests.cs" />
+    <Compile Include="Models\LogEntryModelTests.cs" />
     <Compile Include="Services\FakeService.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="Utils\LogTailerTests.cs" />
     <Compile Include="Validators\ServiceConfigurationValidatorTests.cs" />
     <Compile Include="ViewModels\ConsoleViewModelTests.cs" />
+    <Compile Include="ViewModels\DependenciesViewModelTests.cs" />
     <Compile Include="ViewModels\LogsViewModelTests.cs" />
     <Compile Include="ViewModels\MainViewModelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -298,7 +298,7 @@ namespace Servy.Service.Helpers
             {
                 logger?.Info("Restarting child process...");
 
-                if (process != null && !process.HasExited)
+                if (process != null)
                 {
                     try
                     {
@@ -316,8 +316,20 @@ namespace Servy.Service.Helpers
                             logger?.Warn($"RestartProcess error while getting process PID and StartTime: {ex.Message}");
                         }
 
-                        process.Stop(stopTimeoutMs);
-                        process.StopDescendants(parentPid, parentStartTime, stopTimeoutMs);
+                        if (!process.HasExited)
+                        {
+                            process.Stop(stopTimeoutMs);
+                        }
+
+                        // Always sweep descendants -- orphans persist even after the parent exits.
+                        try
+                        {
+                            process.StopDescendants(parentPid, parentStartTime, stopTimeoutMs);
+                        }
+                        catch (Exception ex)
+                        {
+                            logger?.Warn($"RestartProcess descendant cleanup failed: {ex.Message}");
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -347,8 +359,8 @@ namespace Servy.Service.Helpers
             try
             {
 #if DEBUG
-                var exePath = Assembly.GetExecutingAssembly().Location;
-                var dir = Path.GetDirectoryName(exePath);
+                // Use BaseDirectory instead of ExecutingAssembly location to stay immune to shadow copying
+                var dir = AppDomain.CurrentDomain.BaseDirectory;
 #else
                 var dir = AppConfig.ProgramDataPath;
 #endif

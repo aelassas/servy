@@ -134,7 +134,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.PropertyChanged += (s, e) => changedProps.Add(e.PropertyName);
 
                 vm.IsBusy = true;
-                vm.IsBusy = true; // Duplicate to test branch block
+                vm.IsBusy = true; // Duplicate to test branch block bypass
                 vm.FooterText = "Test";
                 vm.SearchButtonText = "Searching...";
                 vm.SearchText = "Testing";
@@ -199,7 +199,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     .ReturnsAsync(services);
 
                 await vm.SearchCommand.ExecuteAsync(null);
-                await FlushDispatcherAsync(); // Allows background Dispatcher.InvokeAsync to finish
+                await FlushDispatcherAsync();
 
                 var view = vm.ServicesView.Cast<ServiceRowViewModel>().ToList();
                 Assert.Equal(2, view.Count);
@@ -241,7 +241,30 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         #endregion
 
-        #region Background Refresh (Timers & Sync)
+        #region Background Refresh & Timer Sync
+
+        [Fact]
+        public void TimerLifecycle_CreateStartStop_ManagesResourcesCorrectly()
+        {
+            Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+
+                // Act 1: Ensure timer starts correctly
+                vm.CreateAndStartTimer();
+                var timerField = typeof(MainViewModel).GetField("_refreshTimer", BindingFlags.NonPublic | BindingFlags.Instance);
+                var timer = (DispatcherTimer)timerField.GetValue(vm);
+
+                Assert.NotNull(timer);
+                Assert.True(timer.IsEnabled);
+
+                // Act 2: Stop and teardown
+                vm.StopRefreshTimer();
+                timer = (DispatcherTimer)timerField.GetValue(vm);
+
+                Assert.Null(timer);
+            }, createApp: true);
+        }
 
         [Fact]
         public void OnTick_OverlappingTicks_PreventedByInterlocked()
@@ -255,7 +278,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 onTickMethod.Invoke(vm, new object[] { null, EventArgs.Empty });
                 onTickMethod.Invoke(vm, new object[] { null, EventArgs.Empty });
 
-                Assert.True(true); // Should survive without throwing
+                Assert.True(true); // Survives without exception
             }, createApp: true);
         }
 
@@ -544,12 +567,86 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var vm = CreateViewModel();
                 typeof(MainViewModel).GetField("_helpService", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vm, null);
 
-                // These should all return immediately without crashing
+                // These should all return immediately without throwing exceptions
                 await vm.OpenDocumentationCommand.ExecuteAsync(null);
                 await vm.CheckUpdatesCommand.ExecuteAsync(null);
                 await vm.OpenAboutDialogCommand.ExecuteAsync(null);
 
                 Assert.True(true);
+            }, createApp: true);
+        }
+
+        #endregion
+
+        #region Propety Tests
+
+        [Fact]
+        public void Properties_TriStateSelectAll_MutatesAndFiresNotification()
+        {
+            Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+                bool selectAllChangedFired = false;
+                vm.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == nameof(vm.SelectAll)) selectAllChangedFired = true;
+                };
+
+                // Act: Set to null (indeterminate state)
+                vm.SelectAll = null;
+
+                // Assert
+                Assert.Null(vm.SelectAll);
+                Assert.True(selectAllChangedFired);
+
+                // Reset tracking flag
+                selectAllChangedFired = false;
+
+                // Act: Set to same value to verify short-circuit branch bypass
+                vm.SelectAll = null;
+                Assert.False(selectAllChangedFired, "Setting the same value must bypass raising PropertyChanged.");
+            }, createApp: true);
+        }
+
+        [Fact]
+        public void Properties_SearchText_MutatesAndUpdatesValue()
+        {
+            Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+                bool searchTextChangedFired = false;
+                vm.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == nameof(vm.SearchText)) searchTextChangedFired = true;
+                };
+
+                // Act
+                vm.SearchText = "WexflowService";
+
+                // Assert
+                Assert.Equal("WexflowService", vm.SearchText);
+                Assert.True(searchTextChangedFired);
+            }, createApp: true);
+        }
+
+        [Fact]
+        public void Properties_SearchButtonText_MutatesAndUpdatesValue()
+        {
+            Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+                bool buttonTextChangedFired = false;
+                vm.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == nameof(vm.SearchButtonText)) buttonTextChangedFired = true;
+                };
+
+                // Act
+                vm.SearchButtonText = Strings.Button_Searching;
+
+                // Assert
+                Assert.Equal(Strings.Button_Searching, vm.SearchButtonText);
+                Assert.True(buttonTextChangedFired);
             }, createApp: true);
         }
 

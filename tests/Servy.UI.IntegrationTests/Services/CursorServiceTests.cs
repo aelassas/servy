@@ -53,20 +53,26 @@ namespace Servy.UI.IntegrationTests.Services
         [Fact]
         public async Task ResetCursor_FromBackgroundThread_InvokesOnDispatcher()
         {
+            // Use the persistent STA context instead of the synchronous RunInSTA
             await Helper.RunInSTAContext(async () =>
             {
                 EnsureApplicationContext();
                 Mouse.OverrideCursor = Cursors.Hand;
 
+                // 1. Await the Task.Run to guarantee that the background thread 
+                // has explicitly finished executing and queued its InvokeAsync operation.
                 await Task.Run(() =>
                 {
                     _service.ResetCursor();
                 });
 
-                // Force the Dispatcher to process the Reset operation
-                // This flushes the queue up to 'Background' priority
-                await Dispatcher.Yield(DispatcherPriority.Background);
+                // 2. Flush the UI thread's dispatcher queue synchronously.
+                // Because 'Background' is a lower priority than 'Normal' (used by your service),
+                // this forces the dispatcher to execute the service's queued cursor reset 
+                // before releasing this empty action block.
+                Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
 
+                // Verification: The dispatcher has processed the message loop completely.
                 Assert.Null(Mouse.OverrideCursor);
             });
         }

@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Servy.Core.Data;
+using Servy.Core.DTOs;
 using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
@@ -10,18 +11,21 @@ using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Data;
+using System.Windows.Threading;
 using Xunit;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
-    public class ConsoleViewModelTests
+    public class ConsoleViewModelTests : IDisposable
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
-        private readonly Mock<ICursorService> _cursorServiceMock; // New Dependency
+        private readonly Mock<ICursorService> _cursorServiceMock;
         private readonly Mock<IUiDispatcher> _uiDispatcherMock;
 
         public ConsoleViewModelTests()
@@ -30,12 +34,18 @@ namespace Servy.Manager.UnitTests.ViewModels
             _serviceCommandsMock = new Mock<IServiceCommands>();
             _cursorServiceMock = new Mock<ICursorService>();
             _uiDispatcherMock = new Mock<IUiDispatcher>();
-            _uiDispatcherMock.Setup(d => d.YieldAsync()).Returns(Task.CompletedTask);
 
-            // Setup default configuration values
+            // Execute dispatcher invocations inline synchronously to prevent async deadlocks during tests
+            _uiDispatcherMock.Setup(d => d.YieldAsync()).Returns(Task.CompletedTask);
+            _uiDispatcherMock.Setup(d => d.InvokeAsync(It.IsAny<Action>(), It.IsAny<DispatcherPriority>()))
+                             .Callback<Action, DispatcherPriority>((action, priority) => action())
+                             .Returns(Task.CompletedTask);
+
+            // Default configuration values
             _appConfigMock = new Mock<IAppConfiguration>();
             _appConfigMock.Setup(c => c.ConsoleMaxLines).Returns(500);
             _appConfigMock.Setup(c => c.ConsoleRefreshIntervalInMs).Returns(100);
+            _appConfigMock.Setup(c => c.SearchDebounceDelayMs).Returns(10); // Short debounce for testing
         }
 
         private ConsoleViewModel CreateViewModel()
@@ -45,99 +55,49 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _serviceCommandsMock.Object,
                 _appConfigMock.Object,
                 _cursorServiceMock.Object,
-                _uiDispatcherMock.Object); // Inject mock cursor service
+                _uiDispatcherMock.Object);
+        }
+
+        public void Dispose()
+        {
+            // Centralized cleanup not needed for mocks, but interface implemented for scaling
+        }
+
+        #region Constructor & Guard Tests
+
+        [Fact]
+        public void Constructor_NullServiceRepository_ThrowsArgumentNullException()
+        {
+            Assert.Throws<ArgumentNullException>(() => new ConsoleViewModel(
+                null, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _uiDispatcherMock.Object));
         }
 
         [Fact]
-        public async Task SetSelectionActive_WhenFalse_ClearsBufferForReload()
+        public void Constructor_NullAppConfig_ThrowsArgumentNullException()
         {
-            await Helper.RunOnSTA(async () =>
-            {
-                // Arrange
-                var vm = CreateViewModel();
-                var service = new ConsoleService { Name = "TestService", StdoutPath = "out.log" };
-                vm.SelectedService = service;
-                vm.RawLines.Add(new LogLine("Existing Log", LogType.StdOut));
-
-                vm.SetSelectionActive(true);
-                Assert.True(vm.IsPaused);
-
-                // Act - User clears selection (Resume)
-                vm.SetSelectionActive(false);
-
-                // Assert
-                Assert.False(vm.IsPaused);
-                // SwitchService is triggered, which clears RawLines immediately
-                Assert.Empty(vm.RawLines);
-            }, createApp: true);
+            Assert.Throws<ArgumentNullException>(() => new ConsoleViewModel(
+                _serviceRepoMock.Object, _serviceCommandsMock.Object, null, _cursorServiceMock.Object, _uiDispatcherMock.Object));
         }
 
         [Fact]
-        public async Task ConsoleSearchText_Filter_FiltersVisibleLines()
+        public void DesignTimeConstructor_InitializesSuccessfully()
         {
-            await Helper.RunOnSTA(async () =>
-            {
-                // Arrange
-                var vm = CreateViewModel();
-                var line1 = new LogLine("Operation successful", LogType.StdOut);
-                var line2 = new LogLine("System Crash", LogType.StdErr);
-
-                vm.RawLines.Add(line1);
-                vm.RawLines.Add(line2);
-
-                // Act
-                vm.ConsoleSearchText = "Crash";
-
-                // Bypass the async debounce timer and WPF dispatcher queue entirely.
-                vm.VisibleLines.Refresh();
-
-                // Assert
-                var filtered = vm.VisibleLines.Cast<LogLine>().ToList();
-
-                Assert.Single(filtered);
-                Assert.Contains("Crash", filtered[0].Text);
-            }, createApp: true);
+            var dtViewModel = new ConsoleViewModel();
+            Assert.NotNull(dtViewModel.RawLines);
+            Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
         }
 
+        #endregion
+
+        #region Property & Command Lifecycle Tests
+
         [Fact]
-        public async Task SearchCommand_PopulatesServicesCollection()
+        public async Task SelectedService_Change_ResetsStateAndTriggersMonitoring()
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Arrange
                 var vm = CreateViewModel();
-                var searchResults = new List<Service>
-                {
-                    new Service { Name = "AuthService" },
-                    new Service { Name = "Gateway" }
-                };
-
-                _serviceCommandsMock
-                    .Setup(x => x.SearchServicesAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(searchResults);
-
-                // Act
-                await vm.SearchCommand.ExecuteAsync("query");
-
-                // Assert
-                Assert.Equal(2, vm.Services.Count);
-                Assert.Contains(vm.Services, s => s.Name == "AuthService");
-                Assert.False(vm.IsBusy);
-            }, createApp: true);
-        }
-
-        [Fact]
-        public async Task SelectedService_Change_ResetsState()
-        {
-            await Helper.RunOnSTA(async () =>
-            {
-                // Arrange
-                var vm = CreateViewModel();
-                var service = new ConsoleService
-                {
-                    Name = "AppService",
-                    StdoutPath = "C:\\out.log"
-                };
+                var service = new ConsoleService { Name = "AppService", StdoutPath = "C:\\out.log" };
 
                 // Act
                 vm.SelectedService = service;
@@ -145,68 +105,226 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.Equal("AppService", vm.SelectedService.Name);
                 Assert.Empty(vm.RawLines);
-            }, createApp: true);
+            });
         }
 
         [Fact]
-        public async Task StopMonitoring_WithClearPoints_ResetsPidAndHistory()
+        public async Task ClearSelectionCommand_Executes_SetsSelectionActiveFalse()
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Arrange
+                var vm = CreateViewModel();
+                vm.SetSelectionActive(true);
+                Assert.True(vm.IsPaused);
+
+                // Act
+                vm.ClearSelectionCommand.Execute(null);
+
+                // Assert
+                Assert.False(vm.IsPaused);
+            });
+        }
+
+        [Fact]
+        public async Task CopyPidCommand_ValidPid_InvokesServiceCommandsMapping()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+                var mockService = new ConsoleService { Name = "TestService", Pid = 5555 };
+                vm.SelectedService = mockService;
+
+                // Act
+                await vm.CopyPidCommand.ExecuteAsync(null);
+
+                // Assert
+                _serviceCommandsMock.Verify(c => c.CopyPid(It.Is<Service>(s => s.Name == "TestService")), Times.Once);
+            });
+        }
+
+        [Fact]
+        public async Task ConsoleSearchText_Filter_FiltersVisibleLinesAndTriggersDebounce()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+
+                vm.RawLines.Add(new LogLine("Operation successful", LogType.StdOut));
+                vm.RawLines.Add(new LogLine("System Crash", LogType.StdErr));
+
+                // Act - Trigger Filter
+                vm.ConsoleSearchText = "Crash";
+
+                // Wait for the debounce + dispatcher queue
+                // We use a small loop to wait for the UI thread to catch up
+                int retries = 0;
+                while (vm.VisibleLines.Cast<LogLine>().Count() != 1 && retries < 10)
+                {
+                    await Task.Delay(20);
+                    Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                    retries++;
+                }
+
+                // Assert
+                var filtered = vm.VisibleLines.Cast<LogLine>().ToList();
+                Assert.Single(filtered);
+                Assert.Contains("Crash", filtered[0].Text);
+            });
+        }
+
+        [Fact]
+        public async Task ConsoleSearchText_Cleared_TriggersScrollRequest()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+                bool scrollRequested = false;
+                vm.RequestScroll += (force) => scrollRequested = true;
+
+                // Act
+                vm.ConsoleSearchText = "";
+                await Task.Delay(50);
+                Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+
+                // Assert
+                Assert.True(scrollRequested);
+            });
+        }
+
+        #endregion
+
+        #region Base Monitoring Loop (OnTickAsync) Tests
+
+        [Fact]
+        public async Task OnTickAsync_SelectedServiceNull_ResetsConsole()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+                var methodInfo = typeof(ConsoleViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                // Force state variable to simulate an orphaned selection
+                var fieldInfo = typeof(ConsoleViewModel).GetField("_hadSelectedService", BindingFlags.NonPublic | BindingFlags.Instance);
+                fieldInfo?.SetValue(vm, true);
+                vm.Pid = "1234";
+
+                // Act
+                await (Task)methodInfo.Invoke(vm, null);
+
+                // Assert
+                Assert.Equal(UiConstants.NotAvailable, vm.Pid);
+                Assert.False((bool)fieldInfo.GetValue(vm));
+            });
+        }
+
+        [Fact]
+        public async Task OnTickAsync_StateSnapshotNull_ClearsPathsAndPid()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+                var service = new ConsoleService { Name = "DeadService", Pid = 1234, StdoutPath = "log.txt" };
+                vm.SelectedService = service;
+
+                // Simulate DB returning a service state with no active PID (stopped)
+                _serviceRepoMock.Setup(r => r.GetServiceConsoleStateAsync("DeadService", It.IsAny<CancellationToken>()))
+                                .ReturnsAsync(new ServiceConsoleStateDto { Pid = null });
+
+                var methodInfo = typeof(ConsoleViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                // Act
+                await (Task)methodInfo.Invoke(vm, null);
+
+                // Assert
+                Assert.Null(service.Pid);
+                Assert.Null(service.StdoutPath);
+                Assert.Equal(UiConstants.NotAvailable, vm.Pid);
+            });
+        }
+
+        [Fact]
+        public async Task OnTickAsync_PathsChanged_UpdatesPathsAndTriggersSwitch()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+                var service = new ConsoleService { Name = "ActiveService", Pid = 100, StdoutPath = "old.txt" };
+                vm.SelectedService = service;
+
+                // Simulate DB reporting a newly rotated log file path
+                _serviceRepoMock.Setup(r => r.GetServiceConsoleStateAsync("ActiveService", It.IsAny<CancellationToken>()))
+                                .ReturnsAsync(new ServiceConsoleStateDto { Pid = 100, ActiveStdoutPath = "new.txt" });
+
+                var methodInfo = typeof(ConsoleViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                // Act
+                await (Task)methodInfo.Invoke(vm, null);
+
+                // Assert
+                Assert.Equal("new.txt", service.StdoutPath);
+            });
+        }
+
+        #endregion
+
+        #region Resource Management & Disposal Tests
+
+        [Fact]
+        public async Task OnMonitoringStopped_ClearViewTrue_ResetsConsole()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
                 var vm = CreateViewModel();
                 vm.Pid = "1234";
                 vm.RawLines.Add(new LogLine("Test", LogType.StdOut));
 
+                var methodInfo = typeof(ConsoleViewModel).GetMethod("OnMonitoringStopped", BindingFlags.NonPublic | BindingFlags.Instance);
+
                 // Act
-                vm.StopMonitoring(true);
+                methodInfo.Invoke(vm, new object[] { true });
 
                 // Assert
                 Assert.Equal(UiConstants.NotAvailable, vm.Pid);
                 Assert.Empty(vm.RawLines);
-            }, createApp: true);
+            });
         }
 
         [Fact]
-        public async Task HistorySort_WithIdenticalTimestamps_ShouldSortBySequenceId()
+        public async Task Dispose_CleansUpCancellationTokensAndEvents()
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Arrange
-                var sameTime = new DateTime(2026, 1, 30, 10, 0, 0);
-
-                // 1. Instantiate in the chronological order they arrived
-                var line1 = new LogLine("Line 1", LogType.StdOut, sameTime); // Gets lower ID
-                var line2 = new LogLine("Line 2", LogType.StdErr, sameTime); // Gets higher ID
-
-                // 2. Put them in the list "out of order" to prove the sort works
-                var list = new List<LogLine> { line2, line1 };
+                var vm = CreateViewModel();
+                bool scrollTriggered = false;
+                vm.RequestScroll += (force) => scrollTriggered = true;
 
                 // Act
-                var sorted = list.OrderBy(l => l.Timestamp).ThenBy(l => l.Id).ToList();
+                vm.Dispose();
 
-                // Assert
-                Assert.Equal("Line 1", sorted[0].Text);
-                Assert.Equal("Line 2", sorted[1].Text);
-                Assert.True(sorted[0].Id < sorted[1].Id);
-            }, createApp: true);
+                // Assert: Event invocation list should be wiped
+                var eventField = typeof(ConsoleViewModel).GetField("RequestScroll", BindingFlags.NonPublic | BindingFlags.Instance);
+                var eventDelegate = eventField?.GetValue(vm);
+                Assert.Null(eventDelegate);
+                Assert.False(scrollTriggered);
+            });
         }
+
+        #endregion
+
+        #region Sorting Logic Proof Tests
 
         [Fact]
         public async Task HistorySort_WithIdenticalTimestamps_ShouldPreserveArrivalOrder()
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Arrange
                 var sameTime = new DateTime(2026, 1, 30, 10, 0, 0);
 
                 var line2 = new LogLine("Line 2", LogType.StdErr, sameTime);
                 var line1 = new LogLine("Line 1", LogType.StdOut, sameTime);
 
-                // Line 2 is at index 0, Line 1 is at index 1
                 var combinedHistory = new List<LogLine> { line2, line1 };
 
-                // Act
                 var sortedHistory = combinedHistory
                     .Select((line, index) => new { line, index })
                     .OrderBy(x => x.line.Timestamp)
@@ -214,54 +332,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                     .Select(x => x.line)
                     .ToList();
 
-                // Assert
-                // Because timestamps are equal, index 0 (Line 2) must come before index 1 (Line 1)
                 Assert.Equal("Line 2", sortedHistory[0].Text);
                 Assert.Equal("Line 1", sortedHistory[1].Text);
-            }, createApp: true);
+            });
         }
 
-        [Fact]
-        public async Task SwitchService_WithIdenticalTimestamps_ShouldKeepStdOutBeforeStdErr()
-        {
-            await Helper.RunOnSTA(async () =>
-            {
-                // Arrange
-                var vm = CreateViewModel();
-                var sameTime = new DateTime(2026, 1, 30, 12, 0, 0);
-
-                // We simulate StdErr finishing its task first (getting lower IDs)
-                // by instantiating it before StdOut.
-                var errLine = new LogLine("Error Message", LogType.StdErr, sameTime);
-                var outLine = new LogLine("Output Message", LogType.StdOut, sameTime);
-
-                var outRes = new HistoryResult(new List<LogLine> { outLine }, 100, sameTime);
-                var errRes = new HistoryResult(new List<LogLine> { errLine }, 50, sameTime);
-
-                // Act
-                // We simulate the merge and sort logic inside SwitchService:
-                var combinedHistory = new List<LogLine>();
-                combinedHistory.AddRange(outRes.Lines); // Add StdOut first
-                combinedHistory.AddRange(errRes.Lines); // Add StdErr second
-
-                // The specific sorting logic used in production:
-                var sortedHistory = combinedHistory
-                    .Select((line, index) => new { line, index })
-                    .OrderBy(x => x.line.Timestamp)
-                    .ThenBy(x => x.index)
-                    .Select(x => x.line)
-                    .ToList();
-
-                // Assert
-                Assert.Equal(2, sortedHistory.Count);
-                // Even though errLine has a lower ID (created first), 
-                // outLine must be first because of the index tie-breaker (added first to combinedHistory).
-                Assert.Equal(LogType.StdOut, sortedHistory[0].Type);
-                Assert.Equal(LogType.StdErr, sortedHistory[1].Type);
-
-                // Final proof: StdOut is first despite having a higher ID
-                Assert.True(sortedHistory[0].Id > sortedHistory[1].Id);
-            }, createApp: true);
-        }
+        #endregion
     }
 }

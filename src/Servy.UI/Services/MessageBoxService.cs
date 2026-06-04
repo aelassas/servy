@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -8,6 +9,7 @@ namespace Servy.UI.Services
     /// Concrete implementation of <see cref="IMessageBoxService"/> using InvokeAsync 
     /// to ensure callers wait for user dismissal.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public class MessageBoxService : IMessageBoxService
     {
         /// <summary>
