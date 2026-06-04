@@ -388,7 +388,7 @@ namespace Servy.Service
                 _logger = _logger?.CreateScoped(options.ServiceName);
 
                 // Log and Validate using the new scoped _logger
-                if (!_serviceHelper.ValidateAndLog(options, _logger, fullArgs))
+                if (!_serviceHelper.ValidateAndLog(options, _logger))
                 {
                     ExitCode = 1066; // ERROR_SERVICE_SPECIFIC_ERROR
                     Stop();
@@ -830,8 +830,8 @@ namespace Servy.Service
         /// optionally logs standard output and error to the provided file paths.
         /// </para>
         /// <para>
-        /// The process is allowed to run for at least <see cref="MinPreLaunchTimeoutSeconds"/> seconds or 
-        /// <see cref="StartOptions.PreLaunchTimeoutInSeconds"/>, whichever is greater, per attempt.  
+        /// The process is allowed to run for at least <see cref="AppConfig.MinPreLaunchTimeoutSeconds"/> seconds or
+        /// <see cref="StartOptions.PreLaunchTimeoutInSeconds"/>, whichever is greater, per attempt.
         /// If the process exits with a non-zero code or times out, it is retried up to 
         /// <see cref="StartOptions.PreLaunchRetryAttempts"/> times.
         /// </para>
@@ -1777,13 +1777,17 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Orchestrates the recovery process when health check thresholds are exceeded.
-        /// Handles restart attempt persistence, quota enforcement, and state synchronization.
+        /// Dispatches the configured <see cref="RecoveryAction"/> by delegating to
+        /// the appropriate <see cref="IServiceHelper"/> method (restart service,
+        /// restart child process, or reboot computer).
         /// </summary>
         /// <remarks>
-        /// This method uses <see cref="_isRecovering"/> to prevent concurrent recovery executions.
-        /// If the maximum number of restart attempts is reached, it will trigger a full service stop.
+        /// This method is invoked exclusively by <see cref="InitiateRecovery"/>
+        /// after the gatekeeper flag (<see cref="_isRecovering"/>) has been set and
+        /// restart-attempt persistence has been recorded. It assumes the quota check
+        /// has already passed and does not enforce <see cref="_maxRestartAttempts"/>.
         /// </remarks>
+        /// <param name="attemptCount">The current restart attempt number, logged for diagnostics.</param>
         private void ExecuteRecoveryAction(int attemptCount)
         {
             // LOGGING: Omit the attempt counter in unlimited mode to prevent displaying a misleading '0'.

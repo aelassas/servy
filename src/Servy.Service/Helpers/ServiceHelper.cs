@@ -268,7 +268,7 @@ namespace Servy.Service.Helpers
             => StartOptionsParser.Parse(serviceRepository, _processHelper, fullArgs);
 
         /// <inheritdoc />
-        public bool ValidateAndLog(StartOptions options, IServyLogger logger, string[] fullArgs)
+        public bool ValidateAndLog(StartOptions options, IServyLogger logger)
         {
             LogStartupArguments(logger, options);
 

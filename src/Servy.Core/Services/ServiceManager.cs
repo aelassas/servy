@@ -808,21 +808,26 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public async Task<OperationResult> RestartServiceAsync(string serviceName, bool logSuccessfulRestart = true, CancellationToken cancellationToken = default)
         {
-            if (!(await StopServiceAsync(serviceName, logSuccessfulStop: logSuccessfulRestart, cancellationToken)).IsSuccess)
-                return OperationResult.Failure($"Failed to restart service '{serviceName}'.");
-
-            var res = await StartServiceAsync(serviceName, logSuccessfulStart: logSuccessfulRestart, cancellationToken);
-
-            if (res.IsSuccess)
+            var stopResult = await StopServiceAsync(serviceName, logSuccessfulStop: logSuccessfulRestart, cancellationToken);
+            if (!stopResult.IsSuccess)
             {
-                Logger.Info($"Service '{serviceName}' restarted successfully.");
+                return OperationResult.Failure($"Failed to restart service '{serviceName}': {stopResult.ErrorMessage}");
+            }
+
+            var startResult = await StartServiceAsync(serviceName, logSuccessfulStart: logSuccessfulRestart, cancellationToken);
+
+            if (startResult.IsSuccess)
+            {
+                if (logSuccessfulRestart)
+                    Logger.Info($"Service '{serviceName}' restarted successfully.");
             }
             else
             {
-                Logger.Error($"Failed to restart service '{serviceName}'.");
+                Logger.Error($"Failed to restart service '{serviceName}': {startResult.ErrorMessage}");
+                return OperationResult.Failure($"Failed to restart service '{serviceName}': {startResult.ErrorMessage}");
             }
 
-            return res;
+            return startResult;
         }
 
         /// <inheritdoc />

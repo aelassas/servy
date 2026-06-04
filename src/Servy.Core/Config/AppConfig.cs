@@ -1460,7 +1460,6 @@ namespace Servy.Core.Config
         /// <summary>
         /// Traverses up the directory hierarchy from the specified starting point to locate the 
         /// repository root, identified by the presence of the <c>Servy.sln</c> file.
-        /// This method is only available in <b>DEBUG</b> builds.
         /// </summary>
         /// <param name="startDir">The directory path where the upward search begins.</param>
         /// <returns>The full filesystem path to the directory containing the Servy solution file.</returns>
@@ -1468,8 +1467,8 @@ namespace Servy.Core.Config
         /// Thrown when the root of the drive is reached without finding <c>Servy.sln</c> in any ancestor directory.
         /// </exception>
         /// <remarks>
-        /// This utility is primarily used by the bootstrapper and test harnesses to resolve 
-        /// relative paths to assets or configuration files within the monorepo structure.
+        /// Primarily used by the DEBUG-only <see cref="RepoRoot"/> field and by unit tests
+        /// (which run in all build configurations) to resolve solution-relative paths.
         /// </remarks>
         public static string FindRepoRoot(string startDir)
         {
