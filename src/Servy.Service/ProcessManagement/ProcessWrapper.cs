@@ -507,14 +507,14 @@ namespace Servy.Service.ProcessManagement
                     // The child shares the parent's console. It already received the broadcasted Ctrl+C 
                     // when the parent was signaled. We return TRUE to force the wrapper to wait for 
                     // a graceful exit rather than instantly triggering process.Kill().
-                    if (error == 233)
+                    if (error == Errors.ERROR_PIPE_NOT_CONNECTED)
                     {
                         _logger?.Info($"Process '{process.Format()}' shares a console group. Awaiting graceful shutdown...");
                         return true;
                     }
 
                     // ERROR_INVALID_HANDLE (6) or ERROR_GEN_FAILURE (31)
-                    if (error == Errors.ERROR_INVALID_HANDLE || error == 31)
+                    if (error == Errors.ERROR_INVALID_HANDLE || error == Errors.ERROR_GEN_FAILURE)
                     {
                         return false;
                     }

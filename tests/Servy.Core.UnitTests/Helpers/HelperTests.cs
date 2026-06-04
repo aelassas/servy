@@ -1028,53 +1028,5 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         #endregion
-
-        #region Canonicalise Tests
-
-        [Theory]
-        [InlineData(@"C:\Data\Temp\", @"C:\Data\Temp")]
-        [InlineData(@"C:\Data\Temp", @"C:\Data\Temp")]
-        [InlineData(@"C:/Data/Temp/", @"C:\Data\Temp")]
-        [InlineData(@"C:\Data\..\Data\Temp", @"C:\Data\Temp")]
-        // Test resolution of relative paths by expecting the full path to a file named 'LocalFile'
-        [InlineData(@".\LocalFile", @".\LocalFile")]
-        public void Canonicalise_ShouldNormalizePathsCorrectly(string input, string expected)
-        {
-            // Resolve both input and expected to absolute paths for comparison
-            string expectedFullPath = Path.GetFullPath(expected);
-
-            var result = Helper.Canonicalise(input);
-
-            Assert.Equal(expectedFullPath, result);
-        }
-
-        [Theory]
-        [InlineData(null)]
-        [InlineData("")]
-        [InlineData("   ")]
-        public void Canonicalise_ShouldReturnEmptyString_ForInvalidInput(string? input)
-        {
-            var result = Helper.Canonicalise(input);
-            Assert.Equal(string.Empty, result);
-        }
-
-        [Fact]
-        public void Canonicalise_ShouldRemoveTrailingSeparators_RegardlessOfPlatform()
-        {
-            // Arrange
-            string pathWithSlash = @"C:\Logs\";
-            string pathWithAltSlash = @"C:/Logs/";
-
-            // Act
-            var result1 = Helper.Canonicalise(pathWithSlash);
-            var result2 = Helper.Canonicalise(pathWithAltSlash);
-
-            // Assert
-            Assert.DoesNotContain("/", result1);
-            Assert.DoesNotContain("\\", result1.Substring(result1.Length - 1));
-            Assert.Equal(result1, result2);
-        }
-
-        #endregion
     }
 }

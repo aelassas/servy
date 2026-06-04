@@ -28,5 +28,14 @@ namespace Servy.Core.Native
         /// that cross logical drive boundaries (e.g., from <c>C:</c> to <c>D:</c>).
         /// </remarks>
         public const int ERROR_NOT_SAME_DEVICE = 0x11; // 17
+
+        /// <summary>The pipe is not connected (no console attached to the target process).</summary>
+        public const int ERROR_PIPE_NOT_CONNECTED = 233;
+
+        /// <summary>A general device or pipe failure.</summary>
+        public const int ERROR_GEN_FAILURE = 31;
+
+        /// <summary>The user name or password is incorrect (LogonUserW failure).</summary>
+        public const int ERROR_LOGON_FAILURE = 1326;
     }
 }

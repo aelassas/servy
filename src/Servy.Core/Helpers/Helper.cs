@@ -734,25 +734,6 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Converts a file system path to its fully qualified, canonical representation.
-        /// </summary>
-        /// <param name="p">The path string to be normalized.</param>
-        /// <returns>
-        /// A fully qualified path string with redundant separators and trailing slashes removed. 
-        /// Returns <see cref="string.Empty"/> if the input is null, empty, or whitespace.
-        /// </returns>
-        /// <remarks>
-        /// This method resolves relative path segments (e.g., '..'), normalizes directory separators 
-        /// to the current platform's standard, and strips any trailing directory separators 
-        /// to ensure a stable, uniform path format for comparison.
-        /// </remarks>
-        public static string Canonicalise(string? p)
-        {
-            if (string.IsNullOrWhiteSpace(p)) return string.Empty;
-            return Path.GetFullPath(p).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        }
-
-        /// <summary>
         /// Determines whether a character is disallowed for use in service names.
         /// </summary>
         /// <param name="c">The character to evaluate.</param>
