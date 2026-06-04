@@ -14,6 +14,7 @@ using Servy.Core.Services;
 using Servy.Core.Validators;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using static Servy.CLI.Helpers.Helper;
@@ -70,6 +71,7 @@ namespace Servy.CLI
         /// </summary>
         /// <param name="args">An array of command-line arguments.</param>
         /// <returns>Returns 0 on success; non-zero on error.</returns>
+        [ExcludeFromCodeCoverage]
         public static async Task<int> Main(string[] args)
         {
             using (var cts = new CancellationTokenSource())

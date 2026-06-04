@@ -4,11 +4,19 @@ using Servy.Core.Helpers;
 using Servy.Core.Services;
 using Servy.UI.Design;
 using System.ServiceProcess;
+using System.Windows.Threading;
 
 namespace Servy.UI.UnitTests.Design
 {
     public class DesignTimeMocksTests
     {
+        private readonly DesignTimeUiDispatcher _dispatcher;
+
+        public DesignTimeMocksTests()
+        {
+            _dispatcher = new DesignTimeUiDispatcher();
+        }
+
         #region ProcessHelper Tests
 
         [Fact]
@@ -163,19 +171,53 @@ namespace Servy.UI.UnitTests.Design
         #region Infrastructure Tests
 
         [Fact]
-        public async Task DesignTimeUiDispatcher_YieldAsync_Completes()
+        public async Task InvokeAsync_Action_CompletesSuccessfully()
         {
-            // Arrange
-            var dispatcher = new DesignTimeUiDispatcher();
-            bool reachedAfterYield = false;
+            bool wasExecuted = false;
 
             // Act
-            await dispatcher.YieldAsync();
-            reachedAfterYield = true;
+            Task task = _dispatcher.InvokeAsync(() => wasExecuted = true);
 
             // Assert
-            // Verify that the task completed successfully and execution resumed after the yield
-            Assert.True(reachedAfterYield, "The task should have resumed execution after YieldAsync.");
+            Assert.True(task.IsCompletedSuccessfully, "Task should be completed immediately.");
+            Assert.False(wasExecuted, "Action should not be executed in design-time mode.");
+        }
+
+        [Fact]
+        public async Task InvokeAsync_ActionWithPriority_CompletesSuccessfully()
+        {
+            bool wasExecuted = false;
+
+            // Act
+            Task task = _dispatcher.InvokeAsync(() => wasExecuted = true, DispatcherPriority.Normal);
+
+            // Assert
+            Assert.True(task.IsCompletedSuccessfully, "Task should be completed immediately.");
+            Assert.False(wasExecuted, "Action should not be executed in design-time mode.");
+        }
+
+        [Fact]
+        public async Task InvokeAsync_GenericFunc_ReturnsDefaultValue()
+        {
+            // Act: Reference type
+            Task<string> refTask = _dispatcher.InvokeAsync(() => "Value");
+
+            // Act: Value type
+            Task<int> valTask = _dispatcher.InvokeAsync(() => 42);
+
+            // Assert
+            Assert.Null(await refTask);
+            Assert.Equal(0, await valTask);
+        }
+
+        [Fact]
+        public async Task YieldAsync_CompletesSuccessfully()
+        {
+            // Act
+            Task task = _dispatcher.YieldAsync();
+
+            // Assert
+            Assert.True(task.IsCompletedSuccessfully, "YieldAsync task should return completed state.");
         }
 
         #endregion

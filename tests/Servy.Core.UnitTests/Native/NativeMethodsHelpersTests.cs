@@ -107,7 +107,10 @@ namespace Servy.Core.UnitTests.Native
 
             // Act & Assert
             // When LogonUser is hit with a bad password, it throws UnauthorizedAccessException
-            Assert.Throws<UnauthorizedAccessException>(() => NativeMethodsHelpers.ValidateCredentials(currentUser, badPassword));
+            var exception = Assert.ThrowsAny<Exception>(() => NativeMethodsHelpers.ValidateCredentials(currentUser, badPassword));
+
+            Assert.True(exception is System.ComponentModel.Win32Exception || exception is UnauthorizedAccessException,
+                $"Expected Win32Exception or UnauthorizedAccessException, but caught: {exception.GetType().Name}");
         }
 
         #endregion

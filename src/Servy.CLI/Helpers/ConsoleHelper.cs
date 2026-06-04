@@ -1,8 +1,11 @@
-﻿namespace Servy.CLI.Helpers
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Servy.CLI.Helpers
 {
     /// <summary>
     /// Provides helper methods for console applications.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class ConsoleHelper
     {
         /// <summary>

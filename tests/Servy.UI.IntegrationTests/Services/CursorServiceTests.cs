@@ -55,19 +55,20 @@ namespace Servy.UI.IntegrationTests.Services
                 EnsureApplicationContext();
                 Mouse.OverrideCursor = Cursors.Hand;
 
-                // The service should detect we are on a background thread 
-                // and use Dispatcher.InvokeAsync
+                // 1. Await the Task.Run to guarantee that the background thread 
+                // has explicitly finished executing and queued its InvokeAsync operation.
                 await Task.Run(() =>
                 {
                     _service.ResetCursor();
                 });
 
-                // Force the Dispatcher to process the Reset operation
-                // This flushes the queue up to 'Background' priority
-                await Dispatcher.Yield(DispatcherPriority.Background);
+                // 2. Flush the UI thread's dispatcher queue synchronously.
+                // Because 'Background' is a lower priority than 'Normal' (used by your service),
+                // this forces the dispatcher to execute the service's queued cursor reset 
+                // before releasing this empty action block.
+                Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
 
-                // Verification: Since we are back on the STA thread after the await,
-                // we can check the cursor state immediately.
+                // Verification: The dispatcher has processed the message loop completely.
                 Assert.Null(Mouse.OverrideCursor);
             });
         }

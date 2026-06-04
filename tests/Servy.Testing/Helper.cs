@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Native;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using System.Windows;
 using System.Windows.Threading;
 
 namespace Servy.Testing

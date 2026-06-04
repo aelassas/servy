@@ -9,6 +9,8 @@ namespace Servy.Core.UnitTests.Services
     {
         private readonly XmlServiceSerializer _serializer = new XmlServiceSerializer();
 
+        #region Deserialize Tests
+
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -133,7 +135,6 @@ namespace Servy.Core.UnitTests.Services
             Assert.Null(actual.UserAccount);
             Assert.Null(actual.Password);
             Assert.True(actual.RunAsLocalSystem);
-
         }
 
         [Fact]
@@ -143,7 +144,6 @@ namespace Servy.Core.UnitTests.Services
             string malformedXml = "<ServiceDto><Name>UnclosedTag";
 
             // Act & Assert
-            // XmlSerializer throws InvalidOperationException when the stream is corrupted
             Assert.Null(_serializer.Deserialize(malformedXml));
         }
 
@@ -158,10 +158,76 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.NotNull(result);
-            // Verify that while properties were missing in XML, the result is fully hydrated with defaults
             Assert.Equal(AppConfig.DefaultStopTimeout, result.StopTimeout);
             Assert.Equal(AppConfig.DefaultRotationSizeMB, result.RotationSize);
             Assert.Equal((int)AppConfig.DefaultStartupType, result.StartupType);
         }
+
+        #endregion
+
+        #region Serialize Tests
+
+        [Fact]
+        public void Serialize_NullDto_ReturnsNull()
+        {
+            // Act
+            var result = _serializer.Serialize(null);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Serialize_ValidDto_ReturnsFormattedXmlWithCorrectPreamble()
+        {
+            // Arrange
+            var dto = new ServiceDto
+            {
+                Name = "XmlSerializationService",
+                DisplayName = "Friendly Name",
+                StartTimeout = 30
+            };
+
+            // Act
+            var xmlResult = _serializer.Serialize(dto);
+
+            // Assert
+            Assert.NotNull(xmlResult);
+
+            // Check that it contains indented properties and tags
+            Assert.Contains("<Name>XmlSerializationService</Name>", xmlResult);
+            Assert.Contains("<StartTimeout>30</StartTimeout>", xmlResult);
+
+            // Verify Utf8StringWriter integration: ensures encoding reflects lowercase 'utf-8' without BOM corruptions
+            Assert.StartsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>", xmlResult);
+        }
+
+        [Fact]
+        public void Serialize_InvalidDtoStateOrSerializationFailure_CatchesExceptionAndReturnsNull()
+        {
+            // Arrange: A broken initialization sequence that forces XmlSerializer to trip can be 
+            // simulated by passing a class type mapping variant that mismatches, but since ServiceDto 
+            // is basic, we force an invalid runtime structural parameter exception or corrupted data loop.
+            var invalidDto = new InvalidServiceDtoMock();
+            var serializer = new XmlSerializer(typeof(ServiceDto));
+
+            // Act
+            // Passing an object that cannot be typed safely as ServiceDto into the cast block
+            var result = _serializer.Serialize(invalidDto as ServiceDto);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Derived layout to simulate an un-serializable DTO variant for edge-case coverage.
+    /// </summary>
+    public class InvalidServiceDtoMock : ServiceDto
+    {
+        // Shadowing with an un-serializable type block to force XmlSerializer exceptions
+        public new int Name { get; set; }
     }
 }

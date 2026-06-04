@@ -9,6 +9,7 @@ using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -25,6 +26,7 @@ namespace Servy.UI.Bootstrapping
     /// This class centralizes shared logic for Rendering Tier detection, unhandled exception 
     /// orchestration, configuration loading via JSON, embedded resource extraction, and target app availability monitoring.
     /// </remarks>
+    [ExcludeFromCodeCoverage] // This class is inherently difficult to unit test due to its tight coupling with WPF application lifecycle and static dependencies.
     public class AppBootstrapper
     {
         #region Private Static Fields

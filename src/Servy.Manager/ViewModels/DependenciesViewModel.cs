@@ -11,7 +11,6 @@ using Servy.UI.Commands;
 using Servy.UI.Constants;
 using Servy.UI.Services;
 using System.Collections.ObjectModel;
-using System.ServiceProcess;
 using System.Windows.Input;
 
 namespace Servy.Manager.ViewModels
