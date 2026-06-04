@@ -1,8 +1,5 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Servy.Core.UnitTests.Helpers
 {
