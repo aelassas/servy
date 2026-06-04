@@ -50,49 +50,29 @@ namespace Servy.UI.IntegrationTests.Services
 
         #region Branch: Background Thread (Dispatcher.CheckAccess == false)
 
-        [Fact(Skip = "Flaky in CI")]
+        [Fact]
         public async Task ResetCursor_FromBackgroundThread_InvokesOnDispatcher()
         {
+            // Use the persistent STA context instead of the synchronous RunInSTA
             await Helper.RunInSTAContext(async () =>
             {
                 EnsureApplicationContext();
-
-                // 1. Force the initial state
                 Mouse.OverrideCursor = Cursors.Hand;
-                Assert.Equal(Cursors.Hand, Mouse.OverrideCursor);
 
-                // 2. Execute on background thread
+                // The service should detect we are on a background thread 
+                // and use Dispatcher.InvokeAsync
                 await Task.Run(() =>
                 {
                     _service.ResetCursor();
                 });
 
-                // 3. Robust Polling with Higher Priority
-                int retries = 0;
-                bool resetSuccessfully = false;
+                // Force the Dispatcher to process the Reset operation
+                // This flushes the queue up to 'Background' priority
+                await Dispatcher.Yield(DispatcherPriority.Background);
 
-                while (retries < 50) // Increased retries for CI stability
-                {
-                    // Use 'Send' or 'Normal' priority instead of 'Background'.
-                    // 'Background' priority is often starved in busy CI runners.
-                    Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Normal);
-
-                    if (Mouse.OverrideCursor == null)
-                    {
-                        resetSuccessfully = true;
-                        break;
-                    }
-
-                    await Task.Delay(20);
-                    retries++;
-                }
-
-                // 4. Force explicit null if still held, but report the failure
-                if (!resetSuccessfully)
-                {
-                    Mouse.OverrideCursor = null; // Clean up for other tests
-                    Assert.Fail($"Expected cursor to be null, but it remained: {Mouse.OverrideCursor}");
-                }
+                // Verification: Since we are back on the STA thread after the await,
+                // we can check the cursor state immediately.
+                Assert.Null(Mouse.OverrideCursor);
             });
         }
 
