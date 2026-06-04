@@ -998,6 +998,7 @@ function Install-ServyService {
       })]
     [string] $StartupDir,
 
+    [ValidateLength(0, 28000)]
     [string] $Params,
 
     # Service Lifecycle and Priority
@@ -1079,6 +1080,7 @@ function Install-ServyService {
       })]
     [string] $FailureProgramStartupDir,
 
+    [ValidateLength(0, 28000)]
     [string] $FailureProgramParams,
 
     # Cap the value length to keep the injected environment variable well within the
@@ -1112,6 +1114,7 @@ function Install-ServyService {
       })]
     [string] $PreLaunchStartupDir,
 
+    [ValidateLength(0, 28000)]
     [string] $PreLaunchParams,
 
     [ValidateLength(0, 28000)]
@@ -1153,6 +1156,7 @@ function Install-ServyService {
       })]
     [string] $PostLaunchStartupDir,
 
+    [ValidateLength(0, 28000)]
     [string] $PostLaunchParams,
 
     # Debug Logs
@@ -1171,6 +1175,7 @@ function Install-ServyService {
       })]
     [string] $PreStopStartupDir,
 
+    [ValidateLength(0, 28000)]
     [string] $PreStopParams,
 
     [ValidateRange(0, 86400)]
@@ -1191,6 +1196,7 @@ function Install-ServyService {
       })]
     [string] $PostStopStartupDir,
 
+    [ValidateLength(0, 28000)]
     [string] $PostStopParams
   )
 

@@ -69,8 +69,9 @@ function Get-ServyLastErrors {
           # Get-WinEvent requires Vista/2008+ (Event Log 6.0 API)
           $errors = @(Get-WinEvent -FilterHashtable $filter -ErrorAction Stop)
       } else {
-          # First run: only the most recent event is used downstream
-          $errors = @(Get-WinEvent -FilterHashtable $filter -MaxEvents 1 -ErrorAction Stop)
+          # First run: fetch a wider window to allow the pre-filter to skip feedback 
+          # logs and still find a genuine service crash behind them.
+          $errors = @(Get-WinEvent -FilterHashtable $filter -MaxEvents 20 -ErrorAction Stop)
       }
   }
   catch {

@@ -90,16 +90,9 @@ function Show-Notification {
     [string]$FallbackLogFile
   )
 
-  try {
-      # Mask sensitive data in the notification before sending
-      $LogText     = Protect-SensitiveString -Text $LogText
-      $ServiceName = Protect-SensitiveString -Text $ServiceName
-  } catch [System.Text.RegularExpressions.RegexMatchTimeoutException] {
-      $LogText     = "[Redacted - log scrubbing timed out]"
-      $ServiceName = "[Redacted]"
-      Write-FallbackError -Message "ServyToast: Protect-SensitiveString timed out; falling back to placeholder body." `
-                        -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
-  }
+  # Mask sensitive data in the notification before sending
+  $LogText     = Protect-SensitiveString -Text $LogText
+  $ServiceName = Protect-SensitiveString -Text $ServiceName
 
   $ToastTitle = "Servy - $ServiceName"
     
