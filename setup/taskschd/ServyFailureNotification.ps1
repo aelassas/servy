@@ -156,8 +156,11 @@ function Show-Notification {
             $settingState = $notifier.Setting.ToString()
             Write-FallbackError -Message "ServyToast: Notification delivery aborted due to platform settings suppression ($settingState). Skipping watermark advance." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
             
-            # ROBUSTNESS: Treat configuration blocks as structural permanent failures to prevent head-of-line blocking loops.
-            return 'TransientFailure'
+            # ROBUSTNESS: Treat platform-level notification suppression as a terminal delivery result.
+            # Returning 'PermanentFailure' ensures the watermark is updated and the queue 
+            # continues processing, avoiding head-of-line blocking loops while notifications 
+            # remain unavailable (e.g., Focus Assist or DND enabled).
+            return 'PermanentFailure'
         }
     } catch {
         # Setting probe restricted; proceed with delivery anyway.
