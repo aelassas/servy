@@ -68,7 +68,13 @@ namespace Servy.UI.IntegrationTests.Services
 
                 // Force the Dispatcher to process the Reset operation
                 // This flushes the queue up to 'Background' priority
-                await Dispatcher.Yield(DispatcherPriority.Background);
+                int retries = 0, maxRetries = 10;
+                while (Mouse.OverrideCursor != null && retries < maxRetries)
+                {
+                    await Dispatcher.Yield(DispatcherPriority.Background);
+                    await Task.Delay(100); // Small delay to allow the UI thread to process
+                    retries++;
+                }
 
                 // Verification: Since we are back on the STA thread after the await,
                 // we can check the cursor state immediately.
