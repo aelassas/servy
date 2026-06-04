@@ -115,7 +115,7 @@ namespace Servy.Core.Helpers
 
                                 // A true descendant can never be created before its parent.
                                 // If it is older, this configuration represents a clear OS PID recycling collision.
-                                if (childStartTime >= currentParentStartTime)
+                                if (childStartTime >= currentParentStartTime.AddSeconds(-AppConfig.PidReuseToleranceSeconds))
                                 {
                                     processStartTimes[child] = childStartTime;
                                     tree.Add(child);
@@ -123,7 +123,8 @@ namespace Servy.Core.Helpers
                                 }
                                 else
                                 {
-                                    Logger.Debug($"GetProcessTree: Pruned recycled PID descendant {child}. Creation time ({childStartTime}) predates parent ({currentParentStartTime}).");
+                                    Logger.Debug($"GetProcessTree: Pruned recycled PID descendant {child}. " +
+                                                 $"Creation time ({childStartTime}) predates parent ({currentParentStartTime}) by more than {AppConfig.PidReuseToleranceSeconds}s.");
                                 }
                             }
                         }

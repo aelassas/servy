@@ -53,7 +53,7 @@ namespace Servy.CLI.Commands
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 
-                var exists = _serviceManager.IsServiceInstalled(opts.ServiceName);
+                var exists = _serviceManager.IsServiceInstalled(opts.ServiceName, cancellationToken: cancellationToken);
                 if (!exists)
                 {
                     return CommandResult.Fail(Strings.Msg_ServiceNotFound);

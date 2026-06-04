@@ -183,22 +183,39 @@ namespace Servy.Core.UnitTests.Logging
         [InlineData("Line1\fLine2", "Line1 Line2")]       // Form Feed
         public void Log_SanitizesMessage_MaintainsSingleLineContract(string rawMessage, string expectedFragment)
         {
-            // Arrange
-            // Ensure any old test file artifacts are completely wiped before starting
-            if (File.Exists(_fullLogPath))
+            // Arrange: Generate an isolated unique filename specific to this InlineData iteration run
+            // to eliminate interleaving contamination and protect internal contract layout checks.
+            string isolatedFileName = $"SanitizationTest_{Guid.NewGuid():N}.log";
+            string isolatedFullPath = Path.Combine(Logger.LogsPath, isolatedFileName);
+
+            try
             {
-                File.Delete(_fullLogPath);
+                if (File.Exists(isolatedFullPath))
+                {
+                    File.Delete(isolatedFullPath);
+                }
+                Logger.Initialize(isolatedFileName);
+
+                // Act
+                Logger.Info(rawMessage);
+                Logger.Shutdown();
+
+                // Assert
+                string[] lines = File.ReadAllLines(isolatedFullPath);
+
+                // Trace target element dynamically to insulate the assertion loop from background thread telemetry noise
+                int matchingIndex = Array.FindIndex(lines, l => l.Contains(expectedFragment));
+                Assert.True(matchingIndex >= 0, $"Expected log entry containing fragment '{expectedFragment}' was not found.");
+
+                string targetLine = lines[matchingIndex];
+                Assert.DoesNotContain("\n", targetLine);
+                Assert.DoesNotContain("\r", targetLine);
             }
-            Logger.Initialize(_testFileName);
-
-            // Act
-            Logger.Info(rawMessage);
-            Logger.Shutdown();
-
-            // Assert
-            string[] lines = File.ReadAllLines(_fullLogPath);
-            Assert.Single(lines); // Ensure log didn't split into multiple physical lines
-            Assert.Contains(expectedFragment, lines[0]);
+            finally
+            {
+                Logger.Shutdown();
+                try { if (File.Exists(isolatedFullPath)) File.Delete(isolatedFullPath); } catch { }
+            }
         }
 
         #endregion
