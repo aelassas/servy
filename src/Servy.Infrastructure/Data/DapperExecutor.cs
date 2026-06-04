@@ -3,6 +3,7 @@ using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Logging;
 using System.Data;
+using System.Data.Common;
 using System.Data.SQLite;
 
 namespace Servy.Infrastructure.Data
@@ -317,6 +318,35 @@ namespace Servy.Infrastructure.Data
         #endregion
 
         #region Asynchronous Methods
+
+        /// <inheritdoc/>
+        public async Task<IDbTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+        {
+            var connection = _dbContext.CreateConnection();
+            try
+            {
+                if (connection is DbConnection dbConn)
+                {
+                    await dbConn.OpenAsync(cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    connection.Open();
+                }
+
+                // BeginTransactionAsync exists on DbConnection in .NET 6+; fall back to sync otherwise.
+                var transaction = (connection is DbConnection dbConn2)
+                    ? await dbConn2.BeginTransactionAsync(cancellationToken).ConfigureAwait(false)
+                    : connection.BeginTransaction();
+
+                return new WrappedDbTransaction(connection, transaction);
+            }
+            catch
+            {
+                connection.Dispose();
+                throw;
+            }
+        }
 
         /// <inheritdoc/>
         public async Task<T?> ExecuteScalarAsync<T>(string sql, object? param = null, IDbTransaction? transaction = null, CancellationToken cancellationToken = default)

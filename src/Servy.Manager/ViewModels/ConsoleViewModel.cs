@@ -436,15 +436,33 @@ namespace Servy.Manager.ViewModels
                     if (outRes != null) combinedHistory.AddRange(outRes.Lines);
                     if (errRes != null) combinedHistory.AddRange(errRes.Lines);
 
-                    // Perform an in-place sort on a background thread.
-                    // This avoids the GC pressure of the previous anonymous object LINQ chain.
-                    await Task.Run(() =>
-                    {
-                        combinedHistory.Sort((a, b) => DateTime.Compare(a.Timestamp, b.Timestamp));
-                    });
-
                     if (combinedHistory.Count > 0)
                     {
+                        // Enforce sorting stability during Introspective Sort operations by capturing original sequence indexes 
+                        // as a secondary tie-breaker constraint. This prevents stdout/stderr line interleaving jank on tied timestamps.
+                        var indexedHistory = new List<(LogLine Line, int Index)>(combinedHistory.Count);
+                        for (int i = 0; i < combinedHistory.Count; i++)
+                        {
+                            indexedHistory.Add((combinedHistory[i], i));
+                        }
+
+                        // Perform an in-place sort on a background thread.
+                        // This avoids the GC pressure of the previous anonymous object LINQ chain.
+                        await Task.Run(() =>
+                        {
+                            indexedHistory.Sort((a, b) =>
+                            {
+                                int byTime = DateTime.Compare(a.Line.Timestamp, b.Line.Timestamp);
+                                return byTime != 0 ? byTime : a.Index.CompareTo(b.Index);
+                            });
+                        });
+
+                        combinedHistory.Clear();
+                        for (int i = 0; i < indexedHistory.Count; i++)
+                        {
+                            combinedHistory.Add(indexedHistory[i].Line);
+                        }
+
                         RawLines.AddRange(combinedHistory);
                         RequestScroll?.Invoke(true);
                     }

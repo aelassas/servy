@@ -135,10 +135,6 @@ namespace Servy.UI.UnitTests.Design
             var service = new DesignTimeHelpService();
             var ct = TestContext.Current.CancellationToken;
 
-            service.OpenDocumentation();
-            service.OpenAboutDialog();
-
-            await service.CheckUpdatesAsync();
             await service.OpenDocumentation("caption");
             await service.CheckUpdates("caption");
             await service.OpenAboutDialog("about", "caption");

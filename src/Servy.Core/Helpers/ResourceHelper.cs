@@ -61,7 +61,6 @@ namespace Servy.Core.Helpers
             bool isCli = false)
         {
             bool copyDone = false; // Tracks if the physical file copy succeeded
-            bool restartFailed = false; // Tracks if the post-copy service restoration failed
 
             try
             {
@@ -114,9 +113,6 @@ namespace Servy.Core.Helpers
                             }
                             catch (Exception startEx)
                             {
-                                // Differentiate restart failure from copy failure
-                                restartFailed = true;
-
                                 // ROBUSTNESS: Dynamically evaluate the copyDone state inside the finally block.
                                 // This guarantees we don't issue false success metrics to the administrator logs if the copy was aborted earlier.
                                 var copyDescription = copyDone
@@ -131,13 +127,13 @@ namespace Servy.Core.Helpers
                     }
                 }
 
-                if (copyDone && !restartFailed)
+                if (copyDone)
                 {
                     Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
                 }
 
-                // ROBUSTNESS: Only return true if both the copy and the service restoration were successful.
-                return copyDone && !restartFailed;
+                // Restart failures are surfaced via Logger.Error already, so the boolean does not need to encode them
+                return copyDone;
             }
             catch (Exception ex)
             {

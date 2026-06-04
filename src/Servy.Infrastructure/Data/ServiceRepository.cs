@@ -163,7 +163,7 @@ namespace Servy.Infrastructure.Data
 
             // Wrap the entire batch sequence in an explicit transaction to enforce snapshot isolation.
             // This prevents concurrent mutations from creating skewed or missing ID references.
-            using (var tx = _dapper.BeginTransaction())
+            using (var tx = await _dapper.BeginTransactionAsync(cancellationToken).ConfigureAwait(false))
             {
                 // 2. Execute the batch upsert within the transaction scope 
                 var affectedRows = await _dapper.ExecuteAsync(sql, encryptedServices, transaction: tx, cancellationToken: cancellationToken);

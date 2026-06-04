@@ -99,6 +99,11 @@ namespace Servy.Infrastructure.UnitTests.Data
             throw new NotImplementedException();
         }
 
+        public Task<IDbTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public int Execute(string sql, object? param = null, IDbTransaction? transaction = null)
         {
             throw new NotImplementedException();

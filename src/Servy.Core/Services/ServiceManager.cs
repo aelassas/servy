@@ -350,15 +350,15 @@ namespace Servy.Core.Services
                         var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: false, cancellationToken);
                         dto.Pid = serviceDto?.Pid;
 
-                        var totalWaitTime = (options.StopTimeout.HasValue && options.StopTimeout.Value > AppConfig.ScmStopTimeoutFloorSeconds
-                            ? options.StopTimeout.Value : AppConfig.ScmStopTimeoutFloorSeconds) + AppConfig.ScmTimeoutBufferSeconds;
+                        var totalWaitTime = (options.StopTimeout > AppConfig.ScmStopTimeoutFloorSeconds
+                            ? options.StopTimeout : AppConfig.ScmStopTimeoutFloorSeconds) + AppConfig.ScmTimeoutBufferSeconds;
                         var previousWaitTime = (serviceDto?.PreviousStopTimeout != null && serviceDto.PreviousStopTimeout.Value > AppConfig.ScmStopTimeoutFloorSeconds
                             ? serviceDto.PreviousStopTimeout.Value : AppConfig.ScmStopTimeoutFloorSeconds) + AppConfig.ScmTimeoutBufferSeconds;
                         totalWaitTime = Math.Max(totalWaitTime, previousWaitTime);
 
                         if (!string.IsNullOrEmpty(options.PreStopExePath))
                         {
-                            totalWaitTime += options.PreStopTimeout ?? AppConfig.DefaultPreStopTimeoutSeconds;
+                            totalWaitTime += options.PreStopTimeout;
                         }
                         uint finalTimeoutMs = (uint)totalWaitTime * 1000;
 

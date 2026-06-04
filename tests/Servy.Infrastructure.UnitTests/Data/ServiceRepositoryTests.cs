@@ -446,7 +446,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             // 1. Setup the mock transaction context
             var mockTx = new Mock<IDbTransaction>();
-            _mockDapper.Setup(d => d.BeginTransaction()).Returns(mockTx.Object);
+            _mockDapper.Setup(d => d.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(mockTx.Object);
 
             _mockSecureData.Setup(s => s.Encrypt(It.IsAny<string>()))
                            .Returns((string input) => encryptedPrefix + input);

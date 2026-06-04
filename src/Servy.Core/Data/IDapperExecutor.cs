@@ -29,6 +29,19 @@ namespace Servy.Core.Data
         T? QuerySingleOrDefault<T>(string sql, object? param = null, IDbTransaction? transaction = null);
 
         /// <summary>
+        /// Asynchronously begins a database transaction.
+        /// </summary>
+        /// <remarks>
+        /// This method ensures the underlying connection is opened before starting the transaction.
+        /// It provides compatibility between standard synchronous <see cref="IDbConnection"/> 
+        /// and modern asynchronous <see cref="System.Data.Common.DbConnection"/> implementations.
+        /// </remarks>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous operation, containing an <see cref="IDbTransaction"/> wrapper.</returns>
+        /// <exception cref="Exception">Thrown if connection opening or transaction initiation fails, ensuring the connection is disposed.</exception>
+        Task<IDbTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Executes a SQL command that returns a scalar value.
         /// </summary>
         /// <typeparam name="T">The type of the scalar result.</typeparam>
