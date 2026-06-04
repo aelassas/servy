@@ -1,4 +1,7 @@
 ﻿using Moq;
+#if !DEBUG
+using Servy.Core.Config;
+#endif
 using Servy.Core.Data;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
@@ -9,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.ServiceProcess;
 using System.Threading;
 using Xunit;
@@ -402,7 +404,7 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             var mockLog = new Mock<IServyLogger>();
-            var restarterPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Servy.Restarter.Net48.exe");
+            var restarterPath = Path.Combine(GetBaseDirectory(), "Servy.Restarter.Net48.exe");
             File.WriteAllText(restarterPath, "dummy");
 
             try
@@ -426,7 +428,7 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             var mockLog = new Mock<IServyLogger>();
-            var restarterPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Servy.Restarter.Net48.exe");
+            var restarterPath = Path.Combine(GetBaseDirectory(), "Servy.Restarter.Net48.exe");
             File.WriteAllText(restarterPath, "dummy");
 
             var mockProcess = new Mock<Process>();
@@ -519,6 +521,19 @@ namespace Servy.Service.UnitTests.Helpers
             // Assert
             mockLog.Verify(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private static string GetBaseDirectory()
+        {
+#if DEBUG
+            return AppDomain.CurrentDomain.BaseDirectory;
+#else
+            return AppConfig.ProgramDataPath;
+#endif
         }
 
         #endregion

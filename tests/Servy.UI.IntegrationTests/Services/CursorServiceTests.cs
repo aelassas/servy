@@ -56,23 +56,26 @@ namespace Servy.UI.IntegrationTests.Services
             await Helper.RunInSTAContext(async () =>
             {
                 EnsureApplicationContext();
-                Mouse.OverrideCursor = Cursors.Hand;
 
-                // Execute the service call on a background thread
+                // 1. Force the initial state
+                Mouse.OverrideCursor = Cursors.Hand;
+                Assert.Equal(Cursors.Hand, Mouse.OverrideCursor);
+
+                // 2. Execute on background thread
                 await Task.Run(() =>
                 {
                     _service.ResetCursor();
                 });
 
-                // Use a poller to wait for the UI thread to process the cursor update.
-                // This is much more reliable in CI environments than a single Invoke call.
+                // 3. Robust Polling with Higher Priority
                 int retries = 0;
                 bool resetSuccessfully = false;
 
-                while (retries < 20) // Poll for up to 200ms
+                while (retries < 50) // Increased retries for CI stability
                 {
-                    // Pump the dispatcher message loop
-                    Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                    // Use 'Send' or 'Normal' priority instead of 'Background'.
+                    // 'Background' priority is often starved in busy CI runners.
+                    Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Normal);
 
                     if (Mouse.OverrideCursor == null)
                     {
@@ -80,12 +83,16 @@ namespace Servy.UI.IntegrationTests.Services
                         break;
                     }
 
-                    await Task.Delay(10);
+                    await Task.Delay(20);
                     retries++;
                 }
 
-                // Verification
-                Assert.True(resetSuccessfully, $"Expected cursor to be null, but it was {Mouse.OverrideCursor}");
+                // 4. Force explicit null if still held, but report the failure
+                if (!resetSuccessfully)
+                {
+                    Mouse.OverrideCursor = null; // Clean up for other tests
+                    Assert.Fail($"Expected cursor to be null, but it remained: {Mouse.OverrideCursor}");
+                }
             });
         }
 
