@@ -22,7 +22,7 @@ namespace Servy.Manager.Services
         /// Starts the specified service.
         /// </summary>
         /// <param name="service">The service to start.</param>
-        /// <param name="showMessageBox"">Whether to show a message box on success or failure.</param>
+        /// <param name="showMessageBox">Whether to show a message box on success or failure.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True if the service started successfully; otherwise, false.</returns>
         Task<bool> StartServiceAsync(Service? service, bool showMessageBox = true, CancellationToken cancellationToken = default);
@@ -31,7 +31,7 @@ namespace Servy.Manager.Services
         /// Stops the specified service.
         /// </summary>
         /// <param name="service">The service to stop.</param>
-        /// <param name="showMessageBox"">Whether to show a message box on success or failure.</param>
+        /// <param name="showMessageBox">Whether to show a message box on success or failure.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True if the service stopped successfully; otherwise, false.</returns>
         Task<bool> StopServiceAsync(Service? service, bool showMessageBox = true, CancellationToken cancellationToken = default);
@@ -40,7 +40,7 @@ namespace Servy.Manager.Services
         /// Restarts the specified service.
         /// </summary>
         /// <param name="service">The service to restart.</param>
-        /// <param name="showMessageBox"">Whether to show a message box on success or failure.</param>
+        /// <param name="showMessageBox">Whether to show a message box on success or failure.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True if the service restarted successfully; otherwise, false.</returns>
         Task<bool> RestartServiceAsync(Service? service, bool showMessageBox = true, CancellationToken cancellationToken = default);

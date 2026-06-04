@@ -71,7 +71,7 @@ foreach ($Proj in $TestProjects) {
         --collect:"XPlat Code Coverage" `
         --results-directory $TestResultsDir `
         -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura `
-        -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/obj/**/*"
+           DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/obj/**/*"
     if ($LASTEXITCODE -ne 0) { Write-Error "dotnet test failed for $Proj"; exit $LASTEXITCODE }
 }
 

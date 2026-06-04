@@ -18,6 +18,9 @@ namespace Servy.Infrastructure.Data
     /// </remarks>
     public class DapperExecutor : IDapperExecutor
     {
+        private const string RetryLoopMisconfiguredMessage =
+            "Database retry budget is exhausted before any attempt was made. Verify AppConfig.Db*MaxRetries is > 0.";
+
         private readonly IAppDbContext _dbContext;
 
         /// <summary>
@@ -154,7 +157,7 @@ namespace Servy.Infrastructure.Data
                 }
             }
 
-            throw new InvalidOperationException("Retry loop exited without returning or rethrowing - retry count must be > 0.");
+            throw new InvalidOperationException(RetryLoopMisconfiguredMessage);
         }
 
         /// <summary>
@@ -190,7 +193,7 @@ namespace Servy.Infrastructure.Data
                 }
             }
 
-            throw new InvalidOperationException("Retry loop exited without returning or rethrowing - retry count must be > 0.");
+            throw new InvalidOperationException(RetryLoopMisconfiguredMessage);
         }
 
         /// <summary>
