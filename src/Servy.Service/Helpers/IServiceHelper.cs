@@ -64,11 +64,10 @@ namespace Servy.Service.Helpers
         /// </remarks>
         /// <param name="options">The startup options to validate.</param>
         /// <param name="logger">The logger instance (typically a scoped/promoted logger) used for reporting.</param>
-        /// <param name="fullArgs">The original command-line arguments for logging purposes.</param>
         /// <returns>
         /// <c>true</c> if the options are valid and the service can proceed; otherwise, <c>false</c>.
         /// </returns>
-        bool ValidateAndLog(StartOptions options, IServyLogger? logger, string[] fullArgs);
+        bool ValidateAndLog(StartOptions options, IServyLogger? logger);
 
         /// <summary>
         /// Ensures the working directory specified in the options is valid.
@@ -80,9 +79,11 @@ namespace Servy.Service.Helpers
 
         /// <summary>
         /// Attempts to restart the given process by:
-        /// 1. Killing it if it's still running.
-        /// 2. Cleaning up job resources (via <paramref name="terminateJobObject"/>).
-        /// 3. Starting the process again with the original path, arguments, and working directory.
+        /// 1. Capturing the parent PID and start time before stopping (for descendant tracking).
+        /// 2. Stopping the parent via <see cref="IProcessWrapper.Stop"/> if it is still running.
+        /// 3. Sweeping descendant processes via <see cref="IProcessWrapper.StopDescendants"/>.
+        /// 4. Invoking <paramref name="startProcess"/> to launch a fresh instance with the original path, arguments, working directory, and environment.
+        /// 5. Disposing the old process wrapper in a finally block to release native handles.
         /// </summary>
         /// <param name="process">The process wrapper to restart.</param>
         /// <param name="startProcess">Callback to restart the process.</param>

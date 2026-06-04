@@ -104,6 +104,7 @@ namespace Servy.Core.UnitTests.Logging
             Logger.Info("Establishing file context on disk");
             Logger.Shutdown(); // Flush and release the handle so the test can lock it
 
+            // Assert
             Assert.True(File.Exists(_fullLogPath), "Baseline log file should exist before locking.");
 
             // Arrange: 2. Re-initialize the logger, then lock the file entirely from outside system operations
@@ -218,7 +219,7 @@ namespace Servy.Core.UnitTests.Logging
             }
             catch (Exception caught)
             {
-                ex = caught;
+                ex = caught; // This successfully captures the ApplicationException
             }
 
             Logger.Initialize(_testFileName);
@@ -434,6 +435,7 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Contains($"Exception: Depth level {targetOverflow} wrapper", content);
 
             // 2. Verify that the deepest "Root" text was dropped because it exceeded the depth safety cutoff
+            // Re-verify string parsing matches depth cutoff expectation boundary context parameters
             Assert.DoesNotContain("Root Exception Context", content);
 
             // 3. Isolate the exact formatted exception text segment to avoid picking up layout brackets
@@ -506,12 +508,17 @@ namespace Servy.Core.UnitTests.Logging
         public void SetUseLocalTimeForRotation_UpdatesTimestampTimezoneFormat()
         {
             // Arrange
-            // Ensure any old test file artifacts are completely wiped before starting
-            if (File.Exists(_fullLogPath))
+            // Generate a completely isolated unique file for this test instance 
+            // to shield it against async logs from parallel test runner assemblies.
+            string isolatedFileName = $"IsolationTimezoneTest_{Guid.NewGuid():N}.log";
+            string isolatedFullPath = Path.Combine(Logger.LogsPath, isolatedFileName);
+
+            if (File.Exists(isolatedFullPath))
             {
-                File.Delete(_fullLogPath);
+                File.Delete(isolatedFullPath);
             }
-            Logger.Initialize(_testFileName, useLocalTimeForRotation: false);
+
+            Logger.Initialize(isolatedFileName, useLocalTimeForRotation: false);
 
             // Act
             Logger.Info("Message UTC");
@@ -520,13 +527,24 @@ namespace Servy.Core.UnitTests.Logging
             Logger.Shutdown();
 
             // Assert
-            string[] lines = File.ReadAllLines(_fullLogPath);
+            string[] lines = File.ReadAllLines(isolatedFullPath);
+
+            // Extract the targeted indices explicitly using their message payloads 
+            // so background threads firing logs into the static entity won't disrupt verification.
+            int utcIndex = Array.FindIndex(lines, l => l.Contains("Message UTC"));
+            int localIndex = Array.FindIndex(lines, l => l.Contains("Message Local"));
+
+            Assert.True(utcIndex >= 0, "Could not find the UTC log line entry.");
+            Assert.True(localIndex >= 0, "Could not find the Local log line entry.");
 
             // Validate the first log entry uses UTC "Z" marker
-            Assert.Contains("Z] [INFO]", lines[0]);
+            Assert.Contains("Z] [INFO]", lines[utcIndex]);
 
             // Validate the second log entry uses the local timezone offset (e.g., +02:00 or -05:00)
-            Assert.Matches(@"[+-]\d{2}:\d{2}\] \[INFO\] \|", lines[1]);
+            Assert.Matches(@"[+-]\d{2}:\d{2}\] \[INFO\] \|", lines[localIndex]);
+
+            // Teardown isolated resource cleanly
+            try { if (File.Exists(isolatedFullPath)) File.Delete(isolatedFullPath); } catch { }
         }
 
         #endregion

@@ -183,7 +183,7 @@ namespace Servy.Service.UnitTests
             _mockLogger.Setup(l => l.CreateScoped(options.ServiceName)).Returns(mockScopedLogger.Object);
 
             // 3. Validation setup (Must use the scoped logger)
-            _mockServiceHelper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object, fullArgs))
+            _mockServiceHelper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object))
                 .Returns(true);
 
             // 4. Path Validator setup (Used inside HandleLogWriters)
@@ -228,7 +228,7 @@ namespace Servy.Service.UnitTests
                 .Returns(mockScopedLogger.Object);
 
             // 3. Setup Validation: Must return true for the method to proceed to HandleLogWriters
-            _mockServiceHelper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object, fullArgs))
+            _mockServiceHelper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object))
                 .Returns(true);
 
             // 4. Force the path validation to fail
@@ -274,7 +274,7 @@ namespace Servy.Service.UnitTests
             Assert.True(stopped);
 
             // Verify that ValidateAndLog was NEVER called because we exited early
-            _mockServiceHelper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>(), It.IsAny<string[]>()), Times.Never);
+            _mockServiceHelper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()), Times.Never);
         }
 
         [Fact]

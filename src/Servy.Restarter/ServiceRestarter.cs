@@ -76,7 +76,15 @@ namespace Servy.Restarter
                         if (stopRemaining <= TimeSpan.Zero)
                             throw new System.TimeoutException($"No time remaining to stop service '{serviceName}'.");
 
-                        controller.WaitForStatus(ServiceControllerStatus.Stopped, stopRemaining);
+                        try
+                        {
+                            controller.WaitForStatus(ServiceControllerStatus.Stopped, stopRemaining);
+                        }
+                        catch (System.ServiceProcess.TimeoutException ex)
+                        {
+                            throw new System.TimeoutException(
+                                $"Service '{serviceName}' did not reach Stopped within {stopRemaining}.", ex);
+                        }
                     }
                     catch (InvalidOperationException)
                     {
@@ -104,7 +112,16 @@ namespace Servy.Restarter
                             $"Timeout expired while waiting for service '{serviceName}' to reach Running. " +
                             "The Start command was issued; the service may still complete the transition.");
 
-                    controller.WaitForStatus(ServiceControllerStatus.Running, remaining);
+                    try
+                    {
+                        controller.WaitForStatus(ServiceControllerStatus.Running, remaining);
+                    }
+                    catch (System.ServiceProcess.TimeoutException ex)
+                    {
+                        throw new System.TimeoutException(
+                            $"Service '{serviceName}' did not reach Running within {remaining}.", ex);
+                    }
+
                 }
                 catch (InvalidOperationException)
                 {

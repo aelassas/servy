@@ -187,7 +187,7 @@ namespace Servy.Service.UnitTests.Helpers
             try
             {
                 // Act
-                var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+                var result = _helper.ValidateAndLog(options, mockLog.Object);
 
                 // Assert
                 Assert.True(result);
@@ -213,7 +213,7 @@ namespace Servy.Service.UnitTests.Helpers
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockLog.Object);
 
             // Act
-            var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+            var result = _helper.ValidateAndLog(options, mockLog.Object);
 
             // Assert
             Assert.False(result);
@@ -231,7 +231,7 @@ namespace Servy.Service.UnitTests.Helpers
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockLog.Object);
 
             // Act
-            var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+            var result = _helper.ValidateAndLog(options, mockLog.Object);
 
             // Assert
             Assert.False(result);
@@ -256,7 +256,7 @@ namespace Servy.Service.UnitTests.Helpers
             _mockProcessHelper.Setup(ph => ph.ValidatePath(options.ExecutablePath, It.IsAny<bool>())).Returns(false);
 
             // Act
-            var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+            var result = _helper.ValidateAndLog(options, mockLog.Object);
 
             // Assert
             Assert.False(result);

@@ -85,7 +85,15 @@ namespace Servy.Core.Helpers
                 throw new ArgumentNullException(nameof(aesIVFilePath));
 
             // 1. Utilize the BCL's robust connection string builder
-            var builder = new DbConnectionStringBuilder { ConnectionString = connectionString };
+            DbConnectionStringBuilder builder;
+            try
+            {
+                builder = new DbConnectionStringBuilder { ConnectionString = connectionString };
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidOperationException("Connection string format is invalid.", ex);
+            }
 
             // 2. Safely check for both common key variants
             if (!builder.TryGetValue("Data Source", out var raw) && !builder.TryGetValue("DataSource", out raw))

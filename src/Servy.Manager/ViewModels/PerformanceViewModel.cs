@@ -248,7 +248,7 @@ namespace Servy.Manager.ViewModels
             {
                 _processHelper.MaintainCache();
                 return _processHelper.GetProcessTreeMetrics(pid);
-            });
+            }, token);
 
             if (token.IsCancellationRequested) return;
             if (!ReferenceEquals(currentSelection, _selectedService)) return;

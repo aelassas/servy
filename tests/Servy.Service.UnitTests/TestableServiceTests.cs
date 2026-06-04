@@ -53,7 +53,7 @@ namespace Servy.Service.UnitTests
                           .Returns(mockScopedLogger.Object);
 
             // 3. Setup Validation and Working Directory check (using the SCOPED logger)
-            mockHelper.Setup(h => h.ValidateAndLog(expectedOptions, mockScopedLogger.Object, fullArgs))
+            mockHelper.Setup(h => h.ValidateAndLog(expectedOptions, mockScopedLogger.Object))
                       .Returns(true);
             mockHelper.Setup(h => h.EnsureValidWorkingDirectory(expectedOptions, mockScopedLogger.Object));
 
@@ -85,7 +85,7 @@ namespace Servy.Service.UnitTests
             mockRootLogger.Verify(l => l.Dispose(), Times.Never);
 
             // Verify validation and working directory check used the NEW scoped logger
-            mockHelper.Verify(h => h.ValidateAndLog(expectedOptions, mockScopedLogger.Object, fullArgs), Times.Once);
+            mockHelper.Verify(h => h.ValidateAndLog(expectedOptions, mockScopedLogger.Object), Times.Once);
             mockHelper.Verify(h => h.EnsureValidWorkingDirectory(expectedOptions, mockScopedLogger.Object), Times.Once);
         }
 
@@ -131,7 +131,7 @@ namespace Servy.Service.UnitTests
 
             // Verify that subsequent steps (Promotion/Validation/WorkingDir) were NEVER reached
             mockLogger.Verify(l => l.CreateScoped(It.IsAny<string>()), Times.Never);
-            mockHelper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>(), It.IsAny<string[]>()), Times.Never);
+            mockHelper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()), Times.Never);
             mockHelper.Verify(h => h.EnsureValidWorkingDirectory(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()), Times.Never);
         }
 
