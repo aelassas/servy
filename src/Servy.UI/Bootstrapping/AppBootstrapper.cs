@@ -583,8 +583,8 @@ namespace Servy.UI.Bootstrapping
         {
             TryRun(CleanupAvailabilityWatcher, nameof(CleanupAvailabilityWatcher));
             TryRun(() => _appLifetimeCts.Cancel(), nameof(_appLifetimeCts));
-            // Do NOT dispose _appLifetimeCts here - the async void monitor still
-            // accesses .Token. Let the GC reclaim it after the monitor unwinds.
+            // Do NOT dispose _appLifetimeCts here - the async Task monitor (StartAvailabilityMonitorAsync)
+            // still accesses .Token. Let the GC reclaim it after the monitor unwinds.
 
             TryRun(() => SecureData?.Dispose(), nameof(SecureData));
             TryRun(() => _protectedKeyProvider?.Dispose(), nameof(_protectedKeyProvider));

@@ -248,7 +248,7 @@ namespace Servy.Manager.Utils
                             Logger.Error($"Unexpected error in log tailer for {path} (Concealed Failure Block #{consecutiveFailures}).", ex);
                         }
 
-                        // EXPONENTIAL BACKOFF: Progressively scale recovery wait to prevent thrashing, capped at MaxDelay.
+                        // LINEAR BACKOFF: Progressively scale recovery wait by attempt number, capped at MaxDelay.
                         int delay = Math.Min(AppConfig.LogTailerMaxUnhandledErrorRecoveryDelayMs, AppConfig.LogTailerUnhandledErrorRecoveryDelayMs * consecutiveFailures);
                         await Task.Delay(delay, linkedToken);
                     }
