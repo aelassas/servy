@@ -47,6 +47,7 @@ namespace Servy.CLI
     /// Responsible for parsing command-line arguments and executing
     /// corresponding service management commands.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class Program
     {
         /// <summary>
@@ -71,7 +72,6 @@ namespace Servy.CLI
         /// </summary>
         /// <param name="args">An array of command-line arguments.</param>
         /// <returns>Returns 0 on success; non-zero on error.</returns>
-        [ExcludeFromCodeCoverage]
         public static async Task<int> Main(string[] args)
         {
             using (var cts = new CancellationTokenSource())

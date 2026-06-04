@@ -2,14 +2,18 @@
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Servy.Core.UnitTests.Logging
 {
+    [CollectionDefinition("LoggerSequential", DisableParallelization = true)]
+    public class LoggerCollection { }
+
     /// <summary>
     /// Comprehensive unit tests for the Logger class, executed sequentially
     /// due to the static nature of the target class to avoid file lock contention.
     /// </summary>
-    [Collection("Servy.Core.UnitTests.Logging.LoggerTests")] // Ensures tests don't run in parallel and fight over the static _writer
+    [Collection("LoggerSequential")] // Ensures tests don't run in parallel and fight over the static _writer
     public class LoggerTests : IDisposable
     {
         private readonly string _testFileName;
@@ -408,8 +412,8 @@ namespace Servy.Core.UnitTests.Logging
             string exceptionSegment = content.Substring(msgIndex).TrimEnd();
 
             // Calculate bracket balance
-            int openTokensCount = exceptionSegment.Split(new[] { "[Inner -> " }, StringSplitOptions.None).Length - 1;
-            int closeBracketsCount = exceptionSegment.Split(']').Length - 1;
+            var openTokensCount = Regex.Matches(exceptionSegment, Regex.Escape("[Inner -> ")).Count;
+            var closeBracketsCount = exceptionSegment.Split(']').Length - 1;
 
             // ASSERTIONS:
             // 1. There must be exactly 3 "[Inner -> " opened tokens.

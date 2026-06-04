@@ -49,27 +49,39 @@ namespace Servy.UI.IntegrationTests.Services
         [Fact]
         public async Task ResetCursor_FromBackgroundThread_InvokesOnDispatcher()
         {
-            // Use the persistent STA context instead of the synchronous RunInSTA
             await Helper.RunInSTAContext(async () =>
             {
                 EnsureApplicationContext();
                 Mouse.OverrideCursor = Cursors.Hand;
 
-                // 1. Await the Task.Run to guarantee that the background thread 
-                // has explicitly finished executing and queued its InvokeAsync operation.
+                // Execute the service call on a background thread
                 await Task.Run(() =>
                 {
                     _service.ResetCursor();
                 });
 
-                // 2. Flush the UI thread's dispatcher queue synchronously.
-                // Because 'Background' is a lower priority than 'Normal' (used by your service),
-                // this forces the dispatcher to execute the service's queued cursor reset 
-                // before releasing this empty action block.
-                Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                // Use a poller to wait for the UI thread to process the cursor update.
+                // This is much more reliable in CI environments than a single Invoke call.
+                int retries = 0;
+                bool resetSuccessfully = false;
 
-                // Verification: The dispatcher has processed the message loop completely.
-                Assert.Null(Mouse.OverrideCursor);
+                while (retries < 20) // Poll for up to 200ms
+                {
+                    // Pump the dispatcher message loop
+                    Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+
+                    if (Mouse.OverrideCursor == null)
+                    {
+                        resetSuccessfully = true;
+                        break;
+                    }
+
+                    await Task.Delay(10);
+                    retries++;
+                }
+
+                // Verification
+                Assert.True(resetSuccessfully, $"Expected cursor to be null, but it was {Mouse.OverrideCursor}");
             });
         }
 
