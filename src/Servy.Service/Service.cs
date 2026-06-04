@@ -493,7 +493,7 @@ namespace Servy.Service
                     // By wrapping this in a Task.Delay, we allow ServiceBase's internal OnStart() 
                     // sequence to complete and report SERVICE_RUNNING first. We then safely overwrite 
                     // the state to include SERVICE_ACCEPT_PRESHUTDOWN, bypassing .NET's internal limitations.
-                    _ = Task.Run((Func<Task>)(async () =>
+                    _ = Task.Run(async () =>
                     {
                         try
                         {
@@ -538,7 +538,7 @@ namespace Servy.Service
                             // 4. Prevent unobserved task exceptions from crashing the finalizer thread
                             _logger?.Error("Unexpected error during PRESHUTDOWN registration.", ex);
                         }
-                    }), token); // Pass token to Task.Run to prevent execution if already cancelled
+                    }, token); // Pass token to Task.Run to prevent execution if already cancelled
                 }
             }
             catch (Exception ex)
@@ -750,8 +750,6 @@ namespace Servy.Service
             // If the counter is already 0, there is no need to check timestamps or files.
             // This keeps the health check efficient.
             if (EnsureRestartAttemptsFile() == 0) return;
-
-            if (!File.Exists(_restartAttemptsFile)) return;
 
             DateTime lastWriteUtc = File.GetLastWriteTimeUtc(_restartAttemptsFile);
 
