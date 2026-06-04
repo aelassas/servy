@@ -6,6 +6,7 @@ using Servy.Core.Security;
 using Servy.Infrastructure.Helpers;
 using System.Reflection;
 using System.Windows;
+using Helper = Servy.Testing.Helper;
 
 namespace Servy.UI.Bootstrapping.Tests
 {
@@ -109,14 +110,11 @@ namespace Servy.UI.Bootstrapping.Tests
         [Fact]
         public async Task OnStartup_ValidEnvironment_ForcesSoftwareRenderingOnArg()
         {
-            // Use a Task.Run to offload to an STA thread, but don't manually push frames.
-            // The test runner will await the result correctly.
-            await Task.Run(() =>
+            // Execute entirely within the persistent async STA context pump thread 
+            // to ensure internal thread safety boundaries match Application.Current initialization rules.
+            await Helper.RunInSTAContext(async () =>
             {
-                // WPF requires an Application instance to exist to process its events.
-                // If one already exists (from a previous test), don't create another.
-                var app = Application.Current ?? new Application();
-
+                var app = SecureCreateApplication();
                 var bootstrapper = new AppBootstrapper(_options, _mockProcessKiller.Object);
 
                 SetStaticBooleanMock(typeof(SecurityHelper), "_isAdministratorMockValue", true);
@@ -124,12 +122,10 @@ namespace Servy.UI.Bootstrapping.Tests
 
                 try
                 {
+                    // Push Software Rendering command line switch parameter
                     var startupArgs = CreateStartupEventArgs(new[] { AppConfig.ForceSoftwareRenderingArg });
-
-                    // Act: Wrap in a try-catch to catch exceptions inside the thread
                     bool proceed = bootstrapper.OnStartup(app, startupArgs);
 
-                    // Assert
                     Assert.True(proceed);
                     Assert.True(bootstrapper.ForceSoftwareRendering);
                 }
@@ -138,12 +134,24 @@ namespace Servy.UI.Bootstrapping.Tests
                     ResetStaticField(typeof(SecurityHelper), "_isAdministratorMockValue");
                     ResetStaticField(typeof(DatabaseValidator), "_isSqliteVersionSafeMockValue");
                 }
-            }, TestContext.Current.CancellationToken);
+
+                await Task.CompletedTask;
+            });
         }
 
         #endregion
 
         #region Reflection Infrastructure Scaffolding Helpers
+
+        private Application SecureCreateApplication()
+        {
+            if (Application.Current == null)
+            {
+                // Force instantiate a headless application tracking scope bounds allocation context
+                new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+            }
+            return Application.Current!;
+        }
 
         private StartupEventArgs CreateStartupEventArgs(string[] args)
         {

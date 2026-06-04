@@ -38,28 +38,34 @@ namespace Servy.Testing
             var tcs = new TaskCompletionSource<bool>();
             var thread = new Thread(() =>
             {
-                // 1. Create a SynchronizationContext for the STA thread
-                // This is the "Gold Standard" for testing WPF/Dispatcher logic
-                var dispatcher = Dispatcher.CurrentDispatcher;
-                var syncContext = new DispatcherSynchronizationContext(dispatcher);
-                SynchronizationContext.SetSynchronizationContext(syncContext);
-
                 try
                 {
-                    // 2. We don't need Dispatcher.Run() if we use the context correctly
-                    // But if you must support controls that require a pump, use a simple frame
-                    var frame = new DispatcherFrame();
+                    // Initialize the Dispatcher for the STA thread
+                    var dispatcher = Dispatcher.CurrentDispatcher;
 
-                    // Execute the action
-                    _ = action().ContinueWith(task =>
+                    // Queue the test execution onto the STA thread's dispatcher.
+                    // This guarantees that Dispatcher.CurrentDispatcher inside the test 
+                    // resolves to THIS dispatcher, which has an active message pump.
+                    dispatcher.InvokeAsync(async () =>
                     {
-                        frame.Continue = false; // Stop the frame when task completes
-                        if (task.IsFaulted) tcs.SetException(task.Exception!);
-                        else tcs.SetResult(true);
-                    }, TaskScheduler.FromCurrentSynchronizationContext());
+                        try
+                        {
+                            await action();
+                            tcs.SetResult(true);
+                        }
+                        catch (Exception ex)
+                        {
+                            tcs.SetException(ex);
+                        }
+                        finally
+                        {
+                            // Shut down the dispatcher loop to exit the thread cleanly
+                            dispatcher.BeginInvokeShutdown(DispatcherPriority.Normal);
+                        }
+                    });
 
-                    // 3. Keep the thread alive until the action finishes
-                    Dispatcher.PushFrame(frame);
+                    // Start the message pump. It will process the InvokeAsync above.
+                    Dispatcher.Run();
                 }
                 catch (Exception ex)
                 {
@@ -68,9 +74,9 @@ namespace Servy.Testing
             });
 
             thread.SetApartmentState(ApartmentState.STA);
-            thread.IsBackground = true; // Prevents hanging the CI process
             thread.Start();
 
+            // Wait for the test (and the STA thread lifecycle) to complete
             await tcs.Task;
         }
 
