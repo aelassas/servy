@@ -371,7 +371,6 @@ namespace Servy.Service.ProcessManagement
                 return;
             }
 
-            string extension = Path.GetExtension(psi.FileName);
             string fileNameOnly = Path.GetFileNameWithoutExtension(psi.FileName);
 
             // Python Logic: 

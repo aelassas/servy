@@ -525,7 +525,9 @@ namespace Servy.Core.Config
         /// This acts as a global safety net for the request.
         /// </summary>
         /// <remarks>
-        /// static readonly int so the static constructor check is evaluated at runtime.
+        /// This value defines the absolute ceiling for network operations. If the server does not respond
+        /// within this duration, the underlying <see cref="System.Net.Http.HttpClient"/> will forcibly 
+        /// terminate the connection.
         /// </remarks>
         public const int UpdateCheckHttpTimeoutSeconds = 20;
 
@@ -536,7 +538,17 @@ namespace Servy.Core.Config
         /// connection error instead of the friendly 'Update check timed out' message.
         /// </summary>
         /// <remarks>
-        /// static readonly int so the static constructor check is evaluated at runtime.
+        /// <para>
+        /// This value governs the application-level logic for cancelling pending tasks. By ensuring this
+        /// is strictly less than <see cref="UpdateCheckHttpTimeoutSeconds"/>, we guarantee that the 
+        /// system provides a deterministic, high-level timeout notification before the lower-level 
+        /// transport layer reaches its hard limit.
+        /// </para>
+        /// <para>
+        /// To ensure the relationship between <see cref="UpdateCheckHttpTimeoutSeconds"/> 
+        /// and <see cref="UpdateCheckTimeoutSeconds"/> remains valid, there is a unit test
+        /// that validates the constraint.
+        /// </para>
         /// </remarks>
         public const int UpdateCheckTimeoutSeconds = 10;
 
