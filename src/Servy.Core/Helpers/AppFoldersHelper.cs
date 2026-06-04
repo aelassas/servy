@@ -59,7 +59,7 @@ namespace Servy.Core.Helpers
         /// </item>
         /// <item>
         /// <description>
-        /// **Operational Folders:** Subfolders (db, security, logs) are processed. If they reside within the Root Vault, 
+        /// **Operational Folders:** Subfolders (db, security, recovery, logs) are processed. If they reside within the Root Vault, 
         /// inheritance is preserved to allow manually granted service account permissions to cascade down.
         /// </description>
         /// </item>
@@ -124,7 +124,7 @@ namespace Servy.Core.Helpers
             SecurityHelper.CreateSecureDirectory(AppConfig.ProgramDataPath, breakInheritance: true);
 
             // 5. Secure operational folders while respecting inheritance
-            string[] subFolders = new[] { dbFolder, aesKeyFolder, aesIVFolder, AppConfig.RecoveryFolderPath }
+            string[] subFolders = new[] { dbFolder, aesKeyFolder, aesIVFolder, AppConfig.RecoveryFolderPath, AppConfig.LogsFolderPath }
                 .Select(Path.GetFullPath)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();

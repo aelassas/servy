@@ -608,7 +608,7 @@ namespace Servy.Manager.Services
                     {
                         errorMessage = Strings.Msg_ServiceNotFound;
                     }
-                    else if (checkDisabled && await Task.Run(() => _serviceManager.GetServiceStartupType(service.Name), cancellationToken) == ServiceStartType.Disabled)
+                    else if (checkDisabled && await Task.Run(() => _serviceManager.GetServiceStartupType(service.Name, cancellationToken: cancellationToken), cancellationToken) == ServiceStartType.Disabled)
                     {
                         errorMessage = Strings.Msg_ServiceDisabledError;
                     }

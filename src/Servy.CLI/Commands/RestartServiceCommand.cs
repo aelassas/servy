@@ -44,13 +44,13 @@ namespace Servy.CLI.Commands
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 
-                var exists = _serviceManager.IsServiceInstalled(opts.ServiceName);
+                var exists = _serviceManager.IsServiceInstalled(opts.ServiceName, cancellationToken: cancellationToken);
                 if (!exists)
                 {
                     return CommandResult.Fail(Strings.Msg_ServiceNotFound);
                 }
 
-                var startupType = _serviceManager.GetServiceStartupType(opts.ServiceName);
+                var startupType = _serviceManager.GetServiceStartupType(opts.ServiceName, cancellationToken: cancellationToken);
                 if (startupType == ServiceStartType.Disabled)
                 {
                     return CommandResult.Fail(Strings.Msg_ServiceDisabledError);
