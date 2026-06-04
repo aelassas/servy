@@ -271,12 +271,12 @@ function Get-EventsToProcess {
 
     # Chronological sorting for email sequence
     if ($null -eq $LastProcessed) {
-        # FIRST RUN LOGIC: Only notify for the most recent to avoid flood
-        # Wrapping in @() ensures eventsToProcess is always an array
-        return @($errors[0])
+        # FIRST RUN LOGIC: Take the most recent VALID (non-feedback) event.
+        # Ensure errors are sorted by time so we are sure '0' is the newest.
+        return @(($errors | Sort-Object TimeCreated -Descending)[0])
     } else {
         # NORMAL RUN LOGIC: Chronological order
-        # Explicitly cast to array to handle single-event scenarios in PS 2.0
+        # Explicitly cast to array to handle single-event scenarios
         return @($errors | Sort-Object TimeCreated)
     }
 }

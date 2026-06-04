@@ -268,16 +268,28 @@ function Send-NotificationEmail {
       Write-FallbackError -Message $errorMsg -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
       return 'PermanentFailure'
   } catch [System.Net.Mail.SmtpException] {
-      # SMTP-level error: classify by status code.
-      # 4xx (deferred) = transient; 5xx (rejected) = permanent.
-      $status = [int]$_.Exception.StatusCode
-      $isPermanent = $status -ge 500 -and $status -lt 600
-
+      # SMTP-level errors: Apply granular classification based on RFC 5321 codes.
+      # 4xx (e.g., 421, 450) are treated as Transient; 5xx (e.g., 550, 554) are Permanent.
+      $status = $_.Exception.StatusCode
+      
+      # Determine if the error is recoverable (Transient) or invalid (Permanent).
+      # ServiceNotAvailable, MailboxBusy, and TransactionFailed are explicitly mapped 
+      # to Transient, even if they sometimes present as 5xx-like behavior in specific drivers.
+      $isTransient = ($status -ge 400 -and $status -lt 500) `
+        -or $status -eq [System.Net.Mail.SmtpStatusCode]::ServiceNotAvailable `
+        -or $status -eq [System.Net.Mail.SmtpStatusCode]::MailboxBusy `
+        -or $status -eq [System.Net.Mail.SmtpStatusCode]::TransactionFailed
+      
       $errorMsg = "ServyFailureEmail: SMTP $status sending to $to. Error: $($_.Exception.Message)"
-      Write-FallbackError -Message $errorMsg -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
-
-      if ($isPermanent) { return 'PermanentFailure' }
-      return 'TransientFailure'
+      
+      # Record to fallback logs (disk and Application Event Log) before deciding exit status.
+      Write-FallbackError -Message $errorMsg -scriptDir $scriptDir -FallbackFileName $FallbackLogFile    
+      
+      # Return status determines if the watermark advances.
+      # TransientFailure: Queue processing halts to wait for system recovery.
+      # PermanentFailure: Event processed (watermark advances) to prevent head-of-line blocking.
+      if ($isTransient) { return 'TransientFailure' }
+      return 'PermanentFailure'
   } catch [System.FormatException] {
       # Malformed e-mail address slipped past validation - never going to succeed.
       Write-FallbackError -Message "ServyFailureEmail: Permanent format failure: $($_.Exception.Message)" -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
