@@ -326,14 +326,18 @@ namespace Servy.Manager.ViewModels
                 Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
 
+            string serviceName = null;
             try
             {
+                if (SelectedService == null)
+                {
+                    DependencyTree.Clear();   // explicit reset to empty is fine here
+                    return;
+                }
+                serviceName = SelectedService.Name;
+
                 IsBusy = true;
                 DependencyTree.Clear();
-
-                if (SelectedService == null) return;
-
-                var serviceName = SelectedService.Name;
 
                 // 2. Offload the synchronous SCM call to a background thread
                 var root = await Task.Run(() =>
@@ -351,7 +355,7 @@ namespace Servy.Manager.ViewModels
             catch (OperationCanceledException) { /* Ignored */ }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to load dependency tree for {SelectedService?.Name}", ex);
+                Logger.Error($"Failed to load dependency tree for {serviceName}", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_FailedToLoadDependencyTree, AppConfig.Caption);
             }
             finally

@@ -902,36 +902,6 @@ namespace Servy.ViewModels
 
         #endregion
 
-        #region Public Methods
-
-        /// <summary>
-        /// Load current service configuration based on windows service name.
-        /// </summary>
-        /// <param name="serviceName">Service Name.</param>
-        /// <returns>A task representing the asynchronous load operation.</returns>
-        public async Task LoadServiceConfiguration(string serviceName)
-        {
-            try
-            {
-                var dto = await _serviceRepository.GetByNameAsync(serviceName);
-
-                if (dto == null)
-                {
-                    return;
-                }
-
-                BindServiceDtoToModel(dto);
-                Logger.Info($"Loaded configuration for service '{serviceName}'");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Error loading configuration for service '{serviceName}'", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-            }
-        }
-
-        #endregion
-
         #region Private Helpers
 
         /// <summary>
@@ -1366,6 +1336,32 @@ namespace Servy.ViewModels
         #endregion
 
         #region Public Methods
+
+        /// <summary>
+        /// Load current service configuration based on windows service name.
+        /// </summary>
+        /// <param name="serviceName">Service Name.</param>
+        /// <returns>A task representing the asynchronous load operation.</returns>
+        public async Task LoadServiceConfiguration(string serviceName)
+        {
+            try
+            {
+                var dto = await _serviceRepository.GetByNameAsync(serviceName);
+
+                if (dto == null)
+                {
+                    return;
+                }
+
+                BindServiceDtoToModel(dto);
+                Logger.Info($"Loaded configuration for service '{serviceName}'");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error loading configuration for service '{serviceName}'", ex);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+            }
+        }
 
         /// <summary>
         /// Populates the ViewModel's properties from a given <see cref="ServiceDto"/> instance.

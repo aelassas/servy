@@ -182,7 +182,7 @@ namespace Servy.Core.Native
                                 return; // valid
                             }
                             error = Marshal.GetLastWin32Error();
-                            if (error == 1326) throw new UnauthorizedAccessException("Invalid username or password.");
+                            if (error == Errors.ERROR_LOGON_FAILURE) throw new UnauthorizedAccessException("Invalid username or password.");
                             throw new Win32Exception(error,
                                 $"Service logon failed. Ensure the account has 'Log on as a service' (granted automatically by Servy) and is not denied service logon.");
                         default:

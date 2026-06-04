@@ -55,9 +55,7 @@ namespace Servy.Core.Helpers
         {
             if (string.IsNullOrEmpty(processName)) return false;
 
-            string cleanName = processName;
-            if (cleanName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                cleanName = cleanName.Substring(0, cleanName.Length - 4);
+            string cleanName = StripExe(processName);
 
             return CriticalSystemProcesses.Contains(cleanName);
         }
@@ -199,9 +197,7 @@ namespace Servy.Core.Helpers
                 }
 
                 // Internal normalization for consistent LINQ comparison (Process.ProcessName is extension-less)
-                string normalizedName = processName;
-                if (normalizedName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                    normalizedName = normalizedName.Substring(0, normalizedName.Length - 4);
+                string normalizedName = StripExe(processName);
 
                 int selfPid;
                 using (var current = Process.GetCurrentProcess()) { selfPid = current.Id; }
@@ -213,9 +209,7 @@ namespace Servy.Core.Helpers
                 var targetPids = new List<int>();
                 foreach (var kvp in completeSnapshot)
                 {
-                    string snapName = kvp.Value.Name ?? string.Empty;
-                    if (snapName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                        snapName = snapName.Substring(0, snapName.Length - 4);
+                    string snapName = StripExe(kvp.Value.Name ?? string.Empty);
 
                     if (string.Equals(snapName, normalizedName, StringComparison.OrdinalIgnoreCase)
                         && !protectedPids.Contains(kvp.Key))
@@ -453,6 +447,22 @@ namespace Servy.Core.Helpers
         #endregion
 
         #region Helper Methods
+
+        /// <summary>
+        /// Removes the ".exe" extension from the specified file name, if present.
+        /// </summary>
+        /// <param name="name">The file name or path string to process.</param>
+        /// <returns>
+        /// The file name without the ".exe" extension if it was present; 
+        /// otherwise, the original string. Returns the input as-is if it is null or empty.
+        /// </returns>
+        private static string StripExe(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return name;
+            return name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+                ? name.Substring(0, name.Length - 4)
+                : name;
+        }
 
         /// <summary>
         /// Recursively walks up the process tree using the pre-computed snapshot. Terminates parents only after confirming they are not protected.

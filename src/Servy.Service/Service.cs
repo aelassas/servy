@@ -853,6 +853,9 @@ namespace Servy.Service
             }
 
             // 1. Prepare configuration and shared options
+            // Pre-Launch is the only hook with dedicated environment variables,
+            // all other hooks reuse the main service environment variables.
+            // This design is intentional.
             var vars = options.PreLaunchEnvironmentVariables ?? options.EnvironmentVariables;
             var args = options.PreLaunchExecutableArgs ?? string.Empty;
 
@@ -1110,8 +1113,8 @@ namespace Servy.Service
                     _pathValidator.IsValidPath(options.StdErrPath) &&
                     _pathValidator.IsValidPath(options.StdOutPath))
                 {
-                    var canonStdErr = Helper.Canonicalise(options.StdErrPath);
-                    var canonStdOut = Helper.Canonicalise(options.StdOutPath);
+                    var canonStdErr = Helper.NormalizePath(options.StdErrPath);
+                    var canonStdOut = Helper.NormalizePath(options.StdOutPath);
 
                     // If stderr path equals stdout path (explicitly), use the same writer
                     if (string.Equals(canonStdErr, canonStdOut, StringComparison.OrdinalIgnoreCase))

@@ -383,8 +383,8 @@ namespace Servy.Manager.Services
                         return false;
                     }
 
-                    var res = await Task.Run(() => _serviceRepository.DeleteAsync(service.Name));
-                    if (res > 0) await Task.Run(() => RemoveService(service));
+                    var res = await _serviceRepository.DeleteAsync(service.Name, cancellationToken);
+                    if (res > 0) RemoveService(service);
 
                     var success = res > 0;
 
