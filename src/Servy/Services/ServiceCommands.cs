@@ -140,17 +140,17 @@ namespace Servy.Services
                 return false;
             }
 
-            if (_serviceManager.IsServiceInstalled(dto.Name, cancellationToken))
-            {
-                var confirmExists = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ServiceAlreadyExists, Caption);
-                if (!confirmExists)
-                {
-                    return false;
-                }
-            }
-
             try
             {
+                if (_serviceManager.IsServiceInstalled(dto.Name, cancellationToken))
+                {
+                    var confirmExists = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ServiceAlreadyExists, Caption);
+                    if (!confirmExists)
+                    {
+                        return false;
+                    }
+                }
+
                 _cursorService.SetWaitCursor();
 
                 // 4. Map Install Options strictly from the validated DTO
@@ -265,15 +265,15 @@ namespace Servy.Services
                 return false;
             }
 
-            var exists = _serviceManager.IsServiceInstalled(serviceName, cancellationToken);
-            if (!exists)
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
-                return false;
-            }
-
             try
             {
+                var exists = _serviceManager.IsServiceInstalled(serviceName, cancellationToken);
+                if (!exists)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
+                    return false;
+                }
+
                 _cursorService.SetWaitCursor();
                 var res = await _serviceManager.UninstallServiceAsync(serviceName, cancellationToken);
 

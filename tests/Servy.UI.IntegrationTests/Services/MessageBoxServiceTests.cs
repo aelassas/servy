@@ -11,7 +11,7 @@ namespace Servy.UI.IntegrationTests.Services
 
         public MessageBoxServiceTests()
         {
-            _service = new MessageBoxService();
+            _service = new MessageBoxService(new WpfUiDispatcher());
             MessageBoxService.IsHeadlessMode = true;
         }
 

@@ -208,7 +208,7 @@ namespace Servy.Manager
                     );
 
                     var fileDialogService = new FileDialogService();
-                    var messageBoxService = new MessageBoxService();
+                    var messageBoxService = new MessageBoxService(new WpfUiDispatcher());
                     var helpService = new HelpService(messageBoxService);
                     var serviceValidationRules = new ServiceValidationRules(processHelper);
                     var serviceConfigurationValidator = new ServiceConfigurationValidator(messageBoxService, serviceValidationRules);
