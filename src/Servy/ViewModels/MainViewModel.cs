@@ -76,7 +76,6 @@ namespace Servy.ViewModels
 
         /// <summary>
         /// Gets or sets the name of the Windows service. 
-        /// Updating this property also updates the associated ServiceControllerWrapper instance.
         /// </summary>
         public string? ServiceName
         {
