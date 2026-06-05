@@ -32,7 +32,7 @@ namespace Servy.CLI.UnitTests.Options
                         var optName = optionAttr.LongName.ToLowerInvariant();
                         return optName.EndsWith("params") ||
                                optName.EndsWith("env") ||
-                               optName.EndsWith("envVars") ||
+                               optName.EndsWith("envvars") ||
                                optName.StartsWith("password");
                     });
 
