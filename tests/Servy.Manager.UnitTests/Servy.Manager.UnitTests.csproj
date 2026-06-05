@@ -145,6 +145,7 @@
     <Compile Include="Services\ServiceCommandsTests.cs" />
     <Compile Include="ViewModels\PerformanceViewModelTests.cs" />
     <Compile Include="ViewModels\ServiceRowViewModelTests.cs" />
+    <Compile Include="ViewModels\ServiceSearchViewModelBaseTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
