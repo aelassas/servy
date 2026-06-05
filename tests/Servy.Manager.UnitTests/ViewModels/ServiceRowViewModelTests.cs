@@ -4,6 +4,8 @@ using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
 using Servy.UI.Services;
+using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -227,7 +229,105 @@ namespace Servy.Manager.UnitTests.ViewModels
             _serviceCommandsMock.Verify();
         }
 
+        [Fact]
+        public void Properties_ShouldReflectModelAndNotifyChanges()
+        {
+            // Arrange
+            var service = new Service
+            {
+                Name = "TestService",
+                Description = "Test Description",
+                Status = ServiceStatus.Running,
+                StartupType = ServiceStartType.Automatic,
+                LogOnAs = "LocalSystem",
+                IsInstalled = true,
+                IsDesktopAppAvailable = true,
+                Pid = 1234,
+                IsPidEnabled = true,
+                CpuUsage = 5.5,
+                RamUsage = 1024_1024
+            };
 
+            var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+            var propertiesChanged = new List<string>();
+            vm.PropertyChanged += (s, e) => { if (e.PropertyName != null) propertiesChanged.Add(e.PropertyName); };
 
+            // Assert Initial Passthrough Layout
+            Assert.Equal("TestService", vm.Name);
+            Assert.Equal("Test Description", vm.Description);
+            Assert.Equal(ServiceStatus.Running, vm.Status);
+            Assert.Equal(ServiceStartType.Automatic, vm.StartupType);
+            Assert.Equal("LocalSystem", vm.LogOnAs);
+            Assert.True(vm.IsInstalled);
+            Assert.True(vm.IsDesktopAppAvailable);
+            Assert.Equal(1234, vm.Pid);
+            Assert.True(vm.IsPidEnabled);
+            Assert.Equal(5.5, vm.CpuUsage);
+            Assert.Equal(1024_1024, vm.RamUsage);
+
+            // Act - Change ViewModel properties directly
+            vm.IsSelected = true;
+            vm.IsChecked = true;
+
+            // Act - Trigger changes through the underlying Model to verify automatic forwarding
+            service.Status = ServiceStatus.Stopped;
+            service.Pid = 0;
+
+            // Assert Notification Triggers
+            Assert.Contains(nameof(vm.IsSelected), propertiesChanged);
+            Assert.Contains(nameof(vm.IsChecked), propertiesChanged);
+            Assert.Contains(nameof(vm.Status), propertiesChanged);
+            Assert.Contains(nameof(vm.Pid), propertiesChanged);
+        }
+
+        [Fact]
+        public async Task ExecuteSafeAsync_ShouldCatchExceptionsAndResetCursor()
+        {
+            // Arrange
+            var service = new Service { Name = "FaultyService" };
+            var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+
+            // Force an inner operation tool to break immediately
+            _serviceCommandsMock
+                .Setup(s => s.ConfigureServiceAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("SCM access denied simulation error."));
+
+            // Act
+            // Fetch the private execution route via Reflection to pass structural parameters safely
+            var executeSafeAsyncMethod = typeof(ServiceRowViewModel).GetMethod("ExecuteSafeAsync",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            Func<Task> faultyAction = () => _serviceCommandsMock.Object.ConfigureServiceAsync(service, CancellationToken.None);
+
+            var taskResult = (Task)executeSafeAsyncMethod.Invoke(vm, new object[] { faultyAction });
+            await taskResult;
+
+            // Assert
+            // The wrapper must invoke wait layouts and drop out to structural defaults cleanly
+            _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+
+            // Test passed if no unhandled exception crashed the runner execution stack frame
+        }
+
+        [Fact]
+        public void Dispose_ShouldUnsubscribeFromModelEvents()
+        {
+            // Arrange
+            var service = new Service { Name = "TransientService", Status = ServiceStatus.Stopped };
+            var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+
+            var receivedNotifications = 0;
+            vm.PropertyChanged += (s, e) => receivedNotifications++;
+
+            // Act - Dispose to sever the lifecycle loop link
+            vm.Dispose();
+
+            // Fire model event changes post-disposal frame
+            service.Status = ServiceStatus.Running;
+
+            // Assert - No events should catch since the link was severed
+            Assert.Equal(0, receivedNotifications);
+        }
     }
 }
