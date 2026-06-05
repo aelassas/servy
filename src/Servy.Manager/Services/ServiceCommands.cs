@@ -722,7 +722,7 @@ namespace Servy.Manager.Services
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to export {formatName} of {service.Name}.", ex);
+                Logger.Error($"Failed to export {formatName} of {service?.Name}.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
             }
         }

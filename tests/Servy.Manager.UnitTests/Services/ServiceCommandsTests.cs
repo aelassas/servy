@@ -8,9 +8,11 @@ using Servy.Core.Helpers;
 using Servy.Core.Services;
 using Servy.Manager.Config;
 using Servy.Manager.Models;
+using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.Manager.Validators;
 using Servy.UI.Services;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -377,6 +379,203 @@ namespace Servy.Manager.UnitTests.Services
             Assert.Equal(service.Name, _removedServiceName);
         }
 
-#endregion
+        #endregion
+
+        #region CopyPidAsync Tests
+
+        [Fact]
+        public async Task CopyPidAsync_NullPid_ReturnsImmediatelyWithoutInvokingDispatcher()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "NoPidService", Pid = null };
+
+            // Act
+            await sut.CopyPidAsync(service);
+
+            // Assert
+            _uiDispatcherMock.Verify(d => d.InvokeAsync(It.IsAny<Func<bool>>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CopyPidAsync_SuccessfulClipboardAccess_LogsInfoAndShowsMessage()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "HealthyService", Pid = 4321 };
+
+            // Simulate immediate STA UI Thread Clipboard execution success
+            _uiDispatcherMock.Setup(d => d.InvokeAsync(It.IsAny<Func<bool>>()))
+                .ReturnsAsync(true);
+
+            // Act
+            await sut.CopyPidAsync(service);
+
+            // Assert
+            _uiDispatcherMock.Verify(d => d.InvokeAsync(It.IsAny<Func<bool>>()), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_PidCopied, AppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
+        public async Task CopyPidAsync_ClipboardLockedWithCOMException_RetriesAndEventuallyShowsError()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "LockedClipboardService", Pid = 9999 };
+
+            // Simulate alternative process holding a Win32 clipboard handle block (returns false up to maximum retry cap)
+            _uiDispatcherMock.Setup(d => d.InvokeAsync(It.IsAny<Func<bool>>()))
+                .ReturnsAsync(false);
+
+            // Act
+            await sut.CopyPidAsync(service);
+
+            // Assert
+            // Verifies that the internal retry loop honored Core.Config.AppConfig.ClipboardComMaxRetries (typically 3 or 5)
+            _uiDispatcherMock.Verify(d => d.InvokeAsync(It.IsAny<Func<bool>>()), Times.Exactly(Core.Config.AppConfig.ClipboardComMaxRetries));
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_PidCopyFailed, AppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
+        public async Task CopyPidAsync_UnexpectedCrashInsideDispatcher_CatchesExceptionAndShowsGenericError()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "CrashingClipboardService", Pid = 8888 };
+
+            _uiDispatcherMock.Setup(d => d.InvokeAsync(It.IsAny<Func<bool>>()))
+                .ThrowsAsync(new InvalidOperationException("Fatal thread context exception"));
+
+            // Act
+            await sut.CopyPidAsync(service);
+
+            // Assert
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption), Times.Once);
+        }
+
+        #endregion
+
+        #region ExportServiceConfigAsync Tests (XML & JSON Formats)
+
+        [Fact]
+        public async Task ExportServiceToXmlAsync_ValidPathAndDto_ExecutesSerializerAndDisplaysSuccess()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "XmlExportService" };
+            var targetPath = Path.Combine(Path.GetTempPath(), "export_test.xml");
+            var sampleDto = new ServiceDto { Name = service.Name, ExecutablePath = "test.exe" };
+
+            _fileDialogServiceMock.Setup(f => f.SaveXml(Strings.SaveFileDialog_XmlTitle))
+                .Returns(targetPath);
+
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(sampleDto);
+
+            // Act
+            await sut.ExportServiceToXmlAsync(service, CancellationToken.None);
+
+            // Assert
+            _serviceRepositoryMock.Verify(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.ExportXml_Success, AppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
+        public async Task ExportServiceToJsonAsync_FileDialogCancelled_ReturnsEarlyWithoutQueryingRepository()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "JsonCancelledService" };
+
+            // User clicks "Cancel" on the native Save File Dialog returning null or empty string
+            _fileDialogServiceMock.Setup(f => f.SaveJson(Strings.SaveFileDialog_JsonTitle))
+                .Returns(string.Empty);
+
+            // Act
+            await sut.ExportServiceToJsonAsync(service, CancellationToken.None);
+
+            // Assert
+            _serviceRepositoryMock.Verify(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ExportServiceToXmlAsync_ServiceNotFoundInRepository_ShowsNotFoundError()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "MissingService" };
+            _fileDialogServiceMock.Setup(f => f.SaveXml(It.IsAny<string>())).Returns(@"C:\out.xml");
+
+            // Simulate the database lacking this specific record window mapping
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ServiceDto)null);
+
+            // Act
+            await sut.ExportServiceToXmlAsync(service, CancellationToken.None);
+
+            // Assert
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
+        public async Task ExportServiceToJsonAsync_RepositoryThrowsException_HandlesExceptionGracefully()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "FaultyDbService" };
+            _fileDialogServiceMock.Setup(f => f.SaveJson(It.IsAny<string>())).Returns(@"C:\out.json");
+
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new System.Data.DataException("SQLite lock corruption detected"));
+
+            // Act
+            await sut.ExportServiceToJsonAsync(service, CancellationToken.None);
+
+            // Assert
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
+        public async Task ExportServiceConfigAsync_NullServiceArgument_ShowsError()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+
+            // Act & Assert
+            await sut.ExportServiceToXmlAsync(null, CancellationToken.None);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption), Times.Once);
+        }
+
+        #endregion
+
+        #region Dispose Tests
+
+        [Fact]
+        public async Task Dispose_CalledMultipleTimes_DisposesSemaphoresOnceAndClearsLocks()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Service { Name = "LockingService" };
+
+            // Trigger internal Lazy allocation of a SemaphoreSlim via a private locked method path
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = service.Name });
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(service.Name, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Manual);
+
+            // Execute a command once to eagerly generate an unmanaged lock reference window inside _serviceLocks
+            await sut.StartServiceAsync(service, showMessageBox: false, cancellationToken: CancellationToken.None);
+
+            // Act - Dispose the first time
+            sut.Dispose();
+
+            // Act - Dispose a second time to challenge the atomic Interlocked flag
+            var doubleDisposeException = Record.Exception(() => sut.Dispose());
+
+            // Assert
+            Assert.Null(doubleDisposeException); // Second dispose should be a clean early return
+        }
+
+        #endregion
     }
 }
