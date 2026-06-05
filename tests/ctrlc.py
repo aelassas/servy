@@ -1,10 +1,8 @@
 from datetime import datetime
 import time
 import sys
-import io
 import logging
 import os
-import subprocess
 
 # Force stdout to UTF-8
 # sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
