@@ -10,10 +10,24 @@ namespace Servy.UI.Services
     [ExcludeFromCodeCoverage]
     public class MessageBoxService : IMessageBoxService
     {
+        private readonly IUiDispatcher _dispatcher;
+
         /// <summary>
         /// A hook for integration tests to prevent blocking modal dialogs in headless CI environments.
         /// </summary>
         public static bool IsHeadlessMode { get; set; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MessageBoxService"/> class.
+        /// </summary>
+        /// <param name="dispatcher">
+        /// The <see cref="IUiDispatcher"/> abstraction used to marshal message box calls 
+        /// onto the UI thread, ensuring thread-safe interaction with WPF visual components.
+        /// </param>
+        public MessageBoxService(IUiDispatcher dispatcher)
+        {
+            _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+        }
 
         ///<inheritdoc/>
         public async Task ShowInfoAsync(string? message, string caption)
@@ -25,7 +39,7 @@ namespace Servy.UI.Services
             }
 
             // Use InvokeAsync to ensure the task doesn't complete until the dialog is closed.
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await _dispatcher.InvokeAsync(() =>
             {
                 MessageBox.Show(message, caption, MessageBoxButton.OK, MessageBoxImage.Information);
             });
@@ -40,7 +54,7 @@ namespace Servy.UI.Services
                 return;
             }
 
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await _dispatcher.InvokeAsync(() =>
             {
                 MessageBox.Show(message, caption, MessageBoxButton.OK, MessageBoxImage.Warning);
             });
@@ -55,7 +69,7 @@ namespace Servy.UI.Services
                 return;
             }
 
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await _dispatcher.InvokeAsync(() =>
             {
                 MessageBox.Show(message, caption, MessageBoxButton.OK, MessageBoxImage.Error);
             });
@@ -70,7 +84,7 @@ namespace Servy.UI.Services
                 return true; // Default to 'Yes' to allow happy-path CI flows
             }
 
-            return await Application.Current.Dispatcher.InvokeAsync(() =>
+            return await _dispatcher.InvokeAsync(() =>
             {
                 return MessageBox.Show(message, caption, MessageBoxButton.YesNo, MessageBoxImage.Question)
                        == MessageBoxResult.Yes;
