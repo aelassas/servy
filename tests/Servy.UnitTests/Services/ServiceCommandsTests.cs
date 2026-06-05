@@ -226,7 +226,7 @@ namespace Servy.UnitTests.Services
             catch { /* Ignore creation errors if running in restricted environments */ }
 
             _serviceConfigurationValidator
-                .Setup(v => v.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>()))
                 .ReturnsAsync(true);
 
             // Act
@@ -373,7 +373,7 @@ namespace Servy.UnitTests.Services
 
             // FIX 2: Match the 3-parameter validator signature (ServiceDto, string?, string?).
             // ExportConfigAsync passes 'null' for the wrapper path.
-            _serviceConfigurationValidator.Setup(d => d.Validate(
+            _serviceConfigurationValidator.Setup(d => d.ValidateAsync(
                 It.IsAny<ServiceDto>(),
                 It.IsAny<string?>(),
                 It.IsAny<string?>()))
@@ -408,7 +408,7 @@ namespace Servy.UnitTests.Services
 
             // FIX 1: Ensure the validator mock matches the 3-parameter signature used in ExportConfigAsync.
             // We use 'string?' to allow the 'null' wrapperExePath passed during exports.
-            _serviceConfigurationValidator.Setup(d => d.Validate(
+            _serviceConfigurationValidator.Setup(d => d.ValidateAsync(
                 It.IsAny<ServiceDto>(),
                 It.IsAny<string?>(),
                 It.IsAny<string?>()))
@@ -450,7 +450,7 @@ namespace Servy.UnitTests.Services
 
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(path);
 
-            _serviceConfigurationValidator.Setup(v => v.Validate(
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(
                 It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
 
             bool bindCalled = false;
@@ -489,7 +489,7 @@ namespace Servy.UnitTests.Services
 
             _dialogServiceMock.Setup(d => d.OpenJson()).Returns(path);
 
-            _serviceConfigurationValidator.Setup(v => v.Validate(
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(
                 It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
 
             bool bindCalled = false;

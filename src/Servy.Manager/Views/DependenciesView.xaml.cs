@@ -9,7 +9,7 @@ namespace Servy.Manager.Views
 {
     /// <summary>
     /// Interaction logic for DependenciesView.xaml.
-    /// Provides the UI for live-monitoring stdout/stderr and searching available services.
+    /// Provides the UI for viewing a service's dependency tree and searching available services.
     /// </summary>
     [ExcludeFromCodeCoverage]
     public partial class DependenciesView : UserControl

@@ -133,7 +133,7 @@ namespace Servy.Services
 
             // 3. Validate the DTO
             // We pass config.ConfirmPassword directly to the validator as it is a UI-only field
-            if (!await _serviceConfigurationValidator.Validate(dto, wrapperExePath: wrapperExePath, confirmPassword: config.ConfirmPassword))
+            if (!await _serviceConfigurationValidator.ValidateAsync(dto, wrapperExePath: wrapperExePath, confirmPassword: config.ConfirmPassword))
             {
                 return false;
             }
@@ -530,7 +530,7 @@ namespace Servy.Services
 
                 var dto = _modelToServiceDto();
 
-                if (!await _serviceConfigurationValidator.Validate(dto: dto, wrapperExePath: null, confirmPassword: confirmPassword))
+                if (!await _serviceConfigurationValidator.ValidateAsync(dto: dto, wrapperExePath: null, confirmPassword: confirmPassword))
                     return;
 
                 exportAction(dto, path);
@@ -597,7 +597,7 @@ namespace Servy.Services
                     return;
                 }
 
-                if (!await _serviceConfigurationValidator.Validate(dto))
+                if (!await _serviceConfigurationValidator.ValidateAsync(dto))
                 {
                     Logger.Info($"{formatName} File '{path}' not valid.");
                     return;

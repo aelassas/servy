@@ -31,7 +31,7 @@ namespace Servy.Service.StreamWriters
         /// date-based rotation is skipped for that write.
         /// </remarks>
         /// <returns>An <see cref="IStreamWriter"/> instance.</returns>
-        IStreamWriter? Create(
+        IStreamWriter Create(
             string path,
             bool enableSizeRotation,
             long rotationSizeInBytes,

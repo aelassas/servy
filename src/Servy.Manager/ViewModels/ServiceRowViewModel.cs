@@ -252,7 +252,7 @@ namespace Servy.Manager.ViewModels
             await ExecuteSafeAsync(() => _serviceCommands.ExportServiceToJsonAsync(Service));
 
         private async Task CopyPidAsync(object? parameter) =>
-            await ExecuteSafeAsync(() => _serviceCommands.CopyPid(Service));
+            await ExecuteSafeAsync(() => _serviceCommands.CopyPidAsync(Service));
 
         #endregion
 

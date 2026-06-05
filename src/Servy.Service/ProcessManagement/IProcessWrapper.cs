@@ -120,7 +120,7 @@ namespace Servy.Service.ProcessManagement
         /// <summary>
         /// Formats the process information as a string.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A human-readable description of the process, formatted as "ProcessName (Id)".</returns>
         string Format();
 
         /// <summary>
