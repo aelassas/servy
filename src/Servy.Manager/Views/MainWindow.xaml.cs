@@ -330,6 +330,9 @@ namespace Servy.Manager.Views
         /// <param name="dependenciesVm">
         /// The <see cref="DependenciesViewModel"/> instance for the dependencies tab, or <c>null</c> if unavailable.
         /// </param>
+        /// <param name="consoleVm">
+        /// The <see cref="ConsoleViewModel"/> instance for the console tab, or <c>null</c> if unavailable.
+        /// </param>
         /// <param name="logsVm">
         /// The <see cref="LogsViewModel"/> instance for the logs tab, or <c>null</c> if unavailable.
         /// </param>

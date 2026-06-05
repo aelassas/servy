@@ -14,7 +14,7 @@
     The build configuration to use (Debug or Release).
     Default: Release.
 
-.PARAMETER pause
+.PARAMETER Pause
     Pauses the script at the end. Useful when running from Explorer.
 
 .REQUIREMENTS

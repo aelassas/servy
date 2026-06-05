@@ -1963,16 +1963,14 @@ namespace Servy.Service
 
                 Task<bool> stopTask = Task.Run(() => ExecuteTeardown(TeardownReason.PreShutdown));
 
-                // 2. Wait in 2-second pulses. 
+                // 2. Wait in pulses. 
                 // We increment the checkpoint each pulse to prove to the SCM that we haven't hung.
                 // This loop is guaranteed to terminate because the underlying teardown logic 
                 // (SafeKillProcess) enforces an absolute, stopwatch-backed timeout limit.
-                int interval = 2000;
-
                 bool teardownSucceeded = false;
                 try
                 {
-                    while (!stopTask.Wait(interval))
+                    while (!stopTask.Wait(AppConfig.PreShutdownPulseIntervalMs))
                     {
                         _checkPoint++;
                         UpdateServiceStatus(SERVICE_STOP_PENDING, AppConfig.PreShutdownWaitHintMs);

@@ -1678,18 +1678,18 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void IsServiceInstalled_Throws_ArgumentTnullException()
+        public void IsServiceInstalled_Throws_ArgumentException()
         {
-            Assert.Throws<ArgumentNullException>(() => _serviceManager.IsServiceInstalled(string.Empty));
+            Assert.Throws<ArgumentException>(() => _serviceManager.IsServiceInstalled(string.Empty));
         }
 
         #region GetServiceStartupType
 
         [Fact]
-        public void GetServiceStartupType_ShouldThrowArgumentNullException_WhenNameIsInvalid()
+        public void GetServiceStartupType_ShouldThrowArgumentException_WhenNameIsInvalid()
         {
-            Assert.Throws<ArgumentNullException>(() => _serviceManager.GetServiceStartupType(null));
-            Assert.Throws<ArgumentNullException>(() => _serviceManager.GetServiceStartupType(" "));
+            Assert.Throws<ArgumentException>(() => _serviceManager.GetServiceStartupType(null));
+            Assert.Throws<ArgumentException>(() => _serviceManager.GetServiceStartupType(" "));
         }
 
         [Fact]

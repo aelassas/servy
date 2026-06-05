@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
@@ -176,11 +177,9 @@ namespace Servy.Infrastructure.Data
                 // 3. Sync IDs back to the original DTOs
                 // SQLite has a default limit of 999 parameters. For larger batches, 
                 // we process the ID sync in chunks to avoid 'Too many SQL variables' errors.
-                const int chunkSize = 900;
-
-                for (int i = 0; i < serviceList.Count; i += chunkSize)
+                for (int i = 0; i < serviceList.Count; i += AppConfig.DbBatchIdSyncChunkSize)
                 {
-                    var currentChunk = serviceList.Skip(i).Take(chunkSize).ToList();
+                    var currentChunk = serviceList.Skip(i).Take(AppConfig.DbBatchIdSyncChunkSize).ToList();
 
                     // Pass original names; let SQLite lower both sides in the SQL itself
                     var names = currentChunk.Select(s => s.Name).Where(n => !string.IsNullOrEmpty(n)).ToList();

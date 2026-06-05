@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Common;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ServiceProcess;
@@ -38,7 +39,9 @@ namespace Servy.Core.Services
         /// <param name="options">The options containing all configuration parameters for the service installation, including paths, names, and environment variables.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the installation to complete.</param>
         /// <returns>An <see cref="OperationResult"/> indicating whether the installation was successful and providing error details upon failure.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <see cref="InstallServiceOptions.ServiceName"/>, <see cref="InstallServiceOptions.WrapperExePath"/>, or <see cref="InstallServiceOptions.RealExePath"/> is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if the required service repository has not been initialized.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="options"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if <see cref="InstallServiceOptions.ServiceName"/>, <see cref="InstallServiceOptions.WrapperExePath"/>, or <see cref="InstallServiceOptions.RealExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails via native APIs.</exception>
         Task<OperationResult> InstallServiceAsync(InstallServiceOptions options, CancellationToken cancellationToken = default);
 
@@ -116,7 +119,9 @@ namespace Servy.Core.Services
         List<ServiceInfo> GetAllServices(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Gets the dependency tree for the specified Windows service, including both services this service depends on and services that depend on this service.
+        /// Gets the dependency tree for the specified Windows service - i.e. the services that this
+        /// service depends on (resolved recursively). Reverse dependencies (services that depend on
+        /// this one) are not included.
         /// </summary>
         /// <param name="serviceName">The unique internal name of the service.</param>
         /// <param name="cancellationToken">Optional cancellation token for the dependency query.</param>

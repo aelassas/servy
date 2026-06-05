@@ -24,7 +24,7 @@ namespace Servy.Manager.Config
         // Limits and Thresholds
         int IAppConfiguration.ConsoleMaxLines => Core.Config.AppConfig.DefaultConsoleMaxLines;
         int IAppConfiguration.LogsWindowDays => Core.Config.AppConfig.DefaultLogsWindowDays;
-        int IAppConfiguration.SearchDebounceDelayMs => 300; // Standard UI responsiveness delay
+        int IAppConfiguration.SearchDebounceDelayMs => Core.Config.AppConfig.DefaultSearchDebounceDelayMs; // Standard UI responsiveness delay
         int IAppConfiguration.MaxBulkOperationParallelism => Core.Config.AppConfig.DefaultMaxBulkOperationParallelism;
 
         // Paths
