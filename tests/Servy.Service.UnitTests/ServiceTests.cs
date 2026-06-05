@@ -4,7 +4,6 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
@@ -85,7 +84,7 @@ namespace Servy.Service.UnitTests
             );
         }
 
-        [Fact (Skip = "This test is skipped because reflection-based SCM registration has been replaced by native P/Invoke calls.")]
+        [Fact(Skip = "This test is skipped because reflection-based SCM registration has been replaced by native P/Invoke calls.")]
         [Trait("Category", "ReflectionValidation")]
         public void Verify_ServiceBase_Internal_Fields_Exist_On_Current_Runtime()
         {
@@ -706,6 +705,374 @@ namespace Servy.Service.UnitTests
             // Assert: Directory traversal markers or blank nodes reduce to safe baseline anchors plus hash codes
             Assert.StartsWith("__", result);
             Assert.False(result.Contains(".."), "Output must not contain directory traversal paths.");
+        }
+
+        #endregion
+
+        #region Private Test Helpers
+
+        /// <summary>
+        /// DRY helper to initialize the base StartOptions and mocks required to get the 
+        /// Service through its initial ValidateAndLog and HandleLogWriters phases cleanly.
+        /// </summary>
+        private Mock<IServyLogger> SetupStandardServiceStart(StartOptions options)
+        {
+            var fullArgs = new[] { "servy.exe" };
+            var mockScopedLogger = new Mock<IServyLogger>();
+
+            _mockServiceHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
+            _mockServiceHelper.Setup(h => h.ParseOptions(It.IsAny<IServiceRepository>(), It.IsAny<string[]>())).Returns(options);
+            _mockLogger.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockScopedLogger.Object);
+            _mockServiceHelper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object)).Returns(true);
+            _mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
+            _mockProcess.Setup(p => p.Start()).Returns(true);
+
+            // Default ProcessFactory mock for the main process
+            _mockProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == options.ExecutablePath), It.IsAny<IServyLogger>()))
+                .Returns(_mockProcess.Object);
+
+            return mockScopedLogger;
+        }
+
+        /// <summary>
+        /// Uses reflection to instantiate the internal DataReceivedEventArgs class for testing streams.
+        /// </summary>
+        private DataReceivedEventArgs CreateDataReceivedEventArgs(string data)
+        {
+            var constructor = typeof(DataReceivedEventArgs).GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault();
+            return (DataReceivedEventArgs)constructor?.Invoke(new object[] { data })!;
+        }
+
+        #endregion
+
+        #region Pre-Launch Orchestration Tests
+
+        [Fact]
+        public void OnStart_PreLaunchFireAndForget_RunsAndContinues()
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "test.exe",
+                PreLaunchExecutablePath = "prelaunch.exe",
+                PreLaunchTimeoutInSeconds = 0 // 0 means Fire and Forget
+            };
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            var mockPreLaunchProcess = new Mock<IProcessWrapper>();
+            mockPreLaunchProcess.Setup(p => p.Start()).Returns(true);
+            _mockProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                .Returns(mockPreLaunchProcess.Object);
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("fire-and-forget")), It.IsAny<Exception>()), Times.AtLeastOnce);
+            _mockProcess.Verify(p => p.Start(), Times.Once); // Main process still starts
+        }
+
+        [Fact]
+        public void OnStart_PreLaunchSynchronous_Failure_StopsService()
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "test.exe",
+                PreLaunchExecutablePath = "prelaunch.exe",
+                PreLaunchTimeoutInSeconds = 10,
+                PreLaunchIgnoreFailure = false, // Critical: don't ignore
+                PreLaunchRetryAttempts = 0
+            };
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            bool stopped = false;
+            _service.OnStoppedForTest += () => stopped = true;
+
+            var mockPreLaunchProcess = new Mock<IProcessWrapper>();
+            mockPreLaunchProcess.Setup(p => p.Start()).Returns(true);
+            mockPreLaunchProcess.Setup(p => p.ExitCode).Returns(1); // Failed exit
+
+            _mockProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                .Returns(mockPreLaunchProcess.Object);
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            Assert.True(stopped);
+            scopedLogger.Verify(l => l.Error(It.Is<string>(s => s.Contains("failed after all retry attempts")), null), Times.Once);
+            _mockProcess.Verify(p => p.Start(), Times.Never); // Main process should NOT start
+        }
+
+        [Fact]
+        public void OnStart_PreLaunchSynchronous_IgnoreFailure_Continues()
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "test.exe",
+                PreLaunchExecutablePath = "prelaunch.exe",
+                PreLaunchTimeoutInSeconds = 10,
+                PreLaunchIgnoreFailure = true, // Critical: ignore
+                PreLaunchRetryAttempts = 0
+            };
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            var mockPreLaunchProcess = new Mock<IProcessWrapper>();
+            mockPreLaunchProcess.Setup(p => p.Start()).Returns(true);
+            mockPreLaunchProcess.Setup(p => p.ExitCode).Returns(1); // Failed
+
+            _mockProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == "prelaunch.exe"), It.IsAny<IServyLogger>()))
+                .Returns(mockPreLaunchProcess.Object);
+
+            // Act
+            _service.StartForTest();
+
+            // Assert
+            scopedLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Ignoring pre-launch failure")), null), Times.Once);
+            _mockProcess.Verify(p => p.Start(), Times.Once); // Main process starts anyway
+        }
+
+        #endregion
+
+        #region Stream Redirection Tests
+
+        [Fact]
+        public void OnOutputDataReceived_ValidData_WritesToStdoutWriter()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe", StdOutPath = "stdout.log" };
+            SetupStandardServiceStart(options);
+            _service.StartForTest();
+
+            var onOutputMethod = typeof(Service).GetMethod("OnOutputDataReceived", BindingFlags.NonPublic | BindingFlags.Instance);
+            var eventArgs = CreateDataReceivedEventArgs("Test Output Line");
+
+            // Act
+            onOutputMethod!.Invoke(_service, new object[] { this, eventArgs });
+
+            // Assert
+            _mockStdoutWriter.Verify(w => w.WriteLine("Test Output Line"), Times.Once);
+        }
+
+        [Fact]
+        public void OnErrorDataReceived_ValidData_WritesToStderrWriter()
+        {
+            // Arrange
+            // Change "err.log" to "test_stderr.log" so the StreamWriterFactory Setup matches it!
+            var options = new StartOptions
+            {
+                ServiceName = "Test",
+                ExecutablePath = "test.exe",
+                StdErrPath = "test_stderr.log"
+            };
+            SetupStandardServiceStart(options);
+            _service.StartForTest();
+
+            var onErrorMethod = typeof(Service).GetMethod("OnErrorDataReceived", BindingFlags.NonPublic | BindingFlags.Instance);
+            var eventArgs = CreateDataReceivedEventArgs("Test Error Line");
+
+            // Act
+            onErrorMethod!.Invoke(_service, new object[] { this, eventArgs });
+
+            // Assert
+            _mockStderrWriter.Verify(w => w.WriteLine("Test Error Line"), Times.Once);
+        }
+
+        [Fact]
+        public void OnOutputDataReceived_NullData_DoesNothing()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe", StdOutPath = "out.log" };
+            SetupStandardServiceStart(options);
+            _service.StartForTest();
+
+            var onOutputMethod = typeof(Service).GetMethod("OnOutputDataReceived", BindingFlags.NonPublic | BindingFlags.Instance);
+            var eventArgs = CreateDataReceivedEventArgs(null!);
+
+            // Act
+            onOutputMethod!.Invoke(_service, new object[] { this, eventArgs });
+
+            // Assert
+            _mockStdoutWriter.Verify(w => w.WriteLine(It.IsAny<string>()), Times.Never);
+        }
+
+        #endregion
+
+        #region Process Exit & Health Monitoring Tests
+
+        [Fact]
+        public async Task OnProcessExited_CleanExit_RecoveryDisabled_StopsService()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe", RecoveryOnCleanExit = false, RecoveryAction = RecoveryAction.None };
+            var scopedLogger = SetupStandardServiceStart(options);
+
+            bool stopped = false;
+            _service.OnStoppedForTest += () => stopped = true;
+            _service.StartForTest();
+
+            _mockProcess.Setup(p => p.HasExited).Returns(true);
+            _mockProcess.Setup(p => p.ExitCode).Returns(0);
+
+            // Act
+            var onProcessExitedMethod = typeof(Service).GetMethod("OnProcessExited", BindingFlags.NonPublic | BindingFlags.Instance);
+            onProcessExitedMethod!.Invoke(_service, new object[] { _mockProcess.Object, EventArgs.Empty });
+
+            await Task.Delay(50, TestContext.Current.CancellationToken); // Allow async void to complete inner logic
+
+            // Assert
+            Assert.True(stopped);
+            scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Service will stop.")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnProcessExited_NonZeroExit_RecoveryEnabled_InitiatesRecovery()
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "Test",
+                ExecutablePath = "test.exe",
+                RecoveryAction = RecoveryAction.RestartProcess,
+                EnableHealthMonitoring = true,
+                MaxFailedChecks = 1,
+                HeartbeatInterval = 10
+            };
+            var scopedLogger = SetupStandardServiceStart(options);
+            _service.StartForTest();
+
+            // CRITICAL 1: Populate the internal volatile state switches so recovery evaluations pass
+            var maxFailedField = typeof(Service).GetField("_maxFailedChecks", BindingFlags.NonPublic | BindingFlags.Instance);
+            maxFailedField!.SetValue(_service, 1);
+
+            var recoveryActionEnabledField = typeof(Service).GetField("_recoveryActionEnabled", BindingFlags.NonPublic | BindingFlags.Instance);
+            recoveryActionEnabledField!.SetValue(_service, true);
+
+            _mockProcess.Setup(p => p.HasExited).Returns(true);
+            _mockProcess.Setup(p => p.ExitCode).Returns(1);
+
+            // Act
+            var onProcessExitedMethod = typeof(Service).GetMethod("OnProcessExited", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            // This executes up to the first internal await frame
+            onProcessExitedMethod!.Invoke(_service, new object[] { _mockProcess.Object, EventArgs.Empty });
+
+            // CRITICAL 2: Force the test context thread pool to yield execution control.
+            // This allows the async void state machine to complete its work behind the scenes.
+            int retries = 0;
+            bool foundLog = false;
+            while (retries < 10 && !foundLog)
+            {
+                await Task.Delay(20, TestContext.Current.CancellationToken);
+                try
+                {
+                    // Verify if the background loop successfully hit our warning marker block
+                    scopedLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Initiating recovery")), null), Times.Once());
+                    foundLog = true;
+                }
+                catch (MockException)
+                {
+                    retries++;
+                }
+            }
+
+            // Assert
+            Assert.True(foundLog, "The internal recovery sequence was not scheduled or executed within the time limit.");
+        }
+
+        [Fact]
+        public void CheckHealth_ProcessHealthy_ResetsFailedChecks()
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "Test",
+                ExecutablePath = "test.exe",
+                RecoveryAction = RecoveryAction.RestartProcess,
+                EnableHealthMonitoring = true,
+                MaxFailedChecks = 3
+            };
+            var scopedLogger = SetupStandardServiceStart(options);
+            _service.StartForTest();
+
+            // Force a transient failure into the field
+            var failedChecksField = typeof(Service).GetField("_failedChecks", BindingFlags.NonPublic | BindingFlags.Instance);
+            failedChecksField!.SetValue(_service, 1);
+
+            _mockProcess.Setup(p => p.HasExited).Returns(false); // Process is alive
+
+            // Act
+            var checkHealthMethod = typeof(Service).GetMethod("CheckHealth", BindingFlags.NonPublic | BindingFlags.Instance);
+            checkHealthMethod!.Invoke(_service, new object[] { this, null! });
+
+            // Assert
+            scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("healthy again. Resetting transient failure")), It.IsAny<Exception>()), Times.Once);
+            Assert.Equal(0, failedChecksField.GetValue(_service));
+        }
+
+        #endregion
+
+        #region Teardown & Custom Command Tests
+
+        [Fact]
+        public void OnStop_ExecutesTeardown()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            SetupStandardServiceStart(options);
+            _service.StartForTest();
+
+            bool stopped = false;
+            _service.OnStoppedForTest += () => stopped = true;
+
+            // Act
+            _service.Stop();
+
+            // Assert
+            Assert.True(stopped);
+        }
+
+        [Fact]
+        public void SafeKillProcess_GracefulStop_LogsCorrectly()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            var scopedLogger = SetupStandardServiceStart(options);
+            _service.StartForTest();
+
+            var safeKillMethod = typeof(Service).GetMethod("SafeKillProcess", BindingFlags.NonPublic | BindingFlags.Instance);
+            _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true); // Graceful stop succeeds
+            _mockProcess.Setup(p => p.HasExited).Returns(false);
+
+            // Act
+            safeKillMethod!.Invoke(_service, new object[] { _mockProcess.Object, 1000 });
+
+            // Assert
+            scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("stopped gracefully")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void SafeKillProcess_ForceKill_LogsCorrectly()
+        {
+            // Arrange
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            var scopedLogger = SetupStandardServiceStart(options);
+            _service.StartForTest();
+
+            var safeKillMethod = typeof(Service).GetMethod("SafeKillProcess", BindingFlags.NonPublic | BindingFlags.Instance);
+            _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(false); // Graceful stop fails
+            _mockProcess.Setup(p => p.HasExited).Returns(false);
+
+            // Act
+            safeKillMethod!.Invoke(_service, new object[] { _mockProcess.Object, 1000 });
+
+            // Assert
+            scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("was forcefully terminated")), It.IsAny<Exception>()), Times.Once);
         }
 
         #endregion

@@ -9,7 +9,7 @@ namespace Servy.Service.StreamWriters
     public class StreamWriterFactory : IStreamWriterFactory
     {
         /// <inheritdoc/>
-        public IStreamWriter Create(
+        public IStreamWriter? Create(
             string path,
             bool enableSizeRotation,
             long rotationSizeInBytes,
