@@ -9,7 +9,7 @@
   <Priority>2</Priority>
   <StdoutPath>E:\dev\servy\nodeapp_stdout.log</StdoutPath>
   <StderrPath>E:\dev\servy\nodeapp_stderr.log</StderrPath>
-  <EnableRotation>false</EnableRotation>
+  <EnableSizeRotation>false</EnableSizeRotation>
   <RotationSize>10</RotationSize>
   <EnableDateRotation>false</EnableDateRotation>
   <DateRotationType>0</DateRotationType>

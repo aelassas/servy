@@ -8,7 +8,7 @@
   <Priority>2</Priority>
   <StdoutPath>E:\dev\servy\python_stdout.txt</StdoutPath>
   <StderrPath>E:\dev\servy\python_stderr.txt</StderrPath>
-  <EnableRotation>false</EnableRotation>
+  <EnableSizeRotation>false</EnableSizeRotation>
   <RotationSize>10</RotationSize>
   <EnableHealthMonitoring>false</EnableHealthMonitoring>
   <HeartbeatInterval>30</HeartbeatInterval>

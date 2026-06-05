@@ -10,7 +10,7 @@
   <Priority>2</Priority>
   <StdoutPath>C:\dev\servy\stdout.log</StdoutPath>
   <StderrPath>C:\dev\servy\stderr.log</StderrPath>
-  <EnableRotation>true</EnableRotation>
+  <EnableSizeRotation>true</EnableSizeRotation>
   <RotationSize>10485760</RotationSize>
   <EnableDateRotation>false</EnableDateRotation>
   <DateRotationType>0</DateRotationType>

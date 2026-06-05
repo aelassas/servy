@@ -7,7 +7,7 @@
   "Priority": 2,
   "StdoutPath": "C:\\dev\\servy\\nodeapp.log",
   "StderrPath": "C:\\dev\\servy\\nodeapp.log",
-  "EnableRotation": false,
+  "EnableSizeRotation": false,
   "RotationSize": 10,
   "EnableHealthMonitoring": false,
   "HeartbeatInterval": 30,

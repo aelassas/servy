@@ -6,7 +6,7 @@
   <ExecutablePath>C:\Windows\System32\notepad.exe</ExecutablePath>
   <StartupType>3</StartupType>
   <Priority>2</Priority>
-  <EnableRotation>false</EnableRotation>
+  <EnableSizeRotation>false</EnableSizeRotation>
   <RotationSize>10</RotationSize>
   <EnableDateRotation>false</EnableDateRotation>
   <DateRotationType>0</DateRotationType>

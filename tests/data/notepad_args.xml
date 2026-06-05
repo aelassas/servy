@@ -6,7 +6,7 @@
   <Parameters>-root "J:\" -root "D:\Dest" -batch -times -repeat watch -force "J:\" -nocreation "J:\" -noupdate "J:\" -nodeletion "D:\Dest" -log -logfile "D:\Logs\Unison\sync.log"</Parameters>
   <StartupType>2</StartupType>
   <Priority>2</Priority>
-  <EnableRotation>false</EnableRotation>
+  <EnableSizeRotation>false</EnableSizeRotation>
   <RotationSize>10</RotationSize>
   <EnableHealthMonitoring>false</EnableHealthMonitoring>
   <HeartbeatInterval>30</HeartbeatInterval>

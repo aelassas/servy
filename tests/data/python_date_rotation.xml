@@ -9,7 +9,7 @@
   <Priority>2</Priority>
   <StdoutPath>E:\dev\servy\logs\python_stdout_stderr.txt</StdoutPath>
   <StderrPath>E:\dev\servy\logs\python_stdout_stderr.txt</StderrPath>
-  <EnableRotation>false</EnableRotation>
+  <EnableSizeRotation>false</EnableSizeRotation>
   <RotationSize>3</RotationSize>
   <EnableDateRotation>true</EnableDateRotation>
   <DateRotationType>0</DateRotationType>

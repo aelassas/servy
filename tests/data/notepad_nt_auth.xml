@@ -5,7 +5,7 @@
   <ExecutablePath>C:\Windows\System32\notepad.exe</ExecutablePath>
   <StartupType>2</StartupType>
   <Priority>2</Priority>
-  <EnableRotation>false</EnableRotation>
+  <EnableSizeRotation>false</EnableSizeRotation>
   <RotationSize>10</RotationSize>
   <EnableHealthMonitoring>false</EnableHealthMonitoring>
   <HeartbeatInterval>30</HeartbeatInterval>
