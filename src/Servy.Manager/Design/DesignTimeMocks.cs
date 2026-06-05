@@ -52,9 +52,9 @@ namespace Servy.Manager.Design
             return Task.FromResult(true);
         }
 
-        public Task ExportServiceToXmlAsync(Service? service) => Task.CompletedTask;
+        public Task ExportServiceToXmlAsync(Service? service, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-        public Task ExportServiceToJsonAsync(Service? service) => Task.CompletedTask;
+        public Task ExportServiceToJsonAsync(Service? service, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
         public Task ImportXmlConfigAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 

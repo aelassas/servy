@@ -139,7 +139,9 @@ namespace Servy.Manager
         /// <inheritdoc/>
         public bool ForceSoftwareRendering => _bootstrapper.ForceSoftwareRendering;
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Gets the configured logging verbosity level loaded from <c>appsettings.manager.json</c>.
+        /// </summary>
         public LogLevel LogLevel { get; private set; }
 
         /// <inheritdoc/>

@@ -4,7 +4,7 @@ using System.Windows;
 namespace Servy.Views
 {
     /// <summary>
-    /// Logique d'interaction pour SplashWindow.xaml
+    /// Interaction logic for SplashWindow.xaml
     /// </summary>
     [ExcludeFromCodeCoverage]
     public partial class SplashWindow : Window

@@ -1375,47 +1375,59 @@ namespace Servy.Service
         /// </exception>
         private void StartPostLaunchProcess()
         {
-            if (_options == null || string.IsNullOrWhiteSpace(_options.PostLaunchExecutablePath))
-                return;
+            RunFireAndForgetHook(
+                "post-launch",
+                exePath: _options?.PostLaunchExecutablePath,
+                rawArgs: _options?.PostLaunchExecutableArgs,
+                hookWorkingDir: _options?.PostLaunchWorkingDirectory,
+                track: true);
+        }
 
+        /// <summary>
+        /// Executes a secondary process as a "fire-and-forget" hook, optionally tracking its lifecycle 
+        /// to ensure resources are cleaned up or managed appropriately.
+        /// </summary>
+        /// <param name="hookName">A descriptive name for the hook, used for logging and tracking purposes.</param>
+        /// <param name="exePath">The file path to the executable to be launched. If null or empty, the hook execution is aborted.</param>
+        /// <param name="rawArgs">The command-line arguments string to pass to the executable.</param>
+        /// <param name="hookWorkingDir">
+        /// The directory in which the process should start. If null or whitespace, defaults to the 
+        /// primary service working directory specified in <c>_options</c>.
+        /// </param>
+        /// <param name="track">
+        /// If <c>true</c>, the launched process is added to the internal <c>_trackedHooks</c> collection 
+        /// for management; otherwise, the process resources are disposed immediately after launch.
+        /// </param>
+        /// <remarks>
+        /// This method encapsulates process startup logic using <see cref="ProcessLauncher"/> and 
+        /// applies service-wide environment variables. Any exceptions during process creation or 
+        /// environment validation are caught and logged silently to prevent service interruption.
+        /// </remarks>
+        private void RunFireAndForgetHook(
+            string hookName, string? exePath, string? rawArgs,
+            string? hookWorkingDir, bool track)
+        {
+            if (_options == null || string.IsNullOrWhiteSpace(exePath)) return;
             try
             {
-                // 1. Prepare Environment and Arguments
-                var args = _options.PostLaunchExecutableArgs ?? string.Empty;
-
-                var workingDir = string.IsNullOrWhiteSpace(_options.PostLaunchWorkingDirectory)
-                    ? _options.WorkingDirectory
-                    : _options.PostLaunchWorkingDirectory;
-
-                // 2. Configure Launch Options
+                var workingDir = string.IsNullOrWhiteSpace(hookWorkingDir)
+                    ? _options.WorkingDirectory : hookWorkingDir;
                 var launchOptions = new ProcessLaunchOptions
                 {
-                    ExecutablePath = _options.PostLaunchExecutablePath,
-                    Arguments = args,
+                    ExecutablePath = exePath,
+                    Arguments = rawArgs ?? string.Empty,
                     WorkingDirectory = workingDir,
                     EnvironmentVariables = _options.EnvironmentVariables,
-                    FireAndForget = true, // Post-launch does not block service startup
+                    FireAndForget = true,
                     EnableConsoleUI = _options.EnableConsoleUI,
                 };
-
-                _logger?.Info($"Running post-launch program: {launchOptions.ExecutablePath}");
-
-                // 3. Launch via Centralized Utility
+                _logger?.Info($"Running {hookName} program: {launchOptions.ExecutablePath}");
                 var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger!);
-
-                // 4. Track the native process for teardown orchestration
-                if (process?.UnderlyingProcess is Process nativeProcess)
-                {
-                    lock (_trackedHooks)
-                    {
-                        _trackedHooks.Add(new Hook { OperationName = "post-launch", Process = nativeProcess });
-                    }
-                }
+                if (track && process?.UnderlyingProcess is Process p)
+                    lock (_trackedHooks) _trackedHooks.Add(new Hook { OperationName = hookName, Process = p });
+                else process?.Dispose();
             }
-            catch (Exception ex)
-            {
-                _logger?.Error("Failed to run post-launch program.", ex);
-            }
+            catch (Exception ex) { _logger?.Error($"Failed to run {hookName} program.", ex); }
         }
 
         /// <summary>
@@ -1437,44 +1449,12 @@ namespace Servy.Service
         /// </remarks>
         private void RunFailureProgram()
         {
-            if (_options == null || string.IsNullOrWhiteSpace(_options.FailureProgramPath))
-                return;
-
-            try
-            {
-                // 1. Prepare Environment and Arguments
-                var args = _options.FailureProgramArgs ?? string.Empty;
-
-                var workingDir = string.IsNullOrWhiteSpace(_options.FailureProgramWorkingDirectory)
-                    ? _options.WorkingDirectory
-                    : _options.FailureProgramWorkingDirectory;
-
-                // 2. Configure Launch Options
-                var launchOptions = new ProcessLaunchOptions
-                {
-                    ExecutablePath = _options.FailureProgramPath,
-                    Arguments = args,
-                    WorkingDirectory = workingDir,
-                    EnvironmentVariables = _options.EnvironmentVariables,
-                    FireAndForget = true, // Failure program is always fire-and-forget
-                    EnableConsoleUI = _options.EnableConsoleUI,
-                };
-
-                _logger?.Info($"Running failure program: {launchOptions.ExecutablePath}");
-
-                // 3. Launch via Centralized Utility
-                // We use the wrapper but do not store it in _trackedHooks as this process 
-                // should outlive the service teardown.
-                using (var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger!))
-                {
-                    // The process wrapper is disposed, but the underlying OS process continues.
-                }
-
-            }
-            catch (Exception ex)
-            {
-                _logger?.Error("Failed to run failure program.", ex);
-            }
+            RunFireAndForgetHook(
+                 "failure program",
+                 exePath: _options?.FailureProgramPath,
+                 rawArgs: _options?.FailureProgramArgs,
+                 hookWorkingDir: _options?.FailureProgramWorkingDirectory,
+                 track: false);
         }
 
         /// <summary>
@@ -2792,43 +2772,12 @@ namespace Servy.Service
         /// </summary>
         private void StartPostStopProcess()
         {
-            if (_options == null || string.IsNullOrWhiteSpace(_options.PostStopExecutablePath))
-                return;
-
-            try
-            {
-                // 1. Prepare Environment and Arguments
-                var args = _options.PostStopExecutableArgs ?? string.Empty;
-
-                var workingDir = string.IsNullOrWhiteSpace(_options.PostStopWorkingDirectory)
-                    ? _options.WorkingDirectory
-                    : _options.PostStopWorkingDirectory;
-
-                // 2. Configure Launch Options
-                var launchOptions = new ProcessLaunchOptions
-                {
-                    ExecutablePath = _options.PostStopExecutablePath,
-                    Arguments = args,
-                    WorkingDirectory = workingDir,
-                    EnvironmentVariables = _options.EnvironmentVariables,
-                    FireAndForget = true, // Post-stop is always fire-and-forget
-                    EnableConsoleUI = _options.EnableConsoleUI,
-                };
-
-                _logger?.Info($"Running post-stop program: {launchOptions.ExecutablePath}");
-
-                // 3. Launch via Centralized Utility
-                // We use the wrapper but do not store it in _trackedHooks as this process 
-                // should outlive the service teardown.
-                using (var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger!))
-                {
-                    // The process wrapper is disposed, but the underlying OS process continues.
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger?.Error("Failed to run post-stop program.", ex);
-            }
+            RunFireAndForgetHook(
+                 "post-stop",
+                 exePath: _options?.PostStopExecutablePath,
+                 rawArgs: _options?.PostStopExecutableArgs,
+                 hookWorkingDir: _options?.PostStopWorkingDirectory,
+                 track: false);
         }
 
         /// <summary>
