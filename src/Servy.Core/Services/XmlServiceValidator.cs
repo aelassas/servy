@@ -1,4 +1,5 @@
 ﻿using Servy.Core.DTOs;
+using Servy.Core.Security;
 using Servy.Core.Validators;
 using System;
 using System.IO;
@@ -29,16 +30,10 @@ namespace Servy.Core.Services
         /// <inheritdoc/>
         protected override ServiceDto Parse(string content)
         {
-            // 1. Prevent XXE Attacks
-            var settings = new XmlReaderSettings
-            {
-                DtdProcessing = DtdProcessing.Prohibit,
-                XmlResolver = null
-            };
-
+            // Prevent XXE Attacks
             var serializer = new XmlSerializer(typeof(ServiceDto));
             using (var stringReader = new StringReader(content))
-            using (var xmlReader = XmlReader.Create(stringReader, settings))
+            using (var xmlReader = SecureXml.CreateReader(stringReader))
             {
                 return serializer.Deserialize(xmlReader) as ServiceDto;
             }

@@ -139,8 +139,8 @@ namespace Servy.Service.Helpers
         /// </param>
         /// <param name="logger">Logger.</param>
         /// <remarks>
-        /// Use this method in <see cref="OnStart"/>, <see cref="OnStop"/>, <see cref="OnPause"/>, 
-        /// or <see cref="OnContinue"/> when the operation may take longer than the default SCM timeout.
+        /// Use this method inside the SCM lifecycle callbacks (<c>OnStart</c>, <c>OnStop</c>, 
+        /// <c>OnPause</c>, <c>OnContinue</c>) when the operation may exceed the default SCM timeout.
         /// Calling this method has no effect if the service is not running under the SCM (for example, 
         /// during unit tests or console execution).
         /// </remarks>

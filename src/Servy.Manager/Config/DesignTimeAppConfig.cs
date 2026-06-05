@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel;
-using Servy.Core.Config;
 
 namespace Servy.Manager.Config
 {
@@ -26,7 +25,7 @@ namespace Servy.Manager.Config
         int IAppConfiguration.ConsoleMaxLines => Core.Config.AppConfig.DefaultConsoleMaxLines;
         int IAppConfiguration.LogsWindowDays => Core.Config.AppConfig.DefaultLogsWindowDays;
         int IAppConfiguration.SearchDebounceDelayMs => 300; // Standard UI responsiveness delay
-        public int MaxBulkOperationParallelism => Core.Config.AppConfig.DefaultMaxBulkOperationParallelism;
+        int IAppConfiguration.MaxBulkOperationParallelism => Core.Config.AppConfig.DefaultMaxBulkOperationParallelism;
 
         // Paths
         string IAppConfiguration.DesktopAppPublishPath => Core.Config.AppConfig.DefaultDesktopAppPublishPath;

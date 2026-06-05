@@ -2,6 +2,7 @@
 using Servy.Core.Helpers;
 using Servy.Core.IO;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using System;
 using System.IO;
 using System.Text;
@@ -22,17 +23,11 @@ namespace Servy.Core.Services
 
             try
             {
-                // 2. Security-First Settings (XXE Protection)
-                var settings = new XmlReaderSettings
-                {
-                    DtdProcessing = DtdProcessing.Prohibit,
-                    XmlResolver = null,
-                };
-
                 var serializer = new XmlSerializer(typeof(ServiceDto));
 
+                // 2. Security-First (XXE Protection)
                 using (var stringReader = new StringReader(xml))
-                using (var xmlReader = XmlReader.Create(stringReader, settings))
+                using (var xmlReader = SecureXml.CreateReader(stringReader))
                 {
                     // 3. Attempt Deserialization
                     var dto = serializer.Deserialize(xmlReader) as ServiceDto;

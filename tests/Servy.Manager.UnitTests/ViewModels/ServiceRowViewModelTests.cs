@@ -200,7 +200,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             var vm = CreateViewModel();
             var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.ExportServiceToXmlAsync(It.Is<Service>(srv => srv.Name == "S")))
+            _serviceCommandsMock.Setup(s => s.ExportServiceToXmlAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -216,7 +216,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             // Setup the mock to accept the Service instance from the ViewModel
             _serviceCommandsMock
-                  .Setup(s => s.ExportServiceToJsonAsync(It.Is<Service>(srv => srv.Name == "S")))
+                  .Setup(s => s.ExportServiceToJsonAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<CancellationToken>()))
                   .Returns(Task.CompletedTask)
                   .Verifiable();
 

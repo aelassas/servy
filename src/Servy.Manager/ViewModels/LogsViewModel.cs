@@ -314,7 +314,7 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Executes a search for logs based on the selected filters.
-        /// Updates <see cref="Logs"/> with the results.
+        /// Updates <see cref="LogsView"/> with the results.
         /// </summary>
         /// <param name="parameter">Optional command parameter (not used).</param>
         private async Task Search(object parameter)

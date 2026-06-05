@@ -29,8 +29,7 @@ namespace Servy.Manager.UnitTests.Config
             Assert.Equal(300, config.SearchDebounceDelayMs);
 
             // Testing public property vs interface implementation
-            var publicConfig = (DesignTimeAppConfig)config;
-            Assert.Equal(AppConfig.DefaultMaxBulkOperationParallelism, publicConfig.MaxBulkOperationParallelism);
+            Assert.Equal(AppConfig.DefaultMaxBulkOperationParallelism, config.MaxBulkOperationParallelism);
 
             // Assert - Paths
             Assert.Equal(AppConfig.DefaultDesktopAppPublishPath, config.DesktopAppPublishPath);

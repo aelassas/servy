@@ -259,7 +259,7 @@ namespace Servy.UI.Design
         public void ResetCursor() { /* no-op */ }
 
         /// <summary>
-        /// Returns a dummy disposable to satisfy 'using' blocks in ViewModels.
+        /// No-op implementation for the designer.
         /// </summary>
         public void SetWaitCursor() { /* no-op */ }
     }

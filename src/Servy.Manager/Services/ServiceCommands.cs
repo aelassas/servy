@@ -410,22 +410,24 @@ namespace Servy.Manager.Services
         }
 
         /// <inheritdoc />
-        public Task ExportServiceToXmlAsync(Service service) =>
+        public Task ExportServiceToXmlAsync(Service service, CancellationToken cancellationToken = default) =>
             ExportServiceConfigAsync(
                 service,
                 () => _fileDialogService.SaveXml(Strings.SaveFileDialog_XmlTitle),
                 ServiceExporter.ExportXml,
                 "XML",
-                Strings.ExportXml_Success);
+                Strings.ExportXml_Success,
+                cancellationToken: cancellationToken);
 
         /// <inheritdoc />
-        public Task ExportServiceToJsonAsync(Service service) =>
+        public Task ExportServiceToJsonAsync(Service service, CancellationToken cancellationToken = default) =>
             ExportServiceConfigAsync(
                 service,
                 () => _fileDialogService.SaveJson(Strings.SaveFileDialog_JsonTitle),
                 ServiceExporter.ExportJson,
                 "JSON",
-                Strings.ExportJson_Success);
+                Strings.ExportJson_Success,
+                cancellationToken: cancellationToken);
 
         /// <inheritdoc />
         public Task ImportXmlConfigAsync(CancellationToken cancellationToken = default) =>
@@ -684,6 +686,7 @@ namespace Servy.Manager.Services
         /// <param name="exportAction">A delegate responsible for serializing the <see cref="ServiceDto"/> and writing it to disk.</param>
         /// <param name="formatName">The name of the format (e.g., "XML", "JSON") for logging and error context.</param>
         /// <param name="successMessage">The localized string to display upon successful export.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task representing the asynchronous export operation.</returns>
         /// <remarks>
         /// Unlike the Desktop App variant, this method retrieves the <see cref="ServiceDto"/> directly 
@@ -695,7 +698,8 @@ namespace Servy.Manager.Services
             Func<string> getFilePath,
             Action<ServiceDto, string> exportAction,
             string formatName,
-            string successMessage)
+            string successMessage,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -704,7 +708,7 @@ namespace Servy.Manager.Services
                 var path = getFilePath();
                 if (string.IsNullOrEmpty(path)) return;
 
-                var dto = await _serviceRepository.GetByNameAsync(service.Name);
+                var dto = await _serviceRepository.GetByNameAsync(service.Name, cancellationToken: cancellationToken);
                 if (dto == null)
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
