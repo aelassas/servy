@@ -13,6 +13,6 @@ namespace Servy.Manager.Validators
         /// </summary>
         /// <param name="dto">The service DTO containing configuration.</param>
         /// <returns>True if valid, otherwise false.</returns>
-        Task<bool> Validate(ServiceDto dto);
+        Task<bool> ValidateAsync(ServiceDto dto);
     }
 }

@@ -107,7 +107,7 @@ namespace Servy.Manager.Services
         /// <summary>
         /// Copies the PID of the specified service to the clipboard.
         /// </summary>
-        /// <param name="service">The service to configure.</param>
-        Task CopyPid(Service service);
+        /// <param name="service">The service whose PID should be copied to the clipboard.</param>
+        Task CopyPidAsync(Service service);
     }
 }

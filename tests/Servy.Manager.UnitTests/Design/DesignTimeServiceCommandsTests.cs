@@ -34,7 +34,7 @@ namespace Servy.Manager.UnitTests.Design
                 await commands.ExportServiceToJsonAsync(testService);
                 await commands.ImportXmlConfigAsync();
                 await commands.ImportJsonConfigAsync();
-                await commands.CopyPid(testService);
+                await commands.CopyPidAsync(testService);
                 commands.Dispose();
             });
 

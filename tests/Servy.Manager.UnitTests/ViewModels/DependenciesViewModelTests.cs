@@ -190,7 +190,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             await _viewModel.CopyPidCommand.ExecuteAsync(null);
 
-            _mockServiceCommands.Verify(c => c.CopyPid(It.Is<Service>(s => s.Name == "TestService")), Times.Once);
+            _mockServiceCommands.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "TestService")), Times.Once);
         }
 
         #endregion

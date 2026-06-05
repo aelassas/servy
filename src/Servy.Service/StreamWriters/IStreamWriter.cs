@@ -16,6 +16,7 @@ namespace Servy.Service.StreamWriters
         /// <summary>
         /// Writes text to the stream without adding a newline.
         /// </summary>
+        /// <param name="text">The text to write.</param>
         void Write(string text);
     }
 }

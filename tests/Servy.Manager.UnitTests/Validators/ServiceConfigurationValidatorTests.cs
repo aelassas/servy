@@ -58,7 +58,7 @@ namespace Servy.Manager.UnitTests.Validators
                 .Returns(validResult);
 
             // Act
-            var result = await _validator.Validate(dto);
+            var result = await _validator.ValidateAsync(dto);
 
             // Assert
             Assert.True(result);
@@ -83,7 +83,7 @@ namespace Servy.Manager.UnitTests.Validators
                 .Returns(invalidResult);
 
             // Act
-            var result = await _validator.Validate(dto);
+            var result = await _validator.ValidateAsync(dto);
 
             // Assert
             Assert.False(result);

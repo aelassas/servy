@@ -36,7 +36,7 @@ namespace Servy.UnitTests.Validators
         [Fact]
         public async Task Validate_NullDto_ReturnsFalse()
         {
-            var result = await _validator.Validate(null);
+            var result = await _validator.ValidateAsync(null);
             Assert.False(result);
             _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
@@ -49,7 +49,7 @@ namespace Servy.UnitTests.Validators
                                         // This relies on the actual logic within ServiceValidationRules.Validate
 
             // Act
-            var result = await _validator.Validate(dto);
+            var result = await _validator.ValidateAsync(dto);
 
             // Assert
             Assert.False(result);
@@ -65,7 +65,7 @@ namespace Servy.UnitTests.Validators
             _mockProcessHelper.Setup(p => p.ValidatePath(dto.ExecutablePath, true)).Returns(true);
 
             // Act
-            var result = await _validator.Validate(dto);
+            var result = await _validator.ValidateAsync(dto);
 
             // Assert
             Assert.True(result);

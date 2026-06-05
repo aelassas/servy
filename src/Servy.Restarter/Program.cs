@@ -64,7 +64,7 @@ namespace Servy.Restarter
                 var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
                 var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
-                // 3. Configure the GLOBAL logging
+                // 3. Parse the restart timeout
                 var restartTimeout = int.TryParse(config["RestartTimeoutSeconds"], out var timeout) && timeout > 0 ? timeout : AppConfig.DefaultRestarterTimeoutSeconds;
 
                 // 4. PROMOTE / SCOPE the logger
@@ -72,10 +72,10 @@ namespace Servy.Restarter
                 // and events are mirrored to the Windows Event Log.
                 scopedLogger = rootLogger.CreateScoped(serviceName);
 
-                // Centralized logging bootstrapper
+                // 5. Configure the GLOBAL logging (centralized bootstrapper)
                 LoggerConfigurator.ConfigureFromAppSettings(config, instanceLogger: scopedLogger);
 
-                // 5. Initialize database and helpers
+                // 6. Initialize database and helpers
                 dbContext = new AppDbContext(connectionString);
 
                 var dapperExecutor = new DapperExecutor(dbContext);
@@ -86,7 +86,7 @@ namespace Servy.Restarter
 
                 var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
 
-                // 6. Validation
+                // 7. Validation
                 if (serviceRepository.GetByName(serviceName, decrypt: false) == null)
                 {
                     scopedLogger.Error($"Service '{serviceName}' is not managed by Servy.");
@@ -94,7 +94,7 @@ namespace Servy.Restarter
                     return;
                 }
 
-                // 7. Execution
+                // 8. Execution
                 scopedLogger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
 
                 restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));

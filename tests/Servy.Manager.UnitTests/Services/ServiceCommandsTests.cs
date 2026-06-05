@@ -113,7 +113,7 @@ namespace Servy.Manager.UnitTests.Services
             File.WriteAllText(tempFile, json);
 
             _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
-            _serviceConfigurationValidatorMock.Setup(v => v.Validate(It.IsAny<ServiceDto>())).ReturnsAsync(true);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>())).ReturnsAsync(true);
 
             _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1)
@@ -183,7 +183,7 @@ namespace Servy.Manager.UnitTests.Services
 
             string outErr = null;
             _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
-            _serviceConfigurationValidatorMock.Setup(v => v.Validate(It.IsAny<ServiceDto>())).ReturnsAsync(true);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>())).ReturnsAsync(true);
 
             _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1)

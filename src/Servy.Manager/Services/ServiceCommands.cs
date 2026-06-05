@@ -452,7 +452,7 @@ namespace Servy.Manager.Services
                 cancellationToken: cancellationToken);
 
         ///<inheritdoc/>
-        public async Task CopyPid(Service service)
+        public async Task CopyPidAsync(Service service)
         {
             if (service?.Pid == null) return;
 
@@ -783,7 +783,7 @@ namespace Servy.Manager.Services
                     return;
                 }
 
-                if (!await _serviceConfigurationValidator.Validate(dto)) return;
+                if (!await _serviceConfigurationValidator.ValidateAsync(dto)) return;
 
                 var res = await ExecuteLockedAsync(dto.Name, () =>
                     _serviceRepository.UpsertAsync(

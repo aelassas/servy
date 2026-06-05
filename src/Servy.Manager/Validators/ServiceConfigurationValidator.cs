@@ -41,7 +41,7 @@ namespace Servy.Manager.Validators
         /// This implementation follows a fail-fast approach, showing only the first identified 
         /// error to prevent overwhelming the user with multiple dialog boxes.
         /// </remarks>
-        public async Task<bool> Validate(ServiceDto dto)
+        public async Task<bool> ValidateAsync(ServiceDto dto)
         {
             // Delegate core validation logic to the centralized rules engine
             var result = _serviceValidationRules.Validate(dto, importMode: true);
