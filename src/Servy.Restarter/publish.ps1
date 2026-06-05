@@ -8,9 +8,6 @@
     build pattern (Pattern A). It publishes to the default bin directory and 
     optionally signs the artifact using SignPath.
 
-.PARAMETER Version
-    Version to assign to the published assembly. Default is "1.0.0".
-
 .PARAMETER Tfm
     Target framework to build against. Default is "net10.0-windows".
 

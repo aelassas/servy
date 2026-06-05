@@ -3,7 +3,7 @@
 namespace Servy.ViewModels.Items
 {
     /// <summary>
-    /// Represents an item used to display and bind a service startup type in the UI.
+    /// Represents an item used to display and bind a service date rotation type in the UI.
     /// </summary>
     public class DateRotationTypeItem
     {

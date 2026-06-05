@@ -666,8 +666,10 @@ namespace Servy.Core.Services
         /// <inheritdoc/>
         public async Task<OperationResult> StartServiceAsync(string? serviceName, bool logSuccessfulStart = true, CancellationToken cancellationToken = default)
         {
-            if (_serviceRepository == null) throw new InvalidOperationException("Service repository is not initialized. Cannot install service without a repository.");
-            if (string.IsNullOrWhiteSpace(serviceName)) throw new ArgumentException("serviceName is required.", nameof(serviceName));
+            if (_serviceRepository == null)
+                throw new InvalidOperationException("Service repository is not initialized. Cannot start service without a repository.");
+            if (string.IsNullOrWhiteSpace(serviceName)) 
+                throw new ArgumentException("service name cannot be null or whitespace.", nameof(serviceName));
 
             int timeout = 0;
             try
@@ -739,8 +741,10 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public async Task<OperationResult> StopServiceAsync(string? serviceName, bool logSuccessfulStop = true, CancellationToken cancellationToken = default)
         {
-            if (_serviceRepository == null) throw new InvalidOperationException("Service repository is not initialized. Cannot install service without a repository.");
-            if (string.IsNullOrWhiteSpace(serviceName)) throw new ArgumentException("serviceName is required.", nameof(serviceName));
+            if (_serviceRepository == null)
+                throw new InvalidOperationException("Service repository is not initialized. Cannot stop service without a repository.");
+            if (string.IsNullOrWhiteSpace(serviceName))
+                throw new ArgumentException("service name cannot be null or whitespace.", nameof(serviceName));
 
             int timeout = 0;
             try
@@ -846,7 +850,7 @@ namespace Servy.Core.Services
         public bool IsServiceInstalled(string? serviceName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
-                throw new ArgumentNullException(nameof(serviceName));
+                throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -858,7 +862,7 @@ namespace Servy.Core.Services
         public ServiceStartType? GetServiceStartupType(string? serviceName, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (string.IsNullOrWhiteSpace(serviceName))
-                throw new ArgumentNullException(nameof(serviceName));
+                throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
 
             cancellationToken.ThrowIfCancellationRequested();
 

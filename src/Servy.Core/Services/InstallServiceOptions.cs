@@ -137,7 +137,7 @@ namespace Servy.Core.Services
         /// <summary>The maximum number of rotated log file to keep. Set to 0 for unlimited.</summary>
         public int MaxRotations { get; set; } = AppConfig.DefaultMaxRotations;
 
-        /// <summary>Enables rotation based on the date interval specified by <paramref name="dateRotationType"/>.</summary>
+        /// <summary>Enables rotation based on the date interval specified by <see cref="DateRotationType"/>.</summary>
         public bool EnableDateRotation { get; set; } = AppConfig.DefaultEnableDateRotation;
 
         /// <summary>Defines the date-based rotation schedule (daily, weekly, or monthly).</summary>

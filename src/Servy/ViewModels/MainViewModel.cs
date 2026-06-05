@@ -261,7 +261,7 @@ namespace Servy.ViewModels
         public bool EnableRotation => EnableSizeRotation || EnableDateRotation;
 
         /// <summary>
-        /// Gets or sets the startup type selected for the service.
+        /// Gets or sets the date rotation type selected for the service.
         /// </summary>
         public DateRotationType SelectedDateRotationType
         {
@@ -270,7 +270,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets the list of available startup types for services.
+        /// Gets the list of available date rotation types for services.
         /// </summary>
         public List<DateRotationTypeItem> DateRotationTypes { get; } = new List<DateRotationTypeItem>
         {

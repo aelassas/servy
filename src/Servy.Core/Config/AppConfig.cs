@@ -426,6 +426,9 @@ namespace Servy.Core.Config
         /// </remarks>
         public const int PreShutdownWaitHintMs = 30_000;
 
+        /// <summary>Checkpoint pulse interval (ms) used while waiting for pre-shutdown teardown to complete.</summary>
+        public const int PreShutdownPulseIntervalMs = 2_000;
+
         /// <summary>
         /// Default timeout in seconds before considering a pre-launch task as failed. Default is 30 seconds.
         /// </summary>
@@ -1298,6 +1301,12 @@ namespace Servy.Core.Config
         /// infrastructure failures.
         /// </remarks>
         public const int DbBackoffMaxMs = 5_000;
+
+        /// <summary>
+        /// Max DTOs per chunk when re-querying generated IDs after a batch upsert.
+        /// Kept under SQLite's default SQLITE_MAX_VARIABLE_NUMBER (999) parameter limit.
+        /// </summary>
+        public const int DbBatchIdSyncChunkSize = 900;
 
         /// <summary>
         /// Interval at which the CPU metrics cache is pruned of dead/recycled process entries.
