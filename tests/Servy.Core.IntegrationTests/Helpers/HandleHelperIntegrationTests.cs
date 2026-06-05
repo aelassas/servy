@@ -72,7 +72,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                     {
                         // Fallback: try to find the resource by name if the full namespace path is unknown
                         var actualName = assembly.GetManifestResourceNames()
-                            .FirstOrDefault(n => n.EndsWith("handle64.exe"));
+                            .FirstOrDefault(n => n.EndsWith(targetFileName));
 
                         if (actualName == null) return;
 
