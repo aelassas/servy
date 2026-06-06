@@ -51,3 +51,5 @@ using System.Windows;
 //
 [assembly: AssemblyVersion("8.5.0.0")]
 [assembly: AssemblyFileVersion("8.5.0.0")]
+
+[assembly: InternalsVisibleTo("Servy.Manager.UnitTests")]

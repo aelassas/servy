@@ -132,7 +132,7 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
-        public async Task GetHistoryAsync_ShouldHandleSyntheticTimestampsCorrecty()
+        public async Task GetHistoryAsync_ShouldHandleSyntheticTimestampsCorrectly()
         {
             // Arrange
             var tailer = new LogTailer();
