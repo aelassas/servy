@@ -239,11 +239,16 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             {
                 wrapper.Start();
 
+                // Capture properties safely before any termination logic runs 
+                // to prevent InvalidOperationException if it exits asynchronously.
+                int parentPid = wrapper.Id;
+                DateTime parentStartTime = wrapper.StartTime;
+
                 // Allow the OS time to spawn the child ping process
                 Thread.Sleep(1000);
 
                 // Act
-                wrapper.StopDescendants(wrapper.Id, wrapper.StartTime, 1000);
+                wrapper.StopDescendants(parentPid, parentStartTime, 1000);
 
                 // Give the OS a moment to reap the descendants
                 Thread.Sleep(500);
@@ -251,8 +256,21 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 // Assert: The stop logic logs the cascade
                 Assert.Contains(_logger.Infos, m => m.Contains("Initiating cascaded kill"));
 
-                // Verify native handles are gone (the parent powershell usually dies too when the shell command is terminated)
-                wrapper.Kill();
+                // Verify native handles are gone safely. 
+                // We use a try/catch guard because if the parent powershell died naturally 
+                // during the cascaded tree shutdown, a subsequent Kill() step is redundant.
+                try
+                {
+                    if (!wrapper.HasExited)
+                    {
+                        wrapper.Kill();
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    // Process exited between the HasExited check and the Kill call. 
+                    // This is a safe and successful outcome for the integration test.
+                }
             }
         }
 
