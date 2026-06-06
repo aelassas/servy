@@ -1,7 +1,11 @@
 ﻿using Servy.CLI.Models;
 using Servy.CLI.Resources;
+using Servy.Core.Common;
 using Servy.Core.Logging;
+using Servy.Core.Security;
+using Servy.Core.Services;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Servy.CLI.Commands
@@ -61,6 +65,61 @@ namespace Servy.CLI.Commands
             {
                 return HandleException(ex, commandName, action, suggestion);
             }
+        }
+
+        /// <summary>
+        /// Centralizes shared service management pre-flight validation, installation assertions, and operation logging pipelines.
+        /// </summary>
+        protected async Task<CommandResult> ExecuteServiceOperationAsync(
+            string commandName,
+            string action,
+            string suggestion,
+            string serviceName,
+            IServiceManager serviceManager,
+            Func<CancellationToken, Task<OperationResult>> operation,
+            Func<string, string> successMessageFormatter,
+            Func<CancellationToken, CommandResult> preCheck = null,
+            Func<CancellationToken, Task> onSuccess = null,
+            CancellationToken cancellationToken = default)
+        {
+            return await ExecuteWithHandlingAsync(commandName, action, suggestion, async () =>
+            {
+                // Pre-flight elevation check
+                SecurityHelper.EnsureAdministrator();
+
+                if (string.IsNullOrWhiteSpace(serviceName))
+                    return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
+
+                var exists = serviceManager.IsServiceInstalled(serviceName, cancellationToken: cancellationToken);
+                if (!exists)
+                {
+                    return CommandResult.Fail(Strings.Msg_ServiceNotFound);
+                }
+
+                if (preCheck != null)
+                {
+                    var checkResult = preCheck(cancellationToken);
+                    if (checkResult != null) return checkResult;
+                }
+
+                var res = await operation(cancellationToken);
+                if (res.IsSuccess)
+                {
+                    if (onSuccess != null)
+                    {
+                        await onSuccess(cancellationToken);
+                    }
+
+                    var successMsg = successMessageFormatter(serviceName);
+                    Logger.Info(successMsg);
+                    return CommandResult.Ok(successMsg);
+                }
+                else
+                {
+                    Logger.Error(res.ErrorMessage);
+                    return CommandResult.Fail(res.ErrorMessage);
+                }
+            });
         }
 
         /// <summary>
