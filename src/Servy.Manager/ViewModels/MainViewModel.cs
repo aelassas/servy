@@ -311,22 +311,22 @@ namespace Servy.Manager.ViewModels
         /// Initializes a new instance of <see cref="MainViewModel"/>.
         /// </summary>
         public MainViewModel(
-            IServiceManager serviceManager,
-            IServiceRepository serviceRepository,
-            IServiceCommands serviceCommands,
-            IHelpService helpService,
-            IMessageBoxService messageBoxService,
-            PerformanceViewModel performanceVM,
-            ConsoleViewModel consoleVM,
-            DependenciesViewModel dependenciesVM,
-            IAppConfiguration appConfig,
-            ICursorService cursorService,
-            IProcessHelper processHelper,
-            Dispatcher dispatcher = null
-            )
+              IServiceManager serviceManager,
+              IServiceRepository serviceRepository,
+              IServiceCommands serviceCommands,
+              IHelpService helpService,
+              IMessageBoxService messageBoxService,
+              PerformanceViewModel performanceVM,
+              ConsoleViewModel consoleVM,
+              DependenciesViewModel dependenciesVM,
+              IAppConfiguration appConfig,
+              ICursorService cursorService,
+              IProcessHelper processHelper,
+              Dispatcher dispatcher = null
+              )
         {
-            _serviceManager = serviceManager;
-            _serviceRepository = serviceRepository;
+            _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _serviceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
             ServiceCommands = _serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
@@ -1088,7 +1088,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Simple nested class to hold the results of background work securely
         /// </summary>
-        private sealed class ServiceUpdateInfo
+        internal sealed class ServiceUpdateInfo
         {
             public Service Target { get; }
 

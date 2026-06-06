@@ -9,7 +9,7 @@
   <Priority>1</Priority>
   <StdoutPath>C:\Logs\TestService_out.log</StdoutPath>
   <StderrPath>C:\Logs\TestService_err.log</StderrPath>
-  <EnableRotation>true</EnableRotation>
+  <EnableSizeRotation>true</EnableSizeRotation>
   <RotationSize>10</RotationSize>
   <EnableHealthMonitoring>true</EnableHealthMonitoring>
   <HeartbeatInterval>30</HeartbeatInterval>
