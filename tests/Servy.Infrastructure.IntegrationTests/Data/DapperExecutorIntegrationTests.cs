@@ -1,8 +1,11 @@
 ﻿using Dapper;
 using Moq;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Infrastructure.Data;
 using System;
+using System.Data;
+using System.Data.Common;
 using System.Data.SQLite;
 using System.IO;
 using System.Linq;
@@ -14,6 +17,138 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 {
     public class DapperExecutorIntegrationTests : IDisposable
     {
+        #region Nested Test Spies and Stubs
+
+        // Concrete test spy subclassing DbConnection to bypass Moq's non-virtual limitation
+        private class DisposeTrackingDbConnection : DbConnection
+        {
+            public bool WasDisposed { get; private set; }
+
+            public override string ConnectionString
+            {
+                get { return "Data Source=:memory:;"; }
+                set { /* no-op */ }
+            }
+            public override string Database { get { return "TestDb"; } }
+            public override string DataSource { get { return "Memory"; } }
+            public override string ServerVersion { get { return "1.0"; } }
+            public override ConnectionState State { get { return ConnectionState.Closed; } }
+
+            public override void Open() { throw new InvalidOperationException("Simulated Open Failure"); }
+            public override void Close() { }
+
+            protected override DbCommand CreateDbCommand() { throw new NotImplementedException(); }
+            protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) { throw new NotImplementedException(); }
+
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing)
+                {
+                    WasDisposed = true;
+                }
+                base.Dispose(disposing);
+            }
+
+            public override void ChangeDatabase(string databaseName) { /* no-op */ }
+        }
+
+        // Concrete test double tracking async faults, open attempt loops, and state disposals safely
+        private class FaultyAsyncDbConnection : DbConnection
+        {
+            private readonly SQLiteErrorCode _errorCode;
+            private readonly string _message;
+
+            public int OpenAttempts { get; private set; }
+            public bool WasDisposed { get; private set; }
+
+            public override string ConnectionString
+            {
+                get { return "Data Source=:memory:;"; }
+                set { /* no-op */ }
+            }
+            public override string Database { get { return "TestDb"; } }
+            public override string DataSource { get { return "Memory"; } }
+            public override string ServerVersion { get { return "1.0"; } }
+            public override ConnectionState State { get { return ConnectionState.Closed; } }
+
+            public FaultyAsyncDbConnection(SQLiteErrorCode errorCode, string message)
+            {
+                _errorCode = errorCode;
+                _message = message;
+            }
+
+            public override void Open() { ThrowSQLiteException(); }
+
+            public override Task OpenAsync(CancellationToken cancellationToken)
+            {
+                OpenAttempts++;
+                ThrowSQLiteException();
+                return Task.FromResult(0);
+            }
+
+            public override void Close() { }
+
+            protected override DbCommand CreateDbCommand() { throw new NotImplementedException(); }
+            protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) { throw new NotImplementedException(); }
+
+            private void ThrowSQLiteException()
+            {
+                throw new SQLiteException(_errorCode, _message);
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing)
+                {
+                    WasDisposed = true;
+                }
+                base.Dispose(disposing);
+            }
+
+            public override void ChangeDatabase(string databaseName) { /* no-op */ }
+        }
+
+        // DbConnection stub designed to gracefully simulate lack of asynchronous transaction support
+        private class FlexibleDbConnectionStub : DbConnection
+        {
+            private readonly bool _forceSyncTransactionPath;
+
+            public bool SyncTransactionWasCalled { get; private set; }
+
+            public override string ConnectionString
+            {
+                get { return "Data Source=:memory:;"; }
+                set { /* no-op */ }
+            }
+            public override string Database { get { return "TestDb"; } }
+            public override string DataSource { get { return "Memory"; } }
+            public override string ServerVersion { get { return "1.0"; } }
+            public override ConnectionState State { get { return ConnectionState.Closed; } }
+
+            public FlexibleDbConnectionStub(bool forceSyncTransactionPath = false)
+            {
+                _forceSyncTransactionPath = forceSyncTransactionPath;
+            }
+
+            public override void Open() { }
+            public override Task OpenAsync(CancellationToken cancellationToken) { return Task.FromResult(0); }
+            public override void Close() { }
+
+            protected override DbCommand CreateDbCommand() { return new Mock<DbCommand>().Object; }
+
+            // In net48 ADO.NET, async transaction methods utilize native Task models instead of ValueTask structures
+            // Shifting implementation behaviors to throw or complete forces distinct code paths
+            protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
+            {
+                SyncTransactionWasCalled = true;
+                return new Mock<DbTransaction>().Object as DbTransaction;
+            }
+
+            public override void ChangeDatabase(string databaseName) { /* no-op */ }
+        }
+
+        #endregion
+
         private readonly Mock<IAppDbContext> _mockDbContext;
         private readonly DapperExecutor _executor;
         private readonly string _tempDbPath;
@@ -22,8 +157,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         public DapperExecutorIntegrationTests()
         {
             // 1. Create a unique temporary database file for this specific test run
-            // This allows the schema to persist cleanly across multiple Open/Close cycles 
-            // from the statless executor without colliding with parallel xUnit tests.
             _tempDbPath = Path.GetTempFileName();
             _connectionString = $"Data Source={_tempDbPath};Version=3;";
 
@@ -45,7 +178,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             }
 
             // 3. Setup the context to yield fresh, CLOSED connections targeting the temp DB.
-            // DapperExecutor is responsible for calling .Open() and .OpenAsync()
             _mockDbContext.Setup(db => db.CreateConnection()).Returns(() =>
             {
                 return new SQLiteConnection(_connectionString);
@@ -194,14 +326,176 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             using (var tx = _executor.BeginTransaction())
             {
                 _executor.Execute("DELETE FROM TestServices;", transaction: tx);
-                // Exit scope without executing an explicit tx.Commit() mapping
                 tx.Rollback();
             }
 
             long totalCount = _executor.ExecuteScalar<long>("SELECT COUNT(*) FROM TestServices;");
 
             // Assert
-            Assert.Equal(2, totalCount); // Records remain untouched due to automatic cleanup rollback logic
+            Assert.Equal(2, totalCount);
+        }
+
+        #endregion
+
+        #region Targeted Requirements Branch Coverage Tests
+
+        [Fact]
+        public void BeginTransaction_ExceptionOnOpen_DisposesConnectionAndThrows()
+        {
+            // Arrange
+            var brokenConnectionSpy = new DisposeTrackingDbConnection();
+            _mockDbContext.Setup(db => db.CreateConnection()).Returns(brokenConnectionSpy);
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() => _executor.BeginTransaction());
+            Assert.True(brokenConnectionSpy.WasDisposed, "The connection was not explicitly closed on an initialization error.");
+        }
+
+        [Fact]
+        public void ExecuteWithRetry_DatabaseLockedExhausted_ThrowsSQLiteException()
+        {
+            var busyMockConn = new Mock<DbConnection>();
+            busyMockConn.Setup(c => c.Open()).Callback(() =>
+            {
+                throw new SQLiteException(SQLiteErrorCode.Busy, "Database locked down.");
+            });
+            _mockDbContext.Setup(db => db.CreateConnection()).Returns(busyMockConn.Object);
+
+            // Act & Assert
+            Assert.Throws<SQLiteException>(() => _executor.ExecuteScalar<int>("SELECT COUNT(*) FROM TestServices;"));
+        }
+
+        [Fact]
+        public async Task ExecuteWithRetryAsync_DatabaseBusyExhausted_ThrowsSQLiteException()
+        {
+            // Arrange
+            var busyConnectionSpy = new FaultyAsyncDbConnection(SQLiteErrorCode.Busy, "Async Busy Lock");
+            _mockDbContext.Setup(db => db.CreateConnection()).Returns(busyConnectionSpy);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<SQLiteException>(async () =>
+            {
+                await _executor.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM TestServices;", cancellationToken: CancellationToken.None);
+            });
+
+            Assert.Equal(AppConfig.DbAsyncMaxRetries, busyConnectionSpy.OpenAttempts);
+        }
+
+        [Fact]
+        public void ExecuteScalar_WithActiveTransaction_UsesActiveTxConnection()
+        {
+            // Act
+            using (var tx = _executor.BeginTransaction())
+            {
+                var result = _executor.ExecuteScalar<long>("SELECT COUNT(*) FROM TestServices;", transaction: tx);
+                Assert.Equal(2, result);
+            }
+        }
+
+        [Fact]
+        public void Query_WithActiveTransaction_UsesActiveTxConnection()
+        {
+            // Act
+            using (var tx = _executor.BeginTransaction())
+            {
+                var result = _executor.Query<TestServiceDto>("SELECT * FROM TestServices;", transaction: tx);
+                Assert.Equal(2, result.Count());
+            }
+        }
+
+        [Fact]
+        public void QuerySingleOrDefault_WithActiveTransaction_UsesActiveTxConnection()
+        {
+            // Act
+            using (var tx = _executor.BeginTransaction())
+            {
+                var result = _executor.QuerySingleOrDefault<TestServiceDto>(
+                    "SELECT * FROM TestServices WHERE ServiceName = @Name;",
+                    new { Name = "ServyEngine" },
+                    transaction: tx);
+
+                Assert.NotNull(result);
+                Assert.Equal("ServyEngine", result.ServiceName);
+            }
+        }
+
+        [Fact]
+        public async Task ExecuteScalarAsync_WithActiveTransaction_UsesActiveTxConnection()
+        {
+            // Act
+            using (var tx = _executor.BeginTransaction())
+            {
+                var result = await _executor.ExecuteScalarAsync<long>("SELECT COUNT(*) FROM TestServices;", transaction: tx, cancellationToken: CancellationToken.None);
+                Assert.Equal(2, result);
+            }
+        }
+
+        [Fact]
+        public async Task QueryAsync_WithActiveTransaction_UsesActiveTxConnection()
+        {
+            // Act
+            using (var tx = _executor.BeginTransaction())
+            {
+                var result = await _executor.QueryAsync<TestServiceDto>("SELECT * FROM TestServices;", transaction: tx, cancellationToken: CancellationToken.None);
+                Assert.Equal(2, result.Count());
+            }
+        }
+
+        [Fact]
+        public async Task QueryFirstOrDefaultAsync_WithActiveTransaction_UsesActiveTxConnection()
+        {
+            // Act
+            using (var tx = _executor.BeginTransaction())
+            {
+                var result = await _executor.QueryFirstOrDefaultAsync<TestServiceDto>(
+                    "SELECT * FROM TestServices WHERE ServiceName = @Name;",
+                    new { Name = "ServyEngine" },
+                    transaction: tx,
+                    cancellationToken: CancellationToken.None);
+
+                Assert.NotNull(result);
+                Assert.Equal("ServyEngine", result.ServiceName);
+            }
+        }
+
+        [Fact]
+        public async Task QuerySingleOrDefaultAsync_AllBranchesAndVariants_Covered()
+        {
+            // 1. Valid record variant
+            var singleMatch = await _executor.QuerySingleOrDefaultAsync<TestServiceDto>(
+                "SELECT * FROM TestServices WHERE ServiceName = @Name;",
+                new { Name = "ServyEngine" },
+                cancellationToken: CancellationToken.None);
+
+            Assert.NotNull(singleMatch);
+            Assert.Equal("ServyEngine", singleMatch.ServiceName);
+
+            // 2. Default/Empty records variant
+            var noMatch = await _executor.QuerySingleOrDefaultAsync<TestServiceDto>(
+                "SELECT * FROM TestServices WHERE ServiceName = @Name;",
+                new { Name = "NonExistent" },
+                cancellationToken: CancellationToken.None);
+
+            Assert.Null(noMatch);
+
+            // 3. CommandDefinition/Active Transaction mapping branch variant
+            using (var tx = _executor.BeginTransaction())
+            {
+                var txMatch = await _executor.QuerySingleOrDefaultAsync<TestServiceDto>(
+                    "SELECT * FROM TestServices WHERE ServiceName = @Name;",
+                    new { Name = "ServyWatcher" },
+                    transaction: tx,
+                    cancellationToken: CancellationToken.None);
+
+                Assert.NotNull(txMatch);
+                Assert.Equal("ServyWatcher", txMatch.ServiceName);
+            }
+
+            // 4. Exception input parameters guard validation branch
+            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            {
+                await _executor.QuerySingleOrDefaultAsync<TestServiceDto>(sql: null, cancellationToken: CancellationToken.None);
+            });
         }
 
         #endregion
@@ -209,8 +503,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         #region Engine Internal Edge Cases (Reflection Helpers)
 
         [Theory]
-        [InlineData("SELECT * FROM MyTable\r\nWHERE Id = 1", "SELECT * FROM MyTable  WHERE Id = 1")] // Match the double space left by \r\n replacement
-        [InlineData("SELECT LongQueryStringThatExceedsTheStandardTruncationLimitForLogs", "SELECT LongQueryStringThatExceedsTheStandardTruncationL...")] // 55 chars + ellipses
+        [InlineData("SELECT * FROM MyTable\r\nWHERE Id = 1", "SELECT * FROM MyTable  WHERE Id = 1")]
+        [InlineData("SELECT LongQueryStringThatExceedsTheStandardTruncationLimitForLogs", "SELECT LongQueryStringThatExceedsTheStandardTruncationL...")]
         [InlineData("", "Unknown Query")]
         [InlineData(null, "Unknown Query")]
         public void FormatSqlForLog_Variants_EvaluatesCorrectly(string inputSql, string expectedLoggedSql)
@@ -233,7 +527,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             var methodInfo = typeof(DapperExecutor).GetMethod("CalculateBackoff",
                 System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
 
-            // Act: Simulates attempt 40 (which would bit-shift overflow standard 32-bit integers)
+            // Act: Simulates attempt 40
             var calculatedDelay = (int)methodInfo.Invoke(null, new object[] { 40, 100, 0, 30000 });
 
             // Assert
