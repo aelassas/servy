@@ -104,4 +104,8 @@
     </AssemblyAttribute>
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Servy.Manager.UnitTests" />
+  </ItemGroup>
+
 </Project>
