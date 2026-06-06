@@ -9,7 +9,7 @@
   <Priority>2</Priority>
   <StdoutPath>E:\dev\servy\logs\python_stdout_stderr.txt</StdoutPath>
   <StderrPath>E:\dev\servy\logs\python_stdout_stderr.txt</StderrPath>
-  <EnableRotation>true</EnableRotation>
+  <EnableSizeRotation>true</EnableSizeRotation>
   <RotationSize>3</RotationSize>
   <MaxRotations>3</MaxRotations>
   <EnableHealthMonitoring>false</EnableHealthMonitoring>

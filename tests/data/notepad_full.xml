@@ -7,7 +7,7 @@
   <Parameters>--params</Parameters>
   <StartupType>2</StartupType>
   <Priority>2</Priority>
-  <EnableRotation>false</EnableRotation>
+  <EnableSizeRotation>false</EnableSizeRotation>
   <RotationSize>10</RotationSize>
   <EnableDateRotation>false</EnableDateRotation>
   <DateRotationType>0</DateRotationType>

@@ -9,7 +9,7 @@
   <Priority>2</Priority>
   <StdoutPath>C:\dev\servy\stdout.log</StdoutPath>
   <StderrPath>C:\dev\servy\stderr.log</StderrPath>
-  <EnableRotation>true</EnableRotation>
+  <EnableSizeRotation>true</EnableSizeRotation>
   <RotationSize>10</RotationSize>
   <EnableHealthMonitoring>true</EnableHealthMonitoring>
   <HeartbeatInterval>5</HeartbeatInterval>

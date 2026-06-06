@@ -22,7 +22,7 @@ const __dirname = path.dirname(__filename)
 const filePath = path.resolve(__dirname, "output.txt")
 
 // Clear the file first (overwrite with empty string)
-fs.appendFileSync(filePath, '', "utf8")
+fs.writeFileSync(filePath, '', "utf8")
 
 // Append the current timestamp
 fs.appendFileSync(filePath, (new Date()).toISOString() + '\n', "utf8")

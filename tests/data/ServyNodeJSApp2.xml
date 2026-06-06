@@ -6,7 +6,7 @@
   <Parameters>"%var1%" "%var2%" "%var3%" "%var4%"</Parameters>
   <StartupType>2</StartupType>
   <Priority>2</Priority>
-  <EnableRotation>false</EnableRotation>
+  <EnableSizeRotation>false</EnableSizeRotation>
   <RotationSize>10</RotationSize>
   <EnableHealthMonitoring>false</EnableHealthMonitoring>
   <HeartbeatInterval>30</HeartbeatInterval>

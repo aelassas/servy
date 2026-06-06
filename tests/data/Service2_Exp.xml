@@ -4,7 +4,7 @@
   <ExecutablePath>%NODE_EXE%</ExecutablePath>
   <StartupType>2</StartupType>
   <Priority>2</Priority>
-  <EnableRotation>false</EnableRotation>
+  <EnableSizeRotation>false</EnableSizeRotation>
   <RotationSize>10</RotationSize>
   <EnableHealthMonitoring>true</EnableHealthMonitoring>
   <HeartbeatInterval>30</HeartbeatInterval>

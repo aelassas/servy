@@ -1,7 +1,6 @@
 from datetime import datetime
 import time
 import sys
-import io
 import logging
 import os
 import subprocess
@@ -9,6 +8,7 @@ import subprocess
 # Force stdout to UTF-8
 # sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_DIR = r"C:\test\logs"
 os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOG_DIR, "test.log")
@@ -28,7 +28,7 @@ def main():
         proc = subprocess.Popen(
             [
                 os.path.expandvars("%PYTHON_EXE%"),
-                r"E:\dev\servy\src\tests\ctrlc.py"
+                os.path.join(SCRIPT_DIR, "ctrlc.py")
             ],
         )
         logging.info(f"Spawned PID: {proc.pid}")

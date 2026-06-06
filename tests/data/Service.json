@@ -8,7 +8,7 @@
   "Priority": 1,
   "StdoutPath": "C:\\Logs\\TestService_out.log",
   "StderrPath": "C:\\Logs\\TestService_err.log",
-  "EnableRotation": true,
+  "EnableSizeRotation": true,
   "RotationSize": 10,
   "EnableHealthMonitoring": true,
   "HeartbeatInterval": 30,

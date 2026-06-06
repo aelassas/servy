@@ -1,7 +1,5 @@
 from datetime import datetime
-import time
 import sys
-import io
 import logging
 import os
 

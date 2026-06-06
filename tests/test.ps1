@@ -65,13 +65,15 @@ foreach ($Proj in $TestProjects) {
         exit 1
     }
 
-    Write-Host "Running tests for $($Proj)..."
+Write-Host "Running tests for $($Proj)..."
     dotnet test $Proj `
         --configuration Debug `
         --collect:"XPlat Code Coverage" `
         --results-directory $TestResultsDir `
-        -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura `
-           DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/obj/**/*"
+        -- `
+        DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura `
+        DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="[*.Design]*,**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/obj/**/*" `
+        DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeProperties="True"
     if ($LASTEXITCODE -ne 0) { Write-Error "dotnet test failed for $Proj"; exit $LASTEXITCODE }
 }
 
