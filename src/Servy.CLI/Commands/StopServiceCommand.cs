@@ -1,9 +1,6 @@
-﻿using Servy.CLI.Helpers;
-using Servy.CLI.Models;
+﻿using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
-using Servy.Core.Logging;
-using Servy.Core.Security;
 using Servy.Core.Services;
 
 namespace Servy.CLI.Commands
@@ -35,35 +32,15 @@ namespace Servy.CLI.Commands
             var action = $"stop service '{opts.ServiceName}'";
             var suggestion = "Ensure you have Administrator privileges. If the service is unresponsive, you may need to terminate the process manually via Task Manager.";
 
-            return await ExecuteWithHandlingAsync("stop", action, suggestion, async () =>
-            {
-                // Pre-flight elevation check
-                SecurityHelper.EnsureAdministrator();
-
-                if (string.IsNullOrWhiteSpace(opts.ServiceName))
-                    return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
-
-                var exists = _serviceManager.IsServiceInstalled(opts.ServiceName, cancellationToken: cancellationToken);
-                if (!exists)
-                {
-                    return CommandResult.Fail(Strings.Msg_ServiceNotFound);
-                }
-
-                var res = await _serviceManager.StopServiceAsync(opts.ServiceName, cancellationToken: cancellationToken);
-                if (res.IsSuccess)
-                {
-                    // Localize the message and include the service name for clarity
-                    var successMsg = string.Format(Strings.Msg_StopSuccess, opts.ServiceName);
-
-                    Logger.Info(successMsg);
-                    return CommandResult.Ok(successMsg);
-                }
-                else
-                {
-                    Logger.Error(res.ErrorMessage);
-                    return res.ToFailure();
-                }
-            });
+            return await ExecuteServiceOperationAsync(
+                commandName: "stop",
+                action: action,
+                suggestion: suggestion,
+                serviceName: opts.ServiceName,
+                serviceManager: _serviceManager,
+                operation: (token) => _serviceManager.StopServiceAsync(opts.ServiceName, cancellationToken: token),
+                successMessageFormatter: (name) => string.Format(Strings.Msg_StopSuccess, name),
+                cancellationToken: cancellationToken);
         }
     }
 }

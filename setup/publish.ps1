@@ -1,15 +1,12 @@
 #requires -Version 5.0
 <#
 .SYNOPSIS
-    Main build script for generating Servy installers (self-contained and optional framework-dependent).
+    Main build script for generating the Servy self-contained installer.
 
 .DESCRIPTION
     This script orchestrates the build process for Servy by invoking the internal
     publish script:
         - publish-sc.ps1   (self-contained bundle)
-
-    It ensures the build environment is prepared and passes versioning and
-    framework parameters to child scripts.
 
 .REQUIREMENTS
     1. MSBuild must be available in PATH.
@@ -23,7 +20,7 @@
     The Servy version being packaged.
 
 .EXAMPLE
-    PS> .\publish.ps1 -Tfm "net10.0-windows" -Version "8.4" -IncludeFrameworkDependent
+    PS> .\publish.ps1 -Tfm "net10.0-windows" -Version "8.5"
 
 .NOTES
     This script can be run from any working directory. It calculates elapsed time

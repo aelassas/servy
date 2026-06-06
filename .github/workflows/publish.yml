@@ -62,7 +62,7 @@ jobs:
           fetch-depth: 0  # Required for provenance
 
       # -----------------------------------------------------
-      # Extract Version from setup/publish.ps1
+      # Extract Version from setup/build-config.ps1
       # -----------------------------------------------------
       - name: Get version from build-config.ps1
         shell: pwsh

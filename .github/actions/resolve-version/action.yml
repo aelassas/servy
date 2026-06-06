@@ -1,0 +1,80 @@
+# =========================================================================
+# GitHub Actions Composite Action - Resolve Version
+# -------------------------------------------------------------------------
+# Deduplicates and centralizes the tag-resolution and semantic version
+# parsing logic across all automated release distribution paths.
+# Outputs standardized TAG and VERSION environment metrics.
+# =========================================================================
+
+name: 'Resolve Version'
+description: 'Centralizes tag lookup and extracts semantic version data'
+
+inputs:
+  manual_tag:
+    description: 'Manual trigger tag input from workflow_dispatch context'
+    required: false
+    default: ''
+  release_tag:
+    description: 'Automated workflow release event tag fallback name reference'
+    required: false
+    default: ''
+
+outputs:
+  tag:
+    description: 'Resolved source control reference tag matching target rules'
+    value: ${{ steps.resolve.outputs.tag }}
+  version:
+    description: 'Clean semantic version number string stripped of leading prefixes'
+    value: ${{ steps.resolve.outputs.version }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Resolve Tag and Strip Prefix
+      id: resolve
+      shell: pwsh
+      env:
+        INPUT_MANUAL_TAG: ${{ inputs.manual_tag }}
+        INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        $tag = $null
+
+        if ($env:INPUT_MANUAL_TAG -and $env:INPUT_MANUAL_TAG -ne '') {
+            $tag = $env:INPUT_MANUAL_TAG                         # Manual trigger input
+        } elseif ($env:INPUT_RELEASE_TAG -and $env:INPUT_RELEASE_TAG -ne '') {
+            $tag = $env:INPUT_RELEASE_TAG                        # Release trigger
+        } elseif ($env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME -ne '') {
+            $tag = $env:GITHUB_REF_NAME                          # Fallback for tag push
+        } else {
+            # Fallback block integration matching bump-version requirements
+            Write-Host "No event tag found. Querying GitHub API for latest release..."
+            $headers = @{ Authorization = "Bearer $env:GITHUB_TOKEN" }
+            $url = "https://api.github.com/repos/${{ github.repository }}/releases/latest"
+            try {
+                $response = Invoke-RestMethod -Uri $url -Headers $headers
+                if ($response.tag_name) {
+                    $tag = $response.tag_name
+                }
+            }
+            catch {
+                Write-Warning "Failed to fetch latest release via API context: $_"
+            }
+        }
+
+        if (-not $tag) {
+            Write-Error "No tag provided or fallback found. Set tag via input, trigger a release, or push a tag."
+            exit 1
+        }
+
+        $version = $tag.TrimStart("v")         # e.g. v1.1 -> 1.1
+        Write-Host "Using resolved tag: $tag"
+        Write-Host "Using computed version: $version"
+
+        # Populate outputs for workflow consumption
+        "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+        # Populate GITHUB_ENV directly to match legacy backwards compatibility models
+        "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append

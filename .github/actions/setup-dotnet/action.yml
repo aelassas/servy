@@ -68,7 +68,7 @@ runs:
         # Ensure the installation directory exists
         New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 
-        # Using -Version instead of -Channel to ensure reproducibility.
+        # Using -JsonFile (global.json) instead of -Channel to ensure reproducibility
         # Instructs the script to parse global.json and install whatever is in there
         powershell -ExecutionPolicy Bypass -File ./dotnet-install.ps1 `
           -JsonFile "$env:GITHUB_WORKSPACE\global.json" `

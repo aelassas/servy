@@ -4,11 +4,11 @@
 # Automates the update of Servy’s Scoop manifest.
 # When a new release is published (or triggered
 # manually), this workflow:
-#    • Downloads the latest installer
-#    • Computes its SHA256 hash
-#    • Updates the manifest in `aelassas/scoop-bucket`
-#    • Optionally creates a PR to update the manifest
-#      in `ScoopInstaller/Extras`
+#     • Downloads the latest installer
+#     • Computes its SHA256 hash
+#     • Updates the manifest in `aelassas/scoop-bucket`
+#     • Optionally creates a PR to update the manifest
+#       in `ScoopInstaller/Extras`
 # ===========================================
 
 name: scoop
@@ -38,7 +38,7 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write # Needed here to push commits back
-    
+     
     env:
         RUN_EXTRAS_PR: ${{ github.event.inputs.run_extras_pr || 'false' }}
 
@@ -47,28 +47,10 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4.3.1
 
       - name: Set version vars
-        shell: pwsh
-        env:
-          MANUAL_TAG: ${{ github.event.inputs.tag }} # pass input to env
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          if ($env:MANUAL_TAG -and $env:MANUAL_TAG -ne '') {
-              $tag = $env:MANUAL_TAG                       # Manual trigger input
-          } elseif ($env:RELEASE_TAG -and $env:RELEASE_TAG -ne '') {
-              $tag = $env:RELEASE_TAG                      # Release trigger
-          } elseif ($env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME -ne '') {
-              $tag = $env:GITHUB_REF_NAME                  # Fallback for tag push
-          } else {
-              Write-Error "No tag provided. Set tag via workflow_dispatch input or trigger a release."
-              exit 1
-          }
-
-          $version = $tag.TrimStart("v")         # e.g. v1.1 -> 1.1
-          Write-Host "Using tag: $tag"
-          Write-Host "Using version: $version"
-
-          "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        uses: ./.github/actions/resolve-version
+        with:
+          manual_tag: ${{ github.event.inputs.tag }}
+          release_tag: ${{ github.event.release.tag_name }}
 
       - name: Download installer
         shell: pwsh
@@ -96,12 +78,12 @@ jobs:
           function Write-ScoopManifest {
               param($jsonObj, $jsonPath)
               if ($null -eq $jsonObj) { throw "jsonObj cannot be null" }
-              
+               
               $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
-              
+               
               # Split lines correctly using regex
               $lines = [regex]::Split($jsonString, "\r?\n")
-              
+               
               # Normalize indentation explicitly: calculate the nesting level based on 
               # Windows PowerShell 5.1's 2-space baseline and map it securely to a 4-space indent.
               $lines = $lines | ForEach-Object {
@@ -111,10 +93,10 @@ jobs:
                       ' ' * (4 * $level)
                   })
               }
-              
+               
               # Join lines back together with a standardized Unix trailing newline
               $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
-              
+               
               # Write to file using UTF8
               [System.IO.File]::WriteAllText($jsonPath, $jsonString, [System.Text.Encoding]::UTF8)
               Write-Host "Successfully wrote manifest to $jsonPath"
@@ -147,7 +129,7 @@ jobs:
           if ((git status --porcelain) -ne '') {
             git add $manifestPath
             git commit -m "chore: update setup/scoop/servy.json to version $env:VERSION"
-            
+             
             # Explicitly target the main branch
             git pull origin main
             if ($LASTEXITCODE -ne 0) { throw "git pull failed (exit $LASTEXITCODE)" }
@@ -167,15 +149,15 @@ jobs:
           . "$env:TEMP\ScoopUtils.ps1"
           git clone https://github.com/aelassas/scoop-bucket.git scoop-bucket
           Set-Location scoop-bucket
-          
+           
           git config url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
-          
+           
           $manifestPath = "servy.json"
           $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
           $jsonObj.version = $env:VERSION
           $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-x64-installer.exe"
           $jsonObj.architecture.'64bit'.hash = $env:HASH
-          
+           
           Write-ScoopManifest -jsonObj $jsonObj -jsonPath (Join-Path (Get-Location) $manifestPath)
 
           git config user.name "github-actions[bot]"
@@ -191,12 +173,12 @@ jobs:
             Write-Host "No changes to commit"
           }
 
-      - name: Update servy.json in ScoopInstaller/Extras and prepare PR branch
+      - name: Update servy.json in aelassas/Extras and prepare PR branch
         if: env.RUN_EXTRAS_PR == 'true'
         shell: pwsh
         env:
-          GH_PAT: ${{ secrets.PAT }}    # Used for Git URL injection
-          GH_TOKEN: ${{ secrets.PAT }}  # Used for GH CLI authentication
+          GH_PAT: ${{ secrets.PAT }}    // Used for Git URL injection
+          GH_TOKEN: ${{ secrets.PAT }}  // Used for GH CLI authentication
         run: |
           . "$env:TEMP\ScoopUtils.ps1"
           git clone https://github.com/aelassas/Extras.git extras
@@ -214,12 +196,12 @@ jobs:
           git remote add upstream https://github.com/ScoopInstaller/Extras.git
           git fetch upstream master
           git checkout -B master upstream/master
-          
+           
           if (git rev-parse --verify --quiet "refs/heads/$branchName" 2>$null) {
               git branch -D $branchName
           }
           git checkout -b $branchName
-          
+           
           $manifestPath = "bucket/servy.json"
           $fullPath = Join-Path (Get-Location) $manifestPath
           git config user.name "github-actions[bot]"
@@ -261,7 +243,7 @@ jobs:
               $jsonObj.architecture.'64bit'.hash = $env:HASH
 
               Write-ScoopManifest -jsonObj $jsonObj -jsonPath $fullPath
-          
+           
               if ((git status --porcelain) -ne '') {
                   git add $manifestPath
                   git commit -m "servy: Update to version $env:VERSION"
@@ -269,7 +251,7 @@ jobs:
           }
           git push origin $branchName --force-with-lease
           if ($LASTEXITCODE -ne 0) { throw "git push failed (exit $LASTEXITCODE)" }
-        
+         
       - name: Open Pull Request in ScoopInstaller/Extras
         if: env.RUN_EXTRAS_PR == 'true'
         shell: pwsh

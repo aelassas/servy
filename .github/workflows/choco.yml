@@ -32,34 +32,16 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write # Needed here to push commits back
-    
+     
     steps:
       - name: Checkout repo
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4.3.1
 
       - name: Set version vars
-        shell: pwsh
-        env:
-          MANUAL_TAG: ${{ github.event.inputs.tag }} # pass input to env
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          if ($env:MANUAL_TAG -and $env:MANUAL_TAG -ne '') {
-              $tag = $env:MANUAL_TAG                       # Manual trigger input
-          } elseif ($env:RELEASE_TAG -and $env:RELEASE_TAG -ne '') {
-              $tag = $env:RELEASE_TAG                      # Release trigger
-          } elseif ($env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME -ne '') {
-              $tag = $env:GITHUB_REF_NAME                  # Fallback for tag push
-          } else {
-              Write-Error "No tag provided. Set tag via workflow_dispatch input or trigger a release."
-              exit 1
-          }
-
-          $version = $tag.TrimStart("v")         # e.g. v1.1 -> 1.1
-          Write-Host "Using tag: $tag"
-          Write-Host "Using version: $version"
-
-          "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        uses: ./.github/actions/resolve-version
+        with:
+          manual_tag: ${{ github.event.inputs.tag }}
+          release_tag: ${{ github.event.release.tag_name }}
 
       - name: Download installer
         shell: pwsh
@@ -114,9 +96,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add setup/choco/servy/*
-          
+           
           # Check if there is actually anything to commit
-          if ($(git status --porcelain) -eq $null) {
+          if ((git status --porcelain) -ne '') {
               Write-Host "No changes to commit. Skipping push."
               exit 0
           }
@@ -134,9 +116,9 @@ jobs:
                   git merge  --abort 2>$null
 
                   Write-Host "Attempting to push (Attempt $($retryCount + 1))..."
-        
+         
                   # 2. Pull latest changes
-                  git pull --rebase=merges --autostash origin main
+                  git git pull --rebase=merges --autostash origin main
                   if ($LASTEXITCODE -ne 0) { 
                       throw "git pull failed with exit code $LASTEXITCODE" 
                   }

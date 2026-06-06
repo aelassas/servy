@@ -50,50 +50,21 @@ jobs:
               }
           }
           '@ | Out-File -FilePath "$env:RUNNER_TEMP\git-helpers.ps1" -Encoding utf8
-      # 2. Determine the tag/version to use, support multiple trigger sources
+      # 2. Determine the tag/version to use, support multiple trigger sources via composite action
       - name: Set version vars
+        id: resolve_vars
+        uses: ./.github/actions/resolve-version
+        with:
+          manual_tag: ${{ github.event.inputs.tag }}
+          release_tag: ${{ github.event.release.tag_name }}
+
+      # 2a. Calculate Next Target Minor Component Version
+      - name: Compute next semantic increment
         shell: pwsh
-        env:
-          MANUAL_TAG: ${{ github.event.inputs.tag }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |          
-          # Determine the tag to use
-          $tag = $null
-          
-          if ($env:MANUAL_TAG -and $env:MANUAL_TAG -ne '') {
-              # Manual trigger input
-              Write-Host "Using manual tag: $env:MANUAL_TAG"
-              $tag = $env:MANUAL_TAG
-          } else {
-              # Query GitHub API for latest release
-              Write-Host "Fetching latest release tag from GitHub API..."
-              $headers = @{ Authorization = "Bearer $env:GITHUB_TOKEN" }
-              $url = "https://api.github.com/repos/${{ github.repository }}/releases/latest"
-              try {
-                  $response = Invoke-RestMethod -Uri $url -Headers $headers
-                  if ($response.tag_name) {
-                      $tag = $response.tag_name
-                      Write-Host "Using latest release tag: $tag"
-                  }
-              }
-              catch {
-                  Write-Warning "Failed to fetch latest release: $_"
-              }
-              
-          }
-          
-          if (-not $tag) {
-              Write-Error "No tag could be determined."
-              exit 1
-          }
-          # Remove leading "v" if present
-          $version = $tag.TrimStart("v")
-          Write-Host "Using tag: $tag"
-          Write-Host "Current version: $version"
+        run: |
           # Calculate NEXT_VERSION: increment minor, roll over major if minor >= 9
           # Product follows decimal-point versioning, max 10 minor releases per major
-          $parts = $version.Split('.')
+          $parts = $env:VERSION.Split('.')
           $major = [int]$parts[0]
           $minor = [int]$parts[1]
           if ($minor -lt 9) {
@@ -103,11 +74,9 @@ jobs:
               $minor = 0
           }
           $next_version = "$major.$minor"
-          Write-Host "Next version: $next_version"
-          # Persist variables for later steps
-          "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "Next computed baseline deployment version: $next_version"
           "NEXT_VERSION=$next_version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       # 3. Bump version on main branch
       - name: Bump version on main branch
         shell: pwsh

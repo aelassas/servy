@@ -33,7 +33,7 @@ jobs:
       # Production LoC
       # ----------------------------
       - name: Create prod LoC badge
-        uses: shadowmoose/GHA-LoC-Badge@ccb1053d8fd9015ed6ab0753e85b63b1e9ec0650
+        uses: shadowmoose/GHA-LoC-Badge@8c8191e02ebe2e4b4764f4711228bddcaeb88f19 #v1.0.0
         id: loc_prod
         with:
           debug: true
@@ -47,7 +47,7 @@ jobs:
       # Tests LoC
       # ----------------------------
       - name: Create tests LoC badge
-        uses: shadowmoose/GHA-LoC-Badge@ccb1053d8fd9015ed6ab0753e85b63b1e9ec0650
+        uses: shadowmoose/GHA-LoC-Badge@8c8191e02ebe2e4b4764f4711228bddcaeb88f19 #v1.0.0
         id: loc_tests
         with:
           debug: true

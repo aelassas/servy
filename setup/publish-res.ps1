@@ -113,37 +113,6 @@ Write-Host "Copied $sourceExe -> $destExe"
 Copy-Item -Path (Join-Path $buildFolder $sourcePdb) -Destination (Join-Path $TargetResourcesFolder $destPdb) -Force
 Write-Host "Copied $sourcePdb -> $destPdb"
 
-<#
-Copy-Item -Path (Join-Path $buildFolder "Servy.Core.pdb") `
-          -Destination (Join-Path $TargetResourcesFolder "Servy.Core.pdb") -Force
-#>
-
-# ----------------------------------------------------------------------
-# Step 4 - Copy Servy.Infrastructure.pdb
-# ----------------------------------------------------------------------
-<#
-$InfraServiceProject = Join-Path $scriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
-$InfraSourcePath     = Join-Path $scriptDir "..\Servy.Infrastructure\bin\$Configuration\$Tfm\$Runtime\Servy.Infrastructure.pdb"
-$InfraDestPath       = Join-Path $TargetResourcesFolder "Servy.Infrastructure.pdb"
-
-dotnet publish $InfraServiceProject `
-    -c $Configuration `
-    -r $Runtime `
-    --self-contained false `
-    /p:TargetFramework=$Tfm `
-    /p:PublishSingleFile=false `
-    /p:IncludeAllContentForSelfExtract=false `
-    /p:PublishTrimmed=false
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "dotnet publish failed."
-    exit $LASTEXITCODE
-}
-
-Copy-Item -Path $InfraSourcePath  -Destination $InfraDestPath -Force
-Write-Host "Copied Servy.Infrastructure.pdb"
-#>
-
 # ---------------------------------------------------------------------------------
 # Done
 # ---------------------------------------------------------------------------------

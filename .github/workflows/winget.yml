@@ -23,7 +23,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Publish Servy to WinGet
-        uses: vedantmgoyal9/winget-releaser@7bd472be23763def6e16bd06cc8b1cdfab0e2fd5
+        uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e #v2
         with:
           identifier: aelassas.Servy
           token: ${{ secrets.WINGET_TOKEN }}

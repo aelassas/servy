@@ -1,10 +1,7 @@
-﻿using Servy.CLI.Helpers;
-using Servy.CLI.Models;
+﻿using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Enums;
-using Servy.Core.Logging;
-using Servy.Core.Security;
 using Servy.Core.Services;
 
 namespace Servy.CLI.Commands
@@ -36,42 +33,20 @@ namespace Servy.CLI.Commands
             var action = $"start service '{opts.ServiceName}'";
             var suggestion = "Ensure the service is installed, the executable path is valid, and the service account has 'Log On As Service' rights.";
 
-            return await ExecuteWithHandlingAsync("start",action, suggestion, async () =>
-            {
-                // Pre-flight elevation check
-                SecurityHelper.EnsureAdministrator();
-
-                if (string.IsNullOrWhiteSpace(opts.ServiceName))
-                    return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
-
-                var exists = _serviceManager.IsServiceInstalled(opts.ServiceName, cancellationToken: cancellationToken);
-                if (!exists)
+            return await ExecuteServiceOperationAsync(
+                commandName: "start",
+                action: action,
+                suggestion: suggestion,
+                serviceName: opts.ServiceName,
+                serviceManager: _serviceManager,
+                operation: (token) => _serviceManager.StartServiceAsync(opts.ServiceName, cancellationToken: token),
+                successMessageFormatter: (name) => string.Format(Strings.Msg_StartSuccess, name),
+                preCheck: (token) =>
                 {
-                    return CommandResult.Fail(Strings.Msg_ServiceNotFound);
-                }
-
-                var startupType = _serviceManager.GetServiceStartupType(opts.ServiceName, cancellationToken: cancellationToken);
-                if (startupType == ServiceStartType.Disabled)
-                {
-                    return CommandResult.Fail(Strings.Msg_ServiceDisabledError);
-                }
-
-                var res = await _serviceManager.StartServiceAsync(opts.ServiceName, cancellationToken: cancellationToken);
-                if (res.IsSuccess)
-                {
-                    // Use the localized resource and include the service name
-                    var successMsg = string.Format(Strings.Msg_StartSuccess, opts.ServiceName);
-
-                    Logger.Info(successMsg);
-                    return CommandResult.Ok(successMsg);
-                }
-                else
-                {
-                    Logger.Error(res.ErrorMessage);
-                    return res.ToFailure();
-                }
-
-            });
+                    var startupType = _serviceManager.GetServiceStartupType(opts.ServiceName, cancellationToken: token);
+                    return startupType == ServiceStartType.Disabled ? CommandResult.Fail(Strings.Msg_ServiceDisabledError) : null;
+                },
+                cancellationToken: cancellationToken);
         }
     }
 }
