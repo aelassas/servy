@@ -620,5 +620,356 @@ namespace Servy.UnitTests.Services
         }
 
         #endregion
+
+        #region UninstallService Branch and Catch Block Tests
+
+        [Fact]
+        public async Task UninstallService_ServiceNotInstalled_ReturnsFalseAndDisplaysError()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var serviceName = "MissingUninstallService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
+
+            // Act
+            var result = await sut.UninstallService(serviceName, CancellationToken.None);
+
+            // Assert
+            Assert.False(result);
+            _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_ServiceNotFound, AppConfig.Caption), Times.Once);
+            _serviceManagerMock.Verify(m => m.UninstallServiceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task UninstallService_ManagerReturnsFailure_ReturnsFalseAndDisplaysErrorMessage()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var serviceName = "StuckService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Failure("Service marked for deletion."));
+
+            // Act
+            var result = await sut.UninstallService(serviceName, CancellationToken.None);
+
+            // Assert
+            Assert.False(result);
+            _messageBoxService.Verify(m => m.ShowErrorAsync("Service marked for deletion.", AppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
+        public async Task UninstallService_UnauthorizedAccessException_DisplaysAdminRightsRequired()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var serviceName = "SecureSystemService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new UnauthorizedAccessException());
+
+            // Act
+            var result = await sut.UninstallService(serviceName, CancellationToken.None);
+
+            // Assert
+            Assert.False(result);
+            _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_AdminRightsRequired, AppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
+        public async Task UninstallService_GeneralException_DisplaysUnexpectedErrorAndReturnsFalse()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var serviceName = "CrashingUninstallService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("WMI Registry Failure"));
+
+            // Act
+            var result = await sut.UninstallService(serviceName, CancellationToken.None);
+
+            // Assert
+            Assert.False(result);
+            _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, AppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
+        public async Task UninstallService_SuccessfulRemoval_DisplaysSuccessMessageBoxAndReturnsTrue()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var serviceName = "ValidInstalledService";
+
+            // 1. Pass the IsServiceNameValid gate implicitly by using a standard name string
+            // 2. Pass the IsServiceInstalled check gate
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>()))
+                .Returns(true);
+
+            // 3. Force UninstallServiceAsync to return a successful operational track result
+            _serviceManagerMock.Setup(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.UninstallService(serviceName, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+
+            // Verify that the success info dialog box line was executed with the expected arguments
+            _messageBoxService.Verify(m =>
+                m.ShowInfoAsync(Resources.Strings.Msg_ServiceRemoved, AppConfig.Caption),
+                Times.Once);
+        }
+
+        #endregion
+
+        #region RestartService Branch and Catch Block Tests
+
+        [Fact]
+        public async Task RestartService_SuccessfulExecution_DisplaysInfoAndReturnsTrue()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var serviceName = "HealthyService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Automatic);
+            _serviceManagerMock.Setup(m => m.RestartServiceAsync(serviceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.RestartService(serviceName, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            _messageBoxService.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceRestarted, AppConfig.Caption), Times.Once);
+        }
+
+        [Fact]
+        public async Task RestartService_ServiceDisabled_AbortsWithDisabledError()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var serviceName = "DisabledRestartService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Disabled);
+
+            // Act
+            var result = await sut.RestartService(serviceName, CancellationToken.None);
+
+            // Assert
+            Assert.False(result);
+            _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_ServiceDisabledError, AppConfig.Caption), Times.Once);
+            _serviceManagerMock.Verify(m => m.RestartServiceAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        #endregion
+
+        #region ExportJsonConfig Branch and Catch Block Tests
+
+        [Fact]
+        public async Task ExportJsonConfig_UserCancelsFileDialog_ExitsEarlyWithoutProcessing()
+        {
+            // Arrange
+            var sut = CreateSut();
+            _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(string.Empty);
+
+            // Act
+            await sut.ExportJsonConfig("secretPassword");
+
+            // Assert
+            _modelToServiceDtoMock.Verify(m => m(), Times.Never);
+        }
+
+        [Fact]
+        public async Task ExportJsonConfig_ValidationError_AbortsExportFileWriting()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
+            _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(path);
+
+            var dto = new ServiceDto { Name = "BadJsonExport" };
+            _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "secretPassword")).ReturnsAsync(false);
+
+            // Act
+            await sut.ExportJsonConfig("secretPassword");
+
+            // Assert
+            Assert.False(File.Exists(path));
+            _messageBoxService.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ExportJsonConfig_SerializationExceptionThrown_CatchCatchesAndShowsUnexpectedError()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
+            _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(path);
+
+            var dto = new ServiceDto { Name = "CrashJsonExport" };
+            _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "secretPassword")).ReturnsAsync(true);
+
+            // Force evaluation down the catch lane by breaking dependencies on data extraction execution
+            _modelToServiceDtoMock.Setup(m => m()).Throws(new UnauthorizedAccessException("I/O Lock Encountered"));
+
+            // Act
+            await sut.ExportJsonConfig("secretPassword");
+
+            // Assert
+            _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, AppConfig.Caption), Times.Once);
+        }
+
+        #endregion
+
+        #region ExportConfigAsync Delegate Invocation Tests
+
+        [Fact]
+        public async Task ExportConfigAsync_ValidModel_ExecutesExportActionDelegate()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
+            _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(path);
+
+            var dto = new ServiceDto { Name = "DelegateTestService" };
+            _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
+
+            _serviceConfigurationValidator.Setup(d => d.ValidateAsync(
+                It.IsAny<ServiceDto>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()))
+                .ReturnsAsync(true);
+
+            bool delegateWasInvoked = false;
+            ServiceDto capturedDto = null;
+            string capturedPath = null;
+
+            // Define an explicit action spy to pass into the system pipeline
+            Action<ServiceDto, string> spyExportAction = (passedDto, passedPath) =>
+            {
+                delegateWasInvoked = true;
+                capturedDto = passedDto;
+                capturedPath = passedPath;
+            };
+
+            // Act
+            // Accessing the private ExportConfigAsync method via reflection or testing it 
+            // through the public wrapper methods using a reflection invoke on the wrapper
+            var privateMethod = typeof(ServiceCommands).GetMethod("ExportConfigAsync",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            var task = (Task)privateMethod.Invoke(sut, new object[]
+            {
+                "password",
+                new Func<string>(() => path),
+                spyExportAction,
+                "JSON",
+                "Success"
+            });
+
+            await task;
+
+            // Assert
+            Assert.True(delegateWasInvoked, "The exportAction delegate parameter was never executed.");
+            Assert.Equal(dto, capturedDto);
+            Assert.Equal(path, capturedPath);
+        }
+
+        #endregion
+
+        #region ImportConfigAsync Target Binding Tests
+
+        [Fact]
+        public async Task ImportXmlConfig_AllGatesPassed_InvokesBindServiceDtoToModel()
+        {
+            // Arrange
+            var expectedDto = new ServiceDto { Name = "XmlBindService", ExecutablePath = @"C:\Windows\System32\cmd.exe" };
+
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.xml");
+            File.WriteAllText(path, "<service></service>"); // Setup local physical file context to satisfy Guard
+
+            _dialogServiceMock.Setup(d => d.OpenXml()).Returns(path);
+
+            string validationError = null;
+            _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out validationError)).Returns(true);
+            _xmlServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(expectedDto);
+
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(expectedDto, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(true);
+
+            bool bindActionWasExecuted = false;
+            ServiceDto boundDtoResult = null;
+
+            // Instantiating the SUT with our tracking verification callback action stub
+            var sut = CreateSut(dto =>
+            {
+                bindActionWasExecuted = true;
+                boundDtoResult = dto;
+            });
+
+            try
+            {
+                // Act
+                await sut.ImportXmlConfig();
+
+                // Assert
+                Assert.True(bindActionWasExecuted, "The _bindServiceDtoToModel(dto) logic line was not executed.");
+                Assert.NotNull(boundDtoResult);
+                Assert.Equal("XmlBindService", boundDtoResult.Name);
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public async Task ImportJsonConfig_AllGatesPassed_InvokesBindServiceDtoToModel()
+        {
+            // Arrange
+            var expectedDto = new ServiceDto { Name = "JsonBindService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
+
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
+            File.WriteAllText(path, "{}"); // Setup local physical file context to satisfy Guard
+
+            _dialogServiceMock.Setup(d => d.OpenJson()).Returns(path);
+
+            string validationError = null;
+            _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out validationError)).Returns(true);
+            _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(expectedDto);
+
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(expectedDto, It.IsAny<string>(), It.IsAny<string>()))
+                .ReturnsAsync(true);
+
+            bool bindActionWasExecuted = false;
+            ServiceDto boundDtoResult = null;
+
+            var sut = CreateSut(dto =>
+            {
+                bindActionWasExecuted = true;
+                boundDtoResult = dto;
+            });
+
+            try
+            {
+                // Act
+                await sut.ImportJsonConfig();
+
+                // Assert
+                Assert.True(bindActionWasExecuted, "The _bindServiceDtoToModel(dto) logic line was not executed.");
+                Assert.NotNull(boundDtoResult);
+                Assert.Equal("JsonBindService", boundDtoResult.Name);
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        #endregion
     }
 }
