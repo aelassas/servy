@@ -56,7 +56,6 @@ jobs:
         uses: ./.github/actions/resolve-version
         with:
           manual_tag: ${{ github.event.inputs.tag }}
-          release_tag: ${{ github.event.release.tag_name }}
 
       # 2a. Calculate Next Target Minor Component Version
       - name: Compute next semantic increment

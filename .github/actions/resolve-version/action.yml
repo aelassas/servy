@@ -11,7 +11,7 @@ description: 'Centralizes tag lookup and extracts semantic version data'
 
 inputs:
   manual_tag:
-    description: 'Manual trigger tag input from workflow_dispatch context'
+    description: 'Manual trigger tag input from workflow_dispatch context (e.g. v8.4)'
     required: false
     default: ''
   release_tag:
@@ -44,7 +44,7 @@ runs:
             $tag = $env:INPUT_MANUAL_TAG                         # Manual trigger input
         } elseif ($env:INPUT_RELEASE_TAG -and $env:INPUT_RELEASE_TAG -ne '') {
             $tag = $env:INPUT_RELEASE_TAG                        # Release trigger
-        } elseif ($env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME -ne '') {
+        } elseif ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME -ne '') {
             $tag = $env:GITHUB_REF_NAME                          # Fallback for tag push
         } else {
             # Fallback block integration matching bump-version requirements
