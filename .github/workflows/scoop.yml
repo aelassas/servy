@@ -177,8 +177,8 @@ jobs:
         if: env.RUN_EXTRAS_PR == 'true'
         shell: pwsh
         env:
-          GH_PAT: ${{ secrets.PAT }}    // Used for Git URL injection
-          GH_TOKEN: ${{ secrets.PAT }}  // Used for GH CLI authentication
+          GH_PAT: ${{ secrets.PAT }}    # Used for Git URL injection
+          GH_TOKEN: ${{ secrets.PAT }}  # Used for GH CLI authentication
         run: |
           . "$env:TEMP\ScoopUtils.ps1"
           git clone https://github.com/aelassas/Extras.git extras
