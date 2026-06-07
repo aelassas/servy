@@ -2003,7 +2003,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void GetAllServices_ShouldFallbackToAutomatic_WhenStartTypeThrows()
+        public void GetAllServices_ShouldFallbackToUnknown_WhenStartTypeThrows()
         {
             // Arrange
             var mockSvc = new Mock<IServiceControllerWrapper>();

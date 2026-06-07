@@ -112,7 +112,7 @@ namespace Servy.UI.Bootstrapping.Tests
         {
             // Execute entirely within the persistent async STA context pump thread 
             // to ensure internal thread safety boundaries match Application.Current initialization rules.
-            await Helper.RunInSTAContext(async () =>
+            await Helper.RunOnSTA(async () =>
             {
                 var app = SecureCreateApplication();
                 var bootstrapper = new AppBootstrapper(_options, _mockProcessKiller.Object);

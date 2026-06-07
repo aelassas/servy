@@ -1,14 +1,13 @@
 ﻿using Servy.Core.Native;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
-using System.Windows;
 using System.Windows.Threading;
 
 namespace Servy.Testing
 {
     public class Helper
     {
-        public static void RunInSTA(Action action)
+        public static void RunOnSTA(Action action, bool createApp = false)
         {
             Exception? threadException = null;
             var thread = new Thread(() =>
@@ -33,7 +32,7 @@ namespace Servy.Testing
             }
         }
 
-        public static async Task RunInSTAContext(Func<Task> action)
+        public static async Task RunOnSTA(Func<Task> action, bool createApp = false)
         {
             var tcs = new TaskCompletionSource<bool>();
             var thread = new Thread(() =>

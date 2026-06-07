@@ -34,7 +34,7 @@ namespace Servy.Core.UnitTests.Services
         #region GetServices Tests
 
         [Fact]
-        public void GetServices_ReturnsEnumerable_AndDisposesControllers()
+        public void GetServices_ReturnsEnumerableOfWindowsServiceInfo()
         {
             // Act
             IEnumerable<WindowsServiceInfo> services = _api.GetServices();
@@ -42,18 +42,16 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.NotNull(services);
 
-            // Verify we can iterate the collection. 
-            // This also verifies the 'finally' block in the source code executed
-            // (if it hadn't, subsequent attempts to interact with ServiceControllers would throw).
+            // Materialize the collection to assert basic hydration
             var serviceList = services.ToList();
 
             // Basic sanity check: Windows should always have at least one service 
-            // (like "RpcSs" or "WinDefend")
             Assert.NotEmpty(serviceList);
             Assert.All(serviceList, s =>
             {
-                Assert.NotNull(s.ServiceName);
-                Assert.NotNull(s.DisplayName);
+                // Asserting against string properties only validates mapping accuracy, not handle tracking
+                Assert.False(string.IsNullOrWhiteSpace(s.ServiceName), "Service name was omitted or whitespace.");
+                Assert.False(string.IsNullOrWhiteSpace(s.DisplayName), "Display name was omitted or whitespace.");
             });
         }
 

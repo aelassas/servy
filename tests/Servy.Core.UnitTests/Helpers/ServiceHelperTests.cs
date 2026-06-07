@@ -111,5 +111,103 @@ namespace Servy.Core.UnitTests.Helpers
             // Assert
             Assert.Equal(expected, actual);
         }
+
+        [Theory]
+        [InlineData(30, 10, 0, 55)]  // attempts = 1 -> baseline(30) + buffer(15) + prelaunch(10*1) + backoff(0)
+        [InlineData(30, 10, 1, 66)]  // attempts = 2 -> baseline(30) + buffer(15) + prelaunch(10*2) + backoff(1)
+        [InlineData(30, 10, 2, 78)]  // attempts = 3 -> baseline(30) + buffer(15) + prelaunch(10*3) + backoff(1 + 2 = 3)
+        public void CalculateStartTimeout_WithRetryAttempts_ScalesPreLaunchAndAddsExponentialBackoff(
+            int? configuredTimeout,
+            int preLaunchTimeoutSeconds,
+            int preLaunchRetryAttempts,
+            int expectedTimeout)
+        {
+            // Act
+            int actualTimeout = ServiceHelper.CalculateStartTimeout(
+                configuredTimeout,
+                preLaunchTimeoutSeconds,
+                preLaunchRetryAttempts);
+
+            // Assert
+            Assert.Equal(expectedTimeout, actualTimeout);
+        }
+
+        [Fact]
+        public void CalculateStartTimeout_BackoffReachesMaxDelayLimit_CapsDelayValuesCorrectly()
+        {
+            // Arrange
+            // High attempt count forces the linear multiplier backoff calculation logic (i * InitialDelayMs) 
+            // to exceed the configured maximum ceiling limits specified inside AppConfig.
+            int preLaunchTimeout = 5;
+            int highRetryAttempts = 20;
+
+            int baseFloor = AppConfig.DefaultServiceStartTimeoutSeconds; // 30
+            int buffer = AppConfig.ScmTimeoutBufferSeconds;              // 7
+            int maxBackoffCapPerIteration = AppConfig.PreLaunchRetryMaxDelayMs / 1000; // e.g. 30000ms / 1000 = 30s
+
+            int attempts = highRetryAttempts + 1; // 21
+            int expectedTotalPreLaunch = attempts * preLaunchTimeout; // 21 * 5 = 105
+
+            // Manually evaluate the expected capped loop calculation to pin the assertion pattern matrix
+            int expectedTotalBackoff = 0;
+            for (int i = 1; i < attempts; i++)
+            {
+                expectedTotalBackoff += Math.Min(
+                    (i * AppConfig.PreLaunchRetryInitialDelayMs) / 1000,
+                    maxBackoffCapPerIteration);
+            }
+
+            int expectedTotalTimeout = baseFloor + buffer + expectedTotalPreLaunch + expectedTotalBackoff;
+
+            // Act
+            int actualTimeout = ServiceHelper.CalculateStartTimeout(
+                baseFloor,
+                preLaunchTimeout,
+                highRetryAttempts);
+
+            // Assert
+            Assert.Equal(expectedTotalTimeout, actualTimeout);
+
+            // Explicit sanity check proving that the backoff accumulation step is larger than 0 
+            // and has been clamped at several loop points safely
+            Assert.True(expectedTotalBackoff > maxBackoffCapPerIteration, "Test sequence misconfigured: backoff loop did not cross capping ceiling.");
+        }
+
+        [Fact]
+        public void CalculateStartTimeout_PreLaunchMultiplicationOverflow_ThrowsOverflowException()
+        {
+            // Arrange
+            // Passing adversarial bounds to force the internal 'checked()' statement context to trigger
+            int highTimeout = int.MaxValue / 2;
+            int highAttempts = 3;
+
+            // Act & Assert
+            // Verifies the overflow guard strategy to prevent unexpected truncation errors downstream
+            Assert.Throws<OverflowException>(() =>
+                ServiceHelper.CalculateStartTimeout(30, highTimeout, highAttempts));
+        }
+
+        [Fact]
+        public void CalculateStartTimeout_NegativeRetryAttempts_NormalizesToZeroAttempts()
+        {
+            // Arrange
+            int negativeAttempts = -5; // Malformed payload input parameters baseline check
+            int preLaunchTimeout = 10;
+
+            // Math.Max(0, -5) + 1 => 1 attempt execution block. 
+            // Expected: 30 (floor) + 7 (buffer) + 10 (prelaunch * 1) + 0 (backoff loop skips) = 47
+            int expectedTimeout = AppConfig.DefaultServiceStartTimeoutSeconds +
+                                  AppConfig.ScmTimeoutBufferSeconds +
+                                  preLaunchTimeout;
+
+            // Act
+            int actualTimeout = ServiceHelper.CalculateStartTimeout(
+                null,
+                preLaunchTimeout,
+                negativeAttempts);
+
+            // Assert
+            Assert.Equal(expectedTimeout, actualTimeout);
+        }
     }
 }

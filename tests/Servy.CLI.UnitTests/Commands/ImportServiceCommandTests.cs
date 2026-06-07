@@ -105,7 +105,9 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             var realPath = @"C:\Windows\System32\notepad.exe";
-            var path = Path.GetTempFileName() + ".json";
+
+            // Generate path without materializing an extra temp file
+            var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".json");
 
             var jsonContent = "{\"Name\":\"TestService\",\"ExecutablePath\":\"" + realPath.Replace("\\", "\\\\") + "\"}";
             File.WriteAllText(path, jsonContent);
@@ -133,6 +135,7 @@ namespace Servy.CLI.UnitTests.Commands
             }
             finally
             {
+                // Now only the intended file exists and is deleted
                 if (File.Exists(path)) File.Delete(path);
             }
         }

@@ -92,9 +92,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void SearchCommand_ShouldPopulateLogs_AndRaiseScrollEvent()
+        public async Task SearchCommand_ShouldPopulateLogs_AndRaiseScrollEvent()
         {
-            Helper.RunOnSTA(async () =>
+            await Helper.RunOnSTA(async () =>
             {
                 // Arrange
                 var entries = new List<ServyEventLogEntry>

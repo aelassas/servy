@@ -11,8 +11,11 @@ using Servy.Validators;
 
 namespace Servy.UnitTests.Services
 {
-    public class ServiceCommandsTests
+    public class ServiceCommandsTests:IDisposable
     {
+        private readonly string _wrapperPath = Core.Config.AppConfig.GetServyUIServicePath();
+        private bool _createdWrapperFile = false;
+
         private readonly Mock<IFileDialogService> _dialogServiceMock;
         private readonly Mock<IServiceManager> _serviceManagerMock;
         private readonly Mock<IMessageBoxService> _messageBoxService;
@@ -78,14 +81,23 @@ namespace Servy.UnitTests.Services
 
         private void SetupDummyWrapperExe()
         {
-            var wrapperPath = Core.Config.AppConfig.GetServyUIServicePath();
             try
             {
-                var dir = Path.GetDirectoryName(wrapperPath);
-                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                if (!File.Exists(wrapperPath)) File.WriteAllText(wrapperPath, "dummy-binary-payload");
+                var dir = Path.GetDirectoryName(_wrapperPath);
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+
+                if (!File.Exists(_wrapperPath))
+                {
+                    File.WriteAllText(_wrapperPath, "dummy-binary-payload");
+                    _createdWrapperFile = true; // Track that we actually created it
+                }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // Don't just catch; log it. Setup failure should be visible.
+                throw new InvalidOperationException($"Critical: Failed to setup dummy wrapper at {_wrapperPath}", ex);
+            }
         }
 
         private IMessageBoxService _messageBoxServiceObject => _messageBoxService.Object;
@@ -962,6 +974,19 @@ namespace Servy.UnitTests.Services
             finally
             {
                 if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        #endregion
+
+        #region Dispose implementation
+
+        public void Dispose()
+        {
+            if (_createdWrapperFile && File.Exists(_wrapperPath))
+            {
+                try { File.Delete(_wrapperPath); }
+                catch { /* Best effort cleanup */ }
             }
         }
 
