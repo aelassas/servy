@@ -12,26 +12,36 @@ namespace Servy.CLI.UnitTests.Helpers
     [Verb("testverb", HelpText = "Test verb")]
     internal class TestOptions { }
 
+    // FIX 1: Enforce sequential execution down a single thread apartment channel 
+    // across the entire suite run pass to stop cross-thread Console static corruption.
+    [Collection("SequentialConsoleTests")]
     public class HelperTests
     {
-        // Helper to capture Console output
+        // Thread lock gate safety valve
+        private static readonly object _consoleLock = new object();
+
+        // FIX 2: Consolidated, robust console capture mechanism with synchronized lock bounds
         private void RunTestWithConsoleCapture(Action testAction)
         {
-            using (var swOut = new StringWriter())
-            using (var swErr = new StringWriter())
+            lock (_consoleLock)
             {
                 var oldOut = Console.Out;
                 var oldErr = Console.Error;
-                try
+
+                using (var swOut = new StringWriter())
+                using (var swErr = new StringWriter())
                 {
                     Console.SetOut(swOut);
                     Console.SetError(swErr);
-                    testAction();
-                }
-                finally
-                {
-                    Console.SetOut(oldOut);
-                    Console.SetError(oldErr);
+                    try
+                    {
+                        testAction();
+                    }
+                    finally
+                    {
+                        Console.SetOut(oldOut);
+                        Console.SetError(oldErr);
+                    }
                 }
             }
         }
@@ -83,27 +93,21 @@ namespace Servy.CLI.UnitTests.Helpers
         [Fact]
         public async Task PrintAndReturnAsync_ReturnsExitCode()
         {
-            // Use local capture within the async method
-            using (var swOut = new StringWriter())
-            using (var swErr = new StringWriter())
-            {
-                var oldOut = Console.Out;
-                var oldErr = Console.Error;
-                Console.SetOut(swOut);
-                Console.SetError(swErr);
+            // FIX 3: Re-route through the thread-safe locked execution pipeline sequence 
+            // by calling the wrapped delegate synchronously within the apartment lock state.
+            int exitCode = -1;
 
-                try
-                {
-                    var task = Task.FromResult(CommandResult.Ok("Async"));
-                    int exitCode = await Helper.PrintAndReturnAsync(task);
-                    Assert.Equal(0, exitCode);
-                }
-                finally
-                {
-                    Console.SetOut(oldOut);
-                    Console.SetError(oldErr);
-                }
-            }
+            RunTestWithConsoleCapture(() =>
+            {
+                var task = Task.FromResult(CommandResult.Ok("Async"));
+
+                // Unroll the task value synchronously using GetAwaiter().GetResult() 
+                // since the stream context is fully bound inside the active sync lock.
+                exitCode = Helper.PrintAndReturnAsync(task).GetAwaiter().GetResult();
+            });
+
+            Assert.Equal(0, exitCode);
+            await Task.CompletedTask;
         }
 
         [Theory]

@@ -7,6 +7,7 @@ using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Services;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -108,7 +109,9 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             var realPath = @"C:\Windows\System32\notepad.exe";
-            var path = Path.GetTempFileName() + ".json";
+
+            // Generate path without materializing an extra temp file
+            var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".json");
 
             var jsonContent = "{\"Name\":\"TestService\",\"ExecutablePath\":\"" + realPath.Replace("\\", "\\\\") + "\"}";
             File.WriteAllText(path, jsonContent);
@@ -124,7 +127,7 @@ namespace Servy.CLI.UnitTests.Commands
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             // Act
-            var result = await _command.ExecuteAsync(opts);
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
             try
@@ -136,6 +139,7 @@ namespace Servy.CLI.UnitTests.Commands
             }
             finally
             {
+                // Now only the intended file exists and is deleted
                 if (File.Exists(path)) File.Delete(path);
             }
         }

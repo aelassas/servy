@@ -10,7 +10,7 @@ namespace Servy.Testing
 {
     public class Helper
     {
-        public static void RunInSTA(Action action)
+        public static void RunOnSTA(Action action)
         {
             Exception threadException = null;
             var thread = new Thread(() =>
@@ -35,7 +35,7 @@ namespace Servy.Testing
             }
         }
 
-        public static async Task RunInSTAContext(Func<Task> action)
+        public static async Task RunOnSTA(Func<Task> action)
         {
             var tcs = new TaskCompletionSource<bool>();
             var thread = new Thread(() =>

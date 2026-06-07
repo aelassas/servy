@@ -14,7 +14,7 @@ namespace Servy.UI.IntegrationTests.Helpers
         [Fact]
         public async Task GetVisualChild_NoChildren_ReturnsNull()
         {
-            await Helper.RunInSTAContext(async () =>
+            await Helper.RunOnSTA(async () =>
             {
                 // Branch: Loop i < GetChildrenCount (zero count)
                 var border = new Border();
@@ -31,7 +31,7 @@ namespace Servy.UI.IntegrationTests.Helpers
         [Fact]
         public async Task GetVisualChild_ImmediateChildFound_ReturnsChild()
         {
-            await Helper.RunInSTAContext(async () =>
+            await Helper.RunOnSTA(async () =>
             {
                 // Branch: if (child is T t) return t;
                 var grid = new Grid();
@@ -53,7 +53,7 @@ namespace Servy.UI.IntegrationTests.Helpers
         [Fact]
         public async Task GetVisualChild_DeepChildFound_ReturnsChild()
         {
-            await Helper.RunInSTAContext(async () =>
+            await Helper.RunOnSTA(async () =>
             {
                 // Branch: var res = GetVisualChild<T>(child); if (res != null) return res;
                 var grid = new Grid();

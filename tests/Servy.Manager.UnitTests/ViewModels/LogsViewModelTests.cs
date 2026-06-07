@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Servy.Manager.UnitTests.ViewModels
@@ -97,9 +98,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void SearchCommand_ShouldPopulateLogs_AndRaiseScrollEvent()
+        public async Task SearchCommand_ShouldPopulateLogs_AndRaiseScrollEvent()
         {
-            Helper.RunOnSTA(async () =>
+            await Helper.RunOnSTA(async () =>
             {
                 // Arrange
                 var entries = new List<ServyEventLogEntry>

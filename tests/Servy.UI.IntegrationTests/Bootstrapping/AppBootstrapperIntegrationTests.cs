@@ -97,7 +97,7 @@ namespace Servy.UI.Bootstrapping.Tests
         public async Task OnStartup_ValidEnvironment_ForcesSoftwareRenderingOnArg()
         {
             // Execute inside the managed thread context message loop to stay decoupled from external race states
-            await Helper.RunInSTAContext(async () =>
+            await Helper.RunOnSTA(async () =>
             {
                 var app = SecureCreateApplication();
                 var bootstrapper = new AppBootstrapper(_options, _mockProcessKiller.Object);

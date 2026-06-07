@@ -22,7 +22,7 @@ namespace Servy.UI.IntegrationTests.Services
         {
             // Note: In a CI environment, we cannot actually click "OK".
             // These tests verify that the Dispatcher logic initiates.
-            Helper.RunInSTA(async () =>
+            Helper.RunOnSTA((System.Action)(async () =>
             {
                 // We use a timeout or a mock-like approach because MessageBox.Show blocks.
                 // In a pure unit test, you would typically wrap MessageBox.Show in 
@@ -31,7 +31,7 @@ namespace Servy.UI.IntegrationTests.Services
 
                 Assert.NotNull(task);
                 // We do not await here in CI to avoid hanging the runner on a modal dialog.
-            });
+            }));
         }
 
         #endregion
@@ -43,7 +43,7 @@ namespace Servy.UI.IntegrationTests.Services
         {
             // This test covers the branch: return MessageBox.Show(...) == MessageBoxResult.Yes;
             // Since we can't click the button in CI, we verify the task creation.
-            Helper.RunInSTA(() =>
+            Helper.RunOnSTA(() =>
             {
                 var task = _service.ShowConfirmAsync("Confirm?", "Caption");
                 Assert.NotNull(task);

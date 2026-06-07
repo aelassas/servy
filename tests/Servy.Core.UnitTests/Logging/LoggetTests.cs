@@ -286,12 +286,21 @@ namespace Servy.Core.UnitTests.Logging
 
             // Assert
             string content = File.ReadAllText(_fullLogPath);
-            Assert.Contains("... [truncated]", content);
 
-            // Validate that we didn't leave a dangling high surrogate (\uD83D) at the truncation point.
-            // If the string was cleanly cut on a valid character boundary, it will decode without fallback errors.
-            bool hasDanglingSurrogate = content.Contains('\uD83D') && !content.Contains("😊");
-            Assert.False(hasDanglingSurrogate, "Truncation split a UTF-16 surrogate pair.");
+            const string truncationMarker = "... [truncated]";
+            Assert.Contains(truncationMarker, content);
+
+            // FIX: Isolate the exact boundary text immediately preceding the truncation marker
+            int cutIndex = content.IndexOf(truncationMarker, StringComparison.Ordinal);
+            string truncatedHead = content.Substring(0, cutIndex);
+
+            // Validate that the very last character before the truncation marker is NOT a high surrogate.
+            // In UTF-16 (C# strings), a high surrogate (\uD83D) must always be followed by a low surrogate (\uDE0A).
+            // If it's at the end of the string, it is unpaired and corrupted.
+            char boundaryChar = truncatedHead[truncatedHead.Length - 1];
+
+            Assert.False(char.IsHighSurrogate(boundaryChar),
+                "Regression: Truncation logic split a UTF-16 surrogate pair, leaving an orphaned high surrogate at the boundary.");
         }
 
         [Fact]

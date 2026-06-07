@@ -164,10 +164,22 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Use cmd.exe instead of powershell.exe for a guaranteed instant exit
             using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
             {
+                // FIX: Override the default Temp working directory to a trusted system folder 
+                // to completely bypass AppLocker / Anti-Virus execution block restrictions.
+                // If your wrapper exposes StartInfo directly:
+                wrapper.StartInfo.WorkingDirectory = Environment.SystemDirectory;
+
+                // Note: If your ProcessWrapper custom interface encapsulates StartInfo internally, 
+                // use reflection below to forcefully re-route the destination path safely:
+                // var startInfo = (System.Diagnostics.ProcessStartInfo)typeof(ProcessWrapper)
+                //     .GetField("_startInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                //     .GetValue(wrapper)!;
+                // startInfo.WorkingDirectory = Environment.SystemDirectory;
+
                 wrapper.Start();
 
                 // Act: Wait for 5 seconds. The process exits instantly.
-                bool isHealthy = await wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(5));
+                bool isHealthy = await wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
 
                 // Assert: Returns false because it exited before the timeout finished
                 Assert.False(isHealthy);

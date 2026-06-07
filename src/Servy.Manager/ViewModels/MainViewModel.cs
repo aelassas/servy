@@ -671,6 +671,11 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task OpenDocumentation(object parameter)
         {
+            if (_helpService == null)
+            {
+                Logger.Warn("Help service is not available.");
+                return;
+            }
             await _helpService.OpenDocumentation(AppConfig.Caption);
         }
 
@@ -679,6 +684,11 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task CheckUpdatesAsync(object parameter)
         {
+            if (_helpService == null)
+            {
+                Logger.Warn("Help service is not available.");
+                return;
+            }
             await _helpService.CheckUpdates(AppConfig.Caption);
         }
 
@@ -687,6 +697,11 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task OpenAboutDialog(object parameter)
         {
+            if (_helpService == null)
+            {
+                Logger.Warn("Help service is not available.");
+                return;
+            }
             await _helpService.OpenAboutDialog(
                string.Format(Strings.Text_About,
                Core.Config.AppConfig.Version,

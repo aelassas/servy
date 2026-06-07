@@ -21,7 +21,7 @@ namespace Servy.UI.IntegrationTests.Services
         public async Task YieldAsync_CompletesSuccessfully()
         {
             // Branch: Execute InvokeAsync at Background priority
-            await Helper.RunInSTAContext(async () =>
+            await Helper.RunOnSTA(async () =>
             {
                 var task = _uiDispatcher.YieldAsync();
 
@@ -40,7 +40,7 @@ namespace Servy.UI.IntegrationTests.Services
         [Fact]
         public async Task YieldAsync_EnsuresExecutionOrder()
         {
-            await Helper.RunInSTAContext(async () =>
+            await Helper.RunOnSTA(async () =>
             {
                 bool yieldCompleted = false;
 
