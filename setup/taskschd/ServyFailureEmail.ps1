@@ -167,7 +167,8 @@ function Send-NotificationEmail {
   $rawTimeout = ([string]$configRoot.TimeoutMs).Trim()
   
   # 2. Safe Port Resolution (Prevents [int]$null becoming 0)
-  $smtpPort = if ($rawPort    -match '^\d+$')          { [int]$rawPort }    else { 0 }
+  $portRef = 0
+  $smtpPort = if ([int]::TryParse($rawPort, [ref]$portRef)) { $portRef } else { 0 }
   
   # 3. Safe SSL Preference Resolution (Case-insensitive, defaults to true)
   # LOGIC: Casts to string and trims whitespace to prevent parsing errors. 
@@ -175,7 +176,8 @@ function Send-NotificationEmail {
   $useSsl = if ($rawUseSsl  -match '^(?i)(false|0)$') { $false }        else { $true }
 
   # 4. Safe Timeout Resolution (Defaults to 30000ms / 30s)
-  $timeout = if ($rawTimeout -match '^\d+$')           { [int]$rawTimeout } else { 30000 }
+  $timeoutRef = 0
+  $timeout = if ([int]::TryParse($rawTimeout, [ref]$timeoutRef)) { $timeoutRef } else { 30000 }
 
   $credPath = Join-Path $scriptDir "smtp-cred.xml"
   $emailRegex = '^[^@\s]+@[^@\s]+\.[^@\s]+$' # Definition of the single address format validation rule
