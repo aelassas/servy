@@ -98,7 +98,7 @@ jobs:
           git add setup/choco/servy/*
            
           # Check if there is actually anything to commit
-          if ((git status --porcelain) -ne '') {
+          if ((git status --porcelain) -eq '') {
               Write-Host "No changes to commit. Skipping push."
               exit 0
           }
@@ -118,7 +118,7 @@ jobs:
                   Write-Host "Attempting to push (Attempt $($retryCount + 1))..."
          
                   # 2. Pull latest changes
-                  git git pull --rebase=merges --autostash origin main
+                  git pull --rebase=merges --autostash origin main
                   if ($LASTEXITCODE -ne 0) { 
                       throw "git pull failed with exit code $LASTEXITCODE" 
                   }
