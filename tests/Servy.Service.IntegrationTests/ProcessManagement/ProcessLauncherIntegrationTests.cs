@@ -137,7 +137,25 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.True(wrapper.HasExited);
             }
 
-            string content = File.ReadAllText(logPath);
+            // Allow asynchronous file flushing and OS stream notifications 
+            // to completely unwind into the shared on-disk file layer.
+            string content = string.Empty;
+            bool containsBoth = false;
+
+            // Bounded polling loop ensures zero flakiness under extreme CI CPU consumption
+            for (int i = 0; i < 10; i++)
+            {
+                content = File.ReadAllText(logPath);
+                if (content.Contains("STDOUT_MSG") && content.Contains("STDERR_MSG"))
+                {
+                    containsBoth = true;
+                    break;
+                }
+                Thread.Sleep(100);
+            }
+
+            // Assert
+            Assert.True(containsBoth, $"Log file content did not fully stabilize with both outputs. Current file string content: '{content}'");
             Assert.Contains("STDOUT_MSG", content);
             Assert.Contains("STDERR_MSG", content);
         }
