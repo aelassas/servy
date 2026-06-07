@@ -154,11 +154,11 @@ jobs:
           $version = "$($env:INPUT_VERSION).0"
           
           $projects = @(
-              @{ Path = 'src\Servy\Servy.csproj';                 File = 'sbom-Servy.xml' }
-              @{ Path = 'src\Servy.CLI\Servy.CLI.csproj';         File = 'sbom-Servy.CLI.xml' }
-              @{ Path = 'src\Servy.Manager\Servy.Manager.csproj'; File = 'sbom-Servy.Manager.xml' }
+              @{ Path = 'src\Servy\Servy.csproj';                     File = 'sbom-Servy.xml' }
+              @{ Path = 'src\Servy.CLI\Servy.CLI.csproj';             File = 'sbom-Servy.CLI.xml' }
+              @{ Path = 'src\Servy.Manager\Servy.Manager.csproj';     File = 'sbom-Servy.Manager.xml' }
               @{ Path = 'src\Servy.Restarter\Servy.Restarter.csproj'; File = 'sbom-Servy.Restarter.xml' }
-              @{ Path = 'src\Servy.Service\Servy.Service.csproj'; File = 'sbom-Servy.Service.xml' }
+              @{ Path = 'src\Servy.Service\Servy.Service.csproj';     File = 'sbom-Servy.Service.xml' }
           )
           
           # Explicitly check for native command failures to prevent partial SBOMs
@@ -173,15 +173,8 @@ jobs:
           $outputFile = "servy-$($env:INPUT_VERSION)-net48-sbom.xml"
           
           # Merge into specified output file
-          cyclonedx merge --input-files `
-            sbom-Servy.xml `
-            sbom-Servy.CLI.xml `
-            sbom-Servy.Manager.xml `
-            sbom-Servy.Restarter.xml `
-            sbom-Servy.Service.xml `
-            --output-format xml `
-            --output-file "$outputFile"
-
+          $inputFiles = $projects | ForEach-Object { $_.File }
+          cyclonedx merge --input-files $inputFiles --output-file "$outputFile"
           if ($LASTEXITCODE -ne 0) {
               Write-Error "cyclonedx merge failed (exit $LASTEXITCODE)"
               exit $LASTEXITCODE
