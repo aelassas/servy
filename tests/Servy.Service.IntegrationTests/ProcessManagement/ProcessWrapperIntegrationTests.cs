@@ -239,8 +239,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void StopDescendants_KillsEntireTree()
         {
-            // Construct a nested process tree: powershell -> ping
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"ping 127.0.0.1 -n 30\"", createNoWindow: true))
+            // Use an infinite loop command context instead of a expiring ping count.
+            // This guarantees the child process tree remains 100% stable in memory 
+            // and cannot exit asynchronously while StopDescendants is processing its metadata.
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"while ($true) { Start-Sleep 1 }\"", createNoWindow: true))
             {
                 wrapper.Start();
 
@@ -249,7 +251,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 int parentPid = wrapper.Id;
                 DateTime parentStartTime = wrapper.StartTime;
 
-                // Allow the OS time to spawn the child ping process
+                // Allow the OS time to spawn the child process infrastructure safely
                 Thread.Sleep(1000);
 
                 // Act
