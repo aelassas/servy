@@ -219,12 +219,13 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Stop_ForceKillFallback_ReturnsFalse_AndLogs()
         {
-            // A ping process without a window ignores CloseMainWindow and often ignores Ctrl+C when running headless
-            using (var wrapper = CreateWrapper("ping.exe", "127.0.0.1 -n 20", createNoWindow: true))
+            // Use a powershell instance configured to explicitly trap and ignore the Ctrl+C signal.
+            // This guarantees the process will never exit gracefully, forcing the 50ms timeout to expire.
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"[Console]::TreatControlCAsInput = $true; while($true) { Start-Sleep 1 }\"", createNoWindow: true))
             {
                 wrapper.Start();
 
-                // Act: Provide a very short graceful timeout to force the kill fallback
+                // Act: Provide a very short graceful timeout. Powershell ignores the Ctrl+C, forcing the kill fallback.
                 bool? result = wrapper.Stop(50);
 
                 // Assert
