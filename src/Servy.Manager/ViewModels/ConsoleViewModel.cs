@@ -302,8 +302,8 @@ namespace Servy.Manager.ViewModels
         #region Private Methods
 
         /// <summary>
-        /// Waits for a specified delay (300ms) after the last keystroke before 
-        /// refreshing the visible lines collection to prevent UI jank.
+        /// Waits for the configured debounce delay (<see cref="IAppConfiguration.SearchDebounceDelayMs"/>)
+        /// after the last keystroke before refreshing the visible lines collection to prevent UI jank.
         /// </summary>
         private async Task ApplyFilterWithDebounceAsync()
         {
@@ -579,12 +579,6 @@ namespace Servy.Manager.ViewModels
         /// <param name="parameter">Unused command parameter.</param>
         private async Task CopyPidAsync(object? parameter)
         {
-            if (ServiceCommands == null)
-            {
-                Logger.Warn("ServiceCommands is null. Cannot copy PID.");
-                return;
-            }
-
             if (SelectedService?.Pid != null)
             {
                 var service = ServiceMapper.ToModel(SelectedService);

@@ -296,12 +296,6 @@ namespace Servy.Manager.ViewModels
         /// <param name="parameter">Unused command parameter.</param>
         private async Task CopyPidAsync(object? parameter)
         {
-            if (ServiceCommands == null)
-            {
-                Logger.Warn("ServiceCommands is null. Cannot copy PID.");
-                return;
-            }
-
             if (SelectedService?.Pid != null)
             {
                 var service = ServiceMapper.ToModel(SelectedService);

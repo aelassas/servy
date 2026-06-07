@@ -34,6 +34,12 @@ namespace Servy.Manager.Views
         /// </summary>
         private const double ScrollTolerance = 0.001;
 
+        /// <summary>Defines the pixel threshold from the bottom that forces an immediate resumption of tailing.</summary>
+        private const double ResumeAtBottomThresholdPx = 10;
+
+        /// <summary>Defines the pixel window from the bottom where auto-scrolling remains active.</summary>
+        private const double AutoFollowBandPx = 50;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ConsoleView"/> class.
         /// Sets up the data context change listener to wire up ViewModel events and manages selection changes.
@@ -106,7 +112,7 @@ namespace Servy.Manager.Views
                 if (sv == null) return;
 
                 // Check if we are at the bottom
-                bool isAtBottom = sv.VerticalOffset >= (sv.ScrollableHeight - 10);
+                bool isAtBottom = sv.VerticalOffset >= (sv.ScrollableHeight - ResumeAtBottomThresholdPx);
 
                 // UI/UX Logic: Resume only if at the bottom AND nothing is selected.
                 // Otherwise, stay in "Paused" mode to protect the user's focus.
@@ -143,7 +149,7 @@ namespace Servy.Manager.Views
                     sv.ScrollToEnd();
                     _isFirstLoad = false;
                 }
-                else if (DataContext is ConsoleViewModel vm && sv.VerticalOffset >= (sv.ScrollableHeight - 50) && !vm.IsPaused)
+                else if (DataContext is ConsoleViewModel vm && sv.VerticalOffset >= (sv.ScrollableHeight - AutoFollowBandPx) && !vm.IsPaused)
                 {
                     // Only auto-scroll if the user hasn't paused (by selecting or scrolling up)
                     sv.ScrollToEnd();

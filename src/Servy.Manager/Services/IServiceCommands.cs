@@ -72,7 +72,7 @@ namespace Servy.Manager.Services
         /// Removes the specified service from the repository.
         /// </summary>
         /// <param name="service">The service to remove.</param>
-        /// <param name="cancellationToken">optional cancellation token.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True if the service was removed successfully; otherwise, false.</returns>
         Task<bool> RemoveServiceAsync(Service? service, CancellationToken cancellationToken = default);
 
@@ -80,12 +80,14 @@ namespace Servy.Manager.Services
         /// Exports the specified service configuration to an XML file.
         /// </summary>
         /// <param name="service">The service to export.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         Task ExportServiceToXmlAsync(Service? service, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Exports the specified service configuration to a JSON file.
         /// </summary>
         /// <param name="service">The service to export.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         Task ExportServiceToJsonAsync(Service? service, CancellationToken cancellationToken = default);
 
         /// <summary>

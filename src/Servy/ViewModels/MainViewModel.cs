@@ -1277,7 +1277,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Opens a file dialog to select an JSON configuration file for a service,
+        /// Opens a file dialog to select a JSON configuration file for a service,
         /// validates the JSON against the expected <see cref="ServiceDto"/> structure,
         /// and maps the values to the main view model.
         /// Shows an error message if the JSON is invalid, deserialization fails, or any exception occurs.
@@ -1366,7 +1366,7 @@ namespace Servy.ViewModels
         /// <remarks>
         /// This method maps all DTO fields to the corresponding ViewModel properties.
         /// Some fields (such as environment variables and dependencies) are transformed into 
-        /// display-friendly formats using <c>FormatEnvirnomentVariables</c> and <c>FormatServiceDependencies</c>.
+        /// display-friendly formats using <c>FormatEnvironmentVariables</c> and <c>FormatServiceDependencies</c>.
         /// 
         /// For security purposes, only <see cref="Password"/> is restored from the DTO.
         /// <see cref="ConfirmPassword"/> is intentionally cleared so that any subsequent

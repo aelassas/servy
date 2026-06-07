@@ -1,4 +1,5 @@
-﻿using Servy.Core.Logging;
+﻿using Servy.Core.Config;
+using Servy.Core.Logging;
 using Servy.Manager.Services;
 using Servy.UI.Services;
 using System.Windows.Threading;
@@ -116,7 +117,7 @@ namespace Servy.Manager.ViewModels
                 // Increments atomically to maintain accurate tracking if multi-tab components ever fire concurrently.
                 long currentErrorCount = Interlocked.Increment(ref _tickErrorCount);
 
-                if (currentErrorCount % 10 == 1)
+                if (currentErrorCount % AppConfig.MonitoringTickErrorLogThrottlingInterval == 1)
                 {
                     Logger.Warn($"Background monitoring tick failed in {GetType().Name} (Consecutive Failure Count: {currentErrorCount}).", ex);
                 }

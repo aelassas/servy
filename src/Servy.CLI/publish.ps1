@@ -6,7 +6,7 @@
 
 .DESCRIPTION
     This script performs the following steps:
-      1. Runs publish-res-release.ps1 to ensure shared resources are generated.
+      1. Runs the resource publishing script (publish-res-debug.ps1 or publish-res-release.ps1, selected by -BuildConfiguration).
       2. Builds and publishes Servy.CLI as a self-contained, single-file executable 
          for win-x64.
       3. Signs the generated executable via the SignPath signing pipeline.

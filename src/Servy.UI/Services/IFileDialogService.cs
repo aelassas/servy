@@ -18,7 +18,7 @@
         string? OpenXml();
 
         /// <summary>
-        /// Opens a file dialog to select an JSON configuration file.
+        /// Opens a file dialog to select a JSON configuration file.
         /// </summary>
         /// <returns>The selected file path or null if canceled.</returns>
         string? OpenJson();

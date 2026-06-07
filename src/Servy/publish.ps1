@@ -5,7 +5,7 @@
 
 .DESCRIPTION
     This script performs the following steps:
-      1. Runs the resource publishing script (`publish-res-release.ps1`)
+      1. Runs the resource publishing script (publish-res-debug.ps1 or publish-res-release.ps1, selected by -BuildConfiguration).
       2. Builds and publishes `Servy.csproj` as a self-contained win-x64 executable
       3. Signs the published executable using SignPath (if enabled)
 
