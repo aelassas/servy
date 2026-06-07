@@ -1306,6 +1306,11 @@ namespace Servy.Core.Config
         /// </summary>
         public const int LogTailerErrorLogThrottlingInterval = 60;
 
+        /// <summary>
+        /// The frequency at which background monitoring tick errors are logged to the console to prevent log flooding.
+        /// </summary>
+        public const int MonitoringTickErrorLogThrottlingInterval = 10;
+
         #endregion
 
         #region Security & Encryption

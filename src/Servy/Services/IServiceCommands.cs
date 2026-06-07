@@ -76,7 +76,7 @@ namespace Servy.Services
         Task ExportXmlConfig(string confirmPassword);
 
         /// <summary>
-        /// Exports the service configuration to an JSON file selected by the user.
+        /// Exports the service configuration to a JSON file selected by the user.
         /// </summary>
         /// <param name="confirmPassword">The confirmation of the service account password.</param>
         Task ExportJsonConfig(string confirmPassword);
@@ -90,7 +90,7 @@ namespace Servy.Services
         Task ImportXmlConfig();
 
         /// <summary>
-        /// Opens a file dialog to select an JSON configuration file for a service,
+        /// Opens a file dialog to select a JSON configuration file for a service,
         /// validates the JSON against the expected <see cref="ServiceDto"/> structure,
         /// and maps the values to the main view model.
         /// Shows an error message if the JSON is invalid, deserialization fails, or any exception occurs.

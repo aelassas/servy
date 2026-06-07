@@ -86,7 +86,7 @@ namespace Servy.Views
         /// Provides data for the closing event.
         /// </param>
         /// <remarks>
-        /// This explicitly calls <see cref="Application.Current.Shutdown"/> to guarantee
+        /// This explicitly calls <see cref="Application.Shutdown()"/> to guarantee
         /// that no background threads, timers, or hidden windows keep the process alive.
         /// </remarks>
         protected override void OnClosing(CancelEventArgs e)

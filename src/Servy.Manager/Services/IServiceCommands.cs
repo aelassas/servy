@@ -84,12 +84,14 @@ namespace Servy.Manager.Services
         /// Exports the specified service configuration to an XML file.
         /// </summary>
         /// <param name="service">The service to export.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         Task ExportServiceToXmlAsync(Service service, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Exports the specified service configuration to a JSON file.
         /// </summary>
         /// <param name="service">The service to export.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         Task ExportServiceToJsonAsync(Service service, CancellationToken cancellationToken = default);
 
         /// <summary>
