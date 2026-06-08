@@ -26,59 +26,30 @@ namespace Servy.Core.IntegrationTests.Helpers
         /// </summary>
         public HandleHelperIntegrationTests()
         {
+            // 1. Force execution asset extraction to disk
             Testing.Helper.ExtractHandleExe();
 
-            // Safely read path assignment tokens once extraction checks pass
+            // 2. Fetch the resolved cross-architecture path string token
             _handleExePath = Testing.Helper.HandleExePath;
 
-            if (!File.Exists(_handleExePath))
-            {
-                Debug.WriteLine($"WARNING: handle.exe not found and extraction failed at {_handleExePath}");
-            }
-            else
-            {
-                // Auto-accept Sysinternals EULA in the registry hive context to prevent the headless runner from hanging
-                AcceptSysinternalsEula();
+            // 3. CRITICAL DEFECT GUARD: Assert file physically exists right now
+            // If extraction fails due to directory locks, this stops the test context immediately with an explicit error.
+            Assert.True(File.Exists(_handleExePath), $"Lifecycle Extraction Fault: '{_handleExePath}' could not be verified on the local disk file table.");
 
-                // Guard against Sysinternals kernel-driver load timeouts on cold CI/CD virtual nodes.
-                // If the dynamic driver creation takes longer than the strict execution timeout limits,
-                // catch the exception, allow conhost to catch up, and attempt a secondary deterministic pass.
-                try
-                {
-                    // A dummy run ensures the driver is extracted and loaded 
-                    // before the actual timing-sensitive tests run.
-                    HandleHelper.GetProcessesUsingFile(_handleExePath, Path.GetTempPath());
-                }
-                catch (TimeoutException)
-                {
-                    Debug.WriteLine("WARNING: Initial handle.exe cold-start timed out while mounting kernel objects. Executing retry pass...");
-                    Thread.Sleep(1000);
+            // Auto-accept Sysinternals EULA in the registry hive context to prevent headless runner hangs
+            Testing.Helper.AcceptSysinternalsEula();
 
-                    // Second pass: the driver is now unpacked or registered, so this execution path should complete immediately.
-                    HandleHelper.GetProcessesUsingFile(_handleExePath, Path.GetTempPath());
-                }
-            }
-        }
-
-        /// <summary>
-        /// Programs the current user registry environment to suppress the Sysinternals graphical license box prompt.
-        /// </summary>
-        private void AcceptSysinternalsEula()
-        {
             try
             {
-                // Sysinternals tools check for acceptance under HKCU\Software\Sysinternals\Handle
-                using (RegistryKey key = Registry.CurrentUser.CreateSubKey(@"Software\Sysinternals\Handle"))
-                {
-                    if (key != null)
-                    {
-                        key.SetValue("EulaAccepted", 1, RegistryValueKind.DWord);
-                    }
-                }
+                // Cold-start driver check
+                HandleHelper.GetProcessesUsingFile(_handleExePath, Path.GetTempPath());
             }
-            catch (Exception ex)
+            catch (TimeoutException)
             {
-                Debug.WriteLine($"WARNING: Failed to pre-seed EulaAccepted registry key. Details: {ex.Message}");
+                Debug.WriteLine("WARNING: Initial handle.exe cold-start timed out while mounting kernel objects. Executing retry pass...");
+                Thread.Sleep(1000);
+
+                HandleHelper.GetProcessesUsingFile(_handleExePath, Path.GetTempPath());
             }
         }
 

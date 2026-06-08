@@ -1,4 +1,6 @@
-﻿using Servy.Core.Native;
+﻿using Microsoft.Win32;
+using Servy.Core.Native;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -18,29 +20,21 @@ namespace Servy.Testing
             : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64.exe");
 
         private static readonly object _extractionLock = new object();
-        private static bool _isExtracted = false;
 
         /// <summary>
         /// Extracts handle64.exe from the assembly's embedded resources to the base directory.
         /// </summary>
         public static void ExtractHandleExe()
         {
-            // Fast path: if already extracted in this process, skip immediately
-            if (_isExtracted || File.Exists(HandleExePath)) return;
+            // Check if the file physically exists on the disk frame right now
+            if (File.Exists(HandleExePath)) return;
 
-            // Static lock prevents multiple class instances from extracting simultaneously
             lock (_extractionLock)
             {
-                // Double-check pattern: the file might have been created while we waited for the lock
-                if (_isExtracted || File.Exists(HandleExePath))
-                {
-                    _isExtracted = true;
-                    return;
-                }
+                // Double-check lock validation step
+                if (File.Exists(HandleExePath)) return;
 
                 var assembly = Assembly.GetExecutingAssembly();
-                // Resource names usually follow: ProjectNamespace.Folder.FileName.Extension
-                // Dynamically select the resource manifest lookup string matching the target platform asset
                 string targetFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "handle64a.exe" : "handle64.exe";
                 string resourceName = $"Servy.Core.IntegrationTests.Resources.{targetFileName}";
 
@@ -48,11 +42,11 @@ namespace Servy.Testing
                 {
                     if (resourceStream == null)
                     {
-                        // Fallback: try to find the resource by name if the full namespace path is unknown
                         var actualName = assembly.GetManifestResourceNames()
                             .FirstOrDefault(n => n.EndsWith(targetFileName));
 
-                        if (actualName == null) return;
+                        if (actualName == null)
+                            throw new FileNotFoundException($"Embedded resource metadata mapping for '{targetFileName}' was not found in the manifest layout.");
 
                         using (var fallbackStream = assembly.GetManifestResourceStream(actualName))
                         {
@@ -64,8 +58,6 @@ namespace Servy.Testing
                         WriteResourceToDisk(resourceStream);
                     }
                 }
-
-                _isExtracted = true;
             }
         }
 
@@ -91,6 +83,28 @@ namespace Servy.Testing
             {
                 // If we hit a race where the file was created between our check and our open, 
                 // it's a win-the file is there.
+            }
+        }
+
+        /// <summary>
+        /// Programs the current user registry environment to suppress the Sysinternals graphical license box prompt.
+        /// </summary>
+        public static void AcceptSysinternalsEula()
+        {
+            try
+            {
+                // Sysinternals tools check for acceptance under HKCU\Software\Sysinternals\Handle
+                using (RegistryKey key = Registry.CurrentUser.CreateSubKey(@"Software\Sysinternals\Handle"))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("EulaAccepted", 1, RegistryValueKind.DWord);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"WARNING: Failed to pre-seed EulaAccepted registry key. Details: {ex.Message}");
             }
         }
 
