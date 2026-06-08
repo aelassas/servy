@@ -8,8 +8,7 @@ namespace Servy.Core.IntegrationTests.Helpers
     /// </summary>
     public class ProcessKillerIntegrationTests : IDisposable
     {
-        private static readonly string _handleExePath = Testing.Helper.HandleExePath;
-
+        private readonly string _handleExePath;
         private readonly ProcessKiller _processKiller;
         private readonly List<Process> _trackedProcesses;
         private readonly List<string> _tempFiles;
@@ -24,6 +23,9 @@ namespace Servy.Core.IntegrationTests.Helpers
             _tempFiles = new List<string>();
 
             Testing.Helper.ExtractHandleExe();
+
+            // Safely read path assignment tokens once extraction checks pass
+            _handleExePath = Testing.Helper.HandleExePath;
 
             if (!File.Exists(_handleExePath))
             {
