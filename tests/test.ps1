@@ -10,9 +10,6 @@ This script:
 4. Produces Cobertura-format coverage reports for each project.
 5. Generates a combined HTML coverage report using ReportGenerator.
 
-.PARAMETER MsbuildPath
-The path to MSBuild.exe. Defaults to the Visual Studio 2022 Community Edition location.
-
 .NOTES
 - Requires Coverlet and ReportGenerator to be installed and available in PATH.
 - Must be run in PowerShell (x64).
@@ -89,14 +86,16 @@ foreach ($Proj in $TestProjects) {
 
     Write-Host "Running tests for $($ProjName)..."
 
-    # Define common exclusions using Coverlet console CLI's --exclude-by-file property filter 
-    $TestExclusions = @("**/*.xaml", "**/*.xaml.cs", "**/*.g.cs", "**/obj/**/*")
+    # Define distinct filter categories based on Coverlet's native parameter targets
+    $AssemblyExclusions = @("*.UnitTests", "*.IntegrationTests", "Servy.Testing")
+    $FileExclusions     = @("**/*.xaml", "**/*.xaml.cs", "**/*.g.cs", "**/obj/**/*")
 
-    $excludeArgs = ""
-    foreach ($pattern in $TestExclusions) {
-        # No @ symbol, just the flag and the pattern
-        $excludeArgs += "--exclude-by-file `"$pattern`" "
-    }
+    # Join array strings with a comma wrapper for Coverlet's expected input parser
+    $excludeAssemblies = ($AssemblyExclusions | ForEach-Object { "[$_]*" }) -join ","
+    $excludeFiles      = $FileExclusions -join ","
+
+    # Build dynamic execution parameters
+    $excludeArgs = "--exclude `"$excludeAssemblies`" --exclude-by-file `"$excludeFiles`""
 
     if ($Proj -like "*Servy.Infrastructure*") {
         coverlet "$DllPath" `
@@ -128,7 +127,7 @@ reportgenerator `
     -reports:$coverageFiles `
     -targetdir:$CoverageReportDir `
     -reporttypes:Html `
-    -assemblyfilters:"-Servy.Restarter.Net48" `
+    -assemblyfilters:"-*.UnitTests;-*.IntegrationTests;-Servy.Testing;-Servy.Restarter.Net48" `
     -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/obj/**/*"
 if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed"; exit $LASTEXITCODE }
 

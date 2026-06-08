@@ -11,7 +11,10 @@ using Xunit;
 namespace Servy.Core.UnitTests.Logging
 {
     [CollectionDefinition("LoggerSequential", DisableParallelization = true)]
-    public class LoggerCollection { }
+    public class LoggerCollection : ICollectionFixture<object>
+    {
+        // Enforces strict sequential isolation across the execution suite
+    }
 
     /// <summary>
     /// Comprehensive unit tests for the Logger class, executed sequentially

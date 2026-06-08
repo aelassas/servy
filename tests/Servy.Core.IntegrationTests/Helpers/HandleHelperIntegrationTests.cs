@@ -12,11 +12,17 @@ using Xunit;
 
 namespace Servy.Core.IntegrationTests.Helpers
 {
+    [CollectionDefinition("HandleHelperIntegrationTests", DisableParallelization = true)]
+    public class HandleHelperIntegrationTestsCollection : ICollectionFixture<object>
+    {
+        // Enforces strict sequential isolation across the execution suite
+    }
+
     /// <summary>
     /// Integration tests for the HandleHelper class.
     /// These tests require handle.exe to be present and the runner to be elevated.
     /// </summary>
-    [CollectionDefinition("HandleHelperIntegrationTests", DisableParallelization = true)]
+    [Collection("HandleHelperIntegrationTests")]
     public class HandleHelperIntegrationTests : IDisposable
     {
         // Make the path and extraction state static so it only initializes once per test run
