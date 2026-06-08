@@ -20,7 +20,7 @@ namespace Servy.Core.IntegrationTests.Helpers
     public class HandleHelperIntegrationTests : IDisposable
     {
         // Make the path and extraction state static so it only initializes once per test run
-        // FIX: Dynamically select the native Sysinternals binary based on runtime architecture to support ARM64 agents natively
+        // Dynamically select the native Sysinternals binary based on runtime architecture to support ARM64 agents natively
         private static readonly string _handleExePath = RuntimeInformation.OSArchitecture == Architecture.Arm64
             ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64a.exe")
             : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64.exe");
@@ -39,7 +39,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             if (!File.Exists(_handleExePath))
             {
-                Debug.WriteLine($"WARNING: handle64.exe not found and extraction failed at {_handleExePath}");
+                Debug.WriteLine($"WARNING: handle.exe not found and extraction failed at {_handleExePath}");
             }
             else
             {

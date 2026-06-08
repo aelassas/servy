@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Helpers;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace Servy.Core.IntegrationTests.Helpers
 {
@@ -9,10 +10,17 @@ namespace Servy.Core.IntegrationTests.Helpers
     /// </summary>
     public class ProcessKillerIntegrationTests : IDisposable
     {
+        // Make the path and extraction state static so it only initializes once per test run
+        // Dynamically select the native Sysinternals binary based on runtime architecture to support ARM64 agents natively
+        private static readonly string _handleExePath = RuntimeInformation.OSArchitecture == Architecture.Arm64
+            ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64a.exe")
+            : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64.exe");
+        private static readonly object _extractionLock = new object();
+        private static bool _isExtracted = false;
+
         private readonly ProcessKiller _processKiller;
         private readonly List<Process> _trackedProcesses;
         private readonly List<string> _tempFiles;
-        private readonly string _handleExePath;
 
         /// <summary>
         /// Initializes a new instance of the ProcessKillerIntegrationTests class, configuring tracking lists for safe teardown and ensuring necessary diagnostic utilities are extracted.
@@ -22,9 +30,87 @@ namespace Servy.Core.IntegrationTests.Helpers
             _processKiller = new ProcessKiller();
             _trackedProcesses = new List<Process>();
             _tempFiles = new List<string>();
-            _handleExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64.exe");
 
             ExtractHandleExe();
+
+            if (!File.Exists(_handleExePath))
+            {
+                Debug.WriteLine($"WARNING: handle.exe not found and extraction failed at {_handleExePath}");
+            }
+        }
+
+        /// <summary>
+        /// Extracts handle64.exe from the assembly's embedded resources to the base directory.
+        /// </summary>
+        private void ExtractHandleExe()
+        {
+            // Fast path: if already extracted in this process, skip immediately
+            if (_isExtracted || File.Exists(_handleExePath)) return;
+
+            // Static lock prevents multiple class instances from extracting simultaneously
+            lock (_extractionLock)
+            {
+                // Double-check pattern: the file might have been created while we waited for the lock
+                if (_isExtracted || File.Exists(_handleExePath))
+                {
+                    _isExtracted = true;
+                    return;
+                }
+
+                var assembly = Assembly.GetExecutingAssembly();
+                // Resource names usually follow: ProjectNamespace.Folder.FileName.Extension
+                // Dynamically select the resource manifest lookup string matching the target platform asset
+                string targetFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "handle64a.exe" : "handle64.exe";
+                string resourceName = $"Servy.Core.IntegrationTests.Resources.{targetFileName}";
+
+                using (Stream? resourceStream = assembly.GetManifestResourceStream(resourceName))
+                {
+                    if (resourceStream == null)
+                    {
+                        // Fallback: try to find the resource by name if the full namespace path is unknown
+                        var actualName = assembly.GetManifestResourceNames()
+                            .FirstOrDefault(n => n.EndsWith(targetFileName));
+
+                        if (actualName == null) return;
+
+                        using (var fallbackStream = assembly.GetManifestResourceStream(actualName))
+                        {
+                            WriteResourceToDisk(fallbackStream);
+                        }
+                    }
+                    else
+                    {
+                        WriteResourceToDisk(resourceStream);
+                    }
+                }
+
+                _isExtracted = true;
+            }
+        }
+
+        private void WriteResourceToDisk(Stream? stream)
+        {
+            try
+            {
+                if (stream == null) return;
+
+                // If the file somehow exists but _isExtracted was false, 
+                // FileMode.Create would fail if another process is even just reading it.
+                // We only write if the file isn't physically there.
+                if (File.Exists(_handleExePath)) return;
+
+                // Added FileShare.ReadWrite. On CI, Antivirus or Windows Indexer 
+                // often grab handles the millisecond a file is created.
+                using (FileStream fileStream = new FileStream(_handleExePath, FileMode.CreateNew, FileAccess.Write, FileShare.ReadWrite))
+                {
+                    stream.CopyTo(fileStream);
+                }
+            }
+            catch (IOException ex) when (ex.HResult == unchecked((int)0x80070050)) // ERROR_FILE_EXISTS
+            {
+                // If we hit a race where the file was created between our check and our open, 
+                // it's a win-the file is there.
+            }
         }
 
         /// <summary>
@@ -55,6 +141,10 @@ namespace Servy.Core.IntegrationTests.Helpers
                     try { File.Delete(file); } catch { }
                 }
             }
+
+            // DO NOT delete handle64.exe here.
+            // Deleting an executable while another test's constructor is initializing causes the IOException.
+            // Leaving it in the bin folder is completely safe for integration tests.
         }
 
         /// <summary>
@@ -418,34 +508,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             }
 
             return lockingProcess;
-        }
-
-        /// <summary>
-        /// Extracts the handle64 executable from the test assembly's embedded resources directly to the execution directory to ensure file handle resolution functions optimally.
-        /// </summary>
-        private void ExtractHandleExe()
-        {
-            if (File.Exists(_handleExePath)) return;
-
-            try
-            {
-                var assembly = Assembly.GetExecutingAssembly();
-                var resourceName = assembly.GetManifestResourceNames()
-                    .FirstOrDefault(n => n.EndsWith("handle64.exe", StringComparison.OrdinalIgnoreCase));
-
-                if (resourceName != null)
-                {
-                    using (var resourceStream = assembly.GetManifestResourceStream(resourceName))
-                    using (var fileStream = new FileStream(_handleExePath, FileMode.Create, FileAccess.Write))
-                    {
-                        resourceStream?.CopyTo(fileStream);
-                    }
-                }
-            }
-            catch
-            {
-                // Swallow extraction errors; tests relying on handle.exe will safely bypass
-            }
         }
     }
 }
