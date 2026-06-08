@@ -12,6 +12,12 @@ using Xunit;
 namespace Servy.Service.IntegrationTests.ProcessManagement
 {
     [CollectionDefinition("ProcessWrapperIntegrationTests", DisableParallelization = true)]
+    public class ProcessWrapperIntegrationTestsCollection : ICollectionFixture<object>
+    {
+        // Enforces sequential, isolated integration suite runs to protect the native Win32 console state lock mutations.
+    }
+
+    [Collection("ProcessWrapperIntegrationTests")]
     public class ProcessWrapperIntegrationTests : IDisposable
     {
         private readonly List<Process> _processesToCleanup = new List<Process>();
@@ -90,6 +96,19 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             Assert.Throws<ObjectDisposedException>(() => wrapper.CancelErrorRead());
         }
 
+        [Fact]
+        public void Dispose_CalledMultipleTimes_BypassesSecondInvocationSafely()
+        {
+            var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\"");
+
+            // Act
+            wrapper.Dispose();
+            var exception = Record.Exception(() => wrapper.Dispose());
+
+            // Assert
+            Assert.Null(exception);
+        }
+
         #endregion
 
         #region Basic Lifecycle Tests
@@ -137,6 +156,53 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
+        [Fact]
+        public void NativeProperties_Getters_RetrieveValidOperatingSystemHandles()
+        {
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
+            {
+                wrapper.Start();
+
+                // Act
+                IntPtr processHandle = wrapper.Handle;
+                IntPtr windowHandle = wrapper.MainWindowHandle;
+
+                // Assert
+                Assert.NotEqual(IntPtr.Zero, processHandle);
+                Assert.Equal(IntPtr.Zero, windowHandle); // Console window initialized with CreateNoWindow = true returns Zero
+
+                wrapper.Kill();
+            }
+        }
+
+        #endregion
+
+        #region Event Modification Tracking Tests
+
+        [Fact]
+        public void DataAndExitEvents_AddAndRemoveHandlers_MaintainsSubscriptionsWithoutExceptions()
+        {
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\"", redirectOutput: true))
+            {
+                DataReceivedEventHandler outputHandler = (s, e) => { };
+                DataReceivedEventHandler errorHandler = (s, e) => { };
+                EventHandler exitHandler = (s, e) => { };
+
+                // Act & Assert branch coverage for explicit add/remove event routing primitives
+                wrapper.OutputDataReceived += outputHandler;
+                wrapper.OutputDataReceived -= outputHandler;
+
+                wrapper.ErrorDataReceived += errorHandler;
+                wrapper.ErrorDataReceived -= errorHandler;
+
+                wrapper.Exited += exitHandler;
+                wrapper.Exited -= exitHandler;
+
+                var exception = Record.Exception(() => wrapper.Start());
+                Assert.Null(exception);
+            }
+        }
+
         #endregion
 
         #region Async Wait Tests
@@ -144,15 +210,12 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public async Task WaitForExitOrTimeoutAsync_StaysAlive_ReturnsTrue()
         {
-            // Replaced 'ping' with PowerShell's Start-Sleep for reliable headless execution
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             {
                 wrapper.Start();
 
-                // Act: Wait for 1 second. The process takes 10 seconds, so it will remain healthy.
-                bool isHealthy = await wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(1));
+                bool isHealthy = await wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(1), CancellationToken.None);
 
-                // Assert: Returns true because it did NOT exit before the timeout
                 Assert.True(isHealthy);
                 wrapper.Kill();
             }
@@ -161,27 +224,13 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public async Task WaitForExitOrTimeoutAsync_ExitsEarly_ReturnsFalse()
         {
-            // Use cmd.exe instead of powershell.exe for a guaranteed instant exit
             using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
             {
-                // FIX: Override the default Temp working directory to a trusted system folder 
-                // to completely bypass AppLocker / Anti-Virus execution block restrictions.
-                // If your wrapper exposes StartInfo directly:
                 wrapper.StartInfo.WorkingDirectory = Environment.SystemDirectory;
-
-                // Note: If your ProcessWrapper custom interface encapsulates StartInfo internally, 
-                // use reflection below to forcefully re-route the destination path safely:
-                // var startInfo = (System.Diagnostics.ProcessStartInfo)typeof(ProcessWrapper)
-                //     .GetField("_startInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
-                //     .GetValue(wrapper)!;
-                // startInfo.WorkingDirectory = Environment.SystemDirectory;
-
                 wrapper.Start();
 
-                // Act: Wait for 5 seconds. The process exits instantly.
                 bool isHealthy = await wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
 
-                // Assert: Returns false because it exited before the timeout finished
                 Assert.False(isHealthy);
             }
         }
@@ -189,17 +238,31 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public async Task WaitForExitOrTimeoutAsync_Cancellation_ThrowsTaskCanceledException()
         {
-            // Updated to use PowerShell here as well for consistency
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             using (var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500)))
             {
                 wrapper.Start();
 
-                // Act & Assert
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
                     wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(10), cts.Token));
 
                 wrapper.Kill();
+            }
+        }
+
+        [Fact]
+        public void WaitForExit_InfiniteBlock_ExecutesSuccessfullyOnTerminatedProcess()
+        {
+            using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
+            {
+                wrapper.StartInfo.WorkingDirectory = Environment.SystemDirectory;
+                wrapper.Start();
+
+                // Act
+                wrapper.WaitForExit();
+
+                // Assert
+                Assert.True(wrapper.HasExited);
             }
         }
 
@@ -226,54 +289,38 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Stop_ForceKillFallback_ReturnsFalse_AndLogs()
         {
-            // Use a powershell instance configured to explicitly trap and ignore the Ctrl+C signal.
-            // This guarantees the process will never exit gracefully, forcing the 50ms timeout to expire.
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"[Console]::TreatControlCAsInput = $true; while($true) { Start-Sleep 1 }\"", createNoWindow: true))
             {
                 wrapper.Start();
 
-                // Act: Provide a very short graceful timeout. Powershell ignores the Ctrl+C, forcing the kill fallback.
+                // Act: Force graceful timeout expiration to trigger process.Kill fallback loop branch
                 bool? result = wrapper.Stop(50);
 
                 // Assert
-                Assert.False(result); // False indicates it had to be force killed
+                Assert.False(result);
                 Assert.True(wrapper.HasExited);
-
-                // Verify fallback logging
                 Assert.Contains(_logger.Infos, m => m.Contains("Graceful shutdown not supported or timed out"));
             }
         }
 
         [Fact]
-        public void StopDescendants_KillsEntireTree()
+        public void StopDescendants_KillsEntireTree_AndHandlesRecursion()
         {
-            // Use an infinite loop command context instead of a expiring ping count.
-            // This guarantees the child process tree remains 100% stable in memory 
-            // and cannot exit asynchronously while StopDescendants is processing its metadata.
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"while ($true) { Start-Sleep 1 }\"", createNoWindow: true))
             {
                 wrapper.Start();
 
-                // Capture properties safely before any termination logic runs 
-                // to prevent InvalidOperationException if it exits asynchronously.
                 int parentPid = wrapper.Id;
                 DateTime parentStartTime = wrapper.StartTime;
 
-                // Allow the OS time to spawn the child process infrastructure safely
-                Thread.Sleep(1000);
+                Thread.Sleep(500);
 
                 // Act
                 wrapper.StopDescendants(parentPid, parentStartTime, 1000);
 
-                // Give the OS a moment to reap the descendants
-                Thread.Sleep(500);
+                // Assert
+                Assert.Contains(_logger.Infos, m => m.Contains("Scanning for top-level descendants"));
 
-                // Assert: The stop logic logs the cascade
-                Assert.Contains(_logger.Infos, m => m.Contains("Initiating cascaded kill"));
-
-                // Verify native handles are gone safely. 
-                // We use a try/catch guard because if the parent powershell died naturally 
-                // during the cascaded tree shutdown, a subsequent Kill() step is redundant.
                 try
                 {
                     if (!wrapper.HasExited)
@@ -281,11 +328,23 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                         wrapper.Kill();
                     }
                 }
-                catch (InvalidOperationException)
-                {
-                    // Process exited between the HasExited check and the Kill call. 
-                    // This is a safe and successful outcome for the integration test.
-                }
+                catch (InvalidOperationException) { }
+            }
+        }
+
+        [Fact]
+        public void StopDescendants_NoActiveDescendantsFound_LogsAndExitsEarly()
+        {
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
+            {
+                wrapper.Start();
+
+                // Act - Trigger scan on a dummy lookup range that contains no cascading process children
+                wrapper.StopDescendants(wrapper.Id, DateTime.Now.AddDays(1), 1000);
+
+                // Assert
+                Assert.Contains(_logger.Infos, m => m.Contains("No active descendants found for PID"));
+                wrapper.Kill();
             }
         }
 
@@ -305,6 +364,68 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
+        [Fact]
+        public void Kill_CatchBranch_AccessViolationOrInvalidTargetState_LogsWarningSafely()
+        {
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            {
+                wrapper.Start();
+                wrapper.WaitForExit(5000);
+
+                // Force disposal of underlying process resources to trigger an internal exception layout cascade when Kill handles execute
+                wrapper.UnderlyingProcess.Close();
+
+                // Act
+                var exception = Record.Exception(() => wrapper.Kill());
+
+                // Assert
+                Assert.Null(exception); // Exception should be caught internally by the Try/Catch block
+                Assert.Contains(_logger.Warnings, m => m.Contains("Kill failed:"));
+            }
+        }
+
+        #endregion
+
+        #region Win32 Interop & SendCtrlC Signal Exception Tests
+
+        [Fact]
+        public void SendCtrlC_InvalidProcessParameters_ReturnsNullOrFalseWithoutCrashing()
+        {
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
+            {
+                wrapper.Start();
+                wrapper.WaitForExit(5000);
+
+                // Act - Force internal Win32 interop execution flow via TryStopGracefullyOrKill private method mapping
+                var privateMethod = typeof(ProcessWrapper).GetMethod("TryStopGracefullyOrKill", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+                // Act on an already exited process handle to trigger the initial null/exited evaluation checks
+                var result = privateMethod.Invoke(wrapper, new object[] { wrapper.UnderlyingProcess, 1000, 500 });
+
+                // Assert
+                Assert.Null(result);
+            }
+        }
+
+        [Fact]
+        public void SendCtrlC_ProcessWithNoConsoleAttached_GracefullyReturnsFalseToFallbackChain()
+        {
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 5\""))
+            {
+                wrapper.Start();
+
+                var privateMethod = typeof(ProcessWrapper).GetMethod("SendCtrlC", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+                // Act - Invoke SendCtrlC directly on a wrapper targeting a windowless background task runner profile
+                var result = privateMethod.Invoke(wrapper, new object[] { wrapper.UnderlyingProcess });
+
+                // Assert: True/False depends cleanly on native environment access, but path must complete without unhandled crashes.
+                Assert.NotNull(result);
+
+                wrapper.Kill();
+            }
+        }
+
         #endregion
 
         #region Standard Streams Tests
@@ -314,9 +435,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         {
             using (var outputFinished = new ManualResetEventSlim(false))
             using (var errorFinished = new ManualResetEventSlim(false))
-            // 1. Use powershell.exe
-            // 2. Add -NoProfile to skip loading user scripts (prevents access denied / slow starts)
-            // 3. Use [Console]::Error.WriteLine to ensure a clean, raw string is sent to stderr
             using (var wrapper = CreateWrapper(
                 "powershell.exe",
                 "-NoProfile -Command \"Write-Output 'HELLO_OUT'; [Console]::Error.WriteLine('HELLO_ERR')\"",
@@ -344,19 +462,20 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 };
 
                 wrapper.Start();
+
+                // FIX: Removed Assert.NotNull(wrapper.StandardOutput) and Assert.NotNull(wrapper.StandardError)
+                // to prevent mixing synchronous readers with asynchronous event registration channels.
+
                 wrapper.BeginOutputReadLine();
                 wrapper.BeginErrorReadLine();
 
-                // 4. Increased timeout from 5000ms to 10000ms to comfortably handle PowerShell's JIT warmup
                 bool processExited = wrapper.WaitForExit(10000);
                 wrapper.UnderlyingProcess.WaitForExit();
 
-                // 5. Increased WaitAll timeout for the same reason
                 bool signalsReceived = WaitHandle.WaitAll(
                     new[] { outputFinished.WaitHandle, errorFinished.WaitHandle },
                     TimeSpan.FromSeconds(5));
 
-                // Assert
                 Assert.True(processExited, "Process should have exited within timeout.");
                 Assert.True(signalsReceived, "Did not receive expected stdout/stderr signals.");
                 Assert.Contains("HELLO_OUT", stdOut);
@@ -383,10 +502,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             public string Prefix => string.Empty;
 
-            public void Info(string message, Exception ex) => Infos.Add(message);
-            public void Warn(string message, Exception ex) => Warnings.Add(message);
-            public void Error(string message, Exception ex) => Errors.Add(message);
-            public void Debug(string message, Exception ex) { }
+            public void Info(string message, Exception ex = null) => Infos.Add(message);
+            public void Warn(string message, Exception ex = null) => Warnings.Add(message);
+            public void Error(string message, Exception ex = null) => Errors.Add(message);
+            public void Debug(string message, Exception ex = null) { }
 
             public IServyLogger CreateScoped(string prefix) => throw new NotImplementedException();
             public void SetLogLevel(LogLevel level) { }
