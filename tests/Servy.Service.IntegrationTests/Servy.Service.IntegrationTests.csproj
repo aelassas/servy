@@ -111,6 +111,7 @@
     <Compile Include="ProcessManagement\ProcessExtensionsIntegrationTests.cs" />
     <Compile Include="ProcessManagement\ProcessLauncherIntegrationTests.cs" />
     <Compile Include="ProcessManagement\ProcessWrapperIntegrationTests.cs" />
+    <Compile Include="ProcessManagement\TestLogger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

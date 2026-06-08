@@ -422,25 +422,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             public Task<bool> WaitAndCheckStillRunningAsync(TimeSpan t, CancellationToken c) => Task.FromResult(true);
         }
 
-        private class TestLogger : IServyLogger
-        {
-            public List<string> Warnings { get; } = new List<string>();
-            public List<string> Errors { get; } = new List<string>();
-
-            public string LastWarning => Warnings.LastOrDefault() ?? string.Empty;
-            public string LastError => Errors.LastOrDefault() ?? string.Empty;
-
-            public string Prefix => string.Empty;
-            public void Warn(string message, Exception ex = null) => Warnings.Add(message);
-            public void Error(string message, Exception ex = null) => Errors.Add(message);
-            public void Info(string message, Exception ex = null) { }
-            public void Debug(string message, Exception ex = null) { }
-            public IServyLogger CreateScoped(string prefix) => throw new NotImplementedException();
-            public void SetLogLevel(LogLevel level) { }
-            public void SetIsEventLogEnabled(bool isEnabled) { }
-            public void Dispose() { }
-        }
-
         #endregion
     }
 }

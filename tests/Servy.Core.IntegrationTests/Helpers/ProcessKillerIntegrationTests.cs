@@ -15,11 +15,11 @@ namespace Servy.Core.IntegrationTests.Helpers
     /// </summary>
     public class ProcessKillerIntegrationTests : IDisposable
     {
+        private static readonly string _handleExePath = Testing.Helper.HandleExePath;
+
         private readonly ProcessKiller _processKiller;
         private readonly List<Process> _trackedProcesses;
         private readonly List<string> _tempFiles;
-        private readonly string _handleExePath;
-        private readonly IProcessHelper _processHelper = new ProcessHelper();
 
         /// <summary>
         /// Initializes a new instance of the ProcessKillerIntegrationTests class, configuring tracking lists for safe teardown and ensuring necessary diagnostic utilities are extracted.
@@ -29,9 +29,13 @@ namespace Servy.Core.IntegrationTests.Helpers
             _processKiller = new ProcessKiller();
             _trackedProcesses = new List<Process>();
             _tempFiles = new List<string>();
-            _handleExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64.exe");
 
-            ExtractHandleExe();
+            Testing.Helper.ExtractHandleExe();
+
+            if (!File.Exists(_handleExePath))
+            {
+                Debug.WriteLine($"WARNING: handle.exe not found and extraction failed at {_handleExePath}");
+            }
         }
 
         /// <summary>

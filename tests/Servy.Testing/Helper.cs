@@ -1,5 +1,8 @@
 ﻿using Servy.Core.Native;
 using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Threading;
@@ -8,8 +11,90 @@ using System.Windows.Threading;
 
 namespace Servy.Testing
 {
-    public class Helper
+    public static class Helper
     {
+        // Dynamically select the native Sysinternals binary based on runtime architecture to support ARM64 agents natively
+        public static readonly string HandleExePath = RuntimeInformation.OSArchitecture == Architecture.Arm64
+            ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64a.exe")
+            : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64.exe");
+
+        private static readonly object _extractionLock = new object();
+        private static bool _isExtracted = false;
+
+        /// <summary>
+        /// Extracts handle64.exe from the assembly's embedded resources to the base directory.
+        /// </summary>
+        public static void ExtractHandleExe()
+        {
+            // Fast path: if already extracted in this process, skip immediately
+            if (_isExtracted || File.Exists(HandleExePath)) return;
+
+            // Static lock prevents multiple class instances from extracting simultaneously
+            lock (_extractionLock)
+            {
+                // Double-check pattern: the file might have been created while we waited for the lock
+                if (_isExtracted || File.Exists(HandleExePath))
+                {
+                    _isExtracted = true;
+                    return;
+                }
+
+                var assembly = Assembly.GetExecutingAssembly();
+                // Resource names usually follow: ProjectNamespace.Folder.FileName.Extension
+                // Dynamically select the resource manifest lookup string matching the target platform asset
+                string targetFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "handle64a.exe" : "handle64.exe";
+                string resourceName = $"Servy.Core.IntegrationTests.Resources.{targetFileName}";
+
+                using (Stream resourceStream = assembly.GetManifestResourceStream(resourceName))
+                {
+                    if (resourceStream == null)
+                    {
+                        // Fallback: try to find the resource by name if the full namespace path is unknown
+                        var actualName = assembly.GetManifestResourceNames()
+                            .FirstOrDefault(n => n.EndsWith(targetFileName));
+
+                        if (actualName == null) return;
+
+                        using (var fallbackStream = assembly.GetManifestResourceStream(actualName))
+                        {
+                            WriteResourceToDisk(fallbackStream);
+                        }
+                    }
+                    else
+                    {
+                        WriteResourceToDisk(resourceStream);
+                    }
+                }
+
+                _isExtracted = true;
+            }
+        }
+
+        private static void WriteResourceToDisk(Stream stream)
+        {
+            try
+            {
+                if (stream == null) return;
+
+                // If the file somehow exists but _isExtracted was false, 
+                // FileMode.Create would fail if another process is even just reading it.
+                // We only write if the file isn't physically there.
+                if (File.Exists(HandleExePath)) return;
+
+                // Added FileShare.ReadWrite. On CI, Antivirus or Windows Indexer 
+                // often grab handles the millisecond a file is created.
+                using (FileStream fileStream = new FileStream(HandleExePath, FileMode.CreateNew, FileAccess.Write, FileShare.ReadWrite))
+                {
+                    stream.CopyTo(fileStream);
+                }
+            }
+            catch (IOException ex) when (ex.HResult == unchecked((int)0x80070050)) // ERROR_FILE_EXISTS
+            {
+                // If we hit a race where the file was created between our check and our open, 
+                // it's a win-the file is there.
+            }
+        }
+
         public static void RunOnSTA(Action action)
         {
             Exception threadException = null;
