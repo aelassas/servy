@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Servy.UI.Services;
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -82,6 +83,42 @@ namespace Servy.UI.IntegrationTests.Services
             // Assuming AppConfig.Version is 1.0.0 and we simulate a 1.0.0 response.
             // Implementation note: To fully test this, refactor HelpService to take 
             // an HttpMessageHandler for mocking.
+        }
+
+        #endregion
+
+        #region NormalizeVersion Private Method Reflection Tests
+
+        [Fact]
+        public void NormalizeVersion_NullPassed_ReturnsZeroedFourPartVersion()
+        {
+            // Arrange
+            var method = typeof(HelpService).GetMethod("NormalizeVersion", BindingFlags.Static | BindingFlags.NonPublic);
+
+            // Act
+            var result = (Version)method.Invoke(null, new object[] { null });
+
+            // Assert
+            Assert.Equal(new Version(0, 0, 0, 0), result);
+        }
+
+        [Fact]
+        public void NormalizeVersion_PartialVersionsWithNegativeFields_PadsMissingPartsToZero()
+        {
+            // Arrange
+            var method = typeof(HelpService).GetMethod("NormalizeVersion", BindingFlags.Static | BindingFlags.NonPublic);
+
+            // System.Version elements constructed with 2 parts assign -1 automatically to Build and Revision fields
+            var incompleteVersion = new Version(4, 2);
+
+            // Act
+            var result = (Version)method.Invoke(null, new object[] { incompleteVersion });
+
+            // Assert
+            Assert.Equal(4, result.Major);
+            Assert.Equal(2, result.Minor);
+            Assert.Equal(0, result.Build);
+            Assert.Equal(0, result.Revision);
         }
 
         #endregion

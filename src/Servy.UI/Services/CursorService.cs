@@ -36,6 +36,5 @@ namespace Servy.UI.Services
                 }, DispatcherPriority.Normal);
             }
         }
-
     }
 }

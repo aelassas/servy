@@ -1,15 +1,26 @@
-﻿using System;
-using System.Threading;
+﻿using Servy.Testing;
+using Servy.UI.Services;
+using System;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Xunit;
-using Servy.UI.Services;
-using Servy.Testing;
 
 namespace Servy.UI.IntegrationTests.Services
 {
+    #region xUnit Non-Parallel Collection Setup
+
+    [CollectionDefinition("WpfCursorTests", DisableParallelization = true)]
+    public class WpfCursorTestCollection : ICollectionFixture<object>
+    {
+        // Used exclusively to enforce global non-parallelization constraints across the suite
+    }
+
+    #endregion
+
+    [Collection("WpfCursorTests")]
     public class CursorServiceTests
     {
         private readonly CursorService _service;
@@ -17,22 +28,14 @@ namespace Servy.UI.IntegrationTests.Services
         public CursorServiceTests()
         {
             _service = new CursorService();
+            // REMOVED: Thread-unsafe initialization mutations completely removed from MTA constructor
         }
-
-        #region STA Thread Helper
-
-
-
-        #endregion
 
         #region Branch: Headless / Null Dispatcher
 
         [Fact]
         public void SetWaitCursor_WhenApplicationIsNull_DoesNotThrow()
         {
-            // Branch: if (Application.Current?.Dispatcher == null) return;
-            // This is the default state in standard xUnit runners because Application.Current is null.
-
             // Act
             var exception = Record.Exception(() =>
             {
@@ -42,43 +45,57 @@ namespace Servy.UI.IntegrationTests.Services
 
             // Assert
             Assert.Null(exception);
-            // Coverage: This confirms the guard clause effectively prevented an 
-            // ObjectDisposedException or NullReferenceException when the WPF context is missing.
         }
 
         #endregion
 
         #region Branch: Background Thread (Dispatcher.CheckAccess == false)
 
-        [Fact(Skip = "Flaky on CI")]
-        public async Task ResetCursor_FromBackgroundThread_InvokesOnDispatcher()
+        [Fact]
+        public async Task SetCursorSafe_FromBackgroundThread_MarshalsToUiDispatcherAsynchronously()
         {
-            // Use the persistent STA context instead of the synchronous RunInSTA
             await Helper.RunOnSTA(async () =>
             {
+                // CRITICAL isolation sequence executing safely on the active STA thread
+                ResetApplicationContext();
                 EnsureApplicationContext();
-                Mouse.OverrideCursor = Cursors.Hand;
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
 
-                // The service should detect we are on a background thread 
-                // and use Dispatcher.InvokeAsync
-                await Task.Run(() =>
+                // Arrange - Establish an initial distinct cursor state
+                Mouse.OverrideCursor = Cursors.Arrow;
+
+                var waitCursorTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                var resetCursorTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                // Act - 1. Invoke worker thread to set the wait cursor
+                _ = Task.Run(async () =>
                 {
-                    _service.ResetCursor();
+                    _service.SetWaitCursor();
+                    await currentDispatcher.InvokeAsync(() => waitCursorTcs.TrySetResult(true), DispatcherPriority.Background);
                 });
 
-                // Force the Dispatcher to process the Reset operation
-                // This flushes the queue up to 'Background' priority
-                int retries = 0, maxRetries = 10;
-                while (Mouse.OverrideCursor != null && retries < maxRetries)
-                {
-                    await Dispatcher.Yield(DispatcherPriority.Background);
-                    await Task.Delay(100); // Small delay to allow the UI thread to process
-                    retries++;
-                }
+                var frame = new DispatcherFrame();
+                _ = waitCursorTcs.Task.ContinueWith(_ => currentDispatcher.InvokeAsync(() => frame.Continue = false));
+                Dispatcher.PushFrame(frame);
 
-                // Verification: Since we are back on the STA thread after the await,
-                // we can check the cursor state immediately.
+                // Assert Wait Cursor state
+                Assert.Equal(Cursors.Wait, Mouse.OverrideCursor);
+
+                // Act - 2. Invoke worker thread to reset the cursor
+                _ = Task.Run(async () =>
+                {
+                    _service.ResetCursor();
+                    await currentDispatcher.InvokeAsync(() => resetCursorTcs.TrySetResult(true), DispatcherPriority.Background);
+                });
+
+                var resetFrame = new DispatcherFrame();
+                _ = resetCursorTcs.Task.ContinueWith(_ => currentDispatcher.InvokeAsync(() => resetFrame.Continue = false));
+                Dispatcher.PushFrame(resetFrame);
+
+                // Assert Reset state
                 Assert.Null(Mouse.OverrideCursor);
+
+                ResetApplicationContext();
             });
         }
 
@@ -98,19 +115,33 @@ namespace Servy.UI.IntegrationTests.Services
         }
 
         /// <summary>
-        /// Forces the dispatcher to process all pending messages, 
-        /// including the InvokeAsync call from the service.
+        /// Forcefully tears down Application.Current using reflection to guarantee environment reset.
+        /// Must be called strictly within an active STA thread context loop.
         /// </summary>
-        private static void DoEvents()
+        private static void ResetApplicationContext()
         {
-            var frame = new DispatcherFrame();
-            Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background,
-                new DispatcherOperationCallback(f =>
+            try
+            {
+                Mouse.OverrideCursor = null;
+            }
+            catch (InvalidOperationException)
+            {
+                // Safe fallback guard rail if state drops out during asynchronous unwinding
+            }
+
+            if (Application.Current != null)
+            {
+                try
                 {
-                    ((DispatcherFrame)f).Continue = false;
-                    return null;
-                }), frame);
-            Dispatcher.PushFrame(frame);
+                    typeof(Application)
+                        .GetField("_current", BindingFlags.Static | BindingFlags.NonPublic)
+                        ?.SetValue(null, null);
+                }
+                catch
+                {
+                    // Fallback block if reflection mappings are locked under strict runtime security rules
+                }
+            }
         }
 
         #endregion
