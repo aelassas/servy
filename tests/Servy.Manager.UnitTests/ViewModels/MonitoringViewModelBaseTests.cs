@@ -2,6 +2,7 @@
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
+using Servy.UI.Constants;
 using Servy.UI.Services;
 using System.Reflection;
 using System.Windows.Threading;
@@ -31,6 +32,9 @@ namespace Servy.Manager.UnitTests.ViewModels
             public bool IsOnMonitoringStoppedCalled { get; private set; }
             public bool PassedClearViewParam { get; private set; }
 
+            // Backing property to verify hosted selection variants
+            public ServiceItemBase? MockedSelectedService { get; set; }
+
             public TestMonitoringViewModel(
                 ICursorService cursorService,
                 IUiDispatcher uiDispatcher,
@@ -50,12 +54,19 @@ namespace Servy.Manager.UnitTests.ViewModels
             public int ExposeIsMonitoringFlag => Volatile.Read(ref _isMonitoringFlag);
             public int ExposeIsTickRunningFlag => Volatile.Read(ref _isTickRunningFlag);
 
-            protected override ServiceItemBase? SelectedServiceItem => null;
+            // FIX: Connect the base abstraction hook to our local test control field
+            protected override ServiceItemBase? SelectedServiceItem => MockedSelectedService;
 
             public void ExposeOnTick()
             {
                 var method = typeof(MonitoringViewModelBase).GetMethod("OnTick", BindingFlags.NonPublic | BindingFlags.Instance);
                 method!.Invoke(this, new object[] { this, EventArgs.Empty });
+            }
+
+            public void ExposeSetPidText(ServiceItemBase? service)
+            {
+                var method = typeof(MonitoringViewModelBase).GetMethod("SetPidText", BindingFlags.NonPublic | BindingFlags.Instance);
+                method!.Invoke(this, new object[] { service! });
             }
 
             protected override async Task OnTickAsync()
@@ -80,6 +91,11 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 return null!; // Not relevant for these tests
             }
+        }
+
+        private class ConcreteServiceItem : ServiceItemBase
+        {
+            // Concrete stub implementation for validation
         }
 
         #endregion
@@ -176,11 +192,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.ExposeDispose(true);
             var postDisposeToken = vm.ExposeCurrentToken();
 
-            // ==========================================
-            // FIX: Assert design logic fallback patterns
-            // ==========================================
             Assert.Equal(CancellationToken.None, postDisposeToken);
-            Assert.False(postDisposeToken.IsCancellationRequested); // None is never in a cancelled state
+            Assert.False(postDisposeToken.IsCancellationRequested);
         }
 
         [Fact]
@@ -196,7 +209,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.ExposeInitTimer();
 
             // Act
-            vm.ExposeOnTick(); // Executed directly while _isMonitoringFlag is zero
+            vm.ExposeOnTick();
 
             // Assert
             Assert.False(tickExecuted);
@@ -213,7 +226,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             var vm = CreateViewModel(onTick: async _ =>
             {
                 Interlocked.Increment(ref activeExecutionsCount);
-                await tcs.Task; // Keep execution suspended inside the block
+                await tcs.Task;
             });
 
             vm.StartMonitoring();
@@ -228,8 +241,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.ExposeOnTick();
 
             // Assert
-            Assert.Equal(1, activeExecutionsCount); // Re-entrancy guard caught concurrent calls
-            Assert.False(vm.ExposeTimer!.IsEnabled); // Proves timer remains paused during operations
+            Assert.Equal(1, activeExecutionsCount);
+            Assert.False(vm.ExposeTimer!.IsEnabled);
 
             // Teardown
             tcs.SetResult(null);
@@ -247,15 +260,13 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             // Assert
             Assert.Equal(0, vm.ExposeIsTickRunningFlag);
-            Assert.True(vm.ExposeTimer!.IsEnabled); // Timer restarts cleanly inside finally block
+            Assert.True(vm.ExposeTimer!.IsEnabled);
         }
 
         [Fact]
         public void OnTick_ConsecutiveFailures_RateLimitsErrorLogsObservedByLoggers()
         {
             // Arrange
-            // Redirect or mock standard global framework infrastructure logger channels if applicable.
-            // Since Logger utilizes static methods, we verify via loop thresholds 
             var vm = CreateViewModel(onTick: _ => throw new InvalidOperationException("SCM connection drop out panic."));
             vm.StartMonitoring();
 
@@ -264,12 +275,11 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 vm.ExposeOnTick();
 
-                // Read internal atomic fields via reflection to ensure state stability matches error policy code loops
                 var field = typeof(MonitoringViewModelBase).GetField("_tickErrorCount", BindingFlags.NonPublic | BindingFlags.Instance);
                 long observedErrors = (long)field!.GetValue(vm)!;
 
                 Assert.Equal(i, observedErrors);
-                Assert.Equal(0, vm.ExposeIsTickRunningFlag); // Ensures exception block prevents lockouts
+                Assert.Equal(0, vm.ExposeIsTickRunningFlag);
             }
         }
 
@@ -279,7 +289,6 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Arrange
             var vm = CreateViewModel();
             vm.StartMonitoring();
-            var timerRef = vm.ExposeTimer;
 
             // Act
             vm.ExposeDispose(true);
@@ -287,6 +296,91 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Assert
             Assert.Null(vm.ExposeCts);
             Assert.Null(vm.ExposeTimer);
+        }
+
+        [Fact]
+        public void CopyPidCommand_CanExecute_ReflectsSelectedServicePidAvailability()
+        {
+            // Arrange
+            var vm = CreateViewModel();
+
+            // Scenario 1: SelectedServiceItem is completely null
+            vm.MockedSelectedService = null;
+            Assert.False(vm.CopyPidCommand.CanExecute(null));
+
+            // Scenario 2: Service is set but Pid contains null value context
+            vm.MockedSelectedService = new ConcreteServiceItem { Pid = null };
+            Assert.False(vm.CopyPidCommand.CanExecute(null));
+
+            // Scenario 3: Service is active and has a valid tracked operating system ID
+            vm.MockedSelectedService = new ConcreteServiceItem { Pid = 4012 };
+            Assert.True(vm.CopyPidCommand.CanExecute(null));
+        }
+
+        [Fact]
+        public void SetPidText_VariousStates_CorrectlyUpdatesPropertyValues()
+        {
+            // Arrange
+            var vm = CreateViewModel();
+
+            // Branch 1: Null Service Item provided -> sets string text to N/A fallback string
+            vm.Pid = "InitialText";
+            vm.ExposeSetPidText(null);
+            Assert.Equal(UiConstants.NotAvailable, vm.Pid);
+
+            // Branch 2: Valid Service Item but null numerical PID property
+            var itemWithNullPid = new ConcreteServiceItem { Pid = null };
+            vm.Pid = "SomeExistingPidValue";
+            vm.ExposeSetPidText(itemWithNullPid);
+            Assert.Equal(UiConstants.NotAvailable, vm.Pid);
+
+            // Branch 3: Valid Service Item containing active numeric tracking integer value
+            var itemWithValidPid = new ConcreteServiceItem { Name = "Spooler", Pid = 1248 };
+            vm.Pid = "OldText";
+            vm.ExposeSetPidText(itemWithValidPid);
+            Assert.Equal("1248", vm.Pid);
+
+            // Branch 4: Optimization match path logic -> Value stays same, skips redundant evaluations
+            vm.ExposeSetPidText(itemWithValidPid);
+            Assert.Equal("1248", vm.Pid);
+        }
+
+        [Fact]
+        public async Task CopyPidAsync_ValidServiceWithPid_DispatchesCommandInfrastructureAndExecutesSuccessfully()
+        {
+            // Arrange
+            var vm = CreateViewModel();
+            var serviceItem = new ConcreteServiceItem { Name = "ServyEngine", Pid = 5028 };
+            vm.MockedSelectedService = serviceItem;
+
+            _serviceCommandsMock
+                .Setup(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "ServyEngine" && s.Pid == 5028)))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
+            // Act
+            await vm.CopyPidCommand.ExecuteAsync(null);
+
+            // Assert
+            _serviceCommandsMock.Verify();
+        }
+
+        [Fact]
+        public async Task CopyPidAsync_NullOrMissingProperties_BypassesExecutionAndReturnsSilently()
+        {
+            // Arrange
+            var vm = CreateViewModel();
+
+            // Scenario 1: SelectedServiceItem is completely null -> bypasses invoke loop sequence
+            vm.MockedSelectedService = null;
+            await vm.CopyPidCommand.ExecuteAsync(null);
+
+            // Scenario 2: Service instance assigned but numerical Pid collection value is missing
+            vm.MockedSelectedService = new ConcreteServiceItem { Pid = null };
+            await vm.CopyPidCommand.ExecuteAsync(null);
+
+            // Assert: Verify that no clipboard copy commands were dispatched to system channels
+            _serviceCommandsMock.Verify(c => c.CopyPidAsync(It.IsAny<Service>()), Times.Never);
         }
 
         #endregion

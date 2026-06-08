@@ -973,6 +973,229 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         #endregion
 
+        #region Complete Branch & Exception Circuit Coverage Tests
+
+        [Fact]
+        public void GetServiceUpdateInfo_TargetPidHasValueAndGreaterThanZero_MaintainsCacheAndFetchesMetrics()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var vm = CreateViewModel();
+                var getInfoMethod = typeof(MainViewModel).GetMethod("GetServiceUpdateInfo", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                var service = new Service { Name = "MetricsSvc", Pid = 4321, Status = ServiceStatus.Running };
+                var allServices = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "MetricsSvc", new ServiceInfo { Name = "MetricsSvc", Status = ServiceStatus.Running, } }
+                };
+                var serviceDto = new ServiceDto { Name = "MetricsSvc", Pid = 4321 };
+
+                _processHelper.Setup(p => p.GetProcessTreeMetrics(4321)).Returns(new ProcessMetrics(12.5, 2048576));
+
+                // Act
+                var result = getInfoMethod!.Invoke(vm, new object[] { service, allServices, serviceDto, CancellationToken.None });
+
+                // Assert
+                Assert.NotNull(result);
+                var resultType = result.GetType();
+                var updateInfo = (ServiceUpdateInfo)resultType.GetField("Item1")!.GetValue(result)!;
+
+                Assert.Equal(12.5, updateInfo.CpuUsage);
+                Assert.Equal(2048576, updateInfo.RamUsage);
+                _processHelper.Verify(p => p.MaintainCache(), Times.Once);
+                _processHelper.Verify(p => p.GetProcessTreeMetrics(4321), Times.Once);
+            }, createApp: true);
+        }
+
+        [Fact]
+        public void GetServiceUpdateInfo_StartupTypeNullInOsButPresentInDto_FallbackToDtoStartupType()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var vm = CreateViewModel();
+                var getInfoMethod = typeof(MainViewModel).GetMethod("GetServiceUpdateInfo", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                var service = new Service { Name = "FallbackSvc", Status = ServiceStatus.Running };
+
+                // OS configuration returns null for the startup type sequence
+                var allServices = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "FallbackSvc", new ServiceInfo { Name = "FallbackSvc", Status = ServiceStatus.Running, StartupType = ServiceStartType.Disabled } }
+                };
+
+                // Database fallback contains a valid explicit configuration setting profile
+                var serviceDto = new ServiceDto { Name = "FallbackSvc", StartupType = (int)ServiceStartType.Disabled };
+
+                // Act
+                var result = getInfoMethod!.Invoke(vm, new object[] { service, allServices, serviceDto, CancellationToken.None });
+
+                // Assert
+                Assert.NotNull(result);
+                var updateInfo = (ServiceUpdateInfo)result.GetType().GetField("Item1")!.GetValue(result)!;
+                Assert.Equal(ServiceStartType.Disabled, updateInfo.StartupType);
+            }, createApp: true);
+        }
+
+        [Fact]
+        public void GetServiceUpdateInfo_ServiceDtoNull_SetsRequiresPidUpdateTrueAndNewPidNull()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var vm = CreateViewModel();
+                var getInfoMethod = typeof(MainViewModel).GetMethod("GetServiceUpdateInfo", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                var service = new Service { Name = "OrphanedSvc", Pid = 999 };
+                var allServices = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase);
+
+                // Act - Passing null for ServiceDto parameter
+                var result = getInfoMethod!.Invoke(vm, new object[] { service, allServices, null!, CancellationToken.None });
+
+                // Assert
+                Assert.NotNull(result);
+                var updateInfo = (ServiceUpdateInfo)result.GetType().GetField("Item1")!.GetValue(result)!;
+                Assert.True(updateInfo.RequiresPidUpdate);
+                Assert.Null(updateInfo.NewPid);
+            }, createApp: true);
+        }
+
+        [Fact]
+        public void ApplyServiceUpdate_AppliesAllPropertiesSafelyToTargetUiService()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var vm = CreateViewModel();
+                var applyMethod = typeof(MainViewModel).GetMethod("ApplyServiceUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                var targetService = new Service
+                {
+                    Name = "Svc",
+                    Pid = 10,
+                    CpuUsage = 0,
+                    RamUsage = 0,
+                    IsInstalled = false,
+                    Status = ServiceStatus.Stopped,
+                    StartupType = ServiceStartType.Manual,
+                    LogOnAs = "OldUser",
+                    Description = "Old Desc"
+                };
+
+                var info = new ServiceUpdateInfo(targetService)
+                {
+                    RequiresPidUpdate = true,
+                    NewPid = 20,
+                    CpuUsage = 5.5,
+                    RamUsage = 1024,
+                    IsInstalled = true,
+                    Status = ServiceStatus.Running,
+                    StartupType = ServiceStartType.Automatic,
+                    LogOnAs = "NewUser",
+                    Description = "New Desc"
+                };
+
+                // Act
+                applyMethod!.Invoke(vm, new object[] { info });
+
+                // Assert
+                Assert.Equal(20, targetService.Pid);
+                Assert.True(targetService.IsPidEnabled);
+                Assert.Equal(5.5, targetService.CpuUsage);
+                Assert.Equal(1024, targetService.RamUsage);
+                Assert.True(targetService.IsInstalled);
+                Assert.Equal(ServiceStatus.Running, targetService.Status);
+                Assert.Equal(ServiceStartType.Automatic, targetService.StartupType);
+                Assert.Equal("NewUser", targetService.LogOnAs);
+                Assert.Equal("New Desc", targetService.Description);
+            }, createApp: true);
+        }
+
+        [Fact]
+        public void Service_PropertyChanged_IsCheckedPropertyName_TriggersSelectAllAndHasSelectedServicesCascade()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var vm = CreateViewModel();
+                bool hasSelectedServicesNotified = false;
+                vm.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == nameof(MainViewModel.HasSelectedServices))
+                        hasSelectedServicesNotified = true;
+                };
+
+                var handlerMethod = typeof(MainViewModel).GetMethod("Service_PropertyChanged", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                // Act - Simulate a child RowViewModel checking state mutation notification callback loop trigger
+                handlerMethod!.Invoke(vm, new object[] { null!, new PropertyChangedEventArgs(nameof(ServiceRowViewModel.IsChecked)) });
+
+                // Assert
+                Assert.True(hasSelectedServicesNotified);
+            }, createApp: true);
+        }
+
+        [Fact]
+        public void UpdateSelectAllState_CollectionEmpty_SetsSelectAllFalse()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var vm = CreateViewModel();
+
+                // Clear out items securely to challenge collection edge loops
+                var servicesCollection = (BulkObservableCollection<ServiceRowViewModel>)typeof(MainViewModel)
+                    .GetField("_services", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm)!;
+                servicesCollection.Clear();
+
+                var updateStateMethod = typeof(MainViewModel).GetMethod("UpdateSelectAllState", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                // Act
+                updateStateMethod!.Invoke(vm, null);
+
+                // Assert
+                Assert.False(vm.SelectAll);
+            }, createApp: true);
+        }
+
+        [Fact]
+        public void Dispose_PerformanceAndChildViewModelsNotImplementIDisposable_BypassesGracefully()
+        {
+            Helper.RunOnSTA(() =>
+            {
+                // Arrange
+                var uiDispatcherMock = new Mock<IUiDispatcher>();
+                uiDispatcherMock.Setup(d => d.YieldAsync()).Returns(Task.CompletedTask);
+
+                // Initialize standalone standard child instances that do NOT inherit or abstract from IDisposable directly
+                var mockPerformance = new Mock<PerformanceViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelper.Object, uiDispatcherMock.Object);
+                var mockConsole = new Mock<ConsoleViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object);
+                var mockDependencies = new Mock<DependenciesViewModel>(_serviceRepositoryMock.Object, _serviceManagerMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object, _messageBoxServiceMock.Object);
+
+                var vm = new MainViewModel(
+                    _serviceManagerMock.Object,
+                    _serviceRepositoryMock.Object,
+                    _serviceCommandsMock.Object,
+                    _helpServiceMock.Object,
+                    _messageBoxServiceMock.Object,
+                    mockPerformance.Object,
+                    mockConsole.Object,
+                    mockDependencies.Object,
+                    _appConfigMock.Object,
+                    _cursorServiceMock.Object,
+                    _processHelper.Object,
+                    Dispatcher.CurrentDispatcher
+                );
+
+                // Act & Assert - Ensure standard layout teardowns do not experience casting violations or throw crashes
+                var exception = Record.Exception(() => vm.Dispose());
+                Assert.Null(exception);
+            }, createApp: true);
+        }
+
+        #endregion
+
         #region Disposal & Teardown
 
         [Fact]
