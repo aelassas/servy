@@ -201,6 +201,5 @@ namespace Servy.UI.Services
                 Logger.Debug(fallbackDebug);
             }
         }
-
     }
 }
