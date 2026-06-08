@@ -5,8 +5,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading;
 using Xunit;
 
@@ -25,8 +23,7 @@ namespace Servy.Core.IntegrationTests.Helpers
     [Collection("HandleHelperIntegrationTests")]
     public class HandleHelperIntegrationTests : IDisposable
     {
-        private static readonly string _handleExePath = Testing.Helper.HandleExePath;
-
+        private readonly string _handleExePath;
         private readonly List<string> _tempFiles = new List<string>();
         private readonly List<FileStream> _openedStreams = new List<FileStream>();
 
@@ -36,6 +33,9 @@ namespace Servy.Core.IntegrationTests.Helpers
         public HandleHelperIntegrationTests()
         {
             Testing.Helper.ExtractHandleExe();
+
+            // Safely read path assignment tokens once extraction checks pass
+            _handleExePath = Testing.Helper.HandleExePath;
 
             if (!File.Exists(_handleExePath))
             {
