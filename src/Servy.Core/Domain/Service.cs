@@ -73,7 +73,7 @@ namespace Servy.Core.Domain
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
-        /// The **Display Name** of the service, shown in the Windows Services management console (<c>services.msc</c>).
+        /// The <b>Display Name</b> of the service, shown in the Windows Services management console (<c>services.msc</c>).
         /// </summary>
         /// <remarks>
         /// This name is human-readable, often includes prefixes for grouping, and can be changed 

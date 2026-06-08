@@ -44,6 +44,7 @@ namespace Servy.Services
         /// </summary>
         /// <param name="serviceName">The name of the service to uninstall.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>A task representing the asynchronous uninstallation operation.</returns>
         Task<bool> UninstallService(string? serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -51,6 +52,7 @@ namespace Servy.Services
         /// </summary>
         /// <param name="serviceName">The name of the service to start.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>A task representing the asynchronous start operation.</returns>
         Task<bool> StartService(string? serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -58,6 +60,7 @@ namespace Servy.Services
         /// </summary>
         /// <param name="serviceName">The name of the service to stop.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>A task representing the asynchronous stop operation.</returns>
         Task<bool> StopService(string? serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -65,6 +68,7 @@ namespace Servy.Services
         /// </summary>
         /// <param name="serviceName">The name of the service to restart.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>A task representing the asynchronous restart operation.</returns>
         Task<bool> RestartService(string? serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>

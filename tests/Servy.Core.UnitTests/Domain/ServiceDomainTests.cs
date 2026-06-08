@@ -90,7 +90,7 @@ namespace Servy.Core.UnitTests.Domain
             var service = CreateService();
             _serviceManagerMock.Setup(s => s.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
 
-            var result = service.IsInstalled();
+            var result = service.IsInstalled(TestContext.Current.CancellationToken);
 
             Assert.True(result);
             _serviceManagerMock.Verify(s => s.IsServiceInstalled("TestService", It.IsAny<CancellationToken>()), Times.Once);
@@ -103,7 +103,7 @@ namespace Servy.Core.UnitTests.Domain
             _serviceManagerMock.Setup(s => s.GetServiceStartupType("TestService", It.IsAny<CancellationToken>()))
                 .Returns(ServiceStartType.Automatic);
 
-            var result = service.GetServiceStartupType();
+            var result = service.GetServiceStartupType(TestContext.Current.CancellationToken);
 
             Assert.Equal(ServiceStartType.Automatic, result);
         }

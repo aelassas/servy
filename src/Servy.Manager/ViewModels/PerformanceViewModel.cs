@@ -158,6 +158,7 @@ namespace Servy.Manager.ViewModels
         /// Initializes a new instance of the <see cref="PerformanceViewModel"/> class.
         /// </summary>
         /// <param name="serviceRepository">Repository for service data access.</param>
+        /// <param name="serviceCommands">Commands for service operations.</param>
         /// <param name="appConfig">Application configuration settings.</param>
         /// <param name="cursorService">Service used to control the cursor state.</param>
         /// <param name="processHelper">The process helper used to format process commands.</param>
@@ -225,6 +226,7 @@ namespace Servy.Manager.ViewModels
             _hadSelectedService = true;
 
             var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, token);
+
             // Drop this tick if the user switched services while we were awaiting the DB call.
             if (!ReferenceEquals(currentSelection, _selectedService) || token.IsCancellationRequested) return;
 

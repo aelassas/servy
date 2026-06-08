@@ -219,7 +219,7 @@ namespace Servy.Infrastructure.Data
                     // ROBUSTNESS: Isolate the core data type affinity token from complex metadata extensions (DEFAULT, CHECK, COLLATE, etc.)
                     // PRAGMA table_info().type only returns the bare data type descriptor (e.g. "TEXT", "INTEGER").
                     // Extracting the first whitespace-delimited word prevents false-positive warnings.
-                    string expectedAffinity = expectedFullType.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+                    string expectedAffinity = expectedFullType.Split(SplitWhitespaceChars, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
 
                     if (!string.Equals(dbBaseType, expectedAffinity, StringComparison.OrdinalIgnoreCase) || dbNotNull != expectedNotNull)
                     {

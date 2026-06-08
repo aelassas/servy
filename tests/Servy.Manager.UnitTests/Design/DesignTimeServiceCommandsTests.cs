@@ -28,8 +28,8 @@ namespace Servy.Manager.UnitTests.Design
             var exception = await Record.ExceptionAsync(async () =>
             {
                 await commands.ConfigureServiceAsync(testService, TestContext.Current.CancellationToken);
-                await commands.ExportServiceToXmlAsync(testService);
-                await commands.ExportServiceToJsonAsync(testService);
+                await commands.ExportServiceToXmlAsync(testService, TestContext.Current.CancellationToken);
+                await commands.ExportServiceToJsonAsync(testService, TestContext.Current.CancellationToken);
                 await commands.ImportXmlConfigAsync(TestContext.Current.CancellationToken);
                 await commands.ImportJsonConfigAsync(TestContext.Current.CancellationToken);
                 await commands.CopyPidAsync(testService);

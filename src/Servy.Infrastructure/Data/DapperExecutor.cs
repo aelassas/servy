@@ -172,7 +172,7 @@ namespace Servy.Infrastructure.Data
 
                 try
                 {
-                    return await action(cancellationToken).ConfigureAwait(false);
+                    return await action(cancellationToken);
                 }
                 catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Busy || ex.ResultCode == SQLiteErrorCode.Locked)
                 {
@@ -189,7 +189,7 @@ namespace Servy.Infrastructure.Data
                     Logger.Warn($"Database busy (async attempt {i + 1}/{AppConfig.DbAsyncMaxRetries}). Retrying in {delay}ms... Query: [{queryContext}]");
 
                     // Critical: Pass the token to Task.Delay so we don't hang if cancelled during backoff
-                    await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+                    await Task.Delay(delay, cancellationToken);
                 }
             }
 
@@ -330,7 +330,7 @@ namespace Servy.Infrastructure.Data
             {
                 if (connection is DbConnection dbConn)
                 {
-                    await dbConn.OpenAsync(cancellationToken).ConfigureAwait(false);
+                    await dbConn.OpenAsync(cancellationToken);
                 }
                 else
                 {
@@ -339,7 +339,7 @@ namespace Servy.Infrastructure.Data
 
                 // BeginTransactionAsync exists on DbConnection in .NET 6+; fall back to sync otherwise.
                 var transaction = (connection is DbConnection dbConn2)
-                    ? await dbConn2.BeginTransactionAsync(cancellationToken).ConfigureAwait(false)
+                    ? await dbConn2.BeginTransactionAsync(cancellationToken)
                     : connection.BeginTransaction();
 
                 return new WrappedDbTransaction(connection, transaction);
@@ -365,15 +365,15 @@ namespace Servy.Infrastructure.Data
 
                 if (actualTx != null)
                 {
-                    return await actualTx.Connection!.ExecuteScalarAsync<T?>(command).ConfigureAwait(false);
+                    return await actualTx.Connection!.ExecuteScalarAsync<T?>(command);
                 }
 
                 using (var connection = _dbContext.CreateConnection())
                 {
-                    await connection.OpenAsync(ct).ConfigureAwait(false);
-                    return await connection.ExecuteScalarAsync<T?>(command).ConfigureAwait(false);
+                    await connection.OpenAsync(ct);
+                    return await connection.ExecuteScalarAsync<T?>(command);
                 }
-            }, cancellationToken, sql).ConfigureAwait(false);
+            }, cancellationToken, sql);
         }
 
         /// <inheritdoc/>
@@ -390,15 +390,15 @@ namespace Servy.Infrastructure.Data
 
                 if (actualTx != null)
                 {
-                    return (int?)await actualTx.Connection!.ExecuteAsync(command).ConfigureAwait(false);
+                    return (int?)await actualTx.Connection!.ExecuteAsync(command);
                 }
 
                 using (var connection = _dbContext.CreateConnection())
                 {
-                    await connection.OpenAsync(ct).ConfigureAwait(false);
-                    return (int?)await connection.ExecuteAsync(command).ConfigureAwait(false);
+                    await connection.OpenAsync(ct);
+                    return (int?)await connection.ExecuteAsync(command);
                 }
-            }, cancellationToken, sql).ConfigureAwait(false);
+            }, cancellationToken, sql);
 
             return result ?? 0;
         }
@@ -422,15 +422,15 @@ namespace Servy.Infrastructure.Data
 
                 if (cmd.Transaction != null)
                 {
-                    return await cmd.Transaction.Connection!.QueryAsync<T>(cmd).ConfigureAwait(false);
+                    return await cmd.Transaction.Connection!.QueryAsync<T>(cmd);
                 }
 
                 using (var connection = _dbContext.CreateConnection())
                 {
-                    await connection.OpenAsync(ct).ConfigureAwait(false);
-                    return await connection.QueryAsync<T>(cmd).ConfigureAwait(false);
+                    await connection.OpenAsync(ct);
+                    return await connection.QueryAsync<T>(cmd);
                 }
-            }, command.CancellationToken, command.CommandText).ConfigureAwait(false) ?? Enumerable.Empty<T>();
+            }, command.CancellationToken, command.CommandText) ?? Enumerable.Empty<T>();
         }
 
         /// <inheritdoc/>
@@ -439,7 +439,7 @@ namespace Servy.Infrastructure.Data
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
             // Re-routes through the CommandDefinition overload, which handles the unwrapping and token-binding
-            return await QueryAsync<T>(new CommandDefinition(sql, param, transaction, cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return await QueryAsync<T>(new CommandDefinition(sql, param, transaction, cancellationToken: cancellationToken));
         }
 
         /// <inheritdoc/>
@@ -448,7 +448,7 @@ namespace Servy.Infrastructure.Data
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
             // Re-routes through the CommandDefinition overload, which handles the unwrapping and token-binding
-            return await QuerySingleOrDefaultAsync<T>(new CommandDefinition(sql, param, transaction, cancellationToken: cancellationToken)).ConfigureAwait(false);
+            return await QuerySingleOrDefaultAsync<T>(new CommandDefinition(sql, param, transaction, cancellationToken: cancellationToken));
         }
 
         /// <inheritdoc/>
@@ -470,15 +470,15 @@ namespace Servy.Infrastructure.Data
 
                 if (cmd.Transaction != null)
                 {
-                    return await cmd.Transaction.Connection!.QuerySingleOrDefaultAsync<T>(cmd).ConfigureAwait(false);
+                    return await cmd.Transaction.Connection!.QuerySingleOrDefaultAsync<T>(cmd);
                 }
 
                 using (var connection = _dbContext.CreateConnection())
                 {
-                    await connection.OpenAsync(ct).ConfigureAwait(false);
-                    return await connection.QuerySingleOrDefaultAsync<T>(cmd).ConfigureAwait(false);
+                    await connection.OpenAsync(ct);
+                    return await connection.QuerySingleOrDefaultAsync<T>(cmd);
                 }
-            }, command.CancellationToken, command.CommandText).ConfigureAwait(false);
+            }, command.CancellationToken, command.CommandText);
         }
 
         /// <inheritdoc/>
@@ -501,15 +501,15 @@ namespace Servy.Infrastructure.Data
 
                 if (cmd.Transaction != null)
                 {
-                    return await cmd.Transaction.Connection!.QueryFirstOrDefaultAsync<T>(cmd).ConfigureAwait(false);
+                    return await cmd.Transaction.Connection!.QueryFirstOrDefaultAsync<T>(cmd);
                 }
 
                 using (var connection = _dbContext.CreateConnection())
                 {
-                    await connection.OpenAsync(ct).ConfigureAwait(false);
-                    return await connection.QueryFirstOrDefaultAsync<T>(cmd).ConfigureAwait(false);
+                    await connection.OpenAsync(ct);
+                    return await connection.QueryFirstOrDefaultAsync<T>(cmd);
                 }
-            }, command.CancellationToken, command.CommandText).ConfigureAwait(false);
+            }, command.CancellationToken, command.CommandText);
         }
 
         /// <inheritdoc/>
@@ -521,7 +521,7 @@ namespace Servy.Infrastructure.Data
                 sql,
                 param,
                 transaction,
-                cancellationToken: cancellationToken)).ConfigureAwait(false);
+                cancellationToken: cancellationToken));
         }
 
         #endregion
