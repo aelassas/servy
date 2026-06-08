@@ -74,14 +74,14 @@ namespace Servy.Manager.Mappers
         }
 
         /// <summary>
-        /// Converts a <see cref="ServiceItemBase"/> into its corresponding <see cref="Service"/> domain model representation.
+        /// Converts a <see cref="ServiceItemBase"/> into its corresponding <see cref="Service"/> UI model.
         /// </summary>
         /// <param name="item">The source service item to be converted.</param>
         /// <returns>
         /// A populated <see cref="Service"/> object if <paramref name="item"/> is not null; otherwise, <see langword="null"/>.
         /// </returns>
         /// <remarks>
-        /// This method facilitates the mapping between UI/DTO service items and the core domain model. 
+        /// This method facilitates the mapping between UI/DTO service items and the WPF Service UI model.
         /// It includes polymorphic handling: if the input is a <see cref="ConsoleService"/>, the 
         /// <c>StdoutPath</c> and <c>StderrPath</c> properties are also preserved in the resulting model.
         /// </remarks>

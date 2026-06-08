@@ -41,9 +41,10 @@ namespace Servy.Manager.ViewModels
         #region Properties - Service Data
 
         private DependencyService _selectedService;
+
         /// <summary>
-        /// Gets or sets the currently selected service. 
-        /// Changing this resets the console history and restarts file tailing for the new service paths.
+        /// Gets or sets the currently selected service.
+        /// Changing this reloads the dependency tree and restarts PID monitoring for the new service.
         /// </summary>
         public DependencyService SelectedService
         {

@@ -57,19 +57,19 @@ namespace Servy.Core.Helpers
         /// <list type="number">
         /// <item>
         /// <description>
-        /// **Root Vault:** The primary data path defined in <see cref="AppConfig.ProgramDataPath"/> is secured first 
+        /// <b>Root Vault:</b> The primary data path defined in <see cref="AppConfig.ProgramDataPath"/> is secured first 
         /// by breaking inheritance to block standard users.
         /// </description>
         /// </item>
         /// <item>
         /// <description>
-        /// **Operational Folders:** Subfolders (db, security, recovery, logs) are processed. If they reside within the Root Vault, 
+        /// <b>Operational Folders:</b> Subfolders (db, security, recovery, logs) are processed. If they reside within the Root Vault, 
         /// inheritance is preserved to allow manually granted service account permissions to cascade down.
         /// </description>
         /// </item>
         /// <item>
         /// <description>
-        /// **External Paths:** If a folder is located outside the primary data path, it is treated as a new Root Vault 
+        /// <b>External Paths:</b> If a folder is located outside the primary data path, it is treated as a new Root Vault 
         /// and inheritance is broken for safety.
         /// </description>
         /// </item>

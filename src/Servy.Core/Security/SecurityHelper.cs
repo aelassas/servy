@@ -125,30 +125,30 @@ namespace Servy.Core.Security
         /// <list type="number">
         /// <item>
         /// <description>
-        /// **Inheritance Management:** Either blocks inheritance (Root Vault) or enables it (Child Folder) 
+        /// <b>Inheritance Management:</b> Either blocks inheritance (Root Vault) or enables it (Child Folder) 
         /// to support multi-account setups.
         /// </description>
         /// </item>
         /// <item>
         /// <description>
-        /// **Dangerous Group Purge:** Explicitly removes access for <c>Users</c>, <c>Authenticated Users</c>, 
+        /// <b>Dangerous Group Purge:</b> Explicitly removes access for <c>Users</c>, <c>Authenticated Users</c>, 
         /// and <c>Everyone</c> to close LPE vectors.
         /// </description>
         /// </item>
         /// <item>
         /// <description>
-        /// **Anti-Squatting Purge:** Explicitly removes any <c>Deny</c> rules for <c>Administrators</c> and 
+        /// <b>Anti-Squatting Purge:</b> Explicitly removes any <c>Deny</c> rules for <c>Administrators</c> and 
         /// <c>Local System</c> (and the current user) to prevent Denial-of-Service via directory squatting.
         /// </description>
         /// </item>
         /// <item>
         /// <description>
-        /// **Mandatory Access:** Grants <c>Full Control</c> to <c>Administrators</c> and <c>Local System</c>.
+        /// <b>Mandatory Access:</b> Grants <c>Full Control</c> to <c>Administrators</c> and <c>Local System</c>.
         /// </description>
         /// </item>
         /// <item>
         /// <description>
-        /// **Operational Continuity:** Grants <c>Full Control</c> to the current process user if they 
+        /// <b>Operational Continuity:</b> Grants <c>Full Control</c> to the current process user if they 
         /// are not the LocalSystem account.
         /// </description>
         /// </item>
