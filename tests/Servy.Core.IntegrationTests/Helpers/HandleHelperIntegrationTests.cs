@@ -1,8 +1,6 @@
 ﻿using Microsoft.Win32;
 using Servy.Core.Helpers;
 using System.Diagnostics;
-using System.Reflection;
-using System.Runtime.InteropServices;
 
 namespace Servy.Core.IntegrationTests.Helpers
 {
@@ -19,13 +17,7 @@ namespace Servy.Core.IntegrationTests.Helpers
     [Collection("HandleHelperIntegrationTests")]
     public class HandleHelperIntegrationTests : IDisposable
     {
-        // Make the path and extraction state static so it only initializes once per test run
-        // Dynamically select the native Sysinternals binary based on runtime architecture to support ARM64 agents natively
-        private static readonly string _handleExePath = RuntimeInformation.OSArchitecture == Architecture.Arm64
-            ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64a.exe")
-            : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64.exe");
-        private static readonly object _extractionLock = new object();
-        private static bool _isExtracted = false;
+        private static readonly string _handleExePath = Testing.Helper.HandleExePath;
 
         private readonly List<string> _tempFiles = new List<string>();
         private readonly List<FileStream> _openedStreams = new List<FileStream>();
@@ -35,7 +27,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         /// </summary>
         public HandleHelperIntegrationTests()
         {
-            ExtractHandleExe();
+            Testing.Helper.ExtractHandleExe();
 
             if (!File.Exists(_handleExePath))
             {
@@ -85,80 +77,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             catch (Exception ex)
             {
                 Debug.WriteLine($"WARNING: Failed to pre-seed EulaAccepted registry key. Details: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Extracts handle64.exe from the assembly's embedded resources to the base directory.
-        /// </summary>
-        private void ExtractHandleExe()
-        {
-            // Fast path: if already extracted in this process, skip immediately
-            if (_isExtracted || File.Exists(_handleExePath)) return;
-
-            // Static lock prevents multiple class instances from extracting simultaneously
-            lock (_extractionLock)
-            {
-                // Double-check pattern: the file might have been created while we waited for the lock
-                if (_isExtracted || File.Exists(_handleExePath))
-                {
-                    _isExtracted = true;
-                    return;
-                }
-
-                var assembly = Assembly.GetExecutingAssembly();
-                // Resource names usually follow: ProjectNamespace.Folder.FileName.Extension
-                // Dynamically select the resource manifest lookup string matching the target platform asset
-                string targetFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "handle64a.exe" : "handle64.exe";
-                string resourceName = $"Servy.Core.IntegrationTests.Resources.{targetFileName}";
-
-                using (Stream? resourceStream = assembly.GetManifestResourceStream(resourceName))
-                {
-                    if (resourceStream == null)
-                    {
-                        // Fallback: try to find the resource by name if the full namespace path is unknown
-                        var actualName = assembly.GetManifestResourceNames()
-                            .FirstOrDefault(n => n.EndsWith(targetFileName));
-
-                        if (actualName == null) return;
-
-                        using (var fallbackStream = assembly.GetManifestResourceStream(actualName))
-                        {
-                            WriteResourceToDisk(fallbackStream);
-                        }
-                    }
-                    else
-                    {
-                        WriteResourceToDisk(resourceStream);
-                    }
-                }
-
-                _isExtracted = true;
-            }
-        }
-
-        private void WriteResourceToDisk(Stream? stream)
-        {
-            try
-            {
-                if (stream == null) return;
-
-                // If the file somehow exists but _isExtracted was false, 
-                // FileMode.Create would fail if another process is even just reading it.
-                // We only write if the file isn't physically there.
-                if (File.Exists(_handleExePath)) return;
-
-                // Added FileShare.ReadWrite. On CI, Antivirus or Windows Indexer 
-                // often grab handles the millisecond a file is created.
-                using (FileStream fileStream = new FileStream(_handleExePath, FileMode.CreateNew, FileAccess.Write, FileShare.ReadWrite))
-                {
-                    stream.CopyTo(fileStream);
-                }
-            }
-            catch (IOException ex) when (ex.HResult == unchecked((int)0x80070050)) // ERROR_FILE_EXISTS
-            {
-                // If we hit a race where the file was created between our check and our open, 
-                // it's a win-the file is there.
             }
         }
 
