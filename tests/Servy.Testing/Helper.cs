@@ -13,7 +13,10 @@ namespace Servy.Testing
 {
     public static class Helper
     {
-        // Dynamically select the native Sysinternals binary based on runtime architecture to support ARM64 agents natively
+        /// <summary>
+        /// Handle Exe Path.
+        /// Dynamically select the native Sysinternals binary based on runtime architecture to support ARM64 agents natively.
+        /// </summary>
         public static readonly string HandleExePath = RuntimeInformation.OSArchitecture == Architecture.Arm64
             ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64a.exe")
             : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64.exe");
