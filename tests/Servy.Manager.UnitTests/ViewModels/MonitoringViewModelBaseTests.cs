@@ -50,6 +50,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             public int ExposeIsMonitoringFlag => Volatile.Read(ref _isMonitoringFlag);
             public int ExposeIsTickRunningFlag => Volatile.Read(ref _isTickRunningFlag);
 
+            protected override ServiceItemBase? SelectedServiceItem => null;
+
             public void ExposeOnTick()
             {
                 var method = typeof(MonitoringViewModelBase).GetMethod("OnTick", BindingFlags.NonPublic | BindingFlags.Instance);

@@ -75,12 +75,14 @@ namespace Servy.Services
         /// Exports the service configuration to an XML file selected by the user.
         /// </summary>
         /// <param name="confirmPassword">The confirmation of the service account password.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         Task ExportXmlConfig(string? confirmPassword);
 
         /// <summary>
         /// Exports the service configuration to a JSON file selected by the user.
         /// </summary>
         /// <param name="confirmPassword">The confirmation of the service account password.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         Task ExportJsonConfig(string? confirmPassword);
 
         /// <summary>
@@ -89,6 +91,7 @@ namespace Servy.Services
         /// and maps the values to the main view model.
         /// Shows an error message if the XML is invalid, deserialization fails, or any exception occurs.
         /// </summary>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         Task ImportXmlConfig();
 
         /// <summary>
@@ -97,11 +100,13 @@ namespace Servy.Services
         /// and maps the values to the main view model.
         /// Shows an error message if the JSON is invalid, deserialization fails, or any exception occurs.
         /// </summary>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         Task ImportJsonConfig();
 
         /// <summary>
         /// Opens Servy Manager to manage services.
         /// </summary>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         Task OpenManager();
     }
 }

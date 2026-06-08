@@ -9,6 +9,7 @@
         /// Opens the documentation for the application.
         /// </summary>
         /// <param name="caption">The caption to use for any message box displayed if the documentation cannot be opened.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         Task OpenDocumentation(string caption);
 
         /// <summary>
@@ -23,6 +24,7 @@
         /// </summary>
         /// <param name="about">The content to display in the About dialog.</param>
         /// <param name="caption">The caption of the About dialog window.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         Task OpenAboutDialog(string about, string caption);
     }
 }

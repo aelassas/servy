@@ -8,11 +8,6 @@
     publish script:
         - publish-sc.ps1   (self-contained bundle)
 
-.REQUIREMENTS
-    1. MSBuild must be available in PATH.
-    2. Inno Setup (ISCC.exe) installed and accessible.
-    3. 7-Zip installed with `7z` available in PATH.
-
 .PARAMETER Tfm
     The target framework moniker (TFM).
 
@@ -25,6 +20,11 @@
 .NOTES
     This script can be run from any working directory. It calculates elapsed time
     and pauses at the end to allow double-click usage from Explorer.
+
+    Requirements:
+        1. MSBuild must be available in PATH.
+        2. Inno Setup (ISCC.exe) installed and accessible.
+        3. 7-Zip installed with `7z` available in PATH.
 #>
 
 # publish.ps1

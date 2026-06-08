@@ -23,10 +23,6 @@ namespace Servy.Manager.Services
     /// <summary>
     ///  Concrete implementation of <see cref="IServiceCommands"/> that provides service management commands such as install, uninstall, start, stop, and restart.
     /// </summary>
-    /// <remarks>
-    /// Initializes a new instance of the <see cref="ServiceCommands"/> class.
-    /// </remarks>
-    /// <exception cref="ArgumentNullException">Thrown if any argument is null.</exception>
     public class ServiceCommands : IServiceCommands
     {
         /// <summary>
@@ -74,6 +70,7 @@ namespace Servy.Manager.Services
         /// <param name="appConfig">The application configuration interface.</param>
         /// <param name="processHelper">The process helper used to format process commands.</param>
         /// <param name="dispatcher">The UI dispatcher used for STA operations like Clipboard access.</param>
+        /// <exception cref="ArgumentNullException">Thrown if any argument is null.</exception>
         public ServiceCommands(
             IServiceManager serviceManager,
             IServiceRepository serviceRepository,

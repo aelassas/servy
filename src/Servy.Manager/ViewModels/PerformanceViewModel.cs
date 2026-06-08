@@ -123,13 +123,6 @@ namespace Servy.Manager.ViewModels
         public double GraphWidth { get; } = 400;
         public double GraphHeight { get; } = 200;
 
-        private string _pid = UiConstants.NotAvailable;
-        public string Pid
-        {
-            get => _pid;
-            set => Set(ref _pid, value);
-        }
-
         private string _cpuUsage = UiConstants.NotAvailable;
         public string CpuUsage
         {
@@ -143,12 +136,6 @@ namespace Servy.Manager.ViewModels
             get => _ramUsage;
             set => Set(ref _ramUsage, value);
         }
-
-        #endregion
-
-        #region Commands
-
-        public IAsyncCommand CopyPidCommand { get; }
 
         #endregion
 
@@ -175,7 +162,6 @@ namespace Servy.Manager.ViewModels
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
-            CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null, name: nameof(CopyPidCommand));
 
             InitTimer();
         }
@@ -196,6 +182,9 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region MonitoringViewModelBase Implementation
+
+        /// <inheritdoc/>
+        protected override ServiceItemBase? SelectedServiceItem => SelectedService;
 
         /// <inheritdoc/>
         protected override int RefreshIntervalMs => _appConfig.PerformanceRefreshIntervalInMs;
@@ -298,16 +287,6 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Updates the PID display text based on the selected service's current state.
-        /// </summary>
-        /// <param name="service">Service model.</param>
-        private void SetPidText(ServiceItemBase service)
-        {
-            var pidTxt = service.Pid?.ToString() ?? UiConstants.NotAvailable;
-            if (Pid != pidTxt) Pid = pidTxt;
-        }
-
-        /// <summary>
         /// Processes new performance data and updates the point collections using an optimized 
         /// double-buffering approach to minimize GC allocations.
         /// </summary>
@@ -383,25 +362,6 @@ namespace Servy.Manager.ViewModels
                 RamFillPoints = fillBuffer.Clone();
             }
         }
-
-        /// <summary>
-        /// Asynchronously copies the process identifier (PID) of the selected service to the clipboard or a designated
-        /// destination.
-        /// </summary>
-        /// <remarks>The method performs no action if no service is selected or if the selected service
-        /// does not have a PID.</remarks>
-        /// <param name="parameter">An optional parameter that can be used to pass additional data for the copy operation. This parameter is not
-        /// used by the method.</param>
-        /// <returns>A task that represents the asynchronous copy operation.</returns>
-        private async Task CopyPidAsync(object? parameter)
-        {
-            if (SelectedService?.Pid != null)
-            {
-                var service = ServiceMapper.ToModel(SelectedService);
-                await ServiceCommands.CopyPidAsync(service);
-            }
-        }
-
 
         #endregion
 

@@ -12,16 +12,16 @@
 .PARAMETER None
     No parameters are required; the script is self-contained.
 
-.REQUIREMENTS
-    - .NET SDK installed and accessible in PATH.
-    - ReportGenerator tool installed and available in PATH.
-
 .EXAMPLE
     ./test.ps1
     Runs all unit tests and generates the coverage report.
 
 .NOTES
     Author: Akram El Assas
+
+    Requirements:
+      - .NET SDK installed and accessible in PATH.
+      - ReportGenerator tool installed and available in PATH.
 #>
 
 $ErrorActionPreference = "Stop"

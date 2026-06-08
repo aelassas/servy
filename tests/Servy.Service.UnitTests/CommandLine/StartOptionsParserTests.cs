@@ -1,14 +1,11 @@
 ﻿using Moq;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using Xunit;
 using Servy.Core.Config;
 using Servy.Core.Data;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Service.CommandLine;
-using Servy.Core.DTOs;
+using System.Diagnostics;
 
 namespace Servy.Service.UnitTests.CommandLine
 {

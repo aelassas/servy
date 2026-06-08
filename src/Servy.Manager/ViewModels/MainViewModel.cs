@@ -369,14 +369,14 @@ namespace Servy.Manager.ViewModels
             new UI.Design.DesignTimeServiceRepository(),  // IServiceRepository
             new DesignTimeServiceCommands(),              // IServiceCommands
             new UI.Design.DesignTimeHelpService(),        // HelpService
-            new UI.Design.DesignTimeMessageBoxService(),  // IFileDialogService
-            new PerformanceViewModel(),    // Design-time PerformanceVM
-            new ConsoleViewModel(),        // Design-time ConsoleVM
-            new DependenciesViewModel(),   // Design-time DependenciesVM
-            new DesignTimeAppConfig(),     // AppConfig placeholder
-            new UI.Design.DesignTimeCursorService(), // CursorService placeholder
-            new UI.Design.DesignTimeProcessHelper(), // ProcessHelper placeholder
-            null                                     // dispatcher
+            new UI.Design.DesignTimeMessageBoxService(),  // IMessageBoxService
+            new PerformanceViewModel(),                   // Design-time PerformanceVM
+            new ConsoleViewModel(),                       // Design-time ConsoleVM
+            new DependenciesViewModel(),                  // Design-time DependenciesVM
+            new DesignTimeAppConfig(),                    // AppConfig placeholder
+            new UI.Design.DesignTimeCursorService(),      // CursorService placeholder
+            new UI.Design.DesignTimeProcessHelper(),      // ProcessHelper placeholder
+            null                                          // dispatcher
         )
         { }
 
@@ -575,7 +575,7 @@ namespace Servy.Manager.ViewModels
                 stopwatch.Stop();
                 SetFooterText(stopwatch);
 
-                // Step 5: refresh all service statuses and details in the background
+                // Step 6: refresh all service statuses and details in the background
                 _ = Task.Run(async () =>
                 {
                     try

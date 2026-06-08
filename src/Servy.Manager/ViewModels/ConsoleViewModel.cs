@@ -148,26 +148,7 @@ namespace Servy.Manager.ViewModels
 
         #endregion
 
-        #region Properties - UI State & Search
-
-        private string _pid = UiConstants.NotAvailable;
-        /// <summary>
-        /// Gets or sets the Process ID string for display in the UI.
-        /// </summary>
-        public string Pid
-        {
-            get => _pid;
-            set => Set(ref _pid, value);
-        }
-
-        #endregion
-
         #region Commands
-
-        /// <summary>
-        /// Command to copy the current Process ID to the clipboard.
-        /// </summary>
-        public IAsyncCommand CopyPidCommand { get; }
 
         /// <summary>
         /// Command to clear selection.
@@ -197,7 +178,6 @@ namespace Servy.Manager.ViewModels
         {
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
-            CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null, name: nameof(CopyPidCommand));
             ClearSelectionCommand = new RelayCommand<object>(_ => SetSelectionActive(false));
 
             // Capture while on the UI thread during creation
@@ -229,6 +209,9 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region MonitoringViewModelBase Implementation
+
+        /// <inheritdoc/>
+        protected override ServiceItemBase? SelectedServiceItem => SelectedService;
 
         /// <inheritdoc/>
         protected override int RefreshIntervalMs => _appConfig.ConsoleRefreshIntervalInMs;
@@ -561,29 +544,6 @@ namespace Servy.Manager.ViewModels
                     if (t.IsFaulted)
                         Logger.Warn($"Log tailing failed: {t.Exception?.InnerException?.Message}");
                 }, TaskContinuationOptions.OnlyOnFaulted);
-        }
-
-        /// <summary>
-        /// Updates the PID display text based on the selected service's current state.
-        /// </summary>
-        /// <param name="service">Service model.</param>
-        private void SetPidText(ServiceItemBase? service)
-        {
-            var pidTxt = service?.Pid?.ToString() ?? UiConstants.NotAvailable;
-            if (Pid != pidTxt) Pid = pidTxt;
-        }
-
-        /// <summary>
-        /// Copies the Process ID of the currently selected service to the system clipboard.
-        /// </summary>
-        /// <param name="parameter">Unused command parameter.</param>
-        private async Task CopyPidAsync(object? parameter)
-        {
-            if (SelectedService?.Pid != null)
-            {
-                var service = ServiceMapper.ToModel(SelectedService);
-                await ServiceCommands.CopyPidAsync(service);
-            }
         }
 
         #endregion

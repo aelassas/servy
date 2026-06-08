@@ -1,6 +1,10 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Logging;
+using Servy.Manager.Mappers;
+using Servy.Manager.Models;
 using Servy.Manager.Services;
+using Servy.UI.Commands;
+using Servy.UI.Constants;
 using Servy.UI.Services;
 using System.Windows.Threading;
 
@@ -48,6 +52,27 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private bool _isDisposed;
 
+        private string _pid = UiConstants.NotAvailable;
+
+        /// <summary>
+        /// Gets or sets the Process ID string for display in the UI.
+        /// </summary>
+        public string Pid
+        {
+            get => _pid;
+            set => Set(ref _pid, value);
+        }
+
+        /// <summary>
+        /// Command to copy the current Process ID to the clipboard.
+        /// </summary>
+        public IAsyncCommand CopyPidCommand { get; }
+
+        /// <summary>
+        /// When overridden in a derived class, exposes the currently selected service item base reference.
+        /// </summary>
+        protected abstract ServiceItemBase? SelectedServiceItem { get; }
+
         /// <summary>
         /// Gets the refresh interval in milliseconds for the monitoring timer.
         /// </summary>
@@ -63,6 +88,7 @@ namespace Servy.Manager.ViewModels
         protected MonitoringViewModelBase(ICursorService cursorService, IUiDispatcher uiDispatcher, IServiceCommands serviceCommands)
             : base(cursorService, uiDispatcher, serviceCommands)
         {
+            CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedServiceItem?.Pid != null, name: nameof(CopyPidCommand));
         }
 
         /// <summary>
@@ -207,6 +233,37 @@ namespace Servy.Manager.ViewModels
             if (cts == null) return CancellationToken.None;
             try { return cts.Token; }
             catch (ObjectDisposedException) { return new CancellationToken(canceled: true); }
+        }
+
+        /// <summary>
+        /// Updates the PID display text based on the selected service's current state.
+        /// </summary>
+        /// <param name="service">Service model.</param>
+        protected void SetPidText(ServiceItemBase? service)
+        {
+            var pidTxt = service?.Pid?.ToString() ?? UiConstants.NotAvailable;
+            if (Pid != pidTxt) Pid = pidTxt;
+        }
+
+        /// <summary>
+        /// Resets PID text.
+        /// </summary>
+        protected void ResetPid()
+        {
+            Pid = UiConstants.NotAvailable;
+        }
+
+        /// <summary>
+        /// Copies the Process ID of the currently selected service to the system clipboard.
+        /// </summary>
+        /// <param name="parameter">Unused command parameter.</param>
+        private async Task CopyPidAsync(object? parameter)
+        {
+            if (SelectedServiceItem?.Pid != null)
+            {
+                var service = ServiceMapper.ToModel(SelectedServiceItem);
+                await ServiceCommands.CopyPidAsync(service);
+            }
         }
 
         /// <summary>

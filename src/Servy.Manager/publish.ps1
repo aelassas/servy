@@ -23,16 +23,16 @@
     Target runtime identifier (RID) for publishing.
     Default: win-x64.
 
-.REQUIREMENTS
-    - .NET SDK installed and accessible in PATH.
-    - SignPath.ps1 script available in ..\..\setup\ for signing.
-
 .EXAMPLE
     .\publish.ps1
     Builds Servy.Manager in Release mode with default settings.
 
 .NOTES
     Author: Akram El Assas
+
+    Requirements:
+      - .NET SDK installed and accessible in PATH.
+      - SignPath.ps1 script available in ..\..\setup\ for signing.
 #>
 param(
     [string]$Tfm                = "net10.0-windows",
