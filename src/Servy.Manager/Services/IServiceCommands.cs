@@ -54,10 +54,11 @@ namespace Servy.Manager.Services
         /// </summary>
         /// <param name="service">The service to configure.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         Task ConfigureServiceAsync(Service service, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Installs the specified service, optionally using a custom wrapper executable directory.
+        /// Installs the specified service.
         /// </summary>
         /// <param name="service">The service to install.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
@@ -85,6 +86,7 @@ namespace Servy.Manager.Services
         /// </summary>
         /// <param name="service">The service to export.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         Task ExportServiceToXmlAsync(Service service, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -92,24 +94,28 @@ namespace Servy.Manager.Services
         /// </summary>
         /// <param name="service">The service to export.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         Task ExportServiceToJsonAsync(Service service, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Imports service configurations from an XML file.
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         Task ImportXmlConfigAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Imports service configurations from a JSON file.
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         Task ImportJsonConfigAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Copies the PID of the specified service to the clipboard.
         /// </summary>
         /// <param name="service">The service whose PID should be copied to the clipboard.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         Task CopyPidAsync(Service service);
     }
 }

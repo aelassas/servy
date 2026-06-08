@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Xunit;
 
 namespace Servy.Core.IntegrationTests.Helpers
@@ -42,12 +43,26 @@ namespace Servy.Core.IntegrationTests.Helpers
             }
             else
             {
-                // FIX: Auto-accept Sysinternals EULA in the registry hive context to prevent the headless runner from hanging
+                // Auto-accept Sysinternals EULA in the registry hive context to prevent the headless runner from hanging
                 AcceptSysinternalsEula();
 
-                // A dummy run ensures the driver is extracted and loaded 
-                // before the actual timing-sensitive tests run.
-                HandleHelper.GetProcessesUsingFile(_handleExePath, Path.GetTempPath());
+                // Guard against Sysinternals kernel-driver load timeouts on cold CI/CD virtual nodes.
+                // If the dynamic driver creation takes longer than the strict execution timeout limits,
+                // catch the exception, allow conhost to catch up, and attempt a secondary deterministic pass.
+                try
+                {
+                    // A dummy run ensures the driver is extracted and loaded 
+                    // before the actual timing-sensitive tests run.
+                    HandleHelper.GetProcessesUsingFile(_handleExePath, Path.GetTempPath());
+                }
+                catch (TimeoutException)
+                {
+                    Debug.WriteLine("WARNING: Initial handle.exe cold-start timed out while mounting kernel objects. Executing retry pass...");
+                    Thread.Sleep(1000);
+
+                    // Second pass: the driver is now unpacked or registered, so this execution path should complete immediately.
+                    HandleHelper.GetProcessesUsingFile(_handleExePath, Path.GetTempPath());
+                }
             }
         }
 

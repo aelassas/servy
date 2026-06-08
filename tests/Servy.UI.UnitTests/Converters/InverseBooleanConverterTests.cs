@@ -1,8 +1,7 @@
-﻿using System;
+﻿using Servy.UI.Converters;
 using System.Globalization;
 using System.Windows.Data;
 using Xunit;
-using Servy.UI.Converters;
 
 namespace Servy.UI.UnitTests.Converters
 {

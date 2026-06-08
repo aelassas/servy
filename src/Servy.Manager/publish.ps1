@@ -16,16 +16,16 @@ Common values: "Release" or "Debug".
 .PARAMETER Pause
 Optional switch to pause the script at the end of execution.
 
-.REQUIREMENTS
-- MSBuild must be installed and available in PATH.
-- publish-res-release.ps1 and publish-res-debug.ps1 must exist in the same directory as this script.
-- SignPath.ps1 must exist under ..\..\setup\.
-- Script should be executed from PowerShell (x64).
-
 .NOTES
 - The output executable is located under bin\x64\<BuildConfiguration>\Servy.Manager.exe.
 - Adjust file paths if the project structure changes.
 - Author: Akram El Assas
+
+Requirements:
+  - MSBuild must be installed and available in PATH.
+  - publish-res-release.ps1 and publish-res-debug.ps1 must exist in the same directory as this script.
+  - SignPath.ps1 must exist under ..\..\setup\.
+  - Script should be executed from PowerShell (x64).
 
 .EXAMPLE
 .\publish.ps1

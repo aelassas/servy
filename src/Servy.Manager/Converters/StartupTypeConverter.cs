@@ -1,7 +1,9 @@
 ﻿using Servy.Core.Enums;
 using Servy.Manager.Resources;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Windows.Data;
 
 namespace Servy.Manager.Converters
@@ -13,6 +15,19 @@ namespace Servy.Manager.Converters
     public class StartupTypeConverter : IValueConverter
     {
         /// <summary>
+        /// Centralized mapping between startup type enums and resource string providers.
+        /// Func indirection is required to support runtime culture changes.
+        /// </summary>
+        private static readonly Dictionary<ServiceStartType, Func<string>> Map = new Dictionary<ServiceStartType, Func<string>>()
+        {
+            [ServiceStartType.Automatic] = () => Strings.StartupType_Automatic,
+            [ServiceStartType.AutomaticDelayedStart] = () => Strings.StartupType_AutomaticDelayedStart,
+            [ServiceStartType.Manual] = () => Strings.StartupType_Manual,
+            [ServiceStartType.Disabled] = () => Strings.StartupType_Disabled,
+            [ServiceStartType.Unknown] = () => Strings.StartupType_Unknown,
+        };
+
+        /// <summary>
         /// Converts a <see cref="ServiceStartType"/> value to its localized string.
         /// </summary>
         /// <param name="value">The enum value to convert.</param>
@@ -22,21 +37,9 @@ namespace Servy.Manager.Converters
         /// <returns>The localized string corresponding to the enum value.</returns>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is ServiceStartType status)
+            if (value is ServiceStartType status && Map.TryGetValue(status, out var resourceProvider))
             {
-                switch (status)
-                {
-                    case ServiceStartType.Automatic:
-                        return Strings.StartupType_Automatic;
-                    case ServiceStartType.AutomaticDelayedStart:
-                        return Strings.StartupType_AutomaticDelayedStart;
-                    case ServiceStartType.Manual:
-                        return Strings.StartupType_Manual;
-                    case ServiceStartType.Disabled:
-                        return Strings.StartupType_Disabled;
-                    case ServiceStartType.Unknown:
-                        return Strings.StartupType_Unknown;
-                }
+                return resourceProvider();
             }
 
             return value?.ToString() ?? Strings.Label_Fetching;
@@ -57,16 +60,14 @@ namespace Servy.Manager.Converters
         {
             if (value is string str)
             {
-                if (str == Strings.StartupType_Automatic)
-                    return ServiceStartType.Automatic;
-                if (str == Strings.StartupType_AutomaticDelayedStart)
-                    return ServiceStartType.AutomaticDelayedStart;
-                if (str == Strings.StartupType_Manual)
-                    return ServiceStartType.Manual;
-                if (str == Strings.StartupType_Disabled)
-                    return ServiceStartType.Disabled;
-                if (str == Strings.StartupType_Unknown)
-                    return ServiceStartType.Unknown;
+                var entry = Map.FirstOrDefault(x => x.Value() == str);
+
+                // Dictionary defaults to a KeyValuePair with Key=0 (ServiceStartType.Automatic) 
+                // if not found. We verify the value provider is not null to guarantee an explicit match.
+                if (entry.Value != null)
+                {
+                    return entry.Key;
+                }
             }
 
             return Binding.DoNothing;

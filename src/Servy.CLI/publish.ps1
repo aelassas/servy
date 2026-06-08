@@ -17,15 +17,15 @@ Typical values: "Release" or "Debug".
 .PARAMETER Pause
 Optional switch that pauses execution before the script exits.
 
-.REQUIREMENTS
-- MSBuild must be available in PATH.
-- publish-res-release.ps1 and publish-res-debug.ps1 must exist in the same folder.
-- Script should be executed from PowerShell (x64).
-
 .NOTES
 - The signing script (signpath.ps1) must exist under setup\.
 - The output executable is signed only after a successful build.
 - Adjust paths if project structure changes.
+
+Requirements:
+  - MSBuild must be available in PATH.
+  - publish-res-release.ps1 and publish-res-debug.ps1 must exist in the same folder.
+  - Script should be executed from PowerShell (x64).
 
 .EXAMPLE
 .\publish-cli.ps1

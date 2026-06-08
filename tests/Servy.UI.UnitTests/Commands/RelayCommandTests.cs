@@ -1,7 +1,6 @@
-﻿using System;
-using System.Windows.Input;
+﻿using Servy.UI.Commands;
+using System;
 using Xunit;
-using Servy.UI.Commands;
 
 namespace Servy.UI.UnitTests.Commands
 {

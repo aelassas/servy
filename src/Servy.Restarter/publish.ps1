@@ -17,11 +17,6 @@
 .PARAMETER Pause
     Pauses the script at the end. Useful when running from Explorer.
 
-.REQUIREMENTS
-    - MSBuild installed and available in PATH.
-    - signpath.ps1 must exist in ../../setup/.
-    - .NET SDK or corresponding build tools installed.
-
 .EXAMPLE
     ./build.ps1
     Builds Servy.Restarter in Release mode and signs it.
@@ -33,6 +28,11 @@
 .NOTES
     Author: Akram El Assas
     Project: Servy
+
+    Requirements:
+      - MSBuild installed and available in PATH.
+      - signpath.ps1 must exist in ../../setup/.
+      - .NET SDK or corresponding build tools installed.
 #>
 
 param(

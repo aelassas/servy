@@ -31,10 +31,13 @@
 .PARAMETER IncludeDlls
     If specified, copies all *.dll files from the build output to the resources folder.
 
-.REQUIREMENTS
-    - MSBuild must be installed and available in PATH.
-    - Script must be run under PowerShell (x64 recommended).
-    - The .NET 4.8 Developer Pack must be installed.
+.NOTES
+    Author: Akram El Assas
+
+    Requirements:
+      - MSBuild must be installed and available in PATH.
+      - Script must be run under PowerShell (x64 recommended).
+      - The .NET 4.8 Developer Pack must be installed.
 #>
 param(
     [Parameter(Mandatory=$true)]

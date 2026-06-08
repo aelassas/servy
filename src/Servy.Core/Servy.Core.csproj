@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\packages\ConfigureAwait.Fody.3.4.0\build\ConfigureAwait.Fody.props" Condition="Exists('..\..\packages\ConfigureAwait.Fody.3.4.0\build\ConfigureAwait.Fody.props')" />
+  <Import Project="..\..\packages\ConfigureAwait.Fody.3.4.1\build\ConfigureAwait.Fody.props" Condition="Exists('..\..\packages\ConfigureAwait.Fody.3.4.1\build\ConfigureAwait.Fody.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -52,8 +52,8 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ConfigureAwait, Version=3.4.0.0, Culture=neutral, PublicKeyToken=233850a516558a98, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\ConfigureAwait.Fody.3.4.0\lib\net452\ConfigureAwait.dll</HintPath>
+    <Reference Include="ConfigureAwait, Version=3.4.1.0, Culture=neutral, PublicKeyToken=233850a516558a98, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\ConfigureAwait.Fody.3.4.1\lib\net452\ConfigureAwait.dll</HintPath>
     </Reference>
     <Reference Include="Dapper, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Dapper.2.1.79\lib\net461\Dapper.dll</HintPath>
@@ -232,7 +232,7 @@
       <ErrorText>Ce projet fait référence à des packages NuGet qui sont manquants sur cet ordinateur. Utilisez l'option de restauration des packages NuGet pour les télécharger. Pour plus d'informations, consultez http://go.microsoft.com/fwlink/?LinkID=322105. Le fichier manquant est : {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\..\packages\Fody.6.9.3\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Fody.6.9.3\build\Fody.targets'))" />
-    <Error Condition="!Exists('..\..\packages\ConfigureAwait.Fody.3.4.0\build\ConfigureAwait.Fody.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\ConfigureAwait.Fody.3.4.0\build\ConfigureAwait.Fody.props'))" />
+    <Error Condition="!Exists('..\..\packages\ConfigureAwait.Fody.3.4.1\build\ConfigureAwait.Fody.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\ConfigureAwait.Fody.3.4.1\build\ConfigureAwait.Fody.props'))" />
   </Target>
   <Import Project="..\..\packages\Fody.6.9.3\build\Fody.targets" Condition="Exists('..\..\packages\Fody.6.9.3\build\Fody.targets')" />
 </Project>
