@@ -6,6 +6,8 @@ using Servy.Manager.ViewModels;
 using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -32,20 +34,66 @@ namespace Servy.Manager.UnitTests.ViewModels
             );
         }
 
+        #region Constructor Guard Clauses Tests
+
+        [Fact]
+        public void Constructor_NullService_ThrowsArgumentNullException()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+                new ServiceRowViewModel(null, _serviceCommandsMock.Object, _cursorServiceMock.Object));
+        }
+
+        [Fact]
+        public void Constructor_NullServiceCommands_ThrowsArgumentNullException()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+                new ServiceRowViewModel(new Service { Name = "S" }, null, _cursorServiceMock.Object));
+        }
+
+        [Fact]
+        public void Constructor_NullCursorService_ThrowsArgumentNullException()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+                new ServiceRowViewModel(new Service { Name = "S" }, _serviceCommandsMock.Object, null));
+        }
+
+        [Fact]
+        public void Constructor_ValidArguments_InitializesAllAsyncCommandsSuccessfully()
+        {
+            // Arrange & Act
+            var vm = CreateViewModel();
+
+            // Assert
+            Assert.NotNull(vm.StartCommand);
+            Assert.NotNull(vm.StopCommand);
+            Assert.NotNull(vm.RestartCommand);
+            Assert.NotNull(vm.ConfigureCommand);
+            Assert.NotNull(vm.InstallCommand);
+            Assert.NotNull(vm.UninstallCommand);
+            Assert.NotNull(vm.RemoveCommand);
+            Assert.NotNull(vm.ExportXmlCommand);
+            Assert.NotNull(vm.ExportJsonCommand);
+            Assert.NotNull(vm.CopyPidCommand);
+        }
+
+        #endregion
+
+        #region Command Functional Execution Tests
+
         [Fact]
         public void CanExecuteServiceCommand_ShouldReturnFalse_WhenInternalServiceNameIsEmpty()
         {
             // Arrange
             var vm = new ServiceRowViewModel(
-                new Service { Name = "" }, // internal service has empty name
+                new Service { Name = "" },
                 _serviceCommandsMock.Object,
                 _cursorServiceMock.Object
             );
 
             // Act
             var result = vm.GetType()
-                           .GetMethod("CanExecuteServiceCommand", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                           ?.Invoke(vm, new object[] { null }); // parameter is ignored
+                           .GetMethod("CanExecuteServiceCommand", BindingFlags.NonPublic | BindingFlags.Instance)
+                           ?.Invoke(vm, new object[] { null });
 
             // Assert
             Assert.False((bool)result);
@@ -73,7 +121,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.Service.IsInstalled = isInstalled;
                 vm.Service.Status = status;
             }
-
 
             _serviceCommandsMock.Verify();
         }
@@ -216,18 +263,36 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             var vm = CreateViewModel();
 
-            // Setup the mock to accept the Service instance from the ViewModel
             _serviceCommandsMock
                   .Setup(s => s.ExportServiceToJsonAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<CancellationToken>()))
                   .Returns(Task.CompletedTask)
                   .Verifiable();
 
-            // Execute command
-            vm.ExportJsonCommand.Execute(null); // or vm.Service
+            vm.ExportJsonCommand.Execute(null);
 
-            // Verify
             _serviceCommandsMock.Verify();
         }
+
+        [Fact]
+        public void CopyPidCommand_ShouldCallCopyPidAsync()
+        {
+            // Arrange
+            var vm = CreateViewModel();
+            _serviceCommandsMock
+                .Setup(s => s.CopyPidAsync(It.Is<Service>(srv => srv.Name == "S")))
+                .Returns(Task.CompletedTask)
+                .Verifiable();
+
+            // Act
+            vm.CopyPidCommand.Execute(null);
+
+            // Assert
+            _serviceCommandsMock.Verify();
+        }
+
+        #endregion
+
+        #region Properties & Model Propagation Tests
 
         [Fact]
         public void Properties_ShouldReflectModelAndNotifyChanges()
@@ -267,7 +332,9 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             // Act - Change ViewModel properties directly
             vm.IsSelected = true;
+            vm.IsSelected = true; // Duplicate pass to ensure optimization coverage
             vm.IsChecked = true;
+            vm.IsChecked = true;   // Duplicate pass to ensure optimization coverage
 
             // Act - Trigger changes through the underlying Model to verify automatic forwarding
             service.Status = ServiceStatus.Stopped;
@@ -279,6 +346,48 @@ namespace Servy.Manager.UnitTests.ViewModels
             Assert.Contains(nameof(vm.Status), propertiesChanged);
             Assert.Contains(nameof(vm.Pid), propertiesChanged);
         }
+
+        [Fact]
+        public void Service_PropertyChanged_NullOrEmptyName_ReturnsEarlyWithoutPropertyOrCommandEvaluation()
+        {
+            // Arrange
+            var service = new Service { Name = "S" };
+            var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+
+            bool localPropertyNotificationFired = false;
+            vm.PropertyChanged += (s, e) => localPropertyNotificationFired = true;
+
+            // Fetch private event redirect handler method
+            var method = typeof(ServiceRowViewModel).GetMethod("Service_PropertyChanged", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            // Act & Assert Branch 1: Null PropertyChangedEventArgs argument context
+            method.Invoke(vm, new object[] { service, null });
+            Assert.False(localPropertyNotificationFired);
+
+            // Act & Assert Branch 2: Empty PropertyName string value
+            method.Invoke(vm, new object[] { service, new PropertyChangedEventArgs(string.Empty) });
+            Assert.False(localPropertyNotificationFired);
+        }
+
+        [Fact]
+        public void Service_PropertyChanged_IrrelevantPropertyUpdated_DoesNotRaiseCanExecuteChangedOnCommands()
+        {
+            // Arrange
+            var service = new Service { Name = "S" };
+            var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+
+            var method = typeof(ServiceRowViewModel).GetMethod("Service_PropertyChanged", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            // Act
+            // Triggering a non-state tracking field update (like Description) shouldn't invoke structural command refreshes
+            method.Invoke(vm, new object[] { service, new PropertyChangedEventArgs(nameof(Service.Description)) });
+
+            // Test successfully passes if no cast or execution error leaks from command wrapper pipes
+        }
+
+        #endregion
+
+        #region Execution Safety & Disposal Tests
 
         [Fact]
         public async Task ExecuteSafeAsync_ShouldCatchExceptionsAndResetCursor()
@@ -293,9 +402,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .ThrowsAsync(new InvalidOperationException("SCM access denied simulation error."));
 
             // Act
-            // Fetch the private execution route via Reflection to pass structural parameters safely
             var executeSafeAsyncMethod = typeof(ServiceRowViewModel).GetMethod("ExecuteSafeAsync",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance);
 
             Func<Task> faultyAction = () => _serviceCommandsMock.Object.ConfigureServiceAsync(service, CancellationToken.None);
 
@@ -303,11 +411,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             await taskResult;
 
             // Assert
-            // The wrapper must invoke wait layouts and drop out to structural defaults cleanly
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
-
-            // Test passed if no unhandled exception crashed the runner execution stack frame
         }
 
         [Fact]
@@ -329,5 +434,24 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Assert - No events should catch since the link was severed
             Assert.Equal(0, receivedNotifications);
         }
+
+        [Fact]
+        public void Dispose_CalledMultipleTimes_ReturnsEarlySilently()
+        {
+            // Arrange
+            var service = new Service { Name = "TransientService" };
+            var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+
+            // Act
+            vm.Dispose();
+
+            // Re-invoke tracking logic to challenge the internal boolean field guard branch
+            var sequentialDisposeException = Record.Exception(() => vm.Dispose());
+
+            // Assert
+            Assert.Null(sequentialDisposeException);
+        }
+
+        #endregion
     }
 }

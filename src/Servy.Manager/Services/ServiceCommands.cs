@@ -251,7 +251,7 @@ namespace Servy.Manager.Services
             }
             catch (Exception ex)
             {
-                string serviceName = service.Name ?? "<unknown>";
+                string serviceName = service?.Name ?? "<unknown>";
                 Logger.Error($"Failed to configure {serviceName}.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
             }

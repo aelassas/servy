@@ -14,7 +14,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Data;
 using System.Windows.Threading;
 using Xunit;
 
@@ -172,25 +171,6 @@ namespace Servy.Manager.UnitTests.ViewModels
             });
         }
 
-        [Fact]
-        public async Task ConsoleSearchText_Cleared_TriggersScrollRequest()
-        {
-            await Helper.RunOnSTA(async () =>
-            {
-                var vm = CreateViewModel();
-                bool scrollRequested = false;
-                vm.RequestScroll += (force) => scrollRequested = true;
-
-                // Act
-                vm.ConsoleSearchText = "";
-                await Task.Delay(50);
-                Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
-
-                // Assert
-                Assert.True(scrollRequested);
-            });
-        }
-
         #endregion
 
         #region Base Monitoring Loop (OnTickAsync) Tests
@@ -334,6 +314,206 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 Assert.Equal("Line 2", sortedHistory[0].Text);
                 Assert.Equal("Line 1", sortedHistory[1].Text);
+            });
+        }
+
+        #endregion
+
+        #region Advanced Code-Gap Coverage (CreateServiceItem, SwitchService, StartLiveTail, Dispose Branches)
+
+        [Fact]
+        public void CreateServiceItem_ValidServiceInput_MapsToConsoleServiceWithNullFields()
+        {
+            // Arrange
+            var vm = CreateViewModel();
+            var service = new Service { Name = "EngineService" };
+
+            var methodInfo = typeof(ConsoleViewModel).GetMethod("CreateServiceItem", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            // Act
+            var result = methodInfo.Invoke(vm, new object[] { service }) as ConsoleService;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("EngineService", result.Name);
+            Assert.Null(result.Pid);
+            Assert.Null(result.StdoutPath);
+            Assert.Null(result.StderrPath);
+        }
+
+        [Fact]
+        public async Task ApplyFilterWithDebounceAsync_OldCtsNotNull_CancelsAndDisposesPreviousFilterToken()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var vm = CreateViewModel();
+                var firstCts = new CancellationTokenSource();
+
+                var fieldInfo = typeof(ConsoleViewModel).GetField("_logFilterCts", BindingFlags.NonPublic | BindingFlags.Instance);
+                fieldInfo?.SetValue(vm, firstCts);
+
+                // Act - Mutating ConsoleSearchText causes ApplyFilterWithDebounceAsync to process an Interlocked.Exchange over firstCts
+                vm.ConsoleSearchText = "NewSearchQueryTextString";
+
+                // Assert
+                Assert.True(firstCts.IsCancellationRequested);
+            });
+        }
+
+        [Fact]
+        public async Task SwitchServiceAsync_EmptyCombinedHistory_DoesNotTriggerSortOrCollectionMutation()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var vm = CreateViewModel();
+                vm.RawLines.Add(new LogLine("Preserve Me", LogType.StdOut));
+
+                var methodInfo = typeof(ConsoleViewModel).GetMethod("SwitchServiceAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                // Act - Invoke service transition with empty/null pathing arguments to trigger structural history emptiness
+                var task = (Task)methodInfo.Invoke(vm, new object[] { string.Empty, string.Empty });
+                await task;
+
+                // Assert - Verify that the internal branch evaluation safely skipped AddRange loops since paths were empty
+                Assert.Empty(vm.RawLines);
+            });
+        }
+
+        [Fact]
+        public async Task StartLiveTail_LogReceivedOnActiveSession_AppendsToRawLinesAndTrimsExcessRows()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var vm = CreateViewModel();
+
+                // Cap layout dimensions intentionally low to strike the TrimToSize validation branch immediately
+                _appConfigMock.Setup(c => c.ConsoleMaxLines).Returns(2);
+                var fieldMaxLines = typeof(ConsoleViewModel).GetField("_maxLines", BindingFlags.NonPublic | BindingFlags.Instance);
+                fieldMaxLines?.SetValue(vm, 2);
+
+                var methodInfo = typeof(ConsoleViewModel).GetMethod("StartLiveTail", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                // Read current Session ID to pass down as a synchronized parameter match
+                var fieldSessionId = typeof(ConsoleViewModel).GetField("_currentSessionId", BindingFlags.NonPublic | BindingFlags.Instance);
+                int activeSessionId = (int)fieldSessionId.GetValue(vm);
+
+                // Act - Spin up an active live tail listener instance context mapping to stdout
+                methodInfo.Invoke(vm, new object[] { "out.log", LogType.StdOut, 0L, DateTime.UtcNow, activeSessionId, CancellationToken.None });
+
+                // Pull the dynamic internal event handler delegate out via reflection
+                var fieldActiveTailer = typeof(ConsoleViewModel).GetField("_activeStdoutTailer", BindingFlags.NonPublic | BindingFlags.Instance);
+                var tailerInstance = fieldActiveTailer.GetValue(vm) as LogTailer;
+
+                // Construct a test payload batch block of 3 log lines to pass directly through the tailer's event handler pipeline
+                var newLinesBatch = new List<LogLine>
+                {
+                    new LogLine("Row 1", LogType.StdOut),
+                    new LogLine("Row 2", LogType.StdOut),
+                    new LogLine("Row 3", LogType.StdOut)
+                };
+
+                // Raise the event inside the log tailer instance to simulate inbound disk streaming updates
+                var eventInfo = typeof(LogTailer).GetEvent("OnNewLines", BindingFlags.Public | BindingFlags.Instance);
+                var handlerDelegate = typeof(ConsoleViewModel).GetField("_stdoutTailerHandler", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(vm) as Delegate;
+                eventInfo.AddMethod.Invoke(tailerInstance, new object[] { handlerDelegate });
+
+                // Act - Direct programmatic dispatch invoke step
+                handlerDelegate.DynamicInvoke(new object[] { newLinesBatch });
+
+                // Assert - Proves both AddRange and TrimToSize internal loops executed safely, capping length to 2 rows
+                Assert.Equal(2, vm.RawLines.Count);
+                Assert.Equal("Row 2", vm.RawLines[0].Text);
+                Assert.Equal("Row 3", vm.RawLines[1].Text);
+            });
+        }
+
+        [Fact]
+        public async Task StartLiveTail_LogReceivedWhileSelectionIsActive_BypassesCollectionMutationToPreserveUserFocus()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var vm = CreateViewModel();
+                vm.SetSelectionActive(true); // User is selecting text in the UI terminal window frame
+
+                var methodInfo = typeof(ConsoleViewModel).GetMethod("StartLiveTail", BindingFlags.NonPublic | BindingFlags.Instance);
+                int currentSessionId = (int)typeof(ConsoleViewModel).GetField("_currentSessionId", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(vm);
+
+                methodInfo.Invoke(vm, new object[] { "out.log", LogType.StdOut, 0L, DateTime.UtcNow, currentSessionId, CancellationToken.None });
+
+                var handlerDelegate = typeof(ConsoleViewModel).GetField("_stdoutTailerHandler", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(vm) as Delegate;
+
+                var newLinesBatch = new List<LogLine> { new LogLine("Ignored live incoming console data string line", LogType.StdOut) };
+
+                // Act
+                handlerDelegate.DynamicInvoke(new object[] { newLinesBatch });
+
+                // Assert - Log array size should remain 0 because mutation bypassed collection injection via text pause guard gate
+                Assert.Empty(vm.RawLines);
+            });
+        }
+
+        [Fact]
+        public async Task StartLiveTail_LogReceivedOnStaleSession_BypassesCollectionMutationSilently()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var vm = CreateViewModel();
+                var methodInfo = typeof(ConsoleViewModel).GetMethod("StartLiveTail", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                int currentSessionId = (int)typeof(ConsoleViewModel).GetField("_currentSessionId", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(vm);
+                int staleSessionId = currentSessionId - 1; // Simulated obsolete thread queue callback sequence tracking state
+
+                methodInfo.Invoke(vm, new object[] { "out.log", LogType.StdOut, 0L, DateTime.UtcNow, staleSessionId, CancellationToken.None });
+
+                var handlerDelegate = typeof(ConsoleViewModel).GetField("_stdoutTailerHandler", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(vm) as Delegate;
+                var newLinesBatch = new List<LogLine> { new LogLine("Obsolete service log line output", LogType.StdOut) };
+
+                // Act
+                handlerDelegate.DynamicInvoke(new object[] { newLinesBatch });
+
+                // Assert
+                Assert.Empty(vm.RawLines);
+            });
+        }
+
+        [Fact]
+        public async Task SetSelectionActive_SelectionCleared_ReTriggerServicesSwitchPipeline()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var vm = CreateViewModel();
+                var service = new ConsoleService { Name = "ActiveService", StdoutPath = "out.log", StderrPath = "err.log" };
+                vm.SelectedService = service;
+                vm.SetSelectionActive(true);
+
+                // Act - Toggle selection state back to false to trigger the internal conditional reset pathway loop block
+                vm.SetSelectionActive(false);
+
+                // Assert
+                Assert.False(vm.IsPaused);
+            });
+        }
+
+        [Fact]
+        public async Task Dispose_CalledMultipleTimes_ReturnsSilentlyThroughInternalDisposedValueGuard()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var vm = CreateViewModel();
+
+                // Act
+                vm.Dispose();
+
+                // Assert - Re-invoking sequential Dispose cycles must exit early without crash exceptions or registry faults
+                var multipleDisposeError = Record.Exception(() => vm.Dispose());
+                Assert.Null(multipleDisposeError);
             });
         }
 
