@@ -219,10 +219,10 @@ namespace Servy.Core.IntegrationTests.Helpers
         public async Task CopyResources_OneItemFailsTermination_ContinuesAndReturnsFalse()
         {
             // Arrange: Use the Integration Test assembly which contains the resource
-            var assembly = typeof(ResourceHelperIntegrationTests).Assembly;
+            var assembly = typeof(Testing.Helper).Assembly;
 
             // 1. Explicitly define resource details based on the error message
-            string detectedNamespace = "Servy.Core.IntegrationTests.Resources";
+            string detectedNamespace = "Servy.Testing.Resources";
             string detectedFileName = "handle64";
             string detectedExtension = "exe";
 
@@ -237,12 +237,12 @@ namespace Servy.Core.IntegrationTests.Helpers
             }
 
             var items = new List<ResourceItem>
-    {
-        // Item 1: Will fail termination to trigger the 'res = false' path
-        new ResourceItem { FileNameWithoutExtension = "failapp", Extension = "exe" },
-        // Item 2: The actual resource to be extracted
-        new ResourceItem { FileNameWithoutExtension = detectedFileName, Extension = detectedExtension }
-    };
+            {
+                // Item 1: Will fail termination to trigger the 'res = false' path
+                new ResourceItem { FileNameWithoutExtension = "failapp", Extension = "exe" },
+                // Item 2: The actual resource to be extracted
+                new ResourceItem { FileNameWithoutExtension = detectedFileName, Extension = detectedExtension }
+            };
 
             // 3. MOCK ALIGNMENT: Match the 1-parameter signature used in the .NET 4.8 build
             _mockProcessKiller
