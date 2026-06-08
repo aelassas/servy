@@ -234,13 +234,42 @@ namespace Servy.Core.IntegrationTests.Helpers
             File.WriteAllText(testFile, "Lock Data");
             _tempFiles.Add(testFile);
 
-            // 1. Spawn the process and give it a moment to actually acquire the lock
+            // 1. Spawn the process
             var lockingProcess = SpawnFileLockingProcess(testFile);
 
-            // Stabilization: Ensure the process hasn't crashed before we try to kill it
+            // Stabilization Step A: Ensure the process hasn't crashed before we proceed
             if (lockingProcess == null || lockingProcess.HasExited)
             {
                 throw new InvalidOperationException("Failed to spawn a stable file-locking process.");
+            }
+
+            // CRITICAL - Stabilization Step B: Wait for the child process to physically claim the file lock handle.
+            // We poll by trying to open the file exclusively. Once an IOException triggers, the lock is live.
+            bool lockConfirmed = SpinWait.SpinUntil(() =>
+            {
+                if (lockingProcess.HasExited) return false;
+                try
+                {
+                    using (var stream = File.Open(testFile, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                    {
+                        // If we successfully open it, the child hasn't acquired its lock yet. Keep polling.
+                        return false;
+                    }
+                }
+                catch (IOException)
+                {
+                    // Lock is officially verified in the OS handle table!
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }, TimeSpan.FromSeconds(10)); // Generous timeout for slow CI environments
+
+            if (!lockConfirmed)
+            {
+                throw new InvalidOperationException("The background process failed to acquire the file lock within the allowed timeout window.");
             }
 
             // 2 & 3. Act & Backoff/Retry Phase for Process Termination
@@ -273,7 +302,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assert.True(exited, $"The background process holding the file lock should have been terminated after {killAttempts + 1} attempts.");
 
             // 5. Backoff/Retry Phase for File Deletion
-            // Even if the process is dead, the OS might take a few extra milliseconds to release the handle
             bool deleted = false;
             int retries = 0;
             while (retries < 10 && !deleted)
