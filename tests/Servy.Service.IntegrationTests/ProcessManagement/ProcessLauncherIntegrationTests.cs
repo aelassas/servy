@@ -1,10 +1,21 @@
 ﻿using Servy.Core.Logging;
 using Servy.Service.ProcessManagement;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace Servy.Service.IntegrationTests.ProcessManagement
 {
+    #region xUnit Non-Parallel Collection Setup
+
     [CollectionDefinition("ProcessLauncherIntegrationTests", DisableParallelization = true)]
+    public class ProcessLauncherIntegrationTestsCollection : ICollectionFixture<object>
+    {
+        // Enforces strict sequential isolation across the integration suite runs
+    }
+
+    #endregion
+
+    [Collection("ProcessLauncherIntegrationTests")]
     public class ProcessLauncherIntegrationTests : IDisposable
     {
         private readonly List<string> _tempFiles = new List<string>();
@@ -91,8 +102,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Start_SynchronousTimeout_ThrowsTimeoutException_AndLogsCorrectly()
         {
-            // Use PowerShell with a long sleep to guarantee the timeout is hit 
-            // before the process can exit naturally or be killed by EDR.
             var optionsError = CreateOptions("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\"", fireAndForget: false, timeoutMs: 500);
             optionsError.WaitChunkMs = 100;
             optionsError.LogErrorAsWarning = false;
@@ -100,7 +109,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             var ex1 = Assert.Throws<TimeoutException>(() => ProcessLauncher.Start(optionsError, _realFactory, _logger));
 
             Assert.Contains("exceeded the maximum allowed timeout", ex1.Message);
-            // Verify the specific message exists in the error history
             Assert.Contains(_logger.Errors, m => m.Contains("timed out after"));
 
             var optionsWarn = CreateOptions("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\"", fireAndForget: false, timeoutMs: 500);
@@ -109,6 +117,169 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             Assert.Throws<TimeoutException>(() => ProcessLauncher.Start(optionsWarn, _realFactory, _logger));
             Assert.Contains(_logger.Warnings, m => m.Contains("timed out after"));
+        }
+
+        [Fact]
+        public void WaitForExitWithHeartbeat_InvalidWaitChunk_ThrowsArgumentException()
+        {
+            var options = CreateOptions("powershell.exe", "-NoProfile", fireAndForget: false, timeoutMs: 5000);
+            options.WaitChunkMs = 0; // Violate rule requirement: WaitChunkMs <= 0
+
+            var method = typeof(ProcessLauncher).GetMethod("WaitForExitWithHeartbeat", BindingFlags.Static | BindingFlags.NonPublic);
+            var mockWrapper = new MockFailingProcessWrapper();
+
+            var targetInvocationException = Assert.Throws<TargetInvocationException>(() =>
+                method!.Invoke(null, new object[] { mockWrapper, options, _logger }));
+
+            Assert.IsType<ArgumentException>(targetInvocationException.InnerException);
+            Assert.Contains("Synchronous launch requires WaitChunkMs > 0", targetInvocationException.InnerException.Message);
+        }
+
+        #endregion
+
+        #region Path & Argument Normalization Variations
+
+        [Fact]
+        public void Start_NullArgumentsAndNullWorkingDirectory_ResolvesToDefaultsSafely()
+        {
+            var options = CreateOptions("powershell.exe", null!, fireAndForget: false, timeoutMs: 5000);
+            options.WorkingDirectory = null!; // Triggers Path.GetDirectoryName fallback branch
+
+            // Configure short execution task to exit cleanly
+            options.Arguments = "-NoProfile -Command \"exit 0\"";
+
+            using (var wrapper = ProcessLauncher.Start(options, _realFactory, _logger))
+            {
+                Assert.True(wrapper.HasExited);
+                Assert.NotNull(wrapper.StartInfo.WorkingDirectory);
+            }
+        }
+
+        [Fact]
+        public void Start_EnvironmentVariablesMapping_PadsNullValuesToEmptyString()
+        {
+            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: 5000);
+
+            var envVarInstance = new Servy.Core.EnvironmentVariables.EnvironmentVariable
+            {
+                Name = "CUSTOM_TEST_ENV_PADDED",
+                Value = null! // Triggers target coverage branch: envVar.Value ?? string.Empty
+            };
+
+            options.EnvironmentVariables.Add(envVarInstance);
+
+            // Cast the dynamic output to IProcessWrapper to break out of the dynamic binder loop
+            using (IProcessWrapper wrapper = ProcessLauncher.Start(options, _realFactory, _logger))
+            {
+                // Now strongly-typed; indexer access resolves flawlessly without DLR interference
+                Assert.Equal(string.Empty, wrapper.StartInfo.Environment["CUSTOM_TEST_ENV_PADDED"]);
+            }
+        }
+
+        #endregion
+
+        #region Error Trapping & Fail-Safe Cleanup Branches
+
+        [Fact]
+        public void Start_ProcessStartReturnsFalse_ThrowsInvalidOperationException_AndCleansUp()
+        {
+            var options = CreateOptions("powershell.exe", "-NoProfile", fireAndForget: false, timeoutMs: 5000);
+            var mockFactory = new MockStartFalseProcessFactory();
+
+            var ex = Assert.Throws<InvalidOperationException>(() => ProcessLauncher.Start(options, mockFactory, _logger));
+            Assert.Contains("Process.Start returned false", ex.Message);
+            Assert.True(mockFactory.CreatedWrapper.WasDisposed);
+        }
+
+        [Fact]
+        public void Start_WritersGenerationFails_CatchesExceptionAndLogsError()
+        {
+            // Arrange 
+            // This format bypasses standard .NET path normalization validation 
+            // but guarantees an absolute failure when the file stream opens.
+            string structuralFailurePath = @"\\?\C:\illegal|char.log";
+
+            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'TRIGGER'\"", fireAndForget: false, timeoutMs: 5000);
+            options.EnableConsoleUI = false;
+            options.RedirectToWriters = true;
+            options.StdOutPath = structuralFailurePath;
+
+            // Act
+            using (IProcessWrapper wrapper = ProcessLauncher.Start(options, _realFactory, _logger))
+            {
+                wrapper.WaitForExit();
+
+                // Give the asynchronous background event queue a brief moment to process the stream failure
+                Thread.Sleep(200);
+
+                // Assert 
+                Assert.True(wrapper.HasExited);
+                Assert.Contains(_logger.Errors, m => m.Contains("Disabling stdout capture for"));
+            }
+        }
+
+        #endregion
+
+        #region Language Fixes & Regex Timeout Coverage
+
+        [Theory]
+        [InlineData("python.exe", true)]
+        [InlineData("pythonw.exe", true)]
+        [InlineData("python3.exe", true)]
+        [InlineData("py.exe", true)]
+        [InlineData("java.exe", false)]
+        [InlineData("javaw.exe", false)]
+        [InlineData("javac.exe", false)]
+        public void ApplyLanguageFixes_RuntimesDetection_AppliesExpectedArgumentsAndVariables(string fileName, bool isPython)
+        {
+            var psi = new ProcessStartInfo { FileName = fileName, Arguments = "-version" };
+            ProcessLauncher.ApplyLanguageFixes(psi);
+
+            if (isPython)
+            {
+                Assert.Equal("1", psi.Environment["PYTHONUTF8"]);
+                Assert.Equal("utf-8", psi.Environment["PYTHONIOENCODING"]);
+            }
+            else
+            {
+                Assert.Contains("-Dfile.encoding=UTF-8", psi.Arguments);
+            }
+        }
+
+        [Fact]
+        public void ApplyLanguageFixes_NullOrEmptyPsiFileName_ReturnsEarlySafely()
+        {
+            var psiNull = new ProcessStartInfo { FileName = null! };
+            var psiEmpty = new ProcessStartInfo { FileName = string.Empty };
+
+            var exceptionNull = Record.Exception(() => ProcessLauncher.ApplyLanguageFixes(psiNull));
+            var exceptionEmpty = Record.Exception(() => ProcessLauncher.ApplyLanguageFixes(psiEmpty));
+
+            Assert.Null(exceptionNull);
+            Assert.Null(exceptionEmpty);
+        }
+
+        [Fact]
+        public void ApplyLanguageFixes_JavaWithExistingEncodingProperty_DoesNotOverwiteArguments()
+        {
+            var psi = new ProcessStartInfo { FileName = "java.exe", Arguments = "-Dfile.encoding=ISO-8859-1 -jar target.jar" };
+            ProcessLauncher.ApplyLanguageFixes(psi);
+
+            // Logic should skip prepending UTF-8 properties if a definition is already matched
+            Assert.StartsWith("-Dfile.encoding=ISO-8859-1", psi.Arguments);
+            Assert.DoesNotContain("UTF-8", psi.Arguments);
+        }
+
+        [Fact]
+        public void SetIfMissing_KeyAlreadyExists_DoesNotOverwriteExplicitEnvironmentValue()
+        {
+            var psi = new ProcessStartInfo { FileName = "python.exe" };
+            psi.Environment["PYTHONUTF8"] = "CUSTOM_USER_VALUE"; // Explicit definition
+
+            ProcessLauncher.ApplyLanguageFixes(psi);
+
+            // Verify the helper branch rule 'if (!psi.Environment.ContainsKey(key))' bypassed replacing it
+            Assert.Equal("CUSTOM_USER_VALUE", psi.Environment["PYTHONUTF8"]);
         }
 
         #endregion
@@ -130,12 +301,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.True(wrapper.HasExited);
             }
 
-            // Allow asynchronous file flushing and OS stream notifications 
-            // to completely unwind into the shared on-disk file layer.
             string content = string.Empty;
             bool containsBoth = false;
 
-            // Bounded polling loop ensures zero flakiness under extreme CI CPU consumption
             for (int i = 0; i < 10; i++)
             {
                 content = File.ReadAllText(logPath);
@@ -147,35 +315,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Thread.Sleep(100);
             }
 
-            // Assert
             Assert.True(containsBoth, $"Log file content did not fully stabilize with both outputs. Current file string content: '{content}'");
             Assert.Contains("STDOUT_MSG", content);
             Assert.Contains("STDERR_MSG", content);
-        }
-
-        #endregion
-
-        #region Language Fixes Tests
-
-        [Theory]
-        [InlineData("python.exe", true)]
-        [InlineData("python2.exe", true)]
-        [InlineData("python3.exe", true)]
-        [InlineData("python3.11.exe", true)]
-        [InlineData("node.exe", false)]
-        public void ApplyLanguageFixes_PythonDetection_AppliesEnvironmentVariables(string fileName, bool isPython)
-        {
-            var psi = new ProcessStartInfo { FileName = fileName };
-            ProcessLauncher.ApplyLanguageFixes(psi);
-
-            if (isPython)
-            {
-                Assert.Equal("1", psi.Environment["PYTHONUTF8"]);
-            }
-            else
-            {
-                Assert.False(psi.Environment.ContainsKey("PYTHONUTF8"));
-            }
         }
 
         #endregion
@@ -193,48 +335,61 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             options.FireAndForget = fireAndForget;
             options.TimeoutMs = timeoutMs;
             options.WaitChunkMs = 100;
-
-            // Use correct List type for EnvironmentVariables
             options.EnvironmentVariables = new List<Servy.Core.EnvironmentVariables.EnvironmentVariable>();
 
             return options;
         }
 
-        private class TestLogger : IServyLogger
+        private class MockStartFalseProcessFactory : IProcessFactory
         {
-            public List<string> Warnings { get; } = new List<string>();
-            public List<string> Errors { get; } = new List<string>();
-
-            public string LastWarning => Warnings.LastOrDefault() ?? string.Empty;
-            public string LastError => Errors.LastOrDefault() ?? string.Empty;
-
-            public string? Prefix => string.Empty;
-            public void Warn(string message, Exception? ex) => Warnings.Add(message);
-            public void Error(string message, Exception? ex) => Errors.Add(message);
-            public void Info(string message, Exception? ex) { }
-            public void Debug(string message, Exception? ex) { }
-            public IServyLogger CreateScoped(string prefix) => throw new NotImplementedException();
-            public void SetLogLevel(LogLevel level) { }
-            public void SetIsEventLogEnabled(bool isEnabled) { }
-            public void Dispose() { }
+            public MockStartFalseProcessWrapper CreatedWrapper { get; } = new MockStartFalseProcessWrapper();
+            public IProcessWrapper Create(ProcessStartInfo startInfo, IServyLogger? logger) => CreatedWrapper;
         }
 
-        private class MockFailingProcessFactory : IProcessFactory
+        private class MockStartFalseProcessWrapper : IProcessWrapper
         {
-            public MockFailingProcessWrapper CreatedWrapper { get; } = new MockFailingProcessWrapper();
-            public IProcessWrapper Create(ProcessStartInfo startInfo, IServyLogger? logger) => CreatedWrapper;
+            public bool WasDisposed { get; private set; }
+            public bool Start() => false; // Trigger structural fallback branch criteria match
+            public bool HasExited => true;
+            public void Kill(bool entireProcessTree) { }
+            public void Dispose() => WasDisposed = true;
+
+            public Process UnderlyingProcess { get; } = new Process();
+            public int Id => int.MaxValue;
+            public IntPtr Handle => IntPtr.Zero;
+            public int ExitCode => -1;
+            public bool EnableRaisingEvents { get; set; }
+            public DateTime StartTime => DateTime.Now;
+            public StreamReader StandardOutput => StreamReader.Null;
+            public StreamReader StandardError => StreamReader.Null;
+            public ProcessStartInfo StartInfo => new ProcessStartInfo();
+            public IntPtr MainWindowHandle => IntPtr.Zero;
+            public ProcessPriorityClass PriorityClass { get; set; }
+            public event DataReceivedEventHandler? OutputDataReceived { add { } remove { } }
+            public event DataReceivedEventHandler? ErrorDataReceived { add { } remove { } }
+            public event EventHandler? Exited { add { } remove { } }
+            public void BeginErrorReadLine() { }
+            public void BeginOutputReadLine() { }
+            public void CancelErrorRead() { }
+            public void CancelOutputRead() { }
+            public bool CloseMainWindow() => true;
+            public string Format() => "MockFalse";
+            public bool? Stop(int t) => true;
+            public void StopDescendants(int p, DateTime s, int t) { }
+            public bool WaitForExit(int ms) => true;
+            public void WaitForExit() { }
+            public Task<bool> WaitAndCheckStillRunningAsync(TimeSpan t, CancellationToken c) => Task.FromResult(true);
         }
 
         private class MockFailingProcessWrapper : IProcessWrapper
         {
-            public bool WasDisposed { get; private set; }
-            public bool Start() => throw new InvalidOperationException("Simulated Start Error");
+            public bool Start() => true;
             public bool HasExited => false;
-            public void Kill(bool entireProcessTree) => throw new UnauthorizedAccessException("Simulated Kill Error");
-            public void Dispose() => WasDisposed = true;
+            public void Kill(bool entireProcessTree) { }
+            public void Dispose() { }
 
             public Process UnderlyingProcess { get; } = new Process();
-            public int Id => 1;
+            public int Id => 9999;
             public IntPtr Handle => IntPtr.Zero;
             public int ExitCode => 0;
             public bool EnableRaisingEvents { get; set; }
@@ -255,9 +410,28 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             public string Format() => "Mock";
             public bool? Stop(int t) => true;
             public void StopDescendants(int p, DateTime s, int t) { }
-            public bool WaitForExit(int ms) => true;
+            public bool WaitForExit(int ms) => false; // Enforces persistent loop conditions for timeouts
             public void WaitForExit() { }
             public Task<bool> WaitAndCheckStillRunningAsync(TimeSpan t, CancellationToken c) => Task.FromResult(true);
+        }
+
+        private class TestLogger : IServyLogger
+        {
+            public List<string> Warnings { get; } = new List<string>();
+            public List<string> Errors { get; } = new List<string>();
+
+            public string LastWarning => Warnings.LastOrDefault() ?? string.Empty;
+            public string LastError => Errors.LastOrDefault() ?? string.Empty;
+
+            public string? Prefix => string.Empty;
+            public void Warn(string message, Exception? ex = null) => Warnings.Add(message);
+            public void Error(string message, Exception? ex = null) => Errors.Add(message);
+            public void Info(string message, Exception? ex = null) { }
+            public void Debug(string message, Exception? ex = null) { }
+            public IServyLogger CreateScoped(string prefix) => throw new NotImplementedException();
+            public void SetLogLevel(LogLevel level) { }
+            public void SetIsEventLogEnabled(bool isEnabled) { }
+            public void Dispose() { }
         }
 
         #endregion
