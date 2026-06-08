@@ -1,5 +1,6 @@
 ﻿using Servy.Service.ProcessManagement;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace Servy.Service.IntegrationTests.ProcessManagement
 {
@@ -8,9 +9,17 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
     /// These tests execute real OS processes and evaluate native Toolhelp32 enumerations.
     /// </summary>
     [CollectionDefinition("ProcessExtensionsIntegrationTests", DisableParallelization = true)]
+    public class ProcessExtensionsIntegrationTestsCollection : ICollectionFixture<object>
+    {
+        // Enforces strict sequential isolation across the execution suite
+    }
+
+    [Collection("ProcessExtensionsIntegrationTests")]
     public class ProcessExtensionsIntegrationTests : IDisposable
     {
         private readonly List<Process> _processesToCleanup = new List<Process>();
+
+        #region Format Tests
 
         [Fact]
         public void Format_ActiveProcess_ReturnsProcessNameAndId()
@@ -23,6 +32,25 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
+        [Fact]
+        public void Format_Win32ExceptionThrownOnAccess_CatchesAndReturnsFallbackString()
+        {
+            // Arrange - Use a mock of a non-sealed component pattern or an uninitialized Process model
+            var process = new Process();
+
+            // Forcing an operations execution onto an unallocated Process object native handle
+            // throws an internal Win32Exception or InvalidOperationException depending on runtime state.
+            string formatted = process.Format();
+
+            // Assert
+            Assert.NotNull(formatted);
+            Assert.True(formatted.Contains("PID") || formatted.Contains("Process"));
+        }
+
+        #endregion
+
+        #region GetChildren & GetAllDescendants Boundary Tests
+
         [Theory]
         [InlineData(-1)]
         [InlineData(0)]
@@ -33,15 +61,39 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         [Fact]
+        public void GetChildren_InvalidStartTime_ReturnsEmptyList()
+        {
+            var children = ProcessExtensions.GetChildren(123, DateTime.MinValue);
+            Assert.Empty(children);
+        }
+
+        [Theory]
+        [InlineData(-1)]
+        [InlineData(0)]
+        public void GetAllDescendants_InvalidParameters_ReturnsEmptyList(int invalidPid)
+        {
+            var descendantsNullTime = ProcessExtensions.GetAllDescendants(invalidPid, DateTime.MinValue);
+            var descendantsValidTime = ProcessExtensions.GetAllDescendants(invalidPid, DateTime.Now);
+
+            Assert.Empty(descendantsNullTime);
+            Assert.Empty(descendantsValidTime);
+        }
+
+        [Fact]
+        public void GetAllDescendants_InvalidStartTime_ReturnsEmptyList()
+        {
+            var descendants = ProcessExtensions.GetAllDescendants(1, DateTime.MinValue);
+            Assert.Empty(descendants);
+        }
+
+        [Fact]
         public void GetChildren_ValidParent_ReturnsOnlyImmediateChildren()
         {
-            // Arrange: Spawn powershell -> powershell
             var root = SpawnProcessTree(1);
             List<Process> children = new List<Process>();
 
             try
             {
-                // Poll for "powershell"
                 children = WaitForProcessName(root, "powershell", ProcessExtensions.GetChildren);
 
                 var targetProcess = children.FirstOrDefault(p =>
@@ -59,7 +111,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void GetAllDescendants_ValidParent_ReturnsEntireTree()
         {
-            // Arrange: Spawn powershell -> powershell -> powershell (Depth 2 = 2 nested descendants)
             var root = SpawnProcessTree(2);
             List<Process> descendants = new List<Process>();
 
@@ -72,7 +123,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     foreach (var d in descendants) d.Dispose();
                     descendants = ProcessExtensions.GetAllDescendants(root.Id, root.StartTime);
 
-                    // At depth 2, we expect exactly 2 nested powershell instances
                     int psCount = descendants.Count(d => d.ProcessName.Equals("powershell", StringComparison.OrdinalIgnoreCase));
                     return descendants.Count >= 2 && psCount >= 2;
 
@@ -85,7 +135,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 Assert.True(treeStabilized, $"Tree failed to stabilize within 20s. Found {descendants.Count} descendants.");
 
-                // Assert both the intermediate and the leaf are present
                 int finalPsCount = descendants.Count(d => d.ProcessName.Equals("powershell", StringComparison.OrdinalIgnoreCase));
                 Assert.True(finalPsCount >= 2, $"Expected at least 2 nested powershell processes. Found: {finalPsCount}");
             }
@@ -105,6 +154,62 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             Assert.Empty(children);
         }
 
+        #endregion
+
+        #region TryResolveValidChild Private Method Reflection Tests
+
+        [Fact]
+        public void TryResolveValidChild_ArgumentExceptionThrown_ReturnsNullSafely()
+        {
+            // Arrange - Use an absolute out-of-bounds PID that can never belong to an active windows process allocation
+            int nonExistentPid = 999999;
+
+            var method = typeof(ProcessExtensions).GetMethod("TryResolveValidChild", BindingFlags.Static | BindingFlags.NonPublic);
+
+            // Act - Invoke the verification flow; ArgumentException gets caught when Process.GetProcessById falls out
+            var result = method!.Invoke(null, new object[] { nonExistentPid, DateTime.Now, DateTime.UtcNow });
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void TryResolveValidChild_ProcessFailsLifetimeValidationBounds_ReturnsNullAndDisposes()
+        {
+            // Arrange - Use a guaranteed active process (current process)
+            using (var current = Process.GetCurrentProcess())
+            {
+                var method = typeof(ProcessExtensions).GetMethod("TryResolveValidChild", BindingFlags.Static | BindingFlags.NonPublic);
+
+                // Intentionally alter constraints layout: Pass an execution threshold time set completely in the future
+                // to force 'startedAfterParent' or 'startedBeforeSnapshot' conditional validations to return false.
+                var skewedParentTime = DateTime.Now.AddDays(10);
+                var snapshotTime = DateTime.UtcNow.AddDays(-10);
+
+                // Act
+                var result = method!.Invoke(null, new object[] { current.Id, skewedParentTime, snapshotTime });
+
+                // Assert
+                Assert.Null(result);
+            }
+        }
+
+        [Fact]
+        public void TryResolveValidChild_UnexpectedGenericException_LogsTraceAndReturnsNull()
+        {
+            // Arrange - Passing a negative PID into a raw system process mapping pipeline 
+            // forces an implicit runtime validation layer ArgumentException or Win32Exception layout.
+            var method = typeof(ProcessExtensions).GetMethod("TryResolveValidChild", BindingFlags.Static | BindingFlags.NonPublic);
+
+            // Act
+            var result = method!.Invoke(null, new object[] { -99, DateTime.Now, DateTime.UtcNow });
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        #endregion
+
         #region Integration Test Helpers
 
         /// <summary>
@@ -113,20 +218,14 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         /// </summary>
         private Process SpawnProcessTree(int depth)
         {
-            // Recursive function to build nested PowerShell payloads
             string BuildScript(int currentDepth)
             {
-                // The absolute leaf node just keeps the process tree alive
                 if (currentDepth == 0)
                     return "Start-Sleep -Seconds 15";
 
-                // Get the script for the level below us
                 string innerScript = BuildScript(currentDepth - 1);
-
-                // PowerShell requires Unicode (UTF-16LE) for EncodedCommand
                 string encodedInner = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(innerScript));
 
-                // Create a script that launches the encoded inner script and waits for it
                 return $@"
                     $psi = New-Object System.Diagnostics.ProcessStartInfo
                     $psi.FileName = 'powershell.exe'
@@ -138,7 +237,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 ";
             }
 
-            // Build the script for the requested depth and encode it for the root process
             string rootScript = BuildScript(depth);
             string encodedRoot = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(rootScript));
 

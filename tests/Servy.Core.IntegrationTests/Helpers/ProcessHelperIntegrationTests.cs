@@ -1,16 +1,21 @@
 ﻿using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 
 namespace Servy.Core.IntegrationTests.Helpers
 {
+    [CollectionDefinition("ProcessHelperIntegrationTests", DisableParallelization = true)]
+    public class ProcessHelperIntegrationTestsCollection : ICollectionFixture<object>
+    {
+        // Enforces strict sequential isolation across the execution suite
+    }
+
     /// <summary>
     /// Integration tests for ProcessHelper. 
     /// Verifies OS-level interactions including file system resolution, environment variable expansion, 
     /// and native Windows process tree traversal.
     /// </summary>
-    [CollectionDefinition("ProcessHelperIntegrationTests", DisableParallelization = true)]
+    [Collection("ProcessHelperIntegrationTests")]
     public class ProcessHelperIntegrationTests : IDisposable
     {
         private readonly ProcessHelper _sut;
