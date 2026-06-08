@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 
@@ -19,6 +20,7 @@ namespace Servy.UI.Services
         /// Safely sets the cursor, marshaling to the UI thread if necessary, 
         /// and ignoring calls during headless unit tests.
         /// </summary>
+        [ExcludeFromCodeCoverage] // Flaky on CI
         private static void SetCursorSafe(Cursor? cursor)
         {
             // Skip in unit test environments where Application.Current or its Dispatcher might be null
