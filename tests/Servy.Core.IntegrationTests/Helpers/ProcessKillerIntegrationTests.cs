@@ -29,15 +29,18 @@ namespace Servy.Core.IntegrationTests.Helpers
             _trackedProcesses = new List<Process>();
             _tempFiles = new List<string>();
 
+            // 1. Force execution asset extraction to disk
             Testing.Helper.ExtractHandleExe();
 
-            // Safely read path assignment tokens once extraction checks pass
+            // 2. Fetch the resolved cross-architecture path string token
             _handleExePath = Testing.Helper.HandleExePath;
 
-            if (!File.Exists(_handleExePath))
-            {
-                Debug.WriteLine($"WARNING: handle.exe not found and extraction failed at {_handleExePath}");
-            }
+            // 3. CRITICAL DEFECT GUARD: Assert file physically exists right now
+            // If extraction fails due to directory locks, this stops the test context immediately with an explicit error.
+            Assert.True(File.Exists(_handleExePath), $"Lifecycle Extraction Fault: '{_handleExePath}' could not be verified on the local disk file table.");
+
+            // Auto-accept Sysinternals EULA in the registry hive context to prevent headless runner hangs
+            Testing.Helper.AcceptSysinternalsEula();
         }
 
         /// <summary>

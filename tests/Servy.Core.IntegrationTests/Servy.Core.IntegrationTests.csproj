@@ -131,9 +131,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\handle64.exe" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\src\Servy.Core\Servy.Core.csproj">
       <Project>{4d92fa0d-47bb-4658-91cd-774a25adeb87}</Project>
       <Name>Servy.Core</Name>
