@@ -26,7 +26,7 @@
         Error = 2,
 
         /// <summary>
-        /// Error event indicating a critical failure or problem.
+        /// Critical event indicating a critical failure or problem.
         /// </summary>
         Critical = 1,
 

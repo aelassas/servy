@@ -26,14 +26,6 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Creates a copy of the current state.
         /// </summary>
-        public object Clone()
-        {
-            return new ServiceConsoleStateDto
-            {
-                Pid = Pid,
-                ActiveStdoutPath = ActiveStdoutPath,
-                ActiveStderrPath = ActiveStderrPath
-            };
-        }
+        public object Clone() => MemberwiseClone();
     }
 }

@@ -5,7 +5,7 @@ namespace Servy.CLI.Options
     /// <summary>
     /// Options for the <c>uninstall</c> command to uninstall a Windows service.
     /// </summary>
-    [Verb("uninstall", HelpText = "Uninstall a service.")]
+    [Verb("uninstall", HelpText = "Uninstall a Windows service.")]
     public class UninstallServiceOptions : GlobalOptionsBase
     {
         /// <summary>
