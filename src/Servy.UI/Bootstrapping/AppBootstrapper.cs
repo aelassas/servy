@@ -370,25 +370,16 @@ namespace Servy.UI.Bootstrapping
                             "Manager cannot start safely - see file log for details.");
                     }
 
-                    if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
+                    var handleExeFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64
+                        ? AppConfig.HandleExeARM64FileName
+                        : AppConfig.HandleExeX64FileName;
+
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, handleExeFileName, "exe", false))
                     {
-                        if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.HandleExeARM64FileName, "exe", false))
-                        {
-                            string resourceName = $"{AppConfig.HandleExeARM64FileName}.exe";
-                            Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " +
-                                "File-lock diagnostics will be unavailable this session.");
-                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource_Format, resourceName)));
-                        }
-                    }
-                    else
-                    {
-                        if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.HandleExeX64FileName, "exe", false))
-                        {
-                            string resourceName = $"{AppConfig.HandleExeX64FileName}.exe";
-                            Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " +
-                                "File-lock diagnostics will be unavailable this session.");
-                            await app.Dispatcher.InvokeAsync(() => MessageBox.Show(string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource_Format, resourceName)));
-                        }
+                        string resourceName = $"{handleExeFileName}.exe";
+                        Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " +
+                            "File-lock diagnostics will be unavailable this session.");
+                        await app.Dispatcher.InvokeAsync(() => MessageBox.Show(string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource_Format, resourceName)));
                     }
 
 #if DEBUG

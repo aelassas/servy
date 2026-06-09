@@ -1,12 +1,9 @@
 ﻿using Servy.Core.Data;
 using Servy.Core.Helpers;
-using Servy.Core.Logging;
 using Servy.Manager.Config;
 using Servy.Manager.Design;
-using Servy.Manager.Mappers;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
-using Servy.UI.Commands;
 using Servy.UI.Constants;
 using Servy.UI.Services;
 using System.Windows;
@@ -303,7 +300,6 @@ namespace Servy.Manager.ViewModels
                 valueHistory.Dequeue();
             }
 
-            // --- REPLACED LINQ .Max() WITH ALLOCATION-FREE FOREACH ---
             double currentMax = 0;
             if (!isCpu && valueHistory.Count > 0)
             {

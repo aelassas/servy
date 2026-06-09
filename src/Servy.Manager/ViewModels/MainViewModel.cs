@@ -211,9 +211,9 @@ namespace Servy.Manager.ViewModels
                 {
                     _isUpdatingSelectAll = true;
 
-                    bool targetState = (value == true);
+                    bool targetState = value == true;
 
-                    // Optimization: Use a local list to avoid multiple enumeration if _services is large
+                    // Apply the target check-state to every row in a single pass.
                     foreach (var service in _services)
                     {
                         service.IsChecked = targetState;

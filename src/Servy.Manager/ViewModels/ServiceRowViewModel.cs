@@ -138,8 +138,8 @@ namespace Servy.Manager.ViewModels
         /// Handles property changes in the underlying <see cref="Service"/> and forwards them to the UI.
         /// </summary>
         /// <remarks>
-        /// This refactor removes redundant switch cases because the ViewModel property names 
-        /// match the Service model names exactly.
+        /// Forwards every Service property change 1:1 to the ViewModel: the ViewModel property
+        /// names match the Service model names exactly, so no per-property mapping is needed.
         /// </remarks>
         private void Service_PropertyChanged(object? sender, PropertyChangedEventArgs? e)
         {

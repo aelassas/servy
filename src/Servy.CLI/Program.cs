@@ -201,19 +201,12 @@ namespace Servy.CLI
                         }
 
                         // Copy Sysinternals from embedded resources
-                        if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
+                        var handleExeFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64
+                            ? AppConfig.HandleExeARM64FileName
+                            : AppConfig.HandleExeX64FileName;
+                        if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, handleExeFileName, "exe", false))
                         {
-                            if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeARM64FileName, "exe", false))
-                            {
-                                Console.WriteLine($"Failed copying embedded resource: {AppConfig.HandleExeARM64}");
-                            }
-                        }
-                        else
-                        {
-                            if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeX64FileName, "exe", false))
-                            {
-                                Console.WriteLine($"Failed copying embedded resource: {AppConfig.HandleExeX64}");
-                            }
+                            Console.WriteLine($"Failed copying embedded resource: {handleExeFileName}");
                         }
 
 #if DEBUG
