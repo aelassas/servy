@@ -47,7 +47,7 @@
     <value>File path is required.</value>
   </data>
   <data name="Msg_InvalidConfigFileType" xml:space="preserve">
-    <value>Configuration output file type is required (XML or JSON).</value>
+    <value>Configuration file type is required (XML or JSON).</value>
   </data>
   <data name="Msg_UnsupportedFileType" xml:space="preserve">
     <value>Unsupported configuration file type: {0}</value>
