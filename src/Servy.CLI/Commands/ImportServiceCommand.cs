@@ -114,9 +114,7 @@ namespace Servy.CLI.Commands
                         result = await ProcessJsonAsync(opts, content, cancellationToken: cancellationToken);
                         break;
                     default:
-                        result = CommandResult.Fail(string.Format(Strings.Msg_UnsupportedFileType, configFileType));
-                        Logger.Error($"Unsupported configuration file type: {opts.ConfigFileType}");
-                        break;
+                        throw new ArgumentOutOfRangeException(nameof(configFileType), $"Unhandled file type: {configFileType}");
                 }
 
                 if (result.Success)

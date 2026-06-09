@@ -25,8 +25,10 @@ namespace Servy.CLI.UnitTests.Commands
         private readonly Mock<IJsonServiceValidator> _jsonValidatorMock;
         private readonly Mock<IProcessHelper> _processHelper;
         private readonly ImportServiceCommand _command;
-        private readonly string _tempXmlPath;
-        private readonly string _tempJsonPath;
+
+        // Authentic local paths within safe security boundaries
+        private readonly string _legalXmlPath;
+        private readonly string _legalJsonPath;
 
         public ImportServiceCommandTests()
         {
@@ -47,21 +49,25 @@ namespace Servy.CLI.UnitTests.Commands
                 _jsonValidatorMock.Object,
                 _processHelper.Object);
 
-            _tempXmlPath = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.xml");
-            _tempJsonPath = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.json");
+            // Establish safe, legal physical file anchors in Temp to fulfill ImportGuard invariants
+            string baseTemp = Path.GetTempPath();
+            _legalXmlPath = Path.Combine(baseTemp, $"legal_import_{Guid.NewGuid()}.xml");
+            _legalJsonPath = Path.Combine(baseTemp, $"legal_import_{Guid.NewGuid()}.json");
         }
 
         public void Dispose()
         {
-            if (File.Exists(_tempXmlPath)) File.Delete(_tempXmlPath);
-            if (File.Exists(_tempJsonPath)) File.Delete(_tempJsonPath);
+            // Wipe physical artifacts to clean up the workspace
+            if (File.Exists(_legalXmlPath)) File.Delete(_legalXmlPath);
+            if (File.Exists(_legalJsonPath)) File.Delete(_legalJsonPath);
         }
 
-        #region Constructor ArgumentNullException Tests
+        #region Constructor Guard Clauses
 
         [Fact]
         public void Constructor_NullDependencies_ThrowsArgumentNullException()
         {
+            // Arrange / Act / Assert
             Assert.Throws<ArgumentNullException>("serviceRepository", () => new ImportServiceCommand(null, _xmlServiceSerializer.Object, _jsonServiceSerializer.Object, _serviceManager.Object, _xmlValidatorMock.Object, _jsonValidatorMock.Object, _processHelper.Object));
             Assert.Throws<ArgumentNullException>("xmlServiceValidator", () => new ImportServiceCommand(_serviceRepoMock.Object, _xmlServiceSerializer.Object, _jsonServiceSerializer.Object, _serviceManager.Object, null, _jsonValidatorMock.Object, _processHelper.Object));
             Assert.Throws<ArgumentNullException>("jsonServiceValidator", () => new ImportServiceCommand(_serviceRepoMock.Object, _xmlServiceSerializer.Object, _jsonServiceSerializer.Object, _serviceManager.Object, _xmlValidatorMock.Object, null, _processHelper.Object));
@@ -73,7 +79,7 @@ namespace Servy.CLI.UnitTests.Commands
 
         #endregion
 
-        #region Options Path Guard Tests
+        #region ExecuteAsync Base Route & Guard Checks
 
         [Theory]
         [InlineData(null)]
@@ -92,40 +98,126 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Equal(Strings.Msg_PathRequired, result.Message);
         }
 
-        #endregion
-
-        #region Switch Default Branch Tests
-
         [Fact]
-        public async Task ExecuteAsync_SwitchDefault_ReturnsUnsupportedFileTypeResult()
+        public async Task ExecuteAsync_ImportGuardFails_PathViolatesSecurityExtension_ReturnsFail()
         {
             // Arrange
-            File.WriteAllText(_tempXmlPath, "<ServiceDto><Name>Test</Name></ServiceDto>");
-            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _tempXmlPath };
+            string badExtensionPath = Path.Combine(Path.GetTempPath(), $"corrupt_{Guid.NewGuid()}.txt");
+            File.WriteAllText(badExtensionPath, "<ServiceDto/>");
 
-            // Internal reflection trick to force the unexposed enum state block fallback track execution
-            // Modifies string parsing via private/internal structures if Helper assembly bindings allow,
-            // otherwise achieved by creating a test stub that returns an invalid enum value dynamically.
-            // For xUnit decoupling consistency, we bypass configuration flags to mock structural layout bounds:
-            var invalidTypeOpts = new ImportServiceOptions { ConfigFileType = "UnsupportedFormat", Path = _tempXmlPath };
+            try
+            {
+                var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = badExtensionPath };
+
+                // Act
+                var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+                // Assert
+                Assert.False(result.Success);
+                Assert.Contains(".txt", result.Message);
+            }
+            finally
+            {
+                if (File.Exists(badExtensionPath)) File.Delete(badExtensionPath);
+            }
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_InvalidConfigFileType_ReturnsInvalidConfigFileTypeMessage()
+        {
+            // Arrange
+            File.WriteAllText(_legalXmlPath, "<ServiceDto><Name>Test</Name></ServiceDto>");
+
+            // "ini" passes TryParseFileType validation as a valid enum member but triggers the fallback default branch inside ExecuteAsync
+            var opts = new ImportServiceOptions { ConfigFileType = "ini", Path = _legalXmlPath };
 
             // Act
-            var result = await _command.ExecuteAsync(invalidTypeOpts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
             Assert.False(result.Success);
+            Assert.Equal(Strings.Msg_InvalidConfigFileType, result.Message);
         }
 
         #endregion
 
-        #region ProcessImportInternalAsync If Branches Coverage
+        #region Format-Specific Tracks (ProcessXmlAsync / ProcessJsonAsync)
 
         [Fact]
-        public async Task ProcessImportInternalAsync_DeserializationReturnsNull_ReturnsDeserializationFailure()
+        public async Task ExecuteAsync_XmlFormatTrack_ValidPayload_ReturnsOk()
         {
             // Arrange
-            File.WriteAllText(_tempXmlPath, "<ServiceDto></ServiceDto>");
-            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _tempXmlPath };
+            var realPath = @"C:\Windows\System32\notepad.exe";
+            var xmlContent = "<ServiceDto><Name>XmlService</Name></ServiceDto>";
+            File.WriteAllText(_legalXmlPath, xmlContent);
+
+            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath, InstallService = false };
+
+            MockXmlValidator(true);
+            var dto = new ServiceDto { Name = "XmlService", ExecutablePath = realPath };
+            _xmlServiceSerializer.Setup(s => s.Deserialize(xmlContent)).Returns(dto);
+            _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
+            _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal(string.Format(Strings.Msg_ImportSuccessNoInstall, "XML"), result.Message);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_JsonFormatTrack_ValidPayload_ReturnsOk()
+        {
+            // Arrange
+            var realPath = @"C:\Windows\System32\cmd.exe";
+            var jsonContent = "{\"Name\":\"JsonService\"}";
+            File.WriteAllText(_legalJsonPath, jsonContent);
+
+            var opts = new ImportServiceOptions { ConfigFileType = "json", Path = _legalJsonPath, InstallService = false };
+
+            MockJsonValidator(true);
+            var dto = new ServiceDto { Name = "JsonService", ExecutablePath = realPath };
+            _jsonServiceSerializer.Setup(s => s.Deserialize(jsonContent)).Returns(dto);
+            _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
+            _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal(string.Format(Strings.Msg_ImportSuccessNoInstall, "JSON"), result.Message);
+        }
+
+        #endregion
+
+        #region ProcessImportInternalAsync Internal Validation Branches
+
+        [Fact]
+        public async Task ProcessImportInternalAsync_FormatValidationFails_ReturnsInvalidFormatResult()
+        {
+            // Arrange
+            File.WriteAllText(_legalXmlPath, "<Malformed XML>");
+            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath };
+
+            MockXmlValidator(false, "Missing close root tag definition context");
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(string.Format(Strings.Msg_ImportFormatInvalid, "XML", "Missing close root tag definition context"), result.Message);
+        }
+
+        [Fact]
+        public async Task ProcessImportInternalAsync_DeserializerReturnsNull_ReturnsDeserializationFailure()
+        {
+            // Arrange
+            File.WriteAllText(_legalXmlPath, "<ServiceDto />");
+            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath };
 
             MockXmlValidator(true);
             _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns((ServiceDto)null);
@@ -143,14 +235,14 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             var realPath = @"C:\Windows\System32\notepad.exe";
-            File.WriteAllText(_tempXmlPath, "<ServiceDto></ServiceDto>");
-            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _tempXmlPath, InstallService = false };
+            File.WriteAllText(_legalXmlPath, "<ServiceDto></ServiceDto>");
+            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath, InstallService = false };
 
             MockXmlValidator(true);
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = realPath };
             _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
-            _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(0); // Triggers the branch
+            _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
             // Act
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
@@ -162,17 +254,16 @@ namespace Servy.CLI.UnitTests.Commands
 
         #endregion
 
-        #region ValidateServicePaths Reflection Logic Branch Coverage
+        #region ValidateServicePaths Property Reflection Invariants
 
         [Fact]
-        public async Task ValidateServicePaths_RequiredPathMissing_ReturnsExecutablePathSpecificFailure()
+        public async Task ValidateServicePaths_EmptyRequiredPathProperty_ReturnsExecutablePathSpecificFailure()
         {
             // Arrange
-            File.WriteAllText(_tempXmlPath, "<ServiceDto></ServiceDto>");
-            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _tempXmlPath };
+            File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
+            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath };
 
             MockXmlValidator(true);
-            // ExecutablePath is string.Empty/null but is marked as Required inside the DTO definition layout
             var dto = new ServiceDto { Name = "TestService", ExecutablePath = string.Empty };
             _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
 
@@ -185,46 +276,67 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public async Task ValidateServicePaths_RequiredFieldOmitted_ReturnsGeneralInvalidPathFailure()
+        public async Task ValidateServicePaths_InvalidExecutablePath_ReturnsPathSpecificFailure()
         {
             // Arrange
-            File.WriteAllText(_tempXmlPath, "<ServiceDto></ServiceDto>");
-            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _tempXmlPath };
+            File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
+            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath };
 
             MockXmlValidator(true);
-            // Non-ExecutablePath required metadata field breaks validity rules frame checks
-            var dto = new ServiceDto { Name = "TestService", ExecutablePath = @"C:\notepad.exe" };
+            var dto = new ServiceDto { Name = "TestService", ExecutablePath = @"Z:\Missing\Dir\Engine.exe" };
             _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
-            _processHelper.Setup(p => p.ValidatePath(It.IsAny<string>(), It.IsAny<bool>())).Returns(false);
+            _processHelper.Setup(p => p.ValidatePath(@"Z:\Missing\Dir\Engine.exe", It.IsAny<bool>())).Returns(false);
 
             // Act
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
             Assert.False(result.Success);
+            Assert.Equal(string.Format(Strings.Msg_InvalidExecutablePath, @"Z:\Missing\Dir\Engine.exe"), result.Message);
+        }
+
+        [Fact]
+        public async Task ValidateServicePaths_InvalidSecondaryConfigPath_ReturnsGeneralInvalidPathFailure()
+        {
+            // Arrange
+            File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
+            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath };
+
+            MockXmlValidator(true);
+            // Executable path is legal, but a secondary attribute property (like WorkingDirectory) is invalid
+            var dto = new ServiceDto { Name = "TestService", ExecutablePath = @"C:\Windows\notepad.exe", StartupDirectory = @"Y:\Invalid\Folder" };
+            _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
+
+            _processHelper.Setup(p => p.ValidatePath(@"C:\Windows\notepad.exe", true)).Returns(true);
+            _processHelper.Setup(p => p.ValidatePath(@"Y:\Invalid\Folder", false)).Returns(false);
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.Success);
+            // Proves execution hit the generalized config path error message branch fallback path
+            Assert.Equal(string.Format(Strings.Msg_InvalidPathInConfig, "startup directory"), result.Message);
         }
 
         #endregion
 
-        #region TryInstallServiceAsync Branch Coverage
+        #region TryInstallServiceAsync Workflow Boundaries
 
         [Fact]
-        public async Task TryInstallServiceAsync_ServiceNotFoundInRepoAfterImport_ReturnsLookupFailure()
+        public async Task TryInstallServiceAsync_ServiceLookupFailsAfterImport_ReturnsLookupFailure()
         {
             // Arrange
             var realPath = @"C:\Windows\System32\notepad.exe";
-            File.WriteAllText(_tempXmlPath, "<ServiceDto></ServiceDto>");
-            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _tempXmlPath, InstallService = true };
+            File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
+            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath, InstallService = true };
 
             MockXmlValidator(true);
             var dto = new ServiceDto { Name = "GhostService", ExecutablePath = realPath };
             _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-            // Match the updated interface signature: GetByNameAsync(string, bool, CancellationToken)
-            _serviceRepoMock.Setup(r => r.GetByNameAsync("GhostService", true, It.IsAny<CancellationToken>()))
-                            .ReturnsAsync((ServiceDto)null);
+            _serviceRepoMock.Setup(r => r.GetByNameAsync("GhostService", true, It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto)null);
 
             // Act
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
@@ -235,44 +347,72 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
+        public async Task TryInstallServiceAsync_InstallationDomainSucceeds_ReturnsSuccessMessage()
+        {
+            // Arrange
+            var realPath = @"C:\Windows\System32\notepad.exe";
+            File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
+            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath, InstallService = true };
+
+            MockXmlValidator(true);
+            var dto = new ServiceDto { Name = "OperationalService", ExecutablePath = realPath };
+            _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
+            _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
+            _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            _serviceRepoMock.Setup(r => r.GetByNameAsync("OperationalService", true, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
+            _serviceManager.Setup(m => m.InstallServiceAsync(It.IsAny<Core.Services.InstallServiceOptions>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal(string.Format(Strings.Msg_ImportInstallSuccess, "XML", "OperationalService"), result.Message);
+        }
+
+        [Fact]
         public async Task TryInstallServiceAsync_InstallationDomainFails_ReturnsDomainErrorMessage()
         {
             // Arrange
             var realPath = @"C:\Windows\System32\notepad.exe";
-            File.WriteAllText(_tempXmlPath, "<ServiceDto></ServiceDto>");
-            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _tempXmlPath, InstallService = true };
+            File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
+            var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = _legalXmlPath, InstallService = true };
 
             MockXmlValidator(true);
             var dto = new ServiceDto { Name = "FailInstallService", ExecutablePath = realPath };
             _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
             _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            _serviceRepoMock.Setup(r => r.GetByNameAsync("FailInstallService", true, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
 
-            // Match the updated interface signature: GetByNameAsync(string, bool, CancellationToken)
-            _serviceRepoMock.Setup(r => r.GetByNameAsync("FailInstallService", true, It.IsAny<CancellationToken>()))
-                            .ReturnsAsync(dto);
-
-            // Match the modern async options block layout using OperationResult.Failure
-            var expectedError = "Access Denied: Service wrapper requires elevated interact permissions.";
+            var domainError = "Critical Win32 error: SCM database lock timeout reached.";
             _serviceManager.Setup(m => m.InstallServiceAsync(It.IsAny<Core.Services.InstallServiceOptions>(), It.IsAny<CancellationToken>()))
-                           .ReturnsAsync(OperationResult.Failure(expectedError));
+                           .ReturnsAsync(OperationResult.Failure(domainError));
 
             // Act
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
             Assert.False(result.Success);
-            Assert.Equal(expectedError, result.Message);
+            Assert.Equal(domainError, result.Message);
         }
 
         #endregion
 
-        #region Production Setup Core Mocking Helpers
+        #region Test Initialization Mocking Helpers
 
         private void MockXmlValidator(bool isValid, string errorMsg = null)
         {
             string dummy = errorMsg;
             _xmlValidatorMock
+                .Setup(v => v.TryValidate(It.IsAny<string>(), out dummy))
+                .Returns(isValid);
+        }
+
+        private void MockJsonValidator(bool isValid, string errorMsg = null)
+        {
+            string dummy = errorMsg;
+            _jsonValidatorMock
                 .Setup(v => v.TryValidate(It.IsAny<string>(), out dummy))
                 .Returns(isValid);
         }
