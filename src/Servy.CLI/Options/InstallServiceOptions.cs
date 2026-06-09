@@ -7,7 +7,7 @@ namespace Servy.CLI.Options
     /// Command options for <c>install</c> command.
     /// Installs a new Windows service with specified parameters.
     /// </summary>
-    [Verb("install", HelpText = "Install a service.")]
+    [Verb("install", HelpText = "Install a Windows service.")]
     public class InstallServiceOptions : GlobalOptionsBase
     {
         /// <summary>
