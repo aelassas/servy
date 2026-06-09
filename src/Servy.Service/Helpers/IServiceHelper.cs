@@ -28,8 +28,14 @@ namespace Servy.Service.Helpers
         /// <param name="serviceRepository">The repository used to fetch service-specific configurations.</param>
         /// <param name="fullArgs">The full set of command-line arguments to parse.</param>
         /// <returns>
-        /// A <see cref="StartOptions"/> object if parsing is successful; otherwise, <c>null</c>.
+        /// Returns a populated <see cref="StartOptions"/>.
         /// </returns>
+        /// <exception cref="ArgumentException">
+        /// Thrown when the command-line arguments are invalid.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the service configuration is missing.
+        /// </exception>
         StartOptions ParseOptions(IServiceRepository serviceRepository, string[] fullArgs);
 
         /// <summary>

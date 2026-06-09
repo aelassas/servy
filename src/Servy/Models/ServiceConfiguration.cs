@@ -1,5 +1,4 @@
-﻿using Servy.Core.Config;
-using Servy.Core.Enums;
+﻿using Servy.Core.Enums;
 
 namespace Servy.Models
 {
@@ -160,7 +159,7 @@ namespace Servy.Models
         /// <summary>
         /// Indicates whether to run the Windows Service as the Local System account.
         /// </summary>
-        public bool RunAsLocalSystem { get; set; } = AppConfig.DefaultRunAsLocalSystem;
+        public bool RunAsLocalSystem { get; set; }
 
         /// <summary>
         /// The service account username (e.g., <c>.\username</c>, <c>DOMAIN\username</c>).
@@ -212,19 +211,19 @@ namespace Servy.Models
         /// Gets or sets the timeout in seconds for each pre-launch execution attempt.
         /// Default is 30 seconds.
         /// </summary>
-        public string PreLaunchTimeoutSeconds { get; set; } = AppConfig.DefaultPreLaunchTimeoutSeconds.ToString();
+        public string PreLaunchTimeoutSeconds { get; set; }
 
         /// <summary>
         /// Gets or sets the number of retry attempts if the pre-launch process fails.
         /// Default is 0.
         /// </summary>
-        public string PreLaunchRetryAttempts { get; set; } = AppConfig.DefaultPreLaunchRetryAttempts.ToString();
+        public string PreLaunchRetryAttempts { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to start the main service even if the pre-launch process fails.
         /// Default is false.
         /// </summary>
-        public bool PreLaunchIgnoreFailure { get; set; } = AppConfig.DefaultPreLaunchIgnoreFailure;
+        public bool PreLaunchIgnoreFailure { get; set; }
 
         /// <summary>
         /// Gets or sets the path to the post-launch executable process to run.
@@ -276,12 +275,12 @@ namespace Servy.Models
         /// <summary>
         /// Maximum time in seconds to wait for the pre-stop executable to complete.
         /// </summary>
-        public string PreStopTimeoutSeconds { get; set; } = AppConfig.DefaultPreStopTimeoutSeconds.ToString();
+        public string PreStopTimeoutSeconds { get; set; }
 
         /// <summary>
         /// Whether to log pre-stop failure as error.
         /// </summary>
-        public bool PreStopLogAsError { get; set; } = AppConfig.DefaultPreStopLogAsError;
+        public bool PreStopLogAsError { get; set; }
 
         /// <summary>
         /// Optional path to an executable that runs after the service stops.

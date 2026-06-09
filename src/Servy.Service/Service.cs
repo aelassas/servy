@@ -371,7 +371,7 @@ namespace Servy.Service
                                   string.Equals(args[0], TestModeFlag, StringComparison.OrdinalIgnoreCase);
 
                 // Load startup options
-                var fullArgs = _serviceHelper.GetArgs(); // You'll need to expose this helper
+                var fullArgs = _serviceHelper.GetArgs();
                 var options = _serviceHelper.ParseOptions(_serviceRepository, fullArgs);
 
                 if (options == null)
@@ -2443,7 +2443,8 @@ namespace Servy.Service
         /// </param>
         private void SafeKillProcess(IProcessWrapper process, int timeoutMs)
         {
-            // Remove `|| process.HasExited` so we always clean up orphans
+            // Intentionally do NOT skip when process.HasExited: descendants may still be
+            // alive even after the parent exits, so we always run the cleanup path.
             if (process == null) return;
 
             try

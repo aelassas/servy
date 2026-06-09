@@ -1378,7 +1378,7 @@ namespace Servy.ViewModels
         public void BindServiceDtoToModel(ServiceDto dto)
         {
             ServiceName = dto.Name;
-            ServiceDisplayName = dto.DisplayName;
+            ServiceDisplayName = dto.DisplayName ?? string.Empty;
             ServiceDescription = dto.Description ?? string.Empty;
             ProcessPath = dto.ExecutablePath;
             StartupDirectory = dto.StartupDirectory ?? string.Empty;

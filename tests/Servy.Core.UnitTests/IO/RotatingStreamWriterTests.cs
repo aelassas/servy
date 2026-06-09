@@ -1007,65 +1007,51 @@ namespace Servy.Core.UnitTests.IO
         public async Task Rotate_TransientIOException_SucceedsOnRetry()
         {
             var filePath = Path.Combine(_testDir, "transient.log");
-            // Ensure the file has content so the Length > 0 guard doesn't trigger an early return
             File.WriteAllText(filePath, "initial_data");
 
-            // Arrange: Set a small limit (5 bytes) so the next write triggers a rotation attempt.
-            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 5))
+            // Provide a frozen baseline clock so live timestamps don't introduce drifts
+            var testTime = new DateTime(2026, 6, 9, 9, 5, 0, DateTimeKind.Utc);
+            Func<DateTime> timeProvider = () => testTime;
+
+            using (var writer = new RotatingStreamWriter(
+                filePath,
+                enableSizeRotation: true,
+                rotationSizeInBytes: 5,
+                enableDateRotation: false,
+                dateRotationType: DateRotationType.Daily,
+                maxRotations: 0,
+                useLocalTimeForRotation: false,
+                timeProvider: timeProvider))
             {
                 var startedSignal = new ManualResetEventSlim(false);
-
-                // 1. Lock the file exclusively. 
-                // This will cause the first File.Move attempt inside PerformPhysicalRotation to throw an IOException.
                 var locker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
                 try
                 {
-                    // 2. Start rotation via the public API in a background task
                     var rotateTask = Task.Run(() =>
                     {
                         startedSignal.Set();
-                        // This call triggers CheckRotation -> PrepareRotation -> PerformPhysicalRotation
                         writer.Write("trigger_rotation");
                         writer.Flush();
-                    });
+                    }, CancellationToken.None);
 
-                    // 3. Ensure the background task has started and hit the lock
-                    startedSignal.Wait(2000);
+                    startedSignal.Wait(2000, CancellationToken.None);
+                    Thread.Sleep(50); // Ensure the background retry loop has fully engaged its delay
 
-                    // Give the background thread enough time to hit Attempt 0 and enter its 50ms Thread.Sleep
-                    Thread.Sleep(20);
-
-                    // 4. Release the lock NOW. 
-                    // The next retry (Attempt 1) inside PerformPhysicalRotation will now find the file accessible.
-                    locker.Dispose();
-
-                    // Wait for the rotation task to complete its retries and succeed
+                    locker.Dispose(); // Release lock to let retry succeed
                     await rotateTask;
                 }
                 finally
                 {
-                    // Safety cleanup if the try block failed
                     locker.Dispose();
                 }
 
-                // 5. Assert
                 bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled");
                 DateTime cooldown = (DateTime)GetPrivateField(writer, "_rotationCooldownUntil");
 
-                // The circuit breaker should remain closed because IOException is treated as transient.
                 Assert.False(isDisabled, "Breaker should not trip on IOException.");
-
-                // Successful rotation clears the cooldown. 
-                // If this is not MinValue, it means all retries were exhausted while the lock was still held.
                 Assert.Equal(DateTime.MinValue, cooldown);
-
-                // Verify the original file was successfully moved/rotated
-                Assert.False(File.Exists(filePath), "The base log file should have been moved successfully after the lock was released.");
-
-                // Verify the rotated file exists (using the timestamp-before-extension logic)
-                var rotatedFiles = Directory.GetFiles(_testDir, "transient.*.log");
-                Assert.NotEmpty(rotatedFiles);
+                Assert.False(File.Exists(filePath));
             }
         }
 

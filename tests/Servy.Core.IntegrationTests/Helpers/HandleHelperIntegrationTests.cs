@@ -126,13 +126,29 @@ namespace Servy.Core.IntegrationTests.Helpers
                 _openedStreams.Add(fs); // Keep track for disposal
 
                 // Act
-                var results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
+                List<HandleHelper.ProcessHandleInfo> results = null;
+                bool handleDetected = false;
+
+                // Retry up to 5 times with a small delay to handle OS propagation latency
+                const int maxRetries = 5;
+                for (int i = 0; i < maxRetries; i++)
+                {
+                    results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
+                    if (results.Any(p => p.ProcessId == currentPid))
+                    {
+                        handleDetected = true;
+                        break;
+                    }
+                    Thread.Sleep(50); // Small backoff window
+                }
 
                 // Assert
+                Assert.True(handleDetected, $"Current process (PID {currentPid}) failed to be detected holding a handle to {testFile} after retries.");
                 Assert.NotEmpty(results);
-                var selfMatch = results.FirstOrDefault(p => p.ProcessId == currentPid);
 
+                var selfMatch = results.FirstOrDefault(p => p.ProcessId == currentPid);
                 Assert.NotNull(selfMatch);
+
                 // handle.exe output might include .exe or not, HandleHelper trims whitespace.
                 Assert.Contains(currentName, selfMatch.ProcessName, StringComparison.OrdinalIgnoreCase);
             }

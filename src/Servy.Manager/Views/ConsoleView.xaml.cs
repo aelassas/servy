@@ -28,9 +28,9 @@ namespace Servy.Manager.Views
         private bool _isFirstLoad = true;
 
         /// <summary>
-        /// Gets or sets the current view model displayed in the console interface.
+        /// The view model currently bound to the console view, tracked so its events can be unhooked on DataContext change.
         /// </summary>
-        private ConsoleViewModel CurrentViewModel;
+        private ConsoleViewModel _currentViewModel;
 
         /// <summary>
         /// Define a small tolerance for floating point comparisons 
@@ -53,15 +53,15 @@ namespace Servy.Manager.Views
 
             DataContextChanged += (s, e) =>
             {
-                if (CurrentViewModel != null)
+                if (_currentViewModel != null)
                 {
-                    CurrentViewModel.PropertyChanged -= OnVmPropertyChanged;
-                    CurrentViewModel.RequestScroll -= OnRequestScroll;
+                    _currentViewModel.PropertyChanged -= OnVmPropertyChanged;
+                    _currentViewModel.RequestScroll -= OnRequestScroll;
                 }
 
                 if (DataContext is ConsoleViewModel vm)
                 {
-                    CurrentViewModel = vm;
+                    _currentViewModel = vm;
                     vm.RequestScroll += OnRequestScroll;
                     vm.PropertyChanged += OnVmPropertyChanged;
                 }
