@@ -36,7 +36,6 @@ jobs:
       CONFIGURATION: Release
       TFM: net10.0-windows
       ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
-      CYCLONEDX_VERSION: "6.2.0"
       
       # Dynamic Environment Variables based on selected architecture
       RUNTIME: ${{ inputs.arm64 && 'win-arm64' || 'win-x64' }}
@@ -44,6 +43,7 @@ jobs:
       ISS_FILE: ${{ inputs.arm64 && 'setup\servy-arm64.iss' || 'setup\servy.iss' }}
       
       # Binary Version & Checksum Pins
+      CYCLONEDX_TOOL_VERSION: "6.2.0"
       CYCLONEDX_TOOL_HASH: "3473525381eee02a649b75bbf5b4f0ffa66112f62917aff798fed196e290a884" # the actual SHA256 hash of the CycloneDX nupkg
       CYCLONEDX_CLI_VERSION: "v0.31.0"
       CYCLONEDX_CLI_HASH: "da18bdb0d5b10a5f45ddfb59b7b08b11ddc050bb5c6407608d831929a1799d3f"
@@ -102,10 +102,10 @@ jobs:
           # We verify the CycloneDX nupkg itself. To ensure transitive dependencies 
           # are also verified/pinned, we utilize an isolated NuGet.config below.
           Write-Host "Downloading CycloneDX .NET Tool package for verification..."
-          $toolPkgUri = "https://www.nuget.org/api/v2/package/CycloneDX/$env:CYCLONEDX_VERSION"
+          $toolPkgUri = "https://www.nuget.org/api/v2/package/CycloneDX/$env:CYCLONEDX_TOOL_VERSION"
           $toolPkgDir = "$env:USERPROFILE\cyclonedx-tool"
           New-Item -ItemType Directory -Force -Path $toolPkgDir | Out-Null
-          $toolPkgPath = "$toolPkgDir\CycloneDX.$env:CYCLONEDX_VERSION.nupkg"
+          $toolPkgPath = "$toolPkgDir\CycloneDX.$env:CYCLONEDX_TOOL_VERSION.nupkg"
           Invoke-WebRequest -Uri $toolPkgUri -OutFile $toolPkgPath -ErrorAction Stop
 
           Write-Host "Verifying SHA256 checksum of CycloneDX .NET Tool package..."
@@ -128,7 +128,7 @@ jobs:
           $nugetConfig | Set-Content -Path "$toolPkgDir\nuget.config"
 
           # Continue with the .NET tool installation using the isolated source configuration
-          dotnet tool install --global CycloneDX --version $env:CYCLONEDX_VERSION --configfile "$toolPkgDir\nuget.config"
+          dotnet tool install --global CycloneDX --version $env:CYCLONEDX_TOOL_VERSION --configfile "$toolPkgDir\nuget.config"
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
 
       - name: Install CycloneDX CLI from GitHub
@@ -303,7 +303,7 @@ jobs:
       - name: Upload SBOM
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
-          name: sbom-${{ env.VERSION }}-sbom
+          name: servy-${{ env.VERSION }}-sbom
           path: servy-${{ env.VERSION }}-sbom.xml
           if-no-files-found: error
           retention-days: 1
