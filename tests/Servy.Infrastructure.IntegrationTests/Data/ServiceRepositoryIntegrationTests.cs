@@ -65,12 +65,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             if (cipherText == "POISON_PAYLOAD")
             {
-                // Real .NET CryptographicException whose Type.Name evaluates exactly to "CryptographicException"
-                var innerCryptoException = new System.Security.Cryptography.CryptographicException("Padding check failed.");
-
-                // Throw the expected InvalidOperationException container with the inner exception attached.
-                // This bypasses any flattening traps because it utilizes standard framework types.
-                throw new InvalidOperationException("Cryptographic block alignment corrupt.", innerCryptoException);
+                // Throw a raw CryptographicException directly.
+                // ServiceRepository.DecryptDto will catch this and wrap it inside the single InvalidOperationException
+                // that HandleCorruptServiceDecryption expects.
+                throw new System.Security.Cryptography.CryptographicException("Padding check failed.");
             }
 
             return cipherText.Replace("SECRET_HASH:", "");
@@ -244,7 +242,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
             // Assert
             Assert.NotNull(result);
-            Assert.Contains("[DECRYPTION FAILED: InvalidOperationException]", result.Description);
+            Assert.Contains("[DECRYPTION FAILED: CryptographicException]", result.Description);
             Assert.Null(result.Parameters); // Verifies individual record fields scrubbed safely
         }
 
