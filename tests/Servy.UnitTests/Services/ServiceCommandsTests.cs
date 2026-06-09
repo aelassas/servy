@@ -7,7 +7,7 @@ using Servy.Core.Services;
 using Servy.Models;
 using Servy.Services;
 using Servy.UI.Services;
-using Servy.Validators;
+using Servy.Validation;
 
 namespace Servy.UnitTests.Services
 {

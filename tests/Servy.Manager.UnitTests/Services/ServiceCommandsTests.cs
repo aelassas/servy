@@ -10,7 +10,7 @@ using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
-using Servy.Manager.Validators;
+using Servy.Manager.Validation;
 using Servy.UI.Services;
 
 namespace Servy.Manager.UnitTests.Services

@@ -1,11 +1,11 @@
 ﻿using Moq;
 using Servy.Core.DTOs;
-using Servy.Core.Validators;
+using Servy.Core.Validation;
 using Servy.Manager.Config;
-using Servy.Manager.Validators;
+using Servy.Manager.Validation;
 using Servy.UI.Services;
 
-namespace Servy.Manager.UnitTests.Validators
+namespace Servy.Manager.UnitTests.Validation
 {
     public class ServiceConfigurationValidatorTests
     {

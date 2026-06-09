@@ -4,6 +4,9 @@ using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
+using System.Reflection;
+using System.Security;
+using Xunit;
 
 namespace Servy.CLI.UnitTests.Commands
 {
@@ -27,6 +30,19 @@ namespace Servy.CLI.UnitTests.Commands
             if (Directory.Exists(_tempDir))
                 Directory.Delete(_tempDir, true);
         }
+
+        #region Constructor Tests
+
+        [Fact]
+        public void Constructor_ShouldThrowArgumentNullException_WhenRepositoryIsNull()
+        {
+            // Assert & Act
+            Assert.Throws<ArgumentNullException>(() => new ExportServiceCommand(null!));
+        }
+
+        #endregion
+
+        #region Execute Method Tests
 
         [Fact]
         public async Task Execute_ShouldFail_WhenServiceNameIsNullOrEmpty()
@@ -109,18 +125,92 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Contains("Failed to export configuration for service 'svc'", result.Message);
         }
 
+        #endregion
+
+        #region SaveFile Validation Invariant Checks
+
         [Fact]
         public void SaveFile_ShouldCreateDirectoryIfNotExists()
         {
             var filePath = Path.Combine(_tempDir, "subdir", "file.xml");
             var content = "hello";
 
-            // Use reflection to call private SaveFile
-            var method = typeof(ExportServiceCommand).GetMethod("SaveFile", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method!.Invoke(_command, new object[] { filePath, content });
+            InvokeSaveFile(filePath, content);
 
             Assert.True(File.Exists(filePath));
             Assert.Equal(content, File.ReadAllText(filePath));
         }
+
+        [Fact]
+        public void SaveFile_ShouldThrowSecurityException_WhenValidationFailsWithStandardError()
+        {
+            // Providing an invalid extension ("txt") routes to PathSecurityGuard's extension filter,
+            // producing an error payload that does not contain "Access Denied" or "Security Alert".
+            var filePath = Path.Combine(_tempDir, "denied_extension.txt");
+
+            var ex = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, "data"));
+            Assert.IsType<SecurityException>(ex.InnerException);
+            Assert.Equal(string.Format(Core.Resources.Strings.Msg_SecurityInvalidFileType, ".txt"), ex.InnerException.Message);
+        }
+
+        [Fact]
+        public void SaveFile_ShouldThrowSecurityException_WhenValidationResultTriggersSecurityAlert()
+        {
+            // Forcing a path sequence targeting a structural Windows system environment folder
+            // triggers an internal "Access Denied" rule inside PathSecurityGuard, hitting the SecurityException branch.
+            string protectedDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            var filePath = Path.Combine(protectedDir, "malicious_export.json");
+
+            var ex = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, "data"));
+            Assert.IsType<SecurityException>(ex.InnerException);
+            Assert.Contains("Access Denied", ex.InnerException.Message);
+        }
+
+        #endregion
+
+        #region SaveFile I/O Error Catch Boundary Checks
+
+        [Fact]
+        public void SaveFile_ShouldThrowArgumentException_WhenFileStreamWriteFailsFromExternalLock()
+        {
+            var filePath = Path.Combine(_tempDir, "locked_out.json");
+            File.WriteAllText(filePath, "original contents");
+
+            // Exclusively open and lock down the target filesystem file channel before running SaveFile.
+            // When SaveFile invokes PathSecurityGuard, it opens with FileMode.OpenOrCreate and FileAccess.ReadWrite.
+            // Because our file handle context restricts any sharing options (FileShare.None), PathSecurityGuard
+            // will throw an IOException/UnauthorizedAccessException while trying to allocate the stream.
+            using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                var ex = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, "new config payload"));
+
+                // Unwraps target reflection errors to expose the inner thrown exception rule
+                Assert.IsType<ArgumentException>(ex.InnerException);
+                Assert.Contains(string.Format(Core.Resources.Strings.Msg_SecurityHandleValidationFailed, string.Empty), ex.InnerException.Message);
+            }
+        }
+
+        #endregion
+
+        #region Reflection Helper Definition
+
+        /// <summary>
+        /// Safely executes the private SaveFile system method using reflection layers.
+        /// </summary>
+        private void InvokeSaveFile(string path, string content)
+        {
+            var method = typeof(ExportServiceCommand).GetMethod(
+                "SaveFile",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+
+            if (method == null)
+            {
+                throw new InvalidOperationException("Could not locate private method SaveFile inside ExportServiceCommand target reference metadata.");
+            }
+
+            method.Invoke(_command, new object[] { path, content });
+        }
+
+        #endregion
     }
 }

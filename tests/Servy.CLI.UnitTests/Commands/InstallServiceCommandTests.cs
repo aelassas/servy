@@ -2,7 +2,7 @@
 using Servy.CLI.Commands;
 using Servy.CLI.Models;
 using Servy.CLI.Resources;
-using Servy.CLI.Validators;
+using Servy.CLI.Validation;
 using Servy.Core.Common;
 using Servy.Core.Config;
 using Servy.Core.Services;

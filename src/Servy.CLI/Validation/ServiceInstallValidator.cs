@@ -5,10 +5,10 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Resources;
-using Servy.Core.Validators;
+using Servy.Core.Validation;
 using System.Globalization;
 
-namespace Servy.CLI.Validators
+namespace Servy.CLI.Validation
 {
     /// <summary>
     /// Validates the installation options for a new service in the CLI environment.

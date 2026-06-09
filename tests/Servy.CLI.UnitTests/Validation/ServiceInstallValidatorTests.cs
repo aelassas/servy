@@ -1,10 +1,10 @@
 ﻿using Moq;
 using Servy.CLI.Options;
-using Servy.CLI.Validators;
+using Servy.CLI.Validation;
 using Servy.Core.DTOs;
-using Servy.Core.Validators;
+using Servy.Core.Validation;
 
-namespace Servy.CLI.UnitTests.Validators
+namespace Servy.CLI.UnitTests.Validation
 {
     public class ServiceInstallValidatorTests
     {

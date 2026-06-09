@@ -1,7 +1,7 @@
 ﻿using Servy.CLI.Helpers;
 using Servy.CLI.Models;
 using Servy.CLI.Resources;
-using Servy.CLI.Validators;
+using Servy.CLI.Validation;
 using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;

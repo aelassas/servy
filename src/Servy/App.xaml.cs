@@ -8,7 +8,7 @@ using Servy.Resources;
 using Servy.Services;
 using Servy.UI.Bootstrapping;
 using Servy.UI.Services;
-using Servy.Validators;
+using Servy.Validation;
 using Servy.ViewModels;
 using Servy.Views;
 using System.ComponentModel;
@@ -22,7 +22,7 @@ using Servy.Config;
 using AppConfig = Servy.Core.Config.AppConfig;
 using Servy.Core.Helpers;
 using Microsoft.Extensions.DependencyInjection;
-using Servy.Core.Validators;
+using Servy.Core.Validation;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Servy

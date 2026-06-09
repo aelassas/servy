@@ -9,7 +9,7 @@ using Servy.Core.Logging;
 using Servy.Core.Mappers;
 using Servy.Core.Security;
 using Servy.Core.Services;
-using Servy.Core.Validators;
+using Servy.Core.Validation;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 

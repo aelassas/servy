@@ -1,4 +1,4 @@
-﻿namespace Servy.Core.Validators
+﻿namespace Servy.Core.Validation
 {
     /// <summary>
     /// Represents the outcome of a validation operation, including any encountered errors.
