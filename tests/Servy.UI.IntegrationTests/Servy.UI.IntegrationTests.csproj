@@ -122,11 +122,11 @@
     <Compile Include="Bootstrapping\AppBootstrapperIntegrationTests.cs" />
     <Compile Include="Helpers\HelperTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Services\CursorServiceTests.cs" />
-    <Compile Include="Services\FileDialogServiceTests.cs" />
-    <Compile Include="Services\HelpServiceTests.cs" />
-    <Compile Include="Services\MessageBoxServiceTests.cs" />
-    <Compile Include="Services\WpfUiDispatcherTests.cs" />
+    <Compile Include="Services\CursorServiceIntegrationTests.cs" />
+    <Compile Include="Services\FileDialogServiceIntegrationTests.cs" />
+    <Compile Include="Services\HelpServiceIntegrationTests.cs" />
+    <Compile Include="Services\MessageBoxServiceIntegrationTests.cs" />
+    <Compile Include="Services\WpfUiDispatcherIntegrationTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

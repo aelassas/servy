@@ -6,11 +6,11 @@ using Xunit;
 
 namespace Servy.UI.IntegrationTests.Services
 {
-    public class WpfUiDispatcherTests
+    public class WpfUiDispatcherIntegrationTests
     {
         private readonly WpfUiDispatcher _uiDispatcher;
 
-        public WpfUiDispatcherTests()
+        public WpfUiDispatcherIntegrationTests()
         {
             _uiDispatcher = new WpfUiDispatcher();
         }

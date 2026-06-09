@@ -5,11 +5,11 @@ using Xunit;
 
 namespace Servy.UI.IntegrationTests.Services
 {
-    public class MessageBoxServiceTests
+    public class MessageBoxServiceIntegrationTests
     {
         private readonly MessageBoxService _service;
 
-        public MessageBoxServiceTests()
+        public MessageBoxServiceIntegrationTests()
         {
             _service = new MessageBoxService(new WpfUiDispatcher());
             MessageBoxService.IsHeadlessMode = true;

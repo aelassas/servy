@@ -128,6 +128,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\DapperExecutorIntegrationTests.cs" />
+    <Compile Include="Data\ServiceRepositoryIntegrationTests.cs" />
     <Compile Include="Data\SQLiteDbInitializerIntegrationTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

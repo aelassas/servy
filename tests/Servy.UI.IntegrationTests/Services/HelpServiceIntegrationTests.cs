@@ -7,17 +7,17 @@ using Xunit;
 
 namespace Servy.UI.IntegrationTests.Services
 {
-    public class HelpServiceTests
+    public class HelpServiceIntegrationTests
     {
         private readonly Mock<IMessageBoxService> _mockMessageBox;
-        private readonly HelpService _service;
+        private readonly UI.Services.HelpService _service;
         private const string Caption = "Help Test";
 
-        public HelpServiceTests()
+        public HelpServiceIntegrationTests()
         {
             _mockMessageBox = new Mock<IMessageBoxService>();
-            _service = new HelpService(_mockMessageBox.Object);
-            HelpService.IsHeadlessMode = true;
+            _service = new UI.Services.HelpService(_mockMessageBox.Object);
+            UI.Services.HelpService.IsHeadlessMode = true;
         }
 
         #region Constructor Tests
@@ -93,7 +93,7 @@ namespace Servy.UI.IntegrationTests.Services
         public void NormalizeVersion_NullPassed_ReturnsZeroedFourPartVersion()
         {
             // Arrange
-            var method = typeof(HelpService).GetMethod("NormalizeVersion", BindingFlags.Static | BindingFlags.NonPublic);
+            var method = typeof(UI.Services.HelpService).GetMethod("NormalizeVersion", BindingFlags.Static | BindingFlags.NonPublic);
 
             // Act
             var result = (Version)method.Invoke(null, new object[] { null });
@@ -106,7 +106,7 @@ namespace Servy.UI.IntegrationTests.Services
         public void NormalizeVersion_PartialVersionsWithNegativeFields_PadsMissingPartsToZero()
         {
             // Arrange
-            var method = typeof(HelpService).GetMethod("NormalizeVersion", BindingFlags.Static | BindingFlags.NonPublic);
+            var method = typeof(UI.Services.HelpService).GetMethod("NormalizeVersion", BindingFlags.Static | BindingFlags.NonPublic);
 
             // System.Version elements constructed with 2 parts assign -1 automatically to Build and Revision fields
             var incompleteVersion = new Version(4, 2);
