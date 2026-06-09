@@ -137,7 +137,7 @@ namespace Servy.Core.Services
                     var message = evt.Message ?? string.Empty;
                     var provider = evt.ProviderName ?? string.Empty;
 
-                    // 1. Heuristic only meaningful in wildcard mode; the SQL filter handles non-empty source names exactly.
+                    // 1. Heuristic only meaningful in wildcard mode; the XPath provider filter handles non-empty source names exactly.
                     // This prevents capturing unrelated system/app logs even when _sourceName is empty.
                     if (string.IsNullOrEmpty(_sourceName) &&
                         provider.IndexOf(AppConfig.EventSource, StringComparison.OrdinalIgnoreCase) < 0)

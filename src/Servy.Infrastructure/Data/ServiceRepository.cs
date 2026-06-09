@@ -282,7 +282,7 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<IEnumerable<ServiceDto>> GetAllAsync(bool decrypt = true, CancellationToken cancellationToken = default)
         {
-            var sql = "SELECT * FROM Services ORDER BY LOWER(Name) COLLATE NOCASE ASC;";
+            var sql = "SELECT * FROM Services ORDER BY Name COLLATE NOCASE ASC;";
             var cmd = new CommandDefinition(sql, cancellationToken: cancellationToken);
             var list = await _dapper.QueryAsync<ServiceDto>(cmd);
 
@@ -300,10 +300,10 @@ namespace Servy.Infrastructure.Data
             }
 
             var sql = @"
-        SELECT * FROM Services 
-        WHERE LOWER(Name)       LIKE LOWER(@Pattern) ESCAPE '\' 
-           OR LOWER(Description) LIKE LOWER(@Pattern) ESCAPE '\' 
-        ORDER BY Name COLLATE NOCASE ASC;";
+                SELECT * FROM Services 
+                WHERE LOWER(Name)       LIKE LOWER(@Pattern) ESCAPE '\' 
+                   OR LOWER(Description) LIKE LOWER(@Pattern) ESCAPE '\' 
+                ORDER BY Name COLLATE NOCASE ASC;";
 
             var escapedKeyword = keyword.Trim()
                 .Replace(@"\", @"\\")
