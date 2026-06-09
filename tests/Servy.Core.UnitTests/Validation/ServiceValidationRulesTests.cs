@@ -3,12 +3,12 @@ using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Resources;
-using Servy.Core.Validators;
+using Servy.Core.Validation;
 using System;
 using System.IO;
 using Xunit;
 
-namespace Servy.Core.UnitTests.Validators
+namespace Servy.Core.UnitTests.Validation
 {
     public class ServiceValidationRulesTests
     {

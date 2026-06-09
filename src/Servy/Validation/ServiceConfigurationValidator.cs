@@ -1,12 +1,12 @@
 ﻿using Servy.Config;
 using Servy.Core.DTOs;
-using Servy.Core.Validators;
+using Servy.Core.Validation;
 using Servy.UI.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Servy.Validators
+namespace Servy.Validation
 {
     /// <summary>
     /// Provides UI-facing validation for service configurations by aggregating core validation rules 

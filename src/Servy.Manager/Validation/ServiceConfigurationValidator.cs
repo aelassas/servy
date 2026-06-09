@@ -1,12 +1,12 @@
 ﻿using Servy.Core.DTOs;
-using Servy.Core.Validators;
+using Servy.Core.Validation;
 using Servy.Manager.Config;
 using Servy.UI.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Servy.Manager.Validators
+namespace Servy.Manager.Validation
 {
     /// <summary>
     /// Implements service configuration validation for the Manager application, 

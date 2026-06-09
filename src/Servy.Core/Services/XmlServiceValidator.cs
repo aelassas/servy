@@ -1,6 +1,6 @@
 ﻿using Servy.Core.DTOs;
 using Servy.Core.Security;
-using Servy.Core.Validators;
+using Servy.Core.Validation;
 using System;
 using System.IO;
 using System.Xml;

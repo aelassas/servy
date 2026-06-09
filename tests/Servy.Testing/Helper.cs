@@ -229,5 +229,106 @@ namespace Servy.Testing
             }
         }
 
+        /// <summary>
+        /// Creates an NTFS directory junction point using the Windows native command shell utility.
+        /// Directory junctions do not require elevated administrative privileges to implement.
+        /// </summary>
+        /// <param name="junctionPath">The target path where the physical directory junction link will be established.</param>
+        /// <param name="targetDir">The fully qualified destination directory path that the junction point references.</param>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="junctionPath"/> or <paramref name="targetDir"/> is null, empty, or whitespace.</exception>
+        /// <exception cref="IOException">Thrown when the native command utility returns a non-zero exit code or the validation step detects that the generated object does not contain structural reparse point metadata properties.</exception>
+        /// <exception cref="DirectoryNotFoundException">Thrown if the verification checkpoint evaluates that the newly established filesystem entry is physically missing from disk storage arrays.</exception>
+        public static void CreateJunction(string junctionPath, string targetDir)
+        {
+            if (string.IsNullOrWhiteSpace(junctionPath))
+                throw new ArgumentException("Junction path cannot be null or empty.", nameof(junctionPath));
+            if (string.IsNullOrWhiteSpace(targetDir))
+                throw new ArgumentException("Target directory cannot be null or empty.", nameof(targetDir));
+
+            using (var process = new Process())
+            {
+                process.StartInfo.FileName = "cmd.exe";
+                // /C runs the string command and terminates. Quotes wrap paths securely against space separation.
+                process.StartInfo.Arguments = $"/c mklink /J \"{junctionPath}\" \"{targetDir}\"";
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.UseShellExecute = false;
+                process.Start();
+                process.WaitForExit();
+
+                if (process.ExitCode != 0)
+                {
+                    throw new IOException($"mklink failed to create junction point with exit code {process.ExitCode}");
+                }
+            }
+
+            // Explicitly verify the junction using fresh state retrieval
+            var dirInfo = new DirectoryInfo(junctionPath);
+
+            // CRITICAL: Force the state machine to flush its attribute cache
+            dirInfo.Refresh();
+
+            if (!dirInfo.Exists)
+            {
+                throw new DirectoryNotFoundException($"Junction verification failed: Directory does not exist at {junctionPath}.");
+            }
+
+            if ((dirInfo.Attributes & FileAttributes.ReparsePoint) == 0)
+            {
+                throw new IOException($"Junction validation failed at {junctionPath}. Target exists but lacks the explicit FileAttributes.ReparsePoint flag.");
+            }
+        }
+
+        /// <summary>
+        /// Creates an NTFS file symbolic link pointing to a canonical reference target configuration.
+        /// File-level symbolic links typically require elevated execution tokens (Administrative privileges) 
+        /// or an active global Windows configuration enabling Developer Mode.
+        /// </summary>
+        /// <param name="symlinkFilePath">The target destination path where the new file symbolic link item will materialize.</param>
+        /// <param name="targetFilePath">The canonical baseline target data file location that the symbolic pointer addresses.</param>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="symlinkFilePath"/> or <paramref name="targetFilePath"/> is null, empty, or whitespace.</exception>
+        /// <exception cref="UnauthorizedAccessException">Thrown if the runtime operating architecture security layout rejects execution due to missing operational deployment privileges or non-active system developer settings.</exception>
+        /// <exception cref="FileNotFoundException">Thrown if validation processing finds the virtual reparse endpoint point asset is completely absent from the host volume index hierarchy.</exception>
+        /// <exception cref="IOException">Thrown when low-level file attribution flags do not match the expected structural characteristics of an operating system reparse token constraint.</exception>
+        public static void CreateFileSymlink(string symlinkFilePath, string targetFilePath)
+        {
+            if (string.IsNullOrWhiteSpace(symlinkFilePath))
+                throw new ArgumentException("Symlink path cannot be null or empty.", nameof(symlinkFilePath));
+            if (string.IsNullOrWhiteSpace(targetFilePath))
+                throw new ArgumentException("Target file path cannot be null or empty.", nameof(targetFilePath));
+
+            using (var process = new Process())
+            {
+                process.StartInfo.FileName = "cmd.exe";
+                // NOTE: No /J flag here because it's a file, not a directory.
+                process.StartInfo.Arguments = $"/c mklink \"{symlinkFilePath}\" \"{targetFilePath}\"";
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.UseShellExecute = false;
+                process.Start();
+                process.WaitForExit();
+
+                if (process.ExitCode != 0)
+                {
+                    // If it fails because of permissions (common on non-admin environments), 
+                    // throw a specific exception we can handle or skip gracefully in the unit test.
+                    throw new UnauthorizedAccessException($"mklink failed with exit code {process.ExitCode}. This usually indicates the process lacks administrative privileges or Developer Mode is disabled.");
+                }
+            }
+
+            // Explicitly verify the symlink using fresh state retrieval
+            var fileInfo = new FileInfo(symlinkFilePath);
+
+            // CRITICAL FOR .NET 4.8: Flush the internal attribute snapshot cache
+            fileInfo.Refresh();
+
+            if (!fileInfo.Exists)
+            {
+                throw new FileNotFoundException($"Symlink verification failed: File does not exist at {symlinkFilePath}.");
+            }
+
+            if ((fileInfo.Attributes & FileAttributes.ReparsePoint) == 0)
+            {
+                throw new IOException($"Symlink validation failed at {symlinkFilePath}. The file was created but lacks the ReparsePoint attribute.");
+            }
+        }
     }
 }

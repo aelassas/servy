@@ -8,7 +8,7 @@ using Servy.Core.Resources;
 using Servy.Core.ServiceDependencies;
 using System;
 
-namespace Servy.Core.Validators
+namespace Servy.Core.Validation
 {
     /// <summary>
     /// Provides centralized validation logic for service configurations across all Servy components.

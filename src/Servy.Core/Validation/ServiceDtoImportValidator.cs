@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Text;
 
-namespace Servy.Core.Validators
+namespace Servy.Core.Validation
 {
     /// <summary>
     /// Provides a common base class for validating imported service definitions.

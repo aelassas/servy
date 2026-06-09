@@ -5,7 +5,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Resources;
 using Servy.Core.Services;
-using Servy.Core.Validators;
+using Servy.Core.Validation;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Services

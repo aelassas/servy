@@ -133,7 +133,7 @@
     <Compile Include="Commands\StartServiceCommandTests.cs" />
     <Compile Include="Commands\StopServiceCommandTests.cs" />
     <Compile Include="Commands\UninstallServiceCommandTests.cs" />
-    <Compile Include="Validators\ServiceInstallValidatorTests.cs" />
+    <Compile Include="Validation\ServiceInstallValidatorTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

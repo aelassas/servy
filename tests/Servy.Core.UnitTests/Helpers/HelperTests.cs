@@ -713,34 +713,6 @@ namespace Servy.Core.UnitTests.Helpers
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern bool CreateDirectory(string lpPathName, IntPtr lpSecurityAttributes);
 
-        private static void CreateJunction(string junctionPath, string targetDir)
-        {
-            // DirectoryInfo doesn't expose a native link creation interface in older profiles, 
-            // so we use a safe management command or fallback wrapper for the test runner.
-            using (var process = new System.Diagnostics.Process())
-            {
-                process.StartInfo.FileName = "cmd.exe";
-                process.StartInfo.Arguments = $"/c mklink /J \"{junctionPath}\" \"{targetDir}\"";
-                process.StartInfo.CreateNoWindow = true;
-                process.StartInfo.UseShellExecute = false;
-                process.Start();
-                process.WaitForExit();
-
-                // Throw if the process fails instead of silently continuing
-                if (process.ExitCode != 0)
-                {
-                    throw new IOException($"mklink failed with exit code {process.ExitCode}");
-                }
-            }
-
-            // Explicitly verify the junction was created and carries the correct reparse point attribute
-            var dirInfo = new DirectoryInfo(junctionPath);
-            if (!dirInfo.Exists || (dirInfo.Attributes & FileAttributes.ReparsePoint) == 0)
-            {
-                throw new IOException($"Junction validation failed at {junctionPath}. It may have been created as a standard directory.");
-            }
-        }
-
         #endregion
 
         #region HasAncestorReparsePoint tests
@@ -778,7 +750,7 @@ namespace Servy.Core.UnitTests.Helpers
                 {
                     // Arrange
                     Directory.CreateDirectory(realDir);
-                    CreateJunction(junctionTarget, realDir);
+                    Testing.Helper.CreateJunction(junctionTarget, realDir);
 
                     // The junction exists, but the target file and its immediate parent folder DO NOT exist
                     string targetFilePath = Path.Combine(junctionTarget, "NotYet", "config.json");
@@ -880,7 +852,7 @@ namespace Servy.Core.UnitTests.Helpers
             {
                 try
                 {
-                    CreateJunction(junctionTarget, realDir);
+                    Testing.Helper.CreateJunction(junctionTarget, realDir);
                     created = true;
                     break;
                 }
@@ -935,7 +907,7 @@ namespace Servy.Core.UnitTests.Helpers
             {
                 try
                 {
-                    CreateJunction(junctionDir, realDir);
+                    Testing.Helper.CreateJunction(junctionDir, realDir);
                     // Create nested structure inside the junctioned area
                     Directory.CreateDirectory(deepNestedPath);
                     setupSuccess = true;

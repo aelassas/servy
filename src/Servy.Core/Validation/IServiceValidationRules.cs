@@ -1,6 +1,6 @@
 ﻿using Servy.Core.DTOs;
 
-namespace Servy.Core.Validators
+namespace Servy.Core.Validation
 {
     /// <summary>
     /// Defines the contract for centralized validation logic of service configurations.

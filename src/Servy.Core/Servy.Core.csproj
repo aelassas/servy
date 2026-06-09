@@ -166,7 +166,9 @@
     <Compile Include="Security\SecureData.cs" />
     <Compile Include="Helpers\ServiceHelper.cs" />
     <Compile Include="Helpers\StringHelper.cs" />
-    <Compile Include="Validators\ServiceDtoImportValidator.cs" />
+    <Compile Include="Validation\PathSecurityGuard.cs" />
+    <Compile Include="Validation\PathSecurityResult.cs" />
+    <Compile Include="Validation\ServiceDtoImportValidator.cs" />
     <Compile Include="Services\XmlServiceSerializer.cs" />
     <Compile Include="Services\XmlServiceValidator.cs" />
     <Compile Include="Enums\ProcessPriority.cs" />
@@ -203,10 +205,10 @@
     <Compile Include="Services\Win32ErrorProvider.cs" />
     <Compile Include="Services\WindowsServiceApi.cs" />
     <Compile Include="Services\WindowsServiceInfo.cs" />
-    <Compile Include="Validators\ImportGuard.cs" />
-    <Compile Include="Validators\IServiceValidationRules.cs" />
-    <Compile Include="Validators\ServiceValidationRules.cs" />
-    <Compile Include="Validators\ValidationResult.cs" />
+    <Compile Include="Validation\ImportGuard.cs" />
+    <Compile Include="Validation\IServiceValidationRules.cs" />
+    <Compile Include="Validation\ServiceValidationRules.cs" />
+    <Compile Include="Validation\ValidationResult.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

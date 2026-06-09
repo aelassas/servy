@@ -134,8 +134,8 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Strings.resx</DependentUpon>
     </Compile>
-    <Compile Include="Validators\IServiceInstallValidator.cs" />
-    <Compile Include="Validators\ServiceInstallValidator.cs" />
+    <Compile Include="Validation\IServiceInstallValidator.cs" />
+    <Compile Include="Validation\ServiceInstallValidator.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="App.config">

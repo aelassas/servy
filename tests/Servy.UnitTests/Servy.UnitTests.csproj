@@ -131,7 +131,7 @@
     <Compile Include="Config\DesignTimeAppConfigTests.cs" />
     <Compile Include="Design\DesignTimeServiceCommandsTests.cs" />
     <Compile Include="Helpers\PasswordBoxHelperTests.cs" />
-    <Compile Include="Validators\ServiceConfigurationValidatorTests.cs" />
+    <Compile Include="Validation\ServiceConfigurationValidatorTests.cs" />
     <Compile Include="ViewModels\MainViewModelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\ServiceCommandsTests.cs" />

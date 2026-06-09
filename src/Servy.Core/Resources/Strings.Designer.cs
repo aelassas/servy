@@ -531,11 +531,29 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Security Alert: Exporting configurations through directory junctions or symlinks is prohibited to prevent path redirection attacks..
+        /// </summary>
+        public static string Msg_SecurityDirReparsePointExportProhibited {
+            get {
+                return ResourceManager.GetString("Msg_SecurityDirReparsePointExportProhibited", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Security Alert: Importing configurations through directory junctions or symlinks is prohibited to prevent path redirection attacks..
         /// </summary>
         public static string Msg_SecurityDirReparsePointProhibited {
             get {
                 return ResourceManager.GetString("Msg_SecurityDirReparsePointProhibited", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Security Alert: Exporting configurations through file symbolic links or junctions is prohibited to prevent path redirection attacks..
+        /// </summary>
+        public static string Msg_SecurityFileReparsePointExportProhibited {
+            get {
+                return ResourceManager.GetString("Msg_SecurityFileReparsePointExportProhibited", resourceCulture);
             }
         }
         
@@ -576,6 +594,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Security Alert: Exporting from network drives (including mapped UNC shares) is prohibited..
+        /// </summary>
+        public static string Msg_SecurityNetworkDriveExportProhibited {
+            get {
+                return ResourceManager.GetString("Msg_SecurityNetworkDriveExportProhibited", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Security Alert: Importing from network drives (including mapped UNC shares) is prohibited..
         /// </summary>
         public static string Msg_SecurityNetworkDriveProhibited {
@@ -594,6 +621,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Access Denied: The resolved path targets protected system directory &apos;{0}&apos;. Export prohibited..
+        /// </summary>
+        public static string Msg_SecurityProtectedDirectoryExport {
+            get {
+                return ResourceManager.GetString("Msg_SecurityProtectedDirectoryExport", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Security Alert: &apos;{0}&apos; is a reserved Windows device name and cannot be used..
         /// </summary>
         public static string Msg_SecurityReservedDeviceName {
@@ -608,6 +644,24 @@ namespace Servy.Core.Resources {
         public static string Msg_SecurityResolvedUncDestination {
             get {
                 return ResourceManager.GetString("Msg_SecurityResolvedUncDestination", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Security Alert: Resolved file target points directly to a UNC destination. Export aborted..
+        /// </summary>
+        public static string Msg_SecurityResolvedUncDestinationExport {
+            get {
+                return ResourceManager.GetString("Msg_SecurityResolvedUncDestinationExport", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Security Alert: Exporting from UNC paths is prohibited to prevent malicious configuration injection..
+        /// </summary>
+        public static string Msg_SecurityUncPathExportProhibited {
+            get {
+                return ResourceManager.GetString("Msg_SecurityUncPathExportProhibited", resourceCulture);
             }
         }
         

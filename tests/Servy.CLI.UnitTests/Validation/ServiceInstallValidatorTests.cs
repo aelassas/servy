@@ -2,15 +2,15 @@
 using CommandLine;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
-using Servy.CLI.Validators;
+using Servy.CLI.Validation;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
-using Servy.Core.Validators;
+using Servy.Core.Validation;
 using System;
 using System.Collections.Generic;
 using Xunit;
 
-namespace Servy.CLI.UnitTests.Validators
+namespace Servy.CLI.UnitTests.Validation
 {
     public class ServiceInstallValidatorTests
     {

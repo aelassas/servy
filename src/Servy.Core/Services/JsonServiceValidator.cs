@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Servy.Core.DTOs;
 using Servy.Core.Security;
-using Servy.Core.Validators;
+using Servy.Core.Validation;
 using System;
 
 namespace Servy.Core.Services

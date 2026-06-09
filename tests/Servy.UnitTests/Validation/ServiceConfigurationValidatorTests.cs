@@ -1,14 +1,14 @@
 ﻿using Moq;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
-using Servy.Core.Validators;
+using Servy.Core.Validation;
 using Servy.UI.Services;
-using Servy.Validators;
+using Servy.Validation;
 using System;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Servy.UnitTests.Validators
+namespace Servy.UnitTests.Validation
 {
     public class ServiceConfigurationValidatorTests
     {

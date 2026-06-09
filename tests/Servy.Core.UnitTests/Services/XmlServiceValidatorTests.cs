@@ -4,7 +4,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Resources;
 using Servy.Core.Services;
-using Servy.Core.Validators;
+using Servy.Core.Validation;
 using System.IO;
 using System.Xml.Serialization;
 using Xunit;

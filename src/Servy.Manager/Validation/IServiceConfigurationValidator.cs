@@ -1,7 +1,7 @@
 ﻿using Servy.Core.DTOs;
 using System.Threading.Tasks;
 
-namespace Servy.Manager.Validators
+namespace Servy.Manager.Validation
 {
     /// <summary>
     /// Provides functionality to validate service configurations.

@@ -141,8 +141,8 @@
     <Compile Include="Models\ServiceItemBase.cs" />
     <Compile Include="Utils\HistoryResult.cs" />
     <Compile Include="Utils\LogTailer.cs" />
-    <Compile Include="Validators\IServiceConfigurationValidator.cs" />
-    <Compile Include="Validators\ServiceConfigurationValidator.cs" />
+    <Compile Include="Validation\IServiceConfigurationValidator.cs" />
+    <Compile Include="Validation\ServiceConfigurationValidator.cs" />
     <Compile Include="Mappers\ServiceMapper.cs" />
     <Compile Include="Models\LogEntryModel.cs" />
     <Compile Include="Models\Service.cs" />

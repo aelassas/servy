@@ -1,7 +1,7 @@
 ﻿using Servy.CLI.Models;
 using Servy.CLI.Options;
 
-namespace Servy.CLI.Validators
+namespace Servy.CLI.Validation
 {
     /// <summary>
     /// Handles complex validation for service installation.
