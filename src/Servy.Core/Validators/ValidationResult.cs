@@ -1,7 +1,7 @@
 ﻿namespace Servy.Core.Validators
 {
     /// <summary>
-    /// Represents the outcome of a validation operation, including any encountered errors or warnings.
+    /// Represents the outcome of a validation operation, including any encountered errors.
     /// </summary>
     public class ValidationResult
     {

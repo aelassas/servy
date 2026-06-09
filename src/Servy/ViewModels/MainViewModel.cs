@@ -231,7 +231,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets the log rotation size as a string? (in MB).
+        /// Gets or sets the log rotation size as a string (in MB).
         /// </summary>
         public string? RotationSize
         {
@@ -1010,7 +1010,7 @@ namespace Servy.ViewModels
         /// Executes a file or folder dialog and assigns the resulting path to a property if the selection is valid.
         /// </summary>
         /// <param name="dialogAction">A function that invokes the specific <see cref="IFileDialogService"/> method (e.g., OpenExecutable or OpenFolder).</param>
-        /// <param name="propertySetter">An action that assigns the returned string? to the target ViewModel property.</param>
+        /// <param name="propertySetter">An action that assigns the returned string to the target ViewModel property.</param>
         /// <remarks>
         /// This helper encapsulates the common pattern of checking for null or empty strings 
         /// before updating configuration properties, ensuring that user cancellation of a dialog 
@@ -1195,7 +1195,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Calls <see cref="IServiceCommands.OpenManager"/> for the current <see cref="ServiceName"/>.
+        /// Calls <see cref="IServiceCommands.OpenManager"/> to open the Servy Manager application.
         /// </summary>
         private async Task OpenManager(object? parameter)
         {

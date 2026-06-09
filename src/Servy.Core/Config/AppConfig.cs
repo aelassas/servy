@@ -1470,7 +1470,7 @@ namespace Servy.Core.Config
         /// In <c>DEBUG</c> builds, the path points to the executable located in the application’s base directory.
         /// In <c>RELEASE</c> builds, the path points to the executable located in the ProgramData folder.
         /// </remarks>
-        /// <returns>The full file path to <c>ServyServiceCLI.exe</c>.</returns>
+        /// <returns>The full file path to <c>Servy.Service.CLI.exe</c>.</returns>
         public static string GetServyCLIServicePath() => ResolveExe(ServyServiceCLIFileName);
 
         /// <summary>
@@ -1480,7 +1480,7 @@ namespace Servy.Core.Config
         /// In <c>DEBUG</c> builds, the path points to the executable located in the application’s base directory.
         /// In <c>RELEASE</c> builds, the path points to the executable located in the ProgramData folder.
         /// </remarks>
-        /// <returns>The full file path to <c>ServyServiceUI.exe</c>.</returns>
+        /// <returns>The full file path to <c>Servy.Service.exe</c>.</returns>
         public static string GetServyUIServicePath() => ResolveExe(ServyServiceUIFileName);
 
         /// <summary>

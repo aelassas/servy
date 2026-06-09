@@ -9,7 +9,7 @@
     2. Locates the produced build/publish output folders.
     3. Copies the generated single-file executable and PDB files into the specified
        target Resources directory so they can be embedded in Servy builds.
-    4. Optionally appends an additional suffix (e.g., '.CLI') to the output files.
+    4. Optionally appends an additional suffix (e.g., 'CLI') to the output files.
 
 .PARAMETER ProjectName
     The name of the source project (e.g., "Servy.Service", "Servy.Restarter").

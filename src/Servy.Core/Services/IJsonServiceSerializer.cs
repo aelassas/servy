@@ -25,7 +25,7 @@ namespace Servy.Core.Services
         /// or <see langword="null"/> if the input is null or serialization fails.
         /// </returns>
         /// <remarks>
-        /// This method utilizes the same <see cref="JsonSecurity.UntrustedDataSettings"/> 
+        /// This method utilizes the same <see cref="Security.JsonSecurity.UntrustedDataSettings"/> 
         /// as the deserialization path to ensure perfect round-trip symmetry for custom 
         /// converters, enum formatting, and contract resolvers.
         /// </remarks>

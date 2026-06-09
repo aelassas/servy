@@ -172,19 +172,10 @@ jobs:
 
           while ($attempt -le $maxAttempts -and -not $pushSuccess) {
               Write-Host "Push attempt $attempt of $maxAttempts..."
-              
-              # Ensure workspace noise is cleared before pulling/rebasing              
-              git stash --include-untracked
-              $stashed = ($LASTEXITCODE -eq 0)
 
               # Fetch latest remote state and rebase our local working branch              
               git pull origin main --rebase
               $pullExit = $LASTEXITCODE
-              
-              # Always restore unrelated workspace items immediately after rebase
-              if ($stashed) { 
-                  git stash pop 2>&1 | Out-Null 
-              }
 
               if ($pullExit -ne 0) {
                   Write-Warning "Fetch/Rebase failed. Aborting rebase state and cleaning workspace."

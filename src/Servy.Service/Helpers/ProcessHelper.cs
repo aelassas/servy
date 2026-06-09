@@ -9,7 +9,7 @@ namespace Servy.Service.Helpers
     /// <summary>
     /// Helper methods for processes.
     /// </summary>
-    public class ProcessHelper
+    public static class ProcessHelper
     {
         #region Static Fields
 
