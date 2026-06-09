@@ -1198,7 +1198,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Calls <see cref="IServiceCommands.OpenManager"/> for the current <see cref="ServiceName"/>.
+        /// Calls <see cref="IServiceCommands.OpenManager"/> to open the Servy Manager application.
         /// </summary>
         private async Task OpenManager(object parameter)
         {
