@@ -1,18 +1,14 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Threading;
-using Xunit;
+﻿using Servy.Testing;
 using Servy.UI.Services;
-using Servy.Testing;
+using System.Windows.Threading;
 
 namespace Servy.UI.IntegrationTests.Services
 {
-    public class WpfUiDispatcherTests
+    public class WpfUiDispatcherIntegrationTests
     {
         private readonly WpfUiDispatcher _uiDispatcher;
 
-        public WpfUiDispatcherTests()
+        public WpfUiDispatcherIntegrationTests()
         {
             _uiDispatcher = new WpfUiDispatcher();
         }

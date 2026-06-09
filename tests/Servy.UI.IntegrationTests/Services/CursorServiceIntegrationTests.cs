@@ -6,11 +6,11 @@ using System.Windows.Threading;
 
 namespace Servy.UI.IntegrationTests.Services
 {
-    public class CursorServiceTests
+    public class CursorServiceIntegrationTests
     {
         private readonly CursorService _service;
 
-        public CursorServiceTests()
+        public CursorServiceIntegrationTests()
         {
             _service = new CursorService();
         }

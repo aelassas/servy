@@ -2,7 +2,7 @@
 
 namespace Servy.UI.IntegrationTests.Services
 {
-    public class FileDialogServiceTests
+    public class FileDialogServiceIntegrationTests
     {
         [Fact]
         public void FileDialogService_CanBeInstantiated()

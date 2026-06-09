@@ -4,13 +4,13 @@ using System.Reflection;
 
 namespace Servy.UI.IntegrationTests.Services
 {
-    public class HelpServiceTests
+    public class HelpServiceIntegrationTests
     {
         private readonly Mock<IMessageBoxService> _mockMessageBox;
         private readonly HelpService _service;
         private const string Caption = "Help Test";
 
-        public HelpServiceTests()
+        public HelpServiceIntegrationTests()
         {
             _mockMessageBox = new Mock<IMessageBoxService>();
             _service = new HelpService(_mockMessageBox.Object);
