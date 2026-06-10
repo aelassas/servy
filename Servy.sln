@@ -63,6 +63,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.CLI.UnitTests", "test
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup", "setup", "{70D87C51-9AAD-4358-A6CB-0C51B23F0C56}"
 	ProjectSection(SolutionItems) = preProject
+		setup\generate-sbom.ps1 = setup\generate-sbom.ps1
 		setup\publish-res.ps1 = setup\publish-res.ps1
 		setup\publish.ps1 = setup\publish.ps1
 		setup\servy.iss = setup\servy.iss
@@ -121,6 +122,11 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Testing", "tests\Servy.Testing\Servy.Testing.csproj", "{4BC9A435-C352-4953-82B8-B419B13E8F56}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Infrastructure.IntegrationTests", "tests\Servy.Infrastructure.IntegrationTests\Servy.Infrastructure.IntegrationTests.csproj", "{CAD9027F-24C4-458F-812F-F3928AD57333}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-cyclonedx", "setup-cyclonedx", "{865835E3-BF50-4000-8E69-5141A15D954A}"
+	ProjectSection(SolutionItems) = preProject
+		.github\actions\setup-cyclonedx\action.yml = .github\actions\setup-cyclonedx\action.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -331,6 +337,7 @@ Global
 		{D9F89DE3-F534-4184-9E9E-64380BC4118A} = {A53A690C-C3AB-4823-9AD7-522B8BD824E2}
 		{4BC9A435-C352-4953-82B8-B419B13E8F56} = {A53A690C-C3AB-4823-9AD7-522B8BD824E2}
 		{CAD9027F-24C4-458F-812F-F3928AD57333} = {A53A690C-C3AB-4823-9AD7-522B8BD824E2}
+		{865835E3-BF50-4000-8E69-5141A15D954A} = {BAA8B1D5-2F99-4468-9B13-4DE9A6D75194}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8901951D-D640-4964-A4ED-D957E840307C}

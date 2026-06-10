@@ -1,0 +1,96 @@
+# ==============================================================================
+# Composite Action - Setup and Verify CycloneDX Tools
+# ------------------------------------------------------------------------------
+# Purpose:
+#   Downloads, hash-verifies, and securely isolates both the CycloneDX CLI 
+#   and the CycloneDX .NET tool within single-pass workflow runners.
+# ==============================================================================
+
+name: 'Setup CycloneDX'
+description: 'Install and cryptographically verify CycloneDX CLI and .NET Tool'
+
+inputs:
+  tool_version:
+    description: 'CycloneDX .NET Tool Version'
+    required: true
+    default: '6.2.0'
+  tool_hash:
+    description: 'Expected SHA256 hash of the .NET tool nupkg'
+    required: true
+    default: '3473525381eee02a649b75bbf5b4f0ffa66112f62917aff798fed196e290a884'
+  cli_version:
+    description: 'CycloneDX CLI Version Tag'
+    required: true
+    default: 'v0.31.0'
+  cli_hash:
+    description: 'Expected SHA256 hash of the CLI binary executable'
+    required: true
+    default: 'da18bdb0d5b10a5f45ddfb59b7b08b11ddc050bb5c6407608d831929a1799d3f'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Provision CycloneDX Environment
+      shell: pwsh
+      run: |
+        # --- 1. CycloneDX CLI Install & Verify ---
+        $v = "${{ inputs.cli_version }}"
+        $cliHash = "${{ inputs.cli_hash }}"
+        
+        # Force a hard stop if the download fails (e.g., GitHub is down or version is wrong)
+        $uri = "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe"
+        Write-Host "Downloading CycloneDX CLI from $uri"
+        
+        # Isolate the binary in a dedicated subfolder to prevent broad PATH exposure
+        $cliDir = "$env:USERPROFILE\cyclonedx-cli"
+        New-Item -ItemType Directory -Force -Path $cliDir | Out-Null
+        $outPath = "$cliDir\cyclonedx.exe"
+        
+        Invoke-WebRequest -Uri $uri -OutFile $outPath -ErrorAction Stop
+        
+        # --- SECURITY CHECK: SHA256 PINNING ---
+        Write-Host "Verifying SHA256 checksum of CycloneDX CLI..."
+        $actualHash = (Get-FileHash $outPath -Algorithm SHA256).Hash
+        
+        if ($actualHash -ne $cliHash) {
+            throw "Security Breach: CycloneDX CLI hash mismatch! Expected: $cliHash, Got: $actualHash"
+        }
+        Write-Host "CLI Checksum verified successfully."
+        # --------------------------------------
+        # Append only the isolated subfolder to PATH
+        Add-Content -Path $env:GITHUB_PATH -Value $cliDir
+
+        # --- SECURITY CHECK: SHA256 PINNING FOR .NET TOOL ---
+        # We verify the CycloneDX nupkg itself. To ensure transitive dependencies 
+        # are also verified/pinned, we utilize an isolated NuGet.config below.
+        Write-Host "Downloading CycloneDX .NET Tool package for verification..."
+        $toolVersion = "${{ inputs.tool_version }}"
+        $toolHash = "${{ inputs.tool_hash }}"
+        $toolPkgUri = "https://www.nuget.org/api/v2/package/CycloneDX/$toolVersion"
+        $toolPkgDir = "$env:USERPROFILE\cyclonedx-tool"
+        New-Item -ItemType Directory -Force -Path $toolPkgDir | Out-Null
+        $toolPkgPath = "$toolPkgDir\CycloneDX.$toolVersion.nupkg"
+        Invoke-WebRequest -Uri $toolPkgUri -OutFile $toolPkgPath -ErrorAction Stop
+
+        Write-Host "Verifying SHA256 checksum of CycloneDX .NET Tool package..."
+        $actualToolHash = (Get-FileHash $toolPkgPath -Algorithm SHA256).Hash
+        if ($actualToolHash -ne $toolHash) {
+            throw "Security Breach: CycloneDX .NET Tool hash mismatch! Expected: $toolHash, Got: $actualToolHash"
+        }
+        Write-Host "Tool package checksum verified successfully."
+        
+        # --- ISOLATION: Enforce local source only ---
+        $nugetConfig = @"
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSources>
+            <clear />
+            <add key="LocalVerified" value="$toolPkgDir" />
+          </packageSources>
+        </configuration>
+        "@
+        $nugetConfig | Set-Content -Path "$toolPkgDir\nuget.config"
+
+        # Continue with the .NET tool installation using the isolated source configuration
+        dotnet tool install --global CycloneDX --version $toolVersion --configfile "$toolPkgDir\nuget.config"
+        Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
