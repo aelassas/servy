@@ -259,7 +259,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public async Task<int?> GetServicePidAsync(string? serviceName, CancellationToken cancellationToken = default)
+        public virtual async Task<int?> GetServicePidAsync(string? serviceName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(serviceName)) return null;
             const string sql = "SELECT Pid FROM Services WHERE LOWER(Name) = LOWER(@Name) LIMIT 1;";
@@ -267,7 +267,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public async Task<ServiceConsoleStateDto?> GetServiceConsoleStateAsync(string? serviceName, CancellationToken cancellationToken = default)
+        public virtual async Task<ServiceConsoleStateDto?> GetServiceConsoleStateAsync(string? serviceName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(serviceName)) return null;
             const string sql = @"

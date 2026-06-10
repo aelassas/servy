@@ -332,7 +332,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.EnableSizeRotation = true;
             _viewModel.RotationSize = "555";
 
-            _messageBoxService.Setup(ds => ds.ShowConfirmAsync(Strings.Confirm_ClearAll, AppConfig.Caption)).ReturnsAsync(true);
+            _messageBoxService.Setup(ds => ds.ShowConfirmAsync(Strings.Confirm_ClearAll, UiAppConfig.Caption)).ReturnsAsync(true);
 
             // Act
             await _viewModel.ClearFormCommand.ExecuteAsync(null);
@@ -353,7 +353,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.EnableSizeRotation = true;
             _viewModel.RotationSize = "555";
 
-            _messageBoxService.Setup(ds => ds.ShowConfirmAsync(Strings.Confirm_ClearAll, AppConfig.Caption)).ReturnsAsync(false);
+            _messageBoxService.Setup(ds => ds.ShowConfirmAsync(Strings.Confirm_ClearAll, UiAppConfig.Caption)).ReturnsAsync(false);
 
             // Act
             await _viewModel.ClearFormCommand.ExecuteAsync(null);
@@ -407,14 +407,14 @@ namespace Servy.UnitTests.ViewModels
         public async Task OpenDocumentation_Calls_HelpService_With_Caption()
         {
             await _viewModel.OpenDocumentationCommand.ExecuteAsync(null);
-            _helpService.Verify(h => h.OpenDocumentation(AppConfig.Caption), Times.Once);
+            _helpService.Verify(h => h.OpenDocumentation(UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
         public async Task CheckUpdatesAsync_Calls_HelpService_With_Caption()
         {
             await _viewModel.CheckUpdatesCommand.ExecuteAsync(null);
-            _helpService.Verify(h => h.CheckUpdates(AppConfig.Caption), Times.Once);
+            _helpService.Verify(h => h.CheckUpdates(UiAppConfig.Caption), Times.Once);
         }
 
         [Fact]
@@ -429,7 +429,7 @@ namespace Servy.UnitTests.ViewModels
                     text.Contains(Core.Config.AppConfig.Version) &&
                     text.Contains(DateTime.Now.Year.ToString())
                 ),
-                AppConfig.Caption), Times.Once);
+                UiAppConfig.Caption), Times.Once);
         }
 
         #endregion
@@ -487,7 +487,7 @@ namespace Servy.UnitTests.ViewModels
             await _viewModel.LoadServiceConfiguration("ErrorService");
 
             // Assert
-            _messageBoxService.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption), Times.Once);
+            _messageBoxService.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
         }
 
         #endregion

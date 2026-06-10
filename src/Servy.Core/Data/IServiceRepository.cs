@@ -110,6 +110,9 @@ namespace Servy.Core.Data
         /// Lightweight query to fetch only the Process ID (PID) for a given service.
         /// Used by high-frequency UI timers to check running state without allocating full DTOs.
         /// </summary>
+        /// <param name="serviceName">The unique name of the service to query.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>The PID of the running service, or <c>null</c> if not found or not running.</returns>
         Task<int?> GetServicePidAsync(string? serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>

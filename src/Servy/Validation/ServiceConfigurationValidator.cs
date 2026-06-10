@@ -50,7 +50,7 @@ namespace Servy.Validation
             // Display critical errors first
             if (result.Errors.Any())
             {
-                await _messageBoxService.ShowErrorAsync(result.Errors.First(), AppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(result.Errors.First(), UiAppConfig.Caption);
                 return false;
             }
 

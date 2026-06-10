@@ -12,7 +12,7 @@ using Servy.UI.Services;
 using Servy.Validation;
 using System.Diagnostics;
 using System.IO;
-using static Servy.Config.AppConfig;
+using static Servy.Config.UiAppConfig;
 using AppConfig = Servy.Core.Config.AppConfig;
 
 namespace Servy.Services

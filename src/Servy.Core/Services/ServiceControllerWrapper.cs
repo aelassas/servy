@@ -82,6 +82,7 @@ namespace Servy.Core.Services
         /// <inheritdoc/>
         public ServiceDependencyNode GetDependencies(CancellationToken cancellationToken = default)
         {
+            ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
 
             // Tracks the current branch from root to leaf to detect deep cycles

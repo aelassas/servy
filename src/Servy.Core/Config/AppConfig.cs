@@ -315,7 +315,8 @@ namespace Servy.Core.Config
         public const int MaxParallelScmQueries = 8;
 
         /// <summary>
-        /// Default timeout in seconds to wait for a Windows Service to stop. Default is 60 seconds.
+        /// The wall-clock minimum (floor), in seconds, applied by ServiceManager when a
+        /// configured per-service stop timeout would otherwise be unreasonably short. Default is 60 seconds.
         /// </summary>
         public const int ScmStopTimeoutFloorSeconds = 60;
 
@@ -352,6 +353,9 @@ namespace Servy.Core.Config
         /// Default is <c>false</c>.
         /// </summary>
         public const bool DefaultEnableDebugLogs = false;
+
+        /// <summary>The default rolling interval for Servy's own internal log when not set in appsettings. Default is None (no date-based rotation).</summary>
+        public const DateRotationType DefaultLogRollingInterval = DateRotationType.None;
 
         /// <summary>
         /// Gets a value indicating whether process health monitoring (heartbeat checks) 

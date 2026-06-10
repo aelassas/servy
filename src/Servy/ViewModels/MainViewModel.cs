@@ -892,8 +892,7 @@ namespace Servy.ViewModels
             new DesignTimeAppConfig()
             )
         {
-            // The body is now intentionally empty. 
-            // All dependencies are safely injected via the chained call, bypassing the ArgumentNullException traps.
+            // Intentionally empty: the chained constructor supplies design-time stubs for all dependencies.
         }
 
         #endregion
@@ -1212,7 +1211,7 @@ namespace Servy.ViewModels
         private async Task ClearForm(object? parameter)
         {
             // Ask for confirmation before clearing everything
-            bool confirm = await _messageBoxService.ShowConfirmAsync(Strings.Confirm_ClearAll, AppConfig.Caption);
+            bool confirm = await _messageBoxService.ShowConfirmAsync(Strings.Confirm_ClearAll, UiAppConfig.Caption);
 
             if (!confirm)
                 return;
@@ -1304,7 +1303,7 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task OpenDocumentation(object? parameter)
         {
-            await _helpService.OpenDocumentation(AppConfig.Caption);
+            await _helpService.OpenDocumentation(UiAppConfig.Caption);
         }
 
         /// <summary>
@@ -1313,7 +1312,7 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task CheckUpdatesAsync(object? parameter)
         {
-            await _helpService.CheckUpdates(AppConfig.Caption);
+            await _helpService.CheckUpdates(UiAppConfig.Caption);
         }
 
         /// <summary>
@@ -1326,7 +1325,7 @@ namespace Servy.ViewModels
                     Core.Config.AppConfig.Version,
                     Helper.GetBuiltWithFramework(),
                     DateTime.Now.Year),
-                AppConfig.Caption);
+                UiAppConfig.Caption);
         }
 
         #endregion
@@ -1355,7 +1354,7 @@ namespace Servy.ViewModels
             catch (Exception ex)
             {
                 Logger.Error($"Error loading configuration for service '{serviceName}'", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
             }
         }
 
@@ -1374,10 +1373,10 @@ namespace Servy.ViewModels
         /// </remarks>
         public void BindServiceDtoToModel(ServiceDto dto)
         {
-            ServiceName = dto.Name;
+            ServiceName = dto.Name ?? string.Empty;
             ServiceDisplayName = dto.DisplayName ?? string.Empty;
             ServiceDescription = dto.Description ?? string.Empty;
-            ProcessPath = dto.ExecutablePath;
+            ProcessPath = dto.ExecutablePath ?? string.Empty;
             StartupDirectory = dto.StartupDirectory ?? string.Empty;
             ProcessParameters = dto.Parameters ?? string.Empty;
             SelectedStartupType = dto.StartupType == null ? DefaultStartupType : (ServiceStartType)dto.StartupType;

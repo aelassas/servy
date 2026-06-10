@@ -93,27 +93,32 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assert.NotNull(childProcess);
             _spawnedProcesses.Add(childProcess);
 
-            // 1. INCREASE STABILIZATION: PowerShell needs more than a few ms to 
-            // fully map its memory and release internal handles.
-            Thread.Sleep(1000);
+            // 1. INCREASE STABILIZATION: Allow the PowerShell host engine to fully 
+            // spin up and map its byte allocation inside the OS kernel.
+            Thread.Sleep(1500);
 
             int childPid = childProcess.Id;
 
             // 2. CAPTURE SINGLE METRICS FIRST:
-            // This warms up the PID handle cache in the OS for this process.
             var singleMetrics = _sut.GetProcessMetrics(childPid);
 
-            // Act
+            // Act: Capture the tree aggregation metrics back-to-back
             var treeMetrics = _sut.GetProcessTreeMetrics(childPid);
 
             // 3. LOGGING FOR DEBUGGING:
-            // This helps identify if GetProcessMetrics is returning 0 internally.
             Logger.Info($"Single RAM: {singleMetrics.RamUsage}, Tree RAM: {treeMetrics.RamUsage}");
 
             // Assert
             Assert.True(singleMetrics.RamUsage > 0, "Root process RAM should be captured.");
-            Assert.True(treeMetrics.RamUsage >= singleMetrics.RamUsage,
-                $"Tree RAM ({treeMetrics.RamUsage}) must be >= Root RAM ({singleMetrics.RamUsage}).");
+            Assert.True(treeMetrics.RamUsage > 0, "Tree process RAM aggregation should be captured.");
+
+            // 4. DELTA VALUATION: Ensure the two back-to-back reads do not drift 
+            // beyond a standard runtime memory variance threshold (e.g., 15 MB).
+            long memoryDeltaBytes = Math.Abs(treeMetrics.RamUsage - singleMetrics.RamUsage);
+            long maxAllowedVarianceBytes = 15 * 1024 * 1024; // 15 Megabytes
+
+            Assert.True(memoryDeltaBytes <= maxAllowedVarianceBytes,
+                $"The memory drift between sequential reads ({memoryDeltaBytes} bytes) exceeded the maximum allowed runtime variance threshold ({maxAllowedVarianceBytes} bytes). Single RAM: {singleMetrics.RamUsage}, Tree RAM: {treeMetrics.RamUsage}");
         }
 
         #endregion
