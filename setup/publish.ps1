@@ -128,17 +128,7 @@ finally {
         }
 
         try {
-            if ($Host.Name -eq 'ConsoleHost' -or $Host.Name -like '*Console*') {
-                [void][System.Console]::ReadKey($true)
-            }
-            else {
-                try {
-                    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
-                }
-                catch {
-                    Read-Host | Out-Null
-                }
-            }
+            [void][System.Console]::ReadKey($true)
         }
         catch { }
     }

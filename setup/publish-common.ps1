@@ -177,7 +177,7 @@ function New-PortablePackage {
     # to guarantee that parameters containing spaces (like OutputZip and PackageFolder) 
     # are correctly quoted by the PowerShell parser before native execution.
     $exitCode = 0
-    & $SevenZipExe a -t7z -m0=lzma2 -mx=9 -ms=on $OutputZip $PackageFolder
+    & $SevenZipExe a -t7z -m0=lzma2 -mx=9 -mfb=273 -md=128m -ms=on $OutputZip $PackageFolder
     $exitCode = $LASTEXITCODE
 
     if ($exitCode -ne 0) {

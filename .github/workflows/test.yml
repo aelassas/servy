@@ -36,6 +36,10 @@ jobs:
 
     env:
       REPORTGENERATOR_VERSION: "5.5.10"
+      # Centralized source of truth for coverage exclusions
+      VSTEST_EXCLUSIONS: "[*.UnitTests]*,[*.IntegrationTests]*,[Servy.Testing]*,**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/obj/**/*"
+      REPORTGENERATOR_ASSEMBLIES: "-*.UnitTests;-*.IntegrationTests;-Servy.Testing"
+      REPORTGENERATOR_FILES: "-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/obj/**/*"
 
     steps:
       - name: Checkout repository
@@ -92,7 +96,7 @@ jobs:
               $dotnetArgs += @(
                   '--',
                   'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura',
-                  'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=[*.UnitTests]*,[*.IntegrationTests]*,[Servy.Testing]*,**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/obj/**/*',
+                  "DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=$($env:VSTEST_EXCLUSIONS)",
                   'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeProperties="True"'
               )
 
@@ -144,8 +148,8 @@ jobs:
               "-reports:$joinedReports" `
               "-targetdir:$fixedDir" `
               "-reporttypes:Cobertura" `
-              "-assemblyfilters:-*.UnitTests;-*.IntegrationTests;-Servy.Testing" `
-              -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/obj/**/*"
+              "-assemblyfilters:$($env:REPORTGENERATOR_ASSEMBLIES)" `
+              "-filefilters:$($env:REPORTGENERATOR_FILES)"
           Pop-Location
 
           $mergedFile = Join-Path $fixedDir "Cobertura.xml"

@@ -1,4 +1,4 @@
-#Requires -Version 3.0
+#Requires -Version 5.1
 <#
 .SYNOPSIS
     Monitors Servy error events in the Windows Application log and sends notification emails.

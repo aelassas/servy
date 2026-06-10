@@ -189,8 +189,7 @@ namespace Servy.Manager.ViewModels
         /// <inheritdoc/>
         protected override ServiceItemBase CreateServiceItem(Service? service)
         {
-            if (service == null) throw new ArgumentNullException(nameof(service));
-            return new PerformanceService { Name = service.Name, Pid = service.Pid };
+            return new PerformanceService { Name = service?.Name, Pid = service?.Pid };
         }
 
         /// <inheritdoc/>

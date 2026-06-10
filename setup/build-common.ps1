@@ -129,6 +129,7 @@ function Invoke-StandardPublish {
                 -c $BuildConfiguration `
                 -r $Runtime `
                 --self-contained true `
+                --no-restore `
                 --force `
                 /p:DeleteExistingFiles=true
         }

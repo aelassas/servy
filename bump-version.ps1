@@ -5,7 +5,7 @@
 
 .DESCRIPTION
     This script updates the version of Servy in multiple locations:
-    - setup\build-config.ps1   ($Version variable)
+    - setup\build-config.ps1   (Version hashtable key)
     - All *.csproj files recursively   (<Version>, <FileVersion>, <AssemblyVersion>)
     - src\Servy.CLI\Servy.psd1   (ModuleVersion)
 
