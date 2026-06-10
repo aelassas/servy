@@ -1420,7 +1420,7 @@ namespace Servy.Core.Config
         #region Public Methods
 
         /// <summary>
-        /// Gets the full path to the Sysinternals Handle executable (<c>handle64.exe</c> or <c>handle.exe</c>)
+        /// Gets the full path to the Sysinternals Handle executable (<c>handle64.exe</c>)
         /// depending on the build configuration. In DEBUG mode, it looks in the application's base directory;
         /// in RELEASE mode, it looks in the ProgramData folder.
         /// </summary>
