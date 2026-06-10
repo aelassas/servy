@@ -3,27 +3,27 @@
 # ==============================================================================
 #
 # Purpose:
-#   This workflow generates a CycloneDX Software Bill of Materials (SBOM)
-#   for the Servy solution and uploads it as a short-lived build artifact.
+#    This workflow generates a CycloneDX Software Bill of Materials (SBOM)
+#    for the Servy solution and uploads it as a short-lived build artifact.
 #
 # Trigger:
-#   Manually triggered via workflow_dispatch.
+#    Manually triggered via workflow_dispatch.
 #
 # Inputs:
-#   version:
-#     Required. Must be in Major.Minor format (e.g. 4.2).
-#     The value is validated at runtime and used consistently for:
-#       - SBOM metadata version
-#       - Output filename
-#       - Artifact name
+#    version:
+#      Required. Must be in Major.Minor format (e.g. 4.2).
+#      The value is validated at runtime and used consistently for:
+#        - SBOM metadata version
+#        - Output filename
+#        - Artifact name
 #
 # Security / Trust Notes:
-#   - Version input is validated early and the workflow fails fast on error.
-#   - Repository checkout uses full history to support provenance generation.
-#   - The SBOM artifact is retained for 1 day to reduce exposure surface.
+#    - Version input is validated early and the workflow fails fast on error.
+#    - Repository checkout uses full history to support provenance generation.
+#    - The SBOM artifact is retained for 1 day to reduce exposure surface.
 #
 # Output:
-#   - servy-<version>-sbom.xml (CycloneDX XML)
+#    - servy-<version>-sbom.xml (CycloneDX XML)
 #
 # ==============================================================================
 
@@ -47,10 +47,6 @@ jobs:
       # Mapping the input to an environment variable prevents Expression Injection.
       # The shell will now treat this as a literal string.
       INPUT_VERSION: ${{ github.event.inputs.version }}
-      CYCLONEDX_TOOL_VERSION: "6.2.0"
-      CYCLONEDX_TOOL_HASH: "3473525381eee02a649b75bbf5b4f0ffa66112f62917aff798fed196e290a884" # the actual SHA256 hash of the CycloneDX nupkg
-      CYCLONEDX_CLI_VERSION: "v0.31.0"
-      CYCLONEDX_CLI_HASH: "da18bdb0d5b10a5f45ddfb59b7b08b11ddc050bb5c6407608d831929a1799d3f"
 
     steps:
       # -----------------------------------------------------
@@ -83,103 +79,16 @@ jobs:
         uses: ./.github/actions/setup-dotnet
 
       - name: Install CycloneDX Tools
-        shell: pwsh
-        run: |
-          # --- 1. CycloneDX CLI Install & Verify ---
-          $v = $env:CYCLONEDX_CLI_VERSION
-          if (-not $v) { 
-              throw "CYCLONEDX_CLI_VERSION environment variable not set" 
-          }
-          
-          # Force a hard stop if the download fails (e.g., GitHub is down or version is wrong)
-          $uri = "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe"
-          Write-Host "Downloading CycloneDX CLI from $uri"
-          
-          # Isolate the binary in a dedicated subfolder to prevent broad PATH exposure
-          $cliDir = "$env:USERPROFILE\cyclonedx-cli"
-          New-Item -ItemType Directory -Force -Path $cliDir | Out-Null
-          $outPath = "$cliDir\cyclonedx.exe"
-          
-          Invoke-WebRequest -Uri $uri -OutFile $outPath -ErrorAction Stop
-          
-          # --- SECURITY CHECK: SHA256 PINNING ---
-          Write-Host "Verifying SHA256 checksum of CycloneDX CLI..."
-          $actualHash = (Get-FileHash $outPath -Algorithm SHA256).Hash
-          
-          # -ne in PowerShell is inherently case-insensitive
-          if ($actualHash -ne $env:CYCLONEDX_CLI_HASH) {
-              throw "Security Breach: CycloneDX CLI hash mismatch! Expected: $($env:CYCLONEDX_CLI_HASH), Got: $actualHash"
-          }
-          Write-Host "CLI Checksum verified successfully."
-          # --------------------------------------
-          # Append only the isolated subfolder to PATH
-          Add-Content -Path $env:GITHUB_PATH -Value $cliDir
+        uses: ./.github/actions/setup-cyclonedx
 
-          # --- SECURITY CHECK: SHA256 PINNING FOR .NET TOOL ---
-          # We verify the CycloneDX nupkg itself. To ensure transitive dependencies 
-          # are also verified/pinned, we utilize an isolated NuGet.config below.
-          Write-Host "Downloading CycloneDX .NET Tool package for verification..."
-          $toolPkgUri = "https://www.nuget.org/api/v2/package/CycloneDX/$env:CYCLONEDX_TOOL_VERSION"
-          $toolPkgDir = "$env:USERPROFILE\cyclonedx-tool"
-          New-Item -ItemType Directory -Force -Path $toolPkgDir | Out-Null
-          $toolPkgPath = "$toolPkgDir\CycloneDX.$env:CYCLONEDX_TOOL_VERSION.nupkg"
-          Invoke-WebRequest -Uri $toolPkgUri -OutFile $toolPkgPath -ErrorAction Stop
-
-          Write-Host "Verifying SHA256 checksum of CycloneDX .NET Tool package..."
-          $actualToolHash = (Get-FileHash $toolPkgPath -Algorithm SHA256).Hash
-          if ($actualToolHash -ne $env:CYCLONEDX_TOOL_HASH) {
-              throw "Security Breach: CycloneDX .NET Tool hash mismatch! Expected: $($env:CYCLONEDX_TOOL_HASH), Got: $actualToolHash"
-          }
-          Write-Host "Tool package checksum verified successfully."
-          
-          # --- ISOLATION: Enforce local source only ---
-          $nugetConfig = @"
-          <?xml version="1.0" encoding="utf-8"?>
-          <configuration>
-            <packageSources>
-              <clear />
-              <add key="LocalVerified" value="$toolPkgDir" />
-            </packageSources>
-          </configuration>
-          "@
-          $nugetConfig | Set-Content -Path "$toolPkgDir\nuget.config"
-
-          # Continue with the .NET tool installation using the isolated source configuration
-          dotnet tool install --global CycloneDX --version $env:CYCLONEDX_TOOL_VERSION --configfile "$toolPkgDir\nuget.config"
-          Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
-
+      # -----------------------------------------------------
+      # Generate SBOM
+      # -----------------------------------------------------
       - name: Generate SBOM
         shell: pwsh
         run: |
-          # Use subexpression operator $() to safely append the .0 suffix
-          $version = "$($env:INPUT_VERSION).0"
-          
-          $projects = @(
-              @{ Path = 'src\Servy\Servy.csproj';                     File = 'sbom-Servy.xml' }
-              @{ Path = 'src\Servy.CLI\Servy.CLI.csproj';             File = 'sbom-Servy.CLI.xml' }
-              @{ Path = 'src\Servy.Manager\Servy.Manager.csproj';     File = 'sbom-Servy.Manager.xml' }
-              @{ Path = 'src\Servy.Restarter\Servy.Restarter.csproj'; File = 'sbom-Servy.Restarter.xml' }
-              @{ Path = 'src\Servy.Service\Servy.Service.csproj';     File = 'sbom-Servy.Service.xml' }
-          )
-          
-          # Explicitly check for native command failures to prevent partial SBOMs
-          foreach ($p in $projects) {
-              dotnet-CycloneDX $p.Path --recursive --set-version "$version" --output . --filename $p.File
-              if ($LASTEXITCODE -ne 0) {
-                  Write-Error "dotnet-CycloneDX failed for $($p.Path) (exit $LASTEXITCODE)"
-                  exit $LASTEXITCODE
-              }
-          }
-          
           $outputFile = "servy-$($env:INPUT_VERSION)-sbom.xml"
-          
-          # Merge into specified output file
-          $inputFiles = $projects | ForEach-Object { $_.File }
-          cyclonedx merge --input-files $inputFiles --output-file "$outputFile"
-          if ($LASTEXITCODE -ne 0) {
-              Write-Error "cyclonedx merge failed (exit $LASTEXITCODE)"
-              exit $LASTEXITCODE
-          }
+          & setup/generate-sbom.ps1 -BaseVersion $env:INPUT_VERSION -OutputFile $outputFile
 
       - name: Upload SBOM
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2

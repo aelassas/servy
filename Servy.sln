@@ -80,6 +80,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup", "setup", "{11479D8F
 		setup\build-common.ps1 = setup\build-common.ps1
 		setup\build-config.ps1 = setup\build-config.ps1
 		setup\common-helpers.ps1 = setup\common-helpers.ps1
+		setup\generate-sbom.ps1 = setup\generate-sbom.ps1
 		setup\publish-common.ps1 = setup\publish-common.ps1
 		setup\publish-res.ps1 = setup\publish-res.ps1
 		setup\publish-sc.ps1 = setup\publish-sc.ps1
@@ -173,6 +174,11 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "resolve-version", "resolve-version", "{BF373F26-8DEF-486B-8AE7-C38420BF50C0}"
 	ProjectSection(SolutionItems) = preProject
 		.github\actions\resolve-version\action.yml = .github\actions\resolve-version\action.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-cyclonedx", "setup-cyclonedx", "{B2C6492F-B0F0-4AF1-A4CF-730FF719DE16}"
+	ProjectSection(SolutionItems) = preProject
+		.github\actions\setup-cyclonedx\action.yml = .github\actions\setup-cyclonedx\action.yml
 	EndProjectSection
 EndProject
 Global
@@ -304,6 +310,7 @@ Global
 		{AF414E4C-11AC-4D83-A5CB-C9225D44F7F2} = {F56CEF5B-4A0B-4494-8BFD-F6EC660B510E}
 		{99D2C270-5AF9-482B-B8F4-780A6687554D} = {50795869-2933-430F-98BD-956C414ABBE4}
 		{BF373F26-8DEF-486B-8AE7-C38420BF50C0} = {FED01F22-71C4-4504-9BC6-217F6DE9F152}
+		{B2C6492F-B0F0-4AF1-A4CF-730FF719DE16} = {FED01F22-71C4-4504-9BC6-217F6DE9F152}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {93B02B52-77CF-4BAA-AD7E-08960E6D6482}
