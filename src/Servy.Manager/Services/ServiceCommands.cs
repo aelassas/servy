@@ -208,7 +208,7 @@ namespace Servy.Manager.Services
             {
                 if (string.IsNullOrWhiteSpace(_appConfig.DesktopAppPublishPath) || !File.Exists(_appConfig.DesktopAppPublishPath))
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_DesktopAppNotFound, AppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_DesktopAppNotFound, UiAppConfig.Caption);
                     return;
                 }
 
@@ -232,14 +232,14 @@ namespace Servy.Manager.Services
 
                     if (string.IsNullOrWhiteSpace(service.Name))
                     {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidServiceName, AppConfig.Caption);
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidServiceName, UiAppConfig.Caption);
                         return;
                     }
 
                     var serviceDomain = await GetServiceDomain(service.Name, cancellationToken);
                     if (serviceDomain == null)
                     {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
                         return;
                     }
 
@@ -253,7 +253,7 @@ namespace Servy.Manager.Services
             {
                 string serviceName = service?.Name ?? "<unknown>";
                 Logger.Error($"Failed to configure {serviceName}.", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
             }
         }
 
@@ -271,7 +271,7 @@ namespace Servy.Manager.Services
 
                     if (exists)
                     {
-                        var result = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ServiceAlreadyExists, AppConfig.Caption);
+                        var result = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ServiceAlreadyExists, UiAppConfig.Caption);
                         if (!result)
                         {
                             return false;
@@ -282,7 +282,7 @@ namespace Servy.Manager.Services
                     var serviceDomain = await GetServiceDomain(service.Name, cancellationToken);
                     if (serviceDomain == null)
                     {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
                         return false;
                     }
 
@@ -291,7 +291,7 @@ namespace Servy.Manager.Services
                     wrapperExeDir = Path.GetFullPath(Core.Config.AppConfig.ServyServiceManagerDebugFolder);
                     if (!Directory.Exists(wrapperExeDir))
                     {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidWrapperExePath, AppConfig.Caption);
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidWrapperExePath, UiAppConfig.Caption);
                         return false;
                     }
 #endif
@@ -301,18 +301,18 @@ namespace Servy.Manager.Services
                     {
                         var msg = !string.IsNullOrWhiteSpace(res.ErrorMessage) ? res.ErrorMessage : Strings.Msg_UnexpectedError;
                         Logger.Warn($"InstallService failed: {msg}");
-                        await _messageBoxService.ShowErrorAsync(msg, AppConfig.Caption);
+                        await _messageBoxService.ShowErrorAsync(msg, UiAppConfig.Caption);
                         return false;
                     }
 
                     service.IsInstalled = true;
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceInstalled, AppConfig.Caption);
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceInstalled, UiAppConfig.Caption);
                     return true;
                 }
                 catch (Exception ex)
                 {
                     Logger.Error($"Failed to install {service.Name}.", ex);
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
                     return false;
                 }
             }, cancellationToken: cancellationToken);
@@ -328,13 +328,13 @@ namespace Servy.Manager.Services
             {
                 try
                 {
-                    var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_UninstallServiceConfirm, AppConfig.Caption);
+                    var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_UninstallServiceConfirm, UiAppConfig.Caption);
                     if (!confirm) return false;
 
                     var serviceDomain = await GetServiceDomain(service.Name, cancellationToken);
                     if (serviceDomain == null)
                     {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
                         return false;
                     }
 
@@ -344,7 +344,7 @@ namespace Servy.Manager.Services
                     {
                         var msg = !string.IsNullOrWhiteSpace(res.ErrorMessage) ? res.ErrorMessage : Strings.Msg_UnexpectedError;
                         Logger.Warn($"UninstallService failed: {msg}");
-                        await _messageBoxService.ShowErrorAsync(msg, AppConfig.Caption);
+                        await _messageBoxService.ShowErrorAsync(msg, UiAppConfig.Caption);
                         return false;
                     }
 
@@ -354,7 +354,7 @@ namespace Servy.Manager.Services
                 catch (Exception ex)
                 {
                     Logger.Error($"Failed to uninstall {service.Name}.", ex);
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
                     return false;
                 }
             }, cancellationToken: cancellationToken);
@@ -370,13 +370,13 @@ namespace Servy.Manager.Services
             {
                 try
                 {
-                    var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, AppConfig.Caption);
+                    var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, UiAppConfig.Caption);
                     if (!confirm) return false;
 
                     var serviceDomain = await GetServiceDomain(service.Name, cancellationToken);
                     if (serviceDomain == null)
                     {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
                         return false;
                     }
 
@@ -392,7 +392,7 @@ namespace Servy.Manager.Services
                     else
                     {
                         Logger.Error($"Failed to remove service {service.Name} from repository.");
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
                     }
 
                     return success;
@@ -400,7 +400,7 @@ namespace Servy.Manager.Services
                 catch (Exception ex)
                 {
                     Logger.Error($"Failed to remove {service.Name}.", ex);
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
                     return false;
                 }
             }, cancellationToken: cancellationToken);
@@ -500,18 +500,18 @@ namespace Servy.Manager.Services
                 if (success)
                 {
                     Logger.Info($"PID {pidValue} of service {serviceName} copied to clipboard.");
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_PidCopied, AppConfig.Caption);
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_PidCopied, UiAppConfig.Caption);
                 }
                 else
                 {
                     Logger.Warn($"Failed to copy PID {pidValue} for {serviceName} after {Core.Config.AppConfig.ClipboardComMaxRetries} attempts.");
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_PidCopyFailed, AppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_PidCopyFailed, UiAppConfig.Caption);
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error("Failed to copy PID to clipboard.", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
             }
         }
 
@@ -643,9 +643,9 @@ namespace Servy.Manager.Services
                 if (showMessageBox)
                 {
                     if (!string.IsNullOrWhiteSpace(errorMessage))
-                        await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
+                        await _messageBoxService.ShowErrorAsync(errorMessage, UiAppConfig.Caption);
                     else if (!string.IsNullOrWhiteSpace(infoMessage))
-                        await _messageBoxService.ShowInfoAsync(infoMessage, AppConfig.Caption);
+                        await _messageBoxService.ShowInfoAsync(infoMessage, UiAppConfig.Caption);
                 }
 
                 return success;
@@ -708,19 +708,19 @@ namespace Servy.Manager.Services
                 var dto = await _serviceRepository.GetByNameAsync(service.Name, cancellationToken: cancellationToken);
                 if (dto == null)
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
                     return;
                 }
 
                 exportAction(dto, path);
 
                 Logger.Info($"Service configuration exported to {formatName} at: {path}");
-                await _messageBoxService.ShowInfoAsync(successMessage, AppConfig.Caption);
+                await _messageBoxService.ShowInfoAsync(successMessage, UiAppConfig.Caption);
             }
             catch (Exception ex)
             {
                 Logger.Error($"Failed to export {formatName} of {service?.Name}.", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
             }
         }
 
@@ -766,21 +766,21 @@ namespace Servy.Manager.Services
                 var guardResult = ImportGuard.ValidatePathSecurityAndSize(path, out string content);
                 if (!guardResult.IsValid || guardResult.ValidPath == null || content == null)
                 {
-                    await _messageBoxService.ShowErrorAsync(guardResult.ErrorMessage, AppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(guardResult.ErrorMessage, UiAppConfig.Caption);
                     return;
                 }
 
                 var validation = validateContent(content);
                 if (!validation.IsValid)
                 {
-                    await _messageBoxService.ShowErrorAsync(validation.ErrorMsg, AppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(validation.ErrorMsg, UiAppConfig.Caption);
                     return;
                 }
 
                 var dto = deserialize(content);
                 if (dto == null)
                 {
-                    await _messageBoxService.ShowErrorAsync(loadErrorMessage, AppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(loadErrorMessage, UiAppConfig.Caption);
                     return;
                 }
 
@@ -796,19 +796,19 @@ namespace Servy.Manager.Services
                 if (res > 0)
                 {
                     Logger.Info($"Service configuration imported from {formatName} at: {path}");
-                    await _messageBoxService.ShowInfoAsync(successMessage, AppConfig.Caption);
+                    await _messageBoxService.ShowInfoAsync(successMessage, UiAppConfig.Caption);
                     await RefreshServices();
                 }
                 else
                 {
                     Logger.Error($"Failed to import {formatName} config from {path}");
-                    await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(errorMessage, UiAppConfig.Caption);
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error($"Failed to import {formatName} config from {path}.", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
             }
         }
 

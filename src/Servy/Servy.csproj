@@ -109,7 +109,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Config\AppConfig.cs" />
+    <Compile Include="Config\UiAppConfig.cs" />
     <Compile Include="Config\DesignTimeAppConfig.cs" />
     <Compile Include="Config\IAppConfiguration.cs" />
     <Compile Include="Design\DesignTimeMocks.cs" />

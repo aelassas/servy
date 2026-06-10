@@ -3,7 +3,7 @@
     /// <summary>
     /// Provides application-wide configuration.
     /// </summary>
-    public static class AppConfig
+    public static class UiAppConfig
     {
         /// <summary>
         /// The default caption used in message boxes throughout the application.

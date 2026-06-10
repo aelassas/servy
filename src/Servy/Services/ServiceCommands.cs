@@ -14,7 +14,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using static Servy.Config.AppConfig;
+using static Servy.Config.UiAppConfig;
 using AppConfig = Servy.Core.Config.AppConfig;
 
 namespace Servy.Services

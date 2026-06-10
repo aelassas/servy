@@ -309,7 +309,7 @@ namespace Servy.Manager.ViewModels
             catch (Exception ex)
             {
                 Logger.Error($"Failed to load dependency tree for {serviceName}", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_FailedToLoadDependencyTree, AppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_FailedToLoadDependencyTree, UiAppConfig.Caption);
             }
             finally
             {

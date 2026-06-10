@@ -23,7 +23,7 @@ namespace Servy.Core.Config
             var logLevel = ConfigParser.ParseEnum(config["LogLevel"], AppConfig.DefaultLogLevel, "LogLevel");
             instanceLogger?.SetLogLevel(logLevel);
 
-            var dateRotationType = ConfigParser.ParseEnum(config["LogRollingInterval"], DateRotationType.None, "LogRollingInterval");
+            var dateRotationType = ConfigParser.ParseEnum(config["LogRollingInterval"], AppConfig.DefaultLogRollingInterval, "LogRollingInterval");
 
             var isEventLogEnabled = ConfigParser.ParseBool(config["EnableEventLog"], AppConfig.DefaultEnableEventLog, "EnableEventLog");
             instanceLogger?.SetIsEventLogEnabled(isEventLogEnabled);

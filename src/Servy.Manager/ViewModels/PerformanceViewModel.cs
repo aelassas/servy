@@ -74,7 +74,7 @@ namespace Servy.Manager.ViewModels
 
                 CopyPidCommand?.RaiseCanExecuteChanged();
 
-                ResetGraphs(true);
+                ResetGraphs();
 
                 StopMonitoring(clearView: false); // We have already reset our own view state above; skip the base class OnMonitoringStopped callback.
                 StartMonitoring();
@@ -206,7 +206,7 @@ namespace Servy.Manager.ViewModels
             {
                 if (_hadSelectedService)
                 {
-                    ResetGraphs(true);
+                    ResetGraphs();
                     _hadSelectedService = false;
                     CopyPidCommand?.RaiseCanExecuteChanged();
                 }
@@ -221,7 +221,7 @@ namespace Servy.Manager.ViewModels
 
             if (!currentPid.HasValue)
             {
-                ResetGraphs(true);
+                ResetGraphs();
                 currentSelection.Pid = null;
                 CopyPidCommand?.RaiseCanExecuteChanged();
                 return;
@@ -230,7 +230,7 @@ namespace Servy.Manager.ViewModels
             if (currentSelection.Pid != currentPid)
             {
                 currentSelection.Pid = currentPid;
-                ResetGraphs(true);
+                ResetGraphs();
                 CopyPidCommand?.RaiseCanExecuteChanged();
             }
 
@@ -264,15 +264,12 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <remarks>Call this method to clear existing CPU and RAM usage data and prepare the graphs for
         /// fresh input. This is typically used when reinitializing the display or after a data source change.</remarks>
-        private void ResetGraphs(bool resetLabels)
+        private void ResetGraphs()
         {
             // 1. Reset display values
-            if (resetLabels)
-            {
-                Pid = UiConstants.NotAvailable;
-                CpuUsage = UiConstants.NotAvailable;
-                RamUsage = UiConstants.NotAvailable;
-            }
+            Pid = UiConstants.NotAvailable;
+            CpuUsage = UiConstants.NotAvailable;
+            RamUsage = UiConstants.NotAvailable;
 
             // 2. Clear and SEED the data history with PerformanceHistoryCapacity zeros
             // This ensures the graph line spans the whole width immediately

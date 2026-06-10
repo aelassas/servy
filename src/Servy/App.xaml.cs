@@ -279,7 +279,7 @@ namespace Servy
             // 3. Fire-and-forget initialization
             // Use a dedicated async method instead of a chained ContinueWith 
             // to ensure the startup lifecycle and any faults are correctly observed.
-            _ = _bootstrapper.InitializeAppWithFaultHandlingAsync(this, e, Config.AppConfig.Caption);
+            _ = _bootstrapper.InitializeAppWithFaultHandlingAsync(this, e, Config.UiAppConfig.Caption);
         }
 
         /// <summary>

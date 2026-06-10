@@ -676,7 +676,7 @@ namespace Servy.Manager.ViewModels
                 Logger.Warn("Help service is not available.");
                 return;
             }
-            await _helpService.OpenDocumentation(AppConfig.Caption);
+            await _helpService.OpenDocumentation(UiAppConfig.Caption);
         }
 
         /// <summary>
@@ -689,7 +689,7 @@ namespace Servy.Manager.ViewModels
                 Logger.Warn("Help service is not available.");
                 return;
             }
-            await _helpService.CheckUpdates(AppConfig.Caption);
+            await _helpService.CheckUpdates(UiAppConfig.Caption);
         }
 
         /// <summary>
@@ -707,7 +707,7 @@ namespace Servy.Manager.ViewModels
                Core.Config.AppConfig.Version,
                Helper.GetBuiltWithFramework(),
                DateTime.Now.Year),
-               AppConfig.Caption);
+               UiAppConfig.Caption);
         }
 
         #endregion
@@ -803,12 +803,12 @@ namespace Servy.Manager.ViewModels
 
                 if (selectedServices.Count == 0)
                 {
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_NoServicesSelected, AppConfig.Caption);
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_NoServicesSelected, UiAppConfig.Caption);
                     return;
                 }
 
                 // 2. Request user confirmation
-                if (!await _messageBoxService.ShowConfirmAsync(confirmMessage, AppConfig.Caption))
+                if (!await _messageBoxService.ShowConfirmAsync(confirmMessage, UiAppConfig.Caption))
                     return;
 
                 await SetBusyStateAsync(true);
@@ -846,7 +846,7 @@ namespace Servy.Manager.ViewModels
                     {
                         if (failed.Count == 0)
                         {
-                            await _messageBoxService.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
+                            await _messageBoxService.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, UiAppConfig.Caption);
                         }
                         else
                         {
@@ -854,7 +854,7 @@ namespace Servy.Manager.ViewModels
                                 ? Strings.Msg_AllOperationsFailed
                                 : string.Format(Strings.Msg_OperationCompletedWithErrorsDetails, string.Join(", ", failed));
 
-                            await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
+                            await _messageBoxService.ShowWarningAsync(message, UiAppConfig.Caption);
                         }
                     })).Task; // Await the inner Task produced by Func<Task>
                 }
@@ -983,7 +983,7 @@ namespace Servy.Manager.ViewModels
                     update.IsInstalled = true;
                     update.Status = info.Status;
                     update.StartupType = info.StartupType;
-                    update.LogOnAs = ServiceMapper.GetLogOnAsDisplayName(info.LogOnAs ?? AppConfig.LocalSystem);
+                    update.LogOnAs = ServiceMapper.GetLogOnAsDisplayName(info.LogOnAs ?? UiAppConfig.LocalSystem);
                     update.Description = info.Description;
                 }
                 else

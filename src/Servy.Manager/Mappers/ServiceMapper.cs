@@ -5,7 +5,7 @@ using Servy.Manager.Models;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using AppConfig = Servy.Manager.Config.AppConfig;
+using UiAppConfig = Servy.Manager.Config.UiAppConfig;
 
 namespace Servy.Manager.Mappers
 {
@@ -59,7 +59,7 @@ namespace Servy.Manager.Mappers
                 Description = service.Description ?? string.Empty,
                 StartupType = null,
                 Status = ServiceStatus.None,
-                LogOnAs = service.RunAsLocalSystem ? AppConfig.LocalSystem : GetLogOnAsDisplayName(service.UserAccount),
+                LogOnAs = service.RunAsLocalSystem ? UiAppConfig.LocalSystem : GetLogOnAsDisplayName(service.UserAccount),
                 IsInstalled = false,
                 IsDesktopAppAvailable = isDesktopAppAvailable,
                 Pid = service.Pid,
@@ -112,16 +112,16 @@ namespace Servy.Manager.Mappers
             // LOG: Resolving display name for service account identity.
             // Logic: If the string is null, empty, or matches the internal "LocalSystem" SCM name, we return the UI-friendly constant.
             if (string.IsNullOrEmpty(userSession))
-                return AppConfig.LocalSystem;
+                return UiAppConfig.LocalSystem;
 
             if (ServiceAccounts.LocalSystemAliases.Contains(userSession))
-                return AppConfig.LocalSystem;
+                return UiAppConfig.LocalSystem;
 
             if (ServiceAccounts.LocalServiceAliases.Contains(userSession))
-                return AppConfig.LocalService;
+                return UiAppConfig.LocalService;
 
             if (ServiceAccounts.NetworkServiceAliases.Contains(userSession))
-                return AppConfig.NetworkService;
+                return UiAppConfig.NetworkService;
 
             return userSession;
         }

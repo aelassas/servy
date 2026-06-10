@@ -90,7 +90,7 @@ namespace Servy.Manager.UnitTests.Validation
 
             // Verify message box was shown with the FIRST error only
             _messageBoxServiceMock.Verify(m =>
-                m.ShowErrorAsync(expectedError, AppConfig.Caption), Times.Once);
+                m.ShowErrorAsync(expectedError, UiAppConfig.Caption), Times.Once);
         }
 
         #endregion

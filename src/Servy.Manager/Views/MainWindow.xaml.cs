@@ -274,7 +274,7 @@ namespace Servy.Manager.Views
                 if (_messageBoxService != null)
                 {
                     await _messageBoxService.ShowErrorAsync(
-                        Strings.Msg_MainTabControl_SelectionChangedError, AppConfig.Caption);
+                        Strings.Msg_MainTabControl_SelectionChangedError, UiAppConfig.Caption);
                 }
             }
         }

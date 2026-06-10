@@ -6,7 +6,7 @@ using Servy.Core.Services;
 using Servy.Manager.Mappers;
 using Servy.Manager.Models;
 using Xunit;
-using AppConfig = Servy.Manager.Config.AppConfig;
+using UiAppConfig = Servy.Manager.Config.UiAppConfig;
 
 namespace Servy.Manager.UnitTests.Mappers
 {
@@ -45,7 +45,7 @@ namespace Servy.Manager.UnitTests.Mappers
             Assert.NotNull(result);
             Assert.Equal("Test", result.Name);
             Assert.Equal(1234, result.Pid);
-            Assert.Equal(AppConfig.LocalSystem, result.LogOnAs);
+            Assert.Equal(UiAppConfig.LocalSystem, result.LogOnAs);
         }
 
         [Fact]
@@ -93,9 +93,9 @@ namespace Servy.Manager.UnitTests.Mappers
         #region GetLogOnAsDisplayName Tests
 
         [Theory]
-        [InlineData(null, AppConfig.LocalSystem)]
-        [InlineData("LocalSystem", AppConfig.LocalSystem)]
-        [InlineData("NT AUTHORITY\\LOCALSERVICE", AppConfig.LocalService)]
+        [InlineData(null, UiAppConfig.LocalSystem)]
+        [InlineData("LocalSystem", UiAppConfig.LocalSystem)]
+        [InlineData("NT AUTHORITY\\LOCALSERVICE", UiAppConfig.LocalService)]
         [InlineData("MyCustomUser", "MyCustomUser")]
         public void GetLogOnAsDisplayName_ResolvesCorrectly(string input, string expected)
         {

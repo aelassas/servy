@@ -244,7 +244,7 @@ namespace Servy.Manager.ViewModels
             }
             _hadSelectedService = true;
 
-            var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection?.Name, token);
+            var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection.Name, token);
             var stateSnapshot = serviceDto?.Clone() as ServiceConsoleStateDto;
 
             // Drop this tick if the user switched services while we were awaiting the DB call.
@@ -253,29 +253,22 @@ namespace Servy.Manager.ViewModels
             if (stateSnapshot?.Pid == null)
             {
                 ResetConsole();
-                if (currentSelection != null)
-                {
-                    currentSelection.Pid = null;
-                    currentSelection.StdoutPath = null;
-                    currentSelection.StderrPath = null;
-                }
+                currentSelection.Pid = null;
+                currentSelection.StdoutPath = null;
+                currentSelection.StderrPath = null;
                 CopyPidCommand?.RaiseCanExecuteChanged();
                 return;
             }
 
-            if (currentSelection?.Pid != stateSnapshot.Pid
+            if (currentSelection.Pid != stateSnapshot.Pid
                 || !string.Equals(_stdoutPath, stateSnapshot.ActiveStdoutPath, StringComparison.OrdinalIgnoreCase)
                 || !string.Equals(_stderrPath, stateSnapshot.ActiveStderrPath, StringComparison.OrdinalIgnoreCase))
             {
-                if (currentSelection != null)
-                    currentSelection.Pid = stateSnapshot.Pid;
+                currentSelection.Pid = stateSnapshot.Pid;
                 _stdoutPath = stateSnapshot.ActiveStdoutPath;
                 _stderrPath = stateSnapshot.ActiveStderrPath;
-                if (currentSelection != null)
-                {
-                    currentSelection.StdoutPath = stateSnapshot.ActiveStdoutPath;
-                    currentSelection.StderrPath = stateSnapshot.ActiveStderrPath;
-                }
+                currentSelection.StdoutPath = stateSnapshot.ActiveStdoutPath;
+                currentSelection.StderrPath = stateSnapshot.ActiveStderrPath;
 
                 _ = SwitchServiceAsync(stateSnapshot.ActiveStdoutPath, stateSnapshot.ActiveStderrPath);
                 CopyPidCommand?.RaiseCanExecuteChanged();
