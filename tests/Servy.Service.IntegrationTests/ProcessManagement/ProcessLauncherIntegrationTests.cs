@@ -267,7 +267,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         [Fact]
-        public void ApplyLanguageFixes_JavaWithExistingEncodingProperty_DoesNotOverwiteArguments()
+        public void ApplyLanguageFixes_JavaWithExistingEncodingProperty_DoesNotOverwriteArguments()
         {
             var psi = new ProcessStartInfo { FileName = "java.exe", Arguments = "-Dfile.encoding=ISO-8859-1 -jar target.jar" };
             ProcessLauncher.ApplyLanguageFixes(psi);
