@@ -3,7 +3,7 @@
 # ------------------------------------------------------------------------------
 # Purpose:
 #   Maps solution assembly structures, runs CycloneDX dependency tracking,
-#   and combines outputs into a finalized, unified Cobertura-compatible XML file.
+#   and combines outputs into a finalized, unified CycloneDX SBOM XML file.
 # ==============================================================================
 
 param (
