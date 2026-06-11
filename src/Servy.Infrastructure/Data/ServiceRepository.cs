@@ -5,7 +5,6 @@ using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
-using System.Xml.Linq;
 
 namespace Servy.Infrastructure.Data
 {
