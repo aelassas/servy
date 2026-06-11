@@ -69,7 +69,7 @@ Write-Host "Running tests for $($Proj)..."
         --results-directory $TestResultsDir `
         -- `
         DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura `
-        DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="[*.UnitTests]*,[*.IntegrationTests]*,[Servy.Testing]*,**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/obj/**/*" `
+        DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="[*.UnitTests]*,[*.IntegrationTests]*,[Servy.Testing]*,**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/*.Designer.cs,**/obj/**/*" `
         DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeProperties="True"
     if ($LASTEXITCODE -ne 0) { Write-Error "dotnet test failed for $Proj"; exit $LASTEXITCODE }
 }
@@ -82,7 +82,7 @@ reportgenerator `
     -targetdir:$CoverageReportDir `
     -reporttypes:Html `
     -assemblyfilters:"-*.UnitTests;-*.IntegrationTests;-Servy.Testing" `
-    -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/obj/**/*"
+    -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/*.Designer.cs;-**/obj/**/*"
 if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed"; exit $LASTEXITCODE }
 
 Write-Host "Coverage report generated at $CoverageReportDir"
