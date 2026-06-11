@@ -141,6 +141,8 @@
     <Compile Include="Logging\LogLevel.cs" />
     <Compile Include="Native\Errors.cs" />
     <Compile Include="Native\NativeMethodsHelpers.cs" />
+    <Compile Include="Native\SafeScmHandle.cs" />
+    <Compile Include="Native\SafeServiceHandle.cs" />
     <Compile Include="Native\SafeWinProcessHandle.cs" />
     <Compile Include="Native\Toolhelp32Snapshot.cs" />
     <Compile Include="RegexWrapper\IRegexWrapper.cs" />

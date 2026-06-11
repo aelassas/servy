@@ -60,10 +60,10 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [Fact]
         public void Validate_NameWithSpace_ReturnsFalse()
         {
-            var result = ServiceDependenciesValidator.Validate("Bad Service", out var errors);
+            var result = ServiceDependenciesValidator.Validate("Bad#Service", out var errors);
 
             Assert.False(result);
-            Assert.Contains(errors, e => e.Contains("Bad Service"));
+            Assert.Contains(errors, e => e.Contains("Bad#Service"));
         }
 
         [Fact]
@@ -80,12 +80,12 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         public void Validate_MixedValidAndInvalidNames_ReturnsFalse()
         {
             // 'MSSQL$SQLEXPRESS' is now treated as valid, while 'Bad Service' and 'Another@Bad' fail
-            var input = "MSSQL$SQLEXPRESS;Bad Service;Another@Bad";
+            var input = "MSSQL$SQLEXPRESS;Bad#Service;Another@Bad";
             var result = ServiceDependenciesValidator.Validate(input, out var errors);
 
             Assert.False(result);
             Assert.Equal(2, errors.Count);
-            Assert.Contains(errors, e => e.Contains("Bad Service"));
+            Assert.Contains(errors, e => e.Contains("Bad#Service"));
             Assert.Contains(errors, e => e.Contains("Another@Bad"));
         }
 
@@ -112,7 +112,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [Fact]
         public void Validate_AllInvalidNames_ReturnsFalse()
         {
-            var input = "Bad Service;Another#One;With@Symbol";
+            var input = "Bad^Service;Another#One;With@Symbol";
             var result = ServiceDependenciesValidator.Validate(input, out var errors);
 
             Assert.False(result);

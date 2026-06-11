@@ -8,8 +8,8 @@ namespace Servy.Core.ServiceDependencies
 {
     public static class ServiceDependenciesValidator
     {
-        // Allowed characters updated: letters, digits, hyphen, underscore, period, and dollar sign ($)
-        private static readonly Regex ValidServiceNameRegex = new Regex(@"^[a-zA-Z0-9_.\-$]+$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
+        // Allowed characters updated: letters, digits, hyphen, underscore, period, spaces, and dollar sign ($)
+        private static readonly Regex ValidServiceNameRegex = new Regex(@"^[a-zA-Z0-9_.\-$ ]+$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
         /// <summary>
         /// Validates the input string containing service dependencies.

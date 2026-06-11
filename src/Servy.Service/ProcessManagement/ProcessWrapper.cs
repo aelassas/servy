@@ -518,6 +518,13 @@ namespace Servy.Service.ProcessManagement
 
                 if (!AttachConsole(process.Id))
                 {
+                    // Double check if the process has actually exited under our feet.
+                    // If the process is dead, any attach failure means it's already gone.
+                    if (process.HasExited)
+                    {
+                        return null;
+                    }
+
                     int error = Marshal.GetLastWin32Error();
 
                     // ERROR_PIPE_NOT_CONNECTED (233)

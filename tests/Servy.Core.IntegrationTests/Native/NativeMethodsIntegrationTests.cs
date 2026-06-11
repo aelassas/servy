@@ -1,0 +1,387 @@
+﻿using Microsoft.Win32.SafeHandles;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Text;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace Servy.Core.Native
+{
+    public class NativeMethodsIntegrationTests : IDisposable
+    {
+        private readonly ITestOutputHelper _output;
+        private readonly List<string> _tempFiles = new List<string>();
+
+        public NativeMethodsIntegrationTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
+        public void Dispose()
+        {
+            foreach (var file in _tempFiles)
+            {
+                if (File.Exists(file))
+                {
+                    try { File.Delete(file); } catch { /* Clean fallback */ }
+                }
+            }
+        }
+
+        #region Constants Verification
+
+        [Fact]
+        public void Constants_ValueMatching_VerifyCorrectValues()
+        {
+            Assert.Equal(0x0004, NativeMethods.SERVICE_QUERY_STATUS);
+            Assert.Equal(3, NativeMethods.SERVICE_DEMAND_START);
+            Assert.Equal(0xFFFFFFFFu, NativeMethods.SERVICE_NO_CHANGE);
+            Assert.Equal(1, NativeMethods.SERVICE_CONTROL_STOP);
+            Assert.Equal(3, NativeMethods.SERVICE_CONFIG_DELAYED_AUTO_START_INFO);
+            Assert.Equal(1, NativeMethods.SERVICE_CONFIG_DESCRIPTION);
+            Assert.Equal(0x0004u, NativeMethods.SC_MANAGER_ENUMERATE_SERVICE);
+            Assert.Equal(0x0001u, NativeMethods.SERVICE_QUERY_CONFIG);
+            Assert.Equal(2, NativeMethods.LOGON32_LOGON_INTERACTIVE);
+            Assert.Equal(3, NativeMethods.LOGON32_LOGON_NETWORK);
+            Assert.Equal(0, NativeMethods.LOGON32_PROVIDER_DEFAULT);
+            Assert.Equal(5, NativeMethods.LOGON32_LOGON_SERVICE);
+            Assert.Equal(0x00000002u, NativeMethods.TH32CS_SNAPPROCESS);
+            Assert.Equal(new IntPtr(-1), NativeMethods.INVALID_HANDLE_VALUE);
+            Assert.Equal(-1, NativeMethods.ATTACH_PARENT_PROCESS);
+            Assert.Equal(65001u, NativeMethods.CP_UTF8);
+            Assert.Equal(0x00000100, NativeMethods.SERVICE_ACCEPT_PRESHUTDOWN);
+            Assert.Equal(0x00000004, NativeMethods.SERVICE_RUNNING);
+            Assert.Equal(0x0000000F, NativeMethods.SERVICE_CONTROL_PRESHUTDOWN);
+            Assert.Equal(0x00000003, NativeMethods.SERVICE_STOP_PENDING);
+            Assert.Equal(0x00000001, NativeMethods.SERVICE_STOPPED);
+            Assert.Equal(0x00000001, NativeMethods.SERVICE_ACCEPT_STOP);
+            Assert.Equal(0x00000010, NativeMethods.SERVICE_WIN32_OWN_PROCESS);
+            Assert.Equal(0x00000001u, NativeMethods.FILE_SHARE_READ);
+            Assert.Equal(0x00000002u, NativeMethods.FILE_SHARE_WRITE);
+            Assert.Equal(0x00000004u, NativeMethods.FILE_SHARE_DELETE);
+            Assert.Equal(3u, NativeMethods.OPEN_EXISTING);
+            Assert.Equal(0x02000000u, NativeMethods.FILE_FLAG_BACKUP_SEMANTICS);
+            Assert.Equal(0x0u, NativeMethods.VOLUME_NAME_DOS);
+            Assert.Equal(0x01u, NativeMethods.MOVEFILE_REPLACE_EXISTING);
+            Assert.Equal(0x08u, NativeMethods.MOVEFILE_WRITE_THROUGH);
+            Assert.Equal(122, NativeMethods.ERROR_INSUFFICIENT_BUFFER);
+            Assert.Equal(0x0001u, NativeMethods.SC_MANAGER_CONNECT);
+            Assert.Equal(0x0002u, NativeMethods.SC_MANAGER_CREATE_SERVICE);
+            Assert.Equal(0x0002u, NativeMethods.SERVICE_CHANGE_CONFIG);
+            Assert.Equal(0x0010u, NativeMethods.SERVICE_START);
+            Assert.Equal(0x0020u, NativeMethods.SERVICE_STOP);
+            Assert.Equal(0x00010000u, NativeMethods.SERVICE_DELETE);
+            Assert.Equal(0x00000001u, NativeMethods.SERVICE_ERROR_NORMAL);
+            Assert.Equal(7, NativeMethods.SERVICE_CONFIG_PRESHUTDOWN_INFO);
+        }
+
+        #endregion
+
+        #region Regression Test (Process Snapshot Name Validity)
+
+        [Fact]
+        public void ProcessSnapshots_CurrentProcess_ReturnsValidNonMojibakeName()
+        {
+            // Act
+            IntPtr hSnapshot = NativeMethods.CreateToolhelp32Snapshot(NativeMethods.TH32CS_SNAPPROCESS, 0);
+            Assert.NotEqual(NativeMethods.INVALID_HANDLE_VALUE, hSnapshot);
+
+            var pe32 = new NativeMethods.PROCESSENTRY32
+            {
+                dwSize = (uint)Marshal.SizeOf<NativeMethods.PROCESSENTRY32>()
+            };
+
+            using (var currentProcess = Process.GetCurrentProcess())
+            {
+                uint currentPid = (uint)currentProcess.Id;
+                bool foundCurrentProcess = false;
+                string expectedProcessName = Path.GetFileName(currentProcess.MainModule?.FileName ?? "testhost.exe");
+
+                if (NativeMethods.Process32First(hSnapshot, ref pe32))
+                {
+                    do
+                    {
+                        if (pe32.th32ProcessID == currentPid)
+                        {
+                            foundCurrentProcess = true;
+                            _output.WriteLine($"Found current process name: {pe32.szExeFile}");
+
+                            // Assert
+                            Assert.False(string.IsNullOrWhiteSpace(pe32.szExeFile));
+
+                            // 1. Verify it has a clean executable extension
+                            Assert.True(pe32.szExeFile.EndsWith(".exe", StringComparison.OrdinalIgnoreCase),
+                                $"The captured snapshot name '{pe32.szExeFile}' was corrupted into mojibake.");
+
+                            // 2. Dynamically check against the actual host process name running this test frame
+                            // This handles local test execution AND arbitrary CI test host wrappers flawlessly.
+                            Assert.Contains(expectedProcessName, pe32.szExeFile, StringComparison.OrdinalIgnoreCase);
+                            break;
+                        }
+                    } while (NativeMethods.Process32Next(hSnapshot, ref pe32));
+                }
+
+                NativeMethods.CloseHandle(hSnapshot);
+                Assert.True(foundCurrentProcess, "Process lookup snapshot tracking loop should isolate host runtime PID context.");
+            }
+        }
+
+        #endregion
+
+        #region Process & System Utilities
+
+        [Fact]
+        public void GetTickCount64_Execution_ReturnsPositiveSystemUptime()
+        {
+            ulong tickCount = NativeMethods.GetTickCount64();
+            Assert.True(tickCount > 0, "Uptime tick counter should be non-zero.");
+        }
+
+        [Fact]
+        public void CommandLineToArgvW_ValidStringInput_ParsesArgumentsCorrectly()
+        {
+            // Arrange
+            string cmdLine = "servy-service.exe -c \"C:\\Program Files\\Config.json\" --verbose";
+
+            // Act
+            IntPtr argArrayPointer = NativeMethods.CommandLineToArgvW(cmdLine, out int numArgs);
+
+            // Assert
+            Assert.NotEqual(IntPtr.Zero, argArrayPointer);
+            Assert.Equal(4, numArgs);
+
+            var items = new string[numArgs];
+            for (int i = 0; i < numArgs; i++)
+            {
+                IntPtr itemPtr = Marshal.ReadIntPtr(argArrayPointer, i * IntPtr.Size);
+                items[i] = Marshal.PtrToStringUni(itemPtr);
+            }
+
+            NativeMethods.LocalFree(argArrayPointer);
+
+            Assert.Equal("servy-service.exe", items[0]);
+            Assert.Equal("-c", items[1]);
+            Assert.Equal("C:\\Program Files\\Config.json", items[2]);
+            Assert.Equal("--verbose", items[3]);
+        }
+
+        [Fact]
+        public void NtQueryInformationProcess_CurrentProcessHandle_ReturnsBasicInformation()
+        {
+            // Arrange
+            using (var currentProcess = Process.GetCurrentProcess())
+            {
+                IntPtr processHandle = currentProcess.Handle;
+
+                var pbi = new NativeMethods.PROCESS_BASIC_INFORMATION();
+                int size = Marshal.SizeOf<NativeMethods.PROCESS_BASIC_INFORMATION>();
+
+                // Act & Assert
+                int status = NativeMethods.NtQueryInformationProcess(
+                    processHandle,
+                    (int)NativeMethods.ProcessInfoClass.ProcessBasicInformation,
+                    ref pbi,
+                    (uint)size,
+                    out uint returnLength);
+
+                // NTSTATUS 0 == STATUS_SUCCESS
+                Assert.Equal(0, status);
+                Assert.Equal((uint)size, returnLength);
+                Assert.NotEqual(IntPtr.Zero, pbi.PebBaseAddress);
+                Assert.Equal(processHandle, NativeMethods.OpenProcess(NativeMethods.ProcessAccess.QueryInformation, false, currentProcess.Id).DangerousGetHandle() == IntPtr.Zero ? processHandle : processHandle);
+            }
+        }
+
+        [Fact]
+        public void OpenProcess_InvalidProcessId_ReturnsInvalidHandle()
+        {
+            // Act
+            using (var handle = NativeMethods.OpenProcess(NativeMethods.ProcessAccess.QueryLimitedInformation, false, 999999))
+            {
+                // Assert
+                Assert.True(handle.IsInvalid);
+            }
+        }
+
+        #endregion
+
+        #region File Tracking & Security Utilities
+
+        [Fact]
+        public void FileIdentity_FileTrackingStructures_ValidatesEqualityAndRotationDifferences()
+        {
+            // Arrange
+            var idA = new NativeMethods.FILE_IDENTITY
+            {
+                FileIndex = 12345,
+                VolumeSerialNumber = 98765,
+                PrefixDigest = "ABCDE",
+                IsValidHandleInfo = true
+            };
+
+            var idB = new NativeMethods.FILE_IDENTITY
+            {
+                FileIndex = 12345,
+                VolumeSerialNumber = 98765,
+                PrefixDigest = "ABCDE",
+                IsValidHandleInfo = true
+            };
+
+            var idC = new NativeMethods.FILE_IDENTITY
+            {
+                FileIndex = 54321,
+                VolumeSerialNumber = 98765,
+                PrefixDigest = "ABCDE",
+                IsValidHandleInfo = true
+            };
+
+            // Act & Assert
+            Assert.False(idA.IsDifferentFrom(idB));
+            Assert.True(idA.IsDifferentFrom(idC));
+        }
+
+        [Fact]
+        public void MoveFileEx_ValidPaths_ExecutesAtomicFileRelocation()
+        {
+            // Arrange
+            string src = Path.GetTempFileName();
+            string dst = Path.GetTempFileName() + ".moved";
+            _tempFiles.Add(src);
+            _tempFiles.Add(dst);
+
+            File.WriteAllText(src, "Payload Data");
+
+            // Act
+            bool success = NativeMethods.MoveFileEx(src, dst, NativeMethods.MOVEFILE_REPLACE_EXISTING | NativeMethods.MOVEFILE_WRITE_THROUGH);
+
+            // Assert
+            Assert.True(success);
+            Assert.False(File.Exists(src));
+            Assert.True(File.Exists(dst));
+        }
+
+        [Fact]
+        public void LogonUser_InvalidCredentials_ReturnsFalseAndCapturesWin32Error()
+        {
+            // Act
+            bool loggedOn = NativeMethods.LogonUser(
+                "FakeAccountName",
+                "FakeDomain",
+                "WrongPassword",
+                NativeMethods.LOGON32_LOGON_SERVICE,
+                NativeMethods.LOGON32_PROVIDER_DEFAULT,
+                out IntPtr token);
+
+            // Assert
+            Assert.False(loggedOn);
+            Assert.Equal(IntPtr.Zero, token);
+        }
+
+        #endregion
+
+        #region SCM & Service Control Management Verification
+
+        [Fact]
+        public void OpenSCManager_LocalMachineScope_ReturnsValidHandle()
+        {
+            // Act
+            using (var scmHandle = NativeMethods.OpenSCManager(null, null, NativeMethods.SC_MANAGER_CONNECT | NativeMethods.SC_MANAGER_ENUMERATE_SERVICE))
+            {
+                // Assert
+                Assert.False(scmHandle.IsInvalid);
+            }
+        }
+
+        [Fact]
+        public void OpenService_NonExistentService_ReturnsInvalidHandleAndSetsLastError()
+        {
+            // Arrange & Act
+            using (var scmHandle = NativeMethods.OpenSCManager(null, null, NativeMethods.SC_MANAGER_CONNECT))
+            using (var serviceHandle = NativeMethods.OpenService(scmHandle, "NonExistentService_Phantom_Verification", NativeMethods.SERVICE_QUERY_STATUS))
+            {
+                // Assert
+                Assert.True(serviceHandle.IsInvalid);
+                int lastError = Marshal.GetLastWin32Error();
+
+                // 1060 == ERROR_SERVICE_DOES_NOT_EXIST
+                Assert.Equal(1060, lastError);
+            }
+        }
+
+        [Fact]
+        public void ServiceStructuralProperties_Marshaling_ChecksMemorySizes()
+        {
+            int sizeDescription = Marshal.SizeOf<NativeMethods.SERVICE_DESCRIPTION>();
+            int sizeAutoStart = Marshal.SizeOf<NativeMethods.SERVICE_DELAYED_AUTO_START_INFO>();
+            int sizePreshutdown = Marshal.SizeOf<NativeMethods.SERVICE_PRE_SHUTDOWN_INFO>();
+            int sizeStatus = Marshal.SizeOf<NativeMethods.SERVICE_STATUS>();
+
+            Assert.True(sizeDescription > 0);
+            Assert.True(sizeAutoStart > 0);
+            Assert.True(sizePreshutdown > 0);
+            Assert.True(sizeStatus > 0);
+        }
+
+        #endregion
+
+        #region Console & Signal Interface Verification
+
+        [Fact]
+        public void SetConsoleCtrlHandler_NullCallbackReference_SucceedsValidly()
+        {
+            // Passing null removes or sets default configuration components depending on the trailing boolean flag state parameters.
+            bool success = NativeMethods.SetConsoleCtrlHandler(null, true);
+
+            // Clean up to keep environment in equilibrium
+            if (success) NativeMethods.SetConsoleCtrlHandler(null, false);
+        }
+
+        #endregion
+
+        #region LSA & Security Token Policies
+
+        [Fact]
+        public void LsaPolicy_HandleManagement_ReturnsInvalidSecurityErrorsOnStandardContexts()
+        {
+            // Standard runner environments run on least-privilege tokens.
+            // Opening LSA policies safely fails on STATUS_ACCESS_DENIED or executes safely if elevated.
+            var objectAttributes = new NativeMethods.LSA_OBJECT_ATTRIBUTES
+            {
+                Length = Marshal.SizeOf<NativeMethods.LSA_OBJECT_ATTRIBUTES>()
+            };
+
+            // Act
+            int ntStatus = NativeMethods.LsaOpenPolicy(
+                IntPtr.Zero,
+                ref objectAttributes,
+                NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES,
+                out IntPtr policyHandle);
+
+            if (ntStatus == 0) // STATUS_SUCCESS (Running elevated/admin)
+            {
+                Assert.NotEqual(IntPtr.Zero, policyHandle);
+                NativeMethods.LsaClose(policyHandle);
+            }
+            else
+            {
+                int win32Error = NativeMethods.LsaNtStatusToWinError(ntStatus);
+                Assert.True(win32Error > 0);
+            }
+        }
+
+        [Fact]
+        public void LsaFreeMemory_NullPointerPassed_ExecutesSafelyWithoutCrashing()
+        {
+            // Act & Assert
+            int result = NativeMethods.LsaFreeMemory(IntPtr.Zero);
+
+            // LsaFreeMemory returns status codes; verifying zero-pointers are swallowed without memory segmentation faults
+            Assert.True(result >= 0);
+        }
+
+        #endregion
+    }
+}

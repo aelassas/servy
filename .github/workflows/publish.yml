@@ -347,7 +347,7 @@ jobs:
           $targets = @(
               @{ Path = "src/Servy/Resources";           Name = "Servy.Service.Net48.exe" },
               @{ Path = "src/Servy.Manager/Resources";   Name = "Servy.Service.Net48.exe" },
-              @{ Path = "src/Servy.CLI/Resources";       Name = "Servy.Service.Net48.CLI.exe" }
+              @{ Path = "src/Servy.CLI/Resources";       Name = "Servy.Service.CLI.Net48.exe" }
           )
 
           # Inject the signed EXE into each resource folder

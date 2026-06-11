@@ -20,46 +20,4 @@ namespace Servy.Core.Native
             return NativeMethods.CloseHandle(handle);
         }
     }
-
-    /// <summary>
-    /// Represents a safe wrapper around a Service Control Manager (SCM) database handle.
-    /// </summary>
-    [ExcludeFromCodeCoverage]
-    public sealed class SafeScmHandle : SafeHandleZeroOrMinusOneIsInvalid
-    {
-        public SafeScmHandle() : base(true) { }
-
-        protected override bool ReleaseHandle()
-        {
-            return NativeMethods.CloseServiceHandle(handle);
-        }
-    }
-
-    /// <summary>
-    /// Represents a safe wrapper around a Windows Service handle.
-    /// </summary>
-    [ExcludeFromCodeCoverage]
-    public sealed class SafeServiceHandle : SafeHandleZeroOrMinusOneIsInvalid
-    {
-        public SafeServiceHandle() : base(true) { }
-
-        protected override bool ReleaseHandle()
-        {
-            return NativeMethods.CloseServiceHandle(handle);
-        }
-    }
-
-    /// <summary>
-    /// Represents a safe wrapper around a Job Object handle.
-    /// </summary>
-    [ExcludeFromCodeCoverage]
-    public sealed class SafeJobObjectHandle : SafeHandleZeroOrMinusOneIsInvalid
-    {
-        public SafeJobObjectHandle() : base(true) { }
-
-        protected override bool ReleaseHandle()
-        {
-            return NativeMethods.CloseHandle(handle);
-        }
-    }
 }

@@ -289,6 +289,10 @@ namespace Servy.Service.ProcessManagement
                 returnedOwnership = true;
                 return process;
             }
+            catch (TimeoutException)
+            {
+                throw; // already logged at the configured severity inside WaitForExitWithHeartbeat
+            }
             catch (Exception ex)
             {
                 logger.Error($"Failed during synchronous execution or log flushing for '{options.ExecutablePath}'.", ex);
