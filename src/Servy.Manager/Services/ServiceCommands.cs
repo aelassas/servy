@@ -368,13 +368,15 @@ namespace Servy.Manager.Services
                     var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, UiAppConfig.Caption);
                     if (!confirm) return false;
 
-                    var serviceDomain = await GetServiceDomain(service.Name, cancellationToken);
-                    if (serviceDomain == null)
+                    // Check local database tracking directly via the clean repository layer
+                    var existsInDb = await _serviceRepository.GetByNameAsync(service.Name, decrypt: false, cancellationToken);
+                    if (existsInDb == null)
                     {
                         await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
                         return false;
                     }
 
+                    // Delete from SQLite database
                     var res = await _serviceRepository.DeleteAsync(service.Name, cancellationToken);
                     if (res > 0) RemoveService(service);
 

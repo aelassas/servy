@@ -301,7 +301,7 @@ namespace Servy.Infrastructure.Data
 
             var sql = @"
                 SELECT * FROM Services 
-                WHERE LOWER(Name)       LIKE LOWER(@Pattern) ESCAPE '\' 
+                WHERE LOWER(Name)        LIKE LOWER(@Pattern) ESCAPE '\' 
                    OR LOWER(Description) LIKE LOWER(@Pattern) ESCAPE '\' 
                 ORDER BY Name COLLATE NOCASE ASC;";
 
