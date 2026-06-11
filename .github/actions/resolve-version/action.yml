@@ -19,14 +19,6 @@ inputs:
     required: false
     default: ''
 
-outputs:
-  tag:
-    description: 'Resolved source control reference tag matching target rules'
-    value: ${{ steps.resolve.outputs.tag }}
-  version:
-    description: 'Clean semantic version number string stripped of leading prefixes'
-    value: ${{ steps.resolve.outputs.version }}
-
 runs:
   using: 'composite'
   steps:
@@ -71,10 +63,6 @@ runs:
         Write-Host "Using resolved tag: $tag"
         Write-Host "Using computed version: $version"
 
-        # Populate outputs for workflow consumption
-        "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-        "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-
-        # Populate GITHUB_ENV directly to match legacy backwards compatibility models
+        # Populate GITHUB_ENV
         "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append

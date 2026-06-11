@@ -231,6 +231,10 @@ namespace Servy.Service.ProcessManagement
         /// </returns>
         private bool? TryStopGracefullyOrKill(Process process, int timeoutMs, int postKillWaitMs)
         {
+            // Force the underlying .NET wrapper to drop its cached state and 
+            // query the Windows kernel directly for the true, real-time handle status.
+            process.Refresh();
+
             if (process.HasExited)
             {
                 return null;

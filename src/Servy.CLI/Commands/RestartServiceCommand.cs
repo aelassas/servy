@@ -41,11 +41,7 @@ namespace Servy.CLI.Commands
                 serviceManager: _serviceManager,
                 operation: (token) => _serviceManager.RestartServiceAsync(opts.ServiceName, cancellationToken: token),
                 successMessageFormatter: (name) => string.Format(Strings.Msg_RestartSuccess, name),
-                preCheck: (token) =>
-                {
-                    var startupType = _serviceManager.GetServiceStartupType(opts.ServiceName, cancellationToken: token);
-                    return startupType == ServiceStartType.Disabled ? CommandResult.Fail(Strings.Msg_ServiceDisabledError) : null;
-                },
+                preCheck: NotDisabledPreCheck(_serviceManager, opts.ServiceName),
                 cancellationToken: cancellationToken);
         }
     }

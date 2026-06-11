@@ -13,7 +13,7 @@ namespace Servy.ViewModels.Items
         public DateRotationType DateRotationType { get; set; }
 
         /// <summary>
-        /// Gets or sets the human-readable label for the date rotation type.
+        /// Gets or sets the localized display name for the date rotation type.
         /// </summary>
         public string? DisplayName { get; set; }
     }

@@ -1,6 +1,7 @@
 ﻿using Servy.CLI.Models;
 using Servy.CLI.Resources;
 using Servy.Core.Common;
+using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
@@ -12,6 +13,22 @@ namespace Servy.CLI.Commands
     /// </summary>
     public abstract class BaseCommand
     {
+        /// <summary>
+        /// Creates a pre-check delegate that verifies if a specific service is in a 'Disabled' state before proceeding with a command.
+        /// </summary>
+        /// <param name="serviceManager">The <see cref="IServiceManager"/> instance used to query current service startup configuration.</param>
+        /// <param name="serviceName">The unique name of the service to inspect.</param>
+        /// <returns>
+        /// A <see cref="Func{CancellationToken, CommandResult}"/> that, when executed, returns a failed <see cref="CommandResult"/> 
+        /// if the service is disabled; otherwise, returns <c>null</c> to signal the check passed.
+        /// </returns>
+        protected Func<CancellationToken, CommandResult?> NotDisabledPreCheck(IServiceManager serviceManager, string? serviceName) =>
+            token =>
+            {
+                var startupType = serviceManager.GetServiceStartupType(serviceName, cancellationToken: token);
+                return startupType == ServiceStartType.Disabled ? CommandResult.Fail(Strings.Msg_ServiceDisabledError) : null;
+            };
+
         /// <summary>
         /// Executes a synchronous command action with common error handling.
         /// Catches <see cref="UnauthorizedAccessException"/> and <see cref="Exception"/>, returning an appropriate contextual failure <see cref="CommandResult"/>.

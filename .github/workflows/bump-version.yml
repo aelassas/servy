@@ -52,7 +52,6 @@ jobs:
           '@ | Out-File -FilePath "$env:RUNNER_TEMP\git-helpers.ps1" -Encoding utf8
       # 2. Determine the tag/version to use, support multiple trigger sources via composite action
       - name: Set version vars
-        id: resolve_vars
         uses: ./.github/actions/resolve-version
         with:
           manual_tag: ${{ github.event.inputs.tag }}

@@ -117,10 +117,21 @@ namespace Servy.Manager.ViewModels
 
         #region Properties - UI State & Search
 
+        /// <summary>
+        /// Gets the fixed width of the performance graph drawing surface in device-independent pixels.
+        /// </summary>
         public double GraphWidth { get; } = 400;
+
+        /// <summary>
+        /// Gets the fixed height of the performance graph drawing surface in device-independent pixels.
+        /// </summary>
         public double GraphHeight { get; } = 200;
 
         private string _cpuUsage = UiConstants.NotAvailable;
+
+        /// <summary>
+        /// Gets or sets the formatted, localized CPU usage percentage string displayed in the view template.
+        /// </summary>
         public string CpuUsage
         {
             get => _cpuUsage;
@@ -128,6 +139,10 @@ namespace Servy.Manager.ViewModels
         }
 
         private string _ramUsage = UiConstants.NotAvailable;
+
+        /// <summary>
+        /// Gets or sets the formatted, localized RAM usage metrics string (e.g., "45.2 MB") displayed in the view template.
+        /// </summary>
         public string RamUsage
         {
             get => _ramUsage;

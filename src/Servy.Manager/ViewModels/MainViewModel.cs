@@ -1015,7 +1015,7 @@ namespace Servy.Manager.ViewModels
                 // 2. Determine if the wrapper is actually dead according to Windows
                 bool isProcessDead = update.Status == ServiceStatus.Stopped || update.Status == ServiceStatus.NotInstalled;
 
-                // 3. FIX: Prioritize DB PID, but force to null if the process is dead (Ignore Ghost PIDs)
+                // 3. Prioritize DB PID, but force to null if the process is dead (Ignore Ghost PIDs)
                 int? targetPid = isProcessDead ? null : (serviceDto?.Pid ?? service.Pid);
 
                 // Gather metrics using the safe targetPid

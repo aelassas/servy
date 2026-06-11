@@ -1,9 +1,8 @@
 # ==============================================================================
 # GitHub Composite Action - Setup Custom .NET
 # ------------------------------------------------------------------------------
-# Security: Prevents script injection by mapping user-controlled inputs 
-# to environment variables instead of using inline expressions in 'run' blocks.
-# Added strict Authenticode signature validation to prevent supply-chain attacks.
+# Security: Enforces strict Authenticode signature validation and cryptographic 
+# organizational attribute matching to prevent supply-chain vulnerabilities.
 # ==============================================================================
 name: 'Setup Custom .NET'
 description: 'Installs a specific .NET SDK version using the dotnet-install script'
@@ -21,7 +20,9 @@ runs:
 
         $maxRetries = 5
         for ($i = 0; $i -lt $maxRetries; $i++) {
-          curl.exe -L $url -o dotnet-install.ps1
+          # Use --fail to force exit code 22 on HTTP 400+, allowing the retry loop to capture transient server errors.
+          # --retry and --retry-all-errors ensure curl handles transient network/HTTP recovery internally.
+          curl.exe -fL --retry 5 --retry-all-errors $url -o dotnet-install.ps1
 
           if ($LASTEXITCODE -eq 0) {
             break

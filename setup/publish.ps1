@@ -22,7 +22,7 @@
     and pauses at the end to allow double-click usage from Explorer.
 
     Requirements:
-        1. MSBuild must be available in PATH.
+        1. .NET SDK (dotnet CLI must be available in PATH).
         2. Inno Setup (ISCC.exe) installed and accessible.
         3. 7-Zip installed with `7z` available in PATH.
 #>
