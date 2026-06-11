@@ -682,8 +682,9 @@ namespace Servy.Manager.Services
         /// <returns>A task representing the asynchronous export operation.</returns>
         /// <remarks>
         /// Unlike the Desktop App variant, this method retrieves the <see cref="ServiceDto"/> directly 
-        /// from the <see cref="IServiceRepository"/> to ensure the exported file reflects the actual 
-        /// stored state, including encrypted credentials if applicable.
+        /// from the <see cref="IServiceRepository"/> to ensure the exported file reflects the current 
+        /// configuration. Credentials are exported in decrypted (plaintext) form so the file remains 
+        /// portable across machines; the resulting file should be treated as sensitive.
         /// </remarks>
         private async Task ExportServiceConfigAsync(
             Service? service,

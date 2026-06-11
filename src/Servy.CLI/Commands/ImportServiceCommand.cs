@@ -106,7 +106,7 @@ namespace Servy.CLI.Commands
                         result = await ProcessJsonAsync(opts, content, cancellationToken: cancellationToken);
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(configFileType), $"Unhandled file type: {configFileType}");
+                        return CommandResult.Fail(string.Format(Strings.Msg_UnsupportedFileType, opts.ConfigFileType));
                 }
 
                 if (result.Success)
@@ -137,8 +137,8 @@ namespace Servy.CLI.Commands
                 "XML",
                 xmlContent => _xmlServiceValidator.TryValidate(xmlContent, out var err) ? (true, null) : (false, err),
                 dto => _serviceRepository.UpsertAsync(
-                        dto, 
-                        preserveExistingRuntimeState: true, 
+                        dto,
+                        preserveExistingRuntimeState: true,
                         preserveExistingCredentials: true,
                         cancellationToken: cancellationToken
                         ),

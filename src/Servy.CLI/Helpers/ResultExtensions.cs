@@ -13,8 +13,8 @@ namespace Servy.CLI.Helpers
         /// Converts an internal <see cref="OperationResult"/> to a CLI <see cref="CommandResult"/> with a fallback for null error messages.
         /// </summary>
         /// <remarks>
-        /// Fix #308: Centralized failure mapping to prevent silent null propagation.
-        /// This ensures that even if the core logic fails to provide a specific error string, 
+        /// Centralized failure mapping to prevent silent null propagation.
+        /// This ensures that even if the core logic fails to provide a specific error string,
         /// the CLI user receives a localized "Unknown Error" message instead of a blank line.
         /// </remarks>
         /// <param name="res">The source <see cref="OperationResult"/> from the core library.</param>

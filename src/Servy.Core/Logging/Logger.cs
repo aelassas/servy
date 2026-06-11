@@ -654,7 +654,7 @@ namespace Servy.Core.Logging
         private static string FormatTimestampPrefix()
         {
             var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
-            string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz") : "Z";
+            string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz", CultureInfo.InvariantCulture) : "Z";
             return $"[{now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}{tzMarker}]";
         }
 
