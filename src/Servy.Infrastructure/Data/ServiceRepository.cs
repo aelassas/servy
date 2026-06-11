@@ -258,7 +258,7 @@ namespace Servy.Infrastructure.Data
                 dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(sql, new { Name = name }, cancellationToken: cancellationToken);
             }
 
-            if (decrypt && dto != null) SafeDecrypt(dto);
+            if (decrypt) SafeDecrypt(dto);
             return dto;
         }
 
