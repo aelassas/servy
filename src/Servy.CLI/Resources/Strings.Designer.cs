@@ -369,7 +369,7 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Wrapper executable not found at: %ProgramData%\Servy\Servy.Service.exe. Ensure Servy is properly installed..
+        ///   Recherche une chaîne localisée semblable à Wrapper executable not found at: %ProgramData%\Servy\Servy.Service.CLI.exe. Ensure Servy is properly installed..
         /// </summary>
         public static string Msg_WrapperNotFound {
             get {
