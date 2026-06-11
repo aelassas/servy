@@ -5,6 +5,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
+using System.Xml.Linq;
 
 namespace Servy.Infrastructure.Data
 {
@@ -250,13 +251,7 @@ namespace Servy.Infrastructure.Data
 
             // Try the standard trimmed approach first
             const string sql = "SELECT * FROM Services WHERE LOWER(Name) = LOWER(@Name);";
-            var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
-
-            // FALLBACK: If nothing matches (legacy zombie row), search using the raw untrimmed input string
-            if (dto == null && name != name.Trim())
-            {
-                dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(sql, new { Name = name }, cancellationToken: cancellationToken);
-            }
+            var dto = await ResolveByNameAsync<ServiceDto?>(sql, name, cancellationToken: cancellationToken);
 
             if (decrypt) SafeDecrypt(dto);
             return dto;
@@ -267,7 +262,13 @@ namespace Servy.Infrastructure.Data
         {
             if (string.IsNullOrWhiteSpace(name)) return null;
             const string sql = "SELECT * FROM Services WHERE LOWER(Name) = LOWER(@Name);";
-            var dto = _dapper.QuerySingleOrDefault<ServiceDto>(sql, new { Name = name.Trim() });
+            var dto = _dapper.QuerySingleOrDefault<ServiceDto?>(sql, new { Name = name.Trim() });
+
+            // FALLBACK: If nothing matches (legacy zombie row), search using the raw untrimmed input string
+            if (dto == null && name != name.Trim())
+            {
+                dto = _dapper.QuerySingleOrDefault<ServiceDto?>(sql, new { Name = name });
+            }
 
             if (decrypt) SafeDecrypt(dto);
             return dto;
@@ -278,7 +279,8 @@ namespace Servy.Infrastructure.Data
         {
             if (string.IsNullOrWhiteSpace(serviceName)) return null;
             const string sql = "SELECT Pid FROM Services WHERE LOWER(Name) = LOWER(@Name) LIMIT 1;";
-            return await _dapper.QueryFirstOrDefaultAsync<int?>(sql, new { Name = serviceName.Trim() }, cancellationToken: cancellationToken);
+            var pid = await ResolveByNameAsync<int?>(sql, serviceName, cancellationToken: cancellationToken);
+            return pid;
         }
 
         /// <inheritdoc />
@@ -290,8 +292,8 @@ namespace Servy.Infrastructure.Data
                 FROM Services 
                 WHERE LOWER(Name) = LOWER(@Name)
                 LIMIT 1;";
-
-            return await _dapper.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(sql, new { Name = serviceName.Trim() }, cancellationToken: cancellationToken);
+            var dto = await ResolveByNameAsync<ServiceConsoleStateDto?>(sql, serviceName, cancellationToken: cancellationToken);
+            return dto;
         }
 
         /// <inheritdoc />
@@ -418,6 +420,32 @@ namespace Servy.Infrastructure.Data
         #endregion
 
         #region Private Helpers
+
+        /// <summary>
+        /// Executes a single-row retrieval query by service name, implementing a fallback 
+        /// mechanism to support legacy records that contain leading or trailing whitespace.
+        /// </summary>
+        /// <typeparam name="T">The type of the data object to retrieve.</typeparam>
+        /// <param name="sql">The SQL query string. Must contain a parameter named 'Name'.</param>
+        /// <param name="name">The name of the service to query.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe during the operation.</param>
+        /// <returns>
+        /// The retrieved object of type <typeparamref name="T"/> if found; 
+        /// otherwise, <c>null</c>.
+        /// </returns>
+        private async Task<T?> ResolveByNameAsync<T>(
+            string sql, string name, CancellationToken cancellationToken)
+        {
+            var dto = await _dapper.QuerySingleOrDefaultAsync<T>(
+                sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
+
+            // Legacy rows (Servy <= 8.3) stored Name with whitespace verbatim.
+            if (dto == null && name != name.Trim())
+                dto = await _dapper.QuerySingleOrDefaultAsync<T>(
+                    sql, new { Name = name }, cancellationToken: cancellationToken);
+
+            return dto;
+        }
 
         /// <summary>
         /// Safely attempts decryption on a single DTO, channeling errors to isolation logic.
