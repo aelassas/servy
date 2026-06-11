@@ -69,7 +69,7 @@ Write-Host "Running tests for $($Proj)..."
         --results-directory $TestResultsDir `
         -- `
         DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura `
-        DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="[*.UnitTests]*,[*.IntegrationTests]*,[Servy.Testing]*,**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/obj/**/*",`
+        DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="[*.UnitTests]*,[*.IntegrationTests]*,[Servy.Testing]*,**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/obj/**/*"`
         DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeProperties="True"
     if ($LASTEXITCODE -ne 0) { Write-Error "dotnet test failed for $Proj"; exit $LASTEXITCODE }
 }
