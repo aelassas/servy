@@ -368,7 +368,7 @@ namespace Servy.Manager.Services
                     var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, UiAppConfig.Caption);
                     if (!confirm) return false;
 
-                    // Check local database tracking directly via the clean repository layer
+                    // 1. Try standard fallback-resilient check directly in the DB
                     var existsInDb = await _serviceRepository.GetByNameAsync(service.Name, decrypt: false, cancellationToken);
                     if (existsInDb == null)
                     {
@@ -376,7 +376,7 @@ namespace Servy.Manager.Services
                         return false;
                     }
 
-                    // Delete from SQLite database
+                    // 2. Perform the deletion pass
                     var res = await _serviceRepository.DeleteAsync(service.Name, cancellationToken);
                     if (res > 0) RemoveService(service);
 

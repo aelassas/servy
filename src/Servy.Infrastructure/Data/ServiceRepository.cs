@@ -220,8 +220,16 @@ namespace Servy.Infrastructure.Data
         {
             if (string.IsNullOrWhiteSpace(name)) return 0;
 
-            var sql = "DELETE FROM Services WHERE LOWER(Name) = LOWER(@Name);";
-            return await _dapper.ExecuteAsync(sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
+            const string sql = "DELETE FROM Services WHERE LOWER(Name) = LOWER(@Name);";
+            var rowsAffected = await _dapper.ExecuteAsync(sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
+
+            // FALLBACK: If 0 rows were deleted, attempt to drop using the raw untrimmed name
+            if (rowsAffected == 0 && name != name.Trim())
+            {
+                rowsAffected = await _dapper.ExecuteAsync(sql, new { Name = name }, cancellationToken: cancellationToken);
+            }
+
+            return rowsAffected;
         }
 
         /// <inheritdoc />
@@ -239,11 +247,18 @@ namespace Servy.Infrastructure.Data
         public virtual async Task<ServiceDto?> GetByNameAsync(string? name, bool decrypt = true, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(name)) return null;
-            var sql = "SELECT * FROM Services WHERE LOWER(Name) = LOWER(@Name);";
-            var cmd = new CommandDefinition(sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
-            var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(cmd);
 
-            if (decrypt) SafeDecrypt(dto);
+            // Try the standard trimmed approach first
+            const string sql = "SELECT * FROM Services WHERE LOWER(Name) = LOWER(@Name);";
+            var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
+
+            // FALLBACK: If nothing matches (legacy zombie row), search using the raw untrimmed input string
+            if (dto == null && name != name.Trim())
+            {
+                dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(sql, new { Name = name }, cancellationToken: cancellationToken);
+            }
+
+            if (decrypt && dto != null) SafeDecrypt(dto);
             return dto;
         }
 
