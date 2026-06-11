@@ -114,7 +114,7 @@ jobs:
               Write-Host "Using vstest.console.exe at: $vsTest"
 
               # Define common exclusions 
-              $TestExclusions = @("**/*.xaml", "**/*.xaml.cs", "**/*.g.cs", "**/obj/**/*")
+              $TestExclusions = @("**/*.xaml", "**/*.xaml.cs", "**/*.g.cs", "**/*.Designer.cs", "**/obj/**/*")
 
               # 1. Initialize the arguments array with base arguments
               $coverletArgs = @(
@@ -246,7 +246,7 @@ jobs:
               "-targetdir:CoverageMerged" `
               "-reporttypes:Cobertura" `
               "-assemblyfilters:-*.UnitTests;-*.IntegrationTests;-Servy.Testing;-Servy.Restarter.Net48" `
-              -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/obj/**/*"
+              -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/*.Designer.cs;-**/obj/**/*"
 
       - name: Normalize coverage paths (PowerShell)
         if: always()

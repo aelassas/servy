@@ -88,7 +88,7 @@ foreach ($Proj in $TestProjects) {
 
     # Define distinct filter categories based on Coverlet's native parameter targets
     $AssemblyExclusions = @("*.UnitTests", "*.IntegrationTests", "Servy.Testing")
-    $FileExclusions     = @("**/*.xaml", "**/*.xaml.cs", "**/*.g.cs", "**/obj/**/*")
+    $FileExclusions     = @("**/*.xaml", "**/*.xaml.cs", "**/*.g.cs",  "**/*.Designer.cs", "**/obj/**/*")
 
     # Join array strings with a comma wrapper for Coverlet's expected input parser
     $excludeAssemblies = ($AssemblyExclusions | ForEach-Object { "[$_]*" }) -join ","
@@ -128,7 +128,7 @@ reportgenerator `
     -targetdir:$CoverageReportDir `
     -reporttypes:Html `
     -assemblyfilters:"-*.UnitTests;-*.IntegrationTests;-Servy.Testing;-Servy.Restarter.Net48" `
-    -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/obj/**/*"
+    -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/*.Designer.cs;-**/obj/**/*"
 if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed"; exit $LASTEXITCODE }
 
 Write-Host "Coverage report generated at $CoverageReportDir"
