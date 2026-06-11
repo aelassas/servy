@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="Servy.Manager.Views.PerformanceView"
+﻿<views:ServiceSearchUserControl x:Class="Servy.Manager.Views.PerformanceView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -7,6 +7,7 @@
              xmlns:local="clr-namespace:Servy.Manager"
              xmlns:resx="clr-namespace:Servy.Manager.Resources"
              xmlns:viewmodels="clr-namespace:Servy.Manager.ViewModels"
+             xmlns:views="clr-namespace:Servy.Manager.Views"
              xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
              xmlns:controls="clr-namespace:Servy.Manager.Views.Controls"
              Loaded="UserControl_Loaded"
@@ -14,9 +15,9 @@
              AutomationProperties.AutomationId="PerformanceView"
              AutomationProperties.HelpText="Displays resource usage statistics for the selected process.">
 
-    <UserControl.Resources>
+    <views:ServiceSearchUserControl.Resources>
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
-    </UserControl.Resources>
+    </views:ServiceSearchUserControl.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
@@ -194,4 +195,4 @@
         </Grid>
 
     </Grid>
-</UserControl>
+</views:ServiceSearchUserControl>

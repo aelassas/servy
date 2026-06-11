@@ -1,0 +1,96 @@
+﻿using Servy.Core.Logging;
+using Servy.Manager.ViewModels;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+
+namespace Servy.Manager.Views
+{
+    /// <summary>
+    /// Provides a shared base implementation for search-capable user controls to unify event handler routines.
+    /// </summary>
+    public abstract class ServiceSearchUserControl : UserControl
+    {
+        /// <summary>
+        /// Gets the distinct name of the view used to build explicit contextual log messages.
+        /// </summary>
+        protected abstract string ViewName { get; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ServiceSearchUserControl"/> class.
+        /// </summary>
+        protected ServiceSearchUserControl()
+        {
+            Loaded += UserControl_Loaded;
+        }
+
+        /// <summary>
+        /// Routes the synchronous Loaded event into an asynchronous initialization sequence.
+        /// </summary>
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            _ = UserControl_LoadedAsync(sender, e);
+        }
+
+        /// <summary>
+        /// Performs asynchronous initialization for the UserControl.
+        /// Automatically triggers an initial service search if the service list is currently empty.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The event data.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        private async Task UserControl_LoadedAsync(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Only trigger the search if the ViewModel is initialized and the list is empty
+                // to avoid redundant API/DB calls on view switching.
+                if (DataContext is ServiceSearchViewModelBase vm && !vm.Services.Any())
+                {
+                    await vm.SearchCommand.ExecuteAsync(null);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to perform initial service search in {ViewName}.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Handles the KeyDown event for the search input text box.
+        /// Routes control execution into the ViewModel's SearchCommand when the Enter key is pressed.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The key event arguments.</param>
+        protected void SearchTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                _ = SearchTextBox_KeyDownAsync(sender, e);
+            }
+        }
+
+        /// <summary>
+        /// Performs the asynchronous command dispatch when the Enter key sequence is validated.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The key event arguments.</param>
+        private async Task SearchTextBox_KeyDownAsync(object sender, KeyEventArgs e)
+        {
+            try
+            {
+                if (DataContext is ServiceSearchViewModelBase vm)
+                {
+                    await vm.SearchCommand.ExecuteAsync(null);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to execute search sequence on Enter key press in {ViewName}.", ex);
+            }
+        }
+    }
+}

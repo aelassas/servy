@@ -13,7 +13,7 @@ namespace Servy.ViewModels.Items
         public ServiceStartType StartupType { get; set; }
 
         /// <summary>
-        /// Gets or sets the human-readable label for the startup type.
+        /// Gets or sets the localized display name for the startup type.
         /// </summary>
         public string DisplayName { get; set; }
     }
