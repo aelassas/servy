@@ -188,6 +188,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         id: codecov
+        continue-on-error: true
         uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe #v5.5.4
         if: always() && matrix.upload_coverage == true
         with:
@@ -195,12 +196,12 @@ jobs:
           files: TestResults/fixed/coverage.cobertura.xml
           flags: unittests,integrationtests
           name: codecov-coverage-report
-          fail_ci_if_error: false
+          fail_ci_if_error: true   # let the action report failure
           verbose: false
           commit_parent: ${{ github.event.before }}         
           
       - name: Notify Codecov Status in case of failure
-        if: always() && matrix.upload_coverage == true && steps.codecov.outcome != 'success'
+        if: always() && matrix.upload_coverage == true && steps.codecov.outcome == 'failure'
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b #v7.1.0
         with:
           script: |
@@ -221,6 +222,7 @@ jobs:
 
       - name: Upload coverage to Coveralls
         id: coveralls
+        continue-on-error: true
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b #v2.36
         if: always() && matrix.upload_coverage == true
         with:
@@ -228,13 +230,13 @@ jobs:
           base-path: ${{ github.workspace }}
           file: TestResults/fixed/coverage.cobertura.xml
           format: cobertura
-          fail-on-error: false
+          fail_ci_if_error: true   # let the action report failure
           debug: false
         env:
           COVERALLS_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
 
       - name: Notify Coveralls Status in case of failure
-        if: always() && matrix.upload_coverage == true && steps.coveralls.outcome != 'success'
+        if: always() && matrix.upload_coverage == true && steps.coveralls.outcome == 'failure'
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b #v7.1.0
         with:
           script: |

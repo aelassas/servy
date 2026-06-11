@@ -98,7 +98,7 @@ jobs:
           git add setup/choco/servy/*
            
           # Check if there is actually anything to commit
-          if ((git status --porcelain) -eq '') {
+          if (-not (git status --porcelain)) {
               Write-Host "No changes to commit. Skipping push."
               exit 0
           }

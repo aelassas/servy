@@ -94,7 +94,7 @@ jobs:
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
           # git status --porcelain detects untracked, modified, and deleted files.
-          if ((git status --porcelain) -ne '') {
+          if (git status --porcelain) {
               Invoke-Git add --all
               Invoke-Git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
               Invoke-Git push origin main
@@ -120,7 +120,7 @@ jobs:
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
           # Using porcelain check consistently to prevent silent skips on net48.
-          if ((git status --porcelain) -ne '') {
+          if (git status --porcelain) {
               Invoke-Git add --all
               Invoke-Git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
               Invoke-Git push origin net48

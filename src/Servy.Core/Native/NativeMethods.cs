@@ -51,11 +51,6 @@ namespace Servy.Core.Native
         /// <summary>UTF-8 code page identifier.</summary>
         public const uint CP_UTF8 = 65001;
 
-        /// <summary>Identifier for the standard output device.</summary>
-        public const int STD_OUTPUT_HANDLE = -11;
-        /// <summary>Identifier for the standard error device.</summary>
-        public const int STD_ERROR_HANDLE = -12;
-
         /// <summary>The service accepts pre-shutdown notifications.</summary>
         public const int SERVICE_ACCEPT_PRESHUTDOWN = 0x00000100;
         /// <summary>The service is running.</summary>
@@ -249,59 +244,6 @@ namespace Servy.Core.Native
             CTRL_SHUTDOWN_EVENT = 6,
         }
 
-        /// <summary>Information classes for Job Object configuration.</summary>
-        public enum JobObjectInfoClass
-        {
-            JobObjectExtendedLimitInformation = 9
-        }
-
-        /// <summary>Defines limit flags for job objects.</summary>
-        [Flags]
-        public enum JobLimits : uint
-        {
-            /// <summary>Forces all processes in the job to terminate when the job handle is closed.</summary>
-            KillOnJobClose = 0x00002000
-        }
-
-        /// <summary>Contains extended limit information for a job object.</summary>
-        [StructLayout(LayoutKind.Sequential)]
-        public struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION
-        {
-            public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation;
-            public IO_COUNTERS IoInfo;
-            public UIntPtr ProcessMemoryLimit;
-            public UIntPtr JobMemoryLimit;
-            public UIntPtr PeakProcessMemoryUsed;
-            public UIntPtr PeakJobMemoryUsed;
-        }
-
-        /// <summary>Contains basic limit information for a job object.</summary>
-        [StructLayout(LayoutKind.Sequential)]
-        public struct JOBOBJECT_BASIC_LIMIT_INFORMATION
-        {
-            public Int64 PerProcessUserTimeLimit;
-            public Int64 PerJobUserTimeLimit;
-            public JobLimits LimitFlags;
-            public UIntPtr MinimumWorkingSetSize;
-            public UIntPtr MaximumWorkingSetSize;
-            public UInt32 ActiveProcessLimit;
-            public Int64 Affinity;
-            public UInt32 PriorityClass;
-            public UInt32 SchedulingClass;
-        }
-
-        /// <summary>Contains I/O accounting information for a job object.</summary>
-        [StructLayout(LayoutKind.Sequential)]
-        public struct IO_COUNTERS
-        {
-            public UInt64 ReadOperationCount;
-            public UInt64 WriteOperationCount;
-            public UInt64 OtherOperationCount;
-            public UInt64 ReadTransferCount;
-            public UInt64 WriteTransferCount;
-            public UInt64 OtherTransferCount;
-        }
-
         [StructLayout(LayoutKind.Sequential)]
         public struct FILETIME
         {
@@ -491,22 +433,6 @@ namespace Servy.Core.Native
 
         #endregion
 
-        #region Job Object Functions
-
-        /// <summary>Creates or opens a job object.</summary>
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        public static extern SafeJobObjectHandle CreateJobObject(IntPtr lpJobAttributes, string lpName);
-
-        /// <summary>Sets limits and configuration for a job object.</summary>
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool SetInformationJobObject(SafeJobObjectHandle hJob, JobObjectInfoClass infoClass, IntPtr lpJobObjectInfo, uint cbJobObjectInfoLength);
-
-        /// <summary>Assigns a process to an existing job object.</summary>
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool AssignProcessToJobObject(SafeJobObjectHandle hJob, IntPtr hProcess);
-
-        #endregion
-
         #region Process & Snapshot Functions
 
         /// <summary>Takes a snapshot of specified processes, heaps, modules, and threads.</summary>
@@ -514,11 +440,11 @@ namespace Servy.Core.Native
         public static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessID);
 
         /// <summary>Retrieves information about the first process encountered in a snapshot.</summary>
-        [DllImport("kernel32.dll", SetLastError = true)]
+        [DllImport("kernel32.dll", SetLastError = true, EntryPoint = "Process32FirstW", CharSet = CharSet.Unicode)]
         public static extern bool Process32First(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
 
         /// <summary>Retrieves information about the next process recorded in a snapshot.</summary>
-        [DllImport("kernel32.dll", SetLastError = true)]
+        [DllImport("kernel32.dll", SetLastError = true, EntryPoint = "Process32NextW", CharSet = CharSet.Unicode)]
         public static extern bool Process32Next(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
 
         /// <summary>Opens an existing local process object.</summary>
@@ -542,10 +468,6 @@ namespace Servy.Core.Native
             out PROCESS_BASIC_INFORMATION processInformation,
             int processInformationLength,
             IntPtr returnLength = default);
-
-        /// <summary>Retrieves the number of milliseconds since the system was started.</summary>
-        [DllImport("kernel32.dll")]
-        public static extern ulong GetTickCount64();
 
         /// <summary>
         /// Parses a Unicode command-line string and returns an array of pointers to the command-line arguments, 
@@ -607,14 +529,6 @@ namespace Servy.Core.Native
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool FreeConsole();
 
-        /// <summary>Retrieves a handle to the specified standard device.</summary>
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr GetStdHandle(int nStdHandle);
-
-        /// <summary>Sets the handle for the specified standard device.</summary>
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool SetStdHandle(int nStdHandle, IntPtr handle);
-
         #endregion
 
         #region File & Security Functions
@@ -622,17 +536,6 @@ namespace Servy.Core.Native
         /// <summary>Closes an open object handle.</summary>
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
         public static extern bool CloseHandle(IntPtr handle);
-
-        /// <summary>Creates or opens a file or I/O device.</summary>
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        public static extern IntPtr CreateFile(
-            string lpFileName,
-            uint dwDesiredAccess,
-            uint dwShareMode,
-            IntPtr lpSecurityAttributes,
-            uint dwCreationDisposition,
-            uint dwFlagsAndAttributes,
-            IntPtr hTemplateFile);
 
         /// <summary>Retrieves the final path for the specified file handle.</summary>
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]

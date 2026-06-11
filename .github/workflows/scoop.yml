@@ -126,7 +126,7 @@ jobs:
           # Commit and push back to aelassas/servy
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ((git status --porcelain) -ne '') {
+          if (git status --porcelain) {
             git add $manifestPath
             git commit -m "chore: update setup/scoop/servy.json to version $env:VERSION"
              
@@ -162,7 +162,7 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ((git status --porcelain) -ne '') {
+          if (git status --porcelain) {
             git add $manifestPath
             git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
             git pull
@@ -242,7 +242,7 @@ jobs:
 
               Write-ScoopManifest -jsonObj $jsonObj -jsonPath $fullPath
            
-              if ((git status --porcelain) -ne '') {
+              if (git status --porcelain) {
                   git add $manifestPath
                   git commit -m "servy: Update to version $env:VERSION"
               }

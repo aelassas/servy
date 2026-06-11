@@ -297,7 +297,9 @@ function ConvertFrom-ServyEventMessage {
     if ($firstLine -match '^\[(.+?)\]\s*(.*)$') {
         return @{
             ServiceName = $matches[1]
-            LogText     = if ($rest) { "$($matches[2])`n$rest" } else { $matches[2] }
+            LogText = if ($rest) {
+                if ([string]::IsNullOrEmpty($matches[2])) { $rest } else { "$($matches[2])`n$rest" }
+            } else { $matches[2] }
         }
     } else {
         return @{

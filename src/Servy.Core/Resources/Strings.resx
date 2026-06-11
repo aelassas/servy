@@ -189,7 +189,7 @@
     <value>[Import] File not found: {0}</value>
   </data>
   <data name="Msg_InvalidServiceDependencyName" xml:space="preserve">
-    <value>Invalid service name '{0}'. Only letters, digits, hyphens, underscores, and periods are allowed.</value>
+    <value>Invalid service name '{0}'. Only letters, digits, hyphens, underscores, spaces, and dollar signs ($) are allowed.</value>
   </data>
   <data name="Msg_EnvironmentVariableMissingEquals" xml:space="preserve">
     <value>Each environment variable must contain an unescaped '=' character to separate the key from the value.</value>

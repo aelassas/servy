@@ -1,0 +1,19 @@
+﻿using Microsoft.Win32.SafeHandles;
+using System.Diagnostics.CodeAnalysis;
+
+namespace Servy.Core.Native
+{
+    /// <summary>
+    /// Represents a safe wrapper around a Windows Service handle.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    public sealed class SafeServiceHandle : SafeHandleZeroOrMinusOneIsInvalid
+    {
+        public SafeServiceHandle() : base(true) { }
+
+        protected override bool ReleaseHandle()
+        {
+            return NativeMethods.CloseServiceHandle(handle);
+        }
+    }
+}

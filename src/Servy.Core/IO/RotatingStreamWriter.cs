@@ -274,6 +274,8 @@ namespace Servy.Core.IO
                     return false;
 
                 case DateRotationType.Weekly:
+                    if (now.Date <= _lastRotationDate.Date) return false;   // backward/same-day clock: never rotate
+
                     var lastWeek = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
                         _lastRotationDate, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
                     var thisWeek = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
@@ -284,6 +286,7 @@ namespace Servy.Core.IO
                     return (now.Date - _lastRotationDate.Date).TotalDays >= 7 || thisWeek != lastWeek;
 
                 case DateRotationType.Monthly:
+                    if (now.Date <= _lastRotationDate.Date) return false;
                     return now.Month != _lastRotationDate.Month || now.Year != _lastRotationDate.Year;
 
                 default:
