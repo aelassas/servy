@@ -12,19 +12,19 @@ namespace Servy.CLI.Options
         /// Gets or sets the name of the service to export.
         /// </summary>
         [Option('n', "name", Required = true, HelpText = "Name of the service to export.")]
-        public string ServiceName { get; set; } = null;
+        public string ServiceName { get; set; }
 
         /// <summary>
         /// Gets or sets the configuration file type.
         /// Possible values: xml, json.
         /// </summary>
         [Option('c', "config", Required = true, HelpText = "Configuration export file type (xml or json).")]
-        public string ConfigFileType { get; set; } = null;
+        public string ConfigFileType { get; set; }
 
         /// <summary>
         /// Gets or sets the path of the configuration file to export.
         /// </summary>
         [Option('p', "path", Required = true, HelpText = "Path of the configuration file to export.")]
-        public string Path { get; set; } = null;
+        public string Path { get; set; }
     }
 }

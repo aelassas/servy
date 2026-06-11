@@ -37,5 +37,11 @@ namespace Servy.Core.Native
 
         /// <summary>The user name or password is incorrect (LogonUserW failure).</summary>
         public const int ERROR_LOGON_FAILURE = 1326;
+
+        /// <summary>Account restrictions prevent logon (e.g., blank passwords disallowed).</summary>
+        public const int ERROR_ACCOUNT_RESTRICTION = 1327;
+
+        /// <summary>The user has not been granted the requested logon type at this computer.</summary>
+        public const int ERROR_LOGON_TYPE_NOT_GRANTED = 1385;
     }
 }

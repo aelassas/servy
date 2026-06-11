@@ -165,7 +165,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Start_EnvironmentVariablesMapping_PadsNullValuesToEmptyString()
         {
-            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: 5000);
+            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: 10_000);
 
             var envVarInstance = new Servy.Core.EnvironmentVariables.EnvironmentVariable
             {

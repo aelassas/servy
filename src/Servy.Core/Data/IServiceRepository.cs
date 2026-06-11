@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace Servy.Core.Data
 {
     /// <summary>
-    /// Defines a repository interface for managing <see cref="ServiceDto"/> records operations.
+    /// Defines a repository interface for managing <see cref="ServiceDto"/> records.
     /// </summary>
     public interface IServiceRepository
     {

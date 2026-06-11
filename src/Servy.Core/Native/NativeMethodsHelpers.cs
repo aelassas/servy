@@ -170,11 +170,11 @@ namespace Servy.Core.Native
 
                     switch (error)
                     {
-                        case 1326: // ERROR_LOGON_FAILURE
+                        case Errors.ERROR_LOGON_FAILURE:
                             throw new UnauthorizedAccessException("Invalid username or password.");
-                        case 1327: // ERROR_ACCOUNT_RESTRICTION
+                        case Errors.ERROR_ACCOUNT_RESTRICTION:
                             throw new UnauthorizedAccessException("Account restrictions prevent logon (e.g., blank password use is restricted).");
-                        case 1385: // ERROR_LOGON_TYPE_NOT_GRANTED
+                        case Errors.ERROR_LOGON_TYPE_NOT_GRANTED:
                             // Network logon denied by policy - retry with SERVICE logon type,
                             // which is the logon type the SCM will actually use.
                             if (LogonUser(user, domain, password, LOGON32_LOGON_SERVICE, LOGON32_PROVIDER_DEFAULT, out token))

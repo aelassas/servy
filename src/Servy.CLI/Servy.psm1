@@ -249,8 +249,8 @@ function Format-SecureLogMessage {
   $patternSingle = '(?i)(--(?:' + $fieldsRegex + ')[=\s]+)''[^'']*'''
   $Text = [regex]::Replace($Text, $patternSingle, '$1''***''')
 
-  # 3. Unquoted positional values (using negative lookahead to prevent matching quote boundaries)
-  # FIX FOR #1992: Consume multi-word segments until the next '--' parameter switch block or EOL sequence.
+  # 3. Unquoted positional values (using negative lookahead to prevent matching quote boundaries).
+  # Consume multi-word segments until the next '--' parameter switch block or EOL.
   $patternUnquoted = '(?i)(--(?:' + $fieldsRegex + ')[=\s]+)(?![''"])(?:(?!\s+--|$).)+'
   $Text = [regex]::Replace($Text, $patternUnquoted, '$1"***"')
 
@@ -465,9 +465,9 @@ function Invoke-ServyCli {
       }
 
       if ($killed) {
-        throw "$($ErrorContext): Operation timed out after $($script:ServyTimeoutSeconds) seconds and was terminated."
+          throw "Operation timed out after $($script:ServyTimeoutSeconds) seconds and was terminated."
       } else {
-        throw "$($ErrorContext): Operation timed out after $($script:ServyTimeoutSeconds) seconds. WARNING: Failed to terminate the process (PID: $($process.Id)) - it may still be running."
+          throw "Operation timed out after $($script:ServyTimeoutSeconds) seconds. WARNING: Failed to terminate the process (PID: $($process.Id)) - it may still be running."
       }
     } else {
       # CRITICAL: Since the process is confirmed dead, a parameterless WaitForExit() 

@@ -124,10 +124,9 @@ namespace Servy.Core.Logging
         {
             if ((LogLevel)_currentLogLevel <= LogLevel.Debug)
             {
-                var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
                 // Debug logs are traditionally skipped for Event Log to avoid clutter, 
                 // but we always keep the File Log.
-                Logger.Debug(fullMessage);
+                Logger.Debug(Format(message), ex);
             }
         }
 
@@ -141,7 +140,7 @@ namespace Servy.Core.Logging
                 {
                     SafeWriteToEventLog(fullMessage, EventLogEntryType.Information, EventIds.Info);
                 }
-                Logger.Info(fullMessage);
+                Logger.Info(Format(message), ex);
             }
         }
 
@@ -155,7 +154,7 @@ namespace Servy.Core.Logging
                 {
                     SafeWriteToEventLog(fullMessage, EventLogEntryType.Warning, EventIds.Warning);
                 }
-                Logger.Warn(fullMessage);
+                Logger.Warn(Format(message), ex);
             }
         }
 
@@ -169,7 +168,7 @@ namespace Servy.Core.Logging
                 {
                     SafeWriteToEventLog(fullMessage, EventLogEntryType.Error, EventIds.Error);
                 }
-                Logger.Error(fullMessage);
+                Logger.Error(Format(message), ex);
             }
         }
 
@@ -343,8 +342,7 @@ namespace Servy.Core.Logging
                 if ((LogLevel)_currentLogLevel <= LogLevel.Debug)
                 {
                     // Clean structural alignment logic bypassing double parent formatting calculations
-                    var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
-                    Logger.Debug(fullMessage);
+                    Logger.Debug(Format(message), ex);
                 }
             }
 
@@ -361,7 +359,7 @@ namespace Servy.Core.Logging
                         _parent.SafeWriteToEventLog(fullMessage, EventLogEntryType.Information, EventIds.Info);
                     }
 
-                    Logger.Info(fullMessage);
+                    Logger.Info(Format(message), ex);
                 }
             }
 
@@ -377,7 +375,7 @@ namespace Servy.Core.Logging
                         _parent.SafeWriteToEventLog(fullMessage, EventLogEntryType.Warning, EventIds.Warning);
                     }
 
-                    Logger.Warn(fullMessage);
+                    Logger.Warn(Format(message), ex);
                 }
             }
 
@@ -393,7 +391,7 @@ namespace Servy.Core.Logging
                         _parent.SafeWriteToEventLog(fullMessage, EventLogEntryType.Error, EventIds.Error);
                     }
 
-                    Logger.Error(fullMessage);
+                    Logger.Error(Format(message), ex);
                 }
             }
 

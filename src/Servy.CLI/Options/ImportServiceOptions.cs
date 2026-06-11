@@ -20,13 +20,13 @@ namespace Servy.CLI.Options
         /// Possible values: xml, json.
         /// </summary>
         [Option('c', "config", Required = true, HelpText = "Configuration file type (xml or json).")]
-        public string ConfigFileType { get; set; } = null;
+        public string ConfigFileType { get; set; }
 
         /// <summary>
         /// Gets or sets the path of the configuration file to import.
         /// </summary>
         [Option('p', "path", Required = true, HelpText = "Path of the configuration file to import.")]
-        public string Path { get; set; } = null;
+        public string Path { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to install the service after import.
