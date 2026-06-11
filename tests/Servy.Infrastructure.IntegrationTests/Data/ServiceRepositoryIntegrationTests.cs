@@ -280,8 +280,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal("SerializeMe", recovered.Description);
         }
 
-        #region New Integration Tests for #2904 and Uncovered Members
-
         [Fact]
         public async Task GetByNameAsync_WithPaddedLegacyRow_ResolvesViaUntrimmedFallback()
         {
@@ -421,6 +419,60 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Act & Assert
             Assert.Null(await _repository.GetByNameAsync(null, decrypt: false, CancellationToken.None));
             Assert.Null(await _repository.GetByNameAsync("   ", decrypt: false, CancellationToken.None));
+        }
+
+        #region Legacy Padded Trim Fallback Tests
+
+        [Fact]
+        public void GetByName_WithPaddedLegacyRow_ResolvesViaSynchronousUntrimmedFallback()
+        {
+            // Arrange: Seed an un-trimmed legacy service directly into the database
+            const string paddedName = "HoopsComm ";
+            var sql = $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority) VALUES (@Name, 'C:\\legacy.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');";
+            _repository.GetDapperExecutor().Execute(sql, new { Name = paddedName });
+
+            // Act: Pass the untrimmed name explicitly to satisfy the 'name != name.Trim()' guard clause
+            var resolvedRecord = _repository.GetByName(paddedName, decrypt: false);
+
+            // Assert
+            Assert.NotNull(resolvedRecord);
+            Assert.Equal(paddedName, resolvedRecord.Name);
+        }
+
+        [Fact]
+        public async Task GetServicePidAsync_WithPaddedLegacyRow_ResolvesViaResolveByNameAsyncFallback()
+        {
+            // Arrange: Seed a zombie service row carrying a trailing newline/whitespace character
+            const string paddedName = "LegacyEngineService\n";
+            var sql = $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority, Pid) VALUES (@Name, 'C:\\engine.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}', 7777);";
+            await _executor.ExecuteAsync(sql, new { Name = paddedName }, cancellationToken: CancellationToken.None);
+
+            // Act: Query using the raw untrimmed name to test ResolveByNameAsync fallback branch
+            int? activePid = await _repository.GetServicePidAsync(paddedName, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(activePid);
+            Assert.Equal(7777, activePid.Value);
+        }
+
+        [Fact]
+        public async Task GetServiceConsoleStateAsync_WithPaddedLegacyRow_ResolvesViaResolveByNameAsyncFallback()
+        {
+            // Arrange: Seed an un-trimmed service row containing leading whitespace.
+            // Removed double backslashes inside the verbatim SQL literal block.
+            const string paddedName = " GhostService";
+            var sql = $@"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority, Pid, ActiveStdoutPath, ActiveStderrPath) 
+                         VALUES (@Name, 'C:\ghost.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}', 8888, 'C:\out.log', 'C:\err.log');";
+            await _executor.ExecuteAsync(sql, new { Name = paddedName }, cancellationToken: CancellationToken.None);
+
+            // Act: Query using the raw untrimmed name to push parsing into the generic secondary query pass
+            var state = await _repository.GetServiceConsoleStateAsync(paddedName, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(state);
+            Assert.Equal(8888, state.Pid);
+            Assert.Equal("C:\\out.log", state.ActiveStdoutPath);
+            Assert.Equal("C:\\err.log", state.ActiveStderrPath);
         }
 
         #endregion

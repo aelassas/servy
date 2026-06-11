@@ -705,7 +705,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             int expectedPid = 1234;
 
             _mockDapper
-                .Setup(e => e.QueryFirstOrDefaultAsync<int?>(
+                .Setup(e => e.QuerySingleOrDefaultAsync<int?>(
                     It.Is<string>(sql => sql.Contains("SELECT Pid FROM Services")),
                     It.Is<object>(p => p.GetType().GetProperty("Name").GetValue(p).ToString() == serviceName), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedPid);
@@ -760,7 +760,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
             await repo.GetServicePidAsync(serviceName, CancellationToken.None);
 
-            _mockDapper.Verify(e => e.QueryFirstOrDefaultAsync<int?>(
+            _mockDapper.Verify(e => e.QuerySingleOrDefaultAsync<int?>(
                 It.IsAny<string>(),
                 It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -777,7 +777,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             };
 
             _mockDapper
-                .Setup(e => e.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(
+                .Setup(e => e.QuerySingleOrDefaultAsync<ServiceConsoleStateDto>(
                     It.Is<string>(sql => sql.Contains("SELECT Pid, ActiveStdoutPath, ActiveStderrPath")),
                     It.Is<object>(p => p.GetType().GetProperty("Name").GetValue(p).ToString() == serviceName), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedState);
@@ -815,7 +815,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var serviceName = "SqlVerifyService";
 
             _mockDapper
-                .Setup(e => e.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(
+                .Setup(e => e.QuerySingleOrDefaultAsync<ServiceConsoleStateDto>(
                     It.Is<string>(sql =>
                         sql.Contains("FROM Services") &&
                         sql.Contains("WHERE Name = @Name") &&
@@ -826,7 +826,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
             await repo.GetServiceConsoleStateAsync(serviceName, CancellationToken.None);
 
-            _mockDapper.Verify(e => e.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(
+            _mockDapper.Verify(e => e.QuerySingleOrDefaultAsync<ServiceConsoleStateDto>(
                 It.IsAny<string>(),
                 It.Is<object>(p => p.GetType().GetProperty("Name") != null), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()),
                 Times.Once);
