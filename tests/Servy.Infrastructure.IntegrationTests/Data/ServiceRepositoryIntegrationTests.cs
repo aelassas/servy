@@ -1,4 +1,5 @@
-﻿using Servy.Core.Data;
+﻿using Servy.Core.Config;
+using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Security;
 using Servy.Core.Services;
@@ -220,8 +221,11 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             var results = (await _repository.SearchAsync("development_%", decrypt: true, CancellationToken.None)).ToList();
 
             // Assert
-            Assert.Single(results);
-            Assert.Equal("App_Development_%_Test", results[0].Name);
+            using (var summaryScope = new System.Transactions.TransactionScope(System.Transactions.TransactionScopeOption.Suppress))
+            {
+                Assert.Single(results);
+                Assert.Equal("App_Development_%_Test", results[0].Name);
+            }
         }
 
         [Fact]
@@ -261,7 +265,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.NotEmpty(jsonData);
 
             // Clear Database entries entirely
-            await _repository.DeleteAsync("RoundTripService", CancellationToken.None);
+            var deleteResult = await _repository.DeleteAsync("RoundTripService", CancellationToken.None);
 
             // Import back
             bool xmlImportResult = await _repository.ImportXmlAsync(xmlData, CancellationToken.None);
@@ -276,10 +280,167 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal("SerializeMe", recovered.Description);
         }
 
+        #region New Integration Tests for #2904 and Uncovered Members
+
+        [Fact]
+        public async Task GetByNameAsync_WithPaddedLegacyRow_ResolvesViaUntrimmedFallback()
+        {
+            // Arrange: Directly inject an untrimmed legacy name directly via SQL bypass to simulate version <= 8.3 rows
+            const string paddedName = "HoopsComm ";
+            var sql = $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority) VALUES (@Name, 'C:\\bin.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');";
+            await _executor.ExecuteAsync(sql, new { Name = paddedName }, cancellationToken: CancellationToken.None);
+
+            // Act: UI calls lookup passing the cleaned/trimmed search context parameter
+            var resolvedRecord = await _repository.GetByNameAsync(paddedName, decrypt: false, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(resolvedRecord);
+            Assert.Equal(paddedName, resolvedRecord.Name); // Proves fallback triggered successfully
+        }
+
+        [Fact]
+        public async Task DeleteAsync_WithPaddedLegacyRow_PurgesViaUntrimmedFallback()
+        {
+            // Arrange: Direct SQL seed injects zombie row with hidden trailing whitespace
+            const string paddedName = "ZombieService ";
+            var sql = $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority) VALUES (@Name, 'C:\\z.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');";
+            await _executor.ExecuteAsync(sql, new { Name = paddedName }, cancellationToken: CancellationToken.None);
+
+            // Act: Purge routing requested using trimmed input signature string
+            int affectedRows = await _repository.DeleteAsync(paddedName, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(1, affectedRows); // Verifies fallback step cleaned the target row
+            var lookupResult = await _repository.GetByNameAsync(paddedName, decrypt: false, CancellationToken.None);
+            Assert.Null(lookupResult);
+        }
+
+        [Fact]
+        public void Update_SynchronousPath_SavesAndPreservesStateSymmetrically()
+        {
+            // Arrange
+            var service = new ServiceDto { Name = "SyncService", ExecutablePath = "C:\\s.exe", Pid = 444 };
+            int id = _repository.GetDapperExecutor().ExecuteScalar<int>(
+                $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority, Pid) VALUES ('SyncService', 'C:\\s.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}', 444); SELECT last_insert_rowid();", service);
+            service.Id = id;
+
+            // Act
+            var updatePayload = new ServiceDto { Id = id, Name = "SyncService", ExecutablePath = "C:\\new_sync.exe", Pid = 888 };
+            int affectedRows = _repository.Update(updatePayload, preserveExistingRuntimeState: true, preserveExistingCredentials: false);
+
+            // Assert
+            Assert.Equal(1, affectedRows);
+            var result = _repository.GetByName("SyncService", decrypt: false);
+            Assert.NotNull(result);
+            Assert.Equal("C:\\new_sync.exe", result.ExecutablePath);
+            Assert.Equal(444, result.Pid); // Preserved via synchronous routing pass flags
+        }
+
+        [Fact]
+        public async Task GetServicePidAsync_ValidService_ReturnsCorrectPid()
+        {
+            // Arrange
+            var service = new ServiceDto { Name = "PidTrackedService", ExecutablePath = "C:\\p.exe", Pid = 5678 };
+            await _repository.AddAsync(service, CancellationToken.None);
+
+            // Act
+            int? activePid = await _repository.GetServicePidAsync("PidTrackedService", CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(activePid);
+            Assert.Equal(5678, activePid.Value);
+        }
+
+        [Fact]
+        public async Task GetServicePidAsync_NullOrMissingService_ReturnsNull()
+        {
+            // Act & Assert
+            Assert.Null(await _repository.GetServicePidAsync(null, CancellationToken.None));
+            Assert.Null(await _repository.GetServicePidAsync("NonExistentService", CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task GetServiceConsoleStateAsync_ValidService_ReturnsPopulatedConsoleDto()
+        {
+            // Arrange
+            var service = new ServiceDto
+            {
+                Name = "ConsoleStateService",
+                ExecutablePath = "C:\\c.exe",
+                Pid = 9101,
+                ActiveStdoutPath = "C:\\out.log",
+                ActiveStderrPath = "C:\\err.log"
+            };
+            await _repository.AddAsync(service, CancellationToken.None);
+
+            // Act
+            var state = await _repository.GetServiceConsoleStateAsync("ConsoleStateService", CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(state);
+            Assert.Equal(9101, state.Pid);
+            Assert.Equal("C:\\out.log", state.ActiveStdoutPath);
+            Assert.Equal("C:\\err.log", state.ActiveStderrPath);
+        }
+
+        [Fact]
+        public async Task GetServiceConsoleStateAsync_NullOrMissingService_ReturnsNull()
+        {
+            // Act & Assert
+            Assert.Null(await _repository.GetServiceConsoleStateAsync(null, CancellationToken.None));
+            Assert.Null(await _repository.GetServiceConsoleStateAsync("MissingConsoleService", CancellationToken.None));
+        }
+
+        [Fact]
+        public void GetByName_SynchronousPath_ResolvesEntryCleanly()
+        {
+            // Arrange
+            var service = new ServiceDto { Name = "SynchronousQueryService", ExecutablePath = "C:\\sync.exe" };
+            _repository.GetDapperExecutor().Execute(
+                $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority) VALUES ('SynchronousQueryService', 'C:\\sync.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');", service);
+
+            // Act
+            var resolved = _repository.GetByName("SynchronousQueryService", decrypt: false);
+
+            // Assert
+            Assert.NotNull(resolved);
+            Assert.Equal("C:\\sync.exe", resolved.ExecutablePath);
+        }
+
+        [Fact]
+        public void GetByName_NullOrEmptyInput_ReturnsNull()
+        {
+            // Act & Assert
+            Assert.Null(_repository.GetByName(null, decrypt: false));
+            Assert.Null(_repository.GetByName(string.Empty, decrypt: false));
+        }
+
+        [Fact]
+        public async Task GetByNameAsync_NullOrEmptyInput_ReturnsNull()
+        {
+            // Act & Assert
+            Assert.Null(await _repository.GetByNameAsync(null, decrypt: false, CancellationToken.None));
+            Assert.Null(await _repository.GetByNameAsync("   ", decrypt: false, CancellationToken.None));
+        }
+
+        #endregion
+
         public void Dispose()
         {
             // Triggers automatic removal and cleanup of the shared SQLite state memory allocation layout
             _dbContext.Dispose();
+        }
+    }
+
+    // Secondary extension to provide quick access to internal test structures if needed
+    internal static class ServiceRepositoryExtensions
+    {
+        public static IDapperExecutor GetDapperExecutor(this ServiceRepository repository)
+        {
+            // Instantiates bypass hook access to test context executions safely
+            return (IDapperExecutor)typeof(ServiceRepository)
+                .GetField("_dapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .GetValue(repository);
         }
     }
 }

@@ -630,7 +630,9 @@ namespace Servy.Infrastructure.UnitTests.Data
                 PreStopParameters = "encrypted_pre_stop_params",
                 PostStopParameters = "encrypted_post_stop_params",
             };
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
+                It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(dto);
             _mockSecureData.Setup(s => s.Decrypt("encrypted")).Returns("plain");
             _mockSecureData.Setup(s => s.Decrypt("encrypted_vars")).Returns("v1=val1;v2=val2");
             _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_vars")).Returns("v3=val3");
@@ -994,8 +996,8 @@ namespace Servy.Infrastructure.UnitTests.Data
         {
             var dto = new ServiceDto { Name = "A", Password = "p1" };
 
-            _mockDapper
-                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
+                It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(dto);
 
             _mockSecureData
@@ -1080,8 +1082,9 @@ namespace Servy.Infrastructure.UnitTests.Data
             var dto = new ServiceDto { Name = name };
             var expectedJson = "{\"Name\": \"A\"}";
 
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
-                       .ReturnsAsync(dto);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
+                It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(dto);
 
             _mockJsonServiceSerializer
                 .Setup(s => s.Serialize(It.IsAny<ServiceDto>()))
@@ -1166,8 +1169,9 @@ namespace Servy.Infrastructure.UnitTests.Data
             var databaseMatch = new ServiceDto { Name = "TargetService", Pid = 9999, ActiveStdoutPath = "db.log" };
 
             // Satisfies incoming.Name checks and forces "existing != null" path branch
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
-                       .ReturnsAsync(databaseMatch);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
+                It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(databaseMatch);
 
             // Act
             await repo.UpdateAsync(incoming, preserveExistingRuntimeState: true, preserveExistingCredentials: false, CancellationToken.None);
