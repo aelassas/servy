@@ -137,7 +137,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// The base file name (without extension) of the Servy Service CLI executable.
         /// </summary>
-        public static readonly string ServyServiceCLIFileName = "Servy.Service.Net48.CLI";
+        public static readonly string ServyServiceCLIFileName = "Servy.Service.CLI.Net48";
 
         /// <summary>
         /// The full file name (with extension) of the Servy Service CLI executable.
