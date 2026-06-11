@@ -150,7 +150,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.UI.IntegrationTests",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "choco", "choco", "{0C916905-AFCC-4C80-85FD-7D98DF5E6DE5}"
 	ProjectSection(SolutionItems) = preProject
-		setup\choco\chocolateyuninstall.ps1 = setup\choco\chocolateyuninstall.ps1
 		setup\choco\README.md = setup\choco\README.md
 	EndProjectSection
 EndProject
