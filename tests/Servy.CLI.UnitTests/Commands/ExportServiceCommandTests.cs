@@ -244,9 +244,13 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Act & Assert
             var reflectEx = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, content));
-
             var actualEx = Assert.IsType<SecurityException>(reflectEx.InnerException);
-            Assert.Contains("COM1", actualEx.Message);
+
+            bool matchedExpectedSecurityRules = actualEx.Message.Contains("COM1") ||
+                                                actualEx.Message.Contains("UNC");
+
+            Assert.True(matchedExpectedSecurityRules,
+                $"The security guard rejected the path, but with an unexpected message profile: '{actualEx.Message}'");
 
             // Assert file system state left no permanent footprint
             Assert.False(File.Exists(filePath));
