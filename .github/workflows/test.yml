@@ -95,7 +95,7 @@ jobs:
                   $targetArgs += " /TestCaseFilter:`"$($proj.Filter)`""
               }
               
-              # FIX: Include the project name in the file so integration tests don't overwrite unit tests              
+              # Include the project name in the file so integration tests don't overwrite unit tests              
               $outPath = "$($proj.Dir)\$($proj.Name).coverage.cobertura.xml"
               
               # Use vswhere to find the latest installed vstest.console.exe dynamically
@@ -233,13 +233,13 @@ jobs:
         shell: pwsh
         run: |
           # Find all newly generated cobertura files dynamically          
-          # FIX: Updated the filter to match the new unique filenames          
+          # Updated the filter to match the new unique filenames          
           $reports = Get-ChildItem -Path . -Recurse -Filter "*coverage.cobertura.xml" | Where-Object { $_.FullName -notmatch "CoverageMerged" }
           if ($reports.Count -eq 0) { Write-Error "No coverage files found!"; exit 1 }
           
           $reportPaths = $reports.FullName -join ";"
           
-          # FIX: Add wildcard assembly filters to physically strip test assemblies from the merged XML,
+          # Add wildcard assembly filters to physically strip test assemblies from the merged XML,
           # and include file-level exclusions to eliminate any residual XAML markup layout records.
           reportgenerator `
               "-reports:$reportPaths" `
@@ -247,6 +247,7 @@ jobs:
               "-reporttypes:Cobertura" `
               "-assemblyfilters:-*.UnitTests;-*.IntegrationTests;-Servy.Testing;-Servy.Restarter.Net48" `
               -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/*.Designer.cs;-**/obj/**/*"
+          if ($LASTEXITCODE -ne 0) { Pop-Location; Write-Error "reportgenerator failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
 
       - name: Normalize coverage paths (PowerShell)
         if: always()

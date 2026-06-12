@@ -448,7 +448,11 @@ namespace Servy.Manager.ViewModels
         protected virtual void Dispose(bool disposing)
         {
             if (_disposedValue) return;
-            if (disposing) Cleanup();
+            if (disposing)
+            {
+                Cleanup();
+                ScrollLogsToTopRequested = null;
+            }
             _disposedValue = true;
         }
 

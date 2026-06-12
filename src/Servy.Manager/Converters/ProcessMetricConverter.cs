@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.UI.Constants;
 using Servy.UI.Design;
 using System;
@@ -40,7 +41,13 @@ namespace Servy.Manager.Converters
                 return;
             }
 
-            ProcessHelper = App.Services?.GetService<IProcessHelper>() ?? new DesignTimeProcessHelper();
+            var helper = App.Services?.GetService<IProcessHelper>();
+            if (helper == null)
+            {
+                Logger.Warn($"{GetType().Name}: IProcessHelper could not be resolved from DI; using design-time fallback. Metric values will be placeholders.");
+                helper = new DesignTimeProcessHelper();
+            }
+            ProcessHelper = helper;
         }
 
         /// <summary>

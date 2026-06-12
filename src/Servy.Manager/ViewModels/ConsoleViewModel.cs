@@ -323,6 +323,10 @@ namespace Servy.Manager.ViewModels
             {
                 // Task was cancelled by a newer keystroke; exit gracefully.
             }
+            catch (Exception ex)
+            {
+                Logger.Error("Failed to apply console filter.", ex);
+            }
         }
 
         /// <summary>
@@ -461,6 +465,10 @@ namespace Servy.Manager.ViewModels
                     }
                 }
             }
+            catch (ObjectDisposedException)
+            {
+                Logger.Debug("Attempted to switch logs after disposal; ignoring.");
+            }
             catch (Exception ex)
             {
                 try
@@ -538,8 +546,18 @@ namespace Servy.Manager.ViewModels
             _ = tailer.RunFromPosition(path, type, pos, created, cancellationToken)
                 .ContinueWith(t =>
                 {
+                    var innerEx = t.Exception?.Flatten().InnerException;
+
+                    if (innerEx is ObjectDisposedException)
+                    {
+                        Logger.Debug("LogTailer disposed.");
+                        return;
+                    }
+
                     if (t.IsFaulted)
-                        Logger.Warn($"Log tailing failed: {t.Exception?.InnerException?.Message}");
+                    {
+                        Logger.Warn($"Log tailing failed: {innerEx?.Message}");
+                    }
                 }, TaskContinuationOptions.OnlyOnFaulted);
         }
 

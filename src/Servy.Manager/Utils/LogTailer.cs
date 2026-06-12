@@ -70,6 +70,8 @@ namespace Servy.Manager.Utils
         {
             if (string.IsNullOrEmpty(path)) return;
 
+            if (Volatile.Read(ref _isDisposed) != 0) throw new ObjectDisposedException(nameof(LogTailer));
+
             using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _disposeCts.Token))
             {
                 var linkedToken = linkedCts.Token;
@@ -261,6 +263,7 @@ namespace Servy.Manager.Utils
         /// </summary>
         public async Task<HistoryResult> GetHistoryAsync(string path, LogType type, int maxLines)
         {
+            if (Volatile.Read(ref _isDisposed) != 0) throw new ObjectDisposedException(nameof(LogTailer));
             long pos = 0;
             DateTime created = DateTime.MinValue;
             var lines = await Task.Run(() => LoadHistory(path, type, maxLines, out pos, out created));
