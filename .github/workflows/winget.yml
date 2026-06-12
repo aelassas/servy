@@ -10,6 +10,11 @@ name: winget
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.1)'
+        required: false
 
 concurrency:
   group: winget-${{ github.ref }}
@@ -28,3 +33,5 @@ jobs:
           identifier: aelassas.Servy
           token: ${{ secrets.WINGET_TOKEN }}
           installers-regex: "servy-\\d+\\.\\d+-x64-installer\\.exe$"
+          # Dynamically resolve tag parameters across automated hooks and manual re-run triggers
+          release-tag: ${{ github.event.inputs.tag || github.event.release.tag_name }}
