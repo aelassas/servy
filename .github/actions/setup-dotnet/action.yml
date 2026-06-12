@@ -11,7 +11,7 @@ runs:
   using: "composite"
   steps:
     - name: Install .NET SDK
-      shell: powershell
+      shell: pwsh
       run: |
         $ErrorActionPreference = "Stop"
 
