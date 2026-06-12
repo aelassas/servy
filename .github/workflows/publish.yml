@@ -22,7 +22,6 @@ jobs:
     timeout-minutes: 60  # Prevents indefinite hangs if signing or VT APIs stall
 
     env:
-      ROOT_DIR: ${{ github.workspace }}
       BUILD_CONFIG: Release
       PLATFORM: x64
       FRAMEWORK: net48
@@ -160,7 +159,7 @@ jobs:
           $env:SEVEN_ZIP = $exePath
 
           # 5. Set environment variable for FUTURE steps in the workflow
-          echo "SEVEN_ZIP=$exePath" >> $env:GITHUB_ENV
+          Add-Content -Path $env:GITHUB_ENV -Value "SEVEN_ZIP=$exePath"
 
           # 6. Verification & Version Check
           if (-not (Test-Path $env:SEVEN_ZIP)) { throw "7z.exe not found at $env:SEVEN_ZIP" }
@@ -528,8 +527,8 @@ jobs:
           Move-Item -Path $originalPath -Destination $signPathTarget -Force
           
           # Export explicit paths for downstream steps
-          echo "UNSIGNED_INSTALLER_PATH=$signPathTarget" >> $env:GITHUB_ENV
-          echo "SIGNED_INSTALLER_DIR=signed/installer" >> $env:GITHUB_ENV
+          Add-Content -Path $env:GITHUB_ENV -Value "UNSIGNED_INSTALLER_PATH=$signPathTarget"
+          Add-Content -Path $env:GITHUB_ENV -Value "SIGNED_INSTALLER_DIR=signed/installer"
 
       - name: Upload installer (unsigned)
         id: unsigned-installer
@@ -566,7 +565,7 @@ jobs:
           Move-Item -Path $source -Destination $targetPath -Force
           
           # Export the final artifact path
-          echo "FINAL_INSTALLER_PATH=$targetPath" >> $env:GITHUB_ENV
+          Add-Content -Path $env:GITHUB_ENV -Value "FINAL_INSTALLER_PATH=$targetPath"
 
       - name: Upload signed installer
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
