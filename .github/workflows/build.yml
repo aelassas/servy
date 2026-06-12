@@ -42,9 +42,6 @@ jobs:
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
 
-      - name: Check .NET version
-        run: dotnet --version
-
       - name: Restore dependencies
         run: dotnet restore Servy.sln
 
