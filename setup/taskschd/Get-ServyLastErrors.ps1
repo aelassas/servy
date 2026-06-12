@@ -20,7 +20,7 @@
     Project     : Servy
     
     Requirements:
-      - PowerShell 3.0 or later.
+      - PowerShell 5.1 or later.
       - Windows Vista / Windows Server 2008 or newer.
       - Note: This script is NOT compatible with Windows XP or Server 2003 
         due to the dependency on the Get-WinEvent cmdlet.

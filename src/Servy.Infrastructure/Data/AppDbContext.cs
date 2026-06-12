@@ -34,16 +34,6 @@ namespace Servy.Infrastructure.Data
             return new SQLiteConnection(_connectionString);
         }
 
-        /// <summary>
-        /// Creates a new <see cref="IDapperExecutor"/> instance using a fresh SQLite connection.
-        /// </summary>
-        /// <returns>An <see cref="IDapperExecutor"/> for executing SQL commands.</returns>
-        public IDapperExecutor CreateDapperExecutor()
-        {
-            ThrowIfDisposed();
-            return new DapperExecutor(this);
-        }
-
         #region IDisposable Implementation
 
         /// <summary>

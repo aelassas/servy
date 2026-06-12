@@ -32,11 +32,11 @@ runs:
       run: |
         $tag = $null
 
-        if ($env:INPUT_MANUAL_TAG -and $env:INPUT_MANUAL_TAG -ne '') {
+        if ($env:INPUT_MANUAL_TAG) {
             $tag = $env:INPUT_MANUAL_TAG                         # Manual trigger input
-        } elseif ($env:INPUT_RELEASE_TAG -and $env:INPUT_RELEASE_TAG -ne '') {
+        } elseif ($env:INPUT_RELEASE_TAG) {
             $tag = $env:INPUT_RELEASE_TAG                        # Release trigger
-        } elseif ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME -ne '') {
+        } elseif ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME) {
             $tag = $env:GITHUB_REF_NAME                          # Fallback for tag push
         } else {
             # Fallback block integration matching bump-version requirements

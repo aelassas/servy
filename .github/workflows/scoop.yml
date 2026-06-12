@@ -211,6 +211,7 @@ jobs:
               # Source canonical metadata fields directly from the updated reference file in the workspace
               $canonicalSourcePath = "$env:GITHUB_WORKSPACE/setup/scoop/servy.json"
               $canonicalObj = Get-Content $canonicalSourcePath -Raw | ConvertFrom-Json
+              $installerUrl = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-x64-installer.exe"
 
               # Hydrate static structural fields directly from canonical settings
               $jsonObj = [PSCustomObject]@{
@@ -220,7 +221,7 @@ jobs:
                   license      = $canonicalObj.license
                   architecture = @{
                       '64bit' = @{
-                          url  = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-x64-installer.exe"
+                          url  = $installerUrl
                           hash = $env:HASH
                       }
                   }
@@ -237,7 +238,7 @@ jobs:
               # Update existing manifest
               $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
               $jsonObj.version = $env:VERSION
-              $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-x64-installer.exe"
+              $jsonObj.architecture.'64bit'.url = $installerUrl
               $jsonObj.architecture.'64bit'.hash = $env:HASH
 
               Write-ScoopManifest -jsonObj $jsonObj -jsonPath $fullPath

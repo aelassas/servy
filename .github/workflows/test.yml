@@ -133,18 +133,17 @@ jobs:
           $coverageFiles = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml"
           if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
 
-          $dotnet = "$env:RUNNER_TEMP\dotnet\dotnet.exe"
           $localTools = "$env:RUNNER_TEMP\localtools"
           if (-Not (Test-Path $localTools)) { New-Item -ItemType Directory -Path $localTools | Out-Null }
 
-          & $dotnet new tool-manifest --force --output $localTools
+          & dotnet new tool-manifest --force --output $localTools
 
           Push-Location $localTools
-          & $dotnet tool install dotnet-reportgenerator-globaltool --version $env:REPORTGENERATOR_VERSION
+          & dotnet tool install dotnet-reportgenerator-globaltool --version $env:REPORTGENERATOR_VERSION
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
           $joinedReports = $coverageFiles.FullName -join ';'
-          & $dotnet tool run reportgenerator `
+          & dotnet tool run reportgenerator `
               "-reports:$joinedReports" `
               "-targetdir:$fixedDir" `
               "-reporttypes:Cobertura" `
