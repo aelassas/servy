@@ -66,13 +66,14 @@ jobs:
           key: ${{ runner.os }}-sonar-scanner-${{ env.SONAR_SCANNER_VERSION }}
           restore-keys: ${{ runner.os }}-sonar-scanner-
 
-      # 7. Install Scanner (The dotnet-tool wrapper still works great for MSBuild analysis)
+      # 7. Install / Update Scanner
       - name: Install SonarCloud scanner
         if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           if (!(Test-Path ${{ runner.temp }}\scanner)) { New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory }
-          dotnet tool install dotnet-sonarscanner --version $env:SONAR_SCANNER_VERSION --tool-path ${{ runner.temp }}\scanner
+          # Utilizing 'update' ensures version switches don't crash when versionless fallbacks populate the tool-path
+          dotnet tool update dotnet-sonarscanner --version $env:SONAR_SCANNER_VERSION --tool-path ${{ runner.temp }}\scanner
 
       # 8. Restore NuGet Packages (Mandatory for MSBuild)
       - name: Restore NuGet packages

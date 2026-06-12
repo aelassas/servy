@@ -84,8 +84,13 @@ namespace Servy.CLI
                 // Hook Ctrl+C and Ctrl+Break
                 Console.CancelKeyPress += (s, e) =>
                 {
-                    e.Cancel = true; // Prevent immediate hard-kill
-                    cts.Cancel();
+                    if (!cts.IsCancellationRequested)
+                    {
+                        e.Cancel = true;          // first press: graceful cancellation
+                        cts.Cancel();
+                        Console.WriteLine("Cancelling... press Ctrl+C again to force exit.");
+                    }
+                    // second press: leave e.Cancel = false -> process terminates
                 };
 
                 IAppDbContext dbContext = null;

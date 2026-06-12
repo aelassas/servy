@@ -3,7 +3,6 @@ using Servy.CLI.Enums;
 using Servy.CLI.Models;
 using Servy.CLI.Resources;
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;

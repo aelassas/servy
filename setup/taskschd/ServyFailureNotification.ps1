@@ -225,7 +225,6 @@ foreach ($evt in $eventsToProcess) {
                                         -scriptDir $scriptDir `
                                         -FallbackLogFile $fallbackLogFile
     
-    # ROBUSTNESS: Re-architected watermarking filter path to match ServyFailureEmail.ps1.
     # Advance the event queue timestamp pointer for either clear success or permanent, unfixable configuration blocks.
     # Only break the processing loop without modifying the index watermark on clear TransientFailure states.
     switch ($deliveryStatus) {

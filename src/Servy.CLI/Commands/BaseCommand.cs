@@ -124,7 +124,16 @@ namespace Servy.CLI.Commands
                 {
                     if (onSuccess != null)
                     {
-                        await onSuccess(cancellationToken);
+                        try
+                        {
+                            await onSuccess(cancellationToken);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Transform terminal execution fault into an informative best-effort warning descriptor.
+                            // Prevents database write-locks or directory IO bottlenecks from masking a successful SCM operation.
+                            Logger.Warn($"{commandName}: Service operation completed successfully, but post-success repository synchronization failed for '{serviceName}': {ex.Message}");
+                        }
                     }
 
                     var successMsg = successMessageFormatter(serviceName);

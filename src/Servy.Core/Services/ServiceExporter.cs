@@ -88,7 +88,7 @@ namespace Servy.Core.Services
                 return null;
             }
 
-            // ROBUSTNESS: Switched to centralized UntrustedDataSettings to resolve asymmetry with IJsonServiceSerializer.
+            // Use the same settings as the deserialization path (IJsonServiceSerializer) so exports round-trip identically.
             return JsonConvert.SerializeObject(service, Newtonsoft.Json.Formatting.Indented, JsonSecurity.UntrustedDataSettings);
         }
 
