@@ -335,7 +335,7 @@ jobs:
           fail_ci_if_error: true   # let the action report failure
           debug: false
         env:
-            COVERALLS_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+            COVERALLS_GIT_BRANCH: ${{ github.ref_name }}
 
       - name: Notify Coveralls Status in case of failure
         if: always() && steps.coveralls.outcome == 'failure'
