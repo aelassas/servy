@@ -23,7 +23,7 @@
     Repository  : https://github.com/aelassas/servy
     
     Requirements:
-      - PowerShell 3.0 or later.
+      - PowerShell 5.1 or later.
       - 'smtp-config.xml' and 'smtp-cred.xml' must exist in the script directory.
 
     Setup (Secure Credentials):

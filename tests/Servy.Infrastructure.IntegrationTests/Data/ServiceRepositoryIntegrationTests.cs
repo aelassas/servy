@@ -49,11 +49,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             _masterConnection.Close();
             _masterConnection.Dispose();
         }
-
-        public IDapperExecutor CreateDapperExecutor()
-        {
-            return new DapperExecutor(this);
-        }
     }
 
     /// <summary>

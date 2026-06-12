@@ -46,7 +46,21 @@ runs:
         New-Item -ItemType Directory -Force -Path $cliDir | Out-Null
         $outPath = "$cliDir\cyclonedx.exe"
         
-        Invoke-WebRequest -Uri $uri -OutFile $outPath -ErrorAction Stop
+        # Wrap download inside a defensive retry loop to withstand network instability
+        $maxRetries = 5
+        for ($i = 0; $i -lt $maxRetries; $i++) {
+            try {
+                Invoke-WebRequest -Uri $uri -OutFile $outPath -ErrorAction Stop
+                break
+            }
+            catch {
+                if ($i -eq ($maxRetries - 1)) {
+                    throw "Failed to download CycloneDX CLI executable after $maxRetries attempts. Error: $_"
+                }
+                Write-Host "Warning: Transient download interruption detected for CycloneDX CLI. Retrying in 3 seconds... (Attempt $($i + 1)/$maxRetries)" -ForegroundColor Yellow
+                Start-Sleep -Seconds 3
+            }
+        }
         
         # --- SECURITY CHECK: SHA256 PINNING ---
         Write-Host "Verifying SHA256 checksum of CycloneDX CLI..."
@@ -70,7 +84,21 @@ runs:
         $toolPkgDir = "$env:USERPROFILE\cyclonedx-tool"
         New-Item -ItemType Directory -Force -Path $toolPkgDir | Out-Null
         $toolPkgPath = "$toolPkgDir\CycloneDX.$toolVersion.nupkg"
-        Invoke-WebRequest -Uri $toolPkgUri -OutFile $toolPkgPath -ErrorAction Stop
+        
+        # Wrap package payload resolution inside a defensive retry loop matching sibling actions
+        for ($i = 0; $i -lt $maxRetries; $i++) {
+            try {
+                Invoke-WebRequest -Uri $toolPkgUri -OutFile $toolPkgPath -ErrorAction Stop
+                break
+            }
+            catch {
+                if ($i -eq ($maxRetries - 1)) {
+                    throw "Failed to download CycloneDX .NET Tool nupkg after $maxRetries attempts. Error: $_"
+                }
+                Write-Host "Warning: Transient download interruption detected for CycloneDX NuGet package. Retrying in 3 seconds... (Attempt $($i + 1)/$maxRetries)" -ForegroundColor Yellow
+                Start-Sleep -Seconds 3
+            }
+        }
 
         Write-Host "Verifying SHA256 checksum of CycloneDX .NET Tool package..."
         $actualToolHash = (Get-FileHash $toolPkgPath -Algorithm SHA256).Hash
