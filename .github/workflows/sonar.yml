@@ -82,7 +82,7 @@ jobs:
           
           if ($LASTEXITCODE -ne 0) { throw "sonarscanner begin failed (exit $LASTEXITCODE)" }
 
-          dotnet build --configuration Release
+          dotnet build Servy.sln --configuration Release
           $buildExit = $LASTEXITCODE
 
           ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="$env:SONAR_TOKEN"

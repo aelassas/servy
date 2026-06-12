@@ -42,7 +42,7 @@ function Resolve-Tool {
     }
 
     # 2. Check System PATH (Application only - avoid alias/function/script shadowing)
-    $cmd = Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue
+    $cmd = Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($cmd) { 
         return $cmd.Source   # Source is the canonical path property for Application commands
     }
