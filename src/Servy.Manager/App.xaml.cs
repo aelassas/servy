@@ -51,7 +51,7 @@ namespace Servy.Manager
         /// <summary>
         /// Service provider for dependency injection, initialized by the bootstrapper.
         /// </summary>
-        public static IServiceProvider Services { get; private set; }
+        public static IServiceProvider Services { get; internal set; }
 
         #endregion
 
