@@ -413,7 +413,7 @@ namespace Servy.Manager.ViewModels
         /// <returns>Log levels.</returns>
         private static List<EventLogLevel> GetLogLevels() => Enum.GetValues(typeof(EventLogLevel))
                                                             .Cast<EventLogLevel>()
-                                                            .Where(logLevel => logLevel != EventLogLevel.Critical &&  logLevel != EventLogLevel.Verbose)
+                                                            .Where(logLevel => logLevel != EventLogLevel.Critical && logLevel != EventLogLevel.Verbose)
                                                             .ToList();
 
         #endregion
@@ -442,7 +442,11 @@ namespace Servy.Manager.ViewModels
         protected virtual void Dispose(bool disposing)
         {
             if (_disposedValue) return;
-            if (disposing) Cleanup();
+            if (disposing)
+            {
+                Cleanup();
+                ScrollLogsToTopRequested = null;
+            }
             _disposedValue = true;
         }
 

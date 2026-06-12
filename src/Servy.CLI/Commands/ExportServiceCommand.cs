@@ -103,9 +103,36 @@ namespace Servy.CLI.Commands
             // Preliminary folder generation validation rule
             string fullPath = Path.GetFullPath(userPath);
             string? parentDir = Path.GetDirectoryName(fullPath);
+
+            // Track directories created dynamically during this transaction loop to enable atomic rollbacks
+            var directoriesCreatedByUs = new List<string>();
+
             if (!string.IsNullOrEmpty(parentDir) && !Directory.Exists(parentDir))
             {
-                Directory.CreateDirectory(parentDir);
+                // Map out the missing directory chain chunks hierarchically
+                string? currentPath = parentDir;
+                var missingChain = new Stack<string>();
+
+                while (!string.IsNullOrEmpty(currentPath) && !Directory.Exists(currentPath))
+                {
+                    missingChain.Push(currentPath);
+                    currentPath = Path.GetDirectoryName(currentPath);
+                }
+
+                // Build the directory trees one by one, keeping track of our modifications
+                while (missingChain.Count > 0)
+                {
+                    string targetDir = missingChain.Pop();
+                    try
+                    {
+                        Directory.CreateDirectory(targetDir);
+                        directoriesCreatedByUs.Add(targetDir);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new IOException($"Failed to create directory structure chain for path '{targetDir}': {ex.Message}", ex);
+                    }
+                }
             }
 
             bool createdByUs = !File.Exists(fullPath);
@@ -121,6 +148,19 @@ namespace Servy.CLI.Commands
 
             if (!validationResult.IsValid || fileStream == null)
             {
+                // Roll back directory creation side effects instantly on validation failure
+                for (int i = directoriesCreatedByUs.Count - 1; i >= 0; i--)
+                {
+                    try
+                    {
+                        if (Directory.Exists(directoriesCreatedByUs[i]) && Directory.GetFileSystemEntries(directoriesCreatedByUs[i]).Length == 0)
+                        {
+                            Directory.Delete(directoriesCreatedByUs[i]);
+                        }
+                    }
+                    catch { /* Suppress rollback infrastructure exceptions to preserve original security errors */ }
+                }
+
                 string error = validationResult.ErrorMessage ?? "Security Guard Failure: Target file handle validation rejected.";
 
                 // Keep structural compatibility with old explicit exceptions
@@ -151,9 +191,25 @@ namespace Servy.CLI.Commands
             }
             finally
             {
-                if (!committed && createdByUs)
+                if (!committed)
                 {
-                    try { File.Delete(fullPath); } catch { /* ignored */ }
+                    if (createdByUs)
+                    {
+                        try { File.Delete(fullPath); } catch { /* ignored */ }
+                    }
+
+                    // Fallback rollback guard inside finally block for runtime IO or write-access failure states
+                    for (int i = directoriesCreatedByUs.Count - 1; i >= 0; i--)
+                    {
+                        try
+                        {
+                            if (Directory.Exists(directoriesCreatedByUs[i]) && Directory.GetFileSystemEntries(directoriesCreatedByUs[i]).Length == 0)
+                            {
+                                Directory.Delete(directoriesCreatedByUs[i]);
+                            }
+                        }
+                        catch { /* ignored */ }
+                    }
                 }
             }
         }

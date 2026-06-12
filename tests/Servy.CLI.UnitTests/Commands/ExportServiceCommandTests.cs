@@ -6,7 +6,6 @@ using Servy.Core.Data;
 using Servy.Core.DTOs;
 using System.Reflection;
 using System.Security;
-using Xunit;
 
 namespace Servy.CLI.UnitTests.Commands
 {
@@ -28,7 +27,9 @@ namespace Servy.CLI.UnitTests.Commands
         public void Dispose()
         {
             if (Directory.Exists(_tempDir))
-                Directory.Delete(_tempDir, true);
+            {
+                try { Directory.Delete(_tempDir, recursive: true); } catch { /* fail-safe */ }
+            }
         }
 
         #region Constructor Tests
@@ -192,6 +193,87 @@ namespace Servy.CLI.UnitTests.Commands
 
         #endregion
 
+        #region Transactional Rollback & Directory Integrity Tests
+
+        [Fact]
+        public void SaveFile_ShouldCreateDeepDirectoryTree_WhenPathIsValid()
+        {
+            // Arrange
+            var deepSubDir = Path.Combine(_tempDir, "level1", "level2", "level3");
+            var filePath = Path.Combine(deepSubDir, "service_export.json");
+            var content = "{ \"Name\": \"TestServiceConfig\" }";
+
+            // Act
+            InvokeSaveFile(filePath, content);
+
+            // Assert
+            Assert.True(Directory.Exists(deepSubDir), "The multi-level parent directory chain should be created successfully.");
+            Assert.True(File.Exists(filePath), "The targeted service export payload file should be created.");
+            Assert.Equal(content, File.ReadAllText(filePath));
+        }
+
+        [Fact]
+        public void SaveFile_ValidationFailsOnInvalidExtension_RollsBackCreatedDirectoriesCleanly()
+        {
+            // Arrange
+            var deepSubDir = Path.Combine(_tempDir, "orphaned_tree", "nested_level");
+            var filePath = Path.Combine(deepSubDir, "illegal_device_target.txt");
+            var content = "[Stale Config Payload Data]";
+
+            // Act & Assert
+            // 1. Catch the reflection wrapper exception
+            var reflectEx = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, content));
+
+            // 2. Assert against the actual unwrapped inner exception
+            var actualEx = Assert.IsType<SecurityException>(reflectEx.InnerException);
+            Assert.Contains(".txt", actualEx.Message);
+
+            // Transactional Rollback Integrity Assertions
+            Assert.False(File.Exists(filePath), "The target file should not have been generated.");
+            Assert.False(Directory.Exists(deepSubDir), "The nested parent leaf folder should be rolled back and deleted.");
+            Assert.False(Directory.Exists(Path.Combine(_tempDir, "orphaned_tree")), "The entire newly created parent path root should be swept away if empty.");
+        }
+
+        [Fact]
+        public void SaveFile_ValidationFailsOnReservedDeviceName_RollsBackCreatedDirectoriesCleanly()
+        {
+            // Arrange
+            var deepSubDir = Path.Combine(_tempDir, "dos_device_tree");
+            var filePath = Path.Combine(deepSubDir, "COM1.json");
+            var content = "{ }";
+
+            // Act & Assert
+            var reflectEx = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, content));
+
+            var actualEx = Assert.IsType<SecurityException>(reflectEx.InnerException);
+            Assert.Contains("COM1", actualEx.Message);
+
+            // Assert file system state left no permanent footprint
+            Assert.False(File.Exists(filePath));
+            Assert.False(Directory.Exists(deepSubDir), "The directory allocated for the device name target should be atomically removed on error.");
+        }
+
+        [Fact]
+        public void SaveFile_ValidationFailsOnProtectedFolder_LeavesPreExistingRootUntouched()
+        {
+            // Arrange
+            var preExistingRoot = Path.Combine(_tempDir, "stable_corporate_root");
+            Directory.CreateDirectory(preExistingRoot);
+
+            var generatedSubDir = Path.Combine(preExistingRoot, "dynamic_session_branch");
+            var filePath = Path.Combine(generatedSubDir, "malformed_file.log");
+
+            // Act & Assert
+            var reflectEx = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, "content"));
+            Assert.IsType<SecurityException>(reflectEx.InnerException);
+
+            // Assert
+            Assert.False(Directory.Exists(generatedSubDir), "The dynamic folder leaf created during this call should be cleanly rolled back.");
+            Assert.True(Directory.Exists(preExistingRoot), "The pre-existing folder root must remain untouched by our transaction fallback loop.");
+        }
+
+        #endregion
+
         #region Reflection Helper Definition
 
         /// <summary>
@@ -208,6 +290,7 @@ namespace Servy.CLI.UnitTests.Commands
                 throw new InvalidOperationException("Could not locate private method SaveFile inside ExportServiceCommand target reference metadata.");
             }
 
+            // Let TargetInvocationException bubble up naturally to satisfy the test runner harness match rules.
             method.Invoke(_command, new object[] { path, content });
         }
 

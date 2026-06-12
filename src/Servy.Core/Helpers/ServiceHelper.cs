@@ -292,7 +292,8 @@ namespace Servy.Core.Helpers
                            : floor;
 
             int attempts = Math.Max(0, preLaunchRetryAttempts) + 1;
-            int totalPreLaunch = checked(attempts * preLaunchTimeoutSeconds);
+            int safePreLaunch = Math.Max(0, preLaunchTimeoutSeconds);
+            int totalPreLaunch = checked(attempts * safePreLaunch);
             int totalBackoff = 0;
             for (int i = 1; i < attempts; i++)
             {
@@ -327,7 +328,7 @@ namespace Servy.Core.Helpers
                 previousCapped);
 
             // Add the configurable OS/SCM buffer and the pre-stop hook duration
-            int total = baseline + AppConfig.ScmTimeoutBufferSeconds + preStopTimeout;
+            int total = baseline + AppConfig.ScmTimeoutBufferSeconds + Math.Max(0, preStopTimeout);
 
             return total;
         }

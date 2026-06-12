@@ -35,10 +35,10 @@ jobs:
             exit 1
           fi
 
-          # 2. Find all .md files in the wiki directory
-          # If grep finds a non-ASCII character, it returns 0 (success)
+          # 2. Find all tracked workspace files, safely skipping internal .git repository tracking directories.
+          # If grep finds a non-ASCII character, it returns 0 (success).
           # We check for that success and force an exit 1 to fail the build.
-          NON_ASCII_FILES=$(find wiki -name '*.md' | grep -P '[^\x00-\x7F]' || true)
+          NON_ASCII_FILES=$(find wiki -path wiki/.git -prune -o -type f -print | grep -P '[^\x00-\x7F]' || true)
           
           if [ -n "$NON_ASCII_FILES" ]; then
             echo "Error: The following wiki filenames contain non-ASCII characters:"

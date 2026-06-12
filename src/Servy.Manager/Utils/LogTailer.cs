@@ -64,6 +64,8 @@ namespace Servy.Manager.Utils
         /// <returns>A Task representing the long-running polling operation.</returns>
         public async Task RunFromPosition(string? path, LogType type, long startPos, DateTime startCreated, CancellationToken token)
         {
+            if (Volatile.Read(ref _isDisposed) != 0) throw new ObjectDisposedException(nameof(LogTailer));
+
             if (string.IsNullOrEmpty(path)) return;
 
             using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, _disposeCts.Token))
@@ -256,6 +258,7 @@ namespace Servy.Manager.Utils
         /// </summary>
         public async Task<HistoryResult?> GetHistoryAsync(string? path, LogType type, int maxLines)
         {
+            if (Volatile.Read(ref _isDisposed) != 0) throw new ObjectDisposedException(nameof(LogTailer));
             long pos = 0;
             DateTime created = DateTime.MinValue;
             var lines = await Task.Run(() => LoadHistory(path, type, maxLines, out pos, out created));

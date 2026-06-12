@@ -150,6 +150,7 @@ jobs:
               "-reporttypes:Cobertura" `
               "-assemblyfilters:$($env:REPORTGENERATOR_ASSEMBLIES)" `
               "-filefilters:$($env:REPORTGENERATOR_FILES)"
+          if ($LASTEXITCODE -ne 0) { Pop-Location; Write-Error "reportgenerator failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
           Pop-Location
 
           $mergedFile = Join-Path $fixedDir "Cobertura.xml"
