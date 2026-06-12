@@ -296,7 +296,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}  
           files: CoverageMerged/fixed/coverage.cobertura.xml
-          flags: unittests,integrationtests
+          flags: aggregated_ci
           name: codecov-coverage-report
           fail_ci_if_error: true   # let the action report failure
           verbose: false
