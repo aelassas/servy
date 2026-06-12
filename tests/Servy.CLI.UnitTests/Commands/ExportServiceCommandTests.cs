@@ -281,6 +281,28 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.True(Directory.Exists(preExistingRoot), "The pre-existing folder root must remain untouched by our transaction fallback loop.");
         }
 
+        [Fact]
+        public void SaveFile_DirectoryCreatedButValidationFailsLater_TriggersFinallyFallbackRollback()
+        {
+            // Arrange
+            // We use a path where the directory chain does NOT exist, forcing SaveFile to create it.
+            var deepSubDir = Path.Combine(_tempDir, "finally_coverage_tree", "nested_leaf");
+
+            // We use an invalid file extension (.log). This ensures that the directory creation pass 
+            // succeeds completely, populates 'directoriesCreatedByUs', and THEN PathSecurityGuard 
+            // rejects the file layout, throwing an ArgumentException!
+            var filePath = Path.Combine(deepSubDir, "validation_failure_target.log");
+
+            // Act & Assert
+            var reflectEx = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, "{ }"));
+            Assert.IsType<SecurityException>(reflectEx.InnerException);
+
+            // Assert: Verify that the fallback mechanism inside the finally block caught the failure,
+            // executed the loop tracking arrays, and cleanly wiped the orphaned directories!
+            Assert.False(Directory.Exists(deepSubDir), "The nested leaf directory should be rolled back via the finally loop.");
+            Assert.False(Directory.Exists(Path.Combine(_tempDir, "finally_coverage_tree")), "The parent directory root should be swept cleanly.");
+        }
+
         #endregion
 
         #region Reflection Helper Definition
