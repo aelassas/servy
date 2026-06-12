@@ -64,5 +64,5 @@ runs:
         Write-Host "Using computed version: $version"
 
         # Populate GITHUB_ENV
-        "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        Add-Content -Path $env:GITHUB_ENV -Value "TAG=$tag"
+        Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$version"
