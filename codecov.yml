@@ -2,5 +2,6 @@ coverage:
   status:
     project: off   # disables overall project coverage check
     patch: off     # disables patch coverage check
-  ignore:
-    - "tests/Servy.Testing/**/*"
+
+ignore:
+  - "tests/Servy.Testing/**/*"
