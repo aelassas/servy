@@ -3,7 +3,6 @@ using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Manager.Config;
 using Servy.Manager.Design;
-using Servy.Manager.Mappers;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.Utils;
@@ -437,6 +436,10 @@ namespace Servy.Manager.ViewModels
                             });
                         });
 
+                        // CRITICAL RE-CHECK: Validate session state again after returning from the threaded background sorting await block.
+                        // This prevents stale log data injections if a user switched selections while Task.Run was active.
+                        if (sessionId != _currentSessionId) return;
+
                         combinedHistory.Clear();
                         for (int i = 0; i < indexedHistory.Count; i++)
                         {
@@ -446,6 +449,9 @@ namespace Servy.Manager.ViewModels
                         RawLines.AddRange(combinedHistory);
                         RequestScroll?.Invoke(true);
                     }
+
+                    // CRITICAL RE-CHECK: Ensure session equilibrium before initializing new active log tailer handles.
+                    if (sessionId != _currentSessionId) return;
 
                     // 5. Start Live Tailing, passing the Session ID
                     // Start StdOut tailer if the result and path are valid
@@ -565,6 +571,7 @@ namespace Servy.Manager.ViewModels
         /// Handles the specific logic for resetting the console view when 
         /// monitoring is stopped with the clearView flag set to true.
         /// </summary>
+        /// <param name="clearView">A value indicating whether to clear the console view.</param>
         protected override void OnMonitoringStopped(bool clearView)
         {
             if (!clearView) return;

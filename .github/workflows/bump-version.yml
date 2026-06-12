@@ -85,7 +85,7 @@ jobs:
           Invoke-Git fetch origin main
           Invoke-Git reset --hard origin/main
           
-          git update-index --chmod=+x ./bump-version.ps1
+          Invoke-Git update-index --chmod=+x ./bump-version.ps1
           ./bump-version.ps1 -Version $env:NEXT_VERSION
           if ($LASTEXITCODE -ne 0) {
               Write-Error "bump-version.ps1 failed with exit $LASTEXITCODE"

@@ -63,7 +63,7 @@ namespace Servy.CLI.Commands
         /// <param name="opts">Import service options.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        [SuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "linker.xml")]
+        [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "linker.xml")]
         public async Task<CommandResult> ExecuteAsync(ImportServiceOptions opts, CancellationToken cancellationToken = default)
         {
             var action = $"import configuration from '{opts.Path}'";
@@ -153,7 +153,7 @@ namespace Servy.CLI.Commands
         /// <param name="content">The content of the JSON configuration file.</param>
         /// <param name="cancellationToken">Optional cancellation token</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        [SuppressMessage("Trimming", "IL2026", Justification = "Awaiting full trimming support")]
+        [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Awaiting full trimming support")]
         private Task<CommandResult> ProcessJsonAsync(ImportServiceOptions opts, string content, CancellationToken cancellationToken = default)
         {
             return ProcessImportInternalAsync(

@@ -35,49 +35,6 @@ param(
 $RequiredSignPathVersion = '4.4.1' # Pinned known-good version
 
 # ----------------------------------------------------------
-# ENSURE SIGNPATH MODULE EXISTS & LOAD CORRECT VERSION
-# ----------------------------------------------------------
-$availableModule = Get-Module -ListAvailable -Name SignPath | 
-                   Where-Object { $_.Version -eq $RequiredSignPathVersion }
-
-if (-not $availableModule) {
-    Write-Host "SignPath module (v$RequiredSignPathVersion) not found. Installing..."
-    Install-Module -Name SignPath -RequiredVersion $RequiredSignPathVersion -Force -Scope CurrentUser -AllowClobber -SkipPublisherCheck
-}
-
-# 1. Clean up the current session to prevent version "pollution"
-# We remove ALL loaded SignPath modules so we start with a clean slate.
-# Added attempt limit and error tracking to prevent infinite CI hangs.
-$attempts = 0
-$maxAttempts = 5
-while ((Get-Module -Name SignPath) -and $attempts -lt $maxAttempts) {
-    Remove-Module -Name SignPath -Force -ErrorVariable rmError -ErrorAction SilentlyContinue
-    if ($rmError) {
-        Write-Warning "Failed to remove loaded SignPath module on attempt $($attempts+1): $($rmError | Out-String)"
-    }
-    $attempts++
-}
-
-if (Get-Module -Name SignPath) {
-    throw  "Could not unload pre-existing SignPath module after $attempts attempts. Aborting to avoid version pollution."
-}
-
-# 2. Explicitly import the pinned version
-Import-Module SignPath -RequiredVersion $RequiredSignPathVersion -Force
-
-# 3. Verify exactly ONE module is loaded and it matches the version
-# We filter Get-Module to ensure we are looking at the version we just asked for.
-$loadedModule = Get-Module -Name SignPath | Where-Object { $_.Version -eq $RequiredSignPathVersion }
-
-if ($null -eq $loadedModule) {
-    # If we get here, the import failed or another version is blocking it
-    $currentVersions = (Get-Module -Name SignPath).Version -join ', '
-    throw "Failed to load the correct SignPath module version. Expected: $RequiredSignPathVersion, Found Loaded: [$currentVersions]"
-}
-
-Write-Host "SignPath module v$($loadedModule.Version) loaded and verified for build provenance." -ForegroundColor Green
-
-# ----------------------------------------------------------
 # LOCATE CONFIG FILE
 # ----------------------------------------------------------
 $scriptDir = $PSScriptRoot
@@ -137,6 +94,49 @@ if ($signFlag -ine "true") {
 }
 
 Write-Host "SIGN=true detected. Proceeding with code signing."
+
+# ----------------------------------------------------------
+# ENSURE SIGNPATH MODULE EXISTS & LOAD CORRECT VERSION
+# ----------------------------------------------------------
+$availableModule = Get-Module -ListAvailable -Name SignPath | 
+                   Where-Object { $_.Version -eq $RequiredSignPathVersion }
+
+if (-not $availableModule) {
+    Write-Host "SignPath module (v$RequiredSignPathVersion) not found. Installing..."
+    Install-Module -Name SignPath -RequiredVersion $RequiredSignPathVersion -Force -Scope CurrentUser -AllowClobber -SkipPublisherCheck
+}
+
+# 1. Clean up the current session to prevent version "pollution"
+# We remove ALL loaded SignPath modules so we start with a clean slate.
+# Added attempt limit and error tracking to prevent infinite CI hangs.
+$attempts = 0
+$maxAttempts = 5
+while ((Get-Module -Name SignPath) -and $attempts -lt $maxAttempts) {
+    Remove-Module -Name SignPath -Force -ErrorVariable rmError -ErrorAction SilentlyContinue
+    if ($rmError) {
+        Write-Warning "Failed to remove loaded SignPath module on attempt $($attempts+1): $($rmError | Out-String)"
+    }
+    $attempts++
+}
+
+if (Get-Module -Name SignPath) {
+    throw  "Could not unload pre-existing SignPath module after $attempts attempts. Aborting to avoid version pollution."
+}
+
+# 2. Explicitly import the pinned version
+Import-Module SignPath -RequiredVersion $RequiredSignPathVersion -Force
+
+# 3. Verify exactly ONE module is loaded and it matches the version
+# We filter Get-Module to ensure we are looking at the version we just asked for.
+$loadedModule = Get-Module -Name SignPath | Where-Object { $_.Version -eq $RequiredSignPathVersion }
+
+if ($null -eq $loadedModule) {
+    # If we get here, the import failed or another version is blocking it
+    $currentVersions = (Get-Module -Name SignPath).Version -join ', '
+    throw "Failed to load the correct SignPath module version. Expected: $RequiredSignPathVersion, Found Loaded: [$currentVersions]"
+}
+
+Write-Host "SignPath module v$($loadedModule.Version) loaded and verified for build provenance." -ForegroundColor Green
 
 # ----------------------------------------------------------
 # EXTRACT REQUIRED FIELDS & SECURITY CHECK

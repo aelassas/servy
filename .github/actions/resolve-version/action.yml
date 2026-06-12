@@ -59,7 +59,7 @@ runs:
             exit 1
         }
 
-        $version = $tag.TrimStart("v")         # e.g. v1.1 -> 1.1
+        $version = $tag -replace '^[vV]', ''         # e.g. v1.1 / V1.1 -> 1.1
         Write-Host "Using resolved tag: $tag"
         Write-Host "Using computed version: $version"
 

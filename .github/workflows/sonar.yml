@@ -26,6 +26,7 @@ jobs:
 
     steps:
       # 1. Checkout code first so the custom local action is available
+      # (Note: fetch-depth: 0 is retained for complete Git history)
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4.3.1
         with:
@@ -59,13 +60,14 @@ jobs:
           key: ${{ runner.os }}-sonar-scanner-${{ env.SONAR_SCANNER_VERSION }}
           restore-keys: ${{ runner.os }}-sonar-scanner-
 
-      # 6. Install Scanner
+      # 6. Install / Update Scanner
       - name: Install SonarCloud scanner
         if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           if (!(Test-Path ${{ runner.temp }}\scanner)) { New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory }
-          dotnet tool install dotnet-sonarscanner --version $env:SONAR_SCANNER_VERSION --tool-path ${{ runner.temp }}\scanner
+          # Utilizing 'update' ensures version switches don't crash when versionless fallbacks populate the tool-path
+          dotnet tool update dotnet-sonarscanner --version $env:SONAR_SCANNER_VERSION --tool-path ${{ runner.temp }}\scanner
 
       # 7. Build and Analyze
       - name: Build and analyze
