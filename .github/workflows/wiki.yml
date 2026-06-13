@@ -1,7 +1,11 @@
-# --------------------------------------------------------------------------------
-# GitHub Actions workflow to validate wiki filenames for ASCII compliance.
-# Prevents encoding issues by rejecting filenames containing non-ASCII characters.
-# --------------------------------------------------------------------------------
+# ===============================================
+# GitHub Actions Workflow - Wiki Maintenance
+# -----------------------------------------------
+# Enforces file naming standards in the GitHub Wiki.
+# Specifically, it ensures no filenames contain
+# non-ASCII characters, which could lead to
+# cross-platform issues.
+# ===============================================
 
 name: wiki
 
@@ -17,28 +21,23 @@ jobs:
     name: Validate ASCII Filenames
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4.3.1
-
-      # GitHub Wikis are stored in a separate repository named {repo-name}.wiki
       - name: Checkout Wiki
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4.3.1
         with:
           repository: ${{ github.repository }}.wiki
-          path: wiki
 
       - name: Check for non-ASCII bytes in filenames
         run: |
-          # 1. Safety check: Ensure the wiki directory was actually checked out
-          if [ ! -d "wiki" ]; then
-            echo "Error: 'wiki' directory not found. The Wiki repository may be empty or inaccessible."
+          # 1. Safety check: Ensure workspace files are present (now at root)
+          if [ -z "$(ls -A .)" ]; then
+            echo "Error: Wiki repository appears empty or inaccessible."
             exit 1
           fi
 
-          # 2. Find all tracked workspace files, safely skipping internal .git repository tracking directories.
-          # If grep finds a non-ASCII character, it returns 0 (success).
-          # We check for that success and force an exit 1 to fail the build.
-          NON_ASCII_FILES=$(find wiki -path wiki/.git -prune -o -type f -print | grep -P '[^\x00-\x7F]' || true)
+          # 2. # Collect any filenames containing non-ASCII bytes. `|| true` keeps the
+          # pipeline from failing the step when grep finds no matches (exit 1).
+          # We then fail the build only if the captured list is non-empty.
+          NON_ASCII_FILES=$(find . -path ./.git -prune -o -type f -print | grep -P '[^\x00-\x7F]' || true)
           
           if [ -n "$NON_ASCII_FILES" ]; then
             echo "Error: The following wiki filenames contain non-ASCII characters:"

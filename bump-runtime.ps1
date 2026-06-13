@@ -151,16 +151,12 @@ if (Test-Path $workflowsDir) {
 
 Update-Files -Files $specificFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
 
-# 3. GitHub Action specific update
-$actionFile = Join-Path $baseDir ".github\actions\setup-dotnet\action.yml"
-$actionPattern = "(default:\s*')\d+\.\d+(')"
-
 # Use ${1} to prevent the engine from thinking you want group #11
 $actionReplacement = "`${1}$Version`${2}"
 
 Update-Files -Files @($actionFile) -Pattern $actionPattern -Replacement $actionReplacement -DryRun:$DryRun
 
-# 4. Update global.json SDK version to match the new TFM major via regex to perfectly preserve original file formatting
+# 3. Update global.json SDK version to match the new TFM major via regex to perfectly preserve original file formatting
 $globalJsonFile = Join-Path $baseDir "global.json"
 if (Test-Path $globalJsonFile) {
     # Captures the JSON property context and ensures we do not cross boundaries or break numerical groupings

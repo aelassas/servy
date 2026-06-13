@@ -84,8 +84,7 @@ jobs:
               # Split lines correctly using regex
               $lines = [regex]::Split($jsonString, "\r?\n")
                
-              # Normalize indentation explicitly: calculate the nesting level based on 
-              # Windows PowerShell 5.1's 2-space baseline and map it securely to a 4-space indent.
+              # Normalize indentation: pwsh 7''s ConvertTo-Json uses a 2-space baseline; map it to 4-space indents.
               $lines = $lines | ForEach-Object {
                   [regex]::Replace($_, '^( +)', {
                       param($m)
