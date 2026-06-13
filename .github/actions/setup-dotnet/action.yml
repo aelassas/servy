@@ -17,12 +17,13 @@ runs:
 
         $url = "https://dot.net/v1/dotnet-install.ps1"
         $installDir = "$env:RUNNER_TEMP\dotnet"
+        # Relocate the temporary script to the runner's temp directory to prevent workspace pollution
+        $installerPath = Join-Path $env:RUNNER_TEMP "dotnet-install.ps1"
 
         $maxRetries = 5
         for ($i = 0; $i -lt $maxRetries; $i++) {
           # Use --fail to force exit code 22 on HTTP 400+, allowing the retry loop to capture transient server errors.
-          # --retry and --retry-all-errors ensure curl handles transient network/HTTP recovery internally.
-          curl.exe -fL --retry 5 --retry-all-errors $url -o dotnet-install.ps1
+          curl.exe -fL --retry 5 --retry-all-errors $url -o $installerPath
 
           if ($LASTEXITCODE -eq 0) {
             break
@@ -37,7 +38,7 @@ runs:
         
         # --- SECURITY CHECK ---
         Write-Host "Verifying Authenticode signature of dotnet-install.ps1..."
-        $sig = Get-AuthenticodeSignature ./dotnet-install.ps1
+        $sig = Get-AuthenticodeSignature $installerPath
         
         if ($sig.Status -ne 'Valid') {
           throw "dotnet-install.ps1 signature check failed: $($sig.Status). The file may be compromised or unsigned."
@@ -49,7 +50,7 @@ runs:
         $x500Name = New-Object System.Security.Cryptography.X509Certificates.X500DistinguishedName($cert.SubjectName)
         
         # Extract RDN components cleanly using the .NET crypto API format
-        $decodedSubject = $x500Name.Format($true) # Returns newline-delimited RDN entries
+        $decodedSubject = $x500Name.Format($true)
         
         # Validate that 'O=Microsoft Corporation' exists exactly as an independent structural attribute line
         $isMatch = $false
@@ -69,9 +70,10 @@ runs:
         # Ensure the installation directory exists
         New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 
+        # Executing the installer from its isolated path in $env:RUNNER_TEMP
         # Using -JsonFile (global.json) instead of -Channel to ensure reproducibility
         # Instructs the script to parse global.json and install whatever is in there
-        powershell -ExecutionPolicy Bypass -File ./dotnet-install.ps1 `
+        powershell -ExecutionPolicy Bypass -File $installerPath `
           -JsonFile "$env:GITHUB_WORKSPACE\global.json" `
           -InstallDir $installDir
 
