@@ -244,11 +244,19 @@ namespace Servy.Manager.UnitTests.Utils
                 lock (capturedBatches) capturedBatches.Add(new List<LogLine>(lines));
             };
 
+            // Setup a completion tracking signal task for strict loop synchronization
+            var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
+
             using (var cts = new CancellationTokenSource())
             {
                 // Start tailing from the end of pre-existing content
                 var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 26, DateTime.UtcNow, cts.Token);
+
+                // Wait for the background reader loop to fully complete its initial cycle 
+                // and position its internal StreamReader handle directly at the EOF boundary.
                 await tailer.LoopStartedSignal.Task;
+                await loopCompletedTcs.Task;
 
                 // Append enough lines to cross AppConfig.LogTailerBatchFlushThreshold (e.g. 50 or 100 lines)
                 using (var fs = new FileStream(_tempFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
@@ -291,13 +299,17 @@ namespace Servy.Manager.UnitTests.Utils
                 lock (capturedLines) capturedLines.AddRange(lines);
             };
 
+            // Setup a completion tracking signal task for strict loop synchronization
+            var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
+
             using (var cts = new CancellationTokenSource())
             {
                 // Act
                 // Start tailing from the end of the "Old content"
                 var tailTask = tailer.RunFromPosition(initialPath, LogType.StdOut, fileInfo.Length, fileInfo.CreationTimeUtc, cts.Token);
 
-                // DETERMINISTIC WAIT 1: Ensure the loop has started
+                // DETERMINISTIC WAIT 1: Ensure the loop has fully completed its first pass setup
                 var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5), CancellationToken.None);
                 var completedTask = await Task.WhenAny(tailer.LoopStartedSignal.Task, timeoutTask);
 
@@ -305,6 +317,9 @@ namespace Servy.Manager.UnitTests.Utils
                 {
                     throw new TimeoutException("The LogTailer background loop failed to start within 5 seconds.");
                 }
+
+                // Ensure the loop completes its initial pass tracking before simulating the file swap
+                await loopCompletedTcs.Task;
 
                 // Simulate Rotation: Truncate and write fresh content
                 using (var fs = new FileStream(initialPath, FileMode.Truncate, FileAccess.Write, FileShare.ReadWrite))
@@ -350,12 +365,19 @@ namespace Servy.Manager.UnitTests.Utils
             var capturedLines = new List<LogLine>();
             tailer.OnNewLines += (lines) => { lock (capturedLines) capturedLines.AddRange(lines); };
 
+            // Setup a completion tracking signal task for strict loop synchronization
+            var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
+
             using (var cts = new CancellationTokenSource())
             {
                 // Pass a highly advanced past timestamp or a lastPosition that forces the metadata 
                 // check branch (info.Length < lastPosition) to validate initial attach rotation mapping logic
                 var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 999999, DateTime.UtcNow.AddDays(-1), cts.Token);
+
+                // Enforce execution stabilization before running content validations
                 await tailer.LoopStartedSignal.Task;
+                await loopCompletedTcs.Task;
 
                 await WaitUntilAsync(() => { lock (capturedLines) return capturedLines.Count > 0; }, TimeSpan.FromSeconds(5));
                 cts.Cancel();

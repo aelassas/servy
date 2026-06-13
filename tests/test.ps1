@@ -1,27 +1,25 @@
 <#
 .SYNOPSIS
-Runs unit tests and integration tests, collects coverage with Coverlet, and generates an HTML coverage report.
+    Runs unit tests and integration tests, collects coverage with Coverlet, and generates an HTML coverage report.
 
 .DESCRIPTION
-This script:
-1. Cleans previous test and coverage output.
-2. Builds the Servy.Core.UnitTests and Servy.Infrastructure.UnitTests projects in Debug mode.
-3. Executes their tests using vstest.console.exe through Coverlet.
-4. Produces Cobertura-format coverage reports for each project.
-5. Generates a combined HTML coverage report using ReportGenerator.
+    This script:
+    1. Cleans previous test and coverage output.
+    2. Builds all dynamically discovered test projects in Debug mode via MSBuild.
+    3. Executes their tests using vstest.console.exe through Coverlet.
+    4. Produces Cobertura-format coverage reports for each project.
+    5. Generates a combined HTML coverage report using ReportGenerator.
 
 .NOTES
-- Requires Coverlet and ReportGenerator to be installed and available in PATH.
-- Must be run in PowerShell (x64).
-- Paths to MSBuild and vstest.console.exe may need to be adjusted for the environment.
+    - Requires Coverlet and ReportGenerator to be installed and available in PATH.
+    - Must be run in PowerShell (x64).
+    - Paths to MSBuild and vstest.console.exe may need to be adjusted for the environment.
 
 .EXAMPLE
-PS> .\test.ps1
-Runs tests for Servy.Core and Servy.Infrastructure, collects coverage, and generates an HTML report.
-
+    PS> .\test.ps1
+    Runs tests for discovered suites, collects coverage, and generates an HTML report.
 #>
 
-# tests/test.ps1
 $ErrorActionPreference = "Stop"
 
 # Path to MSBuild.exe for Visual Studio 2022 Community Edition
@@ -45,79 +43,59 @@ if (Test-Path $CoverageReportDir) {
 }
 New-Item -ItemType Directory -Path $CoverageReportDir | Out-Null
 
-# Explicit test projects
-$TestProjects = @(
-    Join-Path $ScriptDir "Servy.Core.UnitTests\Servy.Core.UnitTests.csproj"
-    Join-Path $ScriptDir "Servy.Core.IntegrationTests\Servy.Core.IntegrationTests.csproj"
-    Join-Path $ScriptDir "Servy.Infrastructure.UnitTests\Servy.Infrastructure.UnitTests.csproj"
-    Join-Path $ScriptDir "Servy.Infrastructure.IntegrationTests\Servy.Infrastructure.IntegrationTests.csproj"
-    Join-Path $ScriptDir "Servy.Restarter.UnitTests\Servy.Restarter.UnitTests.csproj"
-    Join-Path $ScriptDir "Servy.Service.UnitTests\Servy.Service.UnitTests.csproj"
-    Join-Path $ScriptDir "Servy.Service.IntegrationTests\Servy.Service.IntegrationTests.csproj"
-    Join-Path $ScriptDir "Servy.UI.UnitTests\Servy.UI.UnitTests.csproj"
-    Join-Path $ScriptDir "Servy.UI.IntegrationTests\Servy.UI.IntegrationTests.csproj"
-    Join-Path $ScriptDir "Servy.UnitTests\Servy.UnitTests.csproj"
-    Join-Path $ScriptDir "Servy.Manager.UnitTests\Servy.Manager.UnitTests.csproj"
-    Join-Path $ScriptDir "Servy.CLI.UnitTests\Servy.CLI.UnitTests.csproj"
-)
+# Leverage the dynamic pipeline scanner to discover test configurations natively
+$RawTestProjects = Get-ChildItem -Path $ScriptDir -Recurse -Filter '*Tests.csproj' |
+    Where-Object { $_.Name -ne 'Servy.Testing.csproj' }
 
 # Run tests and collect coverage for each project
-foreach ($Proj in $TestProjects) {
-    if (-not (Test-Path $Proj)) {
-        Write-Error "Test project not found: $Proj"
-        exit 1
-    }
+foreach ($ProjFile in $RawTestProjects) {
+    $Proj = $ProjFile.FullName
+    $ProjName = $ProjFile.BaseName
+    $ProjDir = $ProjFile.DirectoryName
 
     # Build the test project in Debug mode
-    Write-Host "Building $($Proj)..."
+    Write-Host "Building $($Proj)..." -ForegroundColor Cyan
     $Platform = "x64"
     & $MsbuildPath $Proj /p:Configuration=Debug /p:Platform=$Platform /p:DebugType=portable /p:DebugSymbols=true /verbosity:minimal
-    if ($LASTEXITCODE -ne 0) { Write-Error "Test failed for $Proj"; exit $LASTEXITCODE }
+    if ($LASTEXITCODE -ne 0) { Write-Error "Build failed for $Proj"; exit $LASTEXITCODE }
 
-    # Get project name without extension
-    $ProjName = [System.IO.Path]::GetFileNameWithoutExtension($Proj)
-    $ProjDir = Split-Path $Proj -Parent
-    $DllPath = Join-Path $ProjDir "bin\$Platform\Debug\$ProjName.dll"
-
+    $DllPath = Join-Path $ProjDir "bin\${Platform}\Debug\${ProjName}.dll"
     if (-not (Test-Path $DllPath)) {
         Write-Error "Could not find built DLL: $DllPath"
         exit 1
     }
 
-    Write-Host "Running tests for $($ProjName)..."
+    Write-Host "Running tests for ${ProjName}..." -ForegroundColor Green
 
     # Define distinct filter categories based on Coverlet's native parameter targets
     $AssemblyExclusions = @("*.UnitTests", "*.IntegrationTests", "Servy.Testing")
     $FileExclusions     = @("**/*.xaml", "**/*.xaml.cs", "**/*.g.cs",  "**/*.Designer.cs", "**/obj/**/*")
+
+    # Dynamically evaluate cross-project dependency assembly exclusions to eliminate hardcoded forks
+    if ($ProjName -like "*Infrastructure*") {
+        $AssemblyExclusions += "Servy.Core"
+    }
+    elseif ($ProjName -like "*Core*") {
+        $AssemblyExclusions += "Servy.Infrastructure"
+    }
 
     # Join array strings with a comma wrapper for Coverlet's expected input parser
     $excludeAssemblies = ($AssemblyExclusions | ForEach-Object { "[$_]*" }) -join ","
     $excludeFiles      = $FileExclusions -join ","
 
     # Build dynamic execution parameters
-    $excludeArgs = "--exclude `"$excludeAssemblies`" --exclude-by-file `"$excludeFiles`""
+    $excludeArgs = "--exclude `"${excludeAssemblies}`" --exclude-by-file `"${excludeFiles}`""
 
-    if ($Proj -like "*Servy.Infrastructure*") {
-        coverlet "$DllPath" `
-            --target "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
-            --targetargs "`"$DllPath`" --ResultsDirectory:`"$TestResultsDir`"" `
-            --output (Join-Path $TestResultsDir "$ProjName.coverage.xml") `
-            --format "cobertura" `
-            --include-directory "$ProjDir" `
-            --exclude "[Servy.Core]*" `
-            $excludeArgs
-        if ($LASTEXITCODE -ne 0) { Write-Error "coverlet failed for $ProjName"; exit $LASTEXITCODE }
-    } else {
-        coverlet "$DllPath" `
-            --target "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
-            --targetargs "`"$DllPath`" --ResultsDirectory:`"$TestResultsDir`"" `
-            --output (Join-Path $TestResultsDir "$ProjName.coverage.xml") `
-            --format "cobertura" `
-            --include-directory "$ProjDir" `
-            $excludeArgs
-        if ($LASTEXITCODE -ne 0) { Write-Error "coverlet failed for $ProjName"; exit $LASTEXITCODE }
-    }
+    # Execute test run session through Coverlet coverage runner natively
+    coverlet "$DllPath" `
+        --target "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
+        --targetargs "`"${DllPath}`" --ResultsDirectory:`"${TestResultsDir}`"" `
+        --output (Join-Path $TestResultsDir "${ProjName}.coverage.xml") `
+        --format "cobertura" `
+        --include-directory "$ProjDir" `
+        $excludeArgs
 
+    if ($LASTEXITCODE -ne 0) { Write-Error "coverlet failed for $ProjName"; exit $LASTEXITCODE }
 }
 
 # Generate a global coverage report
@@ -129,6 +107,7 @@ reportgenerator `
     -reporttypes:Html `
     -assemblyfilters:"-*.UnitTests;-*.IntegrationTests;-Servy.Testing;-Servy.Restarter.Net48" `
     -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/*.Designer.cs;-**/obj/**/*"
+
 if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed"; exit $LASTEXITCODE }
 
 Write-Host "Coverage report generated at $CoverageReportDir"

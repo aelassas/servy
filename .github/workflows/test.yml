@@ -68,7 +68,7 @@ jobs:
               @{ Name = "Servy.Infrastructure.UnitTests"; Dir = "Infrastructure"; Filter = $null }
               @{ Name = "Servy.Infrastructure.IntegrationTests"; Dir = "Infrastructure"; Filter = $null }
               @{ Name = "Servy.Restarter.UnitTests"; Dir = "Restarter"; Filter = $null }
-              @{ Name = "Servy.Service.UnitTests"; Dir = "Service"; Filter = "Category!=ReflectionValidation" }
+              @{ Name = "Servy.Service.UnitTests"; Dir = "Service"; Filter = $null }
               @{ Name = "Servy.Service.IntegrationTests"; Dir = "Service"; Filter = $null }
               @{ Name = "Servy.UI.UnitTests"; Dir = "UI"; Filter = $null }
               @{ Name = "Servy.UI.IntegrationTests"; Dir = "UI"; Filter = $null }
@@ -199,11 +199,6 @@ jobs:
               Write-Host "`nRunning tests in $($dll.Name)..." -ForegroundColor Yellow
               
               $vsTestArgs = @($dll.FullName, "/Framework:.NETFramework,Version=v4.8", "/logger:trx")
-              
-              # Automatically apply the required exclusion filter to the Service.UnitTests assembly
-              if ($dll.Name -eq "Servy.Service.UnitTests.dll") {
-                  $vsTestArgs += '/TestCaseFilter:Category!=ReflectionValidation'
-              }
 
               & $vsTest @vsTestArgs
 
@@ -219,7 +214,7 @@ jobs:
 
       - name: Install ReportGenerator
         shell: pwsh
-        if: always()
+        if: ${{ always() }}
         run: |
           dotnet tool install --global dotnet-reportgenerator-globaltool --version $env:REPORTGENERATOR_VERSION
 
@@ -229,7 +224,7 @@ jobs:
           }
 
       - name: Merge coverage reports
-        if: always()
+        if: ${{ always() }}
         shell: pwsh
         run: |
           # Find all newly generated cobertura files dynamically          
@@ -250,7 +245,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
 
       - name: Normalize coverage paths (PowerShell)
-        if: always()
+        if: ${{ always() }}
         shell: pwsh
         run: |
           $fixedDir = "CoverageMerged\fixed"
@@ -293,7 +288,7 @@ jobs:
         id: codecov
         continue-on-error: true
         uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe #v5.5.4
-        if: always()
+        if: ${{ always() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}  
           files: CoverageMerged/fixed/coverage.cobertura.xml
@@ -301,34 +296,13 @@ jobs:
           name: codecov-coverage-report
           fail_ci_if_error: true   # let the action report failure
           verbose: false
-          commit_parent: ${{ github.event.before }}         
-
-      - name: Notify Codecov Status in case of failure
-        if: always() && steps.codecov.outcome == 'failure'
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b #v7.1.0
-        with:
-          script: |
-            const issues = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: 'codecov-tracking',
-              state: 'open'
-            });
-            
-            for (const issue of issues.data) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue.number,
-                body: 'Codecov upload failed in workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-              });
-            }
+          commit_parent: ${{ github.event.before }}
 
       - name: Upload coverage to Coveralls
         id: coveralls
         continue-on-error: true
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b #v2.36
-        if: always()
+        if: ${{ always() }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           base-path: ${{ github.workspace }}
@@ -339,23 +313,32 @@ jobs:
         env:
             COVERALLS_GIT_BRANCH: ${{ github.ref_name }}
 
-      - name: Notify Coveralls Status in case of failure
-        if: always() && steps.coveralls.outcome == 'failure'
+      - name: Notify Metrics Platform Status in case of failure
+        if: ${{ always() && (steps.codecov.outcome == 'failure' || steps.coveralls.outcome == 'failure') }}
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b #v7.1.0
         with:
           script: |
-            const issues = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: 'coveralls-tracking',
-              state: 'open'
-            });
-            
-            for (const issue of issues.data) {
-              await github.rest.issues.createComment({
+            const failureTargets = [
+              { failed: "${{ steps.codecov.outcome }}" === "failure", label: "codecov-tracking", provider: "Codecov" },
+              { failed: "${{ steps.coveralls.outcome }}" === "failure", label: "coveralls-tracking", provider: "Coveralls" }
+            ];
+
+            for (const target of failureTargets) {
+              if (!target.failed) continue;
+
+              const issues = await github.rest.issues.listForRepo({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: issue.number,
-                body: 'Coveralls upload failed in workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+                labels: target.label,
+                state: 'open'
               });
+
+              for (const issue of issues.data) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `${target.provider} upload failed in workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+                });
+              }
             }
