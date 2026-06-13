@@ -1,4 +1,4 @@
-using Servy.Core.Config;
+﻿using Servy.Core.Config;
 using Servy.Core.Enums;
 
 namespace Servy.Core.Services
