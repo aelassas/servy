@@ -231,7 +231,6 @@ namespace Servy.Manager.UnitTests.Utils
 
         #region Tailing Lifecycle & Batch Buffer Flush Branch Tests
 
-#if DEBUG || UNIT_TEST
         [Fact]
         public async Task RunFromPosition_BatchFlushThresholdReached_InvokesOnNewLinesDuringReadLoop()
         {
@@ -370,7 +369,6 @@ namespace Servy.Manager.UnitTests.Utils
                 }
             }
         }
-#endif
 
         #endregion
 

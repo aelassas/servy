@@ -25,11 +25,9 @@ namespace Servy.Manager.Utils
     /// </remarks>
     public class LogTailer : IDisposable
     {
-#if DEBUG || UNIT_TEST
         // Allows tests to wait until the background loop is actually running
         internal TaskCompletionSource<bool> LoopStartedSignal { get; private set; }
             = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-#endif
 
         /// <summary>
         /// Internal token source to ensure the tailing loop stops immediately upon disposal.
@@ -151,9 +149,7 @@ namespace Servy.Manager.Utils
                                 {
                                     while (!linkedToken.IsCancellationRequested)
                                     {
-#if DEBUG || UNIT_TEST
                                         LoopStartedSignal.TrySetResult(true);
-#endif
 
                                         List<LogLine> batch = new List<LogLine>();
                                         string? line;
@@ -265,10 +261,8 @@ namespace Servy.Manager.Utils
                                 }
                                 finally
                                 {
-#if DEBUG || UNIT_TEST
                                     // Reset the signal if the task ends, ensuring subsequent runs (if any) can re-signal
                                     LoopStartedSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-#endif
                                 }
                             }
                         }
