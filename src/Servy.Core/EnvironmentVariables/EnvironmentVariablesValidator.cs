@@ -34,7 +34,7 @@ namespace Servy.Core.EnvironmentVariables
                     continue;
 
                 // Call the centralized grammar rule validation engine to guarantee parity with Parser checks
-                if (!ProcessAndValidateRecord(variable, out _, out _, out string errorMessage))
+                if (!ProcessAndValidateRecord(variable, out _, out _, out string errorMessage, out _))
                 {
                     errors.Add(errorMessage);
                 }
@@ -46,17 +46,21 @@ namespace Servy.Core.EnvironmentVariables
         /// <summary>
         /// Shared syntax validation block used by both Validator and Parser to guarantee alignment.
         /// </summary>
-        internal static bool ProcessAndValidateRecord(string part, out string key, out string value, out string errorMessage)
+        internal static bool ProcessAndValidateRecord(string part, out string key, out string value, out string errorMessage, out EnvVarValidationResultKind resultKind)
         {
             key = string.Empty;
             value = string.Empty;
             errorMessage = string.Empty;
+
+            // Initialize the machine-readable discriminator to a safe failure baseline default
+            resultKind = EnvVarValidationResultKind.GeneralFailure;
 
             // Find first unescaped '='
             int eqIdx = EscapedTokenizer.IndexOfUnescapedChar(part, '=');
             if (eqIdx < 0)
             {
                 errorMessage = Strings.Msg_EnvironmentVariableMissingEquals;
+                resultKind = EnvVarValidationResultKind.MissingEquals;
                 return false;
             }
 
@@ -69,6 +73,7 @@ namespace Servy.Core.EnvironmentVariables
             if (string.IsNullOrEmpty(key))
             {
                 errorMessage = Strings.Msg_EnvironmentVariableKeyEmpty;
+                resultKind = EnvVarValidationResultKind.EmptyKey;
                 return false;
             }
 
@@ -92,9 +97,12 @@ namespace Servy.Core.EnvironmentVariables
             if (value.Contains("\n") || value.Contains("\r"))
             {
                 errorMessage = string.Format(Strings.Msg_EnvironmentVariableForbiddenNewline, key);
+                resultKind = EnvVarValidationResultKind.ForbiddenNewline;
                 return false;
             }
 
+            // Return clean success state across all validation boundaries
+            resultKind = EnvVarValidationResultKind.Success;
             return true;
         }
 

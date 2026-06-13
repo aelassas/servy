@@ -108,6 +108,7 @@
     <Compile Include="Config\ServiceAccounts.cs" />
     <Compile Include="DTOs\ServicePathAttribute.cs" />
     <Compile Include="DTOs\SqlColumnAttribute.cs" />
+    <Compile Include="EnvironmentVariables\EnvVarValidationResultKind.cs" />
     <Compile Include="EnvironmentVariables\EscapedTokenizer.cs" />
     <Compile Include="Helpers\IServiceHelper.cs" />
     <Compile Include="Helpers\ReservedNames.cs" />

@@ -10,17 +10,23 @@
         /// </summary>
         /// <param name="parentPid">The numerical process identifier of the parent whose descendants should be terminated.</param>
         /// <remarks>
-        /// This entry point builds a global native snapshot to ensure that even if intermediate bridge processes have exited, 
-        /// their orphaned descendants are still reachable.
+        /// This entry point utilizes a global native process snapshot to map the hierarchy. 
         /// 
+        /// Termination descent is strictly bounded by process liveliness: the implementation 
+        /// validates child lineage by comparing process start-times to mitigate the risk 
+        /// of terminating recycled PIDs. Consequently, if an intermediate bridge process 
+        /// has already exited, descendant processes in that branch are not reachable 
+        /// for validation and will be skipped to maintain fail-safe integrity.
+        ///
         /// This method enumerates processes where <c>ParentProcessId</c> matches 
         /// the given <paramref name="parentPid"/>.
         /// 
-        /// It then recursively calls itself to ensure that grandchildren and deeper
-        /// descendants are also terminated before finally killing the child itself.
+        /// It recursively calls itself to ensure that grandchildren and deeper
+        /// descendants are also terminated before finally killing the child itself, 
+        /// provided the ancestor lineage remains valid and reachable.
         /// 
         /// Exceptions such as access denied or processes that have already exited are
-        /// caught and ignored to allow cleanup to continue without interruption.
+        /// caught and ignored to allow cleanup to continue for valid, reachable branches.
         /// </remarks>
         void KillChildren(int parentPid);
 

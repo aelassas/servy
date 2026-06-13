@@ -213,6 +213,12 @@ namespace Servy.Core.Helpers
                         if (sc.Status == ServiceControllerStatus.Stopped)
                             continue;
 
+                        var service = await _serviceRepository.GetByNameAsync(serviceName, decrypt: false, cancellationToken: cancellationToken);
+                        if (service == null)
+                        {
+                            throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
+                        }
+
                         try
                         {
                             // Only call Stop() if it's not already trying to stop
@@ -229,12 +235,6 @@ namespace Servy.Core.Helpers
                                 throw;
                             }
                             // else: service is already stopped or stopping - no-op
-                        }
-
-                        var service = await _serviceRepository.GetByNameAsync(serviceName, decrypt: false, cancellationToken: cancellationToken);
-                        if (service == null)
-                        {
-                            throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
                         }
 
                         int timeout = CalculateStopTimeout(
