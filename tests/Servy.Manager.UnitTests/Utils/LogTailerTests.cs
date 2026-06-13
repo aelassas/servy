@@ -203,28 +203,18 @@ namespace Servy.Manager.UnitTests.Utils
         {
             // Arrange
             var tailer = new LogTailer();
-            string racePath = Path.Combine(Path.GetTempPath(), $"race_{Guid.NewGuid()}.log");
-            File.WriteAllText(racePath, "Exist momentarily\n");
+            // Use a path that is guaranteed not to exist, which is a cleaner way to 
+            // force the catch block than racing a File.Delete operation.
+            string nonExistentPath = Path.Combine(Path.GetTempPath(), $"race_{Guid.NewGuid()}.log");
 
             // Act
-            // Start the history retrieval task
-            var historyTask = tailer.GetHistoryAsync(racePath, LogType.StdOut, 10);
-
-            // Immediately delete it on a separate background thread pool worker
-            var deleteAction = Task.Run(() =>
-            {
-                try { File.Delete(racePath); } catch { /* Suppress */ }
-            }, CancellationToken.None);
-
-            // Ensure the deletion logic has executed
-            await deleteAction;
-            var result = await historyTask;
+            // We invoke GetHistoryAsync directly. Since the file does not exist,
+            // the LoadHistory method will trigger the FileNotFoundException catch block.
+            var result = await tailer.GetHistoryAsync(nonExistentPath, LogType.StdOut, 10);
 
             // Assert
             Assert.NotNull(result);
-            // If Thread A won, the list might have lines. If Thread B won, it's empty.
-            // To strictly test the "Catch", we want to ensure it handles FileNotFound gracefully.
-            // If your goal is to test the CATCH block, Option 2 is safer.
+            Assert.Empty(result.Lines); // Should return empty result list as defined in the catch block
         }
 
         #endregion

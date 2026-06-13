@@ -6,13 +6,11 @@
 # ==============================================================================
 name: 'Setup Custom .NET'
 description: 'Installs a specific .NET SDK version using the dotnet-install script'
-
 inputs:
   version:
     description: '.NET SDK version to install (e.g., 10.0.102). Pinning ensures reproducible builds.'
     required: true
     default: '10.0.300'
-
 runs:
   using: "composite"
   steps:
@@ -25,13 +23,15 @@ runs:
 
         $url = "https://dot.net/v1/dotnet-install.ps1"
         $installDir = "$env:RUNNER_TEMP\dotnet"
+        # Relocate the temporary script to the runner's temp directory to prevent workspace pollution
+        $installerPath = Join-Path $env:RUNNER_TEMP "dotnet-install.ps1"
 
         # 1. Download with retries
         $maxRetries = 5
         for ($i = 0; $i -lt $maxRetries; $i++) {
           # Use --fail to force exit code 22 on HTTP 400+, allowing the retry loop to capture transient server errors.
           # --retry and --retry-all-errors ensure curl handles transient network/HTTP recovery internally.
-          curl.exe -fL --retry 5 --retry-all-errors $url -o dotnet-install.ps1
+          curl.exe -fL --retry 5 --retry-all-errors $url -o $installerPath
 
           if ($LASTEXITCODE -eq 0) { break }
           if ($i -eq ($maxRetries - 1)) {
@@ -42,7 +42,7 @@ runs:
         
         # 2. SECURITY CHECK: Verify Microsoft Signature
         Write-Host "Verifying Authenticode signature of dotnet-install.ps1..."
-        $sig = Get-AuthenticodeSignature ./dotnet-install.ps1
+        $sig = Get-AuthenticodeSignature $installerPath
         
         if ($sig.Status -ne 'Valid') {
           throw "dotnet-install.ps1 signature check failed: $($sig.Status). The file may be compromised or unsigned."
@@ -75,8 +75,8 @@ runs:
           New-Item -ItemType Directory -Force -Path $installDir | Out-Null
         }
 
-        # Execute the verified script
-        powershell -ExecutionPolicy Bypass -File ./dotnet-install.ps1 `
+        # Execute the verified script from the temp path
+        powershell -ExecutionPolicy Bypass -File $installerPath `
           -Version "$env:DOTNET_VERSION" `
           -InstallDir $installDir
 
