@@ -1,3 +1,13 @@
+# ==============================================================================
+# GitHub Actions Workflow - Changelog Automation
+# ------------------------------------------------------------------------------
+# Automatically fetches release metadata from GitHub, constructs a formatted 
+# CHANGELOG.md file, and commits the updates to the repository.
+#
+# Triggers:
+# - Automatically after successful completion of 'bump-version' workflow.
+# - Manually via workflow_dispatch for full rebuilds.
+# ==============================================================================
 name: changelog
 
 on:
@@ -50,15 +60,15 @@ jobs:
           $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 
           Write-Host "Fetching releases for $repo..."
-          # Filter out drafts ($_.draft -eq $false) to avoid empty 'published_at' strings          
-          $rawJson = gh api repos/$repo/releases --paginate
+          # Use --slurp to combine paginated responses into a single JSON array,
+          # preventing 'ConvertFrom-Json' from failing on concatenated array fragments.
+          $rawJson = gh api repos/$repo/releases --paginate --slurp
           if ($LASTEXITCODE -ne 0) {
               throw 'gh api releases failed (exit ' + $LASTEXITCODE + '). Aborting changelog update.'
           }
 
-          # ROBUSTNESS: Stream through the pipeline to ensure safe structural object deserialization
-          $deserializedJson = $rawJson | ConvertFrom-Json
-          # Wrap in @() to guarantee an array even if only 1 release exists          
+          # ROBUSTNESS: Flatten the slurped array-of-arrays into a single stream of release objects
+          $deserializedJson = $rawJson | ConvertFrom-Json | ForEach-Object { $_ }
           $releases = @($deserializedJson | Where-Object { $_.draft -eq $false })
 
           if ($releases.Count -eq 0) {
@@ -72,7 +82,6 @@ jobs:
               $title = if ([string]::IsNullOrWhiteSpace($Release.name)) { $Release.tag_name } else { $Release.name }
               $url = $Release.html_url
               
-              # Safely parse the date, falling back to "Pending" if missing (e.g., edge cases)              
               $date = if (![string]::IsNullOrWhiteSpace($Release.published_at)) { 
                   [datetime]::Parse($Release.published_at).ToString("yyyy-MM-dd") 
               } else { 
@@ -127,7 +136,6 @@ jobs:
                   $existing = [System.IO.File]::ReadAllText($changelogPath, $utf8NoBom)
               }
 
-              # Safety check to prevent duplicating the release entry              
               $tagLine = "**Tag:** [$bt$tag$bt](https://github.com/$repo/tree/$tag)"
               if ($existing.Contains($tagLine)) {
                   Write-Host "Release $tag is already in the CHANGELOG. No updates needed."
@@ -148,12 +156,10 @@ jobs:
       - name: Commit and Push
         shell: pwsh
         run: |
-          # Disable CRLF warnings          
           git config core.autocrlf false
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Quietly check if CHANGELOG.md has actually changed          
           git diff --quiet CHANGELOG.md
           if ($LASTEXITCODE -eq 0) {
               Write-Host "No changes detected in CHANGELOG.md. Nothing to update."
@@ -161,7 +167,6 @@ jobs:
           }
 
           # ROBUSTNESS: Stage and create the initial local commit wrapper BEFORE entering the loop.
-          # This allows git pull --rebase to seamlessly overlay updates without swallowing files via git stash.
           git add CHANGELOG.md
           git commit -m "docs: auto-update CHANGELOG.md"
 
