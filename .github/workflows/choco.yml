@@ -55,7 +55,7 @@ jobs:
         run: |
           $HASH = Get-FileHash "servy-${env:VERSION}-x64-installer.exe" -Algorithm SHA256
           $UPPER = $HASH.Hash.ToUpper()
-          "HASH=$UPPER" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Add-Content -Path $env:GITHUB_ENV -Value "HASH=$UPPER"
 
       - name: Update nuspec version and release notes
         shell: pwsh
