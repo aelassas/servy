@@ -42,7 +42,7 @@ runs:
             # Fallback block integration matching bump-version requirements
             Write-Host "No event tag found. Querying GitHub API for latest release..."
             $headers = @{ Authorization = "Bearer $env:GITHUB_TOKEN" }
-            $url = "https://api.github.com/repos/${{ github.repository }}/releases/latest"
+            $url = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/latest"
             try {
                 $response = Invoke-RestMethod -Uri $url -Headers $headers
                 if ($response.tag_name) {
