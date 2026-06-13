@@ -1,4 +1,4 @@
-﻿using Servy.Core.Config;
+using Servy.Core.Config;
 using Servy.Core.Enums;
 
 namespace Servy.Core.Services
@@ -134,7 +134,7 @@ namespace Servy.Core.Services
         /// <summary>The Display Name of the service, shown in the Windows Services management console (<c>services.msc</c>).</summary>
         public string? DisplayName { get; set; }
 
-        /// <summary>The maximum number of rotated log file to keep. Set to 0 for unlimited.</summary>
+        /// <summary>The maximum number of rotated log files to keep. Set to 0 for unlimited.</summary>
         public int MaxRotations { get; set; } = AppConfig.DefaultMaxRotations;
 
         /// <summary>Enables rotation based on the date interval specified by <see cref="DateRotationType"/>.</summary>
