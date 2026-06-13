@@ -73,7 +73,7 @@ jobs:
 
           foreach ($proj in $projects) {
             Write-Host "Building $proj ($config) for $runtime..."
-            # Explicitly tracks matrix parameters for un-emulated native optimization outputs
+            # Build per-project with an explicit RID so each matrix leg produces native (x64/ARM64) binaries
             dotnet build $proj --configuration $config --runtime $runtime --no-restore
             
             if ($LASTEXITCODE -ne 0) { 

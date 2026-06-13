@@ -46,6 +46,7 @@ jobs:
       - name: Download installer
         shell: pwsh
         run: |
+          # Standardized to explicit brace form ${env:VARIABLE}
           $url = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
           Write-Host "Downloading Servy installer from $url"
           Invoke-WebRequest -Uri $url -OutFile "servy-${env:VERSION}-x64-installer.exe"
@@ -53,6 +54,7 @@ jobs:
       - name: Compute SHA256
         shell: pwsh
         run: |
+          # Standardized to explicit brace form ${env:VARIABLE}
           $HASH = Get-FileHash "servy-${env:VERSION}-x64-installer.exe" -Algorithm SHA256
           $UPPER = $HASH.Hash.ToUpper()
           Add-Content -Path $env:GITHUB_ENV -Value "HASH=$UPPER"
@@ -63,6 +65,7 @@ jobs:
           $file = "setup/choco/servy/servy.nuspec"
           $content = Get-Content $file -Raw
 
+          # Standardized to explicit brace form ${env:VARIABLE}
           $content = $content -replace '<version>.*?</version>', "<version>${env:VERSION}.0</version>"
           $content = $content -replace '(?s)<releaseNotes>.*?</releaseNotes>', "<releaseNotes>Release for version ${env:VERSION}.0. See https://github.com/aelassas/servy/releases/tag/v${env:VERSION}</releaseNotes>"
           $content = $content -replace '<iconUrl>.*?</iconUrl>', "<iconUrl>https://cdn.jsdelivr.net/gh/aelassas/servy@v${env:VERSION}/src/Servy/servy.ico</iconUrl>"
@@ -77,8 +80,9 @@ jobs:
           $content = Get-Content $file -Raw
 
           # Build replacement strings
-          $urlReplacement = "`$url64         = 'https://github.com/aelassas/servy/releases/download/$($env:TAG)/servy-$($env:VERSION)-x64-installer.exe'"
-          $checksumReplacement = "`$checksum64    = '$($env:HASH)'"
+          # Standardized to explicit brace form ${env:VARIABLE} within string parameters
+          $urlReplacement = "`$url64         = 'https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe'"
+          $checksumReplacement = "`$checksum64    = '${env:HASH}'"
 
           Write-Host "URL: $urlReplacement"
           Write-Host "HASH: $checksumReplacement"
@@ -103,6 +107,7 @@ jobs:
               exit 0
           }
 
+          # Standardized to explicit brace form ${env:VARIABLE}
           git commit -m "chore(choco): update package for version ${env:VERSION}"
 
           $maxRetries = 5
@@ -161,7 +166,8 @@ jobs:
         env:
           CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
         run: |
-          $nupkg = "setup/choco/servy/servy.$env:VERSION.0.nupkg"
+          # Standardized to clear, safe brace configuration form ${env:VERSION}
+          $nupkg = "setup/choco/servy/servy.${env:VERSION}.0.nupkg"
           if (-not (Test-Path $nupkg)) {
               throw "Expected nupkg not found at '$nupkg' - choco pack likely did not produce it."
           }

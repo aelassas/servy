@@ -20,6 +20,10 @@ on:
 permissions:
   contents: write  # Required for peaceiris/actions-gh-pages to push badges
 
+# Centralized color configurations to resolve visual drift in repository layout templates
+env:
+  LOC_BADGE_COLOR: green
+
 jobs:
   loc_job:
     runs-on: ubuntu-latest
@@ -39,7 +43,7 @@ jobs:
           debug: true
           directory: ./
           badge_label: 'LoC prod'
-          badge_color: green
+          badge_color: ${{ env.LOC_BADGE_COLOR }}
           badge: ./output/loc-prod.svg
           ignore: '.gitignore|*.txt|.github|setup|tests|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
 
@@ -53,7 +57,7 @@ jobs:
           debug: true
           directory: ./
           badge_label: 'LoC tests'
-          badge_color: green
+          badge_color: ${{ env.LOC_BADGE_COLOR }}
           badge: ./output/loc-tests.svg
           ignore: '.gitignore|*.txt|.github|setup|tests/data|src|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
 
@@ -79,12 +83,14 @@ jobs:
           mkdir -p ./output
 
           # Use shields.io static badge generation with URL-encoded label
-          # FIX: Escape commas to ensure strict RFC 3986 compliance
+          # Escape commas to ensure strict RFC 3986 compliance
           ENCODED_TOTAL=$(echo "$TOTAL_COMMA" | sed 's/,/%2C/g')
-          URL="https://img.shields.io/badge/LoC%20total-${ENCODED_TOTAL}-3BC41C"
+          
+          # Eliminated hardcoded hex constant. Integrated named color token targeting the centralized environment value.
+          URL="https://img.shields.io/badge/LoC%20total-${ENCODED_TOTAL}-${{ env.LOC_BADGE_COLOR }}"
           echo "URL: ${URL}"
 
-          # FIX: Fail step on HTTP errors (-f) and show errors (-S) to prevent publishing garbage
+          # Fail step on HTTP errors (-f) and show errors (-S) to prevent publishing garbage
           curl -fsS -o ./output/loc-total.svg "${URL}"
 
       # ----------------------------

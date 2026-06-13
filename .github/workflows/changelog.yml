@@ -165,41 +165,40 @@ jobs:
           git add CHANGELOG.md
           git commit -m "docs: auto-update CHANGELOG.md"
 
-          # We use a retry loop to handle concurrent upstream pushes gracefully          
-          $maxAttempts = 3
-          $attempt = 1
+          $maxRetries = 5
+          $retryCount = 0
           $pushSuccess = $false
 
-          while ($attempt -le $maxAttempts -and -not $pushSuccess) {
-              Write-Host "Push attempt $attempt of $maxAttempts..."
+          while (-not $pushSuccess -and $retryCount -lt $maxRetries) {
+              try {
+                  # Clean up any leftover state from a previous failed attempt
+                  git rebase --abort 2>$null
+                  git merge  --abort 2>$null
 
-              # Fetch latest remote state and rebase our local working branch              
-              git pull origin main --rebase
-              $pullExit = $LASTEXITCODE
+                  Write-Host "Attempting to push Changelog (Attempt $($retryCount + 1))..."
+           
+                  # Pull latest changes using the autostash merging scheme
+                  git pull --rebase=merges --autostash origin main
+                  if ($LASTEXITCODE -ne 0) { 
+                      throw "git pull failed with exit code $LASTEXITCODE" 
+                  }
 
-              if ($pullExit -ne 0) {
-                  Write-Warning "Fetch/Rebase failed. Aborting rebase state and cleaning workspace."
-                  git rebase --abort 2>&1 | Out-Null
-                  
-                  # Back off briefly before trying again to let transient remote locks clear                  
-                  Start-Sleep -Seconds 5
-                  $attempt++
-                  continue
-              }
+                  # Push up to the tracking branch
+                  git push origin HEAD:main
+                  if ($LASTEXITCODE -ne 0) { 
+                      throw "git push failed with exit code $LASTEXITCODE" 
+                  }
 
-              # Attempt to push up to the remote repository              
-              git push origin main
-              if ($LASTEXITCODE -eq 0) {
                   $pushSuccess = $true
-                  Write-Host "CHANGELOG.md successfully pushed on attempt $attempt."
-              } else {
-                  Write-Warning "Push rejected due to concurrent remote updates. Retrying..."
-                  Start-Sleep -Seconds 2
-                  $attempt++
+                  Write-Host "Changelog push successful!"
+              }
+              catch {
+                  $retryCount++
+                  Write-Warning "Changelog push failed: $($_.Exception.Message). Waiting 5 seconds before retry..."
+                  Start-Sleep -s 5
               }
           }
 
           if (-not $pushSuccess) {
-              Write-Error "Failed to push CHANGELOG.md updates after $maxAttempts attempts due to high concurrent repository activity."
-              exit 1
+              throw "Failed to push CHANGELOG.md updates to main after $maxRetries attempts."
           }

@@ -25,9 +25,16 @@ namespace Servy.Manager.Utils
     /// </remarks>
     public class LogTailer : IDisposable
     {
-        // Allows tests to wait until the background loop is actually running
+        /// <summary>
+        /// Allows tests to wait until the background loop is actually running.
+        /// </summary>
         internal TaskCompletionSource<bool> LoopStartedSignal { get; private set; }
             = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// <summary>
+        /// Event hook triggered at the end of a polling loop iteration for synchronization profiling.
+        /// </summary>
+        internal event Action? OnLoopCompleted;
 
         /// <summary>
         /// Internal token source to ensure the tailing loop stops immediately upon disposal.
@@ -256,6 +263,9 @@ namespace Servy.Manager.Utils
 
                                         // We successfully reached the EOF polling point without crashing.
                                         consecutiveFailures = 0;
+                                        // Signal to the test framework that the current stream buffer is drained 
+                                        // and the loop iteration is completing its pass.
+                                        OnLoopCompleted?.Invoke();
                                         await Task.Delay(AppConfig.LogTailerEofPollIntervalMs, linkedToken);
                                     }
                                 }

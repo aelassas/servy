@@ -4,11 +4,11 @@
 # Automates the update of Servy’s Scoop manifest.
 # When a new release is published (or triggered
 # manually), this workflow:
-#       • Downloads the latest installer
-#       • Computes its SHA256 hash
-#       • Updates the manifest in `aelassas/scoop-bucket`
-#       • Optionally creates a PR to update the manifest
-#         in `ScoopInstaller/Extras`
+#        • Downloads the latest installer
+#        • Computes its SHA256 hash
+#        • Updates the manifest in `aelassas/scoop-bucket`
+#        • Optionally creates a PR to update the manifest
+#          in `ScoopInstaller/Extras`
 # ===========================================
 
 name: scoop
@@ -130,12 +130,34 @@ jobs:
           if (git status --porcelain) {
             git add $manifestPath
             git commit -m "chore: update setup/scoop/servy.json to version $env:VERSION"
-             
-            # Explicitly target the main branch
-            git pull origin main
-            if ($LASTEXITCODE -ne 0) { throw "git pull failed (exit $LASTEXITCODE)" }
-            git push origin HEAD:main
-            if ($LASTEXITCODE -ne 0) { throw "git push failed (exit $LASTEXITCODE)" }
+            
+            $maxRetries = 5
+            $retryCount = 0
+            $pushSuccess = $false
+
+            while (-not $pushSuccess -and $retryCount -lt $maxRetries) {
+                try {
+                    git rebase --abort 2>$null
+                    git merge  --abort 2>$null
+
+                    Write-Host "Attempting in-repo Scoop update push (Attempt $($retryCount + 1))..."
+                    
+                    git pull --rebase=merges --autostash origin main
+                    if ($LASTEXITCODE -ne 0) { throw "git pull failed" }
+
+                    git push origin HEAD:main
+                    if ($LASTEXITCODE -ne 0) { throw "git push failed" }
+
+                    $pushSuccess = $true
+                    Write-Host "In-repo Scoop push successful!"
+                }
+                catch {
+                    $retryCount++
+                    Write-Warning "Push failed. Retrying in 5 seconds..."
+                    Start-Sleep -s 5
+                }
+            }
+            if (-not $pushSuccess) { throw "Failed to push in-repo Scoop update after $maxRetries attempts." }
           } else {
             Write-Host "No changes to local manifest."
           }
@@ -166,10 +188,34 @@ jobs:
           if (git status --porcelain) {
             git add $manifestPath
             git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
-            git pull
-            if ($LASTEXITCODE -ne 0) { throw "git pull failed (exit $LASTEXITCODE)" }
-            git push origin HEAD
-            if ($LASTEXITCODE -ne 0) { throw "git push failed (exit $LASTEXITCODE)" }
+            
+            $maxRetries = 5
+            $retryCount = 0
+            $pushSuccess = $false
+
+            while (-not $pushSuccess -and $retryCount -lt $maxRetries) {
+                try {
+                    git rebase --abort 2>$null
+                    git merge  --abort 2>$null
+
+                    Write-Host "Attempting external scoop-bucket push (Attempt $($retryCount + 1))..."
+                    
+                    git pull --rebase=merges --autostash origin HEAD
+                    if ($LASTEXITCODE -ne 0) { throw "git pull failed" }
+
+                    git push origin HEAD
+                    if ($LASTEXITCODE -ne 0) { throw "git push failed" }
+
+                    $pushSuccess = $true
+                    Write-Host "External scoop-bucket push successful!"
+                }
+                catch {
+                    $retryCount++
+                    Write-Warning "Push failed. Retrying in 5 seconds..."
+                    Start-Sleep -s 5
+                }
+            }
+            if (-not $pushSuccess) { throw "Failed to push scoop-bucket updates after $maxRetries attempts." }
           } else {
             Write-Host "No changes to commit"
           }

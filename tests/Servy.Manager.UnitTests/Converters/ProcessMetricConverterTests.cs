@@ -22,7 +22,7 @@ namespace Servy.Manager.UnitTests.Converters
 
         public void Dispose()
         {
-            // Restore original environment equilibrium state
+            // Restore original environment equilibrium state safely
             App.Services = _originalServices;
         }
 
@@ -54,6 +54,8 @@ namespace Servy.Manager.UnitTests.Converters
             var mockHelper = new Mock<IProcessHelper>();
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton<IProcessHelper>(mockHelper.Object);
+
+            // Populate the static tracking hook for this run execution slice
             App.Services = serviceCollection.BuildServiceProvider();
 
             // Act
@@ -67,8 +69,7 @@ namespace Servy.Manager.UnitTests.Converters
         [Fact]
         public void Constructor_ServicesNull_FallsBackToDesignTimeHelperAndLogsWarning()
         {
-            // Arrange
-            App.Services = null; // Explicitly ensure the provider root is null
+            // Arrange - Handled natively by the class constructor (App.Services is already null)
 
             // Act
             var converter = new TestMetricConverter();
@@ -84,8 +85,9 @@ namespace Servy.Manager.UnitTests.Converters
         public void Constructor_ServicesNotNullButHelperMissing_FallsBackToDesignTimeHelperAndLogsWarning()
         {
             // Arrange
+            // Since the class constructor backed up state globally, we can safely overwrite
+            // App.Services directly without tracking internal try/finally boilerplate blocks here.
             var emptyServiceCollection = new ServiceCollection();
-            // Build a valid provider that has completely missing registrations for IProcessHelper
             App.Services = emptyServiceCollection.BuildServiceProvider();
 
             // Act

@@ -59,36 +59,28 @@ jobs:
       - name: Run all tests with coverage (Debug)
         shell: pwsh
         run: |
-          $testProjects = @(
-              @{ Path = "tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj"; Dir = "Core"; Filter = $null }
-              @{ Path = "tests/Servy.Core.IntegrationTests/Servy.Core.IntegrationTests.csproj"; Dir = "Core"; Filter = $null }
-              @{ Path = "tests/Servy.Infrastructure.UnitTests/Servy.Infrastructure.UnitTests.csproj"; Dir = "Infrastructure"; Filter = $null }
-              @{ Path = "tests/Servy.Infrastructure.IntegrationTests/Servy.Infrastructure.IntegrationTests.csproj"; Dir = "Infrastructure"; Filter = $null }
-              @{ Path = "tests/Servy.Restarter.UnitTests/Servy.Restarter.UnitTests.csproj"; Dir = "Restarter"; Filter = $null }
-              @{ Path = "tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj"; Dir = "Service"; Filter = "Category!=ReflectionValidation" }
-              @{ Path = "tests/Servy.Service.IntegrationTests/Servy.Service.IntegrationTests.csproj"; Dir = "Service"; Filter = $null }
-              @{ Path = "tests/Servy.UI.UnitTests/Servy.UI.UnitTests.csproj"; Dir = "UI"; Filter = $null }
-              @{ Path = "tests/Servy.UI.IntegrationTests/Servy.UI.IntegrationTests.csproj"; Dir = "UI"; Filter = $null }
-              @{ Path = "tests/Servy.UnitTests/Servy.UnitTests.csproj"; Dir = "UnitTests"; Filter = $null }
-              @{ Path = "tests/Servy.Manager.UnitTests/Servy.Manager.UnitTests.csproj"; Dir = "Manager"; Filter = $null }
-              @{ Path = "tests/Servy.CLI.UnitTests/Servy.CLI.UnitTests.csproj"; Dir = "CLI"; Filter = $null }
-          )
+          # Dynamically builds tracking metadata to align perfectly with the local execution framework.
+          $RawTestProjects = Get-ChildItem -Path "${{ github.workspace }}/tests" -Recurse -Filter '*Tests.csproj' | 
+              Where-Object { $_.Name -ne 'Servy.Testing.csproj' }
 
           $failed = $false
 
-          foreach ($proj in $testProjects) {
-              $projName = [System.IO.Path]::GetFileNameWithoutExtension($proj.Path)
+          foreach ($projFile in $RawTestProjects) {
+              $projPath = $projFile.FullName
+              $projName = $projFile.BaseName
+              
+              # Extract the structural parent workspace folder identifier key matching your build metadata (e.g., 'Core', 'UI')
+              $subDirName = if ($projFile.Directory.Name -match 'Servy\.(.+?)\.') { $matches[1] } else { "UnitTests" }
+              
               Write-Host "Running tests for $projName..." -ForegroundColor Cyan
               
               $dotnetArgs = @(
-                  'test', $proj.Path,
+                  'test', $projPath,
                   '--configuration', 'Debug',
                   '--no-build',
                   '--collect', 'XPlat Code Coverage',
-                  '--results-directory', "./TestResults/$($proj.Dir)/$projName"
+                  '--results-directory', "./TestResults/$subDirName/$projName"
               )
-              
-              if ($proj.Filter) { $dotnetArgs += @('--filter', $proj.Filter) }
               
               $dotnetArgs += @(
                   '--',
@@ -114,14 +106,14 @@ jobs:
         run: dotnet build Servy.sln --configuration Release --no-restore
 
       - name: Run all tests (Release)
-        run: dotnet test Servy.sln --configuration Release --no-build --filter "Category!=ReflectionValidation"
+        run: dotnet test Servy.sln --configuration Release --no-build
 
       # -----------------------------------------------------
       # Coverage Report Merging (x64 Only Context)
       # -----------------------------------------------------
       - name: Merge and normalize coverage paths (PowerShell)
         shell: pwsh
-        if: always() && matrix.upload_coverage == true
+        if: ${{ always() && matrix.upload_coverage == true }}
         run: |
           $workspace = $env:GITHUB_WORKSPACE
           $fixedDir = Join-Path $workspace "TestResults\fixed"
@@ -171,7 +163,7 @@ jobs:
       # Third-Party Metrics Tracking Uploads (x64 Only Context)
       # -----------------------------------------------------
       - name: Import Codecov Public GPG Key
-        if: always() && matrix.upload_coverage == true
+        if: ${{ always() && matrix.upload_coverage == true }}
         continue-on-error: true
         shell: bash
         run: |
@@ -188,7 +180,7 @@ jobs:
         id: codecov
         continue-on-error: true
         uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe #v5.5.4
-        if: always() && matrix.upload_coverage == true
+        if: ${{ always() && matrix.upload_coverage == true }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}          
           files: TestResults/fixed/coverage.cobertura.xml
@@ -197,32 +189,12 @@ jobs:
           fail_ci_if_error: true   # let the action report failure
           verbose: false
           commit_parent: ${{ github.event.before }}         
-          
-      - name: Notify Codecov Status in case of failure
-        if: always() && matrix.upload_coverage == true && steps.codecov.outcome == 'failure'
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b #v7.1.0
-        with:
-          script: |
-            const issues = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: 'codecov-tracking',
-              state: 'open'
-            });
-            for (const issue of issues.data) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue.number,
-                body: 'Codecov upload failed in workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-              });
-            }
 
       - name: Upload coverage to Coveralls
         id: coveralls
         continue-on-error: true
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b #v2.36
-        if: always() && matrix.upload_coverage == true
+        if: ${{ always() && matrix.upload_coverage == true }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           base-path: ${{ github.workspace }}
@@ -233,22 +205,32 @@ jobs:
         env:
           COVERALLS_GIT_BRANCH: ${{ github.ref_name }}
 
-      - name: Notify Coveralls Status in case of failure
-        if: always() && matrix.upload_coverage == true && steps.coveralls.outcome == 'failure'
+      - name: Notify Metrics Platform Status in case of failure
+        if: ${{ always() && matrix.upload_coverage == true && (steps.codecov.outcome == 'failure' || steps.coveralls.outcome == 'failure') }}
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b #v7.1.0
         with:
           script: |
-            const issues = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: 'coveralls-tracking',
-              state: 'open'
-            });
-            for (const issue of issues.data) {
-              await github.rest.issues.createComment({
+            const failureTargets = [
+              { failed: "${{ steps.codecov.outcome }}" === "failure", label: "codecov-tracking", provider: "Codecov" },
+              { failed: "${{ steps.coveralls.outcome }}" === "failure", label: "coveralls-tracking", provider: "Coveralls" }
+            ];
+
+            for (const target of failureTargets) {
+              if (!target.failed) continue;
+
+              const issues = await github.rest.issues.listForRepo({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: issue.number,
-                body: 'Coveralls upload failed in workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+                labels: target.label,
+                state: 'open'
               });
+
+              for (const issue of issues.data) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `${target.provider} upload failed in workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+                });
+              }
             }

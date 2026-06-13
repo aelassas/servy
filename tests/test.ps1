@@ -1,3 +1,4 @@
+#Requires -Version 5.1
 <#
 .SYNOPSIS
     Runs unit tests and integration tests, and generates code coverage reports.
@@ -5,7 +6,7 @@
 .DESCRIPTION
     This script performs the following tasks:
     1. Cleans up previous test results and coverage reports.
-    2. Runs unit tests for specified test projects using 'dotnet test'.
+    2. Runs unit tests for dynamically discovered test projects using 'dotnet test'.
     3. Collects code coverage in Cobertura format.
     4. Generates an aggregated HTML coverage report using ReportGenerator.
 
@@ -17,8 +18,8 @@
     Author: Akram El Assas
 
     Requirements:
-      - .NET SDK installed and accessible in PATH.
-      - ReportGenerator tool installed and available in PATH.
+        - .NET SDK installed and accessible in PATH.
+        - ReportGenerator tool installed and available in PATH.
 #>
 
 $ErrorActionPreference = "Stop"
@@ -39,38 +40,33 @@ if (Test-Path $CoverageReportDir) {
     Remove-Item -Path $CoverageReportDir -Recurse -Force
 }
 
-# Explicit test projects
-$TestProjects = @(
-    Join-Path $ScriptDir "Servy.Core.UnitTests\Servy.Core.UnitTests.csproj"
-    Join-Path $ScriptDir "Servy.Core.IntegrationTests\Servy.Core.IntegrationTests.csproj"
-    Join-Path $ScriptDir "Servy.Infrastructure.UnitTests\Servy.Infrastructure.UnitTests.csproj"
-    Join-Path $ScriptDir "Servy.Infrastructure.IntegrationTests\Servy.Infrastructure.IntegrationTests.csproj"
-    Join-Path $ScriptDir "Servy.Restarter.UnitTests\Servy.Restarter.UnitTests.csproj"
-    Join-Path $ScriptDir "Servy.Service.UnitTests\Servy.Service.UnitTests.csproj"
-    Join-Path $ScriptDir "Servy.Service.IntegrationTests\Servy.Service.IntegrationTests.csproj"
-    Join-Path $ScriptDir "Servy.UI.UnitTests\Servy.UI.UnitTests.csproj"
-    Join-Path $ScriptDir "Servy.UI.IntegrationTests\Servy.UI.IntegrationTests.csproj"
-    Join-Path $ScriptDir "Servy.UnitTests\Servy.UnitTests.csproj"
-    Join-Path $ScriptDir "Servy.Manager.UnitTests\Servy.Manager.UnitTests.csproj"
-    Join-Path $ScriptDir "Servy.CLI.UnitTests\Servy.CLI.UnitTests.csproj"
-)
+# Discovers project test contexts matching standard naming criteria while filtering out base utilities.
+$RawTestProjects = Get-ChildItem -Path $ScriptDir -Recurse -Filter '*Tests.csproj' | 
+    Where-Object { $_.Name -ne 'Servy.Testing.csproj' }
 
 # Run tests and collect coverage for each project
-foreach ($Proj in $TestProjects) {
-    if (-not (Test-Path $Proj)) {
-        Write-Error "Test project not found: $Proj"
-        exit 1
-    }
+foreach ($ProjFile in $RawTestProjects) {
+    $Proj = $ProjFile.FullName
+    $ProjName = $ProjFile.BaseName
 
-Write-Host "Running tests for $($Proj)..."
-    dotnet test $Proj `
-        --configuration Debug `
-        --collect:"XPlat Code Coverage" `
-        --results-directory $TestResultsDir `
-        -- `
-        DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura `
-        DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="[*.UnitTests]*,[*.IntegrationTests]*,[Servy.Testing]*,**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/*.Designer.cs,**/obj/**/*" `
-        DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeProperties="True"
+    Write-Host "Running tests for $($Proj)..." -ForegroundColor Cyan
+    
+    # Re-map positional configurations dynamically to retain proper layout consistency
+    $dotnetArgs = @(
+        'test', $Proj,
+        '--configuration', 'Debug',
+        '--collect', 'XPlat Code Coverage',
+        '--results-directory', (Join-Path $TestResultsDir $ProjName)
+    )
+
+    $dotnetArgs += @(
+        '--',
+        'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura',
+        'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=[*.UnitTests]*,[*.IntegrationTests]*,[Servy.Testing]*,**/*.xaml,**/*.xaml.cs,**/*.g.cs,**/*.Designer.cs,**/obj/**/*',
+        'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeProperties="True"'
+    )
+
+    & dotnet @dotnetArgs
     if ($LASTEXITCODE -ne 0) { Write-Error "dotnet test failed for $Proj"; exit $LASTEXITCODE }
 }
 
