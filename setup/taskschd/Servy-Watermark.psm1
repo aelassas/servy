@@ -65,9 +65,11 @@ function Write-FallbackError {
 
     # System visibility: Attempt to notify the Windows Application Event Log.
     try {
-        # Ensure source exists before writing to event log
+        # -EntryType is Warning.
+        # This keeps it viewable in the Event Viewer while preventing the EventTrigger task 
+        # subscription (which strictly isolates Level 2) from entering a zero-backoff recursive loop.
         Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_ERROR `
-          -EntryType Error -Message $Message -ErrorAction Stop
+          -EntryType Warning -Message $Message -ErrorAction Stop
     } catch {
         # If the Event Log fails, the disk log above remains the final source of truth.
     }

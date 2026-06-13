@@ -4,11 +4,11 @@
 # Automates the update of Servy’s Scoop manifest.
 # When a new release is published (or triggered
 # manually), this workflow:
-#      • Downloads the latest installer
-#      • Computes its SHA256 hash
-#      • Updates the manifest in `aelassas/scoop-bucket`
-#      • Optionally creates a PR to update the manifest
-#        in `ScoopInstaller/Extras`
+#       • Downloads the latest installer
+#       • Computes its SHA256 hash
+#       • Updates the manifest in `aelassas/scoop-bucket`
+#       • Optionally creates a PR to update the manifest
+#         in `ScoopInstaller/Extras`
 # ===========================================
 
 name: scoop
@@ -97,8 +97,9 @@ jobs:
               # Join lines back together with a standardized Unix trailing newline
               $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
                
-              # Write to file using UTF8
-              [System.IO.File]::WriteAllText($jsonPath, $jsonString, [System.Text.Encoding]::UTF8)
+              # Write to file using BOM-less UTF-8 encoding
+              $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+              [System.IO.File]::WriteAllText($jsonPath, $jsonString, $utf8NoBom)
               Write-Host "Successfully wrote manifest to $jsonPath"
           }
           '@
@@ -187,10 +188,19 @@ jobs:
           git config url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
           $branchName = "update-servy-$env:VERSION"
 
-          $mergedPR = gh pr list --repo ScoopInstaller/Extras --head "aelassas:$branchName" --state merged --json number --limit 1 | ConvertFrom-Json
-          if ($mergedPR.Count -gt 0) {
-              Write-Host "A PR for version $env:VERSION has already been merged. Skipping."
-              return 
+          # Query all PR state contexts associated with this destination branch layout mapping
+          $existingPR = gh pr list --repo ScoopInstaller/Extras --head "aelassas:$branchName" --state all --json number,state --limit 1 | ConvertFrom-Json
+          
+          if ($existingPR.Count -gt 0) {
+              if ($existingPR[0].state -eq "MERGED") {
+                  Write-Host "A PR for version $env:VERSION has already been merged. Skipping entire branch processing block."
+                  Add-Content -Path $env:GITHUB_ENV -Value "SKIP_PR_CREATE=true"
+                  return 
+              }
+              elseif ($existingPR[0].state -eq "OPEN") {
+                  Write-Host "A PR for version $env:VERSION is currently OPEN. Proceeding to force-push payload updates, but skip creation step."
+                  Add-Content -Path $env:GITHUB_ENV -Value "SKIP_PR_CREATE=true"
+              }
           }
 
           git remote add upstream https://github.com/ScoopInstaller/Extras.git
@@ -204,6 +214,7 @@ jobs:
            
           $manifestPath = "bucket/servy.json"
           $fullPath = Join-Path (Get-Location) $manifestPath
+          $installerUrl = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-x64-installer.exe"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
@@ -211,7 +222,6 @@ jobs:
               # Source canonical metadata fields directly from the updated reference file in the workspace
               $canonicalSourcePath = "$env:GITHUB_WORKSPACE/setup/scoop/servy.json"
               $canonicalObj = Get-Content $canonicalSourcePath -Raw | ConvertFrom-Json
-              $installerUrl = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-x64-installer.exe"
 
               # Hydrate static structural fields directly from canonical settings
               $jsonObj = [PSCustomObject]@{
@@ -252,7 +262,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "git push failed (exit $LASTEXITCODE)" }
          
       - name: Open Pull Request in ScoopInstaller/Extras
-        if: env.RUN_EXTRAS_PR == 'true'
+        if: env.RUN_EXTRAS_PR == 'true' && env.SKIP_PR_CREATE != 'true'
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.PAT }}

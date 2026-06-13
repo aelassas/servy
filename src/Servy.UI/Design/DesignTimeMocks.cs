@@ -130,7 +130,7 @@ namespace Servy.UI.Design
         /// <summary>
         /// Returns a default "Stopped" status for design-time display.
         /// </summary>
-        public ServiceControllerStatus GetServiceStatus(string? serviceName, CancellationToken cancellationToken = default)
+        public ServiceControllerStatus? GetServiceStatus(string? serviceName, CancellationToken cancellationToken = default)
             => ServiceControllerStatus.Stopped;
 
         /// <summary>

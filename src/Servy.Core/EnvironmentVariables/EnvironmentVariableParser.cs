@@ -39,20 +39,28 @@ namespace Servy.Core.EnvironmentVariables
                     continue;
 
                 // Delegate execution to the centralized validation rules block to maintain perfect logic alignment
-                if (!EnvironmentVariablesValidator.ProcessAndValidateRecord(part, out string key, out string value, out string errorMessage))
+                if (!EnvironmentVariablesValidator.ProcessAndValidateRecord(part, out string key, out string value, out string errorMessage, out EnvVarValidationResultKind resultKind))
                 {
-                    // If parsing encounters anomalies that the validator blocks, map exceptions identically
-                    if (errorMessage == Strings.Msg_EnvironmentVariableMissingEquals)
+                    // FIX: Replaced fragile localized string-matching checks with a strongly typed enum switch block.
+                    // This prevents runtime localization culture mismatches and keeps future validation rules from being misreported.
+                    switch (resultKind)
                     {
-                        throw new FormatException($"Invalid environment variable (no unescaped '='): {part}");
-                    }
-                    if (errorMessage == Strings.Msg_EnvironmentVariableKeyEmpty)
-                    {
-                        throw new FormatException($"Environment variable key cannot be empty: {part}");
-                    }
+                        case EnvVarValidationResultKind.MissingEquals:
+                            throw new FormatException($"Invalid environment variable (no unescaped '='): {part}");
 
-                    // Fallback to the explicit forbidden newline or general custom exception details
-                    throw new FormatException($"Environment variable '{key}' contains a forbidden newline character. Multi-line values are not supported.");
+                        case EnvVarValidationResultKind.EmptyKey:
+                            throw new FormatException($"Environment variable key cannot be empty: {part}");
+
+                        case EnvVarValidationResultKind.ForbiddenNewline:
+                            throw new FormatException($"Environment variable '{key}' contains a forbidden newline character. Multi-line values are not supported.");
+
+                        case EnvVarValidationResultKind.GeneralFailure:
+                        default:
+                            // Fallback safely surfaces the validator's native message context if an unmapped rule fails
+                            throw new FormatException(!string.IsNullOrWhiteSpace(errorMessage)
+                                ? errorMessage
+                                : $"Environment variable record failed validation tracking: {part}");
+                    }
                 }
 
                 result.Add(new EnvironmentVariable { Name = key, Value = value });

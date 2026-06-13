@@ -12,19 +12,19 @@ description: 'Install and cryptographically verify CycloneDX CLI and .NET Tool'
 inputs:
   tool_version:
     description: 'CycloneDX .NET Tool Version'
-    required: true
+    required: false
     default: '6.2.0'
   tool_hash:
     description: 'Expected SHA256 hash of the .NET tool nupkg'
-    required: true
+    required: false
     default: '3473525381eee02a649b75bbf5b4f0ffa66112f62917aff798fed196e290a884'
   cli_version:
     description: 'CycloneDX CLI Version Tag'
-    required: true
+    required: false
     default: 'v0.31.0'
   cli_hash:
     description: 'Expected SHA256 hash of the CLI binary executable'
-    required: true
+    required: false
     default: 'da18bdb0d5b10a5f45ddfb59b7b08b11ddc050bb5c6407608d831929a1799d3f'
 
 runs:

@@ -367,28 +367,35 @@ namespace Servy.Core.UnitTests.Mappers
         }
 
         [Fact]
-        public void GetStatus_ReturnsStatus_WhenServiceIsInstalled()
+        public void GetStatus_ReturnsNull_WhenServiceIsNotInstalled()
         {
-            _serviceManagerMock.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
-            _serviceManagerMock.Setup(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>())).Returns(ServiceControllerStatus.Running);
+            // Arrange
+            _serviceManagerMock.Setup(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>()))
+                               .Returns((ServiceControllerStatus?)null);
 
+            // Act
             var result = _service.GetStatus(TestContext.Current.CancellationToken);
 
-            Assert.Equal(ServiceControllerStatus.Running, result);
-            _serviceManagerMock.Verify(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>()), Times.Once);
+            // Assert
+            Assert.Null(result);
             _serviceManagerMock.Verify(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>()), Times.Once);
+            _serviceManagerMock.Verify(sm => sm.IsServiceInstalled(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
-        public void GetStatus_ReturnsNull_WhenServiceIsNotInstalled()
+        public void GetStatus_ReturnsStatus_WhenServiceIsInstalled()
         {
-            _serviceManagerMock.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(false);
+            // Arrange
+            _serviceManagerMock.Setup(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>()))
+                               .Returns(ServiceControllerStatus.Running);
 
+            // Act
             var result = _service.GetStatus(TestContext.Current.CancellationToken);
 
-            Assert.Null(result);
-            _serviceManagerMock.Verify(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>()), Times.Once);
-            _serviceManagerMock.Verify(sm => sm.GetServiceStatus(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            // Assert
+            Assert.Equal(ServiceControllerStatus.Running, result);
+            _serviceManagerMock.Verify(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>()), Times.Once);
+            _serviceManagerMock.Verify(sm => sm.IsServiceInstalled(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]

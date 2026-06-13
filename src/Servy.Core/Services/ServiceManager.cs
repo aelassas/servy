@@ -833,16 +833,31 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public ServiceControllerStatus GetServiceStatus(string? serviceName, CancellationToken cancellationToken = default(CancellationToken))
+        public ServiceControllerStatus? GetServiceStatus(string? serviceName, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            using (var sc = _controllerFactory(serviceName))
+            try
             {
-                return sc.Status;
+                using (var sc = _controllerFactory(serviceName))
+                {
+                    return sc.Status;
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Catching InvalidOperationException handles cases where the service does not exist 
+                // or was uninstalled mid-flight, safely satisfying the nullable fallback contract.
+                Logger.Debug($"Service '{serviceName}' was not found or was removed during status retrieval: {ex.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Unexpected error retrieving status for service '{serviceName}'.", ex);
+                return null;
             }
         }
 

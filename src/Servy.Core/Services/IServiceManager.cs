@@ -79,12 +79,15 @@ namespace Servy.Core.Services
         Task<OperationResult> RestartServiceAsync(string? serviceName, bool logSuccessfulRestart = true, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Gets the current status of the specified Windows service by querying the Service Control Manager.
+        /// Retrieves the current status of the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The unique name of the service to interrogate.</param>
         /// <param name="cancellationToken">Optional cancellation token for the status query.</param>
-        /// <returns>The current <see cref="ServiceControllerStatus"/> of the service (e.g., Running, Stopped, Paused).</returns>
-        ServiceControllerStatus GetServiceStatus(string? serviceName, CancellationToken cancellationToken = default);
+        /// <returns>
+        /// A <see cref="ServiceControllerStatus"/> value representing the current status, 
+        /// or <c>null</c> if the service was not found or has been uninstalled.
+        /// </returns>
+        ServiceControllerStatus? GetServiceStatus(string? serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Determines whether a Windows service with the specified name is currently installed on the local machine.

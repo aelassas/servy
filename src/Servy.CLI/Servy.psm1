@@ -527,9 +527,11 @@ function Invoke-ServyCli {
     # CRITICAL: Clean up events gracefully
     if ($outEvent) {
       Unregister-Event -SourceIdentifier $outEvent.Name -ErrorAction SilentlyContinue
+      Remove-Job -Id $outEvent.Id -Force -ErrorAction SilentlyContinue
     }
     if ($errorEvent) {
       Unregister-Event -SourceIdentifier $errorEvent.Name -ErrorAction SilentlyContinue
+      Remove-Job -Id $errorEvent.Id -Force -ErrorAction SilentlyContinue
     }
     
     if ($null -ne $process) {

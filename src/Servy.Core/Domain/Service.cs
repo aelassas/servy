@@ -429,12 +429,9 @@ namespace Servy.Core.Domain
         /// </returns>
         public ServiceControllerStatus? GetStatus(CancellationToken cancellationToken = default)
         {
-            if (IsInstalled(cancellationToken))
-            {
-                var status = _serviceManager.GetServiceStatus(Name, cancellationToken);
-                return status;
-            }
-            return null;
+            // Bypassed independent IsInstalled pre-check to resolve the TOCTOU window vulnerability.
+            // Delegate status resolution directly to a single-query path that returns null safely on missing services.
+            return _serviceManager.GetServiceStatus(Name, cancellationToken);
         }
 
         /// <summary>
