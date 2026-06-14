@@ -149,7 +149,7 @@ namespace Servy.Core.Validation
                 if (requiredSize == 0)
                 {
                     fileStream.Dispose();
-                    var errorMsg = string.Format(Strings.Msg_SecurityHandleValidationFailed, "Kernel size probe allocation failed.");
+                    var errorMsg = Strings.Msg_SecurityHandleSizeProbeFailed;
                     Logger.Error(errorMsg);
                     return PathSecurityResult.Fail(errorMsg);
                 }
@@ -161,7 +161,7 @@ namespace Servy.Core.Validation
                 if (resultSize == 0)
                 {
                     fileStream.Dispose();
-                    var errorMsg = string.Format(Strings.Msg_SecurityHandleValidationFailed, "Kernel path resolution serialization failed.");
+                    var errorMsg = Strings.Msg_SecurityHandleSerializationFailed;
                     Logger.Error(errorMsg);
                     return PathSecurityResult.Fail(errorMsg);
                 }

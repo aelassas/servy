@@ -274,6 +274,12 @@
   <data name="Msg_SecurityHandleValidationFailed" xml:space="preserve">
     <value>Security Guard Failure: Target file handle validation rejected. {0}</value>
   </data>
+  <data name="Msg_SecurityHandleSizeProbeFailed" xml:space="preserve">
+    <value>Path validation failed at the kernel level: Kernel size probe allocation failed.</value>
+  </data>
+  <data name="Msg_SecurityHandleSerializationFailed" xml:space="preserve">
+    <value>Path validation failed at the kernel level: Kernel path resolution serialization failed.</value>
+  </data>
   <data name="Msg_InvalidPath" xml:space="preserve">
     <value>The specified path is invalid.</value>
   </data>
