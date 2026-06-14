@@ -43,9 +43,9 @@ if (Test-Path $CoverageReportDir) {
 }
 New-Item -ItemType Directory -Path $CoverageReportDir | Out-Null
 
-# Leverage the dynamic pipeline scanner to discover test configurations natively
-$RawTestProjects = Get-ChildItem -Path $ScriptDir -Recurse -Filter '*Tests.csproj' |
-    Where-Object { $_.Name -ne 'Servy.Testing.csproj' }
+# Leverage the dynamic pipeline scanner to discover test configurations natively.
+# The native filesystem globbing filter (*Tests.csproj) already naturally excludes 'Servy.Testing.csproj'.
+$RawTestProjects = Get-ChildItem -Path $ScriptDir -Recurse -Filter '*Tests.csproj'
 
 # Run tests and collect coverage for each project
 foreach ($ProjFile in $RawTestProjects) {

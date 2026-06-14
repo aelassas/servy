@@ -62,27 +62,20 @@ jobs:
       - name: Run all tests with coverage (Debug)
         shell: pwsh
         run: |
-          $testProjects = @(
-              @{ Name = "Servy.Core.UnitTests"; Dir = "Core"; Filter = $null }
-              @{ Name = "Servy.Core.IntegrationTests"; Dir = "Core"; Filter = $null }
-              @{ Name = "Servy.Infrastructure.UnitTests"; Dir = "Infrastructure"; Filter = $null }
-              @{ Name = "Servy.Infrastructure.IntegrationTests"; Dir = "Infrastructure"; Filter = $null }
-              @{ Name = "Servy.Restarter.UnitTests"; Dir = "Restarter"; Filter = $null }
-              @{ Name = "Servy.Service.UnitTests"; Dir = "Service"; Filter = $null }
-              @{ Name = "Servy.Service.IntegrationTests"; Dir = "Service"; Filter = $null }
-              @{ Name = "Servy.UI.UnitTests"; Dir = "UI"; Filter = $null }
-              @{ Name = "Servy.UI.IntegrationTests"; Dir = "UI"; Filter = $null }
-              @{ Name = "Servy.UnitTests"; Dir = "UnitTests"; Filter = $null }
-              @{ Name = "Servy.Manager.UnitTests"; Dir = "Manager"; Filter = $null }
-              @{ Name = "Servy.CLI.UnitTests"; Dir = "CLI"; Filter = $null }
-          )
+          # The native filesystem globbing filter (*Tests.csproj) already naturally excludes 'Servy.Testing.csproj'.
+          $RawTestProjects = Get-ChildItem -Path "${{ github.workspace }}/tests" -Recurse -Filter '*Tests.csproj'
 
           $failed = $false
 
-          foreach ($proj in $testProjects) {
-              Write-Host "Running tests for $($proj.Name)..." -ForegroundColor Cyan
+          foreach ($projFile in $RawTestProjects) {
+              $projName = $projFile.BaseName
               
-              $dllPath = "tests\$($proj.Name)\bin\x64\Debug\$($proj.Name).dll"
+              # Re-map our parent folder tracking keys to dynamically support the Net48 project structures
+              $subDirName = if ($projFile.Directory.Name -match 'Servy\.(.+?)\.') { $matches[1] } else { "UnitTests" }
+              
+              Write-Host "Running tests for $projName..." -ForegroundColor Cyan
+              
+              $dllPath = "tests\$projName\bin\x64\Debug\$projName.dll"
               if (-Not (Test-Path $dllPath)) {
                   Write-Error "Test DLL not found: $dllPath"
                   $failed = $true
@@ -91,12 +84,9 @@ jobs:
 
               # Build target arguments for vstest.console.exe              
               $targetArgs = "`"$dllPath`""
-              if ($proj.Filter) {
-                  $targetArgs += " /TestCaseFilter:`"$($proj.Filter)`""
-              }
               
               # Include the project name in the file so integration tests don't overwrite unit tests              
-              $outPath = "$($proj.Dir)\$($proj.Name).coverage.cobertura.xml"
+              $outPath = "$subDirName\$projName.coverage.cobertura.xml"
               
               # Use vswhere to find the latest installed vstest.console.exe dynamically
               $vsInstallPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
@@ -136,7 +126,7 @@ jobs:
               }
 
               # 3. Add Infrastructure specific exclusion if needed
-              if ($Proj -like "*Servy.Infrastructure*") {
+              if ($projName -like "*Servy.Infrastructure*") {
                   $coverletArgs += "--exclude"
                   $coverletArgs += "[Servy.Core]*"
               }
@@ -146,7 +136,7 @@ jobs:
                   
               if ($LASTEXITCODE -ne 0) { 
                   $failed = $true 
-                  Write-Error "Tests failed for project: $($proj.Name)"
+                  Write-Error "Tests failed for project: $projName"
               }
           }
 
