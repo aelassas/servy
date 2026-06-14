@@ -438,6 +438,20 @@ namespace Servy.Core.Logging
                 return;
             }
 
+            // Pre-compute formatting, regex sanitization, and timestamping outside the global lock.
+            // This minimizes critical section contention, allowing concurrent log entry formatting.
+            string levelName = (int)level >= 0 && (int)level < LevelStrings.Length
+                ? LevelStrings[(int)level]
+                : level.ToString().ToUpperInvariant(); // Fallback for safety
+
+            // Sanitize message into a single-line representation for better scannability
+            var sanitizedMessage = LineBreakingRegex.Replace(message, " ; ");
+            sanitizedMessage = VerticalControlRegex.Replace(sanitizedMessage, " ");
+            sanitizedMessage = sanitizedMessage.Trim();
+
+            // Format: [2026-05-06 08:58:20+01:00] [INFO] Message text OR [2026-05-06 08:58:20Z] [INFO] Message text
+            string logEntry = $"{FormatTimestampPrefix()} [{levelName}] | {sanitizedMessage}";
+
             try
             {
                 // Lock current thread context to block underlying I/O wrappers from calling back here
@@ -447,18 +461,6 @@ namespace Servy.Core.Logging
                 {
                     // 2. Double-check: Correctly see either null or the NEW writer.
                     if (_writer == null) return;
-
-                    string levelName = (int)level >= 0 && (int)level < LevelStrings.Length
-                        ? LevelStrings[(int)level]
-                        : level.ToString().ToUpperInvariant(); // Fallback for safety
-
-                    // Sanitize message into a single-line representation for better scannability
-                    var sanitizedMessage = LineBreakingRegex.Replace(message, " ; ");
-                    sanitizedMessage = VerticalControlRegex.Replace(sanitizedMessage, " ");
-                    sanitizedMessage = sanitizedMessage.Trim();
-
-                    // Format: [2026-05-06 08:58:20+01:00] [INFO] Message text OR [2026-05-06 08:58:20Z] [INFO] Message text
-                    string logEntry = $"{FormatTimestampPrefix()} [{levelName}] | {sanitizedMessage}";
 
                     _writer.WriteLine(logEntry);
                 }

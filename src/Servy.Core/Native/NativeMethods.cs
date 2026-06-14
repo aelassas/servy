@@ -534,7 +534,7 @@ namespace Servy.Core.Native
         #region File & Security Functions
 
         /// <summary>Closes an open object handle.</summary>
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern bool CloseHandle(IntPtr handle);
 
         /// <summary>Retrieves the final path for the specified file handle.</summary>

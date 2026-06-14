@@ -245,6 +245,8 @@ namespace Servy.Core.Native
         /// <returns>A populated identity structure. Check <see cref="FILE_IDENTITY.IsValidHandleInfo"/> for success state.</returns>
         public static FILE_IDENTITY GetFileIdentity(FileStream fs)
         {
+            if (fs == null) throw new ArgumentNullException(nameof(fs));
+
             var identity = new FILE_IDENTITY();
 
             // 1. Kernel32 Handle Probe

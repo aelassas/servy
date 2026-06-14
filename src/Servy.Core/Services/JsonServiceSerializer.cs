@@ -31,7 +31,7 @@ namespace Servy.Core.Services
             }
             catch (JsonException ex)
             {
-                // LOGIC: In Newtonsoft.Json, the base JsonException does not contain line info.
+                // Newtonsoft's base JsonException does not carry line info.
                 // We cast to IJsonLineInfo to safely access coordinates if the exception provides them.
                 var lineInfo = ex as IJsonLineInfo;
                 int lineNumber = (lineInfo != null && lineInfo.HasLineInfo()) ? lineInfo.LineNumber : 0;
