@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -33,7 +34,8 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IMessageBoxService> _messageBoxServiceMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
         private readonly Mock<ICursorService> _cursorServiceMock;
-        private readonly Mock<IProcessHelper> _processHelper;
+        private readonly Mock<IProcessHelper> _processHelperMock;
+        private readonly Mock<IProcessKiller> _processKillerMock;
 
         // Child ViewModels
         private readonly Mock<PerformanceViewModel> _performanceViewModelMock;
@@ -48,7 +50,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             _serviceCommandsMock = new Mock<IServiceCommands>();
             _messageBoxServiceMock = new Mock<IMessageBoxService>();
             _cursorServiceMock = new Mock<ICursorService>();
-            _processHelper = new Mock<IProcessHelper>();
+            _processHelperMock = new Mock<IProcessHelper>();
+            _processKillerMock = new Mock<IProcessKiller>();
 
             var uiDispatcherMock = new Mock<IUiDispatcher>();
             uiDispatcherMock.Setup(d => d.YieldAsync()).Returns(Task.CompletedTask);
@@ -67,7 +70,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _serviceCommandsMock.Object,
                 _appConfigMock.Object,
                 _cursorServiceMock.Object,
-                _processHelper.Object,
+                _processHelperMock.Object,
                 uiDispatcherMock.Object);
 
             _consoleViewModelMock = new Mock<ConsoleViewModel>(
@@ -102,7 +105,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _dependenciesViewModelMock.Object,
                 _appConfigMock.Object,
                 _cursorServiceMock.Object,
-                _processHelper.Object,
+                _processHelperMock.Object,
                 dispatcher ?? Dispatcher.CurrentDispatcher
             );
         }
@@ -121,9 +124,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                Assert.Throws<ArgumentNullException>(() => new MainViewModel(null, _serviceRepositoryMock.Object, _serviceCommandsMock.Object, _helpServiceMock.Object, _messageBoxServiceMock.Object, _performanceViewModelMock.Object, _consoleViewModelMock.Object, _dependenciesViewModelMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelper.Object, Dispatcher.CurrentDispatcher));
-                Assert.Throws<ArgumentNullException>(() => new MainViewModel(_serviceManagerMock.Object, null, _serviceCommandsMock.Object, _helpServiceMock.Object, _messageBoxServiceMock.Object, _performanceViewModelMock.Object, _consoleViewModelMock.Object, _dependenciesViewModelMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelper.Object, Dispatcher.CurrentDispatcher));
-                Assert.Throws<ArgumentNullException>(() => new MainViewModel(_serviceManagerMock.Object, _serviceRepositoryMock.Object, null, _helpServiceMock.Object, _messageBoxServiceMock.Object, _performanceViewModelMock.Object, _consoleViewModelMock.Object, _dependenciesViewModelMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelper.Object, Dispatcher.CurrentDispatcher));
+                Assert.Throws<ArgumentNullException>(() => new MainViewModel(null, _serviceRepositoryMock.Object, _serviceCommandsMock.Object, _helpServiceMock.Object, _messageBoxServiceMock.Object, _performanceViewModelMock.Object, _consoleViewModelMock.Object, _dependenciesViewModelMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelperMock.Object, Dispatcher.CurrentDispatcher));
+                Assert.Throws<ArgumentNullException>(() => new MainViewModel(_serviceManagerMock.Object, null, _serviceCommandsMock.Object, _helpServiceMock.Object, _messageBoxServiceMock.Object, _performanceViewModelMock.Object, _consoleViewModelMock.Object, _dependenciesViewModelMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelperMock.Object, Dispatcher.CurrentDispatcher));
+                Assert.Throws<ArgumentNullException>(() => new MainViewModel(_serviceManagerMock.Object, _serviceRepositoryMock.Object, null, _helpServiceMock.Object, _messageBoxServiceMock.Object, _performanceViewModelMock.Object, _consoleViewModelMock.Object, _dependenciesViewModelMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelperMock.Object, Dispatcher.CurrentDispatcher));
             }, createApp: true);
         }
 
@@ -413,7 +416,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var getInfoMethod = typeof(MainViewModel).GetMethod("GetServiceUpdateInfo", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 var service = new Service { Name = "CrashService", Pid = 1234 };
-                _processHelper.Setup(p => p.GetProcessTreeMetrics(1234)).Throws(new Exception("Process performance counter corrupt"));
+                _processHelperMock.Setup(p => p.GetProcessTreeMetrics(1234)).Throws(new Exception("Process performance counter corrupt"));
 
                 var result = getInfoMethod.Invoke(vm, new object[] { service, new Dictionary<string, ServiceInfo>(), new ServiceDto(), CancellationToken.None });
 
@@ -986,31 +989,50 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                // Arrange
-                var vm = CreateViewModel();
-                var getInfoMethod = typeof(MainViewModel).GetMethod("GetServiceUpdateInfo", BindingFlags.NonPublic | BindingFlags.Instance);
+                // Preserve the original environment context firmly inside the thread scope boundary
+                var originalProvider = App.Services;
 
-                var service = new Service { Name = "MetricsSvc", Pid = 4321, Status = ServiceStatus.Running };
-                var allServices = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase)
+                // Build an isolated runtime DI container to satisfy the base class locator check.
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_processKillerMock.Object);
+
+                // Build the provider instance explicitly and verify it isn't dropped by cross-thread assignments
+                var localProvider = serviceCollection.BuildServiceProvider();
+                App.Services = localProvider;
+
+                try
                 {
-                    { "MetricsSvc", new ServiceInfo { Name = "MetricsSvc", Status = ServiceStatus.Running, } }
-                };
-                var serviceDto = new ServiceDto { Name = "MetricsSvc", Pid = 4321 };
+                    // Arrange
+                    var vm = CreateViewModel();
+                    var getInfoMethod = typeof(MainViewModel).GetMethod("GetServiceUpdateInfo", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                _processHelper.Setup(p => p.GetProcessTreeMetrics(4321)).Returns(new ProcessMetrics(12.5, 2048576));
+                    var service = new Service { Name = "MetricsSvc", Pid = 4321, Status = ServiceStatus.Running };
+                    var allServices = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        { "MetricsSvc", new ServiceInfo { Name = "MetricsSvc", Status = ServiceStatus.Running, } }
+                    };
+                    var serviceDto = new ServiceDto { Name = "MetricsSvc", Pid = 4321 };
 
-                // Act
-                var result = getInfoMethod.Invoke(vm, new object[] { service, allServices, serviceDto, CancellationToken.None });
+                    _processHelperMock.Setup(p => p.GetProcessTreeMetrics(4321)).Returns(new ProcessMetrics(12.5, 2048576));
 
-                // Assert
-                Assert.NotNull(result);
-                var resultType = result.GetType();
-                var updateInfo = (ServiceUpdateInfo)resultType.GetField("Item1").GetValue(result);
+                    // Act
+                    var result = getInfoMethod.Invoke(vm, new object[] { service, allServices, serviceDto, CancellationToken.None });
 
-                Assert.Equal(12.5, updateInfo.CpuUsage);
-                Assert.Equal(2048576, updateInfo.RamUsage);
-                _processHelper.Verify(p => p.MaintainCache(), Times.Once);
-                _processHelper.Verify(p => p.GetProcessTreeMetrics(4321), Times.Once);
+                    // Assert
+                    Assert.NotNull(result);
+                    var resultType = result.GetType();
+                    var updateInfo = (ServiceUpdateInfo)resultType.GetField("Item1").GetValue(result);
+
+                    Assert.Equal(12.5, updateInfo.CpuUsage);
+                    Assert.Equal(2048576, updateInfo.RamUsage);
+                    _processHelperMock.Verify(p => p.MaintainCache(), Times.Once);
+                    _processHelperMock.Verify(p => p.GetProcessTreeMetrics(4321), Times.Once);
+                }
+                finally
+                {
+                    // Clean up tracking boundaries to isolate adjacent concurrent test suites
+                    App.Services = originalProvider;
+                }
             }, createApp: true);
         }
 
@@ -1175,7 +1197,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 uiDispatcherMock.Setup(d => d.YieldAsync()).Returns(Task.CompletedTask);
 
                 // Initialize standalone standard child instances that do NOT inherit or abstract from IDisposable directly
-                var mockPerformance = new Mock<PerformanceViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelper.Object, uiDispatcherMock.Object);
+                var mockPerformance = new Mock<PerformanceViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelperMock.Object, uiDispatcherMock.Object);
                 var mockConsole = new Mock<ConsoleViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object);
                 var mockDependencies = new Mock<DependenciesViewModel>(_serviceRepositoryMock.Object, _serviceManagerMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object, _messageBoxServiceMock.Object);
 
@@ -1190,7 +1212,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     mockDependencies.Object,
                     _appConfigMock.Object,
                     _cursorServiceMock.Object,
-                    _processHelper.Object,
+                    _processHelperMock.Object,
                     Dispatcher.CurrentDispatcher
                 );
 
