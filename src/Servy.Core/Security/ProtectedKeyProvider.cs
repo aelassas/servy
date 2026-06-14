@@ -132,9 +132,10 @@ namespace Servy.Core.Security
                 // GetOrGenerate handles its own internal migration/rotation logic.
                 byte[] decrypted = GetOrGenerate(path, length);
 
-                // Store a clone in the cache so the return value of this method 
-                // (which the caller might eventually zero out) doesn't mutate our cache.
-                cacheField = (byte[])decrypted.Clone();
+                // Capture ownership of the freshly generated key material directly without 
+                // executing an extra intermediate cloning pass. This prevents un-zeroed plaintext 
+                // leftovers from floating on the managed heap before garbage collection.
+                cacheField = decrypted;
 
                 // CODE PARITY: Return a clone directly from the initialized cache field.
                 // This enforces literal parity with the XML documentation contract and guarantees 
