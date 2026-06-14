@@ -297,7 +297,8 @@ namespace Servy.Manager.Utils
 
                         // LINEAR BACKOFF: Progressively scale recovery wait by attempt number, capped at MaxDelay.
                         int delay = Math.Min(AppConfig.LogTailerMaxUnhandledErrorRecoveryDelayMs, AppConfig.LogTailerUnhandledErrorRecoveryDelayMs * consecutiveFailures);
-                        await Task.Delay(delay, linkedToken);
+                        try { await Task.Delay(delay, linkedToken); }
+                        catch (OperationCanceledException) { break; }
                     }
                 }
             }
