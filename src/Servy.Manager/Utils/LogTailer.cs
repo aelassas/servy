@@ -374,7 +374,22 @@ namespace Servy.Manager.Utils
                         int toRead = (int)Math.Min(pos, buffer.Length);
                         pos -= toRead;
                         fs.Seek(pos, SeekOrigin.Begin);
-                        fs.Read(buffer, 0, toRead);
+
+                        // Hand-crafted a deterministic read loop for .NET Framework 4.8.
+                        // This guarantees the buffer chunk is fully populated even if the OS 
+                        // returns a partial/short read, preventing stale data corruption.
+                        int totalBytesRead = 0;
+                        while (totalBytesRead < toRead)
+                        {
+                            int bytesRead = fs.Read(buffer, totalBytesRead, toRead - totalBytesRead);
+                            if (bytesRead == 0)
+                            {
+                                // Clean boundary handling: reached an unexpected end of stream/truncation
+                                throw new EndOfStreamException("Expected to read more bytes from log history stream, but reached EOF.");
+                            }
+                            totalBytesRead += bytesRead;
+                        }
+
                         for (int i = toRead - 1; i >= 0; i--)
                         {
                             if (buffer[i] == (byte)'\n')

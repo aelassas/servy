@@ -313,14 +313,14 @@ namespace Servy.Service
 
                 if (!resourceHelper.CopyEmbeddedResourceForceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe"))
                 {
-                    _logger.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.exe");
+                    _logger?.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.exe");
                 }
 
 #if DEBUG
                 // Copy debug symbols from embedded resources (only in debug builds)
                 if (!resourceHelper.CopyEmbeddedResourceForceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb"))
                 {
-                    _logger.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.pdb");
+                    _logger?.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.pdb");
                 }
 #endif
 
@@ -663,19 +663,19 @@ namespace Servy.Service
                             return attempts;
 
                         WriteAttemptsInternal(0);
-                        _logger.Warn("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
+                        _logger?.Warn("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
                         return 0;
                     }
                     else
                     {
                         WriteAttemptsInternal(0);
-                        _logger.Warn("Restart attempts file not found. Initializing counter to 0.");
+                        _logger?.Warn("Restart attempts file not found. Initializing counter to 0.");
                         return 0;
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.Warn($"Error reading restart attempts file: {ex.Message}. Resetting counter to 0.");
+                    _logger?.Warn($"Error reading restart attempts file: {ex.Message}. Resetting counter to 0.");
                     return 0;
                 }
             }
@@ -699,7 +699,7 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error($"Failed to save restart attempts to file: {ex.Message}");
+                    _logger?.Error($"Failed to save restart attempts to file: {ex.Message}");
                 }
             }
         }
@@ -808,7 +808,7 @@ namespace Servy.Service
             double secondsSinceLastAttempt = (DateTime.UtcNow - lastWriteUtc).TotalSeconds;
             if (secondsSinceLastAttempt > resetThresholdSeconds)
             {
-                _logger.Info($"Resetting restart attempts counter. Stable for {secondsSinceLastAttempt:F1} seconds.");
+                _logger?.Info($"Resetting restart attempts counter. Stable for {secondsSinceLastAttempt:F1} seconds.");
                 SaveRestartAttempts(0);
             }
         }
