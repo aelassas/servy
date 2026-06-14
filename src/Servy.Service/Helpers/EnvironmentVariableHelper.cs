@@ -327,7 +327,12 @@ namespace Servy.Service.Helpers
                     }
                     else
                     {
-                        replacement = Regex.Replace(replacement, Regex.Escape(token), m => inheritedValue, RegexOptions.IgnoreCase);
+                        replacement = Regex.Replace(
+                            replacement,
+                            Regex.Escape(token),
+                            m => inheritedValue,
+                            RegexOptions.IgnoreCase,
+                            AppConfig.InputRegexTimeout);
                     }
                 }
 
