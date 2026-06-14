@@ -59,9 +59,8 @@ jobs:
       - name: Run all tests with coverage (Debug)
         shell: pwsh
         run: |
-          # Dynamically builds tracking metadata to align perfectly with the local execution framework.
-          $RawTestProjects = Get-ChildItem -Path "${{ github.workspace }}/tests" -Recurse -Filter '*Tests.csproj' | 
-              Where-Object { $_.Name -ne 'Servy.Testing.csproj' }
+          # The native filesystem globbing filter (*Tests.csproj) already naturally excludes 'Servy.Testing.csproj'.
+          $RawTestProjects = Get-ChildItem -Path "${{ github.workspace }}/tests" -Recurse -Filter '*Tests.csproj'
 
           $failed = $false
 
@@ -69,7 +68,7 @@ jobs:
               $projPath = $projFile.FullName
               $projName = $projFile.BaseName
               
-              # Extract the structural parent workspace folder identifier key matching your build metadata (e.g., 'Core', 'UI')
+              # Derive the category segment (e.g. 'Core', 'UI') from the project folder name for the results path
               $subDirName = if ($projFile.Directory.Name -match 'Servy\.(.+?)\.') { $matches[1] } else { "UnitTests" }
               
               Write-Host "Running tests for $projName..." -ForegroundColor Cyan

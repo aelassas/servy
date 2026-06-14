@@ -40,9 +40,8 @@ if (Test-Path $CoverageReportDir) {
     Remove-Item -Path $CoverageReportDir -Recurse -Force
 }
 
-# Discovers project test contexts matching standard naming criteria while filtering out base utilities.
-$RawTestProjects = Get-ChildItem -Path $ScriptDir -Recurse -Filter '*Tests.csproj' | 
-    Where-Object { $_.Name -ne 'Servy.Testing.csproj' }
+# The native filesystem globbing filter (*Tests.csproj) already naturally excludes 'Servy.Testing.csproj'.
+$RawTestProjects = Get-ChildItem -Path $ScriptDir -Recurse -Filter '*Tests.csproj'
 
 # Run tests and collect coverage for each project
 foreach ($ProjFile in $RawTestProjects) {

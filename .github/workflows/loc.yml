@@ -20,7 +20,6 @@ on:
 permissions:
   contents: write  # Required for peaceiris/actions-gh-pages to push badges
 
-# Centralized color configurations to resolve visual drift in repository layout templates
 env:
   LOC_BADGE_COLOR: green
 
@@ -86,7 +85,6 @@ jobs:
           # Escape commas to ensure strict RFC 3986 compliance
           ENCODED_TOTAL=$(echo "$TOTAL_COMMA" | sed 's/,/%2C/g')
           
-          # Eliminated hardcoded hex constant. Integrated named color token targeting the centralized environment value.
           URL="https://img.shields.io/badge/LoC%20total-${ENCODED_TOTAL}-${{ env.LOC_BADGE_COLOR }}"
           echo "URL: ${URL}"
 
