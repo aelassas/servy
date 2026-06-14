@@ -8,10 +8,10 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Servy.Core.Resources
-{
-
-
+namespace Servy.Core.Resources {
+    using System;
+    
+    
     /// <summary>
     ///   Une classe de ressource fortement typée destinée, entre autres, à la consultation des chaînes localisées.
     /// </summary>
@@ -570,6 +570,24 @@ namespace Servy.Core.Resources
         public static string Msg_SecurityHandleInvalid {
             get {
                 return ResourceManager.GetString("Msg_SecurityHandleInvalid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Path validation failed at the kernel level: Kernel path resolution serialization failed..
+        /// </summary>
+        public static string Msg_SecurityHandleSerializationFailed {
+            get {
+                return ResourceManager.GetString("Msg_SecurityHandleSerializationFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Path validation failed at the kernel level: Kernel size probe allocation failed..
+        /// </summary>
+        public static string Msg_SecurityHandleSizeProbeFailed {
+            get {
+                return ResourceManager.GetString("Msg_SecurityHandleSizeProbeFailed", resourceCulture);
             }
         }
         
