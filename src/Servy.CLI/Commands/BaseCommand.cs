@@ -1,4 +1,5 @@
-﻿using Servy.CLI.Models;
+﻿using Servy.CLI.Helpers;
+using Servy.CLI.Models;
 using Servy.CLI.Resources;
 using Servy.Core.Common;
 using Servy.Core.Enums;
@@ -143,7 +144,7 @@ namespace Servy.CLI.Commands
                 else
                 {
                     Logger.Error(res.ErrorMessage);
-                    return CommandResult.Fail(res.ErrorMessage);
+                    return res.ToFailure();
                 }
             });
         }

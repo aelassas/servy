@@ -1,4 +1,4 @@
-#Requires -Version 3.0
+#Requires -Version 5.1
 <#
 .SYNOPSIS
     Masks sensitive credentials and keys in a given text string.
