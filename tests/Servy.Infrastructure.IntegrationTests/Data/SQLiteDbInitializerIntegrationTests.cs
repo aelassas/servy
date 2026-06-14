@@ -267,6 +267,86 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
         #endregion
 
+        #region V6
+
+        [Fact]
+        public void ApplyVersion6_UnicodeCasingDuplicates_DeduplicatesAndAppliesNoCaseIndex()
+        {
+            using (var conn = CreateConnection())
+            {
+                // Arrange: Initialize a clean baseline up to Version 5 state
+                conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY, Version INTEGER);");
+                conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 5);");
+
+                // Construct a valid pre-v6 table layout manually to safely insert custom casing variations
+                var getSqlType = typeof(SQLiteDbInitializer).GetMethod("GetSqlType", BindingFlags.Static | BindingFlags.NonPublic);
+                var getExpectedCols = typeof(SQLiteDbInitializer).GetMethod("GetExpectedColumns", BindingFlags.Static | BindingFlags.NonPublic);
+                var expectedCols = (IEnumerable<string>)getExpectedCols!.Invoke(null, null)!;
+
+                var colDefs = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT" };
+                var insertCols = new List<string> { "Name" };
+                var insertVals1 = new List<string> { "'Alpha-Service'" };
+                var insertVals2 = new List<string> { "'alpha-service'" };
+
+                foreach (var col in expectedCols)
+                {
+                    if (col.Equals("Name", StringComparison.OrdinalIgnoreCase)) continue;
+
+                    string sqlType = (string)getSqlType!.Invoke(null, new object[] { col })!;
+                    colDefs.Add($"{col} {sqlType}");
+                    insertCols.Add(col);
+                    string val = sqlType.IndexOf("TEXT", StringComparison.OrdinalIgnoreCase) >= 0 ? "''" : "0";
+                    insertVals1.Add(val);
+                    insertVals2.Add(val);
+                }
+
+                conn.Execute($"CREATE TABLE Services ({string.Join(", ", colDefs)});");
+
+                // Setup the old functional index as NON-UNIQUE so it permits the insert of casing variations on legacy systems.
+                // This simulates pre-V1 state layout anomalies that version tracking systems must fix.
+                conn.Execute("CREATE INDEX idx_services_name_lower ON Services(LOWER(Name));");
+
+                // Seed duplicate rows out of chronological entry order to check oldest historical match selection (MIN(Id) resolution)
+                // Row 1 (Id=1): Alpha-Service, Row 2 (Id=2): alpha-service
+                conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals1)});");
+                conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals2)});");
+
+                // Act: Trigger initialization to catch version 5 -> 6 transition pipeline branch
+                SQLiteDbInitializer.Initialize(conn);
+
+                // Assert
+                var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
+                Assert.Equal(6, version);
+
+                // 1. Verify table deduplication pass: only the oldest instance (Id = 1) survives the constraint cleanup
+                var remainingServices = conn.Query("SELECT Id, Name FROM Services;").ToList();
+                Assert.Single(remainingServices);
+                Assert.Equal(1L, (long)remainingServices[0].Id);
+                Assert.Equal("Alpha-Service", (string)remainingServices[0].Name);
+
+                // 2. Verify the structural index details map directly to the modern COLLATE NOCASE layout rules
+                // Cast rows explicitly to Dictionary IDictionary contexts to prevent lowercase property access issues
+                var indexList = conn.Query("PRAGMA index_list('Services');")
+                                    .Select(x => (IDictionary<string, object>)x)
+                                    .ToList();
+
+                var targetingIndex = indexList.FirstOrDefault(idx => string.Equals(idx["name"]?.ToString(), "idx_services_name_lower", StringComparison.OrdinalIgnoreCase));
+
+                Assert.NotNull(targetingIndex);
+                Assert.Equal(1L, Convert.ToInt64(targetingIndex["unique"]));
+
+                // 3. Confirm index expression metadata properties use the raw column reference with NOCASE collation rules
+                var indexInfo = conn.Query("PRAGMA index_info('idx_services_name_lower');")
+                                    .Select(x => (IDictionary<string, object>)x)
+                                    .ToList();
+
+                Assert.Single(indexInfo);
+                Assert.Equal("Name", indexInfo[0]["name"]?.ToString());
+            }
+        }
+
+        #endregion
+
         #region Reconciliation Self-Healing (Missing, Orphans, Mismatches)
 
         [Fact]
@@ -302,8 +382,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
                 conn.Execute($"CREATE TABLE Services ({string.Join(", ", corruptedTableDef)});");
 
-                // Reset schema version to max so migrations don't run, forcing ReconcileSchema to do all the work
-                conn.Execute("UPDATE SchemaInfo SET Version = 5 WHERE Id = 1;");
+                // Updated stashed schema version context to 6 to safely bypass the modern sequential 
+                // index migrations block layout. This redirects execution straight into ReconcileSchema 
+                // to self-heal the sabotaged test structure completely.
+                conn.Execute("UPDATE SchemaInfo SET Version = 6 WHERE Id = 1;");
 
                 // Step 3: Act - Run Initialize again
                 SQLiteDbInitializer.Initialize(conn);
