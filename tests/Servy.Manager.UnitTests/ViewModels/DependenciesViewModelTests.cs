@@ -1,6 +1,5 @@
 ﻿using Moq;
 using Servy.Core.Data;
-using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Config;
 using Servy.Manager.Models;
@@ -10,13 +9,7 @@ using Servy.Manager.ViewModels;
 using Servy.UI.Constants;
 using Servy.UI.Design;
 using Servy.UI.Services;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {

@@ -21,10 +21,8 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IAppConfiguration> _mockAppConfig;
         private readonly Mock<ICursorService> _mockCursorService;
         private readonly Mock<IProcessHelper> _mockProcessHelper;
-        private readonly Mock<IUiDispatcher> _mockUiDispatcher;
-
-        // Centralized mock container to protect base class initialization flows
         private readonly Mock<IProcessKiller> _mockProcessKiller;
+        private readonly Mock<IUiDispatcher> _mockUiDispatcher;
 
         public PerformanceViewModelTests()
         {
@@ -98,7 +96,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // Build an isolated runtime DI container to satisfy the base class locator check.
                 var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton<IProcessKiller>(_mockProcessKiller.Object);
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
 
                 // Build the provider instance explicitly and verify it isn't dropped by cross-thread assignments
                 var localProvider = serviceCollection.BuildServiceProvider();
