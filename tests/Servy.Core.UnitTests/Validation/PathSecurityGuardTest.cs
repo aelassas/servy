@@ -1,4 +1,5 @@
-﻿using Servy.Core.Validation;
+﻿using Servy.Core.Resources;
+using Servy.Core.Validation;
 
 namespace Servy.Core.UnitTests.Validation
 {

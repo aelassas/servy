@@ -410,21 +410,21 @@ namespace Servy.Core.Native
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern bool ChangeServiceConfig2(
               SafeServiceHandle hService,
-              int dwInfoLevel,
+             uint dwInfoLevel,
               ref SERVICE_DESCRIPTION lpInfo);
 
         /// <summary>Changes optional service configuration (Delayed Auto Start).</summary>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern bool ChangeServiceConfig2(
               SafeServiceHandle hService,
-              int dwInfoLevel,
+             uint dwInfoLevel,
               ref SERVICE_DELAYED_AUTO_START_INFO lpInfo);
 
         /// <summary>Changes optional service configuration using a raw buffer pointer.</summary>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern bool ChangeServiceConfig2(
               SafeServiceHandle hService,
-              int dwInfoLevel,
+             uint dwInfoLevel,
               IntPtr lpInfo);
 
         /// <summary>Updates the SCM's status information for the calling service.</summary>
