@@ -55,39 +55,5 @@ namespace Servy.Manager.Views
                 Logger.Error($"Failed to perform initial service search in {ViewName}.", ex);
             }
         }
-
-        /// <summary>
-        /// Handles the KeyDown event for the search input text box.
-        /// Routes control execution into the ViewModel's SearchCommand when the Enter key is pressed.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The key event arguments.</param>
-        protected void SearchTextBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-            {
-                _ = SearchTextBox_KeyDownAsync(sender, e);
-            }
-        }
-
-        /// <summary>
-        /// Performs the asynchronous command dispatch when the Enter key sequence is validated.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The key event arguments.</param>
-        private async Task SearchTextBox_KeyDownAsync(object sender, KeyEventArgs e)
-        {
-            try
-            {
-                if (DataContext is ServiceSearchViewModelBase vm)
-                {
-                    await vm.SearchCommand.ExecuteAsync(null);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to execute search sequence on Enter key press in {ViewName}.", ex);
-            }
-        }
     }
 }

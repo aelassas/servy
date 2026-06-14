@@ -118,7 +118,7 @@ jobs:
           # Load and update JSON
           $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
           $jsonObj.version = $env:VERSION
-          $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-x64-installer.exe"
+          $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
           $jsonObj.architecture.'64bit'.hash = $env:HASH
 
           Write-ScoopManifest -jsonObj $jsonObj -jsonPath (Resolve-Path $manifestPath)
@@ -177,7 +177,7 @@ jobs:
           $manifestPath = "servy.json"
           $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
           $jsonObj.version = $env:VERSION
-          $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-x64-installer.exe"
+          $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
           $jsonObj.architecture.'64bit'.hash = $env:HASH
            
           Write-ScoopManifest -jsonObj $jsonObj -jsonPath (Join-Path (Get-Location) $manifestPath)
@@ -259,7 +259,7 @@ jobs:
            
           $manifestPath = "bucket/servy.json"
           $fullPath = Join-Path (Get-Location) $manifestPath
-          $installerUrl = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-x64-installer.exe"
+          $installerUrl = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 

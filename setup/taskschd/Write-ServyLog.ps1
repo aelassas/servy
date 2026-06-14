@@ -6,7 +6,8 @@ function Write-ServyLog {
     param(
         [Parameter(Mandatory=$true)][string]$FilePath,
         [Parameter(Mandatory=$true)][string]$Message,
-        [int]$MaxSizeBytes = 1048576 # 1 MB limit
+        [int]$MaxSizeBytes   = 1048576, # 1 MB limit
+        [int]$MaxBackupFiles = 10
     )
 
     try {
@@ -81,11 +82,10 @@ function Write-ServyLog {
                     # Use .NET IO for atomic renaming; Rename-Item can exhibit quirky behavior under load
                     [System.IO.File]::Move($absPath, $target)
 
-                    $keepCount = 10
                     $rotatedPattern = "${baseName}_*${ext}"
                     Get-ChildItem -Path $logDir -Filter $rotatedPattern -ErrorAction SilentlyContinue |
                         Sort-Object LastWriteTime -Descending |
-                        Select-Object -Skip $keepCount |
+                        Select-Object -Skip $MaxBackupFiles |
                         Remove-Item -Force -ErrorAction SilentlyContinue
                 }
             }

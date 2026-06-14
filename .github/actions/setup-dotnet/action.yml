@@ -13,8 +13,6 @@ runs:
     - name: Install .NET SDK
       shell: pwsh
       run: |
-        $ErrorActionPreference = "Stop"
-
         $url = "https://dot.net/v1/dotnet-install.ps1"
         $installDir = "$env:RUNNER_TEMP\dotnet"
         # Relocate the temporary script to the runner's temp directory to prevent workspace pollution
