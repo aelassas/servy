@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using Servy.UI.Resources;
 using System;
 using System.Diagnostics;
@@ -82,7 +83,7 @@ namespace Servy.UI.Services
                     response.EnsureSuccessStatusCode();
 
                     var content = await response.Content.ReadAsStringAsync();
-                    var json = JsonConvert.DeserializeObject<JObject>(content);
+                    var json = JsonConvert.DeserializeObject<JObject>(content, JsonSecurity.UntrustedDataSettings);
                     string tagName = json?["tag_name"]?.ToString();
 
                     if (string.IsNullOrEmpty(tagName))

@@ -671,7 +671,7 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Normalizes a file system path by converting it to an absolute path and removing trailing directory separators.
         /// </summary>
-        /// <param name="p">The path string to normalize.</param>
+        /// <param name="path">The path string to normalize.</param>
         /// <returns>
         /// A fully qualified absolute path without trailing separators; 
         /// or <see langword="null"/> if the input is <see langword="null"/>, empty, or consists only of white space.
@@ -681,14 +681,22 @@ namespace Servy.Core.Helpers
         /// based on the current working directory. It then trims any trailing <see cref="Path.DirectorySeparatorChar"/> 
         /// to ensure consistent path comparison and storage in the database.
         /// </remarks>
-        public static string NormalizePath(string p)
+        public static string NormalizePath(string path)
         {
-            if (string.IsNullOrWhiteSpace(p)) return null;
-            var full = Path.GetFullPath(p);
-            // Don't strip the root \ from a drive root like "C:\\" or "\\server\share\\"
-            if (Path.GetPathRoot(full)?.Equals(full, StringComparison.OrdinalIgnoreCase) == true)
-                return full;
-            return full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (string.IsNullOrWhiteSpace(path)) return null;
+            try
+            {
+                var full = Path.GetFullPath(path);
+                // Don't strip the root \ from a drive root like "C:\\" or "\\server\share\\"
+                if (Path.GetPathRoot(full)?.Equals(full, StringComparison.OrdinalIgnoreCase) == true)
+                    return full;
+                return full.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug($"NormalizePath: rejected '{path}': {ex.Message}");
+                return null;
+            }
         }
 
         /// <summary>
