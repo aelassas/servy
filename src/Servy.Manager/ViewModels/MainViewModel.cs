@@ -548,6 +548,7 @@ namespace Servy.Manager.ViewModels
                         // Explicitly dispose of existing ViewModels before clearing the collection
                         foreach (var oldVm in _services)
                         {
+                            oldVm.PropertyChanged -= Service_PropertyChanged;
                             oldVm.Dispose();
                         }
 
@@ -891,11 +892,25 @@ namespace Servy.Manager.ViewModels
                 var allServicesList = await Task.Run(() => _serviceManager.GetAllServices(token), token);
                 stopwatch.Stop();
                 Debug.WriteLine($"GetAllServices finished in {stopwatch.ElapsedMilliseconds}ms");
-                var allServicesDict = allServicesList.ToDictionary(s => s.Name, StringComparer.OrdinalIgnoreCase);
+                var allServicesDict = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase);
+                foreach (var d in allServicesList)
+                {
+                    if (d.Name != null && !allServicesDict.ContainsKey(d.Name))
+                        allServicesDict[d.Name] = d;
+                    else
+                        Logger.Warn($"Duplicate service name under OrdinalIgnoreCase ignored during refresh: '{d?.Name}'.");
+                }
 
                 // 3. Fetch all Repository DTOs in bulk
                 var allDtosList = await _serviceRepository.GetAllAsync(decrypt: true, token);
-                var allDtosDict = allDtosList.ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
+                var allDtosDict = new Dictionary<string, ServiceDto>(StringComparer.OrdinalIgnoreCase);
+                foreach (var d in allDtosList)
+                {
+                    if (d.Name != null && !allDtosDict.ContainsKey(d.Name))
+                        allDtosDict[d.Name] = d;
+                    else
+                        Logger.Warn($"Duplicate service name under OrdinalIgnoreCase ignored during refresh: '{d?.Name}'.");
+                }
 
                 // 4. Process data collection in parallel
                 // We collect the updates in thread-safe bags instead of applying them immediately

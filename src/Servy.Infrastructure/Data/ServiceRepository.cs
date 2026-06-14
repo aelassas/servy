@@ -132,9 +132,9 @@ namespace Servy.Infrastructure.Data
             var sql = $@"
                 INSERT INTO Services ({SqlConstants.InsertColumns}) 
                 VALUES ({SqlConstants.InsertValues})
-                ON CONFLICT(LOWER(Name)) DO UPDATE SET
+                ON CONFLICT(Name COLLATE NOCASE) DO UPDATE SET
                 {SqlConstants.UpsertSet};
-                SELECT id FROM Services WHERE LOWER(Name) = LOWER(@Name);";
+                SELECT id FROM Services WHERE Name = @Name COLLATE NOCASE;";
 
             var id = await _dapper.ExecuteScalarAsync<int>(sql, encryptedService, cancellationToken: cancellationToken);
             service.Id = id;
@@ -164,7 +164,7 @@ namespace Servy.Infrastructure.Data
             var sql = $@"
                 INSERT INTO Services ({SqlConstants.InsertColumns}) 
                 VALUES ({SqlConstants.InsertValues})
-                ON CONFLICT(LOWER(Name)) DO UPDATE SET
+                ON CONFLICT(Name COLLATE NOCASE) DO UPDATE SET
                 {SqlConstants.UpsertSet};";
 
             // Wrap the entire batch sequence in an explicit transaction to enforce snapshot isolation.
@@ -225,7 +225,7 @@ namespace Servy.Infrastructure.Data
         {
             if (string.IsNullOrWhiteSpace(name)) return 0;
 
-            const string sql = "DELETE FROM Services WHERE LOWER(Name) = LOWER(@Name);";
+            const string sql = "DELETE FROM Services WHERE Name = @Name COLLATE NOCASE;";
             var rowsAffected = await _dapper.ExecuteAsync(sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
 
             // FALLBACK: If 0 rows were deleted, attempt to drop using the raw untrimmed name
@@ -254,7 +254,7 @@ namespace Servy.Infrastructure.Data
             if (string.IsNullOrWhiteSpace(name)) return null;
 
             // Try the standard trimmed approach first
-            const string sql = "SELECT * FROM Services WHERE LOWER(Name) = LOWER(@Name);";
+            const string sql = "SELECT * FROM Services WHERE Name = @Name COLLATE NOCASE;";
             var dto = await ResolveByNameAsync<ServiceDto>(sql, name, cancellationToken: cancellationToken);
 
             if (decrypt) SafeDecrypt(dto);
@@ -265,7 +265,7 @@ namespace Servy.Infrastructure.Data
         public virtual ServiceDto GetByName(string name, bool decrypt = true)
         {
             if (string.IsNullOrWhiteSpace(name)) return null;
-            const string sql = "SELECT * FROM Services WHERE LOWER(Name) = LOWER(@Name);";
+            const string sql = "SELECT * FROM Services WHERE Name = @Name COLLATE NOCASE;";
             var dto = _dapper.QuerySingleOrDefault<ServiceDto>(sql, new { Name = name.Trim() });
 
             // FALLBACK: If nothing matches (legacy zombie row), search using the raw untrimmed input string
@@ -282,7 +282,7 @@ namespace Servy.Infrastructure.Data
         public virtual async Task<int?> GetServicePidAsync(string serviceName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(serviceName)) return null;
-            const string sql = "SELECT Pid FROM Services WHERE LOWER(Name) = LOWER(@Name) LIMIT 1;";
+            const string sql = "SELECT Pid FROM Services WHERE Name = @Name COLLATE NOCASE LIMIT 1;";
             var pid = await ResolveByNameAsync<int?>(sql, serviceName, cancellationToken: cancellationToken);
             return pid;
         }
@@ -294,9 +294,8 @@ namespace Servy.Infrastructure.Data
             const string sql = @"
                 SELECT Pid, ActiveStdoutPath, ActiveStderrPath 
                 FROM Services 
-                WHERE LOWER(Name) = LOWER(@Name)
+                WHERE Name = @Name COLLATE NOCASE
                 LIMIT 1;";
-
             var dto = await ResolveByNameAsync<ServiceConsoleStateDto>(sql, serviceName, cancellationToken: cancellationToken);
             return dto;
         }
@@ -321,10 +320,12 @@ namespace Servy.Infrastructure.Data
                 return await GetAllAsync(decrypt, cancellationToken: cancellationToken);
             }
 
+            // Optimized query layout configuration. SQLite executes 'LIKE' operations case-insensitively for standard ASCII
+            // elements inherently by default configuration, but leveraging explicit ESCAPE patterns protects complex paths.
             var sql = @"
                 SELECT * FROM Services 
-                WHERE LOWER(Name)        LIKE LOWER(@Pattern) ESCAPE '\' 
-                   OR LOWER(Description) LIKE LOWER(@Pattern) ESCAPE '\' 
+                WHERE Name        LIKE @Pattern ESCAPE '\' 
+                   OR Description LIKE @Pattern ESCAPE '\' 
                 ORDER BY Name COLLATE NOCASE ASC;";
 
             var escapedKeyword = keyword.Trim()

@@ -53,6 +53,10 @@ namespace Servy.Manager.Views
                     await vm.SearchCommand.ExecuteAsync(null);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // Expected - a newer tab navigation / window close superseded this initial load.
+            }
             catch (Exception ex)
             {
                 Logger.Error($"Failed to perform initial service search in {ViewName}.", ex);

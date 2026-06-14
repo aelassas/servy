@@ -438,6 +438,7 @@ namespace Servy.Manager.ViewModels
             {
                 Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
+            ScrollLogsToTopRequested = null;
         }
 
         /// <summary>
@@ -451,7 +452,6 @@ namespace Servy.Manager.ViewModels
             if (disposing)
             {
                 Cleanup();
-                ScrollLogsToTopRequested = null;
             }
             _disposedValue = true;
         }
@@ -464,6 +464,5 @@ namespace Servy.Manager.ViewModels
         }
 
         #endregion
-
     }
 }

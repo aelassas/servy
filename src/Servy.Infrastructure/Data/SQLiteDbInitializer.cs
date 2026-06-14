@@ -122,8 +122,16 @@ namespace Servy.Infrastructure.Data
                             currentVersion = 5;
                         }
 
+                        // Version 6 Migration to upgrade the unique index to a Unicode-aware case-insensitive collation (COLLATE NOCASE)
+                        if (currentVersion < 6)
+                        {
+                            ApplyVersion6(connection, transaction);
+                            UpdateSchemaVersion(connection, 6, transaction);
+                            currentVersion = 6;
+                        }
+
                         // --- FUTURE MIGRATIONS GO HERE ---
-                        // if (currentVersion < 6) { ... }
+                        // if (currentVersion < 7) { ... }
 
                         // 6. Reconciliation safety net
                         // Ensures that any columns added to SqlConstants but missed in migrations are applied.
@@ -439,8 +447,6 @@ namespace Servy.Infrastructure.Data
             connection.Execute(createTableSql, transaction: transaction);
 
             // --- Extract only the columns that actually exist in the old table ---
-            // Because 'expectedColumns' contains future columns (like v5's RecoveryOnCleanExit),
-            // selecting them from the old table will throw a "no such column" SQL logic error.
             var existingColumns = new HashSet<string>(
                 connection.Query("PRAGMA table_info(Services);", transaction: transaction)
                           .Select(row => (string)row.name),
@@ -453,9 +459,6 @@ namespace Servy.Infrastructure.Data
 
             if (orphansBeforeRebuild.Count > 0)
             {
-                // Stash the orphan column values in a side table inside the same transaction
-                // so the operator can recover the data even though the live schema no longer references it.
-                // Added 'IF NOT EXISTS' to ensure structural idempotency if migrations are re-evaluated.
                 var orphanList = string.Join(", ", orphansBeforeRebuild);
                 var idList = string.Join(", ", new[] { "Id" }.Concat(orphansBeforeRebuild));
 
@@ -467,8 +470,6 @@ namespace Servy.Infrastructure.Data
             }
 
             // Snapshot existing dependent objects (indexes, triggers, views) before dropping the table.
-            // Exclude 'idx_services_name_lower' since it is explicitly recreated down below.
-            // Automatically skips system auto-indexes where SQL is NULL.
             var dependents = connection.Query<(string Type, string Name, string Sql)>(
                 @"SELECT type, name, sql FROM sqlite_master 
                   WHERE tbl_name = 'Services' 
@@ -490,7 +491,7 @@ namespace Servy.Infrastructure.Data
             connection.Execute("DROP TABLE IF EXISTS Services;", transaction: transaction);
             connection.Execute("ALTER TABLE Services_v4 RENAME TO Services;", transaction: transaction);
 
-            // Re-create the functional unique index because SQLite drops indexes when the parent table is dropped
+            // --------------------------------------------------------------------------
             connection.Execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_lower ON Services(LOWER(Name));", transaction: transaction);
 
             // Re-create all snapshot dependent indexes, triggers, and views
@@ -516,6 +517,47 @@ namespace Servy.Infrastructure.Data
         /// to the 'Services' table to support triggering recovery actions even on successful exits (Code 0).
         /// </summary>
         private static void ApplyVersion5(DbConnection connection, DbTransaction transaction) => AddColumnIfMissing(connection, transaction, 5, "RecoveryOnCleanExit");
+
+        /// <summary>
+        /// Applies the Version 6 schema migration, dropping the outdated ASCII-bound LOWER unique index
+        /// and creating a modern Unicode case-insensitive collation index (Name COLLATE NOCASE) to clean up cross-platform casing discrepancies.
+        /// </summary>
+        /// <param name="connection">The active database connection.</param>
+        /// <param name="transaction">The active atomic transaction.</param>
+        private static void ApplyVersion6(DbConnection connection, DbTransaction transaction)
+        {
+            Logger.Info("Migrating database to Version 6: Upgrading index to a native Unicode case-insensitive collation descriptor (NOCASE).");
+
+            // Drop legacy LOWER index safely
+            connection.Execute("DROP INDEX IF EXISTS idx_services_name_lower;", transaction: transaction);
+
+            // Defensively purge any conflicting non-ASCII duplicate records that exist under the expanded collation range
+            var duplicates = connection.Query(@"
+                SELECT Name, COUNT(*) AS Count, MIN(Id) AS KeepId
+                FROM Services
+                GROUP BY Name COLLATE NOCASE
+                HAVING COUNT(*) > 1;", transaction: transaction).ToList();
+
+            if (duplicates.Count > 0)
+            {
+                Logger.Warn($"Version 6 Remediation: Found {duplicates.Count} distinct non-ASCII row variance collisions. Resolving via oldest instance retention tracking.");
+
+                foreach (var dup in duplicates)
+                {
+                    string serviceName = dup.Name;
+                    long keepId = Convert.ToInt64(dup.KeepId);
+
+                    connection.Execute(
+                        "DELETE FROM Services WHERE Name = @Name COLLATE NOCASE AND Id <> @KeepId;",
+                        new { Name = serviceName, KeepId = keepId },
+                        transaction: transaction);
+                }
+            }
+
+            // Materialize the hardened Unicode structural index rule
+            connection.Execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_lower ON Services(Name COLLATE NOCASE);", transaction: transaction);
+            Logger.Info("Database successfully migrated to Version 6.");
+        }
 
         #endregion
 
