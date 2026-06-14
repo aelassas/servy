@@ -160,8 +160,9 @@ namespace Servy.Manager.Utils
 
                                         List<LogLine> batch = new List<LogLine>();
                                         string? line;
+                                        string? lastSuccessfullyReadLine = null;
 
-                                        // Capture our starting point position for this polling execution loop
+                                        // Capture our starting point position for this polling execution loop pass block
                                         long streamStartOffset = fs.Position;
 
                                         while ((line = await reader.ReadLineAsync(linkedToken)) != null)
@@ -175,47 +176,53 @@ namespace Servy.Manager.Utils
                                                 carryOverFragment = string.Empty;
                                             }
 
-                                            // TRACK CORRUPT / FLUSH-TORN LINES PURELY ASYNCHRONOUSLY
-                                            // Calculate exactly how many bytes were advanced on disk for this line
-                                            long currentPosition = fs.Position;
-                                            long bytesConsumed = currentPosition - streamStartOffset;
-
-                                            // Calculate the raw byte weight of the string characters read
-                                            int stringByteCount = System.Text.Encoding.UTF8.GetByteCount(line);
-
-                                            // If the stream advanced exactly by the string size (or less due to a missing 
-                                            // trailing delimiter), we've caught a live log file mid-flush at EOF.
-                                            if (bytesConsumed <= stringByteCount)
-                                            {
-                                                // Double check if we are truly at the physical boundary of the file length
-                                                // before deciding to hold it back as a partial fragment.
-                                                if (currentPosition >= fs.Length)
-                                                {
-                                                    carryOverFragment = line;
-                                                    lastPosition = streamStartOffset; // Roll back position pointer
-                                                    break;
-                                                }
-                                            }
-
+                                            lastSuccessfullyReadLine = line;
                                             batch.Add(new LogLine(line, type));
+
                                             if (batch.Count >= AppConfig.LogTailerBatchFlushThreshold)
                                             {
                                                 OnNewLines?.Invoke(batch);
                                                 batch = new List<LogLine>(AppConfig.LogTailerBatchFlushThreshold);
                                             }
+                                        }
 
-                                            // Securely advance our loop tracking state offsets
-                                            streamStartOffset = currentPosition;
+                                        // --- EOF Reached. Verify File Integrity / Flush-Torn Status ---
+                                        // Abandon unstable internal loop stream position delta arithmetic. 
+                                        // Instead, evaluate the physical trailing byte on disk deterministically if data was processed.
+                                        if (lastSuccessfullyReadLine != null && fs.Length > 0)
+                                        {
+                                            fs.Seek(-1, SeekOrigin.End);
+                                            int lastByte = fs.ReadByte();
+
+                                            if (lastByte != (byte)'\n')
+                                            {
+                                                // The file does not terminate with a newline. The writer process was caught
+                                                // mid-flush. Pop the untracked line out of the batch to preserve boundary isolation.
+                                                if (batch.Count > 0)
+                                                {
+                                                    batch.RemoveAt(batch.Count - 1);
+                                                }
+
+                                                carryOverFragment = lastSuccessfullyReadLine;
+
+                                                // Roll back our persistent file offset indicator pointer to the beginning of this poll block pass.
+                                                // This ensures the next polling loop pass re-scans and captures the fully completed line cleanly.
+                                                lastPosition = streamStartOffset;
+                                            }
+                                            else
+                                            {
+                                                // Trailing character is a valid newline. Clear tracking fragment strings completely.
+                                                carryOverFragment = string.Empty;
+                                                lastPosition = fs.Position;
+                                            }
+                                        }
+                                        else if (string.IsNullOrEmpty(carryOverFragment))
+                                        {
+                                            // Secure baseline EOF tracking position advance
+                                            lastPosition = fs.Position;
                                         }
 
                                         if (batch.Count > 0) OnNewLines?.Invoke(batch);
-
-                                        // --- EOF Reached. Verify File Integrity / Rotation ---
-                                        // Only advance lastPosition if we are not currently buffering a flush-torn line fragment.
-                                        if (string.IsNullOrEmpty(carryOverFragment))
-                                        {
-                                            lastPosition = fs.Position;
-                                        }
 
                                         info.Refresh();
                                         bool rotated = false;

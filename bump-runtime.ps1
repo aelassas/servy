@@ -151,11 +151,6 @@ if (Test-Path $workflowsDir) {
 
 Update-Files -Files $specificFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
 
-# Use ${1} to prevent the engine from thinking you want group #11
-$actionReplacement = "`${1}$Version`${2}"
-
-Update-Files -Files @($actionFile) -Pattern $actionPattern -Replacement $actionReplacement -DryRun:$DryRun
-
 # 3. Update global.json SDK version to match the new TFM major via regex to perfectly preserve original file formatting
 $globalJsonFile = Join-Path $baseDir "global.json"
 if (Test-Path $globalJsonFile) {
