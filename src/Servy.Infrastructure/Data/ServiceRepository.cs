@@ -439,7 +439,10 @@ namespace Servy.Infrastructure.Data
                 sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
 
             // Legacy rows (Servy <= 8.3) stored Name with whitespace verbatim.
-            if (dto == null && name != name.Trim())
+            // Default structural comparison check natively supports both value
+            // types (returning false for numeric 0/structs) and reference types
+            // without throwing a compiler type-safety exception.
+            if (EqualityComparer<T>.Default.Equals(dto, default) && name != name.Trim())
                 dto = await _dapper.QuerySingleOrDefaultAsync<T>(
                     sql, new { Name = name }, cancellationToken: cancellationToken);
 
