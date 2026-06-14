@@ -120,7 +120,7 @@ Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyCont
         $encoding = Get-FileEncoding $csproj
         $content = [System.IO.File]::ReadAllText($csproj, $encoding)
 
-        # LOGIC: Track total matches across all tags to ensure the script is not silent on no-match.
+        # Track total matches across all tags to ensure the script is not silent on no-match.
         # This prevents the "worst failure mode" where projects appear updated but remain on old versions.
         $totalReplacements = 0
         $versionTags = @('Version', 'FileVersion', 'AssemblyVersion')
@@ -159,7 +159,7 @@ Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyCont
             [System.IO.File]::WriteAllText($csproj, $content, $encoding)
             Write-Host "Successfully updated project ($($encoding.BodyName)): $csproj ($totalReplacements replacements)" -ForegroundColor Green
         } else {
-            # LOG: Warn instead of Error, as non-shipping helper projects may legitimately lack version tags.
+            # Warn instead of Error, as non-shipping helper projects may legitimately lack version tags.
             # This mirrors the visibility of Update-FileContent without strictly terminating the script.
             Write-Warning "Skipped project: No versioning identifiers found in $csproj. Verify if this project requires version metadata."
         }
