@@ -96,7 +96,7 @@ function Get-ServyLastErrors {
         Write-ServyLog -FilePath $logPath -Message $errorMsg
       }
       else {
-        Write-Warning "Get-ServyLastErrors: Missing required dependencies in '$PSScriptRoot'"
+        Write-Warning "Get-ServyLastErrors: Missing required dependencies in '$scriptHome'"
       }
     }
 

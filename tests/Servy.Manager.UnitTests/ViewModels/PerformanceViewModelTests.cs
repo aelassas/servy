@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Manager.Config;
@@ -12,7 +13,6 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media;
 using System.Windows.Threading;
 using Xunit;
 
@@ -27,6 +27,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IProcessHelper> _mockProcessHelper;
         private readonly Mock<IUiDispatcher> _mockUiDispatcher;
 
+        // Centralized mock container to protect base class initialization flows
+        private readonly Mock<IProcessKiller> _mockProcessKiller;
+
         public PerformanceViewModelTests()
         {
             _mockServiceRepository = new Mock<IServiceRepository>();
@@ -35,6 +38,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             _mockCursorService = new Mock<ICursorService>();
             _mockProcessHelper = new Mock<IProcessHelper>();
             _mockUiDispatcher = new Mock<IUiDispatcher>();
+            _mockProcessKiller = new Mock<IProcessKiller>();
 
             // Setup configuration defaults to prevent timer initialization drops
             _mockAppConfig.Setup(c => c.PerformanceRefreshIntervalInMs).Returns(1000);
@@ -93,25 +97,50 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                var vm = CreateViewModel();
-                var mockService = new PerformanceService { Name = "WexflowEngine", Pid = 4321 };
-                bool propChangedFired = false;
+                // Preserve the original environment context firmly inside the thread scope boundary
+                var originalProvider = App.Services;
 
-                vm.PropertyChanged += (s, e) =>
+                // Build an isolated runtime DI container to satisfy the base class locator check.
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton<IProcessKiller>(_mockProcessKiller.Object);
+
+                // Build the provider instance explicitly and verify it isn't dropped by cross-thread assignments
+                var localProvider = serviceCollection.BuildServiceProvider();
+                App.Services = localProvider;
+
+                try
                 {
-                    if (e.PropertyName == nameof(vm.SelectedService)) propChangedFired = true;
-                };
+                    var vm = CreateViewModel();
+                    var mockService = new PerformanceService { Name = "WexflowEngine", Pid = 4321 };
+                    bool propChangedFired = false;
 
-                // Act
-                vm.SelectedService = mockService;
+                    vm.PropertyChanged += (s, e) =>
+                    {
+                        if (e.PropertyName == nameof(vm.SelectedService)) propChangedFired = true;
+                    };
 
-                // Assert
-                Assert.True(propChangedFired);
-                Assert.Same(mockService, vm.SelectedService);
+                    // Act
+                    // Ensure the global tracking point reference is still locked to our local provider right before invocation
+                    if (App.Services == null)
+                    {
+                        App.Services = localProvider;
+                    }
 
-                // Graph buffers should be completely reset to empty points during service transitions
-                Assert.Empty(vm.CpuPointCollection);
-                Assert.Empty(vm.RamPointCollection);
+                    vm.SelectedService = mockService;
+
+                    // Assert
+                    Assert.True(propChangedFired);
+                    Assert.Same(mockService, vm.SelectedService);
+
+                    // Graph buffers should be completely reset to empty points during service transitions
+                    Assert.Empty(vm.CpuPointCollection);
+                    Assert.Empty(vm.RamPointCollection);
+                }
+                finally
+                {
+                    // Clean up tracking boundaries to isolate adjacent concurrent test suites
+                    App.Services = originalProvider;
+                }
             }, createApp: true);
         }
 
