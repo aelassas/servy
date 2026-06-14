@@ -134,7 +134,7 @@ namespace Servy.Core.Services
         /// <returns><c>true</c> if the configuration is successfully changed; otherwise, <c>false</c>.</returns>
         bool ChangeServiceConfig2(
             SafeServiceHandle hService,
-            int dwInfoLevel,
+           uint dwInfoLevel,
             ref SERVICE_DESCRIPTION lpInfo
         );
 
@@ -147,7 +147,7 @@ namespace Servy.Core.Services
         /// <returns>Returns true if the function succeeds; otherwise, false.</returns>
         bool ChangeServiceConfig2(
             SafeServiceHandle hService,
-            int dwInfoLevel,
+           uint dwInfoLevel,
             IntPtr lpInfo
         );
 
@@ -160,7 +160,7 @@ namespace Servy.Core.Services
         /// <returns><see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.</returns>
         bool ChangeServiceConfig2(
             SafeServiceHandle hService,
-            int dwInfoLevel,
+           uint dwInfoLevel,
             ref SERVICE_DELAYED_AUTO_START_INFO lpInfo
         );
 

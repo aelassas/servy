@@ -147,52 +147,65 @@ namespace Servy.Core.Validation
 
                 uint requiredSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, null, 0, NativeMethods.VOLUME_NAME_DOS);
 
-                if (requiredSize > 0)
+                // Fail closed if the win32 character size probe returns 0. 
+                // This prevents resolution errors from silently bypassing target checks.
+                if (requiredSize == 0)
                 {
-                    var pathBuilder = new StringBuilder((int)requiredSize);
-                    uint resultSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, pathBuilder, requiredSize, NativeMethods.VOLUME_NAME_DOS);
+                    fileStream.Dispose();
+                    var errorMsg = string.Format(Strings.Msg_SecurityHandleValidationFailed, "Kernel size probe allocation failed.");
+                    Logger.Error(errorMsg);
+                    return PathSecurityResult.Fail(errorMsg);
+                }
 
-                    if (resultSize > 0)
-                    {
-                        string finalPathName = pathBuilder.ToString();
-                        string normalizedPath = finalPathName;
-                        bool unwrappedUnc = false;
+                var pathBuilder = new StringBuilder((int)requiredSize);
+                uint resultSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, pathBuilder, requiredSize, NativeMethods.VOLUME_NAME_DOS);
 
-                        if (normalizedPath.StartsWith(@"\\?\UNC\", StringComparison.OrdinalIgnoreCase))
-                        {
-                            normalizedPath = @"\\" + normalizedPath.Substring(@"\\?\UNC\".Length);
-                            unwrappedUnc = true;
-                        }
-                        else if (normalizedPath.StartsWith(@"\\?\", StringComparison.Ordinal))
-                        {
-                            normalizedPath = normalizedPath.Substring(4);
-                        }
+                // Fail closed if the string serialization pass returns 0.
+                if (resultSize == 0)
+                {
+                    fileStream.Dispose();
+                    var errorMsg = string.Format(Strings.Msg_SecurityHandleValidationFailed, "Kernel path resolution serialization failed.");
+                    Logger.Error(errorMsg);
+                    return PathSecurityResult.Fail(errorMsg);
+                }
 
-                        bool finalIsUnc = unwrappedUnc || (Uri.TryCreate(normalizedPath, UriKind.Absolute, out var finalUri) && finalUri.IsUnc);
+                string finalPathName = pathBuilder.ToString();
+                string normalizedPath = finalPathName;
+                bool unwrappedUnc = false;
 
-                        if (unwrappedUnc || normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) || finalIsUnc)
-                        {
-                            fileStream.Dispose();
-                            var errorMsg = mode == FileMode.Open ? Strings.Msg_SecurityResolvedUncDestination : Strings.Msg_SecurityResolvedUncDestinationExport;
-                            Logger.Error(errorMsg);
-                            return PathSecurityResult.Fail(errorMsg);
-                        }
+                if (normalizedPath.StartsWith(@"\\?\UNC\", StringComparison.OrdinalIgnoreCase))
+                {
+                    normalizedPath = @"\\" + normalizedPath.Substring(@"\\?\UNC\".Length);
+                    unwrappedUnc = true;
+                }
+                else if (normalizedPath.StartsWith(@"\\?\", StringComparison.Ordinal))
+                {
+                    normalizedPath = normalizedPath.Substring(4);
+                }
 
-                        // Re-check protected folders against the RESOLVED native kernel path
-                        var resolvedViolation = protectedFolders.FirstOrDefault(folder =>
-                            !string.IsNullOrEmpty(folder) &&
-                            normalizedPath.StartsWith(
-                                folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
-                                StringComparison.OrdinalIgnoreCase));
+                bool finalIsUnc = unwrappedUnc || (Uri.TryCreate(normalizedPath, UriKind.Absolute, out var finalUri) && finalUri.IsUnc);
 
-                        if (resolvedViolation != null)
-                        {
-                            fileStream.Dispose();
-                            var errorMsg = string.Format(mode == FileMode.Open ? Strings.Msg_SecurityProtectedDirectory : Strings.Msg_SecurityProtectedDirectoryExport, resolvedViolation);
-                            Logger.Error(errorMsg);
-                            return PathSecurityResult.Fail(errorMsg);
-                        }
-                    }
+                if (unwrappedUnc || normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) || finalIsUnc)
+                {
+                    fileStream.Dispose();
+                    var errorMsg = mode == FileMode.Open ? Strings.Msg_SecurityResolvedUncDestination : Strings.Msg_SecurityResolvedUncDestinationExport;
+                    Logger.Error(errorMsg);
+                    return PathSecurityResult.Fail(errorMsg);
+                }
+
+                // Re-check protected folders against the RESOLVED native kernel path
+                var resolvedViolation = protectedFolders.FirstOrDefault(folder =>
+                    !string.IsNullOrEmpty(folder) &&
+                    normalizedPath.StartsWith(
+                        folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
+                        StringComparison.OrdinalIgnoreCase));
+
+                if (resolvedViolation != null)
+                {
+                    fileStream.Dispose();
+                    var errorMsg = string.Format(mode == FileMode.Open ? Strings.Msg_SecurityProtectedDirectory : Strings.Msg_SecurityProtectedDirectoryExport, resolvedViolation);
+                    Logger.Error(errorMsg);
+                    return PathSecurityResult.Fail(errorMsg);
                 }
 
                 stream = fileStream;

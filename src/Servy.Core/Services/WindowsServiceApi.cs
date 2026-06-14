@@ -102,17 +102,17 @@ namespace Servy.Core.Services
 
         /// <inheritdoc />
         [ExcludeFromCodeCoverage]
-        public bool ChangeServiceConfig2(SafeServiceHandle hService, int dwInfoLevel, ref SERVICE_DESCRIPTION lpInfo)
+        public bool ChangeServiceConfig2(SafeServiceHandle hService,uint dwInfoLevel, ref SERVICE_DESCRIPTION lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
 
         /// <inheritdoc />
         [ExcludeFromCodeCoverage]
-        public bool ChangeServiceConfig2(SafeServiceHandle hService, int dwInfoLevel, ref SERVICE_DELAYED_AUTO_START_INFO lpInfo)
+        public bool ChangeServiceConfig2(SafeServiceHandle hService,uint dwInfoLevel, ref SERVICE_DELAYED_AUTO_START_INFO lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
 
         /// <inheritdoc />
         [ExcludeFromCodeCoverage]
-        public bool ChangeServiceConfig2(SafeServiceHandle hService, int dwInfoLevel, IntPtr lpInfo)
+        public bool ChangeServiceConfig2(SafeServiceHandle hService,uint dwInfoLevel, IntPtr lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, lpInfo);
 
         // --- QueryServiceConfig Overloads ---
