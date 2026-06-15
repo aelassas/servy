@@ -64,7 +64,7 @@ namespace Servy.Manager.Config
         /// </summary>
         /// <remarks>
         /// To prevent thread starvation and SCM contention, the actual degree of parallelism is 
-        /// throttled by a hardware-aware ceiling: <c>Math.Min(Environment.ProcessorCount * 2, MaxBulkOperationParallelism)</c>.
+        /// throttled by a hardware-aware ceiling: <c>Math.Max(1, Math.Min(Environment.ProcessorCount * 2, MaxBulkOperationParallelism))</c>.
         /// </remarks>
         int MaxBulkOperationParallelism { get; }
     }

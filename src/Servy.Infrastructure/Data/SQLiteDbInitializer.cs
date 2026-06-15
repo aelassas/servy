@@ -4,6 +4,7 @@ using Servy.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Data.SQLite;
 using System.Linq;
 using System.Reflection;
 
@@ -48,12 +49,17 @@ namespace Servy.Infrastructure.Data
         /// <param name="connection">An open database connection to execute commands on.</param>
         public static void Initialize(DbConnection connection)
         {
+            // Register the collation sequence BEFORE any DDL or PRAGMA is sent to the SQLite engine.
+            // This prevents immediate engine parsing errors if the index already exists on disk from a prior application run.
+            SQLiteFunction.RegisterFunction(typeof(UnicodeNoCaseCollation));
+
             // Disable foreign keys temporarily for the duration of the migration process.
             // SQLite requires this to be set OUTSIDE of an active transaction for table-rebuilds (v4) to work.
             connection.Execute("PRAGMA foreign_keys=OFF;");
 
             try
             {
+
                 // 1. Ensure the version tracking table exists. 
                 // The CHECK constraint guarantees only a single row (Id = 1) can ever exist.
                 connection.Execute(@"
@@ -122,7 +128,7 @@ namespace Servy.Infrastructure.Data
                             currentVersion = 5;
                         }
 
-                        // Version 6 Migration to upgrade the unique index to a Unicode-aware case-insensitive collation (COLLATE NOCASE)
+                        // Version 6 Migration to upgrade the unique index to a Unicode-aware case-insensitive collation (COLLATE UNICODE_NOCASE)
                         if (currentVersion < 6)
                         {
                             ApplyVersion6(connection, transaction);
@@ -519,30 +525,33 @@ namespace Servy.Infrastructure.Data
         private static void ApplyVersion5(DbConnection connection, DbTransaction transaction) => AddColumnIfMissing(connection, transaction, 5, "RecoveryOnCleanExit");
 
         /// <summary>
-        /// Applies the Version 6 schema migration, dropping the outdated ASCII-bound LOWER unique index
-        /// and creating a modern Unicode case-insensitive collation index (Name COLLATE NOCASE) to clean up cross-platform casing discrepancies.
+        /// Applies the Version 6 schema migration, dropping the legacy functional LOWER unique index
+        /// and creating an explicit collation index (Name COLLATE UNICODE_NOCASE). This aligns the physical index
+        /// with the query engine's case-insensitive filters to optimize lookup execution plans while safely handling global charsets.
         /// </summary>
+        /// <remarks>
+        /// Note: The custom registered UNICODE_NOCASE collation handles wide Unicode characters completely.
+        /// </remarks>
         /// <param name="connection">The active database connection.</param>
         /// <param name="transaction">The active atomic transaction.</param>
         private static void ApplyVersion6(DbConnection connection, DbTransaction transaction)
         {
-            Logger.Info("Migrating database to Version 6: Upgrading index to a native Unicode case-insensitive collation descriptor (NOCASE).");
+            Logger.Info("Migrating database to Version 6: Aligning unique index standard with native case-insensitive query collation (UNICODE_NOCASE).");
 
-            // Purge both the legacy LOWER structural identifier and any early v6 iterations 
-            // to transition seamlessly to a clean, collation-neutral naming standard.
+            // Purge legacy functional identifiers and clean up standard unique indexes to transition cleanly to the Unicode collation format.
             connection.Execute("DROP INDEX IF EXISTS idx_services_name_lower;", transaction: transaction);
             connection.Execute("DROP INDEX IF EXISTS idx_services_name_unique;", transaction: transaction);
 
-            // Defensively purge any conflicting non-ASCII duplicate records that exist under the expanded collation range
+            // Defensively purge any conflicting full-range Unicode case duplicate records that might cause conflicts during index recreation
             var duplicates = connection.Query(@"
                 SELECT Name, COUNT(*) AS Count, MIN(Id) AS KeepId
                 FROM Services
-                GROUP BY Name COLLATE NOCASE
+                GROUP BY Name COLLATE UNICODE_NOCASE
                 HAVING COUNT(*) > 1;", transaction: transaction).ToList();
 
             if (duplicates.Count > 0)
             {
-                Logger.Warn($"Version 6 Remediation: Found {duplicates.Count} distinct non-ASCII row variance collisions. Resolving via oldest instance retention tracking.");
+                Logger.Warn($"Version 6 Remediation: Found {duplicates.Count} duplicate casing records. Resolving via oldest instance retention tracking.");
 
                 foreach (var dup in duplicates)
                 {
@@ -550,14 +559,14 @@ namespace Servy.Infrastructure.Data
                     long keepId = Convert.ToInt64(dup.KeepId);
 
                     connection.Execute(
-                        "DELETE FROM Services WHERE Name = @Name COLLATE NOCASE AND Id <> @KeepId;",
+                        "DELETE FROM Services WHERE Name = @Name COLLATE UNICODE_NOCASE AND Id <> @KeepId;",
                         new { Name = serviceName, KeepId = keepId },
                         transaction: transaction);
                 }
             }
 
-            // Materialize the hardened Unicode structural index rule under a precise, maintainable identifier.
-            connection.Execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_unique ON Services(Name COLLATE NOCASE);", transaction: transaction);
+            // Materialize the index using custom global query collation rules under a precise, maintainable identifier.
+            connection.Execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_unique ON Services(Name COLLATE UNICODE_NOCASE);", transaction: transaction);
             Logger.Info("Database successfully migrated to Version 6.");
         }
 

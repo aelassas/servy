@@ -130,7 +130,7 @@ namespace Servy.Service.Helpers
         #region IServiceHelper implementation
 
         /// <inheritdoc />
-        public void LogStartupArguments(IServyLogger logger, StartOptions options)
+        public void LogStartupArguments(StartOptions options, IServyLogger logger)
         {
             if (options == null)
             {
@@ -270,7 +270,7 @@ namespace Servy.Service.Helpers
         /// <inheritdoc />
         public bool ValidateAndLog(StartOptions options, IServyLogger logger)
         {
-            LogStartupArguments(logger, options);
+            LogStartupArguments(options, logger);
 
             if (!ValidateStartupOptions(logger, options))
             {

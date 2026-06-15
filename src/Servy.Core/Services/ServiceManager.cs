@@ -231,6 +231,27 @@ namespace Servy.Core.Services
             if (string.IsNullOrWhiteSpace(options.WrapperExePath)) throw new ArgumentException("Value is required.", nameof(options));
             if (string.IsNullOrWhiteSpace(options.RealExePath)) throw new ArgumentException("Value is required.", nameof(options));
 
+            // HARDENING: Check database via UNICODE_NOCASE to intercept if this service or a linguistic 
+            // variation of it already exists before running native SCM queries.
+            var existingDbService = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: false, cancellationToken);
+            bool isUpdateMode = existingDbService != null;
+
+            // If the database has a record under a different casing layout (e.g. 'Serviceä' vs 'ServiceÄ'),
+            // the Windows SCM will treat them as two entirely different entities. We must aggressively drop the old 
+            // casing layout registration from the OS before proceeding to avoid split-brain or orphaned processes.
+            if (isUpdateMode && !string.Equals(existingDbService.Name, options.ServiceName, StringComparison.Ordinal))
+            {
+                Logger.Info($"Unicode name variance detected during update sequence ('{existingDbService.Name}' -> '{options.ServiceName}'). Dropping legacy SCM registration key.");
+                if (IsServiceInstalled(existingDbService.Name))
+                {
+                    var uninstallRes = await UninstallServiceAsync(existingDbService.Name, cancellationToken);
+                    if (!uninstallRes.IsSuccess)
+                    {
+                        Logger.Warn($"Failed to unregister legacy casing variant '{existingDbService.Name}' from SCM: {uninstallRes.ErrorMessage}");
+                    }
+                }
+            }
+
             string binPath = string.Join(" ",
                 Helper.Quote(options.WrapperExePath),
                 Helper.Quote(options.ServiceName)

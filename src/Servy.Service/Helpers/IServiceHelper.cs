@@ -42,13 +42,13 @@ namespace Servy.Service.Helpers
         /// Records the full initialization context, including raw command-line arguments and resolved 
         /// <see cref="StartOptions"/>, to the diagnostic log and Windows Event Log.
         /// </summary>
-        /// <param name="logger">
-        /// The scoped logger instance used for output. If <see langword="null"/>, diagnostic 
-        /// information will not be recorded.
-        /// </param>
         /// <param name="options">
         /// The hydrated configuration object containing the executable paths, timeouts, 
         /// and environment variables.
+        /// </param>
+        /// <param name="logger">
+        /// The scoped logger instance used for output. If <see langword="null"/>, diagnostic 
+        /// information will not be recorded.
         /// </param>
         /// <remarks>
         /// <para>
@@ -62,7 +62,7 @@ namespace Servy.Service.Helpers
         /// plaintext exposure in log files.
         /// </para>
         /// </remarks>
-        void LogStartupArguments(IServyLogger logger, StartOptions options);
+        void LogStartupArguments(StartOptions options, IServyLogger logger);
 
         /// <summary>
         /// Performs a comprehensive validation of the startup options and logs the results.

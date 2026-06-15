@@ -39,7 +39,7 @@ namespace Servy.Manager.Models
         /// <summary>
         /// Gets the UTC time when the log line was processed by the manager.
         /// </summary>
-        public DateTime Timestamp { get; set; }
+        public DateTime Timestamp { get; private set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the timestamp was synthetically generated 
@@ -52,7 +52,7 @@ namespace Servy.Manager.Models
         /// </summary>
         /// <param name="text">The string content read from the file.</param>
         /// <param name="type">The stream type (StdOut or StdErr).</param>
-        /// <param name="timestamp">Local time when the log line was processed.</param>
+        /// <param name="timestamp"> A timestamp that will be normalized to UTC.</param>
         public LogLine(string text, LogType type, DateTime? timestamp = null)
         {
             Id = Interlocked.Increment(ref _nextId);

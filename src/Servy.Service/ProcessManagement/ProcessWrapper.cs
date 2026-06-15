@@ -310,9 +310,9 @@ namespace Servy.Service.ProcessManagement
                 parentPid = process.Id;
                 parentStartTime = process.StartTime;
             }
-            catch
+            catch (Exception ex)
             {
-                // Process already dead
+                _logger?.Warn($"StopTree could not read process PID/StartTime (descendant enumeration may be incomplete): {ex.Message}");
             }
 
             // 1. RECURSION: Hunt down grandchildren first

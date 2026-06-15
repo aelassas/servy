@@ -7,6 +7,7 @@ using Servy.Core.Security;
 using Servy.Core.Services;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -132,9 +133,9 @@ namespace Servy.Infrastructure.Data
             var sql = $@"
                 INSERT INTO Services ({SqlConstants.InsertColumns}) 
                 VALUES ({SqlConstants.InsertValues})
-                ON CONFLICT(Name COLLATE NOCASE) DO UPDATE SET
+                ON CONFLICT(Name COLLATE UNICODE_NOCASE) DO UPDATE SET
                 {SqlConstants.UpsertSet};
-                SELECT id FROM Services WHERE Name = @Name COLLATE NOCASE;";
+                SELECT id FROM Services WHERE Name = @Name COLLATE UNICODE_NOCASE;";
 
             var id = await _dapper.ExecuteScalarAsync<int>(sql, encryptedService, cancellationToken: cancellationToken);
             service.Id = id;
@@ -164,7 +165,7 @@ namespace Servy.Infrastructure.Data
             var sql = $@"
                 INSERT INTO Services ({SqlConstants.InsertColumns}) 
                 VALUES ({SqlConstants.InsertValues})
-                ON CONFLICT(Name COLLATE NOCASE) DO UPDATE SET
+                ON CONFLICT(Name COLLATE UNICODE_NOCASE) DO UPDATE SET
                 {SqlConstants.UpsertSet};";
 
             // Wrap the entire batch sequence in an explicit transaction to enforce snapshot isolation.
@@ -184,9 +185,8 @@ namespace Servy.Infrastructure.Data
                     // Pass original names; let SQLite lower both sides in the SQL itself
                     var names = currentChunk.Select(s => s.Name).Where(n => !string.IsNullOrEmpty(n)).ToList();
 
-                    // Fetch the generated IDs using NOCASE collation on Name comparison to ensure index usage and case-insensitivity within the same snapshot
                     var idMap = (await _dapper.QueryAsync<(int Id, string Name)>(
-                        "SELECT Id, Name FROM Services WHERE Name COLLATE NOCASE IN @names",
+                        "SELECT Id, Name FROM Services WHERE Name COLLATE UNICODE_NOCASE IN @names",
                         new { names },
                         transaction: tx,
                         cancellationToken: cancellationToken))
@@ -225,16 +225,15 @@ namespace Servy.Infrastructure.Data
         {
             if (string.IsNullOrWhiteSpace(name)) return 0;
 
-            const string sql = "DELETE FROM Services WHERE Name = @Name COLLATE NOCASE;";
-            var rowsAffected = await _dapper.ExecuteAsync(sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
+            const string sql = "DELETE FROM Services WHERE Name = @Name COLLATE UNICODE_NOCASE;";
 
-            // FALLBACK: If 0 rows were deleted, attempt to drop using the raw untrimmed name
-            if (rowsAffected == 0 && name != name.Trim())
-            {
-                rowsAffected = await _dapper.ExecuteAsync(sql, new { Name = name }, cancellationToken: cancellationToken);
-            }
-
-            return rowsAffected;
+            return await ResolveWithLegacyFallbackAsync(
+                sql: sql,
+                queryExecutor: (executedSql, parameters) => _dapper.ExecuteAsync(executedSql, parameters, cancellationToken: cancellationToken),
+                name: name,
+                fallbackEvaluationPredicate: rowsAffected => rowsAffected == 0,
+                cancellationToken: cancellationToken
+            ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
@@ -253,8 +252,7 @@ namespace Servy.Infrastructure.Data
         {
             if (string.IsNullOrWhiteSpace(name)) return null;
 
-            // Try the standard trimmed approach first
-            const string sql = "SELECT * FROM Services WHERE Name = @Name COLLATE NOCASE;";
+            const string sql = "SELECT * FROM Services WHERE Name = @Name COLLATE UNICODE_NOCASE;";
             var dto = await ResolveByNameAsync<ServiceDto>(sql, name, cancellationToken: cancellationToken);
 
             if (decrypt) SafeDecrypt(dto);
@@ -265,14 +263,14 @@ namespace Servy.Infrastructure.Data
         public virtual ServiceDto GetByName(string name, bool decrypt = true)
         {
             if (string.IsNullOrWhiteSpace(name)) return null;
-            const string sql = "SELECT * FROM Services WHERE Name = @Name COLLATE NOCASE;";
-            var dto = _dapper.QuerySingleOrDefault<ServiceDto>(sql, new { Name = name.Trim() });
+            const string sql = "SELECT * FROM Services WHERE Name = @Name COLLATE UNICODE_NOCASE;";
 
-            // FALLBACK: If nothing matches (legacy zombie row), search using the raw untrimmed input string
-            if (dto == null && name != name.Trim())
-            {
-                dto = _dapper.QuerySingleOrDefault<ServiceDto>(sql, new { Name = name });
-            }
+            var dto = ResolveWithLegacyFallback<ServiceDto>(
+                sql: sql,
+                queryExecutor: (executedSql, parameters) => _dapper.QuerySingleOrDefault<ServiceDto>(executedSql, parameters),
+                name: name,
+                fallbackEvaluationPredicate: result => EqualityComparer<ServiceDto>.Default.Equals(result, default)
+            );
 
             if (decrypt) SafeDecrypt(dto);
             return dto;
@@ -282,7 +280,7 @@ namespace Servy.Infrastructure.Data
         public virtual async Task<int?> GetServicePidAsync(string serviceName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(serviceName)) return null;
-            const string sql = "SELECT Pid FROM Services WHERE Name = @Name COLLATE NOCASE LIMIT 1;";
+            const string sql = "SELECT Pid FROM Services WHERE Name = @Name COLLATE UNICODE_NOCASE LIMIT 1;";
             var pid = await ResolveByNameAsync<int?>(sql, serviceName, cancellationToken: cancellationToken);
             return pid;
         }
@@ -294,7 +292,7 @@ namespace Servy.Infrastructure.Data
             const string sql = @"
                 SELECT Pid, ActiveStdoutPath, ActiveStderrPath 
                 FROM Services 
-                WHERE Name = @Name COLLATE NOCASE
+                WHERE Name = @Name COLLATE UNICODE_NOCASE
                 LIMIT 1;";
             var dto = await ResolveByNameAsync<ServiceConsoleStateDto>(sql, serviceName, cancellationToken: cancellationToken);
             return dto;
@@ -303,7 +301,7 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<IEnumerable<ServiceDto>> GetAllAsync(bool decrypt = true, CancellationToken cancellationToken = default)
         {
-            var sql = "SELECT * FROM Services ORDER BY Name COLLATE NOCASE ASC;";
+            var sql = "SELECT * FROM Services ORDER BY Name COLLATE UNICODE_NOCASE ASC;";
             var cmd = new CommandDefinition(sql, cancellationToken: cancellationToken);
             var list = await _dapper.QueryAsync<ServiceDto>(cmd);
 
@@ -324,9 +322,9 @@ namespace Servy.Infrastructure.Data
             // elements inherently by default configuration, but leveraging explicit ESCAPE patterns protects complex paths.
             var sql = @"
                 SELECT * FROM Services 
-                WHERE Name        LIKE @Pattern ESCAPE '\' 
+                WHERE Name       LIKE @Pattern ESCAPE '\' 
                    OR Description LIKE @Pattern ESCAPE '\' 
-                ORDER BY Name COLLATE NOCASE ASC;";
+                ORDER BY Name COLLATE UNICODE_NOCASE ASC;";
 
             var escapedKeyword = keyword.Trim()
                 .Replace(@"\", @"\\")
@@ -428,32 +426,92 @@ namespace Servy.Infrastructure.Data
         #region Private Helpers
 
         /// <summary>
-        /// Executes a single-row retrieval query by service name, implementing a fallback 
-        /// mechanism to support legacy records that contain leading or trailing whitespace.
+        /// Executes an asynchronous single-row retrieval query by a service name parameter, 
+        /// funneling execution through the centralized legacy tracking fallback pipeline.
         /// </summary>
-        /// <typeparam name="T">The type of the data object to retrieve.</typeparam>
-        /// <param name="sql">The SQL query string. Must contain a parameter named 'Name'.</param>
-        /// <param name="name">The name of the service to query.</param>
-        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe during the operation.</param>
+        /// <typeparam name="T">The expected return type of the database record or primitive scalar value.</typeparam>
+        /// <param name="sql">The target parameterized SQL statement to execute.</param>
+        /// <param name="name">The name of the service used to query the data store layer.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests during the asynchronous sequence.</param>
         /// <returns>
-        /// The retrieved object of type <typeparamref name="T"/> if found; 
-        /// otherwise, <c>null</c>.
+        /// A task representing the asynchronous operation. The task result contains the retrieved 
+        /// value of type <typeparamref name="T"/> if matched; otherwise, the default value of <typeparamref name="T"/>.
         /// </returns>
-        private async Task<T> ResolveByNameAsync<T>(
-            string sql, string name, CancellationToken cancellationToken)
+        private Task<T> ResolveByNameAsync<T>(string sql, string name, CancellationToken cancellationToken)
         {
-            var dto = await _dapper.QuerySingleOrDefaultAsync<T>(
-                sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
+            return ResolveWithLegacyFallbackAsync(
+                sql: sql,
+                queryExecutor: (executedSql, parameters) => _dapper.QuerySingleOrDefaultAsync<T>(executedSql, parameters, cancellationToken: cancellationToken),
+                name: name,
+                fallbackEvaluationPredicate: result => EqualityComparer<T>.Default.Equals(result, default),
+                cancellationToken: cancellationToken
+            );
+        }
+
+        /// <summary>
+        /// Orchestrates an asynchronous data store command using a unified legacy whitespace fallback execution pattern.
+        /// Evaluates the primary trimmed criteria, conditionally routing to verbatim untrimmed parameters if a historical 
+        /// record configuration (Servy &lt;= 8.3 zombie rows) matches the evaluation predicate.
+        /// </summary>
+        /// <typeparam name="T">The type of the expected query return payload or operational status identifier.</typeparam>
+        /// <param name="sql">The parameterized SQL command string intended for driver execution pass blocks.</param>
+        /// <param name="queryExecutor">A high-order delegate wrapping the concrete asynchronous ADO.NET or Dapper execution context.</param>
+        /// <param name="name">The raw input service identifier string containing possible whitespace artifacts.</param>
+        /// <param name="fallbackEvaluationPredicate">A condition tracking routine used to determine whether the baseline result indicates an empty return or an unexecuted block target.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests during the asynchronous sequence.</param>
+        /// <returns>
+        /// A task representing the asynchronous orchestration. The task result contains the finalized entity or status scalar 
+        /// value resolved across the multi-attempt runtime boundary.
+        /// </returns>
+        private static async Task<T> ResolveWithLegacyFallbackAsync<T>(
+            string sql,
+            Func<string, object, Task<T>> queryExecutor,
+            string name,
+            Func<T, bool> fallbackEvaluationPredicate,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var result = await queryExecutor(sql, new { Name = name.Trim() }).ConfigureAwait(false);
 
             // Legacy rows (Servy <= 8.3) stored Name with whitespace verbatim.
-            // Default structural comparison check natively supports both value
-            // types (returning false for numeric 0/structs) and reference types
-            // without throwing a compiler type-safety exception.
-            if (EqualityComparer<T>.Default.Equals(dto, default) && name != name.Trim())
-                dto = await _dapper.QuerySingleOrDefaultAsync<T>(
-                    sql, new { Name = name }, cancellationToken: cancellationToken);
+            if (fallbackEvaluationPredicate(result) && name != name.Trim())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                result = await queryExecutor(sql, new { Name = name }).ConfigureAwait(false);
+            }
 
-            return dto;
+            return result;
+        }
+
+        /// <summary>
+        /// Orchestrates a synchronous data store command using a unified legacy whitespace fallback execution pattern.
+        /// Evaluates the primary trimmed criteria, conditionally routing to verbatim untrimmed parameters if a historical 
+        /// record configuration (Servy &lt;= 8.3 zombie rows) matches the evaluation predicate.
+        /// </summary>
+        /// <typeparam name="T">The type of the expected query return payload or operational status identifier.</typeparam>
+        /// <param name="sql">The parameterized SQL command string intended for driver execution pass blocks.</param>
+        /// <param name="queryExecutor">A high-order delegate wrapping the concrete synchronous ADO.NET or Dapper execution context.</param>
+        /// <param name="name">The raw input service identifier string containing possible whitespace artifacts.</param>
+        /// <param name="fallbackEvaluationPredicate">A condition tracking routine used to determine whether the baseline result indicates an empty return or an unexecuted block target.</param>
+        /// <returns>
+        /// The finalized entity or status scalar value resolved across the multi-attempt runtime boundary.
+        /// </returns>
+        private static T ResolveWithLegacyFallback<T>(
+            string sql,
+            Func<string, object, T> queryExecutor,
+            string name,
+            Func<T, bool> fallbackEvaluationPredicate)
+        {
+            var result = queryExecutor(sql, new { Name = name.Trim() });
+
+            // Legacy rows (Servy <= 8.3) stored Name with whitespace verbatim.
+            if (fallbackEvaluationPredicate(result) && name != name.Trim())
+            {
+                result = queryExecutor(sql, new { Name = name });
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -583,6 +641,7 @@ namespace Servy.Infrastructure.Data
         /// This prevents double-encryption and unintended mutation of the input object.
         /// </summary>
         /// <param name="source">The original DTO to clone and encrypt.</param>
+        /// <returns>A new <see cref="ServiceDto"/> instance with sensitive fields encrypted.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the target input source reference parameter is null.</exception>
         /// <exception cref="InvalidOperationException">Thrown when a specific field fails to encrypt.</exception>
         private ServiceDto CreateEncryptedClone(ServiceDto source)
@@ -593,6 +652,7 @@ namespace Servy.Infrastructure.Data
             {
                 throw new ArgumentNullException(nameof(source));
             }
+
             // 1. Perform the shallow clone to isolate mutations from the original DTO
             var clone = (ServiceDto)source.Clone();
 
