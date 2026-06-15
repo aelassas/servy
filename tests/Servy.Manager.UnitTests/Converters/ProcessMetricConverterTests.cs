@@ -9,6 +9,7 @@ using System.Windows.Data;
 
 namespace Servy.Manager.UnitTests.Converters
 {
+    [Collection("Ambient AppServices Dependent Tests")]
     public class ProcessMetricConverterTests
     {
         // Centralized lock token shared across the test fixture to block cross-thread interference

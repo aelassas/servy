@@ -15,6 +15,7 @@ using System.Reflection;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
+    [Collection("Ambient AppServices Dependent Tests")]
     public class DependenciesViewModelTests
     {
         // Centralized lock token shared across the test fixture to block cross-thread interference
