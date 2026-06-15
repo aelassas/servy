@@ -474,10 +474,9 @@ namespace Servy.Core.Security
                 byte[] dynamicEntropy = MachineEntropy.Value;
                 encrypted = ProtectedData.Protect(data, dynamicEntropy, DataProtectionScope);
 
-                // ROBUSTNESS: Switch from Helper.GetUniqueTempPath(path) to a stable, deterministic staging name.
-                // Because this path is strictly executed within a global system mutex (enforced by RunUnderMutex), multiple
-                // concurrent writers cannot clash. If a previous run crashes before File.Move, the next execution path
-                // will cleanly overwrite and self-heal the orphaned staging file instead of leaving it indefinitely.
+                // Use a stable, deterministic staging file name. Because this runs under the global system
+                // mutex (RunUnderMutex), concurrent writers cannot clash, and an orphaned .tmp left by a prior
+                // crash is cleanly overwritten and self-healed rather than accumulating.
                 var tempPath = $"{path}.staging.tmp";
 
                 try

@@ -168,7 +168,7 @@ namespace Servy.Core.UnitTests.Services
             var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result.IsSuccess);
-            _mockServiceRepository.Verify(x => x.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            _mockServiceRepository.Verify(x => x.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
 
         [Theory]

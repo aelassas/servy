@@ -132,7 +132,7 @@ namespace Servy.Core.Services
         /// <returns><c>true</c> if the configuration is successfully changed; otherwise, <c>false</c>.</returns>
         bool ChangeServiceConfig2(
             SafeServiceHandle hService,
-           uint dwInfoLevel,
+            uint dwInfoLevel,
             ref SERVICE_DESCRIPTION lpInfo
         );
 

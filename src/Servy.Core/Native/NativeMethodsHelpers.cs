@@ -77,11 +77,10 @@ namespace Servy.Core.Native
                 throw new ArgumentException($"The identity '{username}' is a group or logon context, not a runnable service account. Please use a specific service account (e.g., NetworkService) or a standard user.");
             }
 
-            // The pattern allows for 'NT AUTHORITY\Account', 'DOMAIN\Account', or '.\Account'
-            const string pattern = @"^(?:[\w \.\-]+|\.)\\[\w \.@!\-]+\$?$";
+            // The pattern safely allows for 'NT AUTHORITY\Account', 'DOMAIN\Account', or '.\Account'
+            const string pattern = @"^[\w \.\-]+\\[\w \.@!\-]+\$?$";
             var isGmsa = string.IsNullOrEmpty(password) && username.EndsWith('$');
 
-            // LOGIC: 
             // 1. Check the static exhaustive list (Case-Insensitive via HashSet comparer).
             // 2. Catch Virtual Service Accounts (NT SERVICE\...)
             // 3. Catch IIS AppPool Identities (IIS APPPOOL\...)

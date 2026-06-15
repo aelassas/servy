@@ -12,7 +12,7 @@ namespace Servy.Service
 
         /// <summary>
         /// Main entry point of the Servy Windows service application.
-        /// Extracts required embedded resources and starts the service host.
+        /// Re-attaches the parent console for diagnostic output and starts the service host.
         /// </summary>
         [ExcludeFromCodeCoverage]
         internal static void Main(string[] args)

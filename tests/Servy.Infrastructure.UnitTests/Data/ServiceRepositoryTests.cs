@@ -457,7 +457,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Verify(d => d.ExecuteAsync(
                  It.Is<string>(sql =>
                      sql.Contains("INSERT INTO Services") &&
-                     sql.Contains("ON CONFLICT(Name COLLATE NOCASE) DO UPDATE SET") &&
+                     sql.Contains("ON CONFLICT(Name COLLATE UNICODE_NOCASE) DO UPDATE SET") &&
                      sql.Contains("PreStopParameters = excluded.PreStopParameters") &&
                      sql.Contains("UseLocalTimeForRotation = excluded.UseLocalTimeForRotation")),
                  It.Is<IEnumerable<ServiceDto>>(list =>

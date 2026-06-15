@@ -303,11 +303,9 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 conn.Execute($"CREATE TABLE Services ({string.Join(", ", colDefs)});");
 
                 // Setup the old functional index as NON-UNIQUE so it permits the insert of casing variations on legacy systems.
-                // This simulates pre-V1 state layout anomalies that version tracking systems must fix.
                 conn.Execute("CREATE INDEX idx_services_name_lower ON Services(LOWER(Name));");
 
-                // Seed duplicate rows out of chronological entry order to check oldest historical match selection (MIN(Id) resolution)
-                // Row 1 (Id=1): Alpha-Service, Row 2 (Id=2): alpha-service
+                // Seed duplicate rows out of chronological order to check oldest historical match selection (MIN(Id) resolution)
                 conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals1)});");
                 conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals2)});");
 
@@ -318,14 +316,13 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
                 Assert.Equal(6, version);
 
-                // 1. Verify table deduplication pass: only the oldest instance (Id = 1) survives the constraint cleanup
+                // Verify table deduplication pass: only the oldest instance (Id = 1) survives the constraint cleanup
                 var remainingServices = conn.Query("SELECT Id, Name FROM Services;").ToList();
                 Assert.Single(remainingServices);
                 Assert.Equal(1L, (long)remainingServices[0].Id);
                 Assert.Equal("Alpha-Service", (string)remainingServices[0].Name);
 
-                // 2. Verify the structural index details map directly to the modern COLLATE NOCASE layout rules
-                // Cast rows explicitly to Dictionary IDictionary contexts to prevent lowercase property access issues
+                // Verify the structural index details map directly to the modern COLLATE UNICODE_NOCASE layout rules
                 var indexList = conn.Query("PRAGMA index_list('Services');")
                                     .Select(x => (IDictionary<string, object>)x)
                                     .ToList();
@@ -335,13 +332,119 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.NotNull(targetingIndex);
                 Assert.Equal(1L, Convert.ToInt64(targetingIndex["unique"]));
 
-                // 3. Confirm index expression metadata properties use the raw column reference with NOCASE collation rules
+                // Confirm index expression metadata properties use the raw column reference
                 var indexInfo = conn.Query("PRAGMA index_info('idx_services_name_unique');")
                                     .Select(x => (IDictionary<string, object>)x)
                                     .ToList();
 
                 Assert.Single(indexInfo);
                 Assert.Equal("Name", indexInfo[0]["name"]?.ToString());
+            }
+        }
+
+        [Fact]
+        public void ApplyVersion6_UnicodeCasingDuplicates_DeduplicatesAndAppliesUnicodeNoCaseIndex()
+        {
+            using (var conn = CreateConnection())
+            {
+                // Arrange: Initialize baseline up to Version 5 state
+                conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY, Version INTEGER);");
+                conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 5);");
+
+                var getSqlType = typeof(SQLiteDbInitializer).GetMethod("GetSqlType", BindingFlags.Static | BindingFlags.NonPublic);
+                var getExpectedCols = typeof(SQLiteDbInitializer).GetMethod("GetExpectedColumns", BindingFlags.Static | BindingFlags.NonPublic);
+                var expectedCols = (IEnumerable<string>)getExpectedCols!.Invoke(null, null)!;
+
+                var colDefs = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT" };
+                var insertCols = new List<string> { "Name" };
+                var insertVals1 = new List<string> { "'Ä-Service'" };
+                var insertVals2 = new List<string> { "'ä-service'" };
+
+                foreach (var col in expectedCols)
+                {
+                    if (col.Equals("Name", StringComparison.OrdinalIgnoreCase)) continue;
+
+                    string sqlType = (string)getSqlType!.Invoke(null, new object[] { col })!;
+                    colDefs.Add($"{col} {sqlType}");
+                    insertCols.Add(col);
+                    string val = sqlType.IndexOf("TEXT", StringComparison.OrdinalIgnoreCase) >= 0 ? "''" : "0";
+                    insertVals1.Add(val);
+                    insertVals2.Add(val);
+                }
+
+                conn.Execute($"CREATE TABLE Services ({string.Join(", ", colDefs)});");
+                conn.Execute("CREATE INDEX idx_services_name_lower ON Services(LOWER(Name));");
+
+                // Seed duplicate rows utilizing wide non-ASCII variants out of case parity
+                conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals1)});");
+                conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals2)});");
+
+                // Act
+                SQLiteDbInitializer.Initialize(conn);
+
+                // Assert: Verify UNICODE_NOCASE successfully group-collapsed and purged the duplicate non-ASCII character entries
+                var remainingServices = conn.Query("SELECT Id, Name FROM Services;").ToList();
+                Assert.Single(remainingServices);
+                Assert.Equal(1L, (long)remainingServices[0].Id);
+                Assert.Equal("Ä-Service", (string)remainingServices[0].Name);
+            }
+        }
+
+        [Fact]
+        public void UnicodeNoCaseCollation_InsertsAndQueriesNonAsciiCasing_EnforcesUniqueness()
+        {
+            using (var conn = CreateConnection())
+            {
+                // Arrange: Execute complete initialization runner to build schema and spin custom collations up
+                SQLiteDbInitializer.Initialize(conn);
+
+                // Access internal definition engines to dynamically extract required strict columns
+                var getSqlType = typeof(SQLiteDbInitializer).GetMethod("GetSqlType", BindingFlags.Static | BindingFlags.NonPublic);
+                var getExpectedCols = typeof(SQLiteDbInitializer).GetMethod("GetExpectedColumns", BindingFlags.Static | BindingFlags.NonPublic);
+                var expectedCols = (IEnumerable<string>)getExpectedCols!.Invoke(null, null)!;
+
+                var insertCols = new List<string> { "Name" };
+                var insertVals1 = new List<object> { "ÖffnenService" };
+                var insertVals2 = new List<object> { "öffnenservice" };
+                var paramMap1 = new DynamicParameters();
+                var paramMap2 = new DynamicParameters();
+
+                paramMap1.Add("Name", "ÖffnenService");
+                paramMap2.Add("Name", "öffnenservice");
+
+                // Dynamically populate all missing strict columns with safe data-type compliant mock values
+                foreach (var col in expectedCols)
+                {
+                    if (col.Equals("Name", StringComparison.OrdinalIgnoreCase)) continue;
+
+                    string sqlType = (string)getSqlType!.Invoke(null, new object[] { col })!;
+
+                    // If the column enforces NOT NULL and does not have a DEFAULT constraint, we must supply a value
+                    if (sqlType.IndexOf("NOT NULL", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                        sqlType.IndexOf("DEFAULT", StringComparison.OrdinalIgnoreCase) < 0)
+                    {
+                        insertCols.Add(col);
+                        object mockValue = sqlType.IndexOf("TEXT", StringComparison.OrdinalIgnoreCase) >= 0 ? (object)"mock-path" : 0;
+
+                        paramMap1.Add(col, mockValue);
+                        paramMap2.Add(col, mockValue);
+                    }
+                }
+
+                string sqlTemplate = $"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertCols.Select(c => "@" + c))});";
+
+                // Act & Assert 1: Unique Constraint validation under custom UNICODE_NOCASE rule
+                conn.Execute(sqlTemplate, paramMap1);
+
+                // Assert that inserting a non-ASCII string with alternate casing is safely blocked by the unique index
+                Assert.Throws<SQLiteException>(() => conn.Execute(sqlTemplate, paramMap2));
+
+                // Act & Assert 2: Case-Insensitive query validation on deep wide char comparisons
+                var foundId = conn.QueryFirstOrDefault<long?>(
+                    "SELECT Id FROM Services WHERE Name = 'ÖFFNENSERVICE' COLLATE UNICODE_NOCASE;");
+
+                Assert.NotNull(foundId);
+                Assert.True(foundId > 0);
             }
         }
 

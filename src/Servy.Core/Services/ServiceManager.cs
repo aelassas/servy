@@ -226,6 +226,27 @@ namespace Servy.Core.Services
             if (string.IsNullOrWhiteSpace(options.WrapperExePath)) throw new ArgumentException("Value is required.", nameof(options));
             if (string.IsNullOrWhiteSpace(options.RealExePath)) throw new ArgumentException("Value is required.", nameof(options));
 
+            // HARDENING: Check database via UNICODE_NOCASE to intercept if this service or a linguistic 
+            // variation of it already exists before running native SCM queries.
+            var existingDbService = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: false, cancellationToken);
+            bool isUpdateMode = existingDbService != null;
+
+            // If the database has a record under a different casing layout (e.g. 'notepadä' vs 'notepadÄ'),
+            // the Windows SCM will treat them as two entirely different entities. We must aggressively drop the old 
+            // casing layout registration from the OS before proceeding to avoid split-brain or orphaned processes.
+            if (isUpdateMode && !string.Equals(existingDbService!.Name, options.ServiceName, StringComparison.Ordinal))
+            {
+                Logger.Info($"Unicode name variance detected during update sequence ('{existingDbService.Name}' -> '{options.ServiceName}'). Dropping legacy SCM registration key.");
+                if (IsServiceInstalled(existingDbService.Name))
+                {
+                    var uninstallRes = await UninstallServiceAsync(existingDbService.Name, cancellationToken);
+                    if (!uninstallRes.IsSuccess)
+                    {
+                        Logger.Warn($"Failed to unregister legacy casing variant '{existingDbService.Name}' from SCM: {uninstallRes.ErrorMessage}");
+                    }
+                }
+            }
+
             string binPath = string.Join(" ",
                 Helper.Quote(options.WrapperExePath),
                 Helper.Quote(options.ServiceName)
@@ -463,7 +484,7 @@ namespace Servy.Core.Services
 
                                 cancellationToken.ThrowIfCancellationRequested();
                                 await _serviceRepository.UpsertAsync(
-                                    dto,
+                                    dto, 
                                     preserveExistingRuntimeState: true,
                                     preserveExistingCredentials: false,
                                     cancellationToken);
@@ -479,10 +500,10 @@ namespace Servy.Core.Services
                         cancellationToken.ThrowIfCancellationRequested();
                         SetServiceDescription(serviceHandle!, options.Description);
                         await _serviceRepository.UpsertAsync(
-                            dto,
-                            preserveExistingRuntimeState: false,
-                            preserveExistingCredentials: false,
-                            cancellationToken); // New service: update runtime state in db (PID, ActiveStdoutPath, ActiveStderrPath)
+                                             dto,
+                                             preserveExistingRuntimeState: false,
+                                             preserveExistingCredentials: false,
+                                             cancellationToken); // New service: update runtime state in db (PID, ActiveStdoutPath, ActiveStderrPath)
 
                         Logger.Info($"Service '{options.ServiceName}' installed successfully.");
                         return OperationResult.Success();
@@ -952,6 +973,7 @@ namespace Servy.Core.Services
                         throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
                     }
 
+                    
                     Parallel.ForEach(services, new ParallelOptions
                     {
                         CancellationToken = cancellationToken,

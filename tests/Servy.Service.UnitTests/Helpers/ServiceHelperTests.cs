@@ -66,7 +66,7 @@ namespace Servy.Service.UnitTests.Helpers
             var mockLog = new Mock<IServyLogger>();
 
             // Act
-            _helper.LogStartupArguments(mockLog.Object, options);
+            _helper.LogStartupArguments(options, mockLog.Object);
 
             // Assert
             mockLog.Verify(l => l.Info(It.Is<string>(s =>
@@ -83,7 +83,7 @@ namespace Servy.Service.UnitTests.Helpers
             var mockLog = new Mock<IServyLogger>();
 
             // Act
-            _helper.LogStartupArguments(mockLog.Object, null!);
+            _helper.LogStartupArguments(null!, mockLog.Object);
 
             // Assert
             mockLog.Verify(l => l.Error("StartOptions is null.", It.IsAny<Exception>()), Times.Once);
@@ -116,7 +116,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // Act
-            _helper.LogStartupArguments(mockLog.Object, options);
+            _helper.LogStartupArguments(options, mockLog.Object);
 
             // Assert
             // Local file logger static instance handles sensitive values via string mutations
