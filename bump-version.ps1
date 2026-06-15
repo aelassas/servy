@@ -63,8 +63,7 @@ function Update-FileContent {
     param(
         [string]$Path,
         [string]$Pattern, 
-        [string]$Replacement,
-        [switch]$AllowNoMatch   # opt-in for callers that genuinely tolerate it
+        [string]$Replacement
     )
     
     try {
@@ -76,7 +75,9 @@ function Update-FileContent {
             $regexMatches = [regex]::Matches($content, $Pattern)
             if ($regexMatches.Count -eq 0) {
                 Write-Warning "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern"
-                if (-not $AllowNoMatch) { $script:HadFailure = $true }
+                
+                # A pattern missing exception is always treated as an unrecoverable run failure to keep the automated release pipeline safe.
+                $script:HadFailure = $true
                 return
             }
         
@@ -89,7 +90,9 @@ function Update-FileContent {
             Write-Host "Successfully updated ($($encoding.BodyName)): $Path ($($regexMatches.Count) replacements)" -ForegroundColor Green
         } else {
             Write-Warning "Skipping missing file: $Path"
-            if (-not $AllowNoMatch) { $script:HadFailure = $true }
+            
+            # Missing files are now classified deterministically as build failures.
+            $script:HadFailure = $true
         }
     }
     catch {

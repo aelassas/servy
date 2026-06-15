@@ -380,10 +380,10 @@ namespace Servy.Core.Helpers
                             var pathName = key.GetValue("ImagePath")?.ToString();
                             if (string.IsNullOrWhiteSpace(pathName)) continue;
 
-                            // 1. Expand variables first (e.g., %SystemRoot% -> C:\Windows)
+                            // 2a. Expand variables first (e.g., %SystemRoot% -> C:\Windows)
                             string expandedPath = Environment.ExpandEnvironmentVariables(pathName);
 
-                            // 2. Extract the actual exe path (Handling quotes and arguments)
+                            // 2b. Extract the actual exe path (Handling quotes and arguments)
                             string? exePath = null;
                             int argc;
 
@@ -410,7 +410,7 @@ namespace Servy.Core.Helpers
                                 }
                             }
 
-                            // 3. Fallback and Comparison Logic
+                            // 2c. Fallback and Comparison Logic
                             if (exePath == null)
                             {
                                 exePath = expandedPath; // best-effort; Path.GetFileName below handles unquoted paths

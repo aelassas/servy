@@ -48,7 +48,7 @@ $RawTestProjects = Get-ChildItem -Path $ScriptDir -Recurse -Filter '*Tests.cspro
 foreach ($ProjFile in $RawTestProjects) {
     $Proj = $ProjFile.FullName
     $ProjName = $ProjFile.BaseName
-
+    
     Write-Host "Running tests for $($Proj)..." -ForegroundColor Cyan
     
     # Build the 'dotnet test' arguments for this project
