@@ -161,7 +161,9 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
           git add CHANGELOG.md
-          if (-not (git status --porcelain)) {
+          
+          # Target the specific file path layout directly to ignore workspace noise
+          if (-not (git status --porcelain CHANGELOG.md)) {
               Write-Host "No changes detected in CHANGELOG.md. Nothing to update."
               exit 0
           }
@@ -173,7 +175,6 @@ jobs:
 
           while (-not $pushSuccess -and $retryCount -lt $maxRetries) {
               try {
-                  # Clean up any leftover state from a previous failed attempt
                   git rebase --abort 2>$null
                   git merge  --abort 2>$null
 
