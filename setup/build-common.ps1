@@ -113,7 +113,7 @@ function Invoke-StandardPublish {
 
     # Step 2: Sign the published executable if signing is enabled
     if ($BuildConfiguration -eq "Release") {
-        $signPath = Join-Path $PSScriptRoot "signpath.ps1"
+        $signPath = Join-Path $BC_ScriptDir "signpath.ps1"
         $publishFolder = Join-Path $ProjectDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
         $exePath       = Join-Path $publishFolder "$ProjectName.exe"
 

@@ -1,41 +1,47 @@
 ﻿#requires -Version 5.0
 <#
 .SYNOPSIS
-Updates .NET runtime target version across scripts, AppConfig, and project files.
+    Updates .NET runtime target version across scripts, AppConfig, and project files.
 
 .DESCRIPTION
-This script recursively updates `netX.Y` target framework versions 
-inside:
-- PowerShell scripts (*.ps1)
-- Inno Setup files (*.iss)
-- .csproj project files
-- src/Servy.Core/Config/AppConfig.cs
-- .github/workflows/*.yml
-- global.json
+    This script recursively updates `netX.Y` target framework versions 
+    inside:
+    - PowerShell scripts (*.ps1)
+    - Inno Setup files (*.iss)
+    - .csproj project files
+    - src/Servy.Core/Config/AppConfig.cs
+    - .github/workflows/*.yml
+    - global.json
 
-Use -DryRun to preview changes without modifying anything.
+    Use -DryRun to preview changes without modifying anything.
 
 .PARAMETER Version
-The .NET runtime version (e.g. "10.0").
+    The .NET runtime version (e.g. "10.0").
+
+.PARAMETER SdkPatch
+    The SDK feature-band/patch component appended to the global.json version (default "100"), producing e.g. "10.0.100".
 
 .PARAMETER DryRun
-Shows what would change without writing to disk.
+    Shows what would change without writing to disk.
 
 .EXAMPLE
-./bump-runtime.ps1 -Version 10.0
+    ./bump-runtime.ps1 -Version 10.0
 
 .EXAMPLE
-./bump-runtime.ps1 10.0
+    ./bump-runtime.ps1 -Version 10.0 -SdkPatch 300
 
 .EXAMPLE
-./bump-runtime.ps1 -Version 10.0 -DryRun
-Shows all changes without modifying files.
+    ./bump-runtime.ps1 10.0
 
 .EXAMPLE
-./bump-runtime.ps1 10.0 -DryRun
+    ./bump-runtime.ps1 -Version 10.0 -DryRun
+    Shows all changes without modifying files.
+
+.EXAMPLE
+    ./bump-runtime.ps1 10.0 -DryRun
 
 .NOTES
-This script modifies files in-place unless -DryRun is used.
+    This script modifies files in-place unless -DryRun is used.
 #>
 
 [CmdletBinding()]

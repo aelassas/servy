@@ -5,7 +5,8 @@
 
 .DESCRIPTION
     This script performs the following steps:
-      1. Runs the resource publishing step via publish-res-release.ps1.
+      1. Runs the resource publishing step via publish-res-<configuration>.ps1
+      (publish-res-debug.ps1 / publish-res-release.ps1, selected by -BuildConfiguration).
       2. Builds and publishes the Servy.Manager project as a
          self-contained, single-file executable for the specified
          target framework and runtime.

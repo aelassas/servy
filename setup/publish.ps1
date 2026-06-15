@@ -28,7 +28,7 @@
 #>
 
 # publish.ps1
-# Main setup bundle script for building both self-contained and framework-dependent installers
+# Main setup bundle script for building the self-contained installer.
 
 param(
     [string]$Tfm     = "", 

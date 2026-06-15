@@ -1,3 +1,4 @@
+
 #Requires -Version 5.1
 <#
 .SYNOPSIS
@@ -50,7 +51,7 @@ foreach ($ProjFile in $RawTestProjects) {
 
     Write-Host "Running tests for $($Proj)..." -ForegroundColor Cyan
     
-    # Re-map positional configurations dynamically to retain proper layout consistency
+    # Build the 'dotnet test' arguments for this project
     $dotnetArgs = @(
         'test', $Proj,
         '--configuration', 'Debug',
