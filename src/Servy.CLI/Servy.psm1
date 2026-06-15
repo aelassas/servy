@@ -292,8 +292,8 @@ function Invoke-ServyCli {
 
         Compatible with PowerShell 2.0 and later.
 
-    .EXAMPLE
-        Invoke-ServyCli "start" @("--name=MyService") $false "Failed to start service"
+     .EXAMPLE
+        Invoke-ServyCli -Command "start" -Arguments @("--name=MyService") -ErrorContext "Failed to start service"
 
   #>
   [CmdletBinding()]
@@ -747,7 +747,7 @@ function Install-ServyService {
         recovery actions, environment variables, dependencies, service account credentials,
         and optional pre-launch and post-launch executables.
 
-        The Post-launch executable operates in a fire-and-forget mode , meaning it does not support 
+        The Post-launch executable operates in a fire-and-forget mode, meaning it does not support 
         the full range of configuration options such as stdout/stderr redirection or retry attempts 
         that are available for the Pre-launch executable.
 
@@ -977,12 +977,14 @@ function Install-ServyService {
     # Basic Information
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
+    [ValidateLength(1, 256)]
     [string] $Name,
 
     [ValidateNotNullOrEmpty()]
     [ValidateLength(1, 256)]
     [string] $DisplayName,
 
+    [ValidateLength(0, 8192)]
     [string] $Description,
 
     # Process Configuration
@@ -1343,9 +1345,6 @@ function Install-ServyService {
               $secureEnv[$key] = $null
           }
       }
-      
-      # Help GC by clearing the ArrayList
-      $argsList = $null
   }
 }
 

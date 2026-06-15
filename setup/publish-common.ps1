@@ -116,7 +116,7 @@ function Copy-CommonArtifacts {
         [Parameter(Mandatory=$true)][string]$DestFolder
     )
     
-    # 2. Include Task Scheduler hooks
+    # 1. Include Task Scheduler hooks
     $taskSchdSource = Join-Path $ScriptDir "taskschd"
     if (Test-Path $taskSchdSource) {
         $taskSchdDest = Join-Path $DestFolder "taskschd"
@@ -135,7 +135,7 @@ function Copy-CommonArtifacts {
         }
     }
 
-    # 3. Include PowerShell Module artifacts with Test-Path guards
+    # 2. Include PowerShell Module artifacts with Test-Path guards
     $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1")
     foreach ($art in $cliArtifacts) {
         $sourcePath = Join-Path $CliDir $art

@@ -8,14 +8,13 @@ namespace Servy.CLI.UnitTests.Options
 {
     public class SensitiveOptionsTests
     {
+        private static readonly Type[] OptionTypes = { typeof(InstallServiceOptions) };
+
         [Fact]
         public void SensitiveProperties_MustHaveSensitiveAttribute()
         {
             // Arrange
-            // Note: Add UpdateServiceOptions or other verbs to this array as they are created
-            var optionTypes = new[] { typeof(InstallServiceOptions) };
-
-            foreach (var type in optionTypes)
+            foreach (var type in OptionTypes)
             {
                 // Find properties whose CLI Option LongName matches the sensitive patterns
                 var targetProperties = type.GetProperties()
@@ -33,6 +32,7 @@ namespace Servy.CLI.UnitTests.Options
                     });
 
                 // Act & Assert (Requirement 2)
+                Assert.NotEmpty(targetProperties);
                 foreach (var prop in targetProperties)
                 {
                     var hasSensitiveAttribute = prop.GetCustomAttribute<SensitiveAttribute>() != null;
@@ -60,14 +60,13 @@ namespace Servy.CLI.UnitTests.Options
 
             var fieldsBlock = match.Groups[1].Value;
 
-            var optionTypes = new[] { typeof(InstallServiceOptions) };
-
             // Act & Assert (Requirement 3)
-            foreach (var type in optionTypes)
+            foreach (var type in OptionTypes)
             {
                 var sensitiveProperties = type.GetProperties()
                     .Where(p => p.GetCustomAttribute<SensitiveAttribute>() != null);
 
+                Assert.NotEmpty(sensitiveProperties);
                 foreach (var prop in sensitiveProperties)
                 {
                     var optionAttr = prop.GetCustomAttribute<OptionAttribute>();
