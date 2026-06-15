@@ -1,4 +1,5 @@
 ﻿using Moq;
+using Servy.Core.Common;
 using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
@@ -1153,6 +1154,97 @@ namespace Servy.Core.UnitTests.Services
             // Verify recovery logic executed: legacyDroppedFromDb was true, meaning UpsertAsync was called to restore backup
             _mockServiceRepository.Verify(x => x.UpsertAsync(
                 It.Is<ServiceDto>(d => d.Name == "serviceä" && d.Description == "Recoverable Metadata Payload"),
+                false,
+                false,
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task InstallService_UnexpectedException_DatabaseRecoveryThrows_ReturnsFailureResultWithoutPanic()
+        {
+            // Arrange
+            var options = new InstallServiceOptions
+            {
+                ServiceName = "serviceÄ",
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe"
+            };
+
+            var legacyDbRecord = new ServiceDto
+            {
+                Name = "serviceä",
+                Description = "Backup Payload Bound for Catastrophic Recovery Failure"
+            };
+
+            // Configure the repository to satisfy both the root read and the uninstallation validation checks
+            _mockServiceRepository
+                .SetupSequence(x => x.GetByNameAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(legacyDbRecord)  // Pass 1: Root pre-install layout validation check
+                .ReturnsAsync(legacyDbRecord)  // Pass 2: UninstallServiceAsync internal authorization gate
+                .ReturnsAsync((ServiceDto?)null); // Pass 3: Post-uninstall target validation step
+
+            // CRITICAL: Force the recovery restoration pass to fail catastrophically
+            _mockServiceRepository
+                .Setup(x => x.UpsertAsync(It.IsAny<ServiceDto>(), false, false, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Database disk image is corrupt or file descriptor leaked."));
+
+            _mockWindowsServiceApi
+                .Setup(x => x.GetServices())
+                .Returns(new[] { new WindowsServiceInfo { ServiceName = "serviceä" } });
+
+            var scmHandle = CreateScmHandle(123);
+            var legacyServiceHandle = CreateServiceHandle(456);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenService(scmHandle, "serviceä", It.IsAny<uint>()))
+                .Returns(legacyServiceHandle);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.DeleteService(legacyServiceHandle))
+                .Returns(true);
+
+            // Mock IServiceControllerWrapper to complete uninstallation loop evaluations immediately
+            var mockController = new Mock<IServiceControllerWrapper>();
+            mockController.SetupGet(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+
+            _serviceManager = new ServiceManager(
+                name => mockController.Object,
+                _mockServiceControllerProvider.Object,
+                _mockWindowsServiceApi.Object,
+                _mockWin32ErrorProvider.Object,
+                _mockServiceRepository.Object
+            );
+
+            // Force an unexpected native engine exception inside CreateService to route into the catch-all block
+            _mockWindowsServiceApi
+                .Setup(x => x.CreateService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, It.IsAny<string>(), It.IsAny<string>(), null))
+                .Throws(new Exception("SCM structural allocation failure."));
+
+            // Act
+            // serviceExecute the action inside Record.ExceptionAsync EXACTLY ONCE and capture the direct output payload object ref
+            OperationResult? result = null;
+            var exception = await Record.ExceptionAsync(async () =>
+            {
+                result = await _serviceManager.InstallServiceAsync(options, TestContext.Current.CancellationToken);
+            });
+
+            // Assert
+            // 1. Verify that the runtime completely suppressed the database recovery exception (returns null)
+            Assert.Null(exception);
+
+            // 2. Verify that the result object is populated and contains the wrapped operational failure information
+            Assert.NotNull(result);
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Error installing service", result.ErrorMessage);
+            Assert.Contains("SCM structural allocation failure.", result.ErrorMessage);
+
+            // 3. Verify that the database recovery pipeline made exactly one isolated recovery push attempt
+            _mockServiceRepository.Verify(x => x.UpsertAsync(
+                It.Is<ServiceDto>(d => d.Name == "serviceä" && d.Description == "Backup Payload Bound for Catastrophic Recovery Failure"),
                 false,
                 false,
                 It.IsAny<CancellationToken>()), Times.Once);
