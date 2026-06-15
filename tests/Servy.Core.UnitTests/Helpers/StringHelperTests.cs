@@ -123,7 +123,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void FormatEnvirnomentVariables_ShouldEscapeSpecialCharactersCorrectly()
+        public void FormatEnvironmentVariables_ShouldEscapeSpecialCharactersCorrectly()
         {
             // Arrange
             // Each variable tests one or more escape sequences:
