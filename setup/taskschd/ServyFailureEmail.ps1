@@ -13,15 +13,14 @@
       4. Dispatching HTML-formatted notification emails using a robust .NET SMTP implementation.
       5. Providing fallback logging to the Event Log or local disk if email delivery fails.
 
-.PARAMETER None
-    No parameters are required. SMTP settings (Server, Port, From, To) are loaded 
-    from 'smtp-config.xml'. Credentials are managed via 'smtp-cred.xml'.
-
 .NOTES
     Author      : Akram El Assas
     Project     : Servy
     Repository  : https://github.com/aelassas/servy
     
+    No parameters are required. SMTP settings (Server, Port, From, To) are loaded 
+    from 'smtp-config.xml'. Credentials are managed via 'smtp-cred.xml'.
+
     Requirements:
       - PowerShell 5.1 or later.
       - 'smtp-config.xml' and 'smtp-cred.xml' must exist in the script directory.
