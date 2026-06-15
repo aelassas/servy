@@ -13,9 +13,9 @@ using Servy.Manager.Services;
 using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Services;
+using Servy.UI.ViewModels;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Threading;
@@ -26,7 +26,7 @@ namespace Servy.Manager.ViewModels
     /// ViewModel for the main window of Servy Manager.
     /// Holds the list of services and exposes commands for managing them.
     /// </summary>
-    public class MainViewModel : INotifyPropertyChanged, IDisposable
+    public class MainViewModel : ViewModelBase, IDisposable
     {
         #region Private Fields
 
@@ -54,25 +54,6 @@ namespace Servy.Manager.ViewModels
         private readonly IProcessHelper _processHelper;
 
         private bool _disposed;
-
-        #endregion
-
-        #region Events
-
-        /// <summary>
-        /// Occurs when a property value changes.
-        /// Used for data binding updates.
-        /// </summary>
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        /// <summary>
-        /// Raises the <see cref="PropertyChanged"/> event for the specified property name.
-        /// </summary>
-        /// <param name="propertyName">Name of the property that changed.</param>
-        private void OnPropertyChanged([CallerMemberName] string propertyName = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
 
         #endregion
 

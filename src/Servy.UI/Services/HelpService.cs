@@ -147,11 +147,6 @@ namespace Servy.UI.Services
         /// </summary>
         private static Version NormalizeVersion(Version version)
         {
-            if (version == null)
-            {
-                return new Version(0, 0, 0, 0);
-            }
-
             int major = version.Major;
             int minor = version.Minor;
             int build = version.Build < 0 ? 0 : version.Build;

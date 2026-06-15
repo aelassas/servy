@@ -26,7 +26,7 @@ namespace Servy.UI.ViewModels
         /// <returns>True if the value was changed, false if the existing value coincided with the desired value.</returns>
         protected bool Set<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
-            if (Equals(field, value))
+            if (EqualityComparer<T>.Default.Equals(field, value))
                 return false;
 
             field = value;

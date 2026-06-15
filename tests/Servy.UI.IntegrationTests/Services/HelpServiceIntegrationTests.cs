@@ -87,19 +87,6 @@ namespace Servy.UI.IntegrationTests.Services
         #region NormalizeVersion Private Method Reflection Tests
 
         [Fact]
-        public void NormalizeVersion_NullPassed_ReturnsZeroedFourPartVersion()
-        {
-            // Arrange
-            var method = typeof(HelpService).GetMethod("NormalizeVersion", BindingFlags.Static | BindingFlags.NonPublic);
-
-            // Act
-            var result = (Version)method!.Invoke(null, new object[] { null! })!;
-
-            // Assert
-            Assert.Equal(new Version(0, 0, 0, 0), result);
-        }
-
-        [Fact]
         public void NormalizeVersion_PartialVersionsWithNegativeFields_PadsMissingPartsToZero()
         {
             // Arrange

@@ -124,17 +124,10 @@ namespace Servy.UI
         /// collection has been reset, including its item count and indexer state.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// This utility method is required when internal storage arrays or private <c>Items</c> 
-        /// collections are mutated directly using raw manipulation primitives. Direct mutations bypass 
-        /// standard observable interceptors, masking count adjustments and structural modifications 
-        /// from the execution tracking layer.
-        /// </para>
-        /// <para>
-        /// Invoking this method fires synchronized property updates for <c>Count</c> and <c>Item[]</c>, 
-        /// followed by a broadcast collection-wide <see cref="NotifyCollectionChangedAction.Reset"/> 
-        /// event to force full target element tree reconciliation.
-        /// </para>
+        /// Required because <see cref="AddRange"/> and <see cref="TrimToSize"/> mutate the protected
+        /// <c>Items</c> list directly, which does not raise change notifications. This raises
+        /// <c>PropertyChanged</c> for <c>Count</c> and <c>Item[]</c> followed by a single
+        /// <see cref="NotifyCollectionChangedAction.Reset"/> so bound WPF controls refresh.
         /// </remarks>
         private void RaiseResetNotifications()
         {
