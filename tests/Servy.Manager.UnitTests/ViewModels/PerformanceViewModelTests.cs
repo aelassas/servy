@@ -197,24 +197,49 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                var vm = CreateViewModel();
-                vm.Pid = "999";
-                vm.CpuUsage = "50%";
+                // FIX: Wrapped in the exclusive environment lock block to block parallel mutation pollution
+                lock (StaticEnvironmentLock)
+                {
+                    // Preserve the original environment context firmly inside the thread scope boundary
+                    var originalProvider = App.Services;
 
-                // Force internal state flag via reflection to simulate a transition away from an active tracking state
-                var fieldInfo = typeof(PerformanceViewModel).GetField("_hadSelectedService", BindingFlags.NonPublic | BindingFlags.Instance);
-                fieldInfo?.SetValue(vm, true);
+                    // Build an isolated runtime DI container to satisfy internal locator checks during constructor setup
+                    var serviceCollection = new ServiceCollection();
+                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
 
-                var methodInfo = typeof(PerformanceViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+                    var localProvider = serviceCollection.BuildServiceProvider();
+                    App.Services = localProvider;
 
-                // Act
-                var task = (Task)methodInfo!.Invoke(vm, null)!;
-                task.GetAwaiter().GetResult();
+                    try
+                    {
+                        var vm = CreateViewModel();
+                        vm.Pid = "999";
+                        vm.CpuUsage = "50%";
 
-                // Assert
-                Assert.Equal(UiConstants.NotAvailable, vm.Pid);
-                Assert.Equal(UiConstants.NotAvailable, vm.CpuUsage);
-                Assert.False((bool)fieldInfo!.GetValue(vm)!);
+                        // Force internal state flag via reflection to simulate a transition away from an active tracking state
+                        var fieldInfo = typeof(PerformanceViewModel).GetField("_hadSelectedService", BindingFlags.NonPublic | BindingFlags.Instance);
+                        fieldInfo?.SetValue(vm, true);
+
+                        var methodInfo = typeof(PerformanceViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                        // Act
+                        var task = (Task)methodInfo!.Invoke(vm, null)!;
+                        task.GetAwaiter().GetResult();
+
+                        // Assert
+                        Assert.Equal(UiConstants.NotAvailable, vm.Pid);
+                        Assert.Equal(UiConstants.NotAvailable, vm.CpuUsage);
+                        Assert.False((bool)fieldInfo!.GetValue(vm)!);
+                    }
+                    finally
+                    {
+                        // Clean up tracking boundaries safely
+                        if (originalProvider != null)
+                        {
+                            App.Services = originalProvider;
+                        }
+                    }
+                }
             }, createApp: true);
         }
 
