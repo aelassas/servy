@@ -25,7 +25,7 @@ namespace Servy.Manager.UnitTests.Converters
         {
             public IProcessHelper ExposedProcessHelper => ProcessHelper;
 
-            // FIX: Add an explicit constructor overload that lets the unit test bypass global statics
+            // Add an explicit constructor overload that lets the unit test bypass global statics
             // and force the evaluation of fallback assignments deterministically if necessary.
             public TestMetricConverter() : base() { }
 
@@ -43,15 +43,18 @@ namespace Servy.Manager.UnitTests.Converters
         [Fact]
         public void Constructor_ServicesAndHelperAvailable_ResolvesProcessHelperFromDI()
         {
-            // FIX: Wrapped in the exclusive environment lock block to prevent ambient container poisoning
+            // Wrapped in the exclusive environment lock block to prevent ambient container poisoning
             lock (StaticEnvironmentLock)
             {
                 var originalProvider = App.Services;
 
                 // Arrange
                 var mockHelper = new Mock<IProcessHelper>();
+                var mockKiller = new Mock<IProcessKiller>(); // Add required base pipeline helper layout dependency
+
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton<IProcessHelper>(mockHelper.Object);
+                serviceCollection.AddSingleton<IProcessKiller>(mockKiller.Object);
 
                 // Populate the static tracking hook for this run execution slice
                 App.Services = serviceCollection.BuildServiceProvider();
@@ -76,7 +79,7 @@ namespace Servy.Manager.UnitTests.Converters
         [Fact]
         public void Constructor_ServicesNull_FallsBackToDesignTimeHelperAndLogsWarning()
         {
-            // FIX: Guarded with exclusive lock to prevent converter instantiation failures from empty ambient states
+            // Guarded with exclusive lock to prevent converter instantiation failures from empty ambient states
             lock (StaticEnvironmentLock)
             {
                 var originalProvider = App.Services;
@@ -105,40 +108,44 @@ namespace Servy.Manager.UnitTests.Converters
         [Fact]
         public void Constructor_ServicesNotNullButHelperMissing_FallsBackToDesignTimeHelperAndLogsWarning()
         {
-            // FIX: Guarded with exclusive lock to shield internal constructor resolution routines
+            // Guarded with exclusive lock to shield internal constructor resolution routines
             lock (StaticEnvironmentLock)
             {
                 var originalProvider = App.Services;
 
-                // Arrange
-                // Explicitly force App.Services to be completely null before building our isolated local test pass.
-                // This guarantees that any background test scanner auto-registrations are explicitly discarded.
-                App.Services = null;
-
-                var emptyServiceCollection = new ServiceCollection();
-
-                // Explicitly register a mock helper that matches the shape of the fallback assignment rules
-                // but verify that the DI system falls through cleanly if unexpected data profiles intrude.
-                var serviceProvider = emptyServiceCollection.BuildServiceProvider();
-                App.Services = serviceProvider;
-
                 try
                 {
+                    // Arrange
+                    // Force App.Services to be completely null before building our isolated local test pass.
+                    App.Services = null;
+
+                    var emptyServiceCollection = new ServiceCollection();
+
+                    // Add base layout requirements to shield pass execution branches safely,
+                    // but DO NOT add any IProcessHelper registrations here.
+                    var mockKiller = new Mock<IProcessKiller>();
+                    emptyServiceCollection.AddSingleton<IProcessKiller>(mockKiller.Object);
+
+                    // Explicitly build a pristine provider context that is completely devoid of an IProcessHelper registration
+                    var serviceProvider = emptyServiceCollection.BuildServiceProvider();
+                    App.Services = serviceProvider;
+
                     // Act
                     var converter = new TestMetricConverter();
 
                     // Assert
                     Assert.NotNull(converter.ExposedProcessHelper);
 
-                    // If parallel test execution layers hold a persistent reference hook, verify that 
-                    // the runtime configuration remains safely constrained to a manageable type asset.
+                    // If an environmental scanning runner has injected ambient mocks, 
+                    // we verify the structure falls back cleanly to the non-mock assembly implementation.
                     if (converter.ExposedProcessHelper is ProcessHelper)
                     {
-                        // Fallback verification hook to check if the framework forced a physical wrapper fallback
                         Assert.NotNull(converter.ExposedProcessHelper);
                     }
                     else
                     {
+                        // Ensure that it resolves precisely to the concrete design-time fallback class,
+                        // completely bypassing any proxy wrappers leaked by Moq.
                         Assert.IsType<DesignTimeProcessHelper>(converter.ExposedProcessHelper);
                     }
                 }
@@ -157,7 +164,7 @@ namespace Servy.Manager.UnitTests.Converters
         [Fact]
         public void Convert_ValueIsCorrectType_InvokesFormatSubclassMethod()
         {
-            // FIX: Wrapped in the exclusive environment lock block to insulate ambient environment context
+            // Wrapped in the exclusive environment lock block to insulate ambient environment context
             lock (StaticEnvironmentLock)
             {
                 var originalProvider = App.Services;
@@ -185,7 +192,7 @@ namespace Servy.Manager.UnitTests.Converters
         [Fact]
         public void Convert_ValueIsNull_ReturnsUnknownMetricPlaceholder()
         {
-            // FIX: Wrapped in the exclusive environment lock block to insulate ambient environment context
+            // Wrapped in the exclusive environment lock block to insulate ambient environment context
             lock (StaticEnvironmentLock)
             {
                 var originalProvider = App.Services;
@@ -212,7 +219,7 @@ namespace Servy.Manager.UnitTests.Converters
         [Fact]
         public void Convert_ValueIsIncompatibleType_ReturnsUnknownMetricPlaceholder()
         {
-            // FIX: Wrapped in the exclusive environment lock block to insulate ambient environment context
+            // Wrapped in the exclusive environment lock block to insulate ambient environment context
             lock (StaticEnvironmentLock)
             {
                 var originalProvider = App.Services;
@@ -240,7 +247,7 @@ namespace Servy.Manager.UnitTests.Converters
         [Fact]
         public void ConvertBack_Always_ReturnsBindingDoNothingToken()
         {
-            // FIX: Wrapped in the exclusive environment lock block to insulate ambient environment context
+            // Wrapped in the exclusive environment lock block to insulate ambient environment context
             lock (StaticEnvironmentLock)
             {
                 var originalProvider = App.Services;
