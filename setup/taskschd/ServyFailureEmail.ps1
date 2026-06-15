@@ -228,9 +228,10 @@ function Send-NotificationEmail {
 
   # Hardened domain verification derived from global $DefaultPlaceholderDomain variable scope.
   # Polymorphically screens Server, From, and sub-recipient properties against unconfigured templates.
+  # Adjusted From and To patterns to support matching both standard domain contexts and sub-domain structures after the '@' separator.
   $isPlaceholderServer = $smtpServer -eq $DefaultPlaceholderDomain -or $smtpServer -like "*.$DefaultPlaceholderDomain"
-  $isPlaceholderFrom   = $from -eq $DefaultPlaceholderDomain -or $from -like "*.$DefaultPlaceholderDomain"
-  $isPlaceholderTo     = $toList | Where-Object { $_ -eq $DefaultPlaceholderDomain -or $_ -like "*.$DefaultPlaceholderDomain" }
+  $isPlaceholderFrom   = $from -like "*@$DefaultPlaceholderDomain" -or $from -like "*@*.$DefaultPlaceholderDomain"
+  $isPlaceholderTo     = $toList | Where-Object { $_ -like "*@$DefaultPlaceholderDomain" -or $_ -like "*@*.$DefaultPlaceholderDomain" }
 
   if ($isPlaceholderServer -or $isPlaceholderFrom -or $isPlaceholderTo) {
     Write-FallbackError -Message "ServyFailureEmail: SMTP pipeline fields are still using default placeholder domain references ($DefaultPlaceholderDomain). Email skipped." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
