@@ -236,18 +236,46 @@ namespace Servy.Core.Services
             var existingDbService = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: false, cancellationToken);
             bool isUpdateMode = existingDbService != null;
 
-            // If the database has a record under a different casing layout (e.g. 'Serviceä' vs 'ServiceÄ'),
+            // Track if we successfully executed an aggressive purge of a casing layout duplicate
+            bool legacyDroppedFromDb = false;
+            ServiceDto legacyBackupDto = null;
+
+            // If the database has a record under a different casing layout (e.g. 'notepadä' vs 'notepadÄ'),
             // the Windows SCM will treat them as two entirely different entities. We must aggressively drop the old 
             // casing layout registration from the OS before proceeding to avoid split-brain or orphaned processes.
             if (isUpdateMode && !string.Equals(existingDbService.Name, options.ServiceName, StringComparison.Ordinal))
             {
-                Logger.Info($"Unicode name variance detected during update sequence ('{existingDbService.Name}' -> '{options.ServiceName}'). Dropping legacy SCM registration key.");
+                Logger.Info($"Unicode name variance detected during update sequence ('{existingDbService.Name}' -> '{options.ServiceName}'). Executing full uninstallation sequence for the legacy casing variant from SCM and Database.");
+
                 if (IsServiceInstalled(existingDbService.Name))
                 {
-                    var uninstallRes = await UninstallServiceAsync(existingDbService.Name, cancellationToken);
-                    if (!uninstallRes.IsSuccess)
+                    try
                     {
-                        Logger.Warn($"Failed to unregister legacy casing variant '{existingDbService.Name}' from SCM: {uninstallRes.ErrorMessage}");
+                        // To prevent permanent data loss if the subsequent installation steps fail,
+                        // we hold onto a deep copy or reference of the DTO before calling Uninstall.
+                        legacyBackupDto = existingDbService;
+
+                        var uninstallRes = await UninstallServiceAsync(existingDbService.Name, cancellationToken);
+                        if (!uninstallRes.IsSuccess)
+                        {
+                            string uninstError = $"Failed to unregister legacy casing variant '{legacyBackupDto.Name}' from SCM: {uninstallRes.ErrorMessage}";
+                            Logger.Error(uninstError);
+                            return OperationResult.Failure(uninstError);
+                        }
+
+                        // UninstallServiceAsync succeeded, meaning the DB record for legacyBackupDto.Name is now deleted!
+                        legacyDroppedFromDb = true;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        Logger.Info($"Installation cancelled while dropping legacy casing variant '{existingDbService.Name}'.");
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        string criticalError = $"Unexpected error occurred while trying to drop legacy service casing layout '{existingDbService.Name}'.";
+                        Logger.Error(criticalError, ex);
+                        return OperationResult.Failure($"{criticalError} Details: {ex.Message}");
                     }
                 }
             }
@@ -401,7 +429,7 @@ namespace Servy.Core.Services
                                 string errorMsg = $"Failed to enable pre-shutdown for service '{options.ServiceName}' during installation. Rolling back creation.";
                                 Logger.Error(errorMsg);
                                 needsRollback = true;
-                                return OperationResult.Failure(errorMsg);
+                                throw new InvalidOperationException(errorMsg);
                             }
 
                             if (options.StartType == ServiceStartType.AutomaticDelayedStart)
@@ -413,7 +441,7 @@ namespace Servy.Core.Services
                                     string errorMsg = $"Failed to set delayed auto-start for service '{options.ServiceName}' during installation. Rolling back creation.";
                                     Logger.Error(errorMsg);
                                     needsRollback = true;
-                                    return OperationResult.Failure(errorMsg);
+                                    throw new InvalidOperationException(errorMsg);
                                 }
                                 else
                                 {
@@ -450,10 +478,26 @@ namespace Servy.Core.Services
                                     {
                                         var err = _win32ErrorProvider.GetLastWin32Error();
                                         Logger.Error($"Failed to open service '{options.ServiceName}' for config update. Win32 error: {err}");
-                                        return OperationResult.Failure($"Failed to open service '{options.ServiceName}' for configuration update. Error code: {err}");
+                                        throw new Win32Exception(err, $"Failed to open service '{options.ServiceName}' for configuration update. Error code: {err}");
                                     }
 
-                                    // 1. Update Delayed Auto-start
+                                    // 1. Update Pre-shutdown Timeout for existing service
+                                    // This ensures that updates to StopTimeout or PreStopTimeout are reflected in the OS SCM.
+                                    var preShutdownSuccess = EnablePreShutdown(existingServiceHandle, finalTimeoutMs);
+                                    if (preShutdownSuccess)
+                                    {
+                                        Logger.Info($"Pre-shutdown timeout updated to {totalWaitTime} seconds for existing service '{options.ServiceName}'.");
+                                    }
+                                    else
+                                    {
+                                        // UpdateServiceConfig and ChangeServiceConfig2 have already mutated OS state.
+                                        // We explicitly reject the state run and notify that manual structural reconciliation is required.
+                                        string errorMsg = $"CRITICAL STATE DRIFT: Failed to update pre-shutdown timeout for existing service '{options.ServiceName}'. Core properties were modified but advanced configurations failed. The Servy database remains un-updated. Run re-installation immediately to prevent shutdown data corruption.";
+                                        Logger.Error(errorMsg);
+                                        throw new InvalidOperationException(errorMsg);
+                                    }
+
+                                    // 2. Update Delayed Auto-start
                                     var delayedAutostart = options.StartType == ServiceStartType.AutomaticDelayedStart;
                                     var success = ChangeServiceConfig2(existingServiceHandle, delayedAutostart);
 
@@ -463,24 +507,11 @@ namespace Servy.Core.Services
                                     }
                                     else
                                     {
-                                        string errorMsg = $"Failed to set delayed auto-start for existing service '{options.ServiceName}'.";
+                                        // UpdateServiceConfig has already committed baseline mutations to the SCM.
+                                        // We escalate the diagnostic error to alert operators that the system is now out of sync.
+                                        string errorMsg = $"CRITICAL STATE DRIFT: Failed to set delayed auto-start for existing service '{options.ServiceName}'. SCM configuration is now in an inconsistent state and database synchronization was aborted. Please re-run the full installer context to repair.";
                                         Logger.Error(errorMsg);
-                                        return OperationResult.Failure(errorMsg);
-                                    }
-
-                                    // 2. Update Pre-shutdown Timeout for existing service
-                                    // This ensures that updates to StopTimeout or PreStopTimeout are reflected in the OS SCM.
-                                    var preShutdownSuccess = EnablePreShutdown(existingServiceHandle, finalTimeoutMs);
-                                    if (preShutdownSuccess)
-                                    {
-                                        Logger.Info($"Pre-shutdown timeout updated to {totalWaitTime} seconds for existing service '{options.ServiceName}'.");
-                                    }
-                                    else
-                                    {
-                                        // We treat this as a failure because an incorrect timeout can lead to data corruption during shutdown.
-                                        string errorMsg = $"Failed to update pre-shutdown timeout for existing service '{options.ServiceName}'.";
-                                        Logger.Error(errorMsg);
-                                        return OperationResult.Failure(errorMsg);
+                                        throw new InvalidOperationException(errorMsg);
                                     }
                                 }
 
@@ -496,16 +527,16 @@ namespace Servy.Core.Services
 
                             string creationErrorMsg = $"Failed to create service '{options.ServiceName}'. Win32 error: {createServiceError}";
                             Logger.Error(creationErrorMsg);
-                            return OperationResult.Failure(creationErrorMsg);
+                            throw new Win32Exception(createServiceError, creationErrorMsg);
                         }
 
                         cancellationToken.ThrowIfCancellationRequested();
                         SetServiceDescription(serviceHandle, options.Description);
                         await _serviceRepository.UpsertAsync(
-                            dto,
-                            preserveExistingRuntimeState: false,
-                            preserveExistingCredentials: false,
-                            cancellationToken); // New service: update runtime state in db (PID, ActiveStdoutPath, ActiveStderrPath)
+                                             dto,
+                                             preserveExistingRuntimeState: false,
+                                             preserveExistingCredentials: false,
+                                             cancellationToken); // New service: update runtime state in db (PID, ActiveStdoutPath, ActiveStderrPath)
 
                         Logger.Info($"Service '{options.ServiceName}' installed successfully.");
                         return OperationResult.Success();
@@ -546,18 +577,51 @@ namespace Servy.Core.Services
             catch (OperationCanceledException)
             {
                 Logger.Info($"Installation of '{options.ServiceName}' was cancelled by the user.");
+                await ExecuteDatabaseRecoveryAsync(legacyDroppedFromDb, legacyBackupDto);
                 throw;
             }
             catch (Exception ex)
             {
                 Logger.Error($"Error installing service '{options.ServiceName}'.", ex);
-                throw;
+                await ExecuteDatabaseRecoveryAsync(legacyDroppedFromDb, legacyBackupDto);
+                return OperationResult.Failure($"Error installing service '{options.ServiceName}': {ex.Message}");
             }
             finally
             {
-                if (scmHandle != null)
+                scmHandle?.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Orchestrates an isolated database rollback sequence to restore state tracking for a legacy 
+        /// service variant if the subsequent installation pipeline fails or is canceled.
+        /// </summary>
+        /// <param name="legacyDroppedFromDb">A flag indicating whether the legacy service record was successfully removed during validation hardening.</param>
+        /// <param name="legacyBackupDto">The original service data tracking context captured before structural execution began.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous database recovery operations.</returns>
+        /// <remarks>
+        /// This routine enforces data tracking atomicity across case-renaming scenarios. It executes under 
+        /// <see cref="CancellationToken.None"/> to ensure that recovery routines finish processing even 
+        /// if the primary installation process was canceled via user interaction.
+        /// </remarks>
+        private async Task ExecuteDatabaseRecoveryAsync(bool legacyDroppedFromDb, ServiceDto legacyBackupDto)
+        {
+            if (legacyDroppedFromDb && legacyBackupDto != null)
+            {
+                try
                 {
-                    scmHandle.Dispose();
+                    Logger.Warn($"Installation pipeline failed after dropping legacy Unicode layout. Restoring database state tracking for '{legacyBackupDto.Name}'.");
+
+                    // Re-hydrate the original DTO back into the system repository
+                    await _serviceRepository.UpsertAsync(
+                        legacyBackupDto,
+                        preserveExistingRuntimeState: false,
+                        preserveExistingCredentials: true,
+                        CancellationToken.None); // Use None to ensure recovery runs even during user cancellations
+                }
+                catch (Exception dbRecoveryEx)
+                {
+                    Logger.Error($"CRITICAL: DB Recovery failed while restoring state tracking for '{legacyBackupDto.Name}'. Database is now out of sync.", dbRecoveryEx);
                 }
             }
         }

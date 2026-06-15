@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Servy.Core.Config;
 using Servy.Core.Data;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
@@ -178,14 +179,16 @@ namespace Servy.Core.UnitTests.Services
 
         [Theory]
         [InlineData("TestService", "C:\\Apps\\App.exe", "C:\\Apps\\App.exe")]
-        public async Task InstallService_ThrowsException(string serviceName, string wrapperExePath, string realExePath)
+        public async Task InstallService_Returns_Failure_On_Unexpected_Exception(string serviceName, string wrapperExePath, string realExePath)
         {
+            // --- Arrange ---
             var scmHandle = CreateScmHandle(123);
             var serviceHandle = CreateServiceHandle(456);
 
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(scmHandle);
 
+            // Mock an exact name match to bypass the Unicode layout hardening block safely
             _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Core.DTOs.ServiceDto
                 {
@@ -197,10 +200,11 @@ namespace Servy.Core.UnitTests.Services
                     UserAccount = null
                 });
 
+            // Standardize signatures with It.IsAny to ensure parameter position shifts don't bypass invocation expectations
             _mockWindowsServiceApi.Setup(x => x.CreateService(
                 scmHandle,
                 serviceName,
-                serviceName,
+                It.IsAny<string>(),
                 It.IsAny<uint>(),
                 It.IsAny<uint>(),
                 It.IsAny<uint>(),
@@ -208,25 +212,10 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<string>(),
                 null,
                 IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
-                ServiceAccounts.LocalSystem,
+                It.IsAny<string>(),
+                It.IsAny<string>(),
                 null))
                 .Throws(new Exception("Boom!"));
-
-            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
-                serviceHandle,
-                It.IsAny<uint>(),
-                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
-                .Returns(true);
-
-            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
-               It.IsAny<SafeServiceHandle>(),
-               It.IsAny<uint>(),
-               It.IsAny<IntPtr>()
-               ))
-               .Returns(true);
-
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
             var options = new InstallServiceOptions
             {
@@ -238,43 +227,27 @@ namespace Servy.Core.UnitTests.Services
                 PreLaunchTimeout = 30
             };
 
-            await Assert.ThrowsAsync<Exception>(() => _serviceManager.InstallServiceAsync(options));
+            // --- Act ---
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+
+            // --- Assert ---
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Error installing service", result.ErrorMessage);
+            Assert.Contains("Boom!", result.ErrorMessage);
         }
 
         [Fact]
-        public async Task InstallService_Throws_Win32Exception()
+        public async Task InstallService_Returns_Failure_On_Win32_Errors()
         {
-            var scmHandle = CreateScmHandle(0);
-            var serviceHandle = CreateServiceHandle(456);
+            // --- Arrange Common Setup ---
+            var validScmHandle = CreateScmHandle(123);
+
+            // Instantiating default safe handles sets IsInvalid = true automatically
+            var invalidScmHandle = new SafeScmHandle();
+            var invalidServiceHandle = new SafeServiceHandle();
+
             var serviceName = "TestService";
             var description = "Test Description";
-
-            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
-                .Returns(scmHandle);
-
-            _mockWindowsServiceApi.Setup(x => x.CreateService(
-                scmHandle,
-                serviceName,
-                serviceName,
-                It.IsAny<uint>(),
-                It.IsAny<uint>(),
-                It.IsAny<uint>(),
-                It.IsAny<uint>(),
-                It.IsAny<string>(),
-                null,
-                IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
-                null,
-                null))
-                .Returns(serviceHandle);
-
-            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
-                serviceHandle,
-                It.IsAny<uint>(),
-                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
-                .Returns(true);
-
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
             var options = new InstallServiceOptions
             {
@@ -298,14 +271,49 @@ namespace Servy.Core.UnitTests.Services
                 PreLaunchIgnoreFailure = true
             };
 
-            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallServiceAsync(options));
+            // Ensure repository lookup passes safely by returning null (not update layout mode)
+            _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ServiceDto)null);
 
-            scmHandle = CreateScmHandle(123);
+            // --- Scenario 1: OpenSCManager works, but CreateService fails natively ---
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
-             .Returns(scmHandle);
-            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1074);
+                .Returns(validScmHandle);
 
-            Assert.False((await _serviceManager.InstallServiceAsync(options)).IsSuccess);
+            _mockWindowsServiceApi.Setup(x => x.CreateService(
+                validScmHandle,
+                serviceName,
+                serviceName,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                It.IsAny<string>(),
+                null,
+                null))
+                .Returns(invalidServiceHandle); // Invalid handle intercepts leg
+
+            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(5); // ERROR_ACCESS_DENIED
+
+            // --- Act & Assert 1 ---
+            var result1 = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+
+            Assert.False(result1.IsSuccess);
+            Assert.Contains("Failed to create service", result1.ErrorMessage);
+
+            // --- Scenario 2: OpenSCManager itself fails immediately ---
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(invalidScmHandle);
+
+            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1074); // ERROR_SERVICE_MARKED_FOR_DELETE
+
+            // --- Act & Assert 2 ---
+            var result2 = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+
+            Assert.False(result2.IsSuccess);
+            Assert.Contains("Failed to open Service Control Manager", result2.ErrorMessage);
         }
 
         [Fact]
