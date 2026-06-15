@@ -369,7 +369,7 @@
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_RotationSize}"
                                  AutomationProperties.AutomationId="TextBoxRotationSize"
                                  AutomationProperties.HelpText="Enter the maximum log file size before rotation."/>
-                        <TextBlock Grid.Row="3" Grid.Column="2" Text="{x:Static resx:Strings.Label_RotationSizeUnity}" VerticalAlignment="Center" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="3" Grid.Column="2" Text="{x:Static resx:Strings.Label_RotationSizeUnit}" VerticalAlignment="Center" Margin="5,5,0,5"/>
 
                         <CheckBox Grid.Row="4" Grid.Column="1"
                                   Content="{x:Static resx:Strings.Label_EnableDateRotation}"
