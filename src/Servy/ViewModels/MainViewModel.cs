@@ -10,7 +10,6 @@ using Servy.Resources;
 using Servy.Services;
 using Servy.UI.Commands;
 using Servy.UI.Services;
-using Servy.ViewModels.Items;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -159,27 +158,27 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets the list of available startup types for services.
+        /// Gets the list of available startup types for services, wrapped in the centralized generic display adapter.
         /// </summary>
-        public List<StartupTypeItem> StartupTypes { get; } = new List<StartupTypeItem>
+        public List<EnumDisplayItem<ServiceStartType>> StartupTypes { get; } = new List<EnumDisplayItem<ServiceStartType>>
         {
-            new StartupTypeItem { StartupType = ServiceStartType.Automatic, DisplayName = Strings.StartupType_Automatic },
-            new StartupTypeItem { StartupType = ServiceStartType.AutomaticDelayedStart, DisplayName = Strings.StartupType_AutomaticDelayedStart },
-            new StartupTypeItem { StartupType = ServiceStartType.Manual, DisplayName = Strings.StartupType_Manual },
-            new StartupTypeItem { StartupType = ServiceStartType.Disabled, DisplayName = Strings.StartupType_Disabled },
+            new EnumDisplayItem<ServiceStartType> { Value = ServiceStartType.Automatic, DisplayName = Strings.StartupType_Automatic },
+            new EnumDisplayItem<ServiceStartType> { Value = ServiceStartType.AutomaticDelayedStart, DisplayName = Strings.StartupType_AutomaticDelayedStart },
+            new EnumDisplayItem<ServiceStartType> { Value = ServiceStartType.Manual, DisplayName = Strings.StartupType_Manual },
+            new EnumDisplayItem<ServiceStartType> { Value = ServiceStartType.Disabled, DisplayName = Strings.StartupType_Disabled },
         };
 
         /// <summary>
-        /// Gets the list of available process priority options.
+        /// Gets the list of available process priority options, wrapped in the centralized generic display adapter.
         /// </summary>
-        public List<ProcessPriorityItem> ProcessPriorities { get; } = new List<ProcessPriorityItem>
+        public List<EnumDisplayItem<ProcessPriority>> ProcessPriorities { get; } = new List<EnumDisplayItem<ProcessPriority>>
         {
-            new ProcessPriorityItem { Priority = ProcessPriority.Idle, DisplayName = Strings.ProcessPriority_Idle },
-            new ProcessPriorityItem { Priority = ProcessPriority.BelowNormal, DisplayName = Strings.ProcessPriority_BelowNormal },
-            new ProcessPriorityItem { Priority = ProcessPriority.Normal, DisplayName = Strings.ProcessPriority_Normal },
-            new ProcessPriorityItem { Priority = ProcessPriority.AboveNormal, DisplayName = Strings.ProcessPriority_AboveNormal },
-            new ProcessPriorityItem { Priority = ProcessPriority.High, DisplayName = Strings.ProcessPriority_High },
-            new ProcessPriorityItem { Priority = ProcessPriority.RealTime, DisplayName = Strings.ProcessPriority_RealTime },
+            new EnumDisplayItem<ProcessPriority> { Value = ProcessPriority.Idle, DisplayName = Strings.ProcessPriority_Idle },
+            new EnumDisplayItem<ProcessPriority> { Value = ProcessPriority.BelowNormal, DisplayName = Strings.ProcessPriority_BelowNormal },
+            new EnumDisplayItem<ProcessPriority> { Value = ProcessPriority.Normal, DisplayName = Strings.ProcessPriority_Normal },
+            new EnumDisplayItem<ProcessPriority> { Value = ProcessPriority.AboveNormal, DisplayName = Strings.ProcessPriority_AboveNormal },
+            new EnumDisplayItem<ProcessPriority> { Value = ProcessPriority.High, DisplayName = Strings.ProcessPriority_High },
+            new EnumDisplayItem<ProcessPriority> { Value = ProcessPriority.RealTime, DisplayName = Strings.ProcessPriority_RealTime },
         };
 
         /// <summary>
@@ -272,14 +271,14 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets the list of available date rotation types for services.
+        /// Gets the list of available date rotation types for services
         /// </summary>
-        public List<DateRotationTypeItem> DateRotationTypes { get; } = new List<DateRotationTypeItem>
+        public List<EnumDisplayItem<DateRotationType>> DateRotationTypes { get; } = new List<EnumDisplayItem<DateRotationType>>
         {
-            new DateRotationTypeItem { DateRotationType = DateRotationType.Daily, DisplayName = Strings.DateRotationType_Daily},
-            new DateRotationTypeItem { DateRotationType = DateRotationType.Weekly, DisplayName = Strings.DateRotationType_Weekly},
-            new DateRotationTypeItem { DateRotationType = DateRotationType.Monthly, DisplayName = Strings.DateRotationType_Monthly },
-            new DateRotationTypeItem { DateRotationType = DateRotationType.None, DisplayName = Strings.DateRotationType_None},
+            new EnumDisplayItem<DateRotationType> { Value = DateRotationType.Daily, DisplayName = Strings.DateRotationType_Daily },
+            new EnumDisplayItem<DateRotationType> { Value = DateRotationType.Weekly, DisplayName = Strings.DateRotationType_Weekly },
+            new EnumDisplayItem<DateRotationType> { Value = DateRotationType.Monthly, DisplayName = Strings.DateRotationType_Monthly },
+            new EnumDisplayItem<DateRotationType> { Value = DateRotationType.None, DisplayName = Strings.DateRotationType_None },
         };
 
         /// <summary>
@@ -355,12 +354,12 @@ namespace Servy.ViewModels
         /// <summary>
         /// Gets the list of available recovery actions.
         /// </summary>
-        public List<RecoveryActionItem> RecoveryActions { get; } = new List<RecoveryActionItem>
+        public List<EnumDisplayItem<RecoveryAction>> RecoveryActions { get; } = new List<EnumDisplayItem<RecoveryAction>>
         {
-            new RecoveryActionItem { RecoveryAction= RecoveryAction.None, DisplayName = Strings.RecoveryAction_None },
-            new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartService, DisplayName = Strings.RecoveryAction_RestartService },
-            new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartProcess, DisplayName = Strings.RecoveryAction_RestartProcess },
-            new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartComputer, DisplayName = Strings.RecoveryAction_RestartComputer },
+            new EnumDisplayItem<RecoveryAction> { Value = RecoveryAction.None, DisplayName = Strings.RecoveryAction_None },
+            new EnumDisplayItem<RecoveryAction> { Value = RecoveryAction.RestartService, DisplayName = Strings.RecoveryAction_RestartService },
+            new EnumDisplayItem<RecoveryAction> { Value = RecoveryAction.RestartProcess, DisplayName = Strings.RecoveryAction_RestartProcess },
+            new EnumDisplayItem<RecoveryAction> { Value = RecoveryAction.RestartComputer, DisplayName = Strings.RecoveryAction_RestartComputer },
         };
 
         /// <summary>

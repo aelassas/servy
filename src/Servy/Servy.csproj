@@ -124,10 +124,7 @@
     </Compile>
     <Compile Include="Services\IServiceCommands.cs" />
     <Compile Include="Services\ServiceCommands.cs" />
-    <Compile Include="ViewModels\Items\DateRotationTypeItem.cs" />
-    <Compile Include="ViewModels\Items\ProcessPriorityItem.cs" />
-    <Compile Include="ViewModels\Items\RecoveryActionItem.cs" />
-    <Compile Include="ViewModels\Items\StartupTypeItem.cs" />
+    <Compile Include="ViewModels\EnumDisplayItem.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="Views\SplashWindow.xaml.cs">
       <DependentUpon>SplashWindow.xaml</DependentUpon>

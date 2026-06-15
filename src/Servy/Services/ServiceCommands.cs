@@ -530,6 +530,8 @@ namespace Servy.Services
                 var path = getFilePath();
                 if (string.IsNullOrEmpty(path)) return;
 
+                _cursorService.SetWaitCursor();
+
                 var dto = _modelToServiceDto();
 
                 if (!await _serviceConfigurationValidator.ValidateAsync(dto: dto, wrapperExePath: null, confirmPassword: confirmPassword))
@@ -544,6 +546,10 @@ namespace Servy.Services
             {
                 Logger.Error($"Failed to export service configuration to {formatName}.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+            }
+            finally
+            {
+                _cursorService.ResetCursor();
             }
         }
 
@@ -576,6 +582,8 @@ namespace Servy.Services
             {
                 var path = getFilePath();
                 if (string.IsNullOrEmpty(path)) return;
+
+                _cursorService.SetWaitCursor();
 
                 // Defense-in-depth: Run the security guards FIRST before touching the disk via size validation
                 var guardResult = ImportGuard.ValidatePathSecurityAndSize(path, out string content);
@@ -612,6 +620,10 @@ namespace Servy.Services
             {
                 Logger.Error($"Failed to import service configuration from {formatName}.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+            }
+            finally
+            {
+                _cursorService.ResetCursor();
             }
         }
 

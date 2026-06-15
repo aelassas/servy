@@ -388,6 +388,14 @@ namespace Servy.Core.Config
         public const int ScmStartupRequestThresholdSeconds = 20;
 
         /// <summary>
+        /// Defines the safety buffer, in seconds, added to the configured service start 
+        /// timeout when requesting additional time from the Service Control Manager (SCM). 
+        /// This ensures the service has sufficient overhead to initialize without 
+        /// being prematurely terminated by the SCM.
+        /// </summary>
+        public const int ScmStartupRequestBufferSeconds = 10;
+
+        /// <summary>
         /// The wait hint in milliseconds sent to the Service Control Manager (SCM) during a Pre-Shutdown event.
         /// </summary>
         /// <remarks>

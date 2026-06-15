@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 namespace Servy.Services
 {
     /// <summary>
-    /// Defines commands for managing Windows services, including install, uninstall, start, stop, and restart operations.
+    /// Defines commands for managing Windows services - install, uninstall, start, stop and restart -
+    /// plus importing/exporting service configuration (XML/JSON) and launching Servy Manager.
     /// </summary>
     public interface IServiceCommands
     {
