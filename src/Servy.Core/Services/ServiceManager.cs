@@ -611,7 +611,7 @@ namespace Servy.Core.Services
                     await _serviceRepository.UpsertAsync(
                         legacyBackupDto,
                         preserveExistingRuntimeState: false,
-                        preserveExistingCredentials: true,
+                        preserveExistingCredentials: false,
                         CancellationToken.None); // Use None to ensure recovery runs even during user cancellations
                 }
                 catch (Exception dbRecoveryEx)
