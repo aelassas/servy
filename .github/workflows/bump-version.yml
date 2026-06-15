@@ -89,9 +89,9 @@ jobs:
           foreach ($branch in $branches) {
               Write-Host "Starting semantic version bump sequence for branch: $branch"
 
-              # Standardize uniform refresh sequence to eliminate ordering divergence
-              Invoke-Git fetch origin "${branch}:${branch}"
-              Invoke-Git checkout $branch
+              # Fetch the branch tips safely without modifying active local branch head refs directly
+              Invoke-Git fetch origin $branch
+              Invoke-Git checkout -B $branch
               Invoke-Git reset --hard "origin/$branch"
               
               Invoke-Git update-index --chmod=+x ./bump-version.ps1

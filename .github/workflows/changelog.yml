@@ -160,14 +160,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          git diff --quiet CHANGELOG.md
-          if ($LASTEXITCODE -eq 0) {
+          git add CHANGELOG.md
+          if (-not (git status --porcelain)) {
               Write-Host "No changes detected in CHANGELOG.md. Nothing to update."
               exit 0
           }
-
-          # ROBUSTNESS: Stage and create the initial local commit wrapper BEFORE entering the loop.
-          git add CHANGELOG.md
           git commit -m "docs: auto-update CHANGELOG.md"
 
           $maxRetries = 5
