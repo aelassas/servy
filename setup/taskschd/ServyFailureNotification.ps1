@@ -35,7 +35,7 @@
 $scriptDir = $PSScriptRoot
 
 $timestampFile = Join-Path $scriptDir "last-processed-toast.dat"
-$fallbackLogFile = "ServyNotification.log"
+$fallbackLogFile = "ServyFailureNotification.log"
 
 # Event ID Taxonomy (Refer to src/Servy.Core/Logging/EventIds.cs for updates)
 # 3000-3099: Core Errors | 3100-3199: Script Errors
@@ -86,7 +86,7 @@ function Show-Notification {
     [string]$ServiceName,
     [string]$LogText,
     [DateTime]$TimeCreated,
-    [string]$scriptDir,
+    [string]$ScriptDir,
     [string]$FallbackLogFile
   )
 
@@ -120,7 +120,7 @@ function Show-Notification {
 
     if ($null -eq $titleNode -or $null -eq $bodyNode) {
         # ROBUSTNESS: Schema structure mismatches are unrecoverable; classify as a permanent failure.
-        Write-FallbackError -Message "ServyToast: Unsupported Toast XML structure. Could not locate text nodes for Title or Body." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+        Write-FallbackError -Message "ServyToast: Unsupported Toast XML structure. Could not locate text nodes for Title or Body." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
         return 'PermanentFailure'
     }
 
@@ -147,7 +147,7 @@ function Show-Notification {
     try {
         if ($notifier.Setting -ne [Windows.UI.Notifications.NotificationSetting]::Enabled) {
             $settingState = $notifier.Setting.ToString()
-            Write-FallbackError -Message "ServyToast: Notification delivery aborted due to platform settings suppression ($settingState). Skipping watermark advance." -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+            Write-FallbackError -Message "ServyToast: Notification delivery aborted due to platform settings suppression ($settingState). Skipping watermark advance." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
             
             # ROBUSTNESS: Treat platform-level notification suppression as a terminal delivery result.
             # Returning 'PermanentFailure' ensures the watermark is updated and the queue 
@@ -184,7 +184,7 @@ function Show-Notification {
     }
 
     if ($failedRef.Value) {
-        Write-FallbackError -Message ("ServyToast: Delivery failed (0x{0:X})." -f $failCode.Value) -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+        Write-FallbackError -Message ("ServyToast: Delivery failed (0x{0:X})." -f $failCode.Value) -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
         return 'TransientFailure'
     }
 
@@ -192,7 +192,7 @@ function Show-Notification {
   } catch {
     # System path drops or memory boundaries represent runtime environmental/transient errors
     $syncError = "ServyToast: Notification path failed. Details: $($_.Exception.Message)"
-    Write-FallbackError -Message $syncError -scriptDir $scriptDir -FallbackFileName $FallbackLogFile
+    Write-FallbackError -Message $syncError -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
     return 'TransientFailure'
   }
 }
@@ -222,7 +222,7 @@ foreach ($evt in $eventsToProcess) {
     $deliveryStatus = Show-Notification -ServiceName $parsed.ServiceName `
                                         -LogText $parsed.LogText `
                                         -TimeCreated $evt.TimeCreated `
-                                        -scriptDir $scriptDir `
+                                        -ScriptDir $scriptDir `
                                         -FallbackLogFile $fallbackLogFile
     
     # Advance the event queue timestamp pointer for either clear success or permanent, unfixable configuration blocks.

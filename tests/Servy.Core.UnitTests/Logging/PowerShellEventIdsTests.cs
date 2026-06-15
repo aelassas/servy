@@ -18,43 +18,21 @@ namespace Servy.Core.UnitTests.Logging
             _repoRoot = AppConfig.FindRepoRoot(AppDomain.CurrentDomain.BaseDirectory);
         }
 
-        [Fact]
-        public void ServyWatermark_ErrorId_Matches_EventIds_Constant()
+        /// <summary>
+        /// Verifies that the event ID variables defined inside the automated setup PowerShell scripts
+        /// strictly match the compile-time constants managed by the core logging infrastructure.
+        /// </summary>
+        [Theory]
+        [InlineData("Servy-Watermark.psm1", "$EVENT_ID_ERROR", EventIds.ScheduledTaskScriptError)]
+        [InlineData("ServyFailureNotification.ps1", "$EVENT_ID_DEPENDENCY_ERROR", EventIds.ScheduledTaskScriptDependencyError)]
+        [InlineData("ServyFailureEmail.ps1", "$EVENT_ID_DEPENDENCY_ERROR", EventIds.ScheduledTaskScriptDependencyError)]
+        public void PowerShellScript_EventId_Matches_EventIds_Constant(string scriptName, string variableName, int expectedId)
         {
             // Arrange
-            string filePath = Path.Combine(_repoRoot, TaskSchdPath, "Servy-Watermark.psm1");
-            int expectedId = EventIds.ScheduledTaskScriptError;
+            string filePath = Path.Combine(_repoRoot, TaskSchdPath, scriptName);
 
             // Act
-            int actualId = ExtractEventIdFromPowerShell(filePath, "$EVENT_ID_ERROR");
-
-            // Assert
-            Assert.Equal(expectedId, actualId);
-        }
-
-        [Fact]
-        public void ServyFailureNotification_DependencyErrorId_Matches_EventIds_Constant()
-        {
-            // Arrange
-            string filePath = Path.Combine(_repoRoot, TaskSchdPath, "ServyFailureNotification.ps1");
-            int expectedId = EventIds.ScheduledTaskScriptDependencyError;
-
-            // Act
-            int actualId = ExtractEventIdFromPowerShell(filePath, "$EVENT_ID_DEPENDENCY_ERROR");
-
-            // Assert
-            Assert.Equal(expectedId, actualId);
-        }
-
-        [Fact]
-        public void ServyFailureEmail_DependencyErrorId_Matches_EventIds_Constant()
-        {
-            // Arrange
-            string filePath = Path.Combine(_repoRoot, TaskSchdPath, "ServyFailureEmail.ps1");
-            int expectedId = EventIds.ScheduledTaskScriptDependencyError;
-
-            // Act
-            int actualId = ExtractEventIdFromPowerShell(filePath, "$EVENT_ID_DEPENDENCY_ERROR");
+            int actualId = ExtractEventIdFromPowerShell(filePath, variableName);
 
             // Assert
             Assert.Equal(expectedId, actualId);
