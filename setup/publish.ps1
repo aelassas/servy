@@ -230,26 +230,35 @@ catch {
     Write-Host $_
 }
 finally {
-    # Pause by default (for double-click usage)
-    if ($scriptHadError) {
-        Write-Host "`nBuild failed. Press any key to exit..."
-    }
-    else {
-        Write-Host "`nPress any key to exit..."
-    }
+    # ROBUSTNESS: Detect if running in a non-interactive environment (CI pipeline, automated task).
+    # If [Environment]::UserInteractive evaluates to false or no physical window is attached, 
+    # bypass the ReadKey sequence entirely to prevent the process from hanging indefinitely.
+    $isInteractive = [Environment]::UserInteractive -and ($Host.Name -like '*Console*')
 
-    try {
-        if ($Host.Name -eq 'ConsoleHost' -or $Host.Name -like '*Console*') {
-            [void][System.Console]::ReadKey($true)
+    if ($isInteractive) {
+        # Pause by default (for double-click usage)
+        if ($scriptHadError) {
+            Write-Host "`nBuild failed. Press any key to exit..."
         }
         else {
-            try {
-                $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
-            }
-            catch {
-                Read-Host | Out-Null
-            }
+            Write-Host "`nPress any key to exit..."
+        }
+
+        try {
+            [void][System.Console]::ReadKey($true)
+        }
+        catch { }
+    }
+    else {
+        # Log failure layout directly to the tracking stream for automated log monitoring parses
+        if ($scriptHadError) {
+            Write-Warning "Build execution terminated with errors. Non-zero exit code enforced for automation handler."
         }
     }
-    catch { }
+
+    # ROBUSTNESS: Ensure the orchestrator script exits cleanly with a non-zero code under a failure state.
+    # This guarantees that automated CI tools (GitHub Actions, Azure DevOps) successfully detect the failure.
+    if ($scriptHadError) {
+        exit 1
+    }
 }

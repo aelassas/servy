@@ -43,6 +43,10 @@ $scriptDir = $PSScriptRoot
 $timestampFile = Join-Path $scriptDir "last-processed-email.dat"
 $fallbackLogFile = "ServyFailureEmail.log"
 
+# Central Sentinel Guard Domain Definition (RFC 2606 Reserved Domain).
+# Keeps the template independently modifiable and dynamically secures From/To fields.
+$DefaultPlaceholderDomain = "example.com"
+
 # Event ID Taxonomy (Refer to src/Servy.Core/Logging/EventIds.cs for updates)
 # 3000-3099: Core Errors | 3100-3199: Script Errors
 $EVENT_ID_DEPENDENCY_ERROR = 3104
@@ -130,8 +134,11 @@ function Send-NotificationEmail {
     .PARAMETER Body
         The pre-masked and HTML-encoded body content.
 
-    .PARAMETER scriptDir
-        The directory context for configuration and credential files.
+    .PARAMETER Config
+        The raw XML configuration tree structure containing active SMTP endpoint mappings.
+
+    .PARAMETER ScriptDir
+        The directory context for reading credential files and routing fallback logs.
         
     .PARAMETER FallbackLogFile
         The log file string to route fallback errors towards.
@@ -140,6 +147,7 @@ function Send-NotificationEmail {
   param (
     [string]$Subject,
     [string]$Body,
+    [xml]$Config,
     [string]$ScriptDir,
     [string]$FallbackLogFile
   )
@@ -150,10 +158,10 @@ function Send-NotificationEmail {
 
   # --- HARDENED CONFIGURATION ACCESS ---
   
-  # 1. Check root structure
-  $configRoot = $SmtpConfig.SmtpConfig
+  # 1. Check root structure passed via parameters
+  $configRoot = $Config.SmtpConfig
   if ($null -eq $configRoot) {
-    Write-FallbackError -Message "ServyFailureEmail: Could not find <SmtpConfig> root element." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+    Write-FallbackError -Message "ServyFailureEmail: Could not find <SmtpConfig> root element in configuration context." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
     return 'PermanentFailure'
   }
 
@@ -195,12 +203,6 @@ function Send-NotificationEmail {
     return 'PermanentFailure'
   }
 
-  # Default placeholder check
-  if ($smtpServer -eq "smtp.example.com") {
-    Write-FallbackError -Message "ServyFailureEmail: SMTP Server is still set to default placeholder. Email skipped." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
-    return 'PermanentFailure'
-  }
-
   # Email format checks (Prevent .NET ArgumentException/FormatException)
   if ($from -notmatch $emailRegex) {
     Write-FallbackError -Message "ServyFailureEmail: Invalid 'From' email format ($from) in smtp-config.xml." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
@@ -222,6 +224,17 @@ function Send-NotificationEmail {
           Write-FallbackError -Message "ServyFailureEmail: Invalid 'To' email format ($addr) in smtp-config.xml. Multi-recipient lists must be separated by commas or semicolons." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
           return 'PermanentFailure'
       }
+  }
+
+  # Hardened domain verification derived from global $DefaultPlaceholderDomain variable scope.
+  # Polymorphically screens Server, From, and sub-recipient properties against unconfigured templates.
+  $isPlaceholderServer = $smtpServer -eq $DefaultPlaceholderDomain -or $smtpServer -like "*.$DefaultPlaceholderDomain"
+  $isPlaceholderFrom   = $from -eq $DefaultPlaceholderDomain -or $from -like "*.$DefaultPlaceholderDomain"
+  $isPlaceholderTo     = $toList | Where-Object { $_ -eq $DefaultPlaceholderDomain -or $_ -like "*.$DefaultPlaceholderDomain" }
+
+  if ($isPlaceholderServer -or $isPlaceholderFrom -or $isPlaceholderTo) {
+    Write-FallbackError -Message "ServyFailureEmail: SMTP pipeline fields are still using default placeholder domain references ($DefaultPlaceholderDomain). Email skipped." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+    return 'PermanentFailure'
   }
 
   if (-not (Test-Path $credPath)) {
@@ -362,8 +375,8 @@ foreach ($evt in $eventsToProcess) {
   # Basic HTML formatting (newlines to breaks)
   $htmlBody = $body -replace "`r?`n", "<br>"
     
-  # Attempt to send the email
-  $sendStatus = Send-NotificationEmail -Subject $subject -Body $htmlBody -ScriptDir $scriptDir -FallbackLogFile $fallbackLogFile
+  # Attempt to send the email with explicit configuration encapsulation mapping
+  $sendStatus = Send-NotificationEmail -Subject $subject -Body $htmlBody -Config $SmtpConfig -ScriptDir $scriptDir -FallbackLogFile $fallbackLogFile
   
   switch ($sendStatus) {
       'Success' {

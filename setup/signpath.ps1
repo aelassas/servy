@@ -185,13 +185,14 @@ try {
         OutputArtifactPath = $signedPath
     }
 
-    $repoUrl    = "https://github.com/aelassas/servy.git"
     $commitId   = $env:GITHUB_SHA
     $branchName = $env:GITHUB_REF_NAME
     $repository = $env:GITHUB_REPOSITORY
     $runId      = $env:GITHUB_RUN_ID
 
     if ($commitId -and $branchName -and $repository -and $runId) {
+        $repoUrl    = "https://github.com/$repository.git"
+
         # BuildData.Url must point to the RUN URL - NOT the job URL
         $buildUrl = "https://github.com/$repository/actions/runs/$runId"
 
