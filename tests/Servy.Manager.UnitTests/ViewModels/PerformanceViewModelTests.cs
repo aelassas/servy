@@ -63,9 +63,13 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(null!, _mockServiceCommands.Object, _mockAppConfig.Object, _mockCursorService.Object, _mockProcessHelper.Object, _mockUiDispatcher.Object));
-                Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(_mockServiceRepository.Object, _mockServiceCommands.Object, null!, _mockCursorService.Object, _mockProcessHelper.Object, _mockUiDispatcher.Object));
-                Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(_mockServiceRepository.Object, _mockServiceCommands.Object, _mockAppConfig.Object, _mockCursorService.Object, null!, _mockUiDispatcher.Object));
+                // Guarded with environmental lock block to protect against ambient state drift from adjacent tests
+                lock (StaticEnvironmentLock)
+                {
+                    Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(null!, _mockServiceCommands.Object, _mockAppConfig.Object, _mockCursorService.Object, _mockProcessHelper.Object, _mockUiDispatcher.Object));
+                    Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(_mockServiceRepository.Object, _mockServiceCommands.Object, null!, _mockCursorService.Object, _mockProcessHelper.Object, _mockUiDispatcher.Object));
+                    Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(_mockServiceRepository.Object, _mockServiceCommands.Object, _mockAppConfig.Object, _mockCursorService.Object, null!, _mockUiDispatcher.Object));
+                }
             }, createApp: true);
         }
 
@@ -74,12 +78,34 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                var dtViewModel = new PerformanceViewModel();
+                // Wrapped in the exclusive environment lock block to register the required Design-Time tracker service dependencies
+                lock (StaticEnvironmentLock)
+                {
+                    var originalProvider = App.Services;
 
-                // Verify collections were seeded with placeholder zeros for immediate layout coverage
-                Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
-                Assert.NotNull(dtViewModel.CpuPointCollection);
-                Assert.NotNull(dtViewModel.RamPointCollection);
+                    var serviceCollection = new ServiceCollection();
+                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
+
+                    var localProvider = serviceCollection.BuildServiceProvider();
+                    App.Services = localProvider;
+
+                    try
+                    {
+                        var dtViewModel = new PerformanceViewModel();
+
+                        // Verify collections were seeded with placeholder zeros for immediate layout coverage
+                        Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
+                        Assert.NotNull(dtViewModel.CpuPointCollection);
+                        Assert.NotNull(dtViewModel.RamPointCollection);
+                    }
+                    finally
+                    {
+                        if (originalProvider != null)
+                        {
+                            App.Services = originalProvider;
+                        }
+                    }
+                }
             }, createApp: true);
         }
 
@@ -197,7 +223,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                // FIX: Wrapped in the exclusive environment lock block to block parallel mutation pollution
+                // Wrapped in the exclusive environment lock block to block parallel mutation pollution
                 lock (StaticEnvironmentLock)
                 {
                     // Preserve the original environment context firmly inside the thread scope boundary
