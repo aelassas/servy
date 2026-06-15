@@ -528,8 +528,10 @@ namespace Servy.Infrastructure.Data
         {
             Logger.Info("Migrating database to Version 6: Upgrading index to a native Unicode case-insensitive collation descriptor (NOCASE).");
 
-            // Drop legacy LOWER index safely
+            // Purge both the legacy LOWER structural identifier and any early v6 iterations 
+            // to transition seamlessly to a clean, collation-neutral naming standard.
             connection.Execute("DROP INDEX IF EXISTS idx_services_name_lower;", transaction: transaction);
+            connection.Execute("DROP INDEX IF EXISTS idx_services_name_unique;", transaction: transaction);
 
             // Defensively purge any conflicting non-ASCII duplicate records that exist under the expanded collation range
             var duplicates = connection.Query(@"
@@ -554,8 +556,8 @@ namespace Servy.Infrastructure.Data
                 }
             }
 
-            // Materialize the hardened Unicode structural index rule
-            connection.Execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_lower ON Services(Name COLLATE NOCASE);", transaction: transaction);
+            // Materialize the hardened Unicode structural index rule under a precise, maintainable identifier.
+            connection.Execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_unique ON Services(Name COLLATE NOCASE);", transaction: transaction);
             Logger.Info("Database successfully migrated to Version 6.");
         }
 

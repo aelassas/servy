@@ -583,10 +583,16 @@ namespace Servy.Infrastructure.Data
         /// This prevents double-encryption and unintended mutation of the input object.
         /// </summary>
         /// <param name="source">The original DTO to clone and encrypt.</param>
-        /// <returns>A new <see cref="ServiceDto"/> instance with sensitive fields encrypted.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the target input source reference parameter is null.</exception>
         /// <exception cref="InvalidOperationException">Thrown when a specific field fails to encrypt.</exception>
         private ServiceDto CreateEncryptedClone(ServiceDto source)
         {
+            // Implemented explicit entrance argument null verification pattern matching code conventions 
+            // to stop propagation bugs before causing deeply nested NullReferenceExceptions.
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
             // 1. Perform the shallow clone to isolate mutations from the original DTO
             var clone = (ServiceDto)source.Clone();
 

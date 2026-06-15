@@ -216,6 +216,7 @@ namespace Servy.Core.Native
         /// windows during critical operations like key rotation or service configuration updates.
         /// </para>
         /// </remarks>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="source"/> or <paramref name="destination"/> is null, empty, or whitespace.</exception>
         /// <exception cref="IOException">Thrown when source and destination are on different volumes.</exception>
         /// <exception cref="Win32Exception">Thrown when the native MoveFileEx call fails for other reasons.</exception>
         public static void AtomicSecureMove(string source, string destination)

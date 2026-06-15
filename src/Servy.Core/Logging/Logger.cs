@@ -110,10 +110,12 @@ namespace Servy.Core.Logging
             {
                 _fileName = fileName;
                 _currentLogLevel = (int)logLevel;
-                _logRotationSizeMB = logRotationSizeMB;
                 _dateRotationType = dateRotationType;
                 _useLocalTimeForRotation = useLocalTimeForRotation;
-                _maxBackupLogFiles = maxBackupLogFiles;
+
+                // Validates and bounds inputs to align initialization policies with runtime API constraints
+                _logRotationSizeMB = logRotationSizeMB > 0 ? logRotationSizeMB : AppConfig.DefaultRotationSizeMB;
+                _maxBackupLogFiles = maxBackupLogFiles >= 0 ? maxBackupLogFiles : DefaultMaxBackupLogFiles;
 
                 InternalInitialize();
             }
@@ -152,10 +154,12 @@ namespace Servy.Core.Logging
             lock (_lock)
             {
                 _currentLogLevel = (int)logLevel;
-                _logRotationSizeMB = logRotationSizeMB;
                 _dateRotationType = dateRotationType;
                 _useLocalTimeForRotation = useLocalTimeForRotation;
-                _maxBackupLogFiles = maxBackupLogFiles;
+
+                // Validates and bounds inputs to align initialization policies with runtime API constraints
+                _logRotationSizeMB = logRotationSizeMB > 0 ? logRotationSizeMB : AppConfig.DefaultRotationSizeMB;
+                _maxBackupLogFiles = maxBackupLogFiles >= 0 ? maxBackupLogFiles : DefaultMaxBackupLogFiles;
 
                 // Re-arm or cycle the writer if we have a valid baseline path,
                 // ensuring re-initialization requests that follow a Shutdown() do not silently lose their state.
@@ -525,7 +529,7 @@ namespace Servy.Core.Logging
         /// </summary>
         private static void EnsureLogsDir()
         {
-            // LOGIC: Uses SecurityHelper to create the directory with specific permissions
+            // Uses SecurityHelper to create the directory with specific permissions
             SecurityHelper.CreateSecureDirectory(LogsPath, breakInheritance: false);
         }
 
