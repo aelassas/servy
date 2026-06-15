@@ -75,55 +75,41 @@ jobs:
           Write-Host "Next computed baseline deployment version: $next_version"
           Add-Content -Path $env:GITHUB_ENV -Value "NEXT_VERSION=$next_version"
 
-      # 3. Bump version on main branch
-      - name: Bump version on main branch
+      # 3. Bump version on main and net48 branches sequentially
+      - name: Bump version on main and net48 branches
         shell: pwsh
         run: |
           . "$env:RUNNER_TEMP\git-helpers.ps1"
 
-          Invoke-Git checkout main
-          Invoke-Git fetch origin main
-          Invoke-Git reset --hard origin/main
-          
-          Invoke-Git update-index --chmod=+x ./bump-version.ps1
-          ./bump-version.ps1 -Version $env:NEXT_VERSION
-          if ($LASTEXITCODE -ne 0) {
-              Write-Error "bump-version.ps1 failed with exit $LASTEXITCODE"
-              exit $LASTEXITCODE
-          }
+          # Configure user identity globally for the current loop runner context
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
-          # git status --porcelain detects untracked, modified, and deleted files.
-          if (git status --porcelain) {
-              Invoke-Git add --all
-              Invoke-Git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
-              Invoke-Git push origin main
-          } else {
-              Write-Host "No changes detected on main branch, skipping commit."
-          }
-      # 4. Bump version on net48 branch
-      - name: Bump version on net48 branch
-        shell: pwsh
-        run: |
-          . "$env:RUNNER_TEMP\git-helpers.ps1"
 
-          Invoke-Git fetch origin net48:net48
-          Invoke-Git checkout net48
-          Invoke-Git reset --hard origin/net48
-          
-          Invoke-Git update-index --chmod=+x ./bump-version.ps1
-          ./bump-version.ps1 -Version $env:NEXT_VERSION
-          if ($LASTEXITCODE -ne 0) {
-              Write-Error "bump-version.ps1 failed with exit $LASTEXITCODE"
-              exit $LASTEXITCODE
-          }
-          Invoke-Git config user.name "github-actions[bot]"
-          Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Using porcelain check consistently to prevent silent skips on net48.
-          if (git status --porcelain) {
-              Invoke-Git add --all
-              Invoke-Git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
-              Invoke-Git push origin net48
-          } else {
-              Write-Host "No changes detected on net48 branch, skipping commit."
+          $branches = @("main", "net48")
+          foreach ($branch in $branches) {
+              Write-Host "Starting semantic version bump sequence for branch: $branch"
+
+              # Standardize uniform refresh sequence to eliminate ordering divergence
+              Invoke-Git fetch origin "${branch}:${branch}"
+              Invoke-Git checkout $branch
+              Invoke-Git reset --hard "origin/$branch"
+              
+              Invoke-Git update-index --chmod=+x ./bump-version.ps1
+              ./bump-version.ps1 -Version $env:NEXT_VERSION
+              if ($LASTEXITCODE -ne 0) {
+                  Write-Error "bump-version.ps1 failed with exit $LASTEXITCODE on branch $branch"
+                  exit $LASTEXITCODE
+              }
+
+              # Using porcelain check consistently to prevent silent skips across branches.
+              if (git status --porcelain) {
+                  Invoke-Git add --all
+                  Invoke-Git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
+                  Invoke-Git push origin $branch
+                  Write-Host "Successfully committed and pushed version updates to $branch"
+              } else {
+                  Write-Host "No changes detected on $branch branch, skipping commit."
+              }
+              
+              Write-Host "Finished processing branch: $branch`n"
           }
