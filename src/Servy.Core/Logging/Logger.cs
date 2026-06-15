@@ -351,10 +351,7 @@ namespace Servy.Core.Logging
         /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
         public static void Debug(string? message, Exception? ex = null)
         {
-            if ((LogLevel)_currentLogLevel <= LogLevel.Debug)
-            {
-                Log(LogLevel.Debug, ex != null ? $"{message} | Exception: {FormatException(ex)}" : message);
-            }
+            WriteLeveled(LogLevel.Debug, message, ex);
         }
 
         /// <summary>
@@ -374,10 +371,7 @@ namespace Servy.Core.Logging
         /// </remarks>
         public static void Info(string? message, Exception? ex = null)
         {
-            if ((LogLevel)_currentLogLevel <= LogLevel.Info)
-            {
-                Log(LogLevel.Info, ex != null ? $"{message} | Exception: {FormatException(ex)}" : message);
-            }
+            WriteLeveled(LogLevel.Info, message, ex);
         }
 
         /// <summary>
@@ -388,10 +382,7 @@ namespace Servy.Core.Logging
         /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
         public static void Warn(string? message, Exception? ex = null)
         {
-            if ((LogLevel)_currentLogLevel <= LogLevel.Warn)
-            {
-                Log(LogLevel.Warn, ex != null ? $"{message} | Exception: {FormatException(ex)}" : message);
-            }
+            WriteLeveled(LogLevel.Warn, message, ex);
         }
 
         /// <summary>
@@ -401,10 +392,7 @@ namespace Servy.Core.Logging
         /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
         public static void Error(string? message, Exception? ex = null)
         {
-            if ((LogLevel)_currentLogLevel <= LogLevel.Error)
-            {
-                Log(LogLevel.Error, ex != null ? $"{message} | Exception: {FormatException(ex)}" : message);
-            }
+            WriteLeveled(LogLevel.Error, message, ex);
         }
 
         /// <summary>
@@ -513,6 +501,20 @@ namespace Servy.Core.Logging
         }
 
         #region Private Helpers
+
+        /// <summary>
+        /// Centralized parameterized pipeline to eliminate code duplication across target logging severities.
+        /// </summary>
+        /// <param name="targetLevel">The operational <see cref="LogLevel"/> required to validate execution.</param>
+        /// <param name="message">The text string content entry template block targeted for extraction.</param>
+        /// <param name="ex">An optional <see cref="Exception"/> context structure hook to process and bind.</param>
+        private static void WriteLeveled(LogLevel targetLevel, string? message, Exception? ex)
+        {
+            if ((LogLevel)_currentLogLevel <= targetLevel)
+            {
+                Log(targetLevel, ex != null ? $"{message} | Exception: {FormatException(ex)}" : message);
+            }
+        }
 
         /// <summary>
         /// Validates that the logging directory exists and applies the required security descriptors to protect log integrity.

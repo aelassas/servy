@@ -100,16 +100,12 @@ namespace Servy.Core.Logging
                 return this;
             }
 
-            // Apply explicit structural bracket aggregation rules starting from the initial parent pass.
             string sanitizedSegment = ScopedEventLogLogger.SanitizePrefixSegment(prefix);
             string combined = string.IsNullOrWhiteSpace(Prefix)
                 ? $"[{sanitizedSegment}]"
                 : $"{Prefix} [{sanitizedSegment}]";
 
-            var scope = new ScopedEventLogLogger(this, combined);
-            scope.SetLogLevel((LogLevel)_currentLogLevel);
-            scope.SetIsEventLogEnabled(_isEventLogEnabled);
-            return scope;
+            return new ScopedEventLogLogger(this, combined, (LogLevel)_currentLogLevel, _isEventLogEnabled);
         }
 
         /// <inheritdoc/>
@@ -132,43 +128,19 @@ namespace Servy.Core.Logging
         /// <inheritdoc/>
         public void Info(string message, Exception? ex = null)
         {
-            if ((LogLevel)_currentLogLevel <= LogLevel.Info)
-            {
-                var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
-                if (_isEventLogEnabled)
-                {
-                    SafeWriteToEventLog(fullMessage, EventLogEntryType.Information, EventIds.Info);
-                }
-                Logger.Info(Format(message), ex);
-            }
+            WriteLeveled(LogLevel.Info, EventLogEntryType.Information, EventIds.Info, message, ex, Format, _isEventLogEnabled, Logger.Info);
         }
 
         /// <inheritdoc/>
         public void Warn(string message, Exception? ex = null)
         {
-            if ((LogLevel)_currentLogLevel <= LogLevel.Warn)
-            {
-                var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
-                if (_isEventLogEnabled)
-                {
-                    SafeWriteToEventLog(fullMessage, EventLogEntryType.Warning, EventIds.Warning);
-                }
-                Logger.Warn(Format(message), ex);
-            }
+            WriteLeveled(LogLevel.Warn, EventLogEntryType.Warning, EventIds.Warning, message, ex, Format, _isEventLogEnabled, Logger.Warn);
         }
 
         /// <inheritdoc/>
         public void Error(string message, Exception? ex = null)
         {
-            if ((LogLevel)_currentLogLevel <= LogLevel.Error)
-            {
-                var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
-                if (_isEventLogEnabled)
-                {
-                    SafeWriteToEventLog(fullMessage, EventLogEntryType.Error, EventIds.Error);
-                }
-                Logger.Error(Format(message), ex);
-            }
+            WriteLeveled(LogLevel.Error, EventLogEntryType.Error, EventIds.Error, message, ex, Format, _isEventLogEnabled, Logger.Error);
         }
 
         #endregion
@@ -212,6 +184,40 @@ namespace Servy.Core.Logging
         #endregion
 
         #region Private Helpers
+
+        /// <summary>
+        /// Centralized parameterized log pipeline handler to eliminate code duplication across log severity variants.
+        /// Orchestrates the conditional flow between the Windows Event Log sink and the secondary file system logger, 
+        /// while enforcing thread-local log level thresholds and standardized message formatting.
+        /// </summary>
+        /// <param name="targetLevel">The <see cref="LogLevel"/> required for this entry to be processed.</param>
+        /// <param name="entryType">The <see cref="EventLogEntryType"/> to categorize the Windows Event Log entry.</param>
+        /// <param name="eventId">The application-specific ID for the log entry.</param>
+        /// <param name="message">The primary log text content.</param>
+        /// <param name="ex">An optional <see cref="Exception"/> to be appended to the log.</param>
+        /// <param name="formatSelector">A delegate used to apply instance-specific prefixing or structural sanitization to the message.</param>
+        /// <param name="isEventLogSinkEnabled">Indicates whether the Windows Event Log sink is active for the current logger scope.</param>
+        /// <param name="fileSink">The action delegate (e.g., <see cref="Logger.Info"/>) representing the file-based logging destination.</param>
+        private void WriteLeveled(
+            LogLevel targetLevel,
+            EventLogEntryType entryType,
+            int eventId,
+            string message,
+            Exception? ex,
+            Func<string, string> formatSelector,
+            bool isEventLogSinkEnabled,
+            Action<string, Exception?> fileSink)
+        {
+            if ((LogLevel)_currentLogLevel <= targetLevel)
+            {
+                var fullMessage = formatSelector(ex != null ? $"{message}\n{ex}" : message);
+                if (isEventLogSinkEnabled)
+                {
+                    SafeWriteToEventLog(fullMessage, entryType, eventId);
+                }
+                fileSink(formatSelector(message), ex);
+            }
+        }
 
         /// <summary>
         /// Safely writes an entry to the Windows Event Log, truncating oversized messages
@@ -308,8 +314,9 @@ namespace Servy.Core.Logging
         /// This prevents allocating a new native <see cref="EventLog"/> handle for every scope creation.
         /// </summary>
         /// <remarks>
-        /// Unlike the parent logger, scoped instances maintain their own independent LogLevel and enabled status 
-        /// to allow fine-grained tracing in specific sub-systems without affecting the global state.
+        /// Unlike the parent logger, scoped instances maintain their own independent LogLevel and enabled status.
+        /// Exception: enabling event logging on a scope also (re-)enables the parent, because the parent owns
+        /// the native EventLog handle ("self-heal"). Disabling a scope never affects the parent.
         /// </remarks>
         private sealed class ScopedEventLogLogger : IServyLogger
         {
@@ -325,14 +332,17 @@ namespace Servy.Core.Logging
             /// </summary>
             /// <param name="parent">The parent logger instance that holds the unmanaged EventLog handle.</param>
             /// <param name="prefix">The prefix for this scoped logger.</param>
-            public ScopedEventLogLogger(EventLogLogger parent, string prefix)
+            /// <param name="level">The active structural log level baseline context applied for filtering.</param>
+            /// <param name="isEventLogEnabled">Specifies the initial pipeline tracking state for the Event Log sink.</param>
+            public ScopedEventLogLogger(EventLogLogger parent, string prefix, LogLevel level, bool isEventLogEnabled)
             {
                 _parent = parent;
                 Prefix = prefix;
 
-                // Inherit current snapshot of settings from parent
-                _currentLogLevel = parent._currentLogLevel;
-                _isEventLogEnabled = parent.IsEventLogEnabled;
+                // Structural configuration properties are bound atomically directly from the parameter pass 
+                // instead of performing multi-phase updates that cascade mutations back to the core parent layer.
+                _currentLogLevel = (int)level;
+                _isEventLogEnabled = isEventLogEnabled;
             }
 
             /// <inheritdoc/>
@@ -340,7 +350,6 @@ namespace Servy.Core.Logging
             {
                 if ((LogLevel)_currentLogLevel <= LogLevel.Debug)
                 {
-                    // Clean structural alignment logic bypassing double parent formatting calculations
                     Logger.Debug(Format(message), ex);
                 }
             }
@@ -348,50 +357,19 @@ namespace Servy.Core.Logging
             /// <inheritdoc/>
             public void Info(string message, Exception? ex = null)
             {
-                if ((LogLevel)_currentLogLevel <= LogLevel.Info)
-                {
-                    var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
-
-                    if (_isEventLogEnabled)
-                    {
-                        // Call the parent's private helper directly, bypassing the parent's log-level check
-                        _parent.SafeWriteToEventLog(fullMessage, EventLogEntryType.Information, EventIds.Info);
-                    }
-
-                    Logger.Info(Format(message), ex);
-                }
+                _parent.WriteLeveled(LogLevel.Info, EventLogEntryType.Information, EventIds.Info, message, ex, Format, _isEventLogEnabled, Logger.Info);
             }
 
             /// <inheritdoc/>
             public void Warn(string message, Exception? ex = null)
             {
-                if ((LogLevel)_currentLogLevel <= LogLevel.Warn)
-                {
-                    var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
-
-                    if (_isEventLogEnabled)
-                    {
-                        _parent.SafeWriteToEventLog(fullMessage, EventLogEntryType.Warning, EventIds.Warning);
-                    }
-
-                    Logger.Warn(Format(message), ex);
-                }
+                _parent.WriteLeveled(LogLevel.Warn, EventLogEntryType.Warning, EventIds.Warning, message, ex, Format, _isEventLogEnabled, Logger.Warn);
             }
 
             /// <inheritdoc/>
             public void Error(string message, Exception? ex = null)
             {
-                if ((LogLevel)_currentLogLevel <= LogLevel.Error)
-                {
-                    var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
-
-                    if (_isEventLogEnabled)
-                    {
-                        _parent.SafeWriteToEventLog(fullMessage, EventLogEntryType.Error, EventIds.Error);
-                    }
-
-                    Logger.Error(Format(message), ex);
-                }
+                _parent.WriteLeveled(LogLevel.Error, EventLogEntryType.Error, EventIds.Error, message, ex, Format, _isEventLogEnabled, Logger.Error);
             }
 
             /// <inheritdoc/>
@@ -413,7 +391,17 @@ namespace Servy.Core.Logging
             public void Dispose() { /* no-op; parent owns the EventLog */ }
 
             /// <inheritdoc/>
-            public IServyLogger CreateScoped(string prefix)
+            public IServyLogger CreateScoped(string prefix) => CreateScopedInstance(prefix);
+
+            /// <summary>
+            /// Factory method to construct a new scoped logger instance, ensuring proper prefix hierarchy 
+            /// and inheriting current operational settings (log level, enabled status) from the current scope.
+            /// </summary>
+            /// <param name="prefix">The logging label for the new scope; will be sanitized for structural safety.</param>
+            /// <returns>
+            /// An <see cref="IServyLogger"/> representing the child scope, or <c>this</c> if the prefix is null or whitespace.
+            /// </returns>
+            private IServyLogger CreateScopedInstance(string prefix)
             {
                 if (string.IsNullOrWhiteSpace(prefix))
                 {
@@ -423,16 +411,14 @@ namespace Servy.Core.Logging
                 // Sanitize the segment to prevent user-supplied brackets from breaking log text token parsing.
                 string sanitizedSegment = SanitizePrefixSegment(prefix);
 
-                // Build the compound prefix token directly with explicit bracket boundaries per segment 
-                // instead of relying on structural "bracket-balancing" string manipulation tricks.
+                // Each segment is wrapped in its own brackets; user-supplied brackets are sanitized to parentheses.
                 string combined = string.IsNullOrWhiteSpace(Prefix)
                     ? $"[{sanitizedSegment}]"
                     : $"{Prefix} [{sanitizedSegment}]";
 
-                var scope = new ScopedEventLogLogger(_parent, combined);
-                scope.SetLogLevel((LogLevel)_currentLogLevel);
-                scope.SetIsEventLogEnabled(_isEventLogEnabled);
-                return scope;
+                // Leverages explicit multi-argument constructor pass ensuring clean context inheritance 
+                // down to secondary nested downstream client contexts.
+                return new ScopedEventLogLogger(_parent, combined, (LogLevel)_currentLogLevel, _isEventLogEnabled);
             }
 
             /// <summary>

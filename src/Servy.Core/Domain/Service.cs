@@ -222,7 +222,7 @@ namespace Servy.Core.Domain
         public string? EnvironmentVariables { get; set; }
 
         /// <summary>
-        /// Gets or sets a comma-separated list of dependent service names.
+        /// Gets or sets a semicolon- or newline-separated list of dependent service names.
         /// </summary>
         public string? ServiceDependencies { get; set; }
 

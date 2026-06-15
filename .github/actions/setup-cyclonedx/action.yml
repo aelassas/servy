@@ -121,4 +121,5 @@ runs:
 
         # Continue with the .NET tool installation using the isolated source configuration
         dotnet tool install --global CycloneDX --version $toolVersion --configfile "$toolPkgDir\nuget.config"
+        if ($LASTEXITCODE -ne 0) { throw "CycloneDX .NET tool install failed with exit code $LASTEXITCODE" }
         Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
