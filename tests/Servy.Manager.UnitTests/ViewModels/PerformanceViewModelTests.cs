@@ -16,6 +16,9 @@ namespace Servy.Manager.UnitTests.ViewModels
 {
     public class PerformanceViewModelTests
     {
+        // Centralized lock token shared across the test fixture to block cross-thread interference
+        private static readonly object StaticEnvironmentLock = new object();
+
         private readonly Mock<IServiceRepository> _mockServiceRepository;
         private readonly Mock<IServiceCommands> _mockServiceCommands;
         private readonly Mock<IAppConfiguration> _mockAppConfig;
@@ -47,13 +50,11 @@ namespace Servy.Manager.UnitTests.ViewModels
             return new PerformanceViewModel(
                 _mockServiceRepository.Object,
                 _mockServiceCommands.Object,
-                _appConfigMockOrTarget,
+                _mockAppConfig.Object, // Standardized property target reference mapping
                 _mockCursorService.Object,
                 _mockProcessHelper.Object,
                 _mockUiDispatcher.Object);
         }
-
-        private IAppConfiguration _appConfigMockOrTarget => _mockAppConfig.Object;
 
         #region Initialization & Constructor Verification
 
@@ -91,49 +92,58 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                // Preserve the original environment context firmly inside the thread scope boundary
-                var originalProvider = App.Services;
-
-                // Build an isolated runtime DI container to satisfy the base class locator check.
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-
-                // Build the provider instance explicitly and verify it isn't dropped by cross-thread assignments
-                var localProvider = serviceCollection.BuildServiceProvider();
-                App.Services = localProvider;
-
-                try
+                // Encapsulate the global reference modification inside an exclusive execution block
+                lock (StaticEnvironmentLock)
                 {
-                    var vm = CreateViewModel();
-                    var mockService = new PerformanceService { Name = "WexflowEngine", Pid = 4321 };
-                    bool propChangedFired = false;
+                    // Preserve the original environment context firmly inside the thread scope boundary
+                    var originalProvider = App.Services;
 
-                    vm.PropertyChanged += (s, e) =>
-                    {
-                        if (e.PropertyName == nameof(vm.SelectedService)) propChangedFired = true;
-                    };
+                    // Build an isolated runtime DI container to satisfy the base class locator check.
+                    var serviceCollection = new ServiceCollection();
+                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
 
-                    // Act
-                    // Ensure the global tracking point reference is still locked to our local provider right before invocation
-                    if (App.Services == null)
+                    // Build the provider instance explicitly and verify it isn't dropped by cross-thread assignments
+                    var localProvider = serviceCollection.BuildServiceProvider();
+                    App.Services = localProvider;
+
+                    try
                     {
-                        App.Services = localProvider;
+                        var vm = CreateViewModel();
+                        var mockService = new PerformanceService { Name = "WexflowEngine", Pid = 4321 };
+                        bool propChangedFired = false;
+
+                        vm.PropertyChanged += (s, e) =>
+                        {
+                            if (e.PropertyName == nameof(vm.SelectedService)) propChangedFired = true;
+                        };
+
+                        // Act
+                        // Ensure the global tracking point reference is still locked to our local provider right before invocation
+                        if (App.Services == null)
+                        {
+                            App.Services = localProvider;
+                        }
+
+                        vm.SelectedService = mockService;
+
+                        // Assert
+                        Assert.True(propChangedFired);
+                        Assert.Same(mockService, vm.SelectedService);
+
+                        // Graph buffers should be completely reset to empty points during service transitions
+                        Assert.Empty(vm.CpuPointCollection);
+                        Assert.Empty(vm.RamPointCollection);
                     }
-
-                    vm.SelectedService = mockService;
-
-                    // Assert
-                    Assert.True(propChangedFired);
-                    Assert.Same(mockService, vm.SelectedService);
-
-                    // Graph buffers should be completely reset to empty points during service transitions
-                    Assert.Empty(vm.CpuPointCollection);
-                    Assert.Empty(vm.RamPointCollection);
-                }
-                finally
-                {
-                    // Clean up tracking boundaries to isolate adjacent concurrent test suites
-                    App.Services = originalProvider;
+                    finally
+                    {
+                        // Clean up tracking boundaries to isolate adjacent concurrent test suites.
+                        // Only restore the original provider if it was not null, preventing this test 
+                        // from poisoning the environment context for adjacent tests running on the CI.
+                        if (originalProvider != null)
+                        {
+                            App.Services = originalProvider;
+                        }
+                    }
                 }
             }, createApp: true);
         }
@@ -143,18 +153,38 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                var vm = CreateViewModel();
-                var mockService = new PerformanceService { Name = "SameService" };
-                vm.SelectedService = mockService;
+                // Wrapped in the exclusive environment lock block to block parallel mutation pollution
+                lock (StaticEnvironmentLock)
+                {
+                    var originalProvider = App.Services;
+                    var serviceCollection = new ServiceCollection();
+                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                    var localProvider = serviceCollection.BuildServiceProvider();
+                    App.Services = localProvider;
 
-                bool propertyChangedRaised = false;
-                vm.PropertyChanged += (s, e) => propertyChangedRaised = true;
+                    try
+                    {
+                        var vm = CreateViewModel();
+                        var mockService = new PerformanceService { Name = "SameService" };
+                        vm.SelectedService = mockService;
 
-                // Act
-                vm.SelectedService = mockService;
+                        bool propertyChangedRaised = false;
+                        vm.PropertyChanged += (s, e) => propertyChangedRaised = true;
 
-                // Assert
-                Assert.False(propertyChangedRaised);
+                        // Act
+                        vm.SelectedService = mockService;
+
+                        // Assert
+                        Assert.False(propertyChangedRaised);
+                    }
+                    finally
+                    {
+                        if (originalProvider != null)
+                        {
+                            App.Services = originalProvider;
+                        }
+                    }
+                }
             }, createApp: true);
         }
 
@@ -163,7 +193,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Performance Data Polling Loop (OnTickAsync) Tests
 
         [Fact]
-        public async Task OnTickAsync_SelectedServiceNull_ResetsGraphLabels()
+        public void OnTickAsync_SelectedServiceNull_ResetsGraphLabels()
         {
             Helper.RunOnSTA(() =>
             {
@@ -189,55 +219,74 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task OnTickAsync_ValidService_CollectsMetricsAndHydratesPointCollections()
+        public void OnTickAsync_ValidService_CollectsMetricsAndHydratesPointCollections()
         {
             Helper.RunOnSTA(() =>
             {
-                // 1. Establish the Synchronization Context for this STA Thread execution boundary.
-                // This guarantees that 'await' continuations inside the view model snap back
-                // to this thread instead of scattering onto the background pool thread.
-                SynchronizationContext.SetSynchronizationContext(
-                    new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
-
-                var vm = CreateViewModel();
-                var mockService = new PerformanceService { Name = "ServyDaemon", Pid = 2050 };
-                vm.SelectedService = mockService;
-
-                _mockServiceRepository.Setup(r => r.GetServicePidAsync("ServyDaemon", It.IsAny<CancellationToken>()))
-                                      .ReturnsAsync(2050);
-
-                var fakeMetrics = new ProcessMetrics(45.5, 50 * 1024 * 1024);
-                _mockProcessHelper.Setup(p => p.GetProcessTreeMetrics(2050)).Returns(fakeMetrics);
-
-                // Mock IUiDispatcher to invoke actions immediately on this thread
-                _mockUiDispatcher.Setup(d => d.InvokeAsync(It.IsAny<Action>()))
-                                 .Callback<Action>(action => action())
-                                 .Returns(Task.CompletedTask);
-
-                var methodInfo = typeof(PerformanceViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
-
-                // Act
-                var task = (Task)methodInfo!.Invoke(vm, null)!;
-
-                // 2. Keep the message pump processing while waiting for Task.Run to finish
-                // This simulates a true WPF environment, letting the continuation pass safely.
-                while (!task.IsCompleted)
+                // Wrapped in the exclusive environment lock block to block parallel mutation pollution
+                lock (StaticEnvironmentLock)
                 {
-                    Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
-                    Thread.Sleep(1);
+                    // Preserve the original environment context firmly inside the thread scope boundary
+                    var originalProvider = App.Services;
+
+                    var serviceCollection = new ServiceCollection();
+                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                    var localProvider = serviceCollection.BuildServiceProvider();
+                    App.Services = localProvider;
+
+                    try
+                    {
+                        // 1. Establish the Synchronization Context for this STA Thread execution boundary.
+                        SynchronizationContext.SetSynchronizationContext(
+                            new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
+
+                        var vm = CreateViewModel();
+                        var mockService = new PerformanceService { Name = "ServyDaemon", Pid = 2050 };
+                        vm.SelectedService = mockService;
+
+                        _mockServiceRepository.Setup(r => r.GetServicePidAsync("ServyDaemon", It.IsAny<CancellationToken>()))
+                                              .ReturnsAsync(2050);
+
+                        var fakeMetrics = new ProcessMetrics(45.5, 50 * 1024 * 1024);
+                        _mockProcessHelper.Setup(p => p.GetProcessTreeMetrics(2050)).Returns(fakeMetrics);
+
+                        // Mock IUiDispatcher to invoke actions immediately on this thread
+                        _mockUiDispatcher.Setup(d => d.InvokeAsync(It.IsAny<Action>()))
+                                         .Callback<Action>(action => action())
+                                         .Returns(Task.CompletedTask);
+
+                        var methodInfo = typeof(PerformanceViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                        // Act
+                        var task = (Task)methodInfo!.Invoke(vm, null)!;
+
+                        // 2. Keep the message pump processing while waiting for Task.Run to finish
+                        while (!task.IsCompleted)
+                        {
+                            Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                            Thread.Sleep(1);
+                        }
+
+                        task.GetAwaiter().GetResult();
+
+                        // Assert
+                        Assert.Equal("2050", vm.Pid);
+                        Assert.Equal("15%", vm.CpuUsage);
+                        Assert.Equal("120 MB", vm.RamUsage);
+
+                        Assert.NotEmpty(vm.CpuPointCollection);
+                        Assert.NotEmpty(vm.CpuFillPoints);
+                        Assert.NotEmpty(vm.RamPointCollection);
+                        Assert.NotEmpty(vm.RamFillPoints);
+                    }
+                    finally
+                    {
+                        if (originalProvider != null)
+                        {
+                            App.Services = originalProvider;
+                        }
+                    }
                 }
-
-                task.GetAwaiter().GetResult();
-
-                // Assert
-                Assert.Equal("2050", vm.Pid);
-                Assert.Equal("15%", vm.CpuUsage);
-                Assert.Equal("120 MB", vm.RamUsage);
-
-                Assert.NotEmpty(vm.CpuPointCollection);
-                Assert.NotEmpty(vm.CpuFillPoints);
-                Assert.NotEmpty(vm.RamPointCollection);
-                Assert.NotEmpty(vm.RamFillPoints);
             }, createApp: true);
         }
 
@@ -246,19 +295,39 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Command Processing & Clear Framework Flags
 
         [Fact]
-        public async Task CopyPidCommand_ValidSelection_InvokesDownstreamCommands()
+        public void CopyPidCommand_ValidSelection_InvokesDownstreamCommands()
         {
             Helper.RunOnSTA(() =>
             {
-                var vm = CreateViewModel();
-                var mockService = new PerformanceService { Name = "ActiveService", Pid = 8888 };
-                vm.SelectedService = mockService;
+                // Wrapped in the exclusive environment lock block to block parallel mutation pollution
+                lock (StaticEnvironmentLock)
+                {
+                    var originalProvider = App.Services;
+                    var serviceCollection = new ServiceCollection();
+                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                    var localProvider = serviceCollection.BuildServiceProvider();
+                    App.Services = localProvider;
 
-                // Act
-                vm.CopyPidCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+                    try
+                    {
+                        var vm = CreateViewModel();
+                        var mockService = new PerformanceService { Name = "ActiveService", Pid = 8888 };
+                        vm.SelectedService = mockService;
 
-                // Assert
-                _mockServiceCommands.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "ActiveService")), Times.Once);
+                        // Act
+                        vm.CopyPidCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+
+                        // Assert
+                        _mockServiceCommands.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "ActiveService")), Times.Once);
+                    }
+                    finally
+                    {
+                        if (originalProvider != null)
+                        {
+                            App.Services = originalProvider;
+                        }
+                    }
+                }
             }, createApp: true);
         }
 
@@ -267,19 +336,44 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                var vm = CreateViewModel();
-                vm.CpuPointCollection.Add(new Point(10, 10));
+                // Wrapped in the exclusive environment lock block to block parallel mutation pollution
+                lock (StaticEnvironmentLock)
+                {
+                    // Preserve the original environment context firmly inside the thread scope boundary
+                    var originalProvider = App.Services;
 
-                var methodInfo = typeof(PerformanceViewModel).GetMethod("OnMonitoringStopped", BindingFlags.NonPublic | BindingFlags.Instance);
+                    // Build an isolated runtime DI container to satisfy internal locator checks during constructor setup
+                    var serviceCollection = new ServiceCollection();
+                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
 
-                // Act
-                methodInfo!.Invoke(vm, new object[] { true });
+                    var localProvider = serviceCollection.BuildServiceProvider();
+                    App.Services = localProvider;
 
-                // Assert
-                Assert.Empty(vm.CpuPointCollection);
-                Assert.Empty(vm.CpuFillPoints);
-                Assert.Empty(vm.RamPointCollection);
-                Assert.Empty(vm.RamFillPoints);
+                    try
+                    {
+                        var vm = CreateViewModel();
+                        vm.CpuPointCollection.Add(new Point(10, 10));
+
+                        var methodInfo = typeof(PerformanceViewModel).GetMethod("OnMonitoringStopped", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                        // Act
+                        methodInfo!.Invoke(vm, new object[] { true });
+
+                        // Assert
+                        Assert.Empty(vm.CpuPointCollection);
+                        Assert.Empty(vm.CpuFillPoints);
+                        Assert.Empty(vm.RamPointCollection);
+                        Assert.Empty(vm.RamFillPoints);
+                    }
+                    finally
+                    {
+                        // Clean up tracking boundaries safely
+                        if (originalProvider != null)
+                        {
+                            App.Services = originalProvider;
+                        }
+                    }
+                }
             }, createApp: true);
         }
 
