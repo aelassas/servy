@@ -911,25 +911,11 @@ namespace Servy.Manager.ViewModels
                 var allServicesList = await Task.Run(() => _serviceManager.GetAllServices(token), token);
                 stopwatch.Stop();
                 Debug.WriteLine($"GetAllServices finished in {stopwatch.ElapsedMilliseconds}ms");
-                var allServicesDict = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase);
-                foreach (var d in allServicesList)
-                {
-                    if (d.Name != null && !allServicesDict.ContainsKey(d.Name))
-                        allServicesDict[d.Name] = d;
-                    else
-                        Logger.Warn($"Duplicate service name under OrdinalIgnoreCase ignored during refresh: '{d?.Name}'.");
-                }
+                var allServicesDict = BuildUniqueNameDictionary(allServicesList, s => s.Name);
 
                 // 3. Fetch all Repository DTOs in bulk
                 var allDtosList = await _serviceRepository.GetAllAsync(decrypt: true, token);
-                var allDtosDict = new Dictionary<string, ServiceDto>(StringComparer.OrdinalIgnoreCase);
-                foreach (var d in allDtosList)
-                {
-                    if (d.Name != null && !allDtosDict.ContainsKey(d.Name))
-                        allDtosDict[d.Name] = d;
-                    else
-                        Logger.Warn($"Duplicate service name under OrdinalIgnoreCase ignored during refresh: '{d?.Name}'.");
-                }
+                var allDtosDict = BuildUniqueNameDictionary(allDtosList, d => d.Name);
 
                 // 4. Process data collection in parallel
                 // We collect the updates in thread-safe bags instead of applying them immediately
@@ -995,6 +981,45 @@ namespace Servy.Manager.ViewModels
             {
                 Logger.Error($"Failed to refresh all services.", ex);
             }
+        }
+
+        /// <summary>
+        /// Aggregates an enumerable collection of entities into a case-insensitive dictionary by name.
+        /// Filters out blank entries and logs structured warning alerts for duplicate name variants.
+        /// </summary>
+        /// <typeparam name="T">The type of the entity model within the collection.</typeparam>
+        /// <param name="sourceList">The incoming database or system source collection.</param>
+        /// <param name="nameExtractor">A delegate to retrieve the naming string property from the entity.</param>
+        /// <returns>A dictionary mapped by name under an <see cref="StringComparer.OrdinalIgnoreCase"/> layout baseline.</returns>
+        private static Dictionary<string, T> BuildUniqueNameDictionary<T>(
+            IEnumerable<T> sourceList,
+            Func<T, string?> nameExtractor) where T : class
+        {
+            var dictionary = new Dictionary<string, T>(StringComparer.OrdinalIgnoreCase);
+
+            if (sourceList == null) return dictionary;
+
+            foreach (var item in sourceList)
+            {
+                string? name = nameExtractor(item);
+
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    Logger.Warn("Service with no name ignored during refresh.");
+                    continue;
+                }
+
+                if (!dictionary.ContainsKey(name))
+                {
+                    dictionary[name] = item;
+                }
+                else
+                {
+                    Logger.Warn($"Duplicate service name under OrdinalIgnoreCase ignored during refresh: '{name}'.");
+                }
+            }
+
+            return dictionary;
         }
 
         /// <summary>

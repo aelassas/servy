@@ -455,7 +455,7 @@ namespace Servy.Core.Native
         [DllImport("ntdll.dll")]
         public static extern int NtQueryInformationProcess(
             IntPtr processHandle,
-            int processInformationClass,
+            ProcessInfoClass processInformationClass,
             ref PROCESS_BASIC_INFORMATION processInformation,
             uint processInformationLength,
             out uint returnLength);
@@ -466,7 +466,7 @@ namespace Servy.Core.Native
             IntPtr processHandle,
             ProcessInfoClass processInformationClass,
             out PROCESS_BASIC_INFORMATION processInformation,
-            int processInformationLength,
+            uint processInformationLength,
             IntPtr returnLength = default);
 
         /// <summary>

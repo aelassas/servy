@@ -117,11 +117,11 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
 
 
 // keep Node alive until key press
-process.stdin.setRawMode(true)
-process.stdin.resume()
-process.stdin.on('data', () => {
-  process.stdout.write('Exiting...\n')
-  console.log('Exiting...')
-  // child.kill() // kill the child process
-  process.exit(0)
-})
+// process.stdin.setRawMode(true)
+// process.stdin.resume()
+// process.stdin.on('data', () => {
+//   process.stdout.write('Exiting...\n')
+//   console.log('Exiting...')
+//   // child.kill() // kill the child process
+//   process.exit(0)
+// })

@@ -130,7 +130,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
                 // Verify the old index was dropped and replaced with a UNIQUE index
                 var indexInfo = conn.QuerySingle("PRAGMA index_list('Services');");
-                Assert.Equal("idx_services_name_lower", (string)indexInfo.name);
+                Assert.Equal("idx_services_name_unique", (string)indexInfo.name);
                 Assert.Equal(1L, (long)indexInfo.unique);
 
                 // Verify 'EnableRotation' was renamed to 'EnableSizeRotation'
@@ -330,13 +330,13 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                                     .Select(x => (IDictionary<string, object>)x)
                                     .ToList();
 
-                var targetingIndex = indexList.FirstOrDefault(idx => string.Equals(idx["name"]?.ToString(), "idx_services_name_lower", StringComparison.OrdinalIgnoreCase));
+                var targetingIndex = indexList.FirstOrDefault(idx => string.Equals(idx["name"]?.ToString(), "idx_services_name_unique", StringComparison.OrdinalIgnoreCase));
 
                 Assert.NotNull(targetingIndex);
                 Assert.Equal(1L, Convert.ToInt64(targetingIndex["unique"]));
 
                 // 3. Confirm index expression metadata properties use the raw column reference with NOCASE collation rules
-                var indexInfo = conn.Query("PRAGMA index_info('idx_services_name_lower');")
+                var indexInfo = conn.Query("PRAGMA index_info('idx_services_name_unique');")
                                     .Select(x => (IDictionary<string, object>)x)
                                     .ToList();
 

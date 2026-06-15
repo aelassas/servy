@@ -149,20 +149,37 @@ namespace Servy.Manager.Services
             var results = await _serviceRepository.SearchAsync(
                 searchText ?? string.Empty, decrypt: false, cancellationToken);
 
-            // Map all domain services to Service models in parallel
-            var tasks = results.Select(r => ServiceMapper.ToModelAsync(
-                Core.Mappers.ServiceMapper.ToDomain(_serviceManager, r),
-                _appConfig.IsDesktopAppAvailable,
-                calculatePerf,
-                _processHelper,
-                cancellationToken: cancellationToken));
-            var services = await Task.WhenAll(tasks);
+            // Implemented SemaphoreSlim throttling aligned with sibling paths to prevent unbounded thread pool 
+            // exhaustion during concurrent GetProcessTreeMetrics heavy OS calls.
+            using (var throttler = new SemaphoreSlim(Environment.ProcessorCount))
+            {
+                // Map all domain services to Service models in parallel with a bounded degree of parallelism
+                var tasks = results.Select(async r =>
+                {
+                    await throttler.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    try
+                    {
+                        return await ServiceMapper.ToModelAsync(
+                            Core.Mappers.ServiceMapper.ToDomain(_serviceManager, r),
+                            _appConfig.IsDesktopAppAvailable,
+                            calculatePerf,
+                            _processHelper,
+                            cancellationToken: cancellationToken).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        throttler.Release();
+                    }
+                });
 
-            // Filter out nulls resulting from malformed/orphaned DTOs 
-            // to prevent NullReferenceExceptions during UI data binding.
-            return services
-                .Where(s => s != null)
-                .ToList();
+                var services = await Task.WhenAll(tasks).ConfigureAwait(false);
+
+                // Filter out nulls resulting from malformed/orphaned DTOs 
+                // to prevent NullReferenceExceptions during UI data binding.
+                return services
+                    .Where(s => s != null)
+                    .ToList();
+            }
         }
 
         /// <inheritdoc />

@@ -136,16 +136,29 @@ namespace Servy.Core.Helpers
                             }
                         }
 
+                        // Instantiate a dedicated start-wait stopwatch to decouple the fast-fail interval validation
+                        // from the preceding transitional state settle loop timespan.
+                        var startWaitTimer = Stopwatch.StartNew();
+
                         // This blocks until the service is Started or the waitTime expires
-                        while (sc.Status != ServiceControllerStatus.Running)
+                        while (true)
                         {
+                            // Force a fresh Scm status block reload at the very top of the loop.
+                            // This ensures the first iteration immediately acknowledges the requested Start/Continue commands
+                            // instead of evaluating stale pre-execution cached layout state variables.
+                            sc.Refresh();
+
+                            if (sc.Status == ServiceControllerStatus.Running)
+                                break;
+
                             if (stopwatch.Elapsed > waitTime)
                                 throw new System.ServiceProcess.TimeoutException();
 
                             // FAST FAIL: A service that successfully started would never re-enter Stopped.
                             // Seeing Stopped here means the wrapped process crashed during OnStart.
                             // First-iteration grace avoids false-positives before SCM applies StartPending status.
-                            if (sc.Status == ServiceControllerStatus.Stopped && stopwatch.ElapsedMilliseconds > AppConfig.ScmPollIntervalMs)
+                            // Evaluated tracking properties using the dedicated startWaitTimer context.
+                            if (sc.Status == ServiceControllerStatus.Stopped && startWaitTimer.ElapsedMilliseconds > AppConfig.ScmPollIntervalMs)
                             {
                                 throw new InvalidOperationException(
                                     $"Service '{serviceName}' entered Stopped state during start. " +
@@ -154,7 +167,6 @@ namespace Servy.Core.Helpers
 
                             cancellationToken.ThrowIfCancellationRequested();
                             await Task.Delay(AppConfig.ScmPollIntervalMs, cancellationToken);
-                            sc.Refresh();
                         }
                     }
                 }
