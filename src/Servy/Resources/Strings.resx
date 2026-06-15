@@ -213,7 +213,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Label_RotationSize" xml:space="preserve">
     <value>Rotation Size</value>
   </data>
-  <data name="Label_RotationSizeUnity" xml:space="preserve">
+  <data name="Label_RotationSizeUnit" xml:space="preserve">
     <value>Megabytes (MB)</value>
   </data>
   <data name="Label_EnableDateRotation" xml:space="preserve">

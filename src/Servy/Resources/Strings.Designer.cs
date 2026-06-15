@@ -8,8 +8,10 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Servy.Resources
-{
+namespace Servy.Resources {
+    using System;
+    
+    
     /// <summary>
     ///   Une classe de ressource fortement typée destinée, entre autres, à la consultation des chaînes localisées.
     /// </summary>
@@ -773,9 +775,9 @@ namespace Servy.Resources
         /// <summary>
         ///   Recherche une chaîne localisée semblable à Megabytes (MB).
         /// </summary>
-        public static string Label_RotationSizeUnity {
+        public static string Label_RotationSizeUnit {
             get {
-                return ResourceManager.GetString("Label_RotationSizeUnity", resourceCulture);
+                return ResourceManager.GetString("Label_RotationSizeUnit", resourceCulture);
             }
         }
         
