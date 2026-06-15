@@ -907,6 +907,264 @@ namespace Servy.Core.UnitTests.Services
                 ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny), Times.Once);
         }
 
+        #region InstallService Async Unicode Case-Variance and Recovery Tests
+
+        [Fact]
+        public async Task InstallService_UnicodeCasingVariance_SuccessfullyPurgesLegacyVariant()
+        {
+            // Arrange
+            var options = new InstallServiceOptions
+            {
+                ServiceName = "serviceÄ", // Target casing layout
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe"
+            };
+
+            var legacyDbRecord = new ServiceDto
+            {
+                Name = "serviceä", // Distinct Ordinal variant existing in DB
+                Description = "Legacy Service Description String Layout"
+            };
+
+            // serviceExtended Sequence to handle all 3 database verification reads:
+            // Pass 1: The initial pre-install check in InstallServiceAsync (returns legacy record)
+            // Pass 2: The internal verification read inside UninstallServiceAsync (returns legacy record to authorize drop)
+            // Pass 3: The post-uninstall lookup in InstallServiceAsync to populate target properties (returns null)
+            _mockServiceRepository
+                .SetupSequence(x => x.GetByNameAsync(options.ServiceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(legacyDbRecord)   // Pass 1
+                .ReturnsAsync(legacyDbRecord)   // Pass 2
+                .ReturnsAsync((ServiceDto)null); // Pass 3
+
+            // Simulate that the Windows SCM currently registers the lowercase variant name
+            _mockWindowsServiceApi
+                .Setup(x => x.GetServices())
+                .Returns(new[] { new WindowsServiceInfo { ServiceName = "serviceä" } });
+
+            // Setup handles and dependencies needed to let UninstallServiceAsync pass cleanly
+            var scmHandle = CreateScmHandle(123);
+            var legacyServiceHandle = CreateServiceHandle(456);
+            var targetServiceHandle = CreateServiceHandle(789);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenService(scmHandle, "serviceä", It.IsAny<uint>()))
+                .Returns(legacyServiceHandle);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.DeleteService(legacyServiceHandle))
+                .Returns(true);
+
+            // Setup mock targets for installing the new capitalized layout record
+            _mockWindowsServiceApi
+                .Setup(x => x.CreateService(scmHandle, options.ServiceName, options.ServiceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, It.IsAny<string>(), It.IsAny<string>(), null))
+                .Returns(targetServiceHandle);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.ChangeServiceConfig2(targetServiceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                .Returns(true);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<IntPtr>()))
+                .Returns(true);
+
+            // Mock IServiceControllerWrapper for quick stopping transition loops inside UninstallServiceAsync
+            var mockController = new Mock<IServiceControllerWrapper>();
+            mockController.SetupGet(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+
+            _serviceManager = new ServiceManager(
+                name => mockController.Object,
+                _mockServiceControllerProvider.Object,
+                _mockWindowsServiceApi.Object,
+                _mockWin32ErrorProvider.Object,
+                _mockServiceRepository.Object
+            );
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+
+            // Verify that DeleteService was programmatically forced onto the lower-case legacy variant string name
+            _mockWindowsServiceApi.Verify(x => x.OpenService(scmHandle, "serviceä", It.IsAny<uint>()), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.DeleteService(legacyServiceHandle), Times.Once);
+
+            // Verify that OpenSCManager / CreateService proceeded forward for the target string casing configuration
+            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, "serviceÄ", "serviceÄ", It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, It.IsAny<string>(), It.IsAny<string>(), null), Times.Once);
+        }
+
+        [Fact]
+        public async Task InstallService_UnicodeCasingVariance_UninstallFails_ReturnsOperationFailure()
+        {
+            // Arrange
+            var options = new InstallServiceOptions
+            {
+                ServiceName = "serviceÄ",
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe"
+            };
+
+            var legacyDbRecord = new ServiceDto { Name = "serviceä" };
+
+            _mockServiceRepository
+                .Setup(x => x.GetByNameAsync(options.ServiceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(legacyDbRecord);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.GetServices())
+                .Returns(new[] { new WindowsServiceInfo { ServiceName = "serviceä" } });
+
+            var scmHandle = CreateScmHandle(123);
+            var legacyServiceHandle = CreateServiceHandle(456);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenService(scmHandle, "serviceä", It.IsAny<uint>()))
+                .Returns(legacyServiceHandle);
+
+            // Force DeleteService to fail, simulating locked file assets or SCM driver blocks
+            _mockWindowsServiceApi
+                .Setup(x => x.DeleteService(legacyServiceHandle))
+                .Returns(false);
+
+            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1072); // ERROR_SERVICE_MARKED_FOR_DELETE
+
+            var mockController = new Mock<IServiceControllerWrapper>();
+            mockController.SetupGet(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+            _serviceManager = new ServiceManager(
+                name => mockController.Object,
+                _mockServiceControllerProvider.Object,
+                _mockWindowsServiceApi.Object,
+                _mockWin32ErrorProvider.Object,
+                _mockServiceRepository.Object
+            );
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Failed to unregister legacy casing variant", result.ErrorMessage);
+
+            // Verify execution short-circuited and never reached target creation phase
+            _mockWindowsServiceApi.Verify(x => x.CreateService(It.IsAny<SafeScmHandle>(), "serviceÄ", It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, It.IsAny<string>(), It.IsAny<string>(), null), Times.Never);
+        }
+
+        [Fact]
+        public async Task InstallService_UnicodeCasingVariance_UnexpectedUninstallException_ReturnsFailure()
+        {
+            // Arrange
+            var options = new InstallServiceOptions
+            {
+                ServiceName = "serviceÄ",
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe"
+            };
+
+            var legacyDbRecord = new ServiceDto { Name = "serviceä" };
+
+            _mockServiceRepository
+                .Setup(x => x.GetByNameAsync(options.ServiceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(legacyDbRecord);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.GetServices())
+                .Returns(new[] { new WindowsServiceInfo { ServiceName = "serviceä" } });
+
+            // Force OpenService to trigger a severe structural exception during step evaluations
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Throws(new InvalidOperationException("Fatal SCM Memory Corruption."));
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Unexpected error occurred while trying to drop legacy service casing layout", result.ErrorMessage);
+            Assert.Contains("Fatal SCM Memory Corruption.", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task InstallService_UserCancellationDuringCreation_TriggersDatabaseRecovery()
+        {
+            // Arrange
+            var options = new InstallServiceOptions
+            {
+                ServiceName = "serviceÄ",
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe"
+            };
+
+            var legacyDbRecord = new ServiceDto { Name = "serviceä", Description = "Recoverable Metadata Payload" };
+
+            // Configure the repository to satisfy both the root read and the uninstallation validation checks
+            _mockServiceRepository
+                .SetupSequence(x => x.GetByNameAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(legacyDbRecord)  // Pass 1: InstallServiceAsync validation gate
+                .ReturnsAsync(legacyDbRecord)  // Pass 2: UninstallServiceAsync internal authorization gate
+                .ReturnsAsync((ServiceDto)null); // Pass 3: Post-uninstall target validation step
+
+            _mockWindowsServiceApi
+                .Setup(x => x.GetServices())
+                .Returns(new[] { new WindowsServiceInfo { ServiceName = "serviceä" } });
+
+            var scmHandle = CreateScmHandle(123);
+            var legacyServiceHandle = CreateServiceHandle(456);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.OpenService(scmHandle, "serviceä", It.IsAny<uint>()))
+                .Returns(legacyServiceHandle);
+
+            _mockWindowsServiceApi
+                .Setup(x => x.DeleteService(legacyServiceHandle))
+                .Returns(true);
+
+            // Mock IServiceControllerWrapper for quick stopping transition loops inside UninstallServiceAsync
+            var mockController = new Mock<IServiceControllerWrapper>();
+            mockController.SetupGet(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+
+            _serviceManager = new ServiceManager(
+                name => mockController.Object,
+                _mockServiceControllerProvider.Object,
+                _mockWindowsServiceApi.Object,
+                _mockWin32ErrorProvider.Object,
+                _mockServiceRepository.Object
+            );
+
+            // serviceAllow OpenSCManager to pass cleanly so uninstallation completes.
+            // Trip the cancellation token inside CreateService to simulate a user cancel mid-installation phase.
+            var cts = new CancellationTokenSource();
+            _mockWindowsServiceApi
+                .Setup(x => x.CreateService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, It.IsAny<string>(), It.IsAny<string>(), null))
+                .Callback(() => cts.Cancel())
+                .Throws(new OperationCanceledException(cts.Token));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(() =>
+                _serviceManager.InstallServiceAsync(options, cts.Token));
+
+            // Verify recovery logic executed: legacyDroppedFromDb was true, meaning UpsertAsync was called to restore backup
+            _mockServiceRepository.Verify(x => x.UpsertAsync(
+                It.Is<ServiceDto>(d => d.Name == "serviceä" && d.Description == "Recoverable Metadata Payload"),
+                false,
+                false,
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        #endregion
+
         [Fact]
         public void UpdateServiceConfig_Succeeds_WhenServiceIsOpenedAndConfigChanged()
         {
