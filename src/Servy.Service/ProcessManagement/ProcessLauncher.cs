@@ -396,13 +396,15 @@ namespace Servy.Service.ProcessManagement
             }
 
             // Java Logic: 
-            // Matches 'java', 'javaw', or 'javac'.
-            bool isJava =
+            // Separate 'javac' (Java Compiler) from 'java'/'javaw' (Java Runtime Engines)
+            // to support distinct flag formatting boundaries (-J-D vs -D).
+            bool isJavaRuntime =
                 string.Equals(fileNameOnly, "java", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(fileNameOnly, "javaw", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(fileNameOnly, "javac", StringComparison.OrdinalIgnoreCase);
+                string.Equals(fileNameOnly, "javaw", StringComparison.OrdinalIgnoreCase);
 
-            if (isJava)
+            bool isJavaCompiler = string.Equals(fileNameOnly, "javac", StringComparison.OrdinalIgnoreCase);
+
+            if (isJavaRuntime || isJavaCompiler)
             {
                 string currentArgs = psi.Arguments ?? string.Empty;
 
@@ -419,7 +421,16 @@ namespace Servy.Service.ProcessManagement
 
                 if (!hasEncoding)
                 {
-                    psi.Arguments = $"-Dfile.encoding=UTF-8 {currentArgs}".Trim();
+                    if (isJavaCompiler)
+                    {
+                        // Prepend with the critical -J flag to prevent javac from rejecting the system property flag option
+                        psi.Arguments = $"-J-Dfile.encoding=UTF-8 {currentArgs}".Trim();
+                    }
+                    else
+                    {
+                        // Standard bare declaration assignment for java/javaw
+                        psi.Arguments = $"-Dfile.encoding=UTF-8 {currentArgs}".Trim();
+                    }
                 }
             }
         }
