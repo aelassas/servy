@@ -109,6 +109,11 @@ namespace Servy.Service.ProcessManagement
         /// Stops the associated process.
         /// </summary>
         /// <param name="timeoutMs">The timeout in milliseconds to wait for the process to stop.</param>
+        /// <returns>
+        /// <see langword="null"/> if the process was already dead;
+        /// <see langword="true"/> if it stopped gracefully;
+        /// <see langword="false"/> if it had to be forcefully killed.
+        /// </returns>
         bool? Stop(int timeoutMs);
 
         /// <summary>

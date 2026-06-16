@@ -183,7 +183,7 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Starts the performance monitoring timer, initializes the cancellation context, 
+        /// Starts the monitoring timer, initializes the cancellation context, 
         /// and atomically sets the monitoring flag to active.
         /// </summary>
         public virtual void StartMonitoring()
@@ -196,7 +196,7 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Stops the performance monitoring timer, cancels any in-flight background operations, 
+        /// Stops the monitoring timer, cancels any in-flight background operations, 
         /// and atomically sets the monitoring flag to stopped.
         /// </summary>
         /// <param name="clearView">If <see langword="true"/>, signals the derived view model to clear its data to reflect a stopped state.</param>
