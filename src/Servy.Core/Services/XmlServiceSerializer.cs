@@ -43,7 +43,7 @@ namespace Servy.Core.Services
             }
             catch (Exception ex) when (ex is InvalidOperationException || ex is XmlException)
             {
-                // LOGIC: XmlException contains line info, but InvalidOperationException (thrown by XmlSerializer)
+                // XmlException contains line info, but InvalidOperationException (thrown by XmlSerializer)
                 // often wraps the actual XmlException as an InnerException.
                 var xmlEx = (ex as XmlException) ?? (ex.InnerException as XmlException);
                 int lineNumber = xmlEx?.LineNumber ?? 0;

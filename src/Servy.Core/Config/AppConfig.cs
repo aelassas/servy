@@ -1313,8 +1313,8 @@ namespace Servy.Core.Config
         public const int LogTailerMaxUnhandledErrorRecoveryDelayMs = 60_000;
 
         /// <summary>
-        /// Defines the frequency threshold for reporting consecutive unhandled errors to avoid flooding log pipelines.
-        /// Evacuates duplicates by only authorizing reports every Nth exception pattern cycle.
+        /// Throttles repeated unhandled tailer errors: only every Nth consecutive
+        /// error is logged, to avoid flooding the log pipeline.
         /// </summary>
         public const int LogTailerErrorLogThrottlingInterval = 60;
 

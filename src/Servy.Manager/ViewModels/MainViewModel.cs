@@ -968,7 +968,10 @@ namespace Servy.Manager.ViewModels
         /// <typeparam name="T">The type of the entity model within the collection.</typeparam>
         /// <param name="sourceList">The incoming database or system source collection.</param>
         /// <param name="nameExtractor">A delegate to retrieve the naming string property from the entity.</param>
-        /// <returns>A dictionary mapped by name under an <see cref="StringComparer.OrdinalIgnoreCase"/> layout baseline.</returns>
+        /// <returns>
+        /// A dictionary keyed by name using <see cref="StringComparer.OrdinalIgnoreCase"/>;
+        /// blank names are skipped and case-insensitive duplicates keep the first occurrence (a warning is logged for the rest).
+        /// </returns>
         private static Dictionary<string, T> BuildUniqueNameDictionary<T>(
             IEnumerable<T> sourceList,
             Func<T, string> nameExtractor) where T : class

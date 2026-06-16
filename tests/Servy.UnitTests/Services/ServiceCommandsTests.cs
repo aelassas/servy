@@ -869,8 +869,7 @@ namespace Servy.UnitTests.Services
             };
 
             // Act
-            // Accessing the private ExportConfigAsync method via reflection or testing it 
-            // through the public wrapper methods using a reflection invoke on the wrapper
+            // Invoke the private ExportConfigAsync directly via reflection to exercise the exportAction delegate
             var privateMethod = typeof(ServiceCommands).GetMethod("ExportConfigAsync",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
