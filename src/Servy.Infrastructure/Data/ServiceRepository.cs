@@ -165,7 +165,7 @@ namespace Servy.Infrastructure.Data
 
             // Wrap the entire batch sequence in an explicit transaction to enforce snapshot isolation.
             // This prevents concurrent mutations from creating skewed or missing ID references.
-            using (var tx = await _dapper.BeginTransactionAsync(cancellationToken).ConfigureAwait(false))
+            using (var tx = await _dapper.BeginTransactionAsync(cancellationToken))
             {
                 // 2. Execute the batch upsert within the transaction scope 
                 var affectedRows = await _dapper.ExecuteAsync(sql, encryptedServices, transaction: tx, cancellationToken: cancellationToken);
@@ -228,7 +228,7 @@ namespace Servy.Infrastructure.Data
                 name: name,
                 fallbackEvaluationPredicate: rowsAffected => rowsAffected == 0,
                 cancellationToken: cancellationToken
-            ).ConfigureAwait(false);
+            );
         }
 
         /// <inheritdoc />
@@ -467,13 +467,13 @@ namespace Servy.Infrastructure.Data
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var result = await queryExecutor(sql, new { Name = name.Trim() }).ConfigureAwait(false);
+            var result = await queryExecutor(sql, new { Name = name.Trim() });
 
             // Legacy rows (Servy <= 8.3) stored Name with whitespace verbatim.
             if (fallbackEvaluationPredicate(result) && name != name.Trim())
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                result = await queryExecutor(sql, new { Name = name }).ConfigureAwait(false);
+                result = await queryExecutor(sql, new { Name = name });
             }
 
             return result;
