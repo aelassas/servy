@@ -26,18 +26,9 @@ def main():
     logging.info("Service started")
     try:
         # spawn child process
-        proc = subprocess.Popen(
-            [
-                os.path.expandvars("%PYTHON_EXE%"),
-                os.path.join(SCRIPT_DIR, "ctrlc2.py")
-            ],
-        )
-        proc = subprocess.Popen(
-            [
-                r"C:\Windows\System32\notepad.exe",
-            ],
-        )
-        logging.info(f"Spawned PID: {proc.pid}")
+        py_proc = subprocess.Popen([os.path.expandvars("%PYTHON_EXE%"), os.path.join(SCRIPT_DIR, "ctrlc2.py")])
+        notepad_proc = subprocess.Popen([r"C:\Windows\System32\notepad.exe"])
+        logging.info(f"Spawned PIDs: ctrlc2={py_proc.pid}, notepad={notepad_proc.pid}")
 
         while True:
             current_datetime = datetime.now().strftime("%Y%m%d %H:%M:%S.%f")[:-3]
