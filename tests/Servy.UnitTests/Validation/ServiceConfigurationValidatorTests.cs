@@ -18,7 +18,6 @@ namespace Servy.UnitTests.Validation
         {
             _mockMessageBox = new Mock<IMessageBoxService>();
             _mockProcessHelper = new Mock<IProcessHelper>();
-            // Note: If ServiceValidationRules is not easily mockable, use the real instance
             _validationRules = new ServiceValidationRules(_mockProcessHelper.Object);
             _validator = new ServiceConfigurationValidator(_mockMessageBox.Object, _validationRules);
         }

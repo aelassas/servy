@@ -368,8 +368,8 @@ namespace Servy.Service.Helpers
             if (value.Length <= maxLength) return value;
 
             // We must check if the strict truncation boundary (maxLength) cuts directly through 
-            // a PercentEscapeToken. Since the token is exactly 21 characters long, we only need 
-            // to inspect indices where a token could start and subsequently straddle the cut-line.
+            // a PercentEscapeToken. Since the token has a fixed length (PercentEscapeToken.Length),
+            // we only need to inspect indices where a token could start and subsequently straddle the cut-line.
             int startBound = Math.Max(0, maxLength - PercentEscapeToken.Length + 1);
 
             for (int i = startBound; i < maxLength; i++)

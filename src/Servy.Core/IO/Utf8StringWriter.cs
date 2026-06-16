@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Xml.Serialization;
 
 namespace Servy.Core.IO
 {

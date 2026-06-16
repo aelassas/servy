@@ -1,6 +1,4 @@
-﻿using Servy.Core.Resources;
-
-namespace Servy.Core.EnvironmentVariables
+﻿namespace Servy.Core.EnvironmentVariables
 {
     /// <summary>
     /// Provides methods to parse environment variables strings with escaping support.
@@ -41,8 +39,9 @@ namespace Servy.Core.EnvironmentVariables
                 // Delegate execution to the centralized validation rules block to maintain perfect logic alignment
                 if (!EnvironmentVariablesValidator.ProcessAndValidateRecord(part, out string key, out string value, out string errorMessage, out EnvVarValidationResultKind resultKind))
                 {
-                    // FIX: Replaced fragile localized string-matching checks with a strongly typed enum switch block.
-                    // This prevents runtime localization culture mismatches and keeps future validation rules from being misreported.
+                    // Map the structured validation result to a specific FormatException.
+                    // Using the enum (rather than matching localized message text) keeps the
+                    // mapping correct regardless of UI culture.
                     switch (resultKind)
                     {
                         case EnvVarValidationResultKind.MissingEquals:

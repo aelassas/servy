@@ -20,7 +20,7 @@ namespace Servy.Service.Helpers
         internal static IRegexWrapper EnvVarRegex = new RegexWrapper(new Regex(
             @"(%[a-zA-Z_][a-zA-Z0-9_]*%)",
             RegexOptions.Compiled,
-            AppConfig.InputRegexTimeout)); // 200ms is generous for this pattern
+            AppConfig.InputRegexTimeout)); // AppConfig.InputRegexTimeout is generous for this pattern
 
         #endregion
 
