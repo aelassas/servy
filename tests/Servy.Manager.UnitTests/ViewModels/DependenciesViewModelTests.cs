@@ -23,9 +23,6 @@ namespace Servy.Manager.UnitTests.ViewModels
     [Collection("Ambient AppServices Dependent Tests")]
     public class DependenciesViewModelTests
     {
-        // Centralized lock token shared across the test fixture to block cross-thread interference
-        private static readonly object StaticEnvironmentLock = new object();
-
         private readonly Mock<IServiceRepository> _mockServiceRepository;
         private readonly Mock<IServiceManager> _mockServiceManager;
         private readonly Mock<IServiceCommands> _mockServiceCommands;
@@ -74,49 +71,33 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullServiceRepository_ThrowsArgumentNullException()
         {
-            // Guarded with environmental lock block to protect against ambient state drift from adjacent tests
-            lock (StaticEnvironmentLock)
-            {
-                Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
-                    null, _mockServiceManager.Object, _mockServiceCommands.Object,
-                    _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
-            }
+            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+                null, _mockServiceManager.Object, _mockServiceCommands.Object,
+                _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
         }
 
         [Fact]
         public void Constructor_NullServiceManager_ThrowsArgumentNullException()
         {
-            // Guarded with environmental lock block to protect against ambient state drift from adjacent tests
-            lock (StaticEnvironmentLock)
-            {
-                Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
-                    _mockServiceRepository.Object, null, _mockServiceCommands.Object,
-                    _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
-            }
+            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+                _mockServiceRepository.Object, null, _mockServiceCommands.Object,
+                _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
         }
 
         [Fact]
         public void Constructor_NullAppConfig_ThrowsArgumentNullException()
         {
-            // Guarded with environmental lock block to protect against ambient state drift from adjacent tests
-            lock (StaticEnvironmentLock)
-            {
-                Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
-                    _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
-                    null, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
-            }
+            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+                _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
+                null, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
         }
 
         [Fact]
         public void Constructor_NullMessageBoxService_ThrowsArgumentNullException()
         {
-            // Guarded with environmental lock block to protect against ambient state drift from adjacent tests
-            lock (StaticEnvironmentLock)
-            {
-                Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
-                    _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
-                    _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, null));
-            }
+            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+                _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
+                _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, null));
         }
 
         [Fact]
@@ -124,27 +105,20 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in the exclusive environment lock block to register the required Design-Time tracker service dependencies
-                lock (StaticEnvironmentLock)
-                {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
 
-                    try
-                    {
-                        var dtViewModel = new DependenciesViewModel();
-                        Assert.NotNull(dtViewModel.DependencyTree);
-                        Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                try
+                {
+                    var dtViewModel = new DependenciesViewModel();
+                    Assert.NotNull(dtViewModel.DependencyTree);
+                    Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
                 await Task.CompletedTask;
             }, createApp: true);
@@ -159,44 +133,37 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var viewModel = CreateIsolatedViewModel();
+                    var mockService = new DependencyService { Name = "TestService", Pid = 1234 };
+                    bool selectionChangedFired = false;
+                    bool serviceSelectedFired = false;
 
-                    try
+                    viewModel.PropertyChanged += (s, e) =>
                     {
-                        var viewModel = CreateIsolatedViewModel();
-                        var mockService = new DependencyService { Name = "TestService", Pid = 1234 };
-                        bool selectionChangedFired = false;
-                        bool serviceSelectedFired = false;
+                        if (e.PropertyName == nameof(viewModel.SelectedService)) selectionChangedFired = true;
+                        if (e.PropertyName == nameof(viewModel.IsServiceSelected)) serviceSelectedFired = true;
+                    };
 
-                        viewModel.PropertyChanged += (s, e) =>
-                        {
-                            if (e.PropertyName == nameof(viewModel.SelectedService)) selectionChangedFired = true;
-                            if (e.PropertyName == nameof(viewModel.IsServiceSelected)) serviceSelectedFired = true;
-                        };
+                    viewModel.SelectedService = mockService;
 
-                        viewModel.SelectedService = mockService;
+                    Assert.True(selectionChangedFired);
+                    Assert.True(serviceSelectedFired);
+                    Assert.True(viewModel.IsServiceSelected);
+                    Assert.Same(mockService, viewModel.SelectedService);
 
-                        Assert.True(selectionChangedFired);
-                        Assert.True(serviceSelectedFired);
-                        Assert.True(viewModel.IsServiceSelected);
-                        Assert.Same(mockService, viewModel.SelectedService);
-
-                        // Clean up instances cleanly
-                        viewModel.Dispose();
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Clean up instances cleanly
+                    viewModel.Dispose();
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
                 await Task.CompletedTask;
             }, createApp: true);
@@ -207,36 +174,29 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var viewModel = CreateIsolatedViewModel();
+                    var mockService = new DependencyService { Name = "TestService" };
+                    viewModel.SelectedService = mockService;
 
-                    try
-                    {
-                        var viewModel = CreateIsolatedViewModel();
-                        var mockService = new DependencyService { Name = "TestService" };
-                        viewModel.SelectedService = mockService;
+                    bool anyPropertyChangedFired = false;
+                    viewModel.PropertyChanged += (s, e) => anyPropertyChangedFired = true;
 
-                        bool anyPropertyChangedFired = false;
-                        viewModel.PropertyChanged += (s, e) => anyPropertyChangedFired = true;
+                    viewModel.SelectedService = mockService;
 
-                        viewModel.SelectedService = mockService;
+                    Assert.False(anyPropertyChangedFired);
 
-                        Assert.False(anyPropertyChangedFired);
-
-                        viewModel.Dispose();
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    viewModel.Dispose();
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
                 await Task.CompletedTask;
             }, createApp: true);
@@ -251,42 +211,35 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var viewModel = CreateIsolatedViewModel();
 
-                    try
-                    {
-                        var viewModel = CreateIsolatedViewModel();
+                    // Use constructor signatures. Pass isCyclic = true parameter onto root to simulate a cyclic loop.
+                    var childNode = new ServiceDependencyNode("ChildService", "Friendly Child", isRunning: false, isCyclic: false);
+                    var rootNode = new ServiceDependencyNode("RootService", "Friendly Root", isRunning: false, isCyclic: false);
 
-                        // Use constructor signatures. Pass isCyclic = true parameter onto root to simulate a cyclic loop.
-                        var childNode = new ServiceDependencyNode("ChildService", "Friendly Child", isRunning: false, isCyclic: false);
-                        var rootNode = new ServiceDependencyNode("RootService", "Friendly Root", isRunning: false, isCyclic: false);
+                    // Add components directly to the get-only Collection instance instead of assigning properties
+                    rootNode.Dependencies.Add(childNode);
+                    childNode.Dependencies.Add(rootNode); // Create circular dependency edge reference
 
-                        // Add components directly to the get-only Collection instance instead of assigning properties
-                        rootNode.Dependencies.Add(childNode);
-                        childNode.Dependencies.Add(rootNode); // Create circular dependency edge reference
+                    viewModel.DependencyTree.Add(rootNode);
 
-                        viewModel.DependencyTree.Add(rootNode);
+                    viewModel.ExpandAllCommand.Execute(null);
 
-                        viewModel.ExpandAllCommand.Execute(null);
+                    Assert.True(rootNode.IsExpanded);
+                    Assert.True(childNode.IsExpanded);
 
-                        Assert.True(rootNode.IsExpanded);
-                        Assert.True(childNode.IsExpanded);
-
-                        viewModel.Dispose();
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    viewModel.Dispose();
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
                 await Task.CompletedTask;
             }, createApp: true);
@@ -297,39 +250,32 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var viewModel = CreateIsolatedViewModel();
 
-                    try
-                    {
-                        var viewModel = CreateIsolatedViewModel();
+                    // Use initialization constructors, then populate expansion state parameters sequentially
+                    var childNode = new ServiceDependencyNode("Child", "Root Service") { IsExpanded = true };
+                    var rootNode = new ServiceDependencyNode("Root", "Root Service") { IsExpanded = true };
+                    rootNode.Dependencies.Add(childNode);
 
-                        // Use initialization constructors, then populate expansion state parameters sequentially
-                        var childNode = new ServiceDependencyNode("Child", "Root Service") { IsExpanded = true };
-                        var rootNode = new ServiceDependencyNode("Root", "Root Service") { IsExpanded = true };
-                        rootNode.Dependencies.Add(childNode);
+                    viewModel.DependencyTree.Add(rootNode);
 
-                        viewModel.DependencyTree.Add(rootNode);
+                    viewModel.CollapseAllCommand.Execute(null);
 
-                        viewModel.CollapseAllCommand.Execute(null);
+                    Assert.False(rootNode.IsExpanded);
+                    Assert.False(childNode.IsExpanded);
 
-                        Assert.False(rootNode.IsExpanded);
-                        Assert.False(childNode.IsExpanded);
-
-                        viewModel.Dispose();
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    viewModel.Dispose();
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
                 await Task.CompletedTask;
             }, createApp: true);
@@ -340,34 +286,27 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var viewModel = CreateIsolatedViewModel();
+                    var mockService = new DependencyService { Name = "TestService", Pid = 5555 };
+                    viewModel.SelectedService = mockService;
 
-                    try
-                    {
-                        var viewModel = CreateIsolatedViewModel();
-                        var mockService = new DependencyService { Name = "TestService", Pid = 5555 };
-                        viewModel.SelectedService = mockService;
+                    // Directly await the asynchronous execution flow instead of slamming message loops synchronously
+                    viewModel.CopyPidCommand.ExecuteAsync(null).GetAwaiter().GetResult();
 
-                        // Directly await the asynchronous execution flow instead of slamming message loops synchronously
-                        viewModel.CopyPidCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+                    _mockServiceCommands.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "TestService"), It.IsAny<CancellationToken>()), Times.Once);
 
-                        _mockServiceCommands.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "TestService"), It.IsAny<CancellationToken>()), Times.Once);
-
-                        viewModel.Dispose();
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    viewModel.Dispose();
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
                 await Task.CompletedTask;
             }, createApp: true);
@@ -382,34 +321,27 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var viewModel = CreateIsolatedViewModel();
+                    viewModel.DependencyTree.Add(new ServiceDependencyNode("Stale", "Stale"));
+                    viewModel.SelectedService = null;
 
-                    try
-                    {
-                        var viewModel = CreateIsolatedViewModel();
-                        viewModel.DependencyTree.Add(new ServiceDependencyNode("Stale", "Stale"));
-                        viewModel.SelectedService = null;
+                    // Directly await the tree reset operation asynchronously inside the test pipeline boundary
+                    viewModel.LoadDependencyTreeAsync(null).GetAwaiter().GetResult();
 
-                        // Directly await the tree reset operation asynchronously inside the test pipeline boundary
-                        viewModel.LoadDependencyTreeAsync(null).GetAwaiter().GetResult();
+                    Assert.Empty(viewModel.DependencyTree);
 
-                        Assert.Empty(viewModel.DependencyTree);
-
-                        viewModel.Dispose();
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    viewModel.Dispose();
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
                 await Task.CompletedTask;
             }, createApp: true);
@@ -461,10 +393,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 }
                 finally
                 {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
+                    App.Services = originalProvider;
                 }
             }, createApp: true);
         }
@@ -519,10 +448,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 }
                 finally
                 {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
+                    App.Services = originalProvider;
                 }
             }, createApp: true);
         }
@@ -536,43 +462,36 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var viewModel = CreateIsolatedViewModel();
 
-                    try
-                    {
-                        var viewModel = CreateIsolatedViewModel();
+                    var methodInfo = typeof(DesignTimeUiDispatcher).Assembly.GetType("Servy.Manager.ViewModels.DependenciesViewModel")?
+                        .GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance)
+                        ?? typeof(DependenciesViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                        var methodInfo = typeof(DesignTimeUiDispatcher).Assembly.GetType("Servy.Manager.ViewModels.DependenciesViewModel")?
-                            .GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance)
-                            ?? typeof(DependenciesViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+                    var fieldInfo = typeof(DependenciesViewModel).GetField("_hadSelectedService", BindingFlags.NonPublic | BindingFlags.Instance);
+                    fieldInfo?.SetValue(viewModel, true);
+                    viewModel.Pid = "1234";
 
-                        var fieldInfo = typeof(DependenciesViewModel).GetField("_hadSelectedService", BindingFlags.NonPublic | BindingFlags.Instance);
-                        fieldInfo?.SetValue(viewModel, true);
-                        viewModel.Pid = "1234";
+                    var task = (Task)methodInfo.Invoke(viewModel, null);
+                    // Explicitly await the reflected task continuation instead of slamming the thread context synchronously
+                    task.GetAwaiter().GetResult();
 
-                        var task = (Task)methodInfo.Invoke(viewModel, null);
-                        // Explicitly await the reflected task continuation instead of slamming the thread context synchronously
-                        task.GetAwaiter().GetResult();
+                    Assert.Equal(UiConstants.NotAvailable, viewModel.Pid);
+                    var flagValue = (bool)fieldInfo.GetValue(viewModel);
+                    Assert.False(flagValue);
 
-                        Assert.Equal(UiConstants.NotAvailable, viewModel.Pid);
-                        var flagValue = (bool)fieldInfo.GetValue(viewModel);
-                        Assert.False(flagValue);
-
-                        viewModel.Dispose();
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    viewModel.Dispose();
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
                 await Task.CompletedTask;
             }, createApp: true);
@@ -583,41 +502,34 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var viewModel = CreateIsolatedViewModel();
+                    var mockService = new DependencyService { Name = "ActiveService", Pid = 999 };
+                    viewModel.SelectedService = mockService;
 
-                    try
-                    {
-                        var viewModel = CreateIsolatedViewModel();
-                        var mockService = new DependencyService { Name = "ActiveService", Pid = 999 };
-                        viewModel.SelectedService = mockService;
+                    _mockServiceRepository.Setup(r => r.GetServicePidAsync("ActiveService", It.IsAny<CancellationToken>()))
+                                          .ReturnsAsync((int?)null);
 
-                        _mockServiceRepository.Setup(r => r.GetServicePidAsync("ActiveService", It.IsAny<CancellationToken>()))
-                                              .ReturnsAsync((int?)null);
+                    var methodInfo = typeof(DependenciesViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                        var methodInfo = typeof(DependenciesViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+                    var task = (Task)methodInfo.Invoke(viewModel, null);
+                    // Explicitly await the structural worker tick thread asynchronously
+                    task.GetAwaiter().GetResult();
 
-                        var task = (Task)methodInfo.Invoke(viewModel, null);
-                        // Explicitly await the structural worker tick thread asynchronously
-                        task.GetAwaiter().GetResult();
+                    Assert.Equal(UiConstants.NotAvailable, viewModel.Pid);
+                    Assert.Null(mockService.Pid);
 
-                        Assert.Equal(UiConstants.NotAvailable, viewModel.Pid);
-                        Assert.Null(mockService.Pid);
-
-                        viewModel.Dispose();
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    viewModel.Dispose();
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
                 await Task.CompletedTask;
             }, createApp: true);
@@ -628,41 +540,34 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var viewModel = CreateIsolatedViewModel();
+                    var mockService = new DependencyService { Name = "ActiveService", Pid = 100 };
+                    viewModel.SelectedService = mockService;
 
-                    try
-                    {
-                        var viewModel = CreateIsolatedViewModel();
-                        var mockService = new DependencyService { Name = "ActiveService", Pid = 100 };
-                        viewModel.SelectedService = mockService;
+                    _mockServiceRepository.Setup(r => r.GetServicePidAsync("ActiveService", It.IsAny<CancellationToken>()))
+                                          .ReturnsAsync(200);
 
-                        _mockServiceRepository.Setup(r => r.GetServicePidAsync("ActiveService", It.IsAny<CancellationToken>()))
-                                              .ReturnsAsync(200);
+                    var methodInfo = typeof(DependenciesViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                        var methodInfo = typeof(DependenciesViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+                    var task = (Task)methodInfo.Invoke(viewModel, null);
+                    // Explicitly await the monitoring tick background routine asynchronously
+                    task.GetAwaiter().GetResult();
 
-                        var task = (Task)methodInfo.Invoke(viewModel, null);
-                        // Explicitly await the monitoring tick background routine asynchronously
-                        task.GetAwaiter().GetResult();
+                    Assert.Equal("200", viewModel.Pid);
+                    Assert.Equal(200, mockService.Pid);
 
-                        Assert.Equal("200", viewModel.Pid);
-                        Assert.Equal(200, mockService.Pid);
-
-                        viewModel.Dispose();
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    viewModel.Dispose();
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
                 await Task.CompletedTask;
             }, createApp: true);
