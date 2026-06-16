@@ -315,13 +315,13 @@ namespace Servy.Service.ProcessManagement
             {
                 using (child)
                 {
-                    _logger?.Info($"Cascading stop to deeper descendant: {child.ProcessName} (PID: {child.Id})...");
+                    _logger?.Info($"Cascading stop to deeper descendant: {child.Format()}...");
                     StopTree(child, timeoutMs);
                 }
             }
 
             // 2. TERMINATION: Kill the current node now that its children are dead
-            _logger?.Info($"Terminating node: {process.ProcessName} (PID: {process.Id})");
+            _logger?.Info($"Terminating node: {process.Format()}");
 
             bool? result = TryStopGracefullyOrKill(process, timeoutMs, AppConfig.DefaultDescendantPostKillWaitMs);
 
@@ -358,7 +358,7 @@ namespace Servy.Service.ProcessManagement
             {
                 using (child) // We no longer need to dispose a native Handle, just the Process object
                 {
-                    _logger?.Info($"Found descendant: {child.ProcessName} (PID: {child.Id}). Initiating cascaded kill...");
+                    _logger?.Info($"Found descendant: {child.Format()}. Initiating cascaded kill...");
                     StopTree(child, timeoutMs);
                 }
             }
