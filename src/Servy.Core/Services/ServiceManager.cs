@@ -1033,7 +1033,7 @@ namespace Servy.Core.Services
                     {
                         throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
                     }
-
+                    
                     
                     Parallel.ForEach(services, new ParallelOptions
                     {

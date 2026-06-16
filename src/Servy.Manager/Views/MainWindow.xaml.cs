@@ -12,6 +12,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Media3D;
 
 namespace Servy.Manager.Views
 {
@@ -588,7 +589,10 @@ namespace Servy.Manager.Views
             {
                 if (source == parent)
                     return true;
-                source = VisualTreeHelper.GetParent(source);
+
+                source = (source is Visual || source is Visual3D)
+                    ? VisualTreeHelper.GetParent(source)
+                    : LogicalTreeHelper.GetParent(source);
             }
             return false;
         }

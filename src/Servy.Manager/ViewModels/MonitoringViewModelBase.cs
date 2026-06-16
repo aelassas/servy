@@ -143,7 +143,7 @@ namespace Servy.Manager.ViewModels
                 // Increments atomically to maintain accurate tracking if multi-tab components ever fire concurrently.
                 long currentErrorCount = Interlocked.Increment(ref _tickErrorCount);
 
-                if (currentErrorCount % AppConfig.MonitoringTickErrorLogThrottlingInterval == 1)
+                if (currentErrorCount == 1 || currentErrorCount % AppConfig.MonitoringTickErrorLogThrottlingInterval == 0)
                 {
                     Logger.Warn($"Background monitoring tick failed in {GetType().Name} (Consecutive Failure Count: {currentErrorCount}).", ex);
                 }
@@ -189,6 +189,7 @@ namespace Servy.Manager.ViewModels
         public virtual void StartMonitoring()
         {
             ResetMonitoringCts();
+            Interlocked.Exchange(ref _tickErrorCount, 0); // start each session with a fresh throttle window
             Interlocked.Exchange(ref _isMonitoringFlag, 1);
             InitTimer();
             _timer?.Start();

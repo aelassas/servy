@@ -50,13 +50,37 @@ namespace Servy.Infrastructure.Data
             // This prevents immediate engine parsing errors if the index already exists on disk from a prior application run.
             SQLiteFunction.RegisterFunction(typeof(UnicodeNoCaseCollation));
 
+            // --- INTENTIONAL ROBUSTNESS SAFETY CHECK ---
+            // Scan and report legacy whitespace-padded rows on every initialization pass instead of dropping them.
+            // Because unique indexes like 'idx_services_name_unique' permit 'foo' and ' foo ' to coexist under COLLATE UNICODE_NOCASE,
+            // lookups that automatically trim keys first will hit the clean row. This satisfies the fallback evaluation predicate 
+            // of the read path, which causes the verbatim secondary check to never fire—leaving the padded legacy variant masked and unreachable.
+            try
+            {
+                var legacyCollisions = connection.Query(@"
+                    SELECT a.Id AS ZombieId, a.Name AS ZombieName, b.Id AS TwinId, b.Name AS TwinName
+                    FROM Services a
+                    JOIN Services b ON TRIM(a.Name) = b.Name COLLATE UNICODE_NOCASE
+                    WHERE a.Name <> TRIM(a.Name);").ToList();
+
+                foreach (var collision in legacyCollisions)
+                {
+                    Logger.Warn($"CRITICAL DATA LIFECYCLE ANOMALY: Legacy whitespace-padded service record '{collision.ZombieName}' (ID {collision.ZombieId}) " +
+                                $"coexists with clean twin '{collision.TwinName}' (ID {collision.TwinId}). The padded row is preserved but masked, and remains unreachable by name-based actions.");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Shield the initialization boot pipeline from hard structural crashes if the 'Services' table layout does not yet exist.
+                Logger.Debug("Defensive validation padding check skipped because the base services table layout has not been instantiated yet.", ex);
+            }
+
             // Disable foreign keys temporarily for the duration of the migration process.
             // SQLite requires this to be set OUTSIDE of an active transaction for table-rebuilds (v4) to work.
             connection.Execute("PRAGMA foreign_keys=OFF;");
 
             try
             {
-
                 // 1. Ensure the version tracking table exists. 
                 // The CHECK constraint guarantees only a single row (Id = 1) can ever exist.
                 connection.Execute(@"

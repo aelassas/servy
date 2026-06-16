@@ -560,6 +560,9 @@ namespace Servy.Manager.ViewModels
                 // Step 6: refresh all service statuses and details in the background
                 _ = Task.Run(async () =>
                 {
+                    if (Interlocked.CompareExchange(ref _isRefreshingFlag, 1, 0) == 1)
+                        return;
+
                     try
                     {
                         await RefreshAllServicesAsync(token);
@@ -572,6 +575,7 @@ namespace Servy.Manager.ViewModels
                     {
                         Logger.Error($"RefreshAllServicesAsync failed.", ex);
                     }
+                    finally { Interlocked.Exchange(ref _isRefreshingFlag, 0); }
                 }, token);
             }
             catch (OperationCanceledException)

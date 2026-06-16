@@ -393,11 +393,11 @@ namespace Servy.Manager.ViewModels
                 using (var stderrHistoryTailer = new LogTailer())
                 {
                     var stdoutTask = !string.IsNullOrWhiteSpace(stdoutPath)
-                        ? stdoutHistoryTailer.GetHistoryAsync(stdoutPath, LogType.StdOut, historyLimit)
+                        ? stdoutHistoryTailer.GetHistoryAsync(stdoutPath, LogType.StdOut, historyLimit, cancellationToken: token)
                         : Task.FromResult<HistoryResult?>(null);
 
                     var stderrTask = hasUniqueStderr
-                        ? stderrHistoryTailer.GetHistoryAsync(stderrPath, LogType.StdErr, historyLimit)
+                        ? stderrHistoryTailer.GetHistoryAsync(stderrPath, LogType.StdErr, historyLimit, cancellationToken: token)
                         : Task.FromResult<HistoryResult?>(null);
 
                     // Wait for the necessary reads to complete

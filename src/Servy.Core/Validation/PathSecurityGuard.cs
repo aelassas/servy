@@ -131,9 +131,10 @@ namespace Servy.Core.Validation
             }
 
             // Handle Resolution (Final Target Verification)
+            FileStream? fileStream = null;
             try
             {
-                var fileStream = new FileStream(fullPath, mode, access, share);
+                fileStream = new FileStream(fullPath, mode, access, share);
                 var safeHandle = fileStream.SafeFileHandle;
 
                 if (safeHandle.IsInvalid)
@@ -206,6 +207,7 @@ namespace Servy.Core.Validation
                 }
 
                 stream = fileStream;
+                fileStream = null; // ownership transferred to caller; don't dispose
                 return PathSecurityResult.Success(fullPath);
             }
             catch (Exception ex)
@@ -213,6 +215,10 @@ namespace Servy.Core.Validation
                 var errorMsg = string.Format(Strings.Msg_SecurityHandleValidationFailed, ex.Message);
                 Logger.Error(errorMsg);
                 return PathSecurityResult.Fail(errorMsg);
+            }
+            finally
+            {
+                fileStream?.Dispose();
             }
         }
     }

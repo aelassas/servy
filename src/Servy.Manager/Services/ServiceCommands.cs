@@ -772,11 +772,11 @@ namespace Servy.Manager.Services
             string errorMessage,
             CancellationToken cancellationToken = default)
         {
-            var path = getFilePath();
-            if (string.IsNullOrEmpty(path)) return;
-
             try
             {
+                var path = getFilePath();
+                if (string.IsNullOrEmpty(path)) return;
+
                 // Defense-in-depth: Run the security guards FIRST before touching the disk via size validation
                 var guardResult = ImportGuard.ValidatePathSecurityAndSize(path, out string? content);
                 if (!guardResult.IsValid || guardResult.ValidPath == null || content == null)
@@ -823,7 +823,7 @@ namespace Servy.Manager.Services
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to import {formatName} config from {path}.", ex);
+                Logger.Error($"Failed to import {formatName} config.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
             }
         }
