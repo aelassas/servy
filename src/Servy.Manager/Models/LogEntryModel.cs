@@ -37,7 +37,7 @@ namespace Servy.Manager.Models
                 // Use the return value of Set to trigger dependent property notifications only on change
                 if (Set(ref _level, value))
                 {
-                    // LOGIC: LevelIcon is a dependent property; notify the UI to refresh it when Level changes
+                    // LevelIcon is a dependent property; notify the UI to refresh it when Level changes
                     OnPropertyChanged(nameof(LevelIcon));
                 }
             }
@@ -83,7 +83,7 @@ namespace Servy.Manager.Models
                     case EventLogLevel.Information:
                     case EventLogLevel.Verbose:
                     default:
-                        // LOGIC: Fallback to Information icon for default cases
+                        // Fallback to Information icon for default cases
                         return IconBase + "Info.png";
                 }
             }

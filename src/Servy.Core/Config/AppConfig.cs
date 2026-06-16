@@ -521,7 +521,7 @@ namespace Servy.Core.Config
         /// <para>When set to <c>false</c>, log rotation intervals are calculated using Coordinated Universal Time (UTC). 
         /// This ensures a consistent, monotonic rotation schedule that is unaffected by Daylight Saving Time transitions.</para>
         /// <para>
-        /// <b>CRITICAL SIDE EFFECT SIDE-CHANNEL:</b> Changing this value introduces a global side effect 
+        /// <b>CRITICAL SIDE EFFECT:</b> Changing this value introduces a global side effect 
         /// that extends beyond log file splitting boundaries. It directly dictates whether log entry line 
         /// headers are written using the host system's localized time zone context (<see cref="DateTime.Now"/>) 
         /// or Coordinated Universal Time (<see cref="DateTime.UtcNow"/>).

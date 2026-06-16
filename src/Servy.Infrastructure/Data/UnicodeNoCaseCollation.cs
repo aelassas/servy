@@ -1,12 +1,12 @@
-﻿using System;
-using System.Data.SQLite;
+﻿using System.Data.SQLite;
 
 namespace Servy.Infrastructure.Data
 {
     /// <summary>
     /// Provides a truly Unicode-aware, case-insensitive string collation sequence for SQLite.
     /// Overrides the default ASCII-only constraints of the built-in SQLite NOCASE collation
-    /// by leveraging .NET's linguistic <see cref="StringComparison.OrdinalIgnoreCase"/> rules.
+    /// by leveraging .NET's culture-invariant, case-insensitive linguistic rules
+    /// (<see cref="StringComparison.InvariantCultureIgnoreCase"/>).
     /// </summary>
     [SQLiteFunction(Name = "UNICODE_NOCASE", FuncType = FunctionType.Collation)]
     public class UnicodeNoCaseCollation : SQLiteFunction

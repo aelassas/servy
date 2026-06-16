@@ -449,15 +449,10 @@ namespace Servy.Infrastructure.Data
         /// record configuration (Servy &lt;= 8.3 zombie rows) matches the evaluation predicate.
         /// </summary>
         /// <typeparam name="T">The type of the expected query return payload or operational status identifier.</typeparam>
-        /// <param name="sql">The parameterized SQL command string intended for driver execution pass blocks.</param>
-        /// <param name="queryExecutor">A high-order delegate wrapping the concrete asynchronous ADO.NET or Dapper execution context.</param>
-        /// <param name="name">The raw input service identifier string containing possible whitespace artifacts.</param>
-        /// <param name="fallbackEvaluationPredicate">A condition tracking routine used to determine whether the baseline result indicates an empty return or an unexecuted block target.</param>
-        /// <param name="cancellationToken">A token to monitor for cancellation requests during the asynchronous sequence.</param>
-        /// <returns>
-        /// A task representing the asynchronous orchestration. The task result contains the finalized entity or status scalar 
-        /// value resolved across the multi-attempt runtime boundary.
-        /// </returns>
+        /// <param name="sql">The parameterized SQL statement to execute (must use a @Name parameter).</param>
+        /// <param name="queryExecutor">Delegate that runs <paramref name="sql"/> with the supplied parameters.</param>
+        /// <param name="fallbackEvaluationPredicate">Returns true when the trimmed-name result is "empty" and the verbatim-name fallback should be attempted.</param>
+        /// <returns>A task representing the asynchronous orchestration. The task result contains the trimmed-name query, or the verbatim-name fallback result for legacy whitespace rows.</returns>
         private static async Task<T?> ResolveWithLegacyFallbackAsync<T>(
             string sql,
             Func<string, object, Task<T?>> queryExecutor,
@@ -485,13 +480,10 @@ namespace Servy.Infrastructure.Data
         /// record configuration (Servy &lt;= 8.3 zombie rows) matches the evaluation predicate.
         /// </summary>
         /// <typeparam name="T">The type of the expected query return payload or operational status identifier.</typeparam>
-        /// <param name="sql">The parameterized SQL command string intended for driver execution pass blocks.</param>
-        /// <param name="queryExecutor">A high-order delegate wrapping the concrete synchronous ADO.NET or Dapper execution context.</param>
-        /// <param name="name">The raw input service identifier string containing possible whitespace artifacts.</param>
-        /// <param name="fallbackEvaluationPredicate">A condition tracking routine used to determine whether the baseline result indicates an empty return or an unexecuted block target.</param>
-        /// <returns>
-        /// The finalized entity or status scalar value resolved across the multi-attempt runtime boundary.
-        /// </returns>
+        /// <param name="sql">The parameterized SQL statement to execute (must use a @Name parameter).</param>
+        /// <param name="queryExecutor">Delegate that runs <paramref name="sql"/> with the supplied parameters.</param>
+        /// <param name="fallbackEvaluationPredicate">Returns true when the trimmed-name result is "empty" and the verbatim-name fallback should be attempted.</param>
+        /// <returns>The result of the trimmed-name query, or the verbatim-name fallback result for legacy whitespace rows.</returns>
         private static T? ResolveWithLegacyFallback<T>(
             string sql,
             Func<string, object, T?> queryExecutor,
