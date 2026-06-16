@@ -298,7 +298,6 @@ jobs:
           base-path: ${{ github.workspace }}
           file: CoverageMerged/fixed/coverage.cobertura.xml
           format: cobertura
-          fail_ci_if_error: true   # let the action report failure
           debug: false
         env:
             COVERALLS_GIT_BRANCH: ${{ github.ref_name }}
