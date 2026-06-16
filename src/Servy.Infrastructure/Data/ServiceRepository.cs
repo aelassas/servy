@@ -233,7 +233,7 @@ namespace Servy.Infrastructure.Data
                 name: name,
                 fallbackEvaluationPredicate: rowsAffected => rowsAffected == 0,
                 cancellationToken: cancellationToken
-            ).ConfigureAwait(false);
+            );
         }
 
         /// <inheritdoc />
@@ -472,13 +472,13 @@ namespace Servy.Infrastructure.Data
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var result = await queryExecutor(sql, new { Name = name.Trim() }).ConfigureAwait(false);
+            var result = await queryExecutor(sql, new { Name = name.Trim() });
 
             // Legacy rows (Servy <= 8.3) stored Name with whitespace verbatim.
             if (fallbackEvaluationPredicate(result) && name != name.Trim())
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                result = await queryExecutor(sql, new { Name = name }).ConfigureAwait(false);
+                result = await queryExecutor(sql, new { Name = name });
             }
 
             return result;
