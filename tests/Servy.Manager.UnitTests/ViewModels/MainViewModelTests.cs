@@ -20,6 +20,7 @@ using static Servy.Manager.ViewModels.MainViewModel;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
+    [Collection("Ambient AppServices Dependent Tests")]
     public class MainViewModelTests
     {
         private readonly Mock<IServiceManager> _serviceManagerMock;

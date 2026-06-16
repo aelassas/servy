@@ -16,9 +16,6 @@ namespace Servy.Manager.UnitTests.ViewModels
     [Collection("Ambient AppServices Dependent Tests")]
     public class LogsViewModelTests
     {
-        // Centralized lock token shared across the test fixture to block cross-thread interference
-        private static readonly object StaticEnvironmentLock = new object();
-
         private readonly Mock<IAppConfiguration> _appConfigurationMock;
         private readonly Mock<IEventLogService> _eventLogServiceMock;
         private readonly Mock<ICursorService> _cursorServiceMock;
@@ -47,67 +44,48 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullAppConfig_ThrowsArgumentNullException()
         {
-            // Guarded with environmental lock block to protect against ambient state drift from adjacent tests
-            lock (StaticEnvironmentLock)
-            {
-                Assert.Throws<ArgumentNullException>(() => new LogsViewModel(
-                    null!, _eventLogServiceMock.Object, _cursorServiceMock.Object));
-            }
+            Assert.Throws<ArgumentNullException>(() => new LogsViewModel(
+                null!, _eventLogServiceMock.Object, _cursorServiceMock.Object));
         }
 
         [Fact]
         public void Constructor_NullEventLogService_ThrowsArgumentNullException()
         {
-            // Guarded with environmental lock block to protect against ambient state drift from adjacent tests
-            lock (StaticEnvironmentLock)
-            {
-                Assert.Throws<ArgumentNullException>(() => new LogsViewModel(
-                    _appConfigurationMock.Object, null!, _cursorServiceMock.Object));
-            }
+            Assert.Throws<ArgumentNullException>(() => new LogsViewModel(
+                _appConfigurationMock.Object, null!, _cursorServiceMock.Object));
         }
 
         [Fact]
         public void Constructor_NullCursorService_ThrowsArgumentNullException()
         {
-            // Guarded with environmental lock block to protect against ambient state drift from adjacent tests
-            lock (StaticEnvironmentLock)
-            {
-                Assert.Throws<ArgumentNullException>(() => new LogsViewModel(
-                    _appConfigurationMock.Object, _eventLogServiceMock.Object, null!));
-            }
+            Assert.Throws<ArgumentNullException>(() => new LogsViewModel(
+                _appConfigurationMock.Object, _eventLogServiceMock.Object, null!));
         }
 
         [Fact]
         public void Constructor_ShouldInitializeDefaults()
         {
-            // Guarded with exclusive environment lock and dynamic DI configuration setup
-            lock (StaticEnvironmentLock)
+            var originalProvider = App.Services;
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(_mockProcessKiller.Object);
+            App.Services = serviceCollection.BuildServiceProvider();
+
+            try
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
+                var vm = CreateViewModel();
 
-                try
-                {
-                    var vm = CreateViewModel();
-
-                    Assert.NotNull(vm.LogsView);
-                    Assert.NotNull(vm.SearchCommand);
-                    Assert.NotNull(vm.RowClickCommand);
-                    Assert.False(vm.IsBusy);
-                    Assert.Contains("Search", vm.SearchButtonText);
-                    Assert.NotNull(vm.FromDate);
-                    Assert.NotNull(vm.ToDate);
-                    Assert.Equal(EventLogLevel.All, vm.SelectedLevel);
-                }
-                finally
-                {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
-                }
+                Assert.NotNull(vm.LogsView);
+                Assert.NotNull(vm.SearchCommand);
+                Assert.NotNull(vm.RowClickCommand);
+                Assert.False(vm.IsBusy);
+                Assert.Contains("Search", vm.SearchButtonText);
+                Assert.NotNull(vm.FromDate);
+                Assert.NotNull(vm.ToDate);
+                Assert.Equal(EventLogLevel.All, vm.SelectedLevel);
+            }
+            finally
+            {
+                App.Services = originalProvider;
             }
         }
 
@@ -118,281 +96,225 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void PropertyChanged_IsRaised()
         {
-            // Guarded with exclusive environment lock and dynamic DI configuration setup
-            lock (StaticEnvironmentLock)
+            var originalProvider = App.Services;
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(_mockProcessKiller.Object);
+            App.Services = serviceCollection.BuildServiceProvider();
+
+            try
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
+                var vm = CreateViewModel();
+                string? propertyName = null;
+                vm.PropertyChanged += (s, e) => propertyName = e.PropertyName;
 
-                try
-                {
-                    var vm = CreateViewModel();
-                    string? propertyName = null;
-                    vm.PropertyChanged += (s, e) => propertyName = e.PropertyName;
+                vm.IsBusy = true;
 
-                    vm.IsBusy = true;
-
-                    Assert.Equal(nameof(LogsViewModel.IsBusy), propertyName);
-                }
-                finally
-                {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
-                }
+                Assert.Equal(nameof(LogsViewModel.IsBusy), propertyName);
+            }
+            finally
+            {
+                App.Services = originalProvider;
             }
         }
 
         [Fact]
         public void Properties_DuplicateAssignments_DoNotRaisePropertyChanged()
         {
-            // Guarded with exclusive environment lock and dynamic DI configuration setup
-            lock (StaticEnvironmentLock)
+            var originalProvider = App.Services;
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(_mockProcessKiller.Object);
+            App.Services = serviceCollection.BuildServiceProvider();
+
+            try
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
+                // Arrange
+                var vm = CreateViewModel();
 
-                try
-                {
-                    // Arrange
-                    var vm = CreateViewModel();
+                // Bind explicit static reference anchors to bypass real-time millisecond/tick differences
+                var staticDate = new DateTime(2026, 6, 8);
+                vm.FromDate = staticDate;
+                vm.ToDate = staticDate;
+                vm.SearchButtonText = "Search";
+                vm.Keyword = "Clean";
+                vm.FooterText = "Ready";
 
-                    // Bind explicit static reference anchors to bypass real-time millisecond/tick differences
-                    var staticDate = new DateTime(2026, 6, 8);
-                    vm.FromDate = staticDate;
-                    vm.ToDate = staticDate;
-                    vm.SearchButtonText = "Search";
-                    vm.Keyword = "Clean";
-                    vm.FooterText = "Ready";
+                int notificationCount = 0;
+                vm.PropertyChanged += (s, e) => notificationCount++;
 
-                    int notificationCount = 0;
-                    vm.PropertyChanged += (s, e) => notificationCount++;
+                // Act - Set to identical static values to test optimization guards cleanly
+                vm.IsBusy = false;
+                vm.FooterText = "Ready";
+                vm.SearchButtonText = "Search";
+                vm.FromDate = staticDate;
+                vm.FromDateMaxDate = vm.FromDateMaxDate;
+                vm.ToDate = staticDate;
+                vm.ToDateMinDate = vm.ToDateMinDate;
+                vm.Keyword = "Clean";
+                vm.SelectedLogMessage = null;
 
-                    // Act - Set to identical static values to test optimization guards cleanly
-                    vm.IsBusy = false;
-                    vm.FooterText = "Ready";
-                    vm.SearchButtonText = "Search";
-                    vm.FromDate = staticDate;
-                    vm.FromDateMaxDate = vm.FromDateMaxDate;
-                    vm.ToDate = staticDate;
-                    vm.ToDateMinDate = vm.ToDateMinDate;
-                    vm.Keyword = "Clean";
-                    vm.SelectedLogMessage = null;
-
-                    // Assert
-                    Assert.Equal(0, notificationCount);
-                }
-                finally
-                {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
-                }
+                // Assert
+                Assert.Equal(0, notificationCount);
+            }
+            finally
+            {
+                App.Services = originalProvider;
             }
         }
 
         [Fact]
         public void FromDate_ShouldUpdate_ToDateMinDate()
         {
-            // Guarded with exclusive environment lock and dynamic DI configuration setup
-            lock (StaticEnvironmentLock)
+            var originalProvider = App.Services;
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(_mockProcessKiller.Object);
+            App.Services = serviceCollection.BuildServiceProvider();
+
+            try
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
+                var vm = CreateViewModel();
+                var newDate = DateTime.Today.AddDays(-5);
 
-                try
-                {
-                    var vm = CreateViewModel();
-                    var newDate = DateTime.Today.AddDays(-5);
+                vm.FromDate = newDate;
 
-                    vm.FromDate = newDate;
-
-                    Assert.Equal(newDate, vm.ToDateMinDate);
-                }
-                finally
-                {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
-                }
+                Assert.Equal(newDate, vm.ToDateMinDate);
+            }
+            finally
+            {
+                App.Services = originalProvider;
             }
         }
 
         [Fact]
         public void ToDate_ShouldUpdate_FromDateMaxDate()
         {
-            // Guarded with exclusive environment lock and dynamic DI configuration setup
-            lock (StaticEnvironmentLock)
+            var originalProvider = App.Services;
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(_mockProcessKiller.Object);
+            App.Services = serviceCollection.BuildServiceProvider();
+
+            try
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
+                var vm = CreateViewModel();
+                var newDate = DateTime.Today;
 
-                try
-                {
-                    var vm = CreateViewModel();
-                    var newDate = DateTime.Today;
+                vm.ToDate = newDate;
 
-                    vm.ToDate = newDate;
-
-                    Assert.Equal(newDate, vm.FromDateMaxDate);
-                }
-                finally
-                {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
-                }
+                Assert.Equal(newDate, vm.FromDateMaxDate);
+            }
+            finally
+            {
+                App.Services = originalProvider;
             }
         }
 
         [Fact]
         public void Keyword_PropertyMutates_RaisesNotificationCorrectly()
         {
-            // Guarded with exclusive environment lock and dynamic DI configuration setup
-            lock (StaticEnvironmentLock)
+            var originalProvider = App.Services;
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(_mockProcessKiller.Object);
+            App.Services = serviceCollection.BuildServiceProvider();
+
+            try
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
+                // Arrange
+                var vm = CreateViewModel();
+                string? changedProp = null;
+                vm.PropertyChanged += (s, e) => changedProp = e.PropertyName;
 
-                try
-                {
-                    // Arrange
-                    var vm = CreateViewModel();
-                    string? changedProp = null;
-                    vm.PropertyChanged += (s, e) => changedProp = e.PropertyName;
+                // Act
+                vm.Keyword = "ServyAgent";
 
-                    // Act
-                    vm.Keyword = "ServyAgent";
-
-                    // Assert
-                    Assert.Equal("ServyAgent", vm.Keyword);
-                    Assert.Equal(nameof(LogsViewModel.Keyword), changedProp);
-                }
-                finally
-                {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
-                }
+                // Assert
+                Assert.Equal("ServyAgent", vm.Keyword);
+                Assert.Equal(nameof(LogsViewModel.Keyword), changedProp);
+            }
+            finally
+            {
+                App.Services = originalProvider;
             }
         }
 
         [Fact]
         public void SelectedLevel_PropertyMutates_RaisesNotificationCorrectly()
         {
-            // Guarded with exclusive environment lock and dynamic DI configuration setup
-            lock (StaticEnvironmentLock)
+            var originalProvider = App.Services;
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(_mockProcessKiller.Object);
+            App.Services = serviceCollection.BuildServiceProvider();
+
+            try
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
+                // Arrange
+                var vm = CreateViewModel();
+                string? changedProp = null;
+                vm.PropertyChanged += (s, e) => changedProp = e.PropertyName;
 
-                try
-                {
-                    // Arrange
-                    var vm = CreateViewModel();
-                    string? changedProp = null;
-                    vm.PropertyChanged += (s, e) => changedProp = e.PropertyName;
+                // Act
+                vm.SelectedLevel = EventLogLevel.Error;
 
-                    // Act
-                    vm.SelectedLevel = EventLogLevel.Error;
-
-                    // Assert
-                    Assert.Equal(EventLogLevel.Error, vm.SelectedLevel);
-                    Assert.Equal(nameof(LogsViewModel.SelectedLevel), changedProp);
-                }
-                finally
-                {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
-                }
+                // Assert
+                Assert.Equal(EventLogLevel.Error, vm.SelectedLevel);
+                Assert.Equal(nameof(LogsViewModel.SelectedLevel), changedProp);
+            }
+            finally
+            {
+                App.Services = originalProvider;
             }
         }
 
         [Fact]
         public void FooterText_PropertyMutates_RaisesNotificationCorrectly()
         {
-            // Guarded with exclusive environment lock and dynamic DI configuration setup
-            lock (StaticEnvironmentLock)
+            var originalProvider = App.Services;
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(_mockProcessKiller.Object);
+            App.Services = serviceCollection.BuildServiceProvider();
+
+            try
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
+                // Arrange
+                var vm = CreateViewModel();
+                string? changedProp = null;
+                vm.PropertyChanged += (s, e) => changedProp = e.PropertyName;
 
-                try
-                {
-                    // Arrange
-                    var vm = CreateViewModel();
-                    string? changedProp = null;
-                    vm.PropertyChanged += (s, e) => changedProp = e.PropertyName;
+                // Act
+                vm.FooterText = "Rows processed cleanly";
 
-                    // Act
-                    vm.FooterText = "Rows processed cleanly";
-
-                    // Assert
-                    Assert.Equal("Rows processed cleanly", vm.FooterText);
-                    Assert.Equal(nameof(LogsViewModel.FooterText), changedProp);
-                }
-                finally
-                {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
-                }
+                // Assert
+                Assert.Equal("Rows processed cleanly", vm.FooterText);
+                Assert.Equal(nameof(LogsViewModel.FooterText), changedProp);
+            }
+            finally
+            {
+                App.Services = originalProvider;
             }
         }
 
         [Fact]
         public void SelectedLog_SetToNull_ClearsSelectedLogMessage()
         {
-            // Guarded with exclusive environment lock and dynamic DI configuration setup
-            lock (StaticEnvironmentLock)
+            var originalProvider = App.Services;
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(_mockProcessKiller.Object);
+            App.Services = serviceCollection.BuildServiceProvider();
+
+            try
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
+                // Arrange
+                var vm = CreateViewModel();
+                vm.SelectedLog = new LogEntryModel { Message = "Error Context" };
 
-                try
-                {
-                    // Arrange
-                    var vm = CreateViewModel();
-                    vm.SelectedLog = new LogEntryModel { Message = "Error Context" };
+                // Act
+                vm.SelectedLog = null;
 
-                    // Act
-                    vm.SelectedLog = null;
-
-                    // Assert
-                    Assert.Null(vm.SelectedLog);
-                    Assert.Equal(string.Empty, vm.SelectedLogMessage);
-                }
-                finally
-                {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
-                }
+                // Assert
+                Assert.Null(vm.SelectedLog);
+                Assert.Equal(string.Empty, vm.SelectedLogMessage);
+            }
+            finally
+            {
+                App.Services = originalProvider;
             }
         }
 
@@ -418,64 +340,50 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void RowClickCommand_ShouldSetSelectedLog()
         {
-            // Guarded with exclusive environment lock and dynamic DI configuration setup
-            lock (StaticEnvironmentLock)
+            var originalProvider = App.Services;
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(_mockProcessKiller.Object);
+            App.Services = serviceCollection.BuildServiceProvider();
+
+            try
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
+                var vm = CreateViewModel();
+                var log = new LogEntryModel { Message = "test" };
 
-                try
-                {
-                    var vm = CreateViewModel();
-                    var log = new LogEntryModel { Message = "test" };
+                vm.RowClickCommand.Execute(log);
 
-                    vm.RowClickCommand.Execute(log);
-
-                    Assert.Equal("test", vm.SelectedLog?.Message);
-                    Assert.Equal("test", vm.SelectedLogMessage);
-                }
-                finally
-                {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
-                }
+                Assert.Equal("test", vm.SelectedLog?.Message);
+                Assert.Equal("test", vm.SelectedLogMessage);
+            }
+            finally
+            {
+                App.Services = originalProvider;
             }
         }
 
         [Fact]
         public void RowClickCommand_InvalidParameterObject_BypassesStateMutation()
         {
-            // Guarded with exclusive environment lock and dynamic DI configuration setup
-            lock (StaticEnvironmentLock)
+            var originalProvider = App.Services;
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(_mockProcessKiller.Object);
+            App.Services = serviceCollection.BuildServiceProvider();
+
+            try
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
+                // Arrange
+                var vm = CreateViewModel();
+                vm.SelectedLog = null;
 
-                try
-                {
-                    // Arrange
-                    var vm = CreateViewModel();
-                    vm.SelectedLog = null;
+                // Act - Pass an irrelevant object parameter layout type context
+                vm.RowClickCommand.Execute(new List<string> { "Malformed context entry payload mapping" });
 
-                    // Act - Pass an irrelevant object parameter layout type context
-                    vm.RowClickCommand.Execute(new List<string> { "Malformed context entry payload mapping" });
-
-                    // Assert
-                    Assert.Null(vm.SelectedLog);
-                }
-                finally
-                {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
-                }
+                // Assert
+                Assert.Null(vm.SelectedLog);
+            }
+            finally
+            {
+                App.Services = originalProvider;
             }
         }
 
@@ -488,47 +396,48 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in the exclusive environment lock block to register the required DI tracker targets
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
-
-                    try
+                    // Arrange
+                    var entries = new List<ServyEventLogEntry>
                     {
-                        // Arrange
-                        var entries = new List<ServyEventLogEntry>
-                        {
-                            new ServyEventLogEntry { EventId = 1, Time = DateTimeOffset.Now, Level = EventLogLevel.Information, Message = "test message" }
-                        };
+                        new ServyEventLogEntry { EventId = 1, Time = DateTimeOffset.Now, Level = EventLogLevel.Information, Message = "test message" }
+                    };
 
-                        _eventLogServiceMock
-                            .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                            .ReturnsAsync(entries);
+                    _eventLogServiceMock
+                        .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(entries);
 
-                        var vm = CreateViewModel();
+                    var vm = CreateViewModel();
 
-                        var scrollEventSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                        vm.ScrollLogsToTopRequested += () => scrollEventSource.TrySetResult(true);
+                    var scrollEventSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                    vm.ScrollLogsToTopRequested += () => scrollEventSource.TrySetResult(true);
 
-                        // Act
-                        var searchTask = vm.SearchCommand.ExecuteAsync(null);
+                    // Act
+                    var searchTask = vm.SearchCommand.ExecuteAsync(null);
 
-                        // Force the execution loop context to await task processing step safely
-                        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
-                        var completedTask = Task.WhenAny(scrollEventSource.Task, timeoutTask).GetAwaiter().GetResult();
+                    // Force the execution loop context to await task processing step safely
+                    var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
+                    var completedTask = Task.WhenAny(scrollEventSource.Task, timeoutTask).GetAwaiter().GetResult();
 
-                        if (completedTask == timeoutTask)
-                        {
-                            throw new TimeoutException("The ScrollLogsToTopRequested event failed to fire within the allocated safety window.");
-                        }
+                    if (completedTask == timeoutTask)
+                    {
+                        throw new TimeoutException("The ScrollLogsToTopRequested event failed to fire within the allocated safety window.");
+                    }
 
-                        searchTask.GetAwaiter().GetResult();
+                    searchTask.GetAwaiter().GetResult();
 
-                        // Assert
-                        Assert.Single(vm.LogsView.SourceCollection.Cast<LogEntryModel>());
+                    // Assert
+                    // Assert
+                    using (var enumerator = vm.LogsView.SourceCollection.Cast<LogEntryModel>().GetEnumerator())
+                    {
+                        Assert.True(enumerator.MoveNext());
+                        Assert.False(enumerator.MoveNext());
                         Assert.True(scrollEventSource.Task.Result);
                         Assert.Contains("Search", vm.SearchButtonText);
                         Assert.False(vm.IsBusy);
@@ -536,13 +445,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                         // Verify the cursor service was utilized
                         _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
                     }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             }, createApp: true);
         }
@@ -552,73 +458,66 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in the exclusive environment lock block to register the required DI tracker targets
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    // Arrange
+                    var firstSearchTcs = new TaskCompletionSource<IEnumerable<ServyEventLogEntry>>();
+                    var secondSearchTcs = new TaskCompletionSource<IEnumerable<ServyEventLogEntry>>();
 
-                    try
-                    {
-                        // Arrange
-                        var firstSearchTcs = new TaskCompletionSource<IEnumerable<ServyEventLogEntry>>();
-                        var secondSearchTcs = new TaskCompletionSource<IEnumerable<ServyEventLogEntry>>();
-
-                        var searchCallCount = 0;
-                        _eventLogServiceMock
-                            .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                            .Returns(() =>
-                            {
-                                searchCallCount++;
-                                return searchCallCount == 1 ? firstSearchTcs.Task : secondSearchTcs.Task;
-                            });
-
-                        var vm = CreateViewModel();
-                        var fieldInfo = typeof(LogsViewModel).GetField("_cancellationTokenSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-                        // Fetch the private 'Search' method directly using reflection to bypass AsyncCommand's 'IsRunning' re-entrancy guard
-                        var searchMethod = typeof(LogsViewModel).GetMethod("Search", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                        Assert.NotNull(searchMethod);
-
-                        // Act - 1. Fire the first background lookup
-                        var firstSearchTask = (Task)searchMethod.Invoke(vm, new object[] { null! })!;
-
-                        // 2. Poll until the first token reference is registered inside the model
-                        CancellationTokenSource? firstCtsInstance = null;
-                        int retries = 0;
-                        while (firstCtsInstance == null && retries < 50)
+                    var searchCallCount = 0;
+                    _eventLogServiceMock
+                        .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                        .Returns(() =>
                         {
-                            firstCtsInstance = fieldInfo?.GetValue(vm) as CancellationTokenSource;
-                            if (firstCtsInstance == null)
-                            {
-                                Task.Delay(10).GetAwaiter().GetResult();
-                                retries++;
-                            }
-                        }
+                            searchCallCount++;
+                            return searchCallCount == 1 ? firstSearchTcs.Task : secondSearchTcs.Task;
+                        });
 
-                        Assert.NotNull(firstCtsInstance); // Guard rail assertion
+                    var vm = CreateViewModel();
+                    var fieldInfo = typeof(LogsViewModel).GetField("_cancellationTokenSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
-                        // 3. Invoke the private method directly a second time to force the atomic Interlocked swap loop
-                        var secondSearchTask = (Task)searchMethod.Invoke(vm, new object[] { null! })!;
+                    // Fetch the private 'Search' method directly using reflection to bypass AsyncCommand's 'IsRunning' re-entrancy guard
+                    var searchMethod = typeof(LogsViewModel).GetMethod("Search", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    Assert.NotNull(searchMethod);
 
-                        // Assert - Verify that the original token was forced into a cancelled state immediately
-                        Assert.True(firstCtsInstance.IsCancellationRequested, "The previous CancellationTokenSource was not cancelled by the subsequent search.");
+                    // Act - 1. Fire the first background lookup
+                    var firstSearchTask = (Task)searchMethod.Invoke(vm, new object[] { null! })!;
 
-                        // 4. Tear down task blocks cleanly
-                        firstSearchTcs.TrySetResult(Array.Empty<ServyEventLogEntry>());
-                        secondSearchTcs.TrySetResult(Array.Empty<ServyEventLogEntry>());
-
-                        Task.WhenAll(firstSearchTask, secondSearchTask).GetAwaiter().GetResult();
-                    }
-                    finally
+                    // 2. Poll until the first token reference is registered inside the model
+                    CancellationTokenSource? firstCtsInstance = null;
+                    int retries = 0;
+                    while (firstCtsInstance == null && retries < 50)
                     {
-                        if (originalProvider != null)
+                        firstCtsInstance = fieldInfo?.GetValue(vm) as CancellationTokenSource;
+                        if (firstCtsInstance == null)
                         {
-                            App.Services = originalProvider;
+                            Task.Delay(10).GetAwaiter().GetResult();
+                            retries++;
                         }
                     }
+
+                    Assert.NotNull(firstCtsInstance); // Guard rail assertion
+
+                    // 3. Invoke the private method directly a second time to force the atomic Interlocked swap loop
+                    var secondSearchTask = (Task)searchMethod.Invoke(vm, new object[] { null! })!;
+
+                    // Assert - Verify that the original token was forced into a cancelled state immediately
+                    Assert.True(firstCtsInstance.IsCancellationRequested, "The previous CancellationTokenSource was not cancelled by the subsequent search.");
+
+                    // 4. Tear down task blocks cleanly
+                    firstSearchTcs.TrySetResult(Array.Empty<ServyEventLogEntry>());
+                    secondSearchTcs.TrySetResult(Array.Empty<ServyEventLogEntry>());
+
+                    Task.WhenAll(firstSearchTask, secondSearchTask).GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             }, createApp: true);
         }
@@ -628,38 +527,31 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in the exclusive environment lock block to register the required DI tracker targets
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    // Arrange
+                    _eventLogServiceMock
+                        .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                        .ThrowsAsync(new InvalidOperationException("WMI Repository Event log corruption detected"));
 
-                    try
-                    {
-                        // Arrange
-                        _eventLogServiceMock
-                            .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                            .ThrowsAsync(new InvalidOperationException("WMI Repository Event log corruption detected"));
+                    var vm = CreateViewModel();
 
-                        var vm = CreateViewModel();
+                    // Act
+                    vm.SearchCommand.ExecuteAsync(null).GetAwaiter().GetResult();
 
-                        // Act
-                        vm.SearchCommand.ExecuteAsync(null).GetAwaiter().GetResult();
-
-                        // Assert - Verify final security release blocks completed execution cycle parameters
-                        _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
-                        Assert.False(vm.IsBusy);
-                        Assert.Equal(Strings.Button_Search, vm.SearchButtonText);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert - Verify final security release blocks completed execution cycle parameters
+                    _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+                    Assert.False(vm.IsBusy);
+                    Assert.Equal(Strings.Button_Search, vm.SearchButtonText);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             }, createApp: true);
         }
@@ -669,37 +561,30 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in the exclusive environment lock block to register the required DI tracker targets
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    // Arrange
+                    _eventLogServiceMock
+                        .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                        .ThrowsAsync(new OperationCanceledException());
 
-                    try
-                    {
-                        // Arrange
-                        _eventLogServiceMock
-                            .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                            .ThrowsAsync(new OperationCanceledException());
+                    var vm = CreateViewModel();
 
-                        var vm = CreateViewModel();
+                    // Act
+                    var exception = Record.ExceptionAsync(() => vm.SearchCommand.ExecuteAsync(null)).GetAwaiter().GetResult();
 
-                        // Act
-                        var exception = Record.ExceptionAsync(() => vm.SearchCommand.ExecuteAsync(null)).GetAwaiter().GetResult();
-
-                        // Assert
-                        Assert.Null(exception); // The OperationCanceledException catch block handled it safely
-                        _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert
+                    Assert.Null(exception); // The OperationCanceledException catch block handled it safely
+                    _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             }, createApp: true);
         }
@@ -711,66 +596,52 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Cleanup_ShouldCancelAndDisposeToken()
         {
-            // Guarded with exclusive environment lock and dynamic DI configuration setup
-            lock (StaticEnvironmentLock)
+            var originalProvider = App.Services;
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(_mockProcessKiller.Object);
+            App.Services = serviceCollection.BuildServiceProvider();
+
+            try
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
+                var vm = CreateViewModel();
 
-                try
-                {
-                    var vm = CreateViewModel();
+                vm.Cleanup();
 
-                    vm.Cleanup();
-
-                    // After cleanup, a second call should not throw
-                    var exception = Record.Exception(() => vm.Cleanup());
-                    Assert.Null(exception);
-                }
-                finally
-                {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
-                }
+                // After cleanup, a second call should not throw
+                var exception = Record.Exception(() => vm.Cleanup());
+                Assert.Null(exception);
+            }
+            finally
+            {
+                App.Services = originalProvider;
             }
         }
 
         [Fact]
         public void Dispose_InvokedMultipleTimes_ExitsEarlyThroughDisposedValueAtomicGuard()
         {
-            // Guarded with exclusive environment lock and dynamic DI configuration setup
-            lock (StaticEnvironmentLock)
+            var originalProvider = App.Services;
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(_mockProcessKiller.Object);
+            App.Services = serviceCollection.BuildServiceProvider();
+
+            try
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
+                // Arrange
+                var vm = CreateViewModel();
 
-                try
-                {
-                    // Arrange
-                    var vm = CreateViewModel();
+                // Act - First explicit teardown execution context
+                vm.Dispose();
 
-                    // Act - First explicit teardown execution context
-                    vm.Dispose();
+                // Act - Second verification path execution loop
+                var doubleDisposeException = Record.Exception(() => vm.Dispose());
 
-                    // Act - Second verification path execution loop
-                    var doubleDisposeException = Record.Exception(() => vm.Dispose());
-
-                    // Assert
-                    Assert.Null(doubleDisposeException);
-                }
-                finally
-                {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
-                }
+                // Assert
+                Assert.Null(doubleDisposeException);
+            }
+            finally
+            {
+                App.Services = originalProvider;
             }
         }
 

@@ -12,16 +12,13 @@ using Servy.UI.Constants;
 using Servy.UI.Services;
 using System.Reflection;
 using System.Windows.Threading;
-using Helper = Servy.Testing.Helper;  
+using Helper = Servy.Testing.Helper;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
     [Collection("Ambient AppServices Dependent Tests")]
     public class ConsoleViewModelTests : IDisposable
     {
-        // Centralized lock token shared across the test fixture to block cross-thread interference
-        private static readonly object StaticEnvironmentLock = new object();
-
         private readonly Mock<IServiceRepository> _serviceRepoMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
@@ -70,23 +67,15 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullServiceRepository_ThrowsArgumentNullException()
         {
-            // Guarded with environmental lock block to protect against ambient state drift from adjacent tests
-            lock (StaticEnvironmentLock)
-            {
-                Assert.Throws<ArgumentNullException>(() => new ConsoleViewModel(
-                    null!, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _uiDispatcherMock.Object));
-            }
+            Assert.Throws<ArgumentNullException>(() => new ConsoleViewModel(
+                null!, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _uiDispatcherMock.Object));
         }
 
         [Fact]
         public void Constructor_NullAppConfig_ThrowsArgumentNullException()
         {
-            // Guarded with environmental lock block to protect against ambient state drift from adjacent tests
-            lock (StaticEnvironmentLock)
-            {
-                Assert.Throws<ArgumentNullException>(() => new ConsoleViewModel(
-                    _serviceRepoMock.Object, _serviceCommandsMock.Object, null!, _cursorServiceMock.Object, _uiDispatcherMock.Object));
-            }
+            Assert.Throws<ArgumentNullException>(() => new ConsoleViewModel(
+                _serviceRepoMock.Object, _serviceCommandsMock.Object, null!, _cursorServiceMock.Object, _uiDispatcherMock.Object));
         }
 
         [Fact]
@@ -94,27 +83,20 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                // Wrapped in the exclusive environment lock block to register the required Design-Time tracker service dependencies
-                lock (StaticEnvironmentLock)
-                {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
 
-                    try
-                    {
-                        var dtViewModel = new ConsoleViewModel();
-                        Assert.NotNull(dtViewModel.RawLines);
-                        Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                try
+                {
+                    var dtViewModel = new ConsoleViewModel();
+                    Assert.NotNull(dtViewModel.RawLines);
+                    Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             }, createApp: true);
         }
@@ -128,33 +110,26 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var vm = CreateViewModel();
+                    var service = new ConsoleService { Name = "AppService", StdoutPath = "C:\\out.log" };
 
-                    try
-                    {
-                        var vm = CreateViewModel();
-                        var service = new ConsoleService { Name = "AppService", StdoutPath = "C:\\out.log" };
+                    // Act
+                    vm.SelectedService = service;
 
-                        // Act
-                        vm.SelectedService = service;
-
-                        // Assert
-                        Assert.Equal("AppService", vm.SelectedService.Name);
-                        Assert.Empty(vm.RawLines);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert
+                    Assert.Equal("AppService", vm.SelectedService.Name);
+                    Assert.Empty(vm.RawLines);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             });
         }
@@ -164,33 +139,26 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var vm = CreateViewModel();
+                    vm.SetSelectionActive(true);
+                    Assert.True(vm.IsPaused);
 
-                    try
-                    {
-                        var vm = CreateViewModel();
-                        vm.SetSelectionActive(true);
-                        Assert.True(vm.IsPaused);
+                    // Act
+                    vm.ClearSelectionCommand.Execute(null);
 
-                        // Act
-                        vm.ClearSelectionCommand.Execute(null);
-
-                        // Assert
-                        Assert.False(vm.IsPaused);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert
+                    Assert.False(vm.IsPaused);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             });
         }
@@ -200,32 +168,25 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var vm = CreateViewModel();
+                    var mockService = new ConsoleService { Name = "TestService", Pid = 5555 };
+                    vm.SelectedService = mockService;
 
-                    try
-                    {
-                        var vm = CreateViewModel();
-                        var mockService = new ConsoleService { Name = "TestService", Pid = 5555 };
-                        vm.SelectedService = mockService;
+                    vm.CopyPidCommand.ExecuteAsync(null).GetAwaiter().GetResult();
 
-                        vm.CopyPidCommand.ExecuteAsync(null).GetAwaiter().GetResult();
-
-                        // Assert
-                        _serviceCommandsMock.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "TestService"), It.IsAny<CancellationToken>()), Times.Once);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert
+                    _serviceCommandsMock.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "TestService"), It.IsAny<CancellationToken>()), Times.Once);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             });
         }
@@ -235,45 +196,38 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var vm = CreateViewModel();
 
-                    try
+                    vm.RawLines.Add(new LogLine("Operation successful", LogType.StdOut));
+                    vm.RawLines.Add(new LogLine("System Crash", LogType.StdErr));
+
+                    // Act - Trigger Filter
+                    vm.ConsoleSearchText = "Crash";
+
+                    // Wait for the debounce + dispatcher queue
+                    int retries = 0;
+                    while (vm.VisibleLines.Cast<LogLine>().Count() != 1 && retries < 10)
                     {
-                        var vm = CreateViewModel();
-
-                        vm.RawLines.Add(new LogLine("Operation successful", LogType.StdOut));
-                        vm.RawLines.Add(new LogLine("System Crash", LogType.StdErr));
-
-                        // Act - Trigger Filter
-                        vm.ConsoleSearchText = "Crash";
-
-                        // Wait for the debounce + dispatcher queue
-                        int retries = 0;
-                        while (vm.VisibleLines.Cast<LogLine>().Count() != 1 && retries < 10)
-                        {
-                            Task.Delay(20).GetAwaiter().GetResult();
-                            Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
-                            retries++;
-                        }
-
-                        // Assert
-                        var filtered = vm.VisibleLines.Cast<LogLine>().ToList();
-                        Assert.Single(filtered);
-                        Assert.Contains("Crash", filtered[0].Text);
+                        Task.Delay(20).GetAwaiter().GetResult();
+                        Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                        retries++;
                     }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+
+                    // Assert
+                    var filtered = vm.VisibleLines.Cast<LogLine>().ToList();
+                    Assert.Single(filtered);
+                    Assert.Contains("Crash", filtered[0].Text);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             });
         }
@@ -287,39 +241,32 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var vm = CreateViewModel();
+                    var methodInfo = typeof(ConsoleViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                    try
-                    {
-                        var vm = CreateViewModel();
-                        var methodInfo = typeof(ConsoleViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+                    // Force state variable to simulate an orphaned selection
+                    var fieldInfo = typeof(ConsoleViewModel).GetField("_hadSelectedService", BindingFlags.NonPublic | BindingFlags.Instance);
+                    fieldInfo?.SetValue(vm, true);
+                    vm.Pid = "1234";
 
-                        // Force state variable to simulate an orphaned selection
-                        var fieldInfo = typeof(ConsoleViewModel).GetField("_hadSelectedService", BindingFlags.NonPublic | BindingFlags.Instance);
-                        fieldInfo?.SetValue(vm, true);
-                        vm.Pid = "1234";
+                    // Act
+                    var task = (Task)methodInfo!.Invoke(vm, null)!;
+                    task.GetAwaiter().GetResult();
 
-                        // Act
-                        var task = (Task)methodInfo!.Invoke(vm, null)!;
-                        task.GetAwaiter().GetResult();
-
-                        // Assert
-                        Assert.Equal(UiConstants.NotAvailable, vm.Pid);
-                        Assert.False((bool)fieldInfo!.GetValue(vm)!);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert
+                    Assert.Equal(UiConstants.NotAvailable, vm.Pid);
+                    Assert.False((bool)fieldInfo!.GetValue(vm)!);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             });
         }
@@ -329,42 +276,35 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var vm = CreateViewModel();
+                    var service = new ConsoleService { Name = "DeadService", Pid = 1234, StdoutPath = "log.txt" };
+                    vm.SelectedService = service;
 
-                    try
-                    {
-                        var vm = CreateViewModel();
-                        var service = new ConsoleService { Name = "DeadService", Pid = 1234, StdoutPath = "log.txt" };
-                        vm.SelectedService = service;
+                    // Simulate DB returning a service state with no active PID (stopped)
+                    _serviceRepoMock.Setup(r => r.GetServiceConsoleStateAsync("DeadService", It.IsAny<CancellationToken>()))
+                                    .ReturnsAsync(new ServiceConsoleStateDto { Pid = null });
 
-                        // Simulate DB returning a service state with no active PID (stopped)
-                        _serviceRepoMock.Setup(r => r.GetServiceConsoleStateAsync("DeadService", It.IsAny<CancellationToken>()))
-                                        .ReturnsAsync(new ServiceConsoleStateDto { Pid = null });
+                    var methodInfo = typeof(ConsoleViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                        var methodInfo = typeof(ConsoleViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+                    // Act
+                    var task = (Task)methodInfo!.Invoke(vm, null)!;
+                    task.GetAwaiter().GetResult();
 
-                        // Act
-                        var task = (Task)methodInfo!.Invoke(vm, null)!;
-                        task.GetAwaiter().GetResult();
-
-                        // Assert
-                        Assert.Null(service.Pid);
-                        Assert.Null(service.StdoutPath);
-                        Assert.Equal(UiConstants.NotAvailable, vm.Pid);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert
+                    Assert.Null(service.Pid);
+                    Assert.Null(service.StdoutPath);
+                    Assert.Equal(UiConstants.NotAvailable, vm.Pid);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             });
         }
@@ -374,40 +314,33 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var vm = CreateViewModel();
+                    var service = new ConsoleService { Name = "ActiveService", Pid = 100, StdoutPath = "old.txt" };
+                    vm.SelectedService = service;
 
-                    try
-                    {
-                        var vm = CreateViewModel();
-                        var service = new ConsoleService { Name = "ActiveService", Pid = 100, StdoutPath = "old.txt" };
-                        vm.SelectedService = service;
+                    // Simulate DB reporting a newly rotated log file path
+                    _serviceRepoMock.Setup(r => r.GetServiceConsoleStateAsync("ActiveService", It.IsAny<CancellationToken>()))
+                                    .ReturnsAsync(new ServiceConsoleStateDto { Pid = 100, ActiveStdoutPath = "new.txt" });
 
-                        // Simulate DB reporting a newly rotated log file path
-                        _serviceRepoMock.Setup(r => r.GetServiceConsoleStateAsync("ActiveService", It.IsAny<CancellationToken>()))
-                                        .ReturnsAsync(new ServiceConsoleStateDto { Pid = 100, ActiveStdoutPath = "new.txt" });
+                    var methodInfo = typeof(ConsoleViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                        var methodInfo = typeof(ConsoleViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+                    // Act
+                    var task = (Task)methodInfo!.Invoke(vm, null)!;
+                    task.GetAwaiter().GetResult();
 
-                        // Act
-                        var task = (Task)methodInfo!.Invoke(vm, null)!;
-                        task.GetAwaiter().GetResult();
-
-                        // Assert
-                        Assert.Equal("new.txt", service.StdoutPath);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert
+                    Assert.Equal("new.txt", service.StdoutPath);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             });
         }
@@ -421,36 +354,29 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var vm = CreateViewModel();
+                    vm.Pid = "1234";
+                    vm.RawLines.Add(new LogLine("Test", LogType.StdOut));
 
-                    try
-                    {
-                        var vm = CreateViewModel();
-                        vm.Pid = "1234";
-                        vm.RawLines.Add(new LogLine("Test", LogType.StdOut));
+                    var methodInfo = typeof(ConsoleViewModel).GetMethod("OnMonitoringStopped", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                        var methodInfo = typeof(ConsoleViewModel).GetMethod("OnMonitoringStopped", BindingFlags.NonPublic | BindingFlags.Instance);
+                    // Act
+                    methodInfo!.Invoke(vm, new object[] { true });
 
-                        // Act
-                        methodInfo!.Invoke(vm, new object[] { true });
-
-                        // Assert
-                        Assert.Equal(UiConstants.NotAvailable, vm.Pid);
-                        Assert.Empty(vm.RawLines);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert
+                    Assert.Equal(UiConstants.NotAvailable, vm.Pid);
+                    Assert.Empty(vm.RawLines);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             });
         }
@@ -460,36 +386,29 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    var vm = CreateViewModel();
+                    bool scrollTriggered = false;
+                    vm.RequestScroll += (force) => scrollTriggered = true;
 
-                    try
-                    {
-                        var vm = CreateViewModel();
-                        bool scrollTriggered = false;
-                        vm.RequestScroll += (force) => scrollTriggered = true;
+                    // Act
+                    vm.Dispose();
 
-                        // Act
-                        vm.Dispose();
-
-                        // Assert: Event invocation list should be wiped
-                        var eventField = typeof(ConsoleViewModel).GetField("RequestScroll", BindingFlags.NonPublic | BindingFlags.Instance);
-                        var eventDelegate = eventField?.GetValue(vm);
-                        Assert.Null(eventDelegate);
-                        Assert.False(scrollTriggered);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert: Event invocation list should be wiped
+                    var eventField = typeof(ConsoleViewModel).GetField("RequestScroll", BindingFlags.NonPublic | BindingFlags.Instance);
+                    var eventDelegate = eventField?.GetValue(vm);
+                    Assert.Null(eventDelegate);
+                    Assert.False(scrollTriggered);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             });
         }
@@ -529,8 +448,40 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void CreateServiceItem_ValidServiceInput_MapsToConsoleServiceWithNullFields()
         {
-            // Guarded with environmental lock block to protect against ambient state drift from adjacent tests
-            lock (StaticEnvironmentLock)
+            var originalProvider = App.Services;
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton(_mockProcessKiller.Object);
+            App.Services = serviceCollection.BuildServiceProvider();
+
+            try
+            {
+                // Arrange
+                var vm = CreateViewModel();
+                var service = new Service { Name = "EngineService" };
+
+                var methodInfo = typeof(ConsoleViewModel).GetMethod("CreateServiceItem", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                // Act
+                var result = methodInfo!.Invoke(vm, new object[] { service }) as ConsoleService;
+
+                // Assert
+                var enumerator = vm.VisibleLines.GetEnumerator();
+                Assert.NotNull(result);
+                Assert.Equal("EngineService", result.Name);
+                Assert.Null(result.Pid);
+                Assert.Null(result.StdoutPath);
+                Assert.Null(result.StderrPath);
+            }
+            finally
+            {
+                App.Services = originalProvider;
+            }
+        }
+
+        [Fact]
+        public async Task ApplyFilterWithDebounceAsync_OldCtsNotNull_CancelsAndDisposesPreviousFilterToken()
+        {
+            await Helper.RunOnSTA(async () =>
             {
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
@@ -541,65 +492,20 @@ namespace Servy.Manager.UnitTests.ViewModels
                 {
                     // Arrange
                     var vm = CreateViewModel();
-                    var service = new Service { Name = "EngineService" };
+                    var firstCts = new CancellationTokenSource();
 
-                    var methodInfo = typeof(ConsoleViewModel).GetMethod("CreateServiceItem", BindingFlags.NonPublic | BindingFlags.Instance);
+                    var fieldInfo = typeof(ConsoleViewModel).GetField("_logFilterCts", BindingFlags.NonPublic | BindingFlags.Instance);
+                    fieldInfo?.SetValue(vm, firstCts);
 
-                    // Act
-                    var result = methodInfo!.Invoke(vm, new object[] { service }) as ConsoleService;
+                    // Act - Mutating ConsoleSearchText causes ApplyFilterWithDebounceAsync to process an Interlocked.Exchange over firstCts
+                    vm.ConsoleSearchText = "NewSearchQueryTextString";
 
                     // Assert
-                    Assert.NotNull(result);
-                    Assert.Equal("EngineService", result.Name);
-                    Assert.Null(result.Pid);
-                    Assert.Null(result.StdoutPath);
-                    Assert.Null(result.StderrPath);
+                    Assert.True(firstCts.IsCancellationRequested);
                 }
                 finally
                 {
-                    if (originalProvider != null)
-                    {
-                        App.Services = originalProvider;
-                    }
-                }
-            }
-        }
-
-        [Fact]
-        public async Task ApplyFilterWithDebounceAsync_OldCtsNotNull_CancelsAndDisposesPreviousFilterToken()
-        {
-            await Helper.RunOnSTA(async () =>
-            {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
-                {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
-
-                    try
-                    {
-                        // Arrange
-                        var vm = CreateViewModel();
-                        var firstCts = new CancellationTokenSource();
-
-                        var fieldInfo = typeof(ConsoleViewModel).GetField("_logFilterCts", BindingFlags.NonPublic | BindingFlags.Instance);
-                        fieldInfo?.SetValue(vm, firstCts);
-
-                        // Act - Mutating ConsoleSearchText causes ApplyFilterWithDebounceAsync to process an Interlocked.Exchange over firstCts
-                        vm.ConsoleSearchText = "NewSearchQueryTextString";
-
-                        // Assert
-                        Assert.True(firstCts.IsCancellationRequested);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    App.Services = originalProvider;
                 }
             });
         }
@@ -609,36 +515,29 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    // Arrange
+                    var vm = CreateViewModel();
+                    vm.RawLines.Add(new LogLine("Preserve Me", LogType.StdOut));
 
-                    try
-                    {
-                        // Arrange
-                        var vm = CreateViewModel();
-                        vm.RawLines.Add(new LogLine("Preserve Me", LogType.StdOut));
+                    var methodInfo = typeof(ConsoleViewModel).GetMethod("SwitchServiceAsync", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                        var methodInfo = typeof(ConsoleViewModel).GetMethod("SwitchServiceAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+                    // Act - Invoke service transition with empty/null pathing arguments to trigger structural history emptiness
+                    var task = (Task)methodInfo!.Invoke(vm, new object[] { string.Empty, string.Empty })!;
+                    task.GetAwaiter().GetResult();
 
-                        // Act - Invoke service transition with empty/null pathing arguments to trigger structural history emptiness
-                        var task = (Task)methodInfo!.Invoke(vm, new object[] { string.Empty, string.Empty })!;
-                        task.GetAwaiter().GetResult();
-
-                        // Assert - Verify that the internal branch evaluation safely skipped AddRange loops since paths were empty
-                        Assert.Empty(vm.RawLines);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert - Verify that the internal branch evaluation safely skipped AddRange loops since paths were empty
+                    Assert.Empty(vm.RawLines);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             });
         }
@@ -648,65 +547,58 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    // Arrange
+                    var vm = CreateViewModel();
 
-                    try
+                    // Cap layout dimensions intentionally low to strike the TrimToSize validation branch immediately
+                    _appConfigMock.Setup(c => c.ConsoleMaxLines).Returns(2);
+                    var fieldMaxLines = typeof(ConsoleViewModel).GetField("_maxLines", BindingFlags.NonPublic | BindingFlags.Instance);
+                    fieldMaxLines?.SetValue(vm, 2);
+
+                    var methodInfo = typeof(ConsoleViewModel).GetMethod("StartLiveTail", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                    // Read current Session ID to pass down as a synchronized parameter match
+                    var fieldSessionId = typeof(ConsoleViewModel).GetField("_currentSessionId", BindingFlags.NonPublic | BindingFlags.Instance);
+                    int activeSessionId = (int)fieldSessionId!.GetValue(vm)!;
+
+                    // Act - Spin up an active live tail listener instance context mapping to stdout
+                    methodInfo!.Invoke(vm, new object[] { "out.log", LogType.StdOut, 0L, DateTime.UtcNow, activeSessionId, CancellationToken.None });
+
+                    // Pull the dynamic internal event handler delegate out via reflection
+                    var fieldActiveTailer = typeof(ConsoleViewModel).GetField("_activeStdoutTailer", BindingFlags.NonPublic | BindingFlags.Instance);
+                    var tailerInstance = fieldActiveTailer!.GetValue(vm) as LogTailer;
+
+                    // Construct a test payload batch block of 3 log lines to pass directly through the tailer's event handler pipeline
+                    var newLinesBatch = new List<LogLine>
                     {
-                        // Arrange
-                        var vm = CreateViewModel();
+                        new LogLine("Row 1", LogType.StdOut),
+                        new LogLine("Row 2", LogType.StdOut),
+                        new LogLine("Row 3", LogType.StdOut)
+                    };
 
-                        // Cap layout dimensions intentionally low to strike the TrimToSize validation branch immediately
-                        _appConfigMock.Setup(c => c.ConsoleMaxLines).Returns(2);
-                        var fieldMaxLines = typeof(ConsoleViewModel).GetField("_maxLines", BindingFlags.NonPublic | BindingFlags.Instance);
-                        fieldMaxLines?.SetValue(vm, 2);
+                    // Raise the event inside the log tailer instance to simulate inbound disk streaming updates
+                    var eventInfo = typeof(LogTailer).GetEvent("OnNewLines", BindingFlags.Public | BindingFlags.Instance);
+                    var handlerDelegate = typeof(ConsoleViewModel).GetField("_stdoutTailerHandler", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm) as Delegate;
+                    eventInfo!.AddMethod!.Invoke(tailerInstance, new object[] { handlerDelegate! });
 
-                        var methodInfo = typeof(ConsoleViewModel).GetMethod("StartLiveTail", BindingFlags.NonPublic | BindingFlags.Instance);
+                    // Act - Direct programmatic dispatch invoke step
+                    handlerDelegate!.DynamicInvoke(new object[] { newLinesBatch });
 
-                        // Read current Session ID to pass down as a synchronized parameter match
-                        var fieldSessionId = typeof(ConsoleViewModel).GetField("_currentSessionId", BindingFlags.NonPublic | BindingFlags.Instance);
-                        int activeSessionId = (int)fieldSessionId!.GetValue(vm)!;
-
-                        // Act - Spin up an active live tail listener instance context mapping to stdout
-                        methodInfo!.Invoke(vm, new object[] { "out.log", LogType.StdOut, 0L, DateTime.UtcNow, activeSessionId, CancellationToken.None });
-
-                        // Pull the dynamic internal event handler delegate out via reflection
-                        var fieldActiveTailer = typeof(ConsoleViewModel).GetField("_activeStdoutTailer", BindingFlags.NonPublic | BindingFlags.Instance);
-                        var tailerInstance = fieldActiveTailer!.GetValue(vm) as LogTailer;
-
-                        // Construct a test payload batch block of 3 log lines to pass directly through the tailer's event handler pipeline
-                        var newLinesBatch = new List<LogLine>
-                        {
-                            new LogLine("Row 1", LogType.StdOut),
-                            new LogLine("Row 2", LogType.StdOut),
-                            new LogLine("Row 3", LogType.StdOut)
-                        };
-
-                        // Raise the event inside the log tailer instance to simulate inbound disk streaming updates
-                        var eventInfo = typeof(LogTailer).GetEvent("OnNewLines", BindingFlags.Public | BindingFlags.Instance);
-                        var handlerDelegate = typeof(ConsoleViewModel).GetField("_stdoutTailerHandler", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm) as Delegate;
-                        eventInfo!.AddMethod!.Invoke(tailerInstance, new object[] { handlerDelegate! });
-
-                        // Act - Direct programmatic dispatch invoke step
-                        handlerDelegate!.DynamicInvoke(new object[] { newLinesBatch });
-
-                        // Assert - Proves both AddRange and TrimToSize internal loops executed safely, capping length to 2 rows
-                        Assert.Equal(2, vm.RawLines.Count);
-                        Assert.Equal("Row 2", vm.RawLines[0].Text);
-                        Assert.Equal("Row 3", vm.RawLines[1].Text);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert - Proves both AddRange and TrimToSize internal loops executed safely, capping length to 2 rows
+                    Assert.Equal(2, vm.RawLines.Count);
+                    Assert.Equal("Row 2", vm.RawLines[0].Text);
+                    Assert.Equal("Row 3", vm.RawLines[1].Text);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             });
         }
@@ -716,42 +608,35 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    // Arrange
+                    var vm = CreateViewModel();
+                    vm.SetSelectionActive(true); // User is selecting text in the UI terminal window frame
 
-                    try
-                    {
-                        // Arrange
-                        var vm = CreateViewModel();
-                        vm.SetSelectionActive(true); // User is selecting text in the UI terminal window frame
+                    var methodInfo = typeof(ConsoleViewModel).GetMethod("StartLiveTail", BindingFlags.NonPublic | BindingFlags.Instance);
+                    int currentSessionId = (int)typeof(ConsoleViewModel).GetField("_currentSessionId", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm)!;
 
-                        var methodInfo = typeof(ConsoleViewModel).GetMethod("StartLiveTail", BindingFlags.NonPublic | BindingFlags.Instance);
-                        int currentSessionId = (int)typeof(ConsoleViewModel).GetField("_currentSessionId", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm)!;
+                    methodInfo!.Invoke(vm, new object[] { "out.log", LogType.StdOut, 0L, DateTime.UtcNow, currentSessionId, CancellationToken.None });
 
-                        methodInfo!.Invoke(vm, new object[] { "out.log", LogType.StdOut, 0L, DateTime.UtcNow, currentSessionId, CancellationToken.None });
+                    var handlerDelegate = typeof(ConsoleViewModel).GetField("_stdoutTailerHandler", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm) as Delegate;
 
-                        var handlerDelegate = typeof(ConsoleViewModel).GetField("_stdoutTailerHandler", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm) as Delegate;
+                    var newLinesBatch = new List<LogLine> { new LogLine("Ignored live incoming console data string line", LogType.StdOut) };
 
-                        var newLinesBatch = new List<LogLine> { new LogLine("Ignored live incoming console data string line", LogType.StdOut) };
+                    // Act
+                    handlerDelegate!.DynamicInvoke(new object[] { newLinesBatch });
 
-                        // Act
-                        handlerDelegate!.DynamicInvoke(new object[] { newLinesBatch });
-
-                        // Assert - Log array size should remain 0 because mutation bypassed collection injection via text pause guard gate
-                        Assert.Empty(vm.RawLines);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert - Log array size should remain 0 because mutation bypassed collection injection via text pause guard gate
+                    Assert.Empty(vm.RawLines);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             });
         }
@@ -761,41 +646,34 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    // Arrange
+                    var vm = CreateViewModel();
+                    var methodInfo = typeof(ConsoleViewModel).GetMethod("StartLiveTail", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                    try
-                    {
-                        // Arrange
-                        var vm = CreateViewModel();
-                        var methodInfo = typeof(ConsoleViewModel).GetMethod("StartLiveTail", BindingFlags.NonPublic | BindingFlags.Instance);
+                    int currentSessionId = (int)typeof(ConsoleViewModel).GetField("_currentSessionId", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm)!;
+                    int staleSessionId = currentSessionId - 1; // Simulated obsolete thread queue callback sequence tracking state
 
-                        int currentSessionId = (int)typeof(ConsoleViewModel).GetField("_currentSessionId", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm)!;
-                        int staleSessionId = currentSessionId - 1; // Simulated obsolete thread queue callback sequence tracking state
+                    methodInfo!.Invoke(vm, new object[] { "out.log", LogType.StdOut, 0L, DateTime.UtcNow, staleSessionId, CancellationToken.None });
 
-                        methodInfo!.Invoke(vm, new object[] { "out.log", LogType.StdOut, 0L, DateTime.UtcNow, staleSessionId, CancellationToken.None });
+                    var handlerDelegate = typeof(ConsoleViewModel).GetField("_stdoutTailerHandler", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm) as Delegate;
+                    var newLinesBatch = new List<LogLine> { new LogLine("Obsolete service log line output", LogType.StdOut) };
 
-                        var handlerDelegate = typeof(ConsoleViewModel).GetField("_stdoutTailerHandler", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm) as Delegate;
-                        var newLinesBatch = new List<LogLine> { new LogLine("Obsolete service log line output", LogType.StdOut) };
+                    // Act
+                    handlerDelegate!.DynamicInvoke(new object[] { newLinesBatch });
 
-                        // Act
-                        handlerDelegate!.DynamicInvoke(new object[] { newLinesBatch });
-
-                        // Assert
-                        Assert.Empty(vm.RawLines);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert
+                    Assert.Empty(vm.RawLines);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             });
         }
@@ -805,35 +683,28 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    // Arrange
+                    var vm = CreateViewModel();
+                    var service = new ConsoleService { Name = "ActiveService", StdoutPath = "out.log", StderrPath = "err.log" };
+                    vm.SelectedService = service;
+                    vm.SetSelectionActive(true);
 
-                    try
-                    {
-                        // Arrange
-                        var vm = CreateViewModel();
-                        var service = new ConsoleService { Name = "ActiveService", StdoutPath = "out.log", StderrPath = "err.log" };
-                        vm.SelectedService = service;
-                        vm.SetSelectionActive(true);
+                    // Act - Toggle selection state back to false to trigger the internal conditional reset pathway loop block
+                    vm.SetSelectionActive(false);
 
-                        // Act - Toggle selection state back to false to trigger the internal conditional reset pathway loop block
-                        vm.SetSelectionActive(false);
-
-                        // Assert
-                        Assert.False(vm.IsPaused);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert
+                    Assert.False(vm.IsPaused);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             });
         }
@@ -843,33 +714,26 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Wrapped in environmental lock and localized service collection setup to eliminate tracking flakiness
-                lock (StaticEnvironmentLock)
+                var originalProvider = App.Services;
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton(_mockProcessKiller.Object);
+                App.Services = serviceCollection.BuildServiceProvider();
+
+                try
                 {
-                    var originalProvider = App.Services;
-                    var serviceCollection = new ServiceCollection();
-                    serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                    App.Services = serviceCollection.BuildServiceProvider();
+                    // Arrange
+                    var vm = CreateViewModel();
 
-                    try
-                    {
-                        // Arrange
-                        var vm = CreateViewModel();
+                    // Act
+                    vm.Dispose();
 
-                        // Act
-                        vm.Dispose();
-
-                        // Assert - Re-invoking sequential Dispose cycles must exit early without crash exceptions or registry faults
-                        var multipleDisposeError = Record.Exception(() => vm.Dispose());
-                        Assert.Null(multipleDisposeError);
-                    }
-                    finally
-                    {
-                        if (originalProvider != null)
-                        {
-                            App.Services = originalProvider;
-                        }
-                    }
+                    // Assert - Re-invoking sequential Dispose cycles must exit early without crash exceptions or registry faults
+                    var multipleDisposeError = Record.Exception(() => vm.Dispose());
+                    Assert.Null(multipleDisposeError);
+                }
+                finally
+                {
+                    App.Services = originalProvider;
                 }
             });
         }
