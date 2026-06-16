@@ -16,7 +16,8 @@ using System.Windows.Threading;
 namespace Servy.UI.Design
 {
     /// <summary>
-    /// Provides a no-op implementation of process-related utility methods for XAML design-time support.
+    /// Provides a concrete <see cref="ProcessHelper"/> subtype used purely so the designer can instantiate a stand-in 
+    /// (the real metric methods are simply never invoked at design time).
     /// </summary>
     /// <remarks>
     /// This class inherits from <see cref="ProcessHelper"/> to satisfy dependency requirements 

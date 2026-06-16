@@ -20,7 +20,7 @@ namespace Servy.Manager.Converters
         /// <param name="targetType">The type expected by the binding target property.</param>
         /// <param name="parameter">An optional converter parameter, currently unused.</param>
         /// <param name="culture">The culture information used for localization, currently unused.</param>
-        /// <returns>The first line of the provided text, or an <see cref="string.Empty"/> if the input is null or whitespace.</returns>
+        /// <returns>The first line of the provided text, or <see cref="string.Empty"/> if the input is null.</returns>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value == null)

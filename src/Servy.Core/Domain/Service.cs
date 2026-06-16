@@ -3,6 +3,7 @@ using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.Services;
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.ServiceProcess;
 using System.Threading;

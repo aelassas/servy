@@ -80,7 +80,7 @@ namespace Servy.Core.Helpers
         /// <exception cref="InvalidOperationException">Thrown if the connection string format is invalid or directory names cannot be parsed.</exception>
         public static void EnsureFolders(string connectionString, string aesKeyFilePath, string aesIVFilePath)
         {
-            // Validate inputs per original implementation
+            // Reject null/blank paths before any filesystem or ACL work
             if (string.IsNullOrWhiteSpace(connectionString))
                 throw new ArgumentNullException(nameof(connectionString));
             if (string.IsNullOrWhiteSpace(aesKeyFilePath))
