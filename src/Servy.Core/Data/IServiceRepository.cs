@@ -154,7 +154,8 @@ namespace Servy.Core.Data
         /// </summary>
         /// <param name="name">The name of the service to export.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>An XML string representing the service.</returns>
+        /// <returns>An XML string representing the service, or <see cref="string.Empty"/> if
+        /// <paramref name="name"/> is null/whitespace or no matching service exists.</returns>
         Task<string> ExportXmlAsync(string? name, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -170,7 +171,8 @@ namespace Servy.Core.Data
         /// </summary>
         /// <param name="name">The name of the service to export.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>A JSON string representing the service.</returns>
+        /// <returns>A JSON string representing the service, or <see cref="string.Empty"/> if
+        /// <paramref name="name"/> is null/whitespace or no matching service exists.</returns>
         Task<string> ExportJsonAsync(string? name, CancellationToken cancellationToken = default);
 
         /// <summary>

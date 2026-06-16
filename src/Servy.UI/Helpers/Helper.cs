@@ -90,7 +90,7 @@ namespace Servy.UI.Helpers
         /// <returns>
         /// A string such as:  
         /// <c>No services in 500ms</c>,  
-        /// <c>1 services in 2s</c>,  
+        /// <c>1 service in 2s</c>,  
         /// <c>1,234 logs in 1m 20s</c>.
         /// </returns>
         public static string GetRowsInfo(

@@ -73,7 +73,7 @@ namespace Servy.UI.Services
         {
             try
             {
-                // 10 seconds is the ideal 'patience window' for a manual UI trigger
+                // Patience window for a manual UI trigger (see AppConfig.UpdateCheckTimeoutSeconds)
                 using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(AppConfig.UpdateCheckTimeoutSeconds)))
                 using (var response = await _httpClient.GetAsync(AppConfig.LatestReleaseApiUrl, cts.Token))
                 {
@@ -128,7 +128,7 @@ namespace Servy.UI.Services
             }
             catch (OperationCanceledException)
             {
-                // Specific handling for the 10-second timeout
+                // Specific handling for the update-check timeout (AppConfig.UpdateCheckTimeoutSeconds)
                 Logger.Warn("Update check timed out.");
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UpdateCheckTimeout, caption);
             }

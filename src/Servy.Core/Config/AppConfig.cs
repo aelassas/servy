@@ -850,7 +850,7 @@ namespace Servy.Core.Config
         /// characters and header metadata, ensuring that log writes do not fail due to message bloat.
         /// </para>
         /// <para>
-        /// When a log message exceeds this limit, the <see cref="SafeWriteToEventLog"/> method will truncate the string 
+        /// When a log message exceeds this limit, the <c>SafeWriteToEventLog</c> method in <see cref="EventLogLogger"/> will truncate the string 
         /// and append a "[truncated]" suffix to maintain forensic visibility while ensuring the write operation succeeds.
         /// </para>
         /// </remarks>
@@ -1546,7 +1546,7 @@ namespace Servy.Core.Config
         /// Thrown when the root of the drive is reached without finding <c>Servy.sln</c> in any ancestor directory.
         /// </exception>
         /// <remarks>
-        /// Primarily used by the DEBUG-only <see cref="RepoRoot"/> field and by unit tests
+        /// Primarily used by the DEBUG-only <c>RepoRoot</c> field and by unit tests
         /// (which run in all build configurations) to resolve solution-relative paths.
         /// </remarks>
         public static string FindRepoRoot(string startDir)

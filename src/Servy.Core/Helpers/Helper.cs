@@ -537,7 +537,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="path">The base file path (e.g., the destination file path).</param>
         /// <returns>
-        /// A string representing a unique temporary path, such as <c>C:\Data\config.xml.a1b2c3d4e5f6g7h8.tmp</c>.
+        /// A string representing a unique temporary path, such as <c>C:\Data\config.xml.a1b2c3d4e5f60789.tmp</c>.
         /// </returns>
         /// <remarks>
         /// <para>

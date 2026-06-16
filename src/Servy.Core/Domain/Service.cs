@@ -2,6 +2,7 @@
 using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.Services;
+using System.ComponentModel;
 using System.ServiceProcess;
 #if !DEBUG
 using Servy.Core.Logging;
