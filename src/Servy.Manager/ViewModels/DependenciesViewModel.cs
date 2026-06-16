@@ -60,7 +60,7 @@ namespace Servy.Manager.ViewModels
 
                 CopyPidCommand?.RaiseCanExecuteChanged();
 
-                StopMonitoring(clearView: false); // We have already reset our own view state above; skip the base class OnMonitoringStopped callback.
+                StopMonitoring(clearView: false); // clearView: false -> tree reload is already underway via LoadDependencyTreeAsync; no extra view clearing needed.
                 StartMonitoring();
             }
         }

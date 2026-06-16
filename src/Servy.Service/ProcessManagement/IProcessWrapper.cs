@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.Core.Config;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -102,8 +103,9 @@ namespace Servy.Service.ProcessManagement
         /// the timeout period; otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
-        /// This method polls the process state every 500 milliseconds until the timeout
-        /// is reached. If the process exits during this time, the method returns <c>false</c>.
+        /// This method polls the process state at the interval configured by
+        /// <see cref="AppConfig.WaitForExitOrTimeoutDelayMs"/> (default 500 ms) until the timeout is reached.
+        /// If the process exits during this time, the method returns <c>false</c>.
         /// </remarks>
         Task<bool> WaitAndCheckStillRunningAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
 

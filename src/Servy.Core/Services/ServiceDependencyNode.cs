@@ -22,6 +22,9 @@ namespace Servy.Core.Services
 
         #region Events
 
+        /// <summary>
+        /// Occurs when a property value changes.
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
 
         #endregion

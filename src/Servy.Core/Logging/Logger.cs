@@ -445,7 +445,7 @@ namespace Servy.Core.Logging
             sanitizedMessage = VerticalControlRegex.Replace(sanitizedMessage, " ");
             sanitizedMessage = sanitizedMessage.Trim();
 
-            // Format: [2026-05-06 08:58:20+01:00] [INFO] Message text OR [2026-05-06 08:58:20Z] [INFO] Message text
+            // Format: [2026-05-06 08:58:20.123+01:00] [INFO] | Message text  OR  [2026-05-06 08:58:20.123Z] [INFO] | Message text
             string logEntry = $"{FormatTimestampPrefix()} [{levelName}] | {sanitizedMessage}";
 
             try

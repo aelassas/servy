@@ -125,6 +125,9 @@ namespace Servy.Manager.ViewModels
 
         #region INotifyPropertyChanged
 
+        /// <summary>
+        /// Occurs when a property value changes.
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>

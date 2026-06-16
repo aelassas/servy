@@ -2,7 +2,6 @@
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Manager.Models;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using UiAppConfig = Servy.Manager.Config.UiAppConfig;
@@ -109,8 +108,8 @@ namespace Servy.Manager.Mappers
         /// <returns>A localized display string representing the account, defaulting to the localized Local System string if the input matches system-level credentials.</returns>
         public static string GetLogOnAsDisplayName(string userSession)
         {
-            // LOG: Resolving display name for service account identity.
-            // Logic: If the string is null, empty, or matches the internal "LocalSystem" SCM name, we return the UI-friendly constant.
+            // Resolving display name for service account identity.
+            // If the string is null, empty, or matches the internal "LocalSystem" SCM name, we return the UI-friendly constant.
             if (string.IsNullOrEmpty(userSession))
                 return UiAppConfig.LocalSystem;
 

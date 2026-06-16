@@ -76,7 +76,7 @@ namespace Servy.Manager.ViewModels
 
                 ResetGraphs();
 
-                StopMonitoring(clearView: false); // We have already reset our own view state above; skip the base class OnMonitoringStopped callback.
+                StopMonitoring(clearView: false); // clearView: false -> OnMonitoringStopped is still invoked but no-ops; we've already reset our view state above.
                 StartMonitoring();
             }
         }
