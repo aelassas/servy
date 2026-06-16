@@ -11,6 +11,7 @@ using Servy.UI.Services;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Threading;
+using Helper = Servy.Testing.Helper;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {

@@ -32,7 +32,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Xunit.StaFact" Version="3.0.13" />
     <PackageReference Include="xunit.v3" Version="3.2.2" />
   </ItemGroup>
 
@@ -40,6 +39,7 @@
     <ProjectReference Include="..\..\src\Servy.Core\Servy.Core.csproj" />
     <ProjectReference Include="..\..\src\Servy.UI\Servy.UI.csproj" />
     <ProjectReference Include="..\..\src\Servy\Servy.csproj" />
+    <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj" />
   </ItemGroup>
 
   <ItemGroup>

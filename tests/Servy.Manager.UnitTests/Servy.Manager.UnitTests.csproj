@@ -39,6 +39,7 @@
     <ProjectReference Include="..\..\src\Servy.Core\Servy.Core.csproj" />
     <ProjectReference Include="..\..\src\Servy.Manager\Servy.Manager.csproj" />
     <ProjectReference Include="..\..\src\Servy.UI\Servy.UI.csproj" />
+    <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj" />
   </ItemGroup>
 
   <ItemGroup>

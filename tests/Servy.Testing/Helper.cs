@@ -3,27 +3,36 @@ using Servy.Core.Native;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using System.Windows;
 using System.Windows.Threading;
 
 namespace Servy.Testing
 {
+    /// <summary>
+    /// Provides cross-cutting infrastructure utilities for the testing suite, 
+    /// including resource management, STA-thread execution scaffolding, and environment privilege validation.
+    /// </summary>
     public static class Helper
     {
         /// <summary>
-        /// Handle Exe Path.
-        /// Dynamically select the native Sysinternals binary based on runtime architecture to support ARM64 agents natively.
+        /// Gets the absolute filesystem path for the Sysinternals handle utility.
+        /// Dynamically selects the native binary based on runtime architecture to support ARM64 agents natively.
         /// </summary>
         public static readonly string HandleExePath = RuntimeInformation.OSArchitecture == Architecture.Arm64
             ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64a.exe")
             : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "handle64.exe");
 
         private static readonly object _extractionLock = new object();
+        private static readonly object _applicationLock = new object();
+        private static bool _applicationCreated;
 
         /// <summary>
-        /// Extracts handle64.exe from the assembly's embedded resources to the base directory.
+        /// Extracts the handle utility from the assembly's embedded resources to the base directory.
         /// </summary>
+        /// <exception cref="FileNotFoundException">Thrown when the embedded resource cannot be located in the manifest.</exception>
         public static void ExtractHandleExe()
         {
             // Check if the file physically exists on the disk frame right now
@@ -61,6 +70,15 @@ namespace Servy.Testing
             }
         }
 
+        /// <summary>
+        /// Writes the provided resource stream containing the Sysinternals binary out to the physical disk location.
+        /// </summary>
+        /// <param name="stream">The embedded resource data stream to extract. If null, the operation returns immediately.</param>
+        /// <remarks>
+        /// This method enforces pessimistic file existence checks and leverages <see cref="FileMode.CreateNew"/> combined 
+        /// with <see cref="FileShare.ReadWrite"/> to safely navigate file-locking races caused by real-time background scanners, 
+        /// security software, or parallel test execution threads on continuous integration (CI) agents.
+        /// </remarks>
         private static void WriteResourceToDisk(Stream? stream)
         {
             try
@@ -108,18 +126,68 @@ namespace Servy.Testing
             }
         }
 
+        /// <summary>
+        /// Ensures a WPF <see cref="Application"/> instance exists in the current AppDomain to support
+        /// STA-thread-bound UI components, converters, or resource dictionaries during testing.
+        /// </summary>
+        /// <remarks>
+        /// This method employs a double-checked locking pattern on <see cref="_applicationLock"/> 
+        /// to ensure thread-safe, singleton initialization of the WPF application context, preventing 
+        /// <see cref="InvalidOperationException"/> when UI-dependent code executes in isolated test environments.
+        /// </remarks>
+        private static void EnsureApplication()
+        {
+            lock (_applicationLock)
+            {
+                if (_applicationCreated)
+                    return;
+
+                if (Application.Current == null)
+                {
+                    new Application
+                    {
+                        ShutdownMode = ShutdownMode.OnExplicitShutdown
+                    };
+                }
+
+                _applicationCreated = true;
+            }
+        }
+
+        /// <summary>
+        /// Executes a synchronous operation on a newly spawned Single-Threaded Apartment (STA) thread.
+        /// </summary>
+        /// <param name="action">The synchronous operation to execute.</param>
+        /// <param name="createApp">If true, initializes a WPF <see cref="Application"/> instance within the thread.</param>
         public static void RunOnSTA(Action action, bool createApp = false)
         {
-            Exception? threadException = null;
+            RunOnSTA<object?>(() => { action(); return null; }, createApp);
+        }
+
+        /// <summary>
+        /// Executes a synchronous value-returning function on a newly spawned Single-Threaded Apartment (STA) thread.
+        /// </summary>
+        /// <typeparam name="T">The return type value of the function.</typeparam>
+        /// <param name="func">The synchronous function to execute.</param>
+        /// <param name="createApp">If true, initializes a WPF <see cref="Application"/> instance within the thread.</param>
+        /// <returns>Returns the calculated tracking value asset evaluated inside the thread apartment context.</returns>
+        public static T RunOnSTA<T>(Func<T> func, bool createApp = false)
+        {
+            T result = default!;
+            ExceptionDispatchInfo? capturedException = null;
+
             var thread = new Thread(() =>
             {
                 try
                 {
-                    action();
+                    if (createApp)
+                        EnsureApplication();
+
+                    result = func();
                 }
                 catch (Exception ex)
                 {
-                    threadException = ex;
+                    capturedException = ExceptionDispatchInfo.Capture(ex);
                 }
             });
 
@@ -127,12 +195,17 @@ namespace Servy.Testing
             thread.Start();
             thread.Join();
 
-            if (threadException != null)
-            {
-                throw threadException;
-            }
+            capturedException?.Throw(); // rethrows with the original stack trace intact
+            return result;
         }
 
+        /// <summary>
+        /// Executes an asynchronous operation on a newly spawned Single-Threaded Apartment (STA) thread,
+        /// ensuring a message pump is maintained for the duration of the task.
+        /// </summary>
+        /// <param name="action">The asynchronous task to execute.</param>
+        /// <param name="createApp">If true, initializes a WPF <see cref="Application"/> instance within the thread.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public static async Task RunOnSTA(Func<Task> action, bool createApp = false)
         {
             var tcs = new TaskCompletionSource<bool>();
@@ -150,6 +223,9 @@ namespace Servy.Testing
                     {
                         try
                         {
+                            if (createApp)
+                                EnsureApplication();
+
                             await action();
                             tcs.SetResult(true);
                         }
@@ -194,9 +270,10 @@ namespace Servy.Testing
         }
 
         /// <summary>
-        /// Proactively probes the system's LSA policy subsystem to see if the runner process 
-        /// has security tokens capable of opening policy access mappings.
+        /// Proactively probes the system's LSA policy subsystem to determine if the current runner 
+        /// process has sufficient security tokens to perform policy-level operations.
         /// </summary>
+        /// <returns>True if the process can open LSA policy with lookup permissions; otherwise, false.</returns>
         public static bool CheckLsaPolicyAccess()
         {
             // Emulates an LSA open loop using minimum query flags to detect if the kernel drops an access error
@@ -224,6 +301,5 @@ namespace Servy.Testing
                 }
             }
         }
-
     }
 }

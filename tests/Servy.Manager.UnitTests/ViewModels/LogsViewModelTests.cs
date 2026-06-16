@@ -9,6 +9,7 @@ using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.ViewModels;
 using Servy.UI.Services;
+using Helper = Servy.Testing.Helper;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
