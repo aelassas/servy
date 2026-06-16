@@ -32,7 +32,8 @@ namespace Servy.CLI.Commands
 
         /// <summary>
         /// Executes a synchronous command action with common error handling.
-        /// Catches <see cref="UnauthorizedAccessException"/> and <see cref="Exception"/>, returning an appropriate contextual failure <see cref="CommandResult"/>.
+        /// Wraps the action with common error handling <see cref="OperationCanceledException"/> is translated to a clean cancellation result, 
+        /// and all other exceptions are routed through <see cref="HandleException"/> (which additionally special-cases <see cref="UnauthorizedAccessException"/>).
         /// </summary>
         /// <param name="commandName">Command name  (e.g., "install", "start").</param>
         /// <param name="action">A description of what is being attempted (e.g., "install service 'MyService'").</param>
@@ -57,7 +58,8 @@ namespace Servy.CLI.Commands
 
         /// <summary>
         /// Executes an asynchronous command action with common error handling.
-        /// Catches <see cref="UnauthorizedAccessException"/> and <see cref="Exception"/>, returning an appropriate contextual failure <see cref="CommandResult"/>.
+        /// Wraps the action with common error handling <see cref="OperationCanceledException"/> is translated to a clean cancellation result, 
+        /// and all other exceptions are routed through <see cref="HandleException"/> (which additionally special-cases <see cref="UnauthorizedAccessException"/>).
         /// </summary>
         /// <param name="commandName">Command name  (e.g., "install", "start").</param>
         /// <param name="action">A description of what is being attempted (e.g., "start service 'MyService'").</param>

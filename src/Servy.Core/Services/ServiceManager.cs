@@ -164,7 +164,7 @@ namespace Servy.Core.Services
         /// <param name="serviceHandle">A valid handle to the target Windows service.</param>
         /// <param name="delayedAutostart"><c>true</c> to delay the automatic startup; otherwise <c>false</c>.</param>
         /// <returns><c>true</c> if the change was successful; otherwise, <c>false</c>.</returns>
-        private bool ChangeServiceConfig2(SafeServiceHandle serviceHandle, bool delayedAutostart)
+        private bool SetDelayedAutoStart(SafeServiceHandle serviceHandle, bool delayedAutostart)
         {
             var delayedInfo = new SERVICE_DELAYED_AUTO_START_INFO
             {
@@ -429,7 +429,7 @@ namespace Servy.Core.Services
 
                             if (options.StartType == ServiceStartType.AutomaticDelayedStart)
                             {
-                                var delayedAutoStartConfigSuccess = ChangeServiceConfig2(serviceHandle!, true);
+                                var delayedAutoStartConfigSuccess = SetDelayedAutoStart(serviceHandle!, true);
 
                                 if (!delayedAutoStartConfigSuccess)
                                 {
@@ -494,7 +494,7 @@ namespace Servy.Core.Services
 
                                     // 2. Update Delayed Auto-start
                                     var delayedAutostart = options.StartType == ServiceStartType.AutomaticDelayedStart;
-                                    var success = ChangeServiceConfig2(existingServiceHandle, delayedAutostart);
+                                    var success = SetDelayedAutoStart(existingServiceHandle, delayedAutostart);
 
                                     if (success)
                                     {

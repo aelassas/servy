@@ -16,7 +16,7 @@ namespace Servy.Core.RegexWrapper
         /// <param name="regex">The <see cref="Regex"/> instance to wrap.</param>
         public RegexWrapper(Regex regex)
         {
-            _regex = regex ?? throw new System.ArgumentNullException(nameof(regex));
+            _regex = regex ?? throw new ArgumentNullException(nameof(regex));
         }
 
         /// <summary>

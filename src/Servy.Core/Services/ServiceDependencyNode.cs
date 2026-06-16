@@ -81,16 +81,16 @@ namespace Servy.Core.Services
         /// <param name="serviceName">The internal service name used by the system.</param>
         /// <param name="displayName">The friendly display name of the service.</param>
         /// <param name="isRunning">Indicates whether the service is currently in a running state.</param>
-        /// <param name="isCycle">
+        /// <param name="isCyclic">
         /// Set to <see langword="true"/> if this service creates a dependency loop; 
         /// this prevents further recursive discovery of child dependencies.
         /// </param>
-        public ServiceDependencyNode(string serviceName, string displayName, bool isRunning = false, bool isCycle = false)
+        public ServiceDependencyNode(string serviceName, string displayName, bool isRunning = false, bool isCyclic = false)
         {
             ServiceName = serviceName ?? throw new ArgumentNullException(nameof(serviceName));
             DisplayName = displayName;
             IsRunning = isRunning;
-            IsCyclic = isCycle;
+            IsCyclic = isCyclic;
         }
 
         #endregion

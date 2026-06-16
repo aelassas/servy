@@ -26,7 +26,7 @@ namespace Servy.Manager.ViewModels
         private CancellationTokenSource? _loadTreeCts;
 
         private bool _hadSelectedService;
-        private bool _disposedValue;
+        private bool _isDisposed;
         private readonly IAppConfiguration _appConfig;
         private readonly IMessageBoxService _messageBoxService;
 
@@ -320,7 +320,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         protected override void Dispose(bool disposing)
         {
-            if (!_disposedValue)
+            if (!_isDisposed)
             {
                 if (disposing)
                 {
@@ -334,7 +334,7 @@ namespace Servy.Manager.ViewModels
                 }
 
                 base.Dispose(disposing);
-                _disposedValue = true;
+                _isDisposed = true;
             }
         }
 

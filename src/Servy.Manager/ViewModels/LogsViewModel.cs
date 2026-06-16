@@ -39,7 +39,7 @@ namespace Servy.Manager.ViewModels
         private readonly BulkObservableCollection<LogEntryModel> _logs = new BulkObservableCollection<LogEntryModel>();
         private string? _selectedLogMessage;
         private string? _footerText;
-        private bool _disposedValue;
+        private bool _isDisposed;
 
         #endregion
 
@@ -442,12 +442,12 @@ namespace Servy.Manager.ViewModels
         /// <param name="disposing">True if called from Dispose(), false if from a finalizer.</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (_disposedValue) return;
+            if (_isDisposed) return;
             if (disposing)
             {
                 Cleanup();
             }
-            _disposedValue = true;
+            _isDisposed = true;
         }
 
         /// <inheritdoc/>

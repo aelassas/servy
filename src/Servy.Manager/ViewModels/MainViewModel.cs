@@ -53,7 +53,7 @@ namespace Servy.Manager.ViewModels
         private readonly IAppConfiguration _appConfig;
         private readonly IProcessHelper _processHelper;
 
-        private bool _disposed;
+        private bool _isDisposed;
 
         #endregion
 
@@ -1251,7 +1251,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         protected virtual void Dispose(bool disposing)
         {
-            if (_disposed) return;
+            if (_isDisposed) return;
 
             if (disposing)
             {
@@ -1282,7 +1282,7 @@ namespace Servy.Manager.ViewModels
                 ServiceCommands?.Dispose();
             }
 
-            _disposed = true;
+            _isDisposed = true;
         }
 
         #endregion

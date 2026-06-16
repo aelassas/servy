@@ -35,7 +35,7 @@ jobs:
       CONFIGURATION: Release
       TFM: net10.0-windows
       ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
-      MAX_RETRIES: 5
+      MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream script downloads
       
       # Dynamic Environment Variables based on selected architecture
       RUNTIME: ${{ inputs.arm64 && 'win-arm64' || 'win-x64' }}

@@ -93,8 +93,8 @@ namespace Servy.Service.UnitTests
             // Arrange
             var startOptions = new StartOptions
             {
-                StdOutPath = "valid-path.log",
-                StdErrPath = "error-path.log",
+                StdoutPath = "valid-path.log",
+                StderrPath = "error-path.log",
                 RotationSizeInBytes = 1024 * 1024
             };
 
@@ -137,8 +137,8 @@ namespace Servy.Service.UnitTests
             // Arrange
             var startOptions = new StartOptions
             {
-                StdOutPath = "valid-path.log",
-                StdErrPath = "error-path.log",
+                StdoutPath = "valid-path.log",
+                StderrPath = "error-path.log",
                 RotationSizeInBytes = 1024 * 1024
             };
 

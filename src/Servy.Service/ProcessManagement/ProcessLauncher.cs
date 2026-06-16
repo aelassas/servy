@@ -86,8 +86,8 @@ namespace Servy.Service.ProcessManagement
                 WorkingDirectory = options.WorkingDirectory ?? Path.GetDirectoryName(options.ExecutablePath) ?? string.Empty,
                 UseShellExecute = false,
                 CreateNoWindow = !options.EnableConsoleUI,
-                RedirectStandardOutput = redirectOutput && !string.IsNullOrWhiteSpace(options.StdOutPath),
-                RedirectStandardError = redirectOutput && !string.IsNullOrWhiteSpace(options.StdErrPath),
+                RedirectStandardOutput = redirectOutput && !string.IsNullOrWhiteSpace(options.StdoutPath),
+                RedirectStandardError = redirectOutput && !string.IsNullOrWhiteSpace(options.StderrPath),
             };
 
             if (psi.RedirectStandardOutput)
@@ -123,8 +123,8 @@ namespace Servy.Service.ProcessManagement
             bool stdoutWriterFailed = false;
             bool stderrWriterFailed = false;
 
-            string? normalizedOut = Helper.NormalizePath(options.StdOutPath);
-            string? normalizedErr = Helper.NormalizePath(options.StdErrPath);
+            string? normalizedOut = Helper.NormalizePath(options.StdoutPath);
+            string? normalizedErr = Helper.NormalizePath(options.StderrPath);
 
             bool pathsMatch =
                 normalizedOut != null
@@ -156,8 +156,8 @@ namespace Servy.Service.ProcessManagement
 
                 // Capture paths into local variables to satisfy null-safety analysis
                 // and ensure the closure uses a stable, non-null reference.
-                string? outPath = options.StdOutPath;
-                string? errPath = options.StdErrPath;
+                string? outPath = options.StdoutPath;
+                string? errPath = options.StderrPath;
 
                 // Setup StdOut Writer (Lazy Init)
                 if (psi.RedirectStandardOutput && !string.IsNullOrWhiteSpace(outPath))

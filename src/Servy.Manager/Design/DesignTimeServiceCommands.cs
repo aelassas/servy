@@ -60,7 +60,7 @@ namespace Servy.Manager.Design
 
         public Task ImportJsonConfigAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-        public Task CopyPidAsync(Service? service) => Task.CompletedTask;
+        public Task CopyPidAsync(Service? service, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
         /// <summary>
         /// No-op implementation of IDisposable for design-time.

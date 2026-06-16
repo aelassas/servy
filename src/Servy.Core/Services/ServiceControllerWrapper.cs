@@ -155,7 +155,7 @@ namespace Servy.Core.Services
 
                     try
                     {
-                        // Collect children in a temporary list to sort them before adding to the TreeView
+                        // Collect children in a temporary list so they can be sorted before being added to the node
                         var childNodes = new List<ServiceDependencyNode>();
 
                         // Accessing this property can throw Win32Exception (Access Denied)

@@ -85,12 +85,12 @@ namespace Servy.Service.ProcessManagement
         /// <summary>
         /// Gets or sets the optional filesystem path where standard output will be appended.
         /// </summary>
-        public string? StdOutPath { get; set; }
+        public string? StdoutPath { get; set; }
 
         /// <summary>
         /// Gets or sets the optional filesystem path where standard error will be appended.
         /// </summary>
-        public string? StdErrPath { get; set; }
+        public string? StderrPath { get; set; }
 
         #endregion
 

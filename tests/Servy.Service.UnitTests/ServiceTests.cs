@@ -98,8 +98,8 @@ namespace Servy.Service.UnitTests
                 HeartbeatInterval = 10,
                 MaxFailedChecks = 3,
                 RecoveryAction = RecoveryAction.RestartProcess,
-                StdOutPath = "C:\\Logs\\stdout.log",
-                StdErrPath = "C:\\Logs\\stderr.log"
+                StdoutPath = "C:\\Logs\\stdout.log",
+                StderrPath = "C:\\Logs\\stderr.log"
             };
 
             var mockScopedLogger = new Mock<IServyLogger>();
@@ -135,7 +135,7 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
-        public void OnStart_InvalidStdOutPath_LogsError()
+        public void OnStart_InvalidStdoutPath_LogsError()
         {
             // Arrange
             var fullArgs = new[] { "servy.exe" };
@@ -143,8 +143,8 @@ namespace Servy.Service.UnitTests
             {
                 ServiceName = "TestService",
                 ExecutablePath = "C:\\Windows\\notepad.exe",
-                StdOutPath = "InvalidPath???",
-                StdErrPath = string.Empty,
+                StdoutPath = "InvalidPath???",
+                StderrPath = string.Empty,
                 RecoveryAction = RecoveryAction.None
             };
 
@@ -164,7 +164,7 @@ namespace Servy.Service.UnitTests
                 .Returns(true);
 
             // 4. Force the path validation to fail
-            _mockPathValidator.Setup(v => v.IsValidPath(options.StdOutPath)).Returns(false);
+            _mockPathValidator.Setup(v => v.IsValidPath(options.StdoutPath)).Returns(false);
 
             // Act
             _service.StartForTest();
@@ -335,8 +335,8 @@ namespace Servy.Service.UnitTests
 
             var options = new StartOptions
             {
-                StdOutPath = "valid_stdout.log",
-                StdErrPath = "valid_stderr.log",
+                StdoutPath = "valid_stdout.log",
+                StderrPath = "valid_stderr.log",
                 RotationSizeInBytes = 12345,
                 UseLocalTimeForRotation = true,
             };
@@ -347,10 +347,10 @@ namespace Servy.Service.UnitTests
             var mockStdOutWriter = new Mock<IStreamWriter>();
             var mockStdErrWriter = new Mock<IStreamWriter>();
 
-            mockStreamWriterFactory.Setup(f => f.Create(options.StdOutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
+            mockStreamWriterFactory.Setup(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
                 .Returns(mockStdOutWriter.Object);
 
-            mockStreamWriterFactory.Setup(f => f.Create(options.StdErrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
+            mockStreamWriterFactory.Setup(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
                 .Returns(mockStdErrWriter.Object);
 
             mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
@@ -359,8 +359,8 @@ namespace Servy.Service.UnitTests
             service.InvokeHandleLogWriters(options);
 
             // Assert
-            mockStreamWriterFactory.Verify(f => f.Create(options.StdOutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
-            mockStreamWriterFactory.Verify(f => f.Create(options.StdErrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
+            mockStreamWriterFactory.Verify(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
+            mockStreamWriterFactory.Verify(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
 
             // Check no errors logged
             mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
@@ -394,8 +394,8 @@ namespace Servy.Service.UnitTests
 
             var options = new StartOptions
             {
-                StdOutPath = "invalid_stdout.log",
-                StdErrPath = "invalid_stderr.log",
+                StdoutPath = "invalid_stdout.log",
+                StderrPath = "invalid_stderr.log",
                 RotationSizeInBytes = 12345
             };
 
@@ -439,8 +439,8 @@ namespace Servy.Service.UnitTests
 
             var options = new StartOptions
             {
-                StdOutPath = "",
-                StdErrPath = string.Empty,
+                StdoutPath = "",
+                StderrPath = string.Empty,
                 RotationSizeInBytes = 12345,
                 MaxRotations = 5,
             };
@@ -778,7 +778,7 @@ namespace Servy.Service.UnitTests
         public void OnOutputDataReceived_ValidData_WritesToStdoutWriter()
         {
             // Arrange
-            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe", StdOutPath = "stdout.log" };
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe", StdoutPath = "stdout.log" };
             SetupStandardServiceStart(options);
             _service.StartForTest();
 
@@ -801,7 +801,7 @@ namespace Servy.Service.UnitTests
             {
                 ServiceName = "Test",
                 ExecutablePath = "test.exe",
-                StdErrPath = "test_stderr.log"
+                StderrPath = "test_stderr.log"
             };
             SetupStandardServiceStart(options);
             _service.StartForTest();
@@ -820,7 +820,7 @@ namespace Servy.Service.UnitTests
         public void OnOutputDataReceived_NullData_DoesNothing()
         {
             // Arrange
-            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe", StdOutPath = "out.log" };
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe", StdoutPath = "out.log" };
             SetupStandardServiceStart(options);
             _service.StartForTest();
 

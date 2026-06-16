@@ -19,6 +19,11 @@ on:
       tag:
         description: 'Release tag (e.g. v1.1)'
         required: false
+      skip_push:
+        description: 'Skip pushing package to Chocolatey feed'
+        type: boolean
+        required: false
+        default: false
 
 concurrency:
   group: choco-${{ github.ref }}
@@ -31,11 +36,11 @@ jobs:
   choco:
     runs-on: windows-latest
     permissions:
-      contents: write # Needed here to push commits back  
-      
+      contents: write # Needed here to push commits back        
+
     env:
       MAX_RETRIES: 5
-      SKIP_CHOCO_PUSH: false # Set to true to disable pushing directly to community feed during staging or testing
+      SKIP_CHOCO_PUSH: ${{ github.event.inputs.skip_push || false }}
 
     steps:
       - name: Checkout repo

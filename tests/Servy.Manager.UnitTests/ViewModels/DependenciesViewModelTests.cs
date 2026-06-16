@@ -259,9 +259,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     {
                         var viewModel = CreateIsolatedViewModel();
 
-                        // Use constructor signatures. Pass isCycle = true parameter onto root to simulate a cyclic loop.
-                        var childNode = new ServiceDependencyNode("ChildService", "Friendly Child", isRunning: false, isCycle: false);
-                        var rootNode = new ServiceDependencyNode("RootService", "Friendly Root", isRunning: false, isCycle: false);
+                        // Use constructor signatures. Pass isCyclic = true parameter onto root to simulate a cyclic loop.
+                        var childNode = new ServiceDependencyNode("ChildService", "Friendly Child", isRunning: false, isCyclic: false);
+                        var rootNode = new ServiceDependencyNode("RootService", "Friendly Root", isRunning: false, isCyclic: false);
 
                         // Add components directly to the get-only Collection instance instead of assigning properties
                         rootNode.Dependencies.Add(childNode);
@@ -353,7 +353,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         // Directly await the asynchronous execution flow instead of slamming message loops synchronously
                         viewModel.CopyPidCommand.ExecuteAsync(null).GetAwaiter().GetResult();
 
-                        _mockServiceCommands.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "TestService")), Times.Once);
+                        _mockServiceCommands.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "TestService"), It.IsAny<CancellationToken>()), Times.Once);
 
                         viewModel.Dispose();
                     }

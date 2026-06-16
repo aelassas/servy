@@ -354,7 +354,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.MockedSelectedService = serviceItem;
 
             _serviceCommandsMock
-                .Setup(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "ServyEngine" && s.Pid == 5028)))
+                .Setup(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "ServyEngine" && s.Pid == 5028), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -380,7 +380,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await vm.CopyPidCommand.ExecuteAsync(null);
 
             // Assert: Verify that no clipboard copy commands were dispatched to system channels
-            _serviceCommandsMock.Verify(c => c.CopyPidAsync(It.IsAny<Service>()), Times.Never);
+            _serviceCommandsMock.Verify(c => c.CopyPidAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         #endregion

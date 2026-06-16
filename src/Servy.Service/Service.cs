@@ -926,8 +926,8 @@ namespace Servy.Service
                 WaitChunkMs = _waitChunkMs,
                 ScmAdditionalTimeMs = _scmAdditionalTimeMs,
                 OnScmHeartbeat = new Action<int>((time) => _serviceHelper.RequestAdditionalTime(this, time, _logger)),
-                StdOutPath = options.PreLaunchStdoutPath,
-                StdErrPath = options.PreLaunchStderrPath,
+                StdoutPath = options.PreLaunchStdoutPath,
+                StderrPath = options.PreLaunchStderrPath,
                 RedirectToWriters = !fireAndForget,
                 FireAndForget = fireAndForget,
                 LogErrorAsWarning = options.PreLaunchIgnoreFailure,
@@ -1123,11 +1123,11 @@ namespace Servy.Service
         /// </summary>
         /// <param name="options">The start options containing paths and rotation settings for stdout and stderr.</param>
         /// <remarks>
-        /// - If <see cref="StartOptions.StdOutPath"/> is valid, a <see cref="RotatingStreamWriter"/> is created for stdout.
-        /// - If <see cref="StartOptions.StdErrPath"/> is provided:
-        ///     - If it equals <see cref="StartOptions.StdOutPath"/> (case-insensitive), stderr shares the stdout writer.
-        ///     - Otherwise, a separate <see cref="RotatingStreamWriter"/> is created for stderr.
-        /// - If <see cref="StdErrPath"/> is null, empty, or whitespace, no stderr writer is created.
+        /// - If <see cref="StartOptions.StdoutPath"/> is valid, a <see cref="Core.IO.RotatingStreamWriter"/> is created for stdout.
+        /// - If <see cref="StartOptions.StderrPath"/> is provided:
+        ///     - If it equals <see cref="StartOptions.StdoutPath"/> (case-insensitive), stderr shares the stdout writer.
+        ///     - Otherwise, a separate <see cref="Core.IO.RotatingStreamWriter"/> is created for stderr.
+        /// - If <see cref="StartOptions.StderrPath"/> is null, empty, or whitespace, no stderr writer is created.
         /// </remarks>
         private void HandleLogWriters(StartOptions options)
         {
@@ -1156,17 +1156,17 @@ namespace Servy.Service
             }
 
             // Always create stdout writer if path is valid
-            _stdoutWriter = CreateWriter(options.StdOutPath);
+            _stdoutWriter = CreateWriter(options.StdoutPath);
 
             // Only create stderr writer if a path is provided
-            if (!string.IsNullOrWhiteSpace(options.StdErrPath))
+            if (!string.IsNullOrWhiteSpace(options.StderrPath))
             {
-                if (_stdoutWriter != null && !string.IsNullOrWhiteSpace(options.StdOutPath) &&
-                    _pathValidator.IsValidPath(options.StdErrPath) &&
-                    _pathValidator.IsValidPath(options.StdOutPath))
+                if (_stdoutWriter != null && !string.IsNullOrWhiteSpace(options.StdoutPath) &&
+                    _pathValidator.IsValidPath(options.StderrPath) &&
+                    _pathValidator.IsValidPath(options.StdoutPath))
                 {
-                    var canonStdErr = Helper.NormalizePath(options.StdErrPath);
-                    var canonStdOut = Helper.NormalizePath(options.StdOutPath);
+                    var canonStdErr = Helper.NormalizePath(options.StderrPath);
+                    var canonStdOut = Helper.NormalizePath(options.StdoutPath);
 
                     // If stderr path equals stdout path (explicitly), use the same writer
                     if (string.Equals(canonStdErr, canonStdOut, StringComparison.OrdinalIgnoreCase))
@@ -1175,7 +1175,7 @@ namespace Servy.Service
                         return;
                     }
                 }
-                _stderrWriter = CreateWriter(options.StdErrPath);
+                _stderrWriter = CreateWriter(options.StderrPath);
             }
         }
 
@@ -1517,8 +1517,8 @@ namespace Servy.Service
                     }
                     else
                     {
-                        serviceDto.ActiveStdoutPath = _options?.StdOutPath;
-                        serviceDto.ActiveStderrPath = _options?.StdErrPath;
+                        serviceDto.ActiveStdoutPath = _options?.StdoutPath;
+                        serviceDto.ActiveStderrPath = _options?.StderrPath;
                     }
 
                     _serviceRepository.Update(
