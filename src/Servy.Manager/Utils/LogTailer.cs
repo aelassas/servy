@@ -311,12 +311,12 @@ namespace Servy.Manager.Utils
         /// <summary>
         /// Just loads the history and returns the state without starting the tailing loop.
         /// </summary>
-        public async Task<HistoryResult> GetHistoryAsync(string path, LogType type, int maxLines)
+        public async Task<HistoryResult> GetHistoryAsync(string path, LogType type, int maxLines, CancellationToken cancellationToken = default)
         {
             if (Volatile.Read(ref _isDisposed) != 0) throw new ObjectDisposedException(nameof(LogTailer));
             long pos = 0;
             DateTime created = DateTime.MinValue;
-            var lines = await Task.Run(() => LoadHistory(path, type, maxLines, out pos, out created));
+            var lines = await Task.Run(() => LoadHistory(path, type, maxLines, out pos, out created), cancellationToken);
             return new HistoryResult(lines, pos, created);
         }
 
@@ -432,15 +432,10 @@ namespace Servy.Manager.Utils
                     }
                 }
             }
-            catch (FileNotFoundException)
-            {
-                // Handle the race condition where file existed a moment ago but is gone now
-                return lines;
-            }
-            catch (DirectoryNotFoundException)
-            {
-                return lines;
-            }
+            catch (FileNotFoundException) { return lines; }
+            catch (DirectoryNotFoundException) { return lines; }
+            catch (IOException ex) { Logger.Debug($"History load IO error for {path}: {ex.Message}"); return lines; }
+            catch (UnauthorizedAccessException ex) { Logger.Debug($"History load access denied for {path}: {ex.Message}"); return lines; }
 
             return lines;
         }

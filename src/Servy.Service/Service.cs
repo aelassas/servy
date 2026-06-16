@@ -1778,6 +1778,24 @@ namespace Servy.Service
 
             _logger?.Warn($"Performing recovery action '{_recoveryAction}' {attemptStatus}.");
 
+            // Prune exited hooks
+            lock (_trackedHooks)
+            {
+                for (int i = _trackedHooks.Count - 1; i >= 0; i--)
+                {
+                    var h = _trackedHooks[i];
+                    try
+                    {
+                        if (h.Process == null || h.Process.HasExited)
+                        {
+                            h.Dispose();
+                            _trackedHooks.RemoveAt(i);
+                        }
+                    }
+                    catch { /* leave for teardown */ }
+                }
+            }
+
             switch (_recoveryAction)
             {
                 case RecoveryAction.RestartService:

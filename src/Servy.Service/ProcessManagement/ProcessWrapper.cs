@@ -411,7 +411,6 @@ namespace Servy.Service.ProcessManagement
         public void WaitForExit()
         {
             ThrowIfDisposed();
-            if (_process.HasExited) return;
             _process.WaitForExit();
         }
 
