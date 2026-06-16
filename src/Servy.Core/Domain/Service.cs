@@ -585,6 +585,7 @@ namespace Servy.Core.Domain
         /// A task that represents the asynchronous uninstall operation. The task result 
         /// is <see cref="OperationResult"/> describing whether the uninstall succeeded
         /// (<see cref="OperationResult.Success"/>) along with any failure context.
+        /// </returns>
         /// <exception cref="ArgumentNullException">
         /// Thrown if <see cref="Name"/> is null or empty.
         /// </exception>

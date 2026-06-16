@@ -754,8 +754,9 @@ namespace Servy.Core.Config
         public const long MaxConfigFileSizeBytes = (long)MaxConfigFileSizeMB * BytesInMegabyte;
 
         /// <summary>
-        /// The maximum age in minutes an extracted resource can be before it is considered stale.
-        /// Time delta in minutes to consider an embedded resource as "newer" than an existing file
+        /// Tolerance, in minutes, when comparing the embedded resource timestamp against an
+        /// existing extracted file: the resource is treated as "newer" (and re-extracted)
+        /// only if it is at least this much younger than the file on disk.
         /// </summary>
         public const int ResourceStalenessThresholdMinutes = 20;
 
