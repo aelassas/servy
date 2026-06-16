@@ -21,8 +21,8 @@ namespace Servy.Service.CommandLine
         /// Parses the specified array of command-line arguments into a <see cref="StartOptions"/> instance.
         /// </summary>
         /// <param name="serviceRepository">An instance of <see cref="IServiceRepository"/> used to retrieve service configuration from the database.</param>
-        /// <param name="fullArgs">An array of strings representing the command-line arguments.</param>
         /// <param name="processHelper">The process helper used to format process commands.</param>
+        /// <param name="fullArgs">An array of strings representing the command-line arguments.</param>
         /// <returns>
         /// A <see cref="StartOptions"/> object populated with values parsed from the input arguments.
         /// Missing or invalid values will be set to default values.

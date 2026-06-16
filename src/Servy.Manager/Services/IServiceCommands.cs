@@ -8,8 +8,9 @@ namespace Servy.Manager.Services
 {
     /// <summary>
     /// Defines commands and operations related to service management.
-    /// Provides methods for searching, starting, stopping, configuring,
-    /// installing, uninstalling, removing, and importing/exporting services.
+    /// Provides methods for searching, starting, stopping, restarting, 
+    /// configuring, installing, uninstalling, removing, 
+    /// importing/exporting services, and copying service PIDs.
     /// </summary>
     public interface IServiceCommands : IDisposable
     {

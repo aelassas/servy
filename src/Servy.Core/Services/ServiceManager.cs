@@ -1046,11 +1046,9 @@ namespace Servy.Core.Services
                     },
                     service =>
                     {
-                        // We do not wrap this body in a try/finally for service.Dispose() anymore,
-                        // as it is handled by the outer block to prevent cancellation leaks.
+                        // Wrapper disposal is owned by the outer finally so cancelled iterations are still cleaned up.
 
-                        // This lets Parallel.ForEach surface a single OperationCanceledException
-                        // to the caller and guarantees the caller never sees a partial-but-successful
+                        // Check before any work so cancellation surfaces as OperationCanceledException, not a partial result set.
                         cancellationToken.ThrowIfCancellationRequested();
 
                         ServiceInfo info = new ServiceInfo
@@ -1068,11 +1066,9 @@ namespace Servy.Core.Services
                         {
                             try
                             {
-                                // 1. Set the timeout inside the guarded block
+                                // Set the timeout inside the guarded block
                                 cts.CancelAfter(AppConfig.PopulateNativeDetailsTimeoutMs);
 
-                                // 2. Native details are gathered synchronously on the parallel worker
-                                // PopulateNativeDetails MUST be updated to accept and check this token.
                                 PopulateNativeDetails(scmHandle, info, cts.Token);
                             }
                             catch (OperationCanceledException)
@@ -1094,8 +1090,7 @@ namespace Servy.Core.Services
                 }
                 finally
                 {
-                    // Handle is disposed directly. The dead task-tracking logic is removed 
-                    // to reflect the synchronous nature of the native SCM queries.
+                    // Native SCM queries are synchronous; nothing outlives the loop, so the handle can be disposed here.
                     scmHandle?.Dispose();
                 }
             }

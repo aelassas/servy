@@ -38,7 +38,7 @@ namespace Servy.Service.ProcessManagement
 
         /// <summary>
         /// Matches canonical Python launcher executable names strictly.
-        /// Evaluates patterns such as 'python', 'pythonw', 'python2', 'python3', 'python3.x' 'py', or 'pyw' without capturing arbitrary prefixes.
+        /// Evaluates patterns such as 'python', 'pythonw', 'python2', 'python3', 'python3.x', 'py', or 'pyw' without capturing arbitrary prefixes.
         /// </summary>
         private static readonly Regex PythonExeRegex = new Regex(
              @"^(python(w|\d+(\.\d+)?)?|pyw?)$",

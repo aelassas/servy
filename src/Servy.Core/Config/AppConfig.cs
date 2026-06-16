@@ -166,7 +166,7 @@ namespace Servy.Core.Config
         public static readonly string SecurityFolderPath = Path.Combine(ProgramDataPath, "security");
 
         /// <summary>
-        /// Path to the recovery folder containing containing service restart attempts files.
+        /// Path to the recovery folder containing service restart attempts files.
         /// </summary>
         public static readonly string RecoveryFolderPath = Path.Combine(ProgramDataPath, "recovery");
 
@@ -593,7 +593,7 @@ namespace Servy.Core.Config
         /// <remarks>
         /// This boundary constant prevents visual stutter or jarring UI flashes on high-performance environments. 
         /// If the core application subsystem initialization sequence completes faster than this designated time window, 
-        /// the layout engine introduces a artificial padding delay before transitioning to the primary application workspace.
+        /// the layout engine introduces an artificial padding delay before transitioning to the primary application workspace.
         /// </remarks>
         public const int SplashMinDisplayThresholdMs = 1000;
 

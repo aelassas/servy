@@ -277,7 +277,6 @@ namespace Servy.Core.Native
             public uint VolumeSerialNumber;
 
             /// <summary>A digest of the start of the file for secondary identification.</summary>
-            /// <remarks>Renamed from PrefixHash to reflect its role as a content-based digest.</remarks>
             public string PrefixDigest;
 
             /// <summary>Indicates if handle-based information was successfully retrieved.</summary>
@@ -545,7 +544,7 @@ namespace Servy.Core.Native
         /// <summary>Retrieves the final path for the specified file handle.</summary>
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern uint GetFinalPathNameByHandle(
-           SafeFileHandle hFile, // Use SafeFileHandle here instead of IntPtr
+           SafeFileHandle hFile,
            [Out] StringBuilder lpszFilePath,
            uint cchFilePath,
            uint dwFlags);
