@@ -31,10 +31,11 @@ jobs:
   choco:
     runs-on: windows-latest
     permissions:
-      contents: write # Needed here to push commits back
+      contents: write # Needed here to push commits back  
       
     env:
       MAX_RETRIES: 5
+      SKIP_CHOCO_PUSH: true # Set to true to disable pushing directly to community feed during staging or testing
 
     steps:
       - name: Checkout repo
@@ -135,7 +136,7 @@ jobs:
                   Write-Host "Attempting to push (Attempt $($retryCount + 1))..."
            
                   # 2. Pull latest changes
-                  git git pull --rebase=merges --autostash origin main
+                  git pull --rebase=merges --autostash origin main
                   if ($LASTEXITCODE -ne 0) { 
                       throw "git pull failed with exit code $LASTEXITCODE" 
                   }
@@ -174,6 +175,7 @@ jobs:
           }
 
       - name: Push Chocolatey package
+        if: ${{ env.SKIP_CHOCO_PUSH != 'true' }}
         shell: pwsh
         env:
           CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
