@@ -148,11 +148,13 @@ namespace Servy.Models
 
         /// <summary>
         /// Environment Variables.
+        /// Format: key=value, one per line or separated by semicolons.
         /// </summary>
         public string? EnvironmentVariables { get; set; }
 
         /// <summary>
         /// Windows Service Dependencies.
+        /// Format: ServiceName, one per line or separated by semicolons.
         /// </summary>
         public string? ServiceDependencies { get; set; }
 

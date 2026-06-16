@@ -10,9 +10,9 @@ using System.Text.RegularExpressions;
 namespace Servy.Core.IO
 {
     /// <summary>
-    /// Writes text to a file with automatic log rotation based on file size.
-    /// When the file exceeds a specified size, it is renamed with a timestamp suffix,
-    /// and a new log file is started.
+    /// Writes text to a file with automatic log rotation based on file size and/or a date interval
+    /// (daily, weekly, or monthly). When a rotation trigger is met, the current file is renamed with a
+    /// timestamp suffix and a new log file is started. When both modes are enabled, size rotation takes precedence.
     /// </summary>
     public class RotatingStreamWriter : IDisposable
     {

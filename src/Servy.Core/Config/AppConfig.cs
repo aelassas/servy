@@ -1004,7 +1004,7 @@ namespace Servy.Core.Config
         /// <b>Telemetry Dampening Circuit:</b> In long-running background worker environments, transient filesystem 
         /// friction (such as temporary file locks from antivirus sweeps, backup software indexing, or active 
         /// remote management tailing tools) can cause intermittent deletion failures. Logging these as critical 
-        /// immediately would pollute event streams with actionable noise.
+        /// immediately would pollute event streams with non-actionable noise.
         /// </para>
         /// <para>
         /// This constant establishes a threshold window. If the internal failure counter intercepts 
