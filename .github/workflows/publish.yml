@@ -26,7 +26,7 @@ jobs:
       PLATFORM: x64
       FRAMEWORK: net48
       ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
-      MAX_RETRIES: 5
+      MAX_RETRIES: 5 # Maximum retry attempts for resilient network down-stream script downloads
       
       # Binary Version & Checksum Pins
       INNO_SETUP_VERSION: "6.6.1"

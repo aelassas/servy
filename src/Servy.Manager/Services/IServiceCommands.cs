@@ -115,7 +115,8 @@ namespace Servy.Manager.Services
         /// Copies the PID of the specified service to the clipboard.
         /// </summary>
         /// <param name="service">The service whose PID should be copied to the clipboard.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        Task CopyPidAsync(Service service);
+        Task CopyPidAsync(Service service, CancellationToken cancellationToken = default);
     }
 }

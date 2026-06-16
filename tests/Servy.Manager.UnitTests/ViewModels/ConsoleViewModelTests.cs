@@ -223,7 +223,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         vm.CopyPidCommand.ExecuteAsync(null).GetAwaiter().GetResult();
 
                         // Assert
-                        _serviceCommandsMock.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "TestService")), Times.Once);
+                        _serviceCommandsMock.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "TestService"), It.IsAny<CancellationToken>()), Times.Once);
                     }
                     finally
                     {

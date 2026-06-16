@@ -470,7 +470,7 @@ namespace Servy.Manager.Services
                 cancellationToken: cancellationToken);
 
         ///<inheritdoc/>
-        public async Task CopyPidAsync(Service service)
+        public async Task CopyPidAsync(Service service, CancellationToken cancellationToken = default)
         {
             if (service?.Pid == null) return;
 
@@ -512,7 +512,7 @@ namespace Servy.Manager.Services
                     // This allows the UI thread to remain responsive during the wait.
                     if (i < Core.Config.AppConfig.ClipboardComMaxRetries - 1)
                     {
-                        await Task.Delay(Core.Config.AppConfig.ClipboardComRetryDelayMs);
+                        await Task.Delay(Core.Config.AppConfig.ClipboardComRetryDelayMs, cancellationToken: cancellationToken);
                     }
                 }
 

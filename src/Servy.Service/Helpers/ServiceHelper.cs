@@ -152,8 +152,8 @@ namespace Servy.Service.Helpers
 
 
                   "--------Logging----------------\n" +
-                  $"- stdoutFilePath: {options.StdOutPath}\n" +
-                  $"- stderrFilePath: {options.StdErrPath}\n" +
+                  $"- stdoutFilePath: {options.StdoutPath}\n" +
+                  $"- stderrFilePath: {options.StderrPath}\n" +
                   $"- enableSizeRotation: {options.EnableSizeRotation}\n" +
                   $"- rotationSizeInBytes: {options.RotationSizeInBytes}\n" +
                   $"- enableDateRotation: {options.EnableDateRotation}\n" +
@@ -173,8 +173,8 @@ namespace Servy.Service.Helpers
                   "--------Pre-Launch-------------\n" +
                   $"- preLaunchExecutablePath: {options.PreLaunchExecutablePath}\n" +
                   $"- preLaunchWorkingDirectory: {options.PreLaunchWorkingDirectory}\n" +
-                  $"- preLaunchStdOutPath: {options.PreLaunchStdoutPath}\n" +
-                  $"- preLaunchStdErrPath: {options.PreLaunchStderrPath}\n" +
+                  $"- preLaunchStdoutPath: {options.PreLaunchStdoutPath}\n" +
+                  $"- preLaunchStderrPath: {options.PreLaunchStderrPath}\n" +
                   $"- preLaunchTimeout: {options.PreLaunchTimeoutInSeconds}\n" +
                   $"- preLaunchRetryAttempts: {options.PreLaunchRetryAttempts}\n" +
                   $"- preLaunchIgnoreFailure: {options.PreLaunchIgnoreFailure}\n\n" +

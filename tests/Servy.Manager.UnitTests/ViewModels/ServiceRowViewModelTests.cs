@@ -279,7 +279,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Arrange
             var vm = CreateViewModel();
             _serviceCommandsMock
-                .Setup(s => s.CopyPidAsync(It.Is<Service>(srv => srv.Name == "S")))
+                .Setup(s => s.CopyPidAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 

@@ -132,7 +132,7 @@
     <Compile Include="Converters\RamUsageConverter.cs" />
     <Compile Include="Converters\StartupTypeConverter.cs" />
     <Compile Include="Converters\StatusConverter.cs" />
-    <Compile Include="Design\DesignTimeMocks.cs" />
+    <Compile Include="Design\DesignTimeServiceCommands.cs" />
     <Compile Include="Helpers\Helper.cs" />
     <Compile Include="Models\ConsoleService.cs" />
     <Compile Include="Models\DependencyService.cs" />

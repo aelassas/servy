@@ -44,7 +44,7 @@ namespace Servy.Manager.ViewModels
         private string _stderrPath;
         private int _currentSessionId = 0; // Track the "active" switch request
         private volatile bool _isSelectionActive;
-        private bool _disposedValue;
+        private bool _isDisposed;
         private readonly IAppConfiguration _appConfig;
 
         // Active tailers and their handlers to prevent memory leaks during service switching
@@ -613,7 +613,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         protected override void Dispose(bool disposing)
         {
-            if (!_disposedValue)
+            if (!_isDisposed)
             {
                 if (disposing)
                 {
@@ -642,7 +642,7 @@ namespace Servy.Manager.ViewModels
                 }
 
                 base.Dispose(disposing);
-                _disposedValue = true;
+                _isDisposed = true;
             }
         }
 

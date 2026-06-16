@@ -30,7 +30,7 @@ namespace Servy.Core.Security
         /// <see cref="DataProtectionScope.LocalMachine"/> is used to allow the service to access 
         /// the keys regardless of the specific user account context (e.g., SYSTEM vs. Service Account).
         /// </summary>
-        private static readonly DataProtectionScope DataProtectionScope = DataProtectionScope.LocalMachine;
+        private static readonly DataProtectionScope ProtectionScope = DataProtectionScope.LocalMachine;
 
         /// <summary>
         /// Caches the machine-unique entropy to optimize performance and ensure thread-safe initialization.
@@ -362,7 +362,7 @@ namespace Servy.Core.Security
                 try
                 {
                     // 1. Primary Attempt (v7.9+ logic): Use machine-unique entropy
-                    var unprotectResult = ProtectedData.Unprotect(encrypted, dynamicEntropy, DataProtectionScope);
+                    var unprotectResult = ProtectedData.Unprotect(encrypted, dynamicEntropy, ProtectionScope);
 
                     // Reset failure counter on successful read with modern entropy
                     MigrationFailureCounts.TryRemove(path, out _);
@@ -372,7 +372,7 @@ namespace Servy.Core.Security
                 catch (CryptographicException)
                 {
                     // 2. Fallback Attempt (v7.8 compatibility): Try with NO entropy (null)
-                    byte[] decryptedData = ProtectedData.Unprotect(encrypted, null, DataProtectionScope);
+                    byte[] decryptedData = ProtectedData.Unprotect(encrypted, null, ProtectionScope);
 
                     try
                     {
@@ -476,7 +476,7 @@ namespace Servy.Core.Security
                 // Encrypt data with DPAPI using the machine-specific key and additional entropy.
                 // DataProtectionScope is usually LocalMachine for services
                 byte[] dynamicEntropy = MachineEntropy.Value;
-                encrypted = ProtectedData.Protect(data, dynamicEntropy, DataProtectionScope);
+                encrypted = ProtectedData.Protect(data, dynamicEntropy, ProtectionScope);
 
                 // Use a stable, deterministic staging file name. Because this runs under the global system
                 // mutex (RunUnderMutex), concurrent writers cannot clash, and an orphaned .tmp left by a prior

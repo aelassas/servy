@@ -209,7 +209,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'TRIGGER'\"", fireAndForget: false, timeoutMs: 5000);
             options.EnableConsoleUI = false;
             options.RedirectToWriters = true;
-            options.StdOutPath = structuralFailurePath;
+            options.StdoutPath = structuralFailurePath;
 
             // Act
             using (IProcessWrapper wrapper = ProcessLauncher.Start(options, _realFactory, _logger))
@@ -300,8 +300,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'STDOUT_MSG'; [Console]::Error.WriteLine('STDERR_MSG')\"", false, 10_000);
             options.EnableConsoleUI = false;
             options.RedirectToWriters = true;
-            options.StdOutPath = logPath;
-            options.StdErrPath = logPath;
+            options.StdoutPath = logPath;
+            options.StderrPath = logPath;
 
             using (var wrapper = ProcessLauncher.Start(options, _realFactory, _logger))
             {

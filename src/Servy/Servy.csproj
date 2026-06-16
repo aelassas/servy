@@ -112,7 +112,7 @@
     <Compile Include="Config\UiAppConfig.cs" />
     <Compile Include="Config\DesignTimeAppConfig.cs" />
     <Compile Include="Config\IAppConfiguration.cs" />
-    <Compile Include="Design\DesignTimeMocks.cs" />
+    <Compile Include="Design\DesignTimeServiceCommands.cs" />
     <Compile Include="Validation\IServiceConfigurationValidator.cs" />
     <Compile Include="Helpers\PasswordBoxHelper.cs" />
     <Compile Include="Validation\ServiceConfigurationValidator.cs" />

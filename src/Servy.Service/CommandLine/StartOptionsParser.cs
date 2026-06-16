@@ -64,8 +64,8 @@ namespace Servy.Service.CommandLine
                 EnableConsoleUI = serviceDto.EnableConsoleUI ?? AppConfig.DefaultEnableConsoleUI,
 
                 // Logging
-                StdOutPath = serviceDto.StdoutPath,
-                StdErrPath = serviceDto.StderrPath,
+                StdoutPath = serviceDto.StdoutPath,
+                StderrPath = serviceDto.StderrPath,
                 RotationSizeInBytes = AppConfig.ToBytes(serviceDto.RotationSize ?? AppConfig.DefaultRotationSizeMB), // Convert from MB to Bytes
                 UseLocalTimeForRotation = serviceDto.UseLocalTimeForRotation ?? AppConfig.DefaultUseLocalTimeForRotation,
 

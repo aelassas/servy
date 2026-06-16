@@ -37,7 +37,7 @@ namespace Servy.ViewModels
         private bool _isManagerAppAvailable;
         private readonly IAppConfiguration _appConfig;
         private bool _isBusy;
-        private bool _disposed;
+        private bool _isDisposed;
 
         #endregion
 
@@ -1549,14 +1549,14 @@ namespace Servy.ViewModels
         /// </summary>
         protected virtual void Dispose(bool disposing)
         {
-            if (_disposed) return;
+            if (_isDisposed) return;
 
             if (disposing)
             {
                 _appConfig.PropertyChanged -= AppConfig_PropertyChanged;
             }
 
-            _disposed = true;
+            _isDisposed = true;
         }
 
         #endregion
