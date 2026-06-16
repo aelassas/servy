@@ -599,7 +599,7 @@ namespace Servy.Infrastructure.Data
         /// </para>
         /// </remarks>
         /// <param name="incoming">The fresh configuration DTO targeted for database persistence.</param>
-        /// <param name="existing">The authoritative snapshot currently stored in the database cache layer.</param>
+        /// <param name="existing">The row currently stored in the database for the same service name.</param>
         /// <param name="preserveExistingRuntimeState">Required flag to preserve runtime state (PID, ActiveStdoutPath, ActiveStderrPath, PreviousStopTimeout).</param>
         /// <param name="preserveExistingCredentials">Required flag to preserve existing credentials (RunAsLocalSystem, UserAccount, Password).</param>
         private static void ApplyRuntimeState(ServiceDto incoming, ServiceDto existing, bool preserveExistingRuntimeState, bool preserveExistingCredentials)

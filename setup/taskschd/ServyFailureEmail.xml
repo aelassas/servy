@@ -14,7 +14,7 @@
   </Triggers>
   <Principals>
     <Principal id="Author">
-      <!-- Change LogonType to Password to run even if user is not logged in -->
+      <!-- Password: runs the email task even when no user is logged on. Use InteractiveToken to run only during an interactive session. -->
       <LogonType>Password</LogonType>
       <RunLevel>HighestAvailable</RunLevel>
     </Principal>
