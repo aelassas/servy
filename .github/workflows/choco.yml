@@ -35,7 +35,7 @@ jobs:
       
     env:
       MAX_RETRIES: 5
-      SKIP_CHOCO_PUSH: true # Set to true to disable pushing directly to community feed during staging or testing
+      SKIP_CHOCO_PUSH: false # Set to true to disable pushing directly to community feed during staging or testing
 
     steps:
       - name: Checkout repo
