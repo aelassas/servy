@@ -42,11 +42,10 @@ namespace Servy.CLI.Commands
                 // 2. Direct execution
                 var status = _serviceManager.GetServiceStatus(opts.ServiceName, cancellationToken: cancellationToken);
 
-                // 1. Log the detailed technical status
-                Logger.Info(string.Format(Strings.Msg_ServiceStatusResult, opts.ServiceName, status));
-
-                // 2. Return the localized result to the console
-                return CommandResult.Ok(string.Format(Strings.Msg_ServiceStatusResult, opts.ServiceName, status));
+                // 3. Log the detailed technical status and return the localized result to the console
+                var statusMsg = string.Format(Strings.Msg_ServiceStatusResult, opts.ServiceName, status);
+                Logger.Info(statusMsg);
+                return CommandResult.Ok(statusMsg);
             });
         }
 

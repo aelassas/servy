@@ -2692,7 +2692,7 @@ namespace Servy.Service
                     return mainExitedGracefully;
                 });
 
-                // 2. Wait for the task to complete in 5-second pulses
+                // 2. Wait for the task to complete in SafeKillProcessPulseIntervalMs pulses
                 // This prevents ContextSwitchDeadlock and keeps the SCM happy.
 
                 var maxWaitTime = TimeSpan.FromMilliseconds(totalTimeoutMs);
@@ -2712,7 +2712,7 @@ namespace Servy.Service
                             break; // Exit the loop and let the service finish/crash
                         }
 
-                        // Request 15s of "Wait Hint" every 5s pulse
+                        // Pulse the SCM wait-hint (_scmAdditionalTimeMs) once per SafeKillProcessPulseIntervalMs tick.
                         _serviceHelper.RequestAdditionalTime(this, _scmAdditionalTimeMs, null);
                     }
                 }

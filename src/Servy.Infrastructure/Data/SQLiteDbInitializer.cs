@@ -200,8 +200,9 @@ namespace Servy.Infrastructure.Data
                 tableInfo.Select(row => (string)row.name),
                 StringComparer.OrdinalIgnoreCase);
 
-            // Assume GetExpectedColumns returns StandardColumns. 
-            // We explicitly add primary/special keys to our expected set to prevent them from being flagged as orphans.
+            // GetExpectedColumns returns every column in SqlConstants.InsertColumns
+            // (Name + StandardColumns + PreviousStopTimeout). Only the Id primary key
+            // is absent, so add it explicitly to avoid flagging it as an orphan.
             var expectedColumns = new HashSet<string>(GetExpectedColumns(), StringComparer.OrdinalIgnoreCase);
             var coreKeys = new[] { "Id" };
             foreach (var key in coreKeys)
