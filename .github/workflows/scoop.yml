@@ -41,6 +41,7 @@ jobs:
       
     env:
         RUN_EXTRAS_PR: ${{ github.event.inputs.run_extras_pr || 'false' }}
+        MAX_RETRIES: 5
 
     steps:
       - name: Checkout repo
@@ -56,10 +57,24 @@ jobs:
         shell: pwsh
         run: |
           $InstallerDir = "$env:GITHUB_WORKSPACE\_installer"
-          New-Item -ItemType Directory -Force -Path $InstallerDir
+          New-Item -ItemType Directory -Force -Path $InstallerDir | Out-Null
           $url = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
+          $out = "$InstallerDir\servy-${env:VERSION}-x64-installer.exe"
           Write-Host "Downloading Servy installer from $url"
-          Invoke-WebRequest -Uri $url -OutFile "$InstallerDir\servy-${env:VERSION}-x64-installer.exe"
+          
+          # Resilient network fetch wrapper matching the organizational framework conventions
+          $retries = [int]$env:MAX_RETRIES
+          for ($i = 0; $i -lt $retries; $i++) {
+              try {
+                  Invoke-WebRequest -Uri $url -OutFile $out -ErrorAction Stop
+                  break
+              }
+              catch {
+                  if ($i -eq ($retries - 1)) { throw "Failed to download installer payload after $retries attempts. Error: $_" }
+                  Write-Host "Transient download failure. Retrying in 3 seconds... (Attempt $($i + 1)/$retries)"
+                  Start-Sleep -Seconds 3
+              }
+          }
 
       - name: Compute SHA256
         shell: pwsh
@@ -84,7 +99,7 @@ jobs:
               # Split lines correctly using regex
               $lines = [regex]::Split($jsonString, "\r?\n")
                
-              # Normalize indentation: pwsh 7''s ConvertTo-Json uses a 2-space baseline; map it to 4-space indents.
+              # Normalize indentation: pwsh 7's ConvertTo-Json uses a 2-space baseline; map it to 4-space indents.
               $lines = $lines | ForEach-Object {
                   [regex]::Replace($_, '^( +)', {
                       param($m)
@@ -129,7 +144,7 @@ jobs:
           if (git status --porcelain) {
             git add $manifestPath
             git commit -m "chore: update setup/scoop/servy.json to version $env:VERSION"
-            
+             
             $maxRetries = 5
             $retryCount = 0
             $pushSuccess = $false
@@ -140,7 +155,7 @@ jobs:
                     git merge  --abort 2>$null
 
                     Write-Host "Attempting in-repo Scoop update push (Attempt $($retryCount + 1))..."
-                    
+                     
                     git pull --rebase=merges --autostash origin main
                     if ($LASTEXITCODE -ne 0) { throw "git pull failed" }
 
@@ -187,7 +202,7 @@ jobs:
           if (git status --porcelain) {
             git add $manifestPath
             git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
-            
+             
             $maxRetries = 5
             $retryCount = 0
             $pushSuccess = $false
@@ -198,7 +213,7 @@ jobs:
                     git merge  --abort 2>$null
 
                     Write-Host "Attempting external scoop-bucket push (Attempt $($retryCount + 1))..."
-                    
+                     
                     git pull --rebase=merges --autostash origin HEAD
                     if ($LASTEXITCODE -ne 0) { throw "git pull failed" }
 

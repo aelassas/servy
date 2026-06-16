@@ -32,7 +32,10 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write # Needed here to push commits back
-     
+      
+    env:
+      MAX_RETRIES: 5
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4.3.1
@@ -47,8 +50,22 @@ jobs:
         shell: pwsh
         run: |
           $url = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
+          $out = "servy-${env:VERSION}-x64-installer.exe"
           Write-Host "Downloading Servy installer from $url"
-          Invoke-WebRequest -Uri $url -OutFile "servy-${env:VERSION}-x64-installer.exe"
+          
+          # Defensive resilient download loop to protect against CDN propagation latency
+          $retries = [int]$env:MAX_RETRIES
+          for ($i = 0; $i -lt $retries; $i++) {
+              try {
+                  Invoke-WebRequest -Uri $url -OutFile $out -ErrorAction Stop
+                  break
+              }
+              catch {
+                  if ($i -eq ($retries - 1)) { throw "Failed to download installer after $retries attempts. Error: $_" }
+                  Write-Host "Transient download failure. Retrying in 3 seconds... (Attempt $($i + 1)/$retries)"
+                  Start-Sleep -Seconds 3
+              }
+          }
 
       - name: Compute SHA256
         shell: pwsh
@@ -116,9 +133,9 @@ jobs:
                   git merge  --abort 2>$null
 
                   Write-Host "Attempting to push (Attempt $($retryCount + 1))..."
-         
+           
                   # 2. Pull latest changes
-                  git pull --rebase=merges --autostash origin main
+                  git git pull --rebase=merges --autostash origin main
                   if ($LASTEXITCODE -ne 0) { 
                       throw "git pull failed with exit code $LASTEXITCODE" 
                   }

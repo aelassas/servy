@@ -35,6 +35,7 @@ jobs:
       CONFIGURATION: Release
       TFM: net10.0-windows
       ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+      MAX_RETRIES: 5
       
       # Dynamic Environment Variables based on selected architecture
       RUNTIME: ${{ inputs.arm64 && 'win-arm64' || 'win-x64' }}
@@ -103,12 +104,26 @@ jobs:
           $installer = "innosetup.exe"
           
           Write-Host "Downloading Inno Setup v$version..."
-          Invoke-WebRequest -Uri $url -OutFile $installer -ErrorAction Stop
+          
+          # Resilient down-stream retry loop framework wrapper protection implementation pass
+          $retries = [int]$env:MAX_RETRIES
+          for ($i = 0; $i -lt $retries; $i++) {
+              try {
+                  Invoke-WebRequest -Uri $url -OutFile $installer -ErrorAction Stop
+                  break
+              }
+              catch {
+                  if ($i -eq ($retries - 1)) { throw "Failed to download Inno Setup after $retries attempts. Error: $_" }
+                  Write-Host "Transient download failure. Retrying in 3 seconds... (Attempt $($i + 1)/$retries)"
+                  Start-Sleep -Seconds 3
+              }
+          }
           
           # --- SECURITY CHECK 1: SHA256 PINNING ---
           Write-Host "Verifying SHA256 checksum of Inno Setup..."
           $actualHash = (Get-FileHash $installer -Algorithm SHA256).Hash
           
+          # -ne in PowerShell is inherently case-insensitive
           if ($actualHash -ne $expectedHash) {
               throw "Security Breach: Inno Setup hash mismatch! Expected: $expectedHash, Got: $actualHash"
           }
@@ -140,14 +155,27 @@ jobs:
           $installDir = "C:\7-Zip"
           $exePath = "$installDir\7z.exe"
 
-          # 2. Download from GitHub Releases
+          # 2. Download from GitHub Releases with Retry Wrapper
           Write-Host "Downloading 7-Zip v$version..."
-          Invoke-WebRequest -Uri $url -OutFile $installer -ErrorAction Stop
+          
+          $retries = [int]$env:MAX_RETRIES
+          for ($i = 0; $i -lt $retries; $i++) {
+              try {
+                  Invoke-WebRequest -Uri $url -OutFile $installer -ErrorAction Stop
+                  break
+              }
+              catch {
+                  if ($i -eq ($retries - 1)) { throw "Failed to download 7-Zip after $retries attempts. Error: $_" }
+                  Write-Host "Transient download failure. Retrying in 3 seconds... (Attempt $($i + 1)/$retries)"
+                  Start-Sleep -Seconds 3
+              }
+          }
 
           # --- SECURITY CHECK: SHA256 PINNING ---
           Write-Host "Verifying SHA256 checksum of 7-Zip..."
           $actualHash = (Get-FileHash $installer -Algorithm SHA256).Hash
-                
+          
+          # -ne in PowerShell is inherently case-insensitive
           if ($actualHash -ne $env:SEVEN_ZIP_HASH) {
               throw "Security Breach: 7-Zip hash mismatch! Expected: $($env:SEVEN_ZIP_HASH), Got: $actualHash"
           }
