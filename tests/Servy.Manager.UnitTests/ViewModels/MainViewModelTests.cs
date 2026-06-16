@@ -21,6 +21,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using Xunit;
+using Helper = Servy.Testing.Helper;
 using static Servy.Manager.ViewModels.MainViewModel;
 
 namespace Servy.Manager.UnitTests.ViewModels
