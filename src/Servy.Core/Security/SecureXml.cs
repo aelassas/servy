@@ -29,7 +29,5 @@ namespace Servy.Core.Security
         /// making it suitable for processing untrusted or externally sourced XML input.
         /// </remarks>
         public static XmlReader CreateReader(TextReader input) => XmlReader.Create(input, ReaderSettings);
-
-        // (XmlSerializer instances for a given type are already cached internally by the framework.)
     }
 }
