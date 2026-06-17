@@ -1,10 +1,10 @@
-# ===========================================
+# ==========================================================================================
 # GitHub Actions Workflow - Test (net48)
-# -------------------------------------------
+# ------------------------------------------------------------------------------------------
 # Builds the Servy solution targeting .NET Framework 4.8,
 # runs all tests, collects coverage for all components,
 # normalizes paths, and uploads coverage to Codecov and Coveralls.
-# ===========================================
+# ==========================================================================================
 name: test
 on:
   push:
@@ -204,17 +204,14 @@ jobs:
 
       - name: Install ReportGenerator
         shell: pwsh
-        if: ${{ always() }}
         run: |
           dotnet tool install --global dotnet-reportgenerator-globaltool --version $env:REPORTGENERATOR_VERSION
-
           if ($LASTEXITCODE -ne 0) {
               Write-Error "reportgenerator install failed (exit $LASTEXITCODE)"
               exit $LASTEXITCODE
           }
 
       - name: Merge coverage reports
-        if: ${{ always() }}
         shell: pwsh
         run: |
           # Find all newly generated cobertura files dynamically          
@@ -235,7 +232,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
 
       - name: Normalize coverage paths (PowerShell)
-        if: ${{ always() }}
         shell: pwsh
         run: |
           $fixedDir = "CoverageMerged\fixed"
@@ -278,7 +274,6 @@ jobs:
         id: codecov
         continue-on-error: true
         uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe #v5.5.4
-        if: ${{ always() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}  
           files: CoverageMerged/fixed/coverage.cobertura.xml
@@ -292,7 +287,6 @@ jobs:
         id: coveralls
         continue-on-error: true
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b #v2.36
-        if: ${{ always() }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           base-path: ${{ github.workspace }}
@@ -300,10 +294,10 @@ jobs:
           format: cobertura
           debug: false
         env:
-            COVERALLS_GIT_BRANCH: ${{ github.ref_name }}
+          COVERALLS_GIT_BRANCH: ${{ github.ref_name }}
 
       - name: Notify Metrics Platform Status in case of failure
-        if: ${{ always() && (steps.codecov.outcome == 'failure' || steps.coveralls.outcome == 'failure') }}
+        if: ${{ (steps.codecov.outcome == 'failure' || steps.coveralls.outcome == 'failure') }}
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b #v7.1.0
         with:
           script: |
