@@ -9,7 +9,7 @@ namespace Servy.Core.DTOs
     public class ServiceInfo
     {
         /// <summary>
-        /// Sets or gets the unique identifier of the service.
+        /// Gets or sets the unique identifier of the service.
         /// </summary>
         public string? Name { get; set; }
 

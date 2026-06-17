@@ -15,7 +15,9 @@ namespace Servy.Core.Helpers
     public static class ServiceDtoHelper
     {
         /// <summary>
-        /// Populates any null nullable properties with production defaults from AppConfig.
+        /// Populates null nullable properties that have production defaults in <see cref="AppConfig"/>
+        /// (startup, priority, timeouts, log rotation, health monitoring, pre-launch/pre-stop options).
+        /// Optional free-form fields (paths, parameters, hooks, dependencies) without defaults remain null.
         /// Additionally, unconditionally resets RunAsLocalSystem/UserAccount/Password to a
         /// password-less LocalSystem baseline (Global Identity Reset on Import policy).
         /// </summary>

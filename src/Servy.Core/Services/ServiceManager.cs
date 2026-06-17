@@ -1130,10 +1130,11 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="scmHandle">An active handle to the Service Control Manager.</param>
         /// <param name="info">The service information object to populate.</param>
-        private void PopulateNativeDetails(SafeScmHandle scmHandle, ServiceInfo info, CancellationToken ct)
+        /// <param name="cancellationToken">A cancellation token (carries the per-service native-query timeout); checked before each discrete native call.</param>
+        private void PopulateNativeDetails(SafeScmHandle scmHandle, ServiceInfo info, CancellationToken cancellationToken)
         {
             // 1. Pre-flight check
-            ct.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
             if (string.IsNullOrWhiteSpace(info.Name))
                 throw new ArgumentException("Service name is empty!");
@@ -1147,13 +1148,13 @@ namespace Servy.Core.Services
                 // If the 2000ms timeout or user cancellation hits during GetServiceUser, 
                 // we skip the subsequent calls to keep the loop moving.
 
-                ct.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
                 info.LogOnAs = GetServiceUser(svcHandle) ?? ServiceAccounts.LocalSystem;  // confirmed null = LocalSystem (Win32 default)
 
-                ct.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
                 info.Description = GetServiceDescription(svcHandle) ?? string.Empty;
 
-                ct.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
                 if (info.StartupType == ServiceStartType.Automatic && IsDelayedStart(svcHandle))
                 {
                     info.StartupType = ServiceStartType.AutomaticDelayedStart;
