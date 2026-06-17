@@ -64,7 +64,7 @@ namespace Servy.Manager.ViewModels
                 CanExecuteServiceCommand, name: nameof(ExportJsonCommand));
 
             CopyPidCommand = new AsyncCommand(CopyPidAsync,
-                CanExecuteServiceCommand,
+                _ => CanExecuteServiceCommand(_) && Service?.Pid != null,
                 name: nameof(CopyPidCommand));
         }
 
@@ -153,9 +153,9 @@ namespace Servy.Manager.ViewModels
             OnPropertyChanged(e.PropertyName);
 
             // RE-EVALUATE COMMANDS: 
-            // If status or installation state changes, trigger a CanExecute re-check.
+            // If status, PID or installation state changes, trigger a CanExecute re-check.
             // This ensures UI buttons (Start, Stop, etc.) update their enabled state immediately.
-            if (e.PropertyName == nameof(Service.Status) || e.PropertyName == nameof(Service.IsInstalled))
+            if (e.PropertyName == nameof(Service.Status) || e.PropertyName == nameof(Service.IsInstalled) || e.PropertyName == nameof(Service.Pid))
             {
                 (StartCommand as AsyncCommand)?.RaiseCanExecuteChanged();
                 (StopCommand as AsyncCommand)?.RaiseCanExecuteChanged();
@@ -336,6 +336,5 @@ namespace Servy.Manager.ViewModels
         }
 
         #endregion
-
     }
 }

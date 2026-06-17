@@ -300,23 +300,19 @@ namespace Servy.UI.Bootstrapping
         {
             string? serviceName = null;
             var showSplash = true;
+            var positionalArgs = e.Args.Where(arg => !arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            if (e.Args != null)
+            if (positionalArgs.Count > 0)
             {
-                var positionalArgs = e.Args.Where(arg => !arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase)).ToList();
-
-                if (positionalArgs.Count > 0)
+                if (bool.TryParse(positionalArgs[0], out var parsed))
                 {
-                    if (bool.TryParse(positionalArgs[0], out var parsed))
-                    {
-                        showSplash = parsed;
-                        if (positionalArgs.Count > 1) serviceName = positionalArgs[1];
-                    }
-                    else
-                    {
-                        // First arg isn't a splash flag - assume it is the service name.
-                        serviceName = positionalArgs[0];
-                    }
+                    showSplash = parsed;
+                    if (positionalArgs.Count > 1) serviceName = positionalArgs[1];
+                }
+                else
+                {
+                    // First arg isn't a splash flag - assume it is the service name.
+                    serviceName = positionalArgs[0];
                 }
             }
 

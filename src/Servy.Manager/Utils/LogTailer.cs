@@ -3,6 +3,7 @@ using Servy.Core.Logging;
 using Servy.Core.Native;
 using Servy.Manager.Models;
 using System.IO;
+using System.Text;
 using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Manager.Utils
@@ -150,7 +151,7 @@ namespace Servy.Manager.Utils
                             fs.Seek(lastPosition, SeekOrigin.Begin);
 
                             // Construct the reader specifying a fallback default encoding for files lacking BOM headers
-                            using (StreamReader reader = new StreamReader(fs, System.Text.Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+                            using (StreamReader reader = new StreamReader(fs, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
                             {
                                 try
                                 {
@@ -384,7 +385,7 @@ namespace Servy.Manager.Utils
 
                     // Read forward from the discovered position
                     fs.Seek(pos, SeekOrigin.Begin);
-                    using (StreamReader sr = new StreamReader(fs))
+                    using (StreamReader sr = new StreamReader(fs, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
                     {
                         string? line;
                         var tempLines = new List<string>();

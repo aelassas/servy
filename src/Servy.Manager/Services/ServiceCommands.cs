@@ -116,7 +116,7 @@ namespace Servy.Manager.Services
         private async Task<T> ExecuteLockedAsync<T>(string serviceName, Func<Task<T>> action, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
-                throw new ArgumentNullException(nameof(serviceName));
+                throw new ArgumentException("Service name cannot be null, empty, or whitespace.", nameof(serviceName));
 
             // Get or create the lock for this specific service.
             // We intentionally DO NOT eagerly evict these semaphores when they become idle. 
@@ -464,7 +464,7 @@ namespace Servy.Manager.Services
                 Strings.ImportJson_Error,
                 cancellationToken: cancellationToken);
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public async Task CopyPidAsync(Service? service, CancellationToken cancellationToken = default)
         {
             if (service?.Pid == null) return;

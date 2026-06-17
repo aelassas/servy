@@ -11,7 +11,7 @@ namespace Servy.Core.Logging
     [ExcludeFromCodeCoverage]
     public class EventLogReader : IEventLogReader
     {
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public IEnumerable<ServyEventLogEntry> ReadEvents(EventLogQuery query, int maxReadCount)
         {
             using (var reader = new System.Diagnostics.Eventing.Reader.EventLogReader(query))

@@ -1251,7 +1251,7 @@ namespace Servy.Service
             }
 
             // Apply runtime-specific fixes
-            ProcessLauncher.ApplyLanguageFixes(psi);
+            ProcessLauncher.ApplyLanguageFixes(psi, _logger);
 
             _childProcess = _processFactory.Create(psi, _logger);
 

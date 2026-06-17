@@ -184,12 +184,14 @@ namespace Servy.Manager.ViewModels
 
             InitTimer();
 
-            VisibleLines = CollectionViewSource.GetDefaultView(RawLines);
-            VisibleLines.Filter = (obj) =>
+            VisibleLines = new ListCollectionView(RawLines)
             {
-                if (string.IsNullOrWhiteSpace(ConsoleSearchText)) return true;
-                var line = obj as LogLine;
-                return line?.Text.IndexOf(ConsoleSearchText, StringComparison.OrdinalIgnoreCase) >= 0;
+                Filter = (obj) =>
+                {
+                    if (string.IsNullOrWhiteSpace(ConsoleSearchText)) return true;
+                    var line = obj as LogLine;
+                    return line?.Text.IndexOf(ConsoleSearchText, StringComparison.OrdinalIgnoreCase) >= 0;
+                }
             };
         }
 

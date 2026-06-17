@@ -34,22 +34,46 @@ namespace Servy.Service.ProcessManagement
         /// <inheritdoc/>
         public event DataReceivedEventHandler OutputDataReceived
         {
-            add { _process.OutputDataReceived += value; }
-            remove { _process.OutputDataReceived -= value; }
+            add
+            {
+                ThrowIfDisposed();
+                _process.OutputDataReceived += value;
+            }
+            remove
+            {
+                ThrowIfDisposed();
+                _process.OutputDataReceived -= value;
+            }
         }
 
         /// <inheritdoc/>
         public event DataReceivedEventHandler ErrorDataReceived
         {
-            add { _process.ErrorDataReceived += value; }
-            remove { _process.ErrorDataReceived -= value; }
+            add
+            {
+                ThrowIfDisposed();
+                _process.ErrorDataReceived += value;
+            }
+            remove
+            {
+                ThrowIfDisposed();
+                _process.ErrorDataReceived -= value;
+            }
         }
 
         /// <inheritdoc/>
         public event EventHandler Exited
         {
-            add { _process.Exited += value; }
-            remove { _process.Exited -= value; }
+            add
+            {
+                ThrowIfDisposed();
+                _process.Exited += value;
+            }
+            remove
+            {
+                ThrowIfDisposed();
+                _process.Exited -= value;
+            }
         }
 
         /// <inheritdoc/>
@@ -422,14 +446,14 @@ namespace Servy.Service.ProcessManagement
             _process.BeginErrorReadLine();
         }
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public void CancelOutputRead()
         {
             ThrowIfDisposed();
             _process.CancelOutputRead();
         }
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public void CancelErrorRead()
         {
             ThrowIfDisposed();
