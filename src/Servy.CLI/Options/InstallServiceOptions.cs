@@ -211,7 +211,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the failure program path.
         /// Optional.
         /// </summary>
-        [Option("failureProgramPath", HelpText = "The failure program path. Configure a script or executable to run when the wrapped process exits with a non-zero exit code (recovery disabled) or after all recovery action retries have failed (recovery enabled). Note: it is not run when the process fails to start - that path simply stops the service. Supports environment variable expansion, example: %JAVA_HOME%\\bin\\java.exe")]
+        [Option("failureProgramPath", HelpText = "The failure program path. Configure a script or executable to run when the wrapped process exits with a non-zero exit code (recovery disabled) or after all recovery action retries have failed (recovery enabled). It is not run when the process fails to start; that path simply stops the service. Supports environment variable expansion, example: %JAVA_HOME%\\bin\\java.exe")]
         public string FailureProgramPath { get; set; }
 
         /// <summary>
