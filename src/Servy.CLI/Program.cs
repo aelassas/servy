@@ -100,12 +100,19 @@ namespace Servy.CLI
                     var verbs = GetVerbs();
                     var firstArg = args.Length > 0 ? args[0] : null;
 
-                    if (args.Length == 0 ||
-                        (!verbs.Any(v => string.Equals(v, firstArg, StringComparison.OrdinalIgnoreCase)) && !(firstArg?.StartsWith("-") ?? false)))
+                    if (args.Length == 0)
                     {
-                        // Only inject the default verb if the user didn't provide a recognized verb 
-                        // AND didn't provide a global flag like --version or --help
+                        // Explicitly inject the default help verb only when no commands or arguments are provided
                         args = (new[] { GetVerbName<HelpOptions>() }).Concat(args).ToArray();
+                    }
+                    else if (!verbs.Any(v => string.Equals(v, firstArg, StringComparison.OrdinalIgnoreCase)) && !(firstArg?.StartsWith("-") ?? false))
+                    {
+                        // Detect a mistyped or unrecognized command that does not start with a global flag dash
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Error.WriteLine($"Error: Unknown command '{firstArg}'. See '--help' for available options.");
+                        Console.ResetColor();
+
+                        return (int)CliExitCode.Error;
                     }
 
                     args[0] = args[0].ToLowerInvariant();
