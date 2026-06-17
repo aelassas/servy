@@ -35,7 +35,7 @@ namespace Servy.UI.IntegrationTests.Services
         {
             // Note: Process.Start(psi) is hard to mock directly without a wrapper.
             // In a CI environment, this branch typically "hands off" or succeeds silently.
-            await _service.OpenDocumentation(Caption);
+            await _service.OpenDocumentationAsync(Caption);
 
             _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
@@ -49,7 +49,7 @@ namespace Servy.UI.IntegrationTests.Services
         {
             const string aboutText = "Servy v1.0";
 
-            await _service.OpenAboutDialog(aboutText, Caption);
+            await _service.OpenAboutDialogAsync(aboutText, Caption);
 
             _mockMessageBox.Verify(m => m.ShowInfoAsync(aboutText, Caption), Times.Once);
         }
@@ -67,7 +67,7 @@ namespace Servy.UI.IntegrationTests.Services
             // but we can simulate the logic flow here.
 
             // For the sake of covering the logic branch:
-            await _service.CheckUpdates(Caption);
+            await _service.CheckUpdatesAsync(Caption);
 
             // If the API call fails or returns empty in the test environment, 
             // it hits the catch block or the No Updates branch.

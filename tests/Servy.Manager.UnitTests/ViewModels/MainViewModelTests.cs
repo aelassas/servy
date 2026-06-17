@@ -704,9 +704,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var dummyService = new Service();
 
                 // Setup the underlying loose mock profiles to return instantly completed promises
-                _helpServiceMock.Setup(h => h.OpenDocumentation(It.IsAny<string>())).Returns(Task.CompletedTask);
-                _helpServiceMock.Setup(h => h.CheckUpdates(It.IsAny<string>())).Returns(Task.CompletedTask);
-                _helpServiceMock.Setup(h => h.OpenAboutDialog(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+                _helpServiceMock.Setup(h => h.OpenDocumentationAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+                _helpServiceMock.Setup(h => h.CheckUpdatesAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+                _helpServiceMock.Setup(h => h.OpenAboutDialogAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
                 _serviceCommandsMock.Setup(c => c.SearchServicesAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()))
                                     .ReturnsAsync(new List<Service?>());
@@ -745,9 +745,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _serviceCommandsMock.Verify(c => c.ConfigureServiceAsync(dummyService, It.IsAny<CancellationToken>()), Times.Once);
                 _serviceCommandsMock.Verify(c => c.ImportXmlConfigAsync(It.IsAny<CancellationToken>()), Times.Once);
                 _serviceCommandsMock.Verify(c => c.ImportJsonConfigAsync(It.IsAny<CancellationToken>()), Times.Once);
-                _helpServiceMock.Verify(h => h.OpenDocumentation(It.IsAny<string>()), Times.Once);
-                _helpServiceMock.Verify(h => h.CheckUpdates(It.IsAny<string>()), Times.Once);
-                _helpServiceMock.Verify(h => h.OpenAboutDialog(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+                _helpServiceMock.Verify(h => h.OpenDocumentationAsync(It.IsAny<string>()), Times.Once);
+                _helpServiceMock.Verify(h => h.CheckUpdatesAsync(It.IsAny<string>()), Times.Once);
+                _helpServiceMock.Verify(h => h.OpenAboutDialogAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
                 _serviceCommandsMock.Verify(c => c.SearchServicesAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()), Times.Once);
 
                 await Task.CompletedTask;

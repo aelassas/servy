@@ -13,7 +13,8 @@ namespace Servy.Core.RegexWrapper
         /// </summary>
         /// <param name="input">The string to search for a match.</param>
         /// <returns>A collection of successful matches found in the input string.</returns>
-        /// <exception cref="RegexMatchTimeoutException">Thrown if the execution time exceeds the regex timeout interval.</exception>
+        /// <exception cref="RegexMatchTimeoutException">Thrown while the returned collection is enumerated, if the execution time exceeds the regex timeout interval. Enumerate inside the try block that should observe the timeout.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="input"/> is null.</exception>
         MatchCollection Matches(string input);
     }
 }

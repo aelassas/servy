@@ -839,18 +839,18 @@ namespace Servy.ViewModels
             BrowseStdoutPathCommand = new RelayCommand<object>(_ => BrowseStdoutPath());
             BrowseStderrPathCommand = new RelayCommand<object>(_ => BrowseStderrPath());
 
-            InstallCommand = new AsyncCommand(InstallService, _ => !IsBusy, name: nameof(InstallCommand));
-            UninstallCommand = new AsyncCommand(UninstallService, _ => !IsBusy, name: nameof(UninstallCommand));
-            StartCommand = new AsyncCommand(StartService, _ => !IsBusy, name: nameof(StartCommand));
-            StopCommand = new AsyncCommand(StopService, _ => !IsBusy, name: nameof(StopCommand));
-            RestartCommand = new AsyncCommand(RestartService, _ => !IsBusy, name: nameof(RestartCommand));
+            InstallCommand = new AsyncCommand(InstallServiceAsync, _ => !IsBusy, name: nameof(InstallCommand));
+            UninstallCommand = new AsyncCommand(UninstallServiceAsync, _ => !IsBusy, name: nameof(UninstallCommand));
+            StartCommand = new AsyncCommand(StartServiceAsync, _ => !IsBusy, name: nameof(StartCommand));
+            StopCommand = new AsyncCommand(StopServiceAsync, _ => !IsBusy, name: nameof(StopCommand));
+            RestartCommand = new AsyncCommand(RestartServiceAsync, _ => !IsBusy, name: nameof(RestartCommand));
 
-            ManagerCommand = new AsyncCommand(OpenManager, name: nameof(ManagerCommand));
+            ManagerCommand = new AsyncCommand(OpenManagerAsync, name: nameof(ManagerCommand));
 
-            ExportXmlCommand = new AsyncCommand(ExportXmlConfig, _ => !IsBusy, name: nameof(ExportXmlCommand));
-            ExportJsonCommand = new AsyncCommand(ExportJsonConfig, _ => !IsBusy, name: nameof(ExportJsonCommand));
-            ImportXmlCommand = new AsyncCommand(ImportXmlConfig, _ => !IsBusy, name: nameof(ImportXmlCommand));
-            ImportJsonCommand = new AsyncCommand(ImportJsonConfig, _ => !IsBusy, name: nameof(ImportJsonCommand));
+            ExportXmlCommand = new AsyncCommand(ExportXmlConfigAsync, _ => !IsBusy, name: nameof(ExportXmlCommand));
+            ExportJsonCommand = new AsyncCommand(ExportJsonConfigAsync, _ => !IsBusy, name: nameof(ExportJsonCommand));
+            ImportXmlCommand = new AsyncCommand(ImportXmlConfigAsync, _ => !IsBusy, name: nameof(ImportXmlCommand));
+            ImportJsonCommand = new AsyncCommand(ImportJsonConfigAsync, _ => !IsBusy, name: nameof(ImportJsonCommand));
 
             BrowseFailureProgramPathCommand = new RelayCommand<object>(_ => BrowseFailureProgramPath());
             BrowseFailureProgramStartupDirectoryCommand = new RelayCommand<object>(_ => BrowseFailureProgramStartupDirectory());
@@ -869,11 +869,11 @@ namespace Servy.ViewModels
             BrowsePostStopProcessPathCommand = new RelayCommand<object>(_ => BrowsePostStopProcessPath());
             BrowsePostStopStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePostStopStartupDirectory());
 
-            OpenDocumentationCommand = new AsyncCommand(OpenDocumentation, name: nameof(OpenDocumentationCommand));
+            OpenDocumentationCommand = new AsyncCommand(OpenDocumentationAsync, name: nameof(OpenDocumentationCommand));
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync, name: nameof(CheckUpdatesCommand));
-            OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialog, name: nameof(OpenAboutDialogCommand));
+            OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialogAsync, name: nameof(OpenAboutDialogCommand));
 
-            ClearFormCommand = new AsyncCommand(ClearForm);
+            ClearFormCommand = new AsyncCommand(ClearFormAsync);
 
             IsManagerAppAvailable = _appConfig.IsManagerAppAvailable;
             _appConfig.PropertyChanged += AppConfig_PropertyChanged;
@@ -1115,7 +1115,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Calls <see cref="IServiceCommands.InstallService"/> with the current property values.
         /// </summary>
-        private async Task InstallService(object? parameter)
+        private async Task InstallServiceAsync(object? parameter)
         {
             try
             {
@@ -1131,7 +1131,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Calls <see cref="IServiceCommands.UninstallService"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private async Task UninstallService(object? parameter)
+        private async Task UninstallServiceAsync(object? parameter)
         {
             try
             {
@@ -1147,7 +1147,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Calls <see cref="IServiceCommands.StartService"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private async Task StartService(object? parameter)
+        private async Task StartServiceAsync(object? parameter)
         {
             try
             {
@@ -1163,7 +1163,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Calls <see cref="IServiceCommands.StopService"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private async Task StopService(object? parameter)
+        private async Task StopServiceAsync(object? parameter)
         {
             try
             {
@@ -1179,7 +1179,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Calls <see cref="IServiceCommands.RestartService"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private async Task RestartService(object? parameter)
+        private async Task RestartServiceAsync(object? parameter)
         {
             try
             {
@@ -1195,7 +1195,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Calls <see cref="IServiceCommands.OpenManager"/> to open the Servy Manager application.
         /// </summary>
-        private async Task OpenManager(object? parameter)
+        private async Task OpenManagerAsync(object? parameter)
         {
             await ServiceCommands.OpenManager();
         }
@@ -1207,7 +1207,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Clears all form fields and resets to default values.
         /// </summary>
-        private async Task ClearForm(object? parameter)
+        private async Task ClearFormAsync(object? parameter)
         {
             // Ask for confirmation before clearing everything
             bool confirm = await _messageBoxService.ShowConfirmAsync(Strings.Confirm_ClearAll, UiAppConfig.Caption);
@@ -1226,7 +1226,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Exports the current service configuration to an XML file selected by the user.
         /// </summary>
-        private async Task ExportXmlConfig(object? parameter)
+        private async Task ExportXmlConfigAsync(object? parameter)
         {
             try
             {
@@ -1242,7 +1242,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Exports the current service configuration to a JSON file selected by the user.
         /// </summary>
-        private async Task ExportJsonConfig(object? parameter)
+        private async Task ExportJsonConfigAsync(object? parameter)
         {
             try
             {
@@ -1261,7 +1261,7 @@ namespace Servy.ViewModels
         /// and maps the values to the main view model.
         /// Shows an error message if the XML is invalid, deserialization fails, or any exception occurs.
         /// </summary>
-        private async Task ImportXmlConfig(object? parameter)
+        private async Task ImportXmlConfigAsync(object? parameter)
         {
             try
             {
@@ -1280,7 +1280,7 @@ namespace Servy.ViewModels
         /// and maps the values to the main view model.
         /// Shows an error message if the JSON is invalid, deserialization fails, or any exception occurs.
         /// </summary>
-        private async Task ImportJsonConfig(object? parameter)
+        private async Task ImportJsonConfigAsync(object? parameter)
         {
             try
             {
@@ -1300,9 +1300,9 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens the Servy documentation page in the default browser.
         /// </summary>
-        private async Task OpenDocumentation(object? parameter)
+        private async Task OpenDocumentationAsync(object? parameter)
         {
-            await _helpService.OpenDocumentation(UiAppConfig.Caption);
+            await _helpService.OpenDocumentationAsync(UiAppConfig.Caption);
         }
 
         /// <summary>
@@ -1311,15 +1311,15 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task CheckUpdatesAsync(object? parameter)
         {
-            await _helpService.CheckUpdates(UiAppConfig.Caption);
+            await _helpService.CheckUpdatesAsync(UiAppConfig.Caption);
         }
 
         /// <summary>
         /// Displays the "About Servy" dialog with version and copyright information.
         /// </summary>
-        private async Task OpenAboutDialog(object? parameter)
+        private async Task OpenAboutDialogAsync(object? parameter)
         {
-            await _helpService.OpenAboutDialog(
+            await _helpService.OpenAboutDialogAsync(
                 string.Format(Strings.Text_About,
                     Core.Config.AppConfig.Version,
                     Helper.GetBuiltWithFramework(),

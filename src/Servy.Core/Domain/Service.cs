@@ -146,7 +146,7 @@ namespace Servy.Core.Domain
         public bool EnableDateRotation { get; set; } = AppConfig.DefaultEnableDateRotation;
 
         /// <summary>
-        /// Gets or sets a value indicating date rotation type (stored as int, represents <see cref="Servy.Core.Enums.DateRotationType"/>).
+        /// Gets or sets the date-based log rotation interval.
         /// </summary>
         public DateRotationType DateRotationType { get; set; } = AppConfig.DefaultDateRotationType;
 

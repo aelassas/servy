@@ -179,8 +179,10 @@ namespace Servy.Core.Helpers
                 catch (ArgumentException) { /* Process gone */ }
                 catch (Win32Exception ex)
                 {
-                    // Access denied or query failed; treat as dead so we evict the cache entry.
-                    Logger.Debug($"MaintainCache: cannot query PID {pid} ({ex.Message}); evicting.");
+                    // Access denied or query failed; process is highly likely still running under elevated/protected context.
+                    // Keep the sample entry active to retain baseline delta continuity.
+                    isAlive = true;
+                    Logger.Debug($"MaintainCache: PID {pid} returned access denied ({ex.Message}); keeping cache sample active.");
                 }
                 catch (InvalidOperationException ex)
                 {

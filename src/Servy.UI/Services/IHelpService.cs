@@ -10,14 +10,14 @@
         /// </summary>
         /// <param name="caption">The caption to use for any message box displayed if the documentation cannot be opened.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        Task OpenDocumentation(string caption);
+        Task OpenDocumentationAsync(string caption);
 
         /// <summary>
         /// Checks for application updates and optionally displays a message box with the result.
         /// </summary>
         /// <param name="caption">The caption to use for any message box displayed during the update check.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        Task CheckUpdates(string caption);
+        Task CheckUpdatesAsync(string caption);
 
         /// <summary>
         /// Opens an "About" dialog showing application information.
@@ -25,6 +25,6 @@
         /// <param name="about">The content to display in the About dialog.</param>
         /// <param name="caption">The caption of the About dialog window.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        Task OpenAboutDialog(string about, string caption);
+        Task OpenAboutDialogAsync(string about, string caption);
     }
 }

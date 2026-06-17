@@ -328,9 +328,9 @@ namespace Servy.Manager.ViewModels
             StartSelectedCommand = new AsyncCommand(StartSelectedAsync, name: nameof(StartSelectedCommand));
             StopSelectedCommand = new AsyncCommand(StopSelectedAsync, name: nameof(StopSelectedCommand));
             RestartSelectedCommand = new AsyncCommand(RestartSelectedAsync, name: nameof(RestartSelectedCommand));
-            OpenDocumentationCommand = new AsyncCommand(OpenDocumentation, name: nameof(OpenDocumentationCommand));
+            OpenDocumentationCommand = new AsyncCommand(OpenDocumentationAsync, name: nameof(OpenDocumentationCommand));
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync, name: nameof(CheckUpdatesCommand));
-            OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialog, name: nameof(OpenAboutDialogCommand));
+            OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialogAsync, name: nameof(OpenAboutDialogCommand));
 
             IsConfiguratorEnabled = _appConfig.IsDesktopAppAvailable;
             _appConfig.PropertyChanged += AppConfig_PropertyChanged;
@@ -665,14 +665,14 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Opens the Servy documentation page in the default browser.
         /// </summary>
-        private async Task OpenDocumentation(object? parameter)
+        private async Task OpenDocumentationAsync(object? parameter)
         {
             if (_helpService == null)
             {
                 Logger.Warn("Help service is not available.");
                 return;
             }
-            await _helpService.OpenDocumentation(UiAppConfig.Caption);
+            await _helpService.OpenDocumentationAsync(UiAppConfig.Caption);
         }
 
         /// <summary>
@@ -685,20 +685,20 @@ namespace Servy.Manager.ViewModels
                 Logger.Warn("Help service is not available.");
                 return;
             }
-            await _helpService.CheckUpdates(UiAppConfig.Caption);
+            await _helpService.CheckUpdatesAsync(UiAppConfig.Caption);
         }
 
         /// <summary>
         /// Displays the "About Servy" dialog with version and copyright information.
         /// </summary>
-        private async Task OpenAboutDialog(object? parameter)
+        private async Task OpenAboutDialogAsync(object? parameter)
         {
             if (_helpService == null)
             {
                 Logger.Warn("Help service is not available.");
                 return;
             }
-            await _helpService.OpenAboutDialog(
+            await _helpService.OpenAboutDialogAsync(
                string.Format(Strings.Text_About,
                Core.Config.AppConfig.Version,
                Helper.GetBuiltWithFramework(),

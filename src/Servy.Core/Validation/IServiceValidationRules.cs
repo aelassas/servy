@@ -23,8 +23,9 @@ namespace Servy.Core.Validation
         /// </param>
         /// <param name="importMode">Import mode flag to skip credentials validation.</param>
         /// <returns>
-        /// A <see cref="ValidationResult"/> containing a collection of errors (blocking issues) 
-        /// and warnings (non-blocking suggestions or length limit notifications).
+        /// A <see cref="ValidationResult"/> containing a collection of errors (blocking issues). 
+        /// All structural validation failures - including string length-limit or boundary violations - are reported 
+        /// as blocking errors; there is no separate warnings channel.
         /// </returns>
         /// <remarks>
         /// <para>
