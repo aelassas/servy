@@ -643,7 +643,7 @@ namespace Servy.Infrastructure.Data
             // 1. Perform the shallow clone to isolate mutations from the original DTO
             var clone = (ServiceDto)source.Clone();
 
-            // 2. Iterate using the refactored triplet to maintain parity with the decryption path
+            // 2. Iterate the SensitiveFields triplets to maintain parity with the decryption path
             foreach (var (get, set, name) in SensitiveFields)
             {
                 try
@@ -719,7 +719,7 @@ namespace Servy.Infrastructure.Data
             dto.Description = $"[DECRYPTION FAILED: {rootCauseName}] The record's key or payload is corrupt. " +
                               $"Original Description: {dto.Description}";
 
-            // Centralized scrub loop using the pre-existing reflection schema to safely strip poison data
+            // Scrub every sensitive field via the SensitiveFields delegate table
             foreach (var field in SensitiveFields)
             {
                 try

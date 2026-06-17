@@ -138,8 +138,9 @@ namespace Servy.Core.Helpers
                     // Convert numeric value back to enum type to allow safe processing
                     TEnum parsedEnum = (TEnum)convertedValue;
 
-                    // Validate that the value does not contain bits that are entirely unmapped in the enum definition.
-                    // Enum.ToObject followed by ToString handles parsing verification safely across all underlying types.
+                    // ToString() on a [Flags] enum returns member names when every bit maps to a declared
+                    // member, and the raw number otherwise - so comparing against the numeric string
+                    // detects unmapped bits across all underlying types.
                     if (parsedEnum.ToString() != convertedValue.ToString())
                     {
                         return parsedEnum;

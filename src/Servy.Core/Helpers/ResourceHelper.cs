@@ -49,8 +49,9 @@ namespace Servy.Core.Helpers
         /// <param name="stopServices">Whether to stop services before copying the resource.</param>
         /// <param name="isCli">Whether we are in CLI or not.</param>
         /// <returns>
-        /// True if the copy succeeded (or was not needed) AND all stopped services were successfully restarted; 
-        /// otherwise, false.
+        /// True if the copy succeeded (or was not needed); otherwise, false.
+        /// Failures to restart previously-running services do not affect the return value;
+        /// they are surfaced via <see cref="Logger.Error(string, Exception)"/>.
         /// </returns>
         public async Task<bool> CopyEmbeddedResource(
             Assembly assembly,
@@ -339,12 +340,9 @@ namespace Servy.Core.Helpers
         /// <returns>True if the file was successfully cleared of blocking processes; false if termination failed.</returns>
         private bool TerminateBlockingProcesses(string targetPath)
         {
-            // Fix for #Warning: Use path-based identification for all resource types.
-            // Name-based matching (targetFileName) hits unrelated services on the same host 
-            // that happen to be running their own copy of the same executable (e.g., Servy.Restarter.exe).
-
-            // KillProcessesUsingFile surgically finds the PIDs locking THIS specific file
-            // and terminates their entire trees, leaving "Service B's" restarter untouched.
+            // Identify lock holders by path (not by executable name) so we surgically terminate
+            // only the trees locking THIS specific file, leaving unrelated services that run
+            // their own copy of the same executable (e.g., Servy.Restarter.exe) untouched.
             if (!_processKiller.KillProcessesUsingFile(targetPath))
             {
                 Logger.Error($"Could not clear file locks on '{targetPath}'. Extraction aborted to prevent file corruption.");

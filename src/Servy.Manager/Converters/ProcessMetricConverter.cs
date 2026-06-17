@@ -62,7 +62,7 @@ namespace Servy.Manager.Converters
         /// <param name="value">The process usage value, typically an unboxed value type or its nullable equivalent.</param>
         /// <param name="targetType">The type of the binding target property; typically <see cref="string"/>.</param>
         /// <param name="parameter">Optional converter parameter; not used in this implementation.</param>
-        /// <param name="culture">The culture to use in the converter; uses the system's current UI culture.</param>
+        /// <param name="culture">The culture information for the conversion; currently unused.</param>
         /// <returns>
         /// A string representing the formatted system metric produced by specialized subclasses, 
         /// or the <see cref="UnknownMetricUsage"/> placeholder if the value is null or an incompatible type.

@@ -44,7 +44,7 @@ namespace Servy.Core.Services
         /// <summary>Enable size-based log rotation.</summary>
         public bool EnableSizeRotation { get; set; } = AppConfig.DefaultEnableSizeRotation;
 
-        /// <summary>Size in bytes for log rotation. If 0, no rotation is performed.</summary>
+        /// <summary>Size threshold in bytes that triggers a log rotation. Only used when <see cref="EnableSizeRotation"/> is true; the value is clamped to a minimum of 1 MB.</summary>
         public long RotationSizeInBytes { get; set; } = AppConfig.ToBytes(AppConfig.DefaultRotationSizeMB);
 
         /// <summary>

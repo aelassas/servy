@@ -434,8 +434,8 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Handles the <see cref="DispatcherTimer.Tick"/> event for refreshing services.
-        /// Stops the timer before invoking <see cref="RefreshAllServicesAsync"/> to prevent overlapping ticks,
-        /// and restarts the timer afterward if it still exists.
+        /// Uses an <see cref="Interlocked"/> re-entrancy flag (<see cref="_isRefreshingFlag"/>) so an in-progress 
+        /// refresh causes subsequent ticks to return immediately; the timer itself is not stopped.
         /// </summary>
         private async void OnTick(object? sender, EventArgs? e)
         {

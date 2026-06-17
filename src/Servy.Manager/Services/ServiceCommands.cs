@@ -13,6 +13,7 @@ using Servy.Manager.Resources;
 using Servy.Manager.Validation;
 using Servy.UI.Services;
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -858,9 +859,14 @@ namespace Servy.Manager.Services
         /// </remarks>
         private void StartProcess(Process process)
         {
-            if (!process.Start())
+            try
             {
-                Logger.Warn($"Failed to start external process {_appConfig.DesktopAppPublishPath}.");
+                if (!process.Start())
+                    Logger.Warn($"Failed to start external process {_appConfig.DesktopAppPublishPath}.");
+            }
+            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException)
+            {
+                Logger.Warn($"Failed to start external process {_appConfig.DesktopAppPublishPath}. {ex.Message}");
             }
         }
 
