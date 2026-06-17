@@ -21,8 +21,11 @@ namespace Servy.Core.Native
         /// The account to grant the right to. Can be a domain account (DOMAIN\user),
         /// or a local account (.\user or MACHINE_NAME\user).
         /// </param>
+        /// <exception cref="ArgumentException">Thrown if <paramref name="accountName"/> is null or whitespace.</exception>
         /// <exception cref="InvalidOperationException">
-        /// Thrown if the account cannot be resolved to a SID.
+        /// Thrown if the account cannot be resolved to a SID, or if an LSA operation
+        /// (LsaOpenPolicy / LsaEnumerateAccountRights / LsaAddAccountRights) fails - 
+        /// e.g. access denied when the caller is not running elevated.
         /// </exception>
         public static void Ensure(string accountName)
         {

@@ -26,7 +26,7 @@ namespace Servy.Core.Services
         /// <summary>The command line arguments to pass to the real executable.</summary>
         public string RealArgs { get; set; }
 
-        /// <summary>The service startup type (Automatic, Manual, Disabled).</summary>
+        /// <summary>The service startup type (Automatic, AutomaticDelayedStart, Manual, Disabled).</summary>
         public ServiceStartType StartType { get; set; } = AppConfig.DefaultStartupType;
 
         /// <summary>Optional process priority for the service. Defaults to <see cref="AppConfig.DefaultProcessPriority"/>.</summary>

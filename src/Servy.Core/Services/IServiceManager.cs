@@ -119,10 +119,10 @@ namespace Servy.Core.Services
         /// <param name="serviceName">The unique internal name of the Windows service.</param>
         /// <param name="cancellationToken">Optional cancellation token for the configuration query.</param>
         /// <returns>
-        /// A <see cref="ServiceStartType"/> value if the service is found; otherwise, <c>null</c>.
+        /// A <see cref="ServiceStartType"/> value if the service is found; otherwise, <see cref="ServiceStartType.Unknown"/>.
         /// </returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="serviceName"/> is null, empty, or only contains whitespace.</exception>
-        ServiceStartType? GetServiceStartupType(string serviceName, CancellationToken cancellationToken = default);
+        ServiceStartType GetServiceStartupType(string serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Retrieves all Windows services registered on the local machine and maps them to high-level <see cref="ServiceInfo"/> objects.
