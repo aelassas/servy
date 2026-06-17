@@ -336,7 +336,7 @@ namespace Servy.Service
                 // (like 13 from ProtectedKeyProvider), preserve it. Otherwise, set a generic service failure code.
                 if (Environment.ExitCode == 0)
                 {
-                    Environment.ExitCode = 1066; // ERROR_SERVICE_SPECIFIC_ERROR
+                    Environment.ExitCode = AppConfig.ServiceSpecificErrorCode; // ERROR_SERVICE_SPECIFIC_ERROR
                 }
 
                 // By explicitly calling Environment.Exit here, we guarantee the SCM registers 
@@ -377,7 +377,7 @@ namespace Servy.Service
                 if (options == null)
                 {
                     // Set a non-zero exit code so Windows knows it failed
-                    ExitCode = 1066; // ERROR_SERVICE_SPECIFIC_ERROR
+                    ExitCode = AppConfig.ServiceSpecificErrorCode; // ERROR_SERVICE_SPECIFIC_ERROR
                     throw new InvalidOperationException("Failed to initialize service options.");
                 }
 
@@ -390,7 +390,7 @@ namespace Servy.Service
                 // Log and Validate using the new scoped _logger
                 if (!_serviceHelper.ValidateAndLog(options, _logger))
                 {
-                    ExitCode = 1066; // ERROR_SERVICE_SPECIFIC_ERROR
+                    ExitCode = AppConfig.ServiceSpecificErrorCode; // ERROR_SERVICE_SPECIFIC_ERROR
                     Stop();
                     return;
                 }
@@ -544,7 +544,7 @@ namespace Servy.Service
             catch (Exception ex)
             {
                 _logger?.Error("Exception in OnStart.", ex);
-                if (ExitCode == 0) ExitCode = 1066; // ERROR_SERVICE_SPECIFIC_ERROR
+                if (ExitCode == 0) ExitCode = AppConfig.ServiceSpecificErrorCode; // ERROR_SERVICE_SPECIFIC_ERROR
                 Stop();
             }
         }
@@ -2008,7 +2008,7 @@ namespace Servy.Service
                 else
                 {
                     _logger?.Error("Pre-Shutdown teardown reported failure; signaling SERVICE_STOPPED with non-zero exit code so SCM records the failure.");
-                    if (ExitCode == 0) ExitCode = 1066; // ERROR_SERVICE_SPECIFIC_ERROR
+                    if (ExitCode == 0) ExitCode = AppConfig.ServiceSpecificErrorCode; // ERROR_SERVICE_SPECIFIC_ERROR
                 }
                 UpdateServiceStatus(SERVICE_STOPPED, 0);
 
@@ -2071,7 +2071,7 @@ namespace Servy.Service
                 if (state == SERVICE_STOPPED && ExitCode != 0)
                 {
                     // ERROR_SERVICE_SPECIFIC_ERROR tells SCM to read dwServiceSpecificExitCode
-                    win32ExitCode = 1066; // ERROR_SERVICE_SPECIFIC_ERROR
+                    win32ExitCode = AppConfig.ServiceSpecificErrorCode; // ERROR_SERVICE_SPECIFIC_ERROR
                     specificExitCode = ExitCode;
                 }
 

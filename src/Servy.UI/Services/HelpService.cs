@@ -53,7 +53,7 @@ namespace Servy.UI.Services
         }
 
         /// <inheritdoc />
-        public async Task OpenDocumentation(string caption)
+        public async Task OpenDocumentationAsync(string caption)
         {
             try
             {
@@ -72,7 +72,7 @@ namespace Servy.UI.Services
         }
 
         /// <inheritdoc />
-        public async Task CheckUpdates(string caption)
+        public async Task CheckUpdatesAsync(string caption)
         {
             try
             {
@@ -159,7 +159,7 @@ namespace Servy.UI.Services
         }
 
         /// <inheritdoc />
-        public async Task OpenAboutDialog(string about, string caption)
+        public async Task OpenAboutDialogAsync(string about, string caption)
         {
             await _messageBoxService.ShowInfoAsync(about, caption);
         }

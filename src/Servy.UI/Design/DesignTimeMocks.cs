@@ -170,7 +170,7 @@ namespace Servy.UI.Design
         /// <summary>
         /// No-op implementation for opening documentation with a specific caption.
         /// </summary>
-        public Task OpenDocumentation(string caption)
+        public Task OpenDocumentationAsync(string caption)
         {
             return Task.CompletedTask;
         }
@@ -178,7 +178,7 @@ namespace Servy.UI.Design
         /// <summary>
         /// No-op implementation for update checks triggered by the designer.
         /// </summary>
-        public Task CheckUpdates(string caption)
+        public Task CheckUpdatesAsync(string caption)
         {
             return Task.CompletedTask;
         }
@@ -186,7 +186,7 @@ namespace Servy.UI.Design
         /// <summary>
         /// No-op implementation for the about dialog preview.
         /// </summary>
-        public Task OpenAboutDialog(string about, string caption)
+        public Task OpenAboutDialogAsync(string about, string caption)
         {
             return Task.CompletedTask;
         }

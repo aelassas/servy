@@ -529,7 +529,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Security Alert: Exporting configurations through directory junctions or symlinks is prohibited to prevent path redirection attacks..
+        ///   Recherche une chaîne localisée semblable à Security Alert: Exporting configurations to directory junctions or symlinks is prohibited to prevent path redirection attacks..
         /// </summary>
         public static string Msg_SecurityDirReparsePointExportProhibited {
             get {
@@ -547,7 +547,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Security Alert: Exporting configurations through file symbolic links or junctions is prohibited to prevent path redirection attacks..
+        ///   Recherche une chaîne localisée semblable à Security Alert: Exporting configurations to file symbolic links or junctions is prohibited to prevent path redirection attacks..
         /// </summary>
         public static string Msg_SecurityFileReparsePointExportProhibited {
             get {
@@ -610,7 +610,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Security Alert: Exporting from network drives (including mapped UNC shares) is prohibited..
+        ///   Recherche une chaîne localisée semblable à Security Alert: Exporting to network drives (including mapped UNC shares) is prohibited..
         /// </summary>
         public static string Msg_SecurityNetworkDriveExportProhibited {
             get {
@@ -673,7 +673,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Security Alert: Exporting from UNC paths is prohibited to prevent malicious configuration injection..
+        ///   Recherche une chaîne localisée semblable à Security Alert: Exporting to UNC paths is prohibited to prevent configuration exfiltration..
         /// </summary>
         public static string Msg_SecurityUncPathExportProhibited {
             get {

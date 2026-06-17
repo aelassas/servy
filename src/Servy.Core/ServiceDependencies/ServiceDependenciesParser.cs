@@ -32,8 +32,10 @@ namespace Servy.Core.ServiceDependencies
         /// </list>
         /// </returns>
         /// <remarks>
-        /// - Duplicate dependency names are removed (case-insensitive).  
-        /// - Passing <c>null</c> or an empty string will clear all dependencies.  
+        /// <list type="bullet">
+        /// <item><description>Duplicate dependency names are removed (case-insensitive).</description></item>
+        /// <item><description>Passing <c>null</c> or an empty string will clear all dependencies.</description></item>
+        /// </list>
         /// </remarks>
         public static string Parse(string input)
         {

@@ -245,25 +245,71 @@ namespace Servy.Core.Native
             CTRL_SHUTDOWN_EVENT = 6,
         }
 
+        /// <summary>Represents the number of 100-nanosecond intervals since January 1, 1601 (UTC).</summary>
         [StructLayout(LayoutKind.Sequential)]
         public struct FILETIME
         {
+            /// <summary>Specifies the low-order 32 bits of the file time. </summary>
             public uint dwLowDateTime;
+            /// <summary>Specifies the high-order 32 bits of the file time.</summary>
             public uint dwHighDateTime;
         }
 
+        /// <summary>
+        /// Contains information that the <c>GetFileInformationByHandle</c> function retrieves.
+        /// Used across security gates to obtain absolute target identity locks (volume serial and index pairs).
+        /// </summary>
         [StructLayout(LayoutKind.Sequential)]
         public struct BY_HANDLE_FILE_INFORMATION
         {
+            /// <summary>
+            /// The file attributes, mapped directly to standard Win32 <see cref="System.IO.FileAttributes"/> flags.
+            /// </summary>
             public uint FileAttributes;
+
+            /// <summary>
+            /// A <see cref="FILETIME"/> structure specifying when the file or directory was created.
+            /// </summary>
             public FILETIME CreationTime;
+
+            /// <summary>
+            /// A <see cref="FILETIME"/> structure specifying when the file or directory was last accessed.
+            /// </summary>
             public FILETIME LastAccessTime;
+
+            /// <summary>
+            /// A <see cref="FILETIME"/> structure specifying when the file or directory was last written to.
+            /// </summary>
             public FILETIME LastWriteTime;
+
+            /// <summary>
+            /// The serial number of the volume that contains the file.
+            /// </summary>
             public uint VolumeSerialNumber;
+
+            /// <summary>
+            /// The high-order 32 bits of the file size.
+            /// </summary>
             public uint FileSizeHigh;
+
+            /// <summary>
+            /// The low-order 32 bits of the file size.
+            /// </summary>
             public uint FileSizeLow;
+
+            /// <summary>
+            /// The number of links to this file (hard links for NTFS filesystems).
+            /// </summary>
             public uint NumberOfLinks;
+
+            /// <summary>
+            /// The high-order 32 bits of a unique identifier associated with the file.
+            /// </summary>
             public uint FileIndexHigh;
+
+            /// <summary>
+            /// The low-order 32 bits of a unique identifier associated with the file.
+            /// </summary>
             public uint FileIndexLow;
         }
 

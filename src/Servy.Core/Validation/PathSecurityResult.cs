@@ -4,7 +4,7 @@
     /// A secure token representing a file path that has successfully passed all defense-in-depth security invariants.
     /// The constructor is intentionally hidden to prevent arbitrary instantiation outside of the security gate.
     /// </summary>
-    public sealed class ValidatedImportPath
+    public sealed class ValidatedPath
     {
         /// <summary>
         /// Gets the absolute, fully qualified, and structurally verified filesystem path.
@@ -12,10 +12,10 @@
         public string ResolvedPath { get; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ValidatedImportPath"/> class.
+        /// Initializes a new instance of the <see cref="ValidatedPath"/> class.
         /// </summary>
         /// <param name="resolvedPath">The fully canonicalized filesystem path that has passed validation.</param>
-        internal ValidatedImportPath(string resolvedPath)
+        internal ValidatedPath(string resolvedPath)
         {
             ResolvedPath = resolvedPath;
         }
@@ -35,7 +35,7 @@
         /// Gets the validated path token containing the verified path string. 
         /// Guaranteed to be non-null when <see cref="IsValid"/> is <c>true</c>; otherwise, <c>null</c>.
         /// </summary>
-        public ValidatedImportPath ValidPath { get; }
+        public ValidatedPath ValidPath { get; }
 
         /// <summary>
         /// Gets the descriptive message detailing the specific rule or infrastructural failure that caused the validation to fail.
@@ -47,7 +47,7 @@
         /// Initializes a new instance of the <see cref="PathSecurityResult"/> class representing a successful validation.
         /// </summary>
         /// <param name="path">The secure, verified path token instance.</param>
-        private PathSecurityResult(ValidatedImportPath path)
+        private PathSecurityResult(ValidatedPath path)
         {
             IsValid = true;
             ValidPath = path;
@@ -67,8 +67,8 @@
         /// Creates a successful <see cref="PathSecurityResult"/> encapsulating a verified path token.
         /// </summary>
         /// <param name="path">The raw filesystem path string that passed security clearance invariants.</param>
-        /// <returns>A initialized success descriptor containing a valid <see cref="ValidatedImportPath"/> instance.</returns>
-        internal static PathSecurityResult Success(string path) => new PathSecurityResult(new ValidatedImportPath(path));
+        /// <returns>A initialized success descriptor containing a valid <see cref="ValidatedPath"/> instance.</returns>
+        internal static PathSecurityResult Success(string path) => new PathSecurityResult(new ValidatedPath(path));
 
         /// <summary>
         /// Creates a failed <see cref="PathSecurityResult"/> capturing a validation rule violation error string.

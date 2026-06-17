@@ -142,9 +142,9 @@ namespace Servy.UI.UnitTests.Design
         {
             var service = new DesignTimeHelpService();
 
-            await service.OpenDocumentation("caption");
-            await service.CheckUpdates("caption");
-            await service.OpenAboutDialog("about", "caption");
+            await service.OpenDocumentationAsync("caption");
+            await service.CheckUpdatesAsync("caption");
+            await service.OpenAboutDialogAsync("about", "caption");
         }
 
         [Fact]

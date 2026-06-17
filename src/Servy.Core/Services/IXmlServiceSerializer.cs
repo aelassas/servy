@@ -20,7 +20,7 @@ namespace Servy.Core.Services
         /// Serializes a service DTO instance into an XML-formatted string using UTF-8 encoding and standard indentation.
         /// </summary>
         /// <param name="dto">The service DTO instance to be converted into an XML string.</param>
-        /// <returns>A UTF-8 encoded XML string representing the service; otherwise, null if serialization fails or the input is empty.</returns>
+        /// <returns>A UTF-8 encoded XML string representing the service; otherwise, <c>null</c> if the input is <c>null</c> or serialization fails.</returns>
         string Serialize(ServiceDto dto);
     }
 }

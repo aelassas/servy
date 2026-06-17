@@ -1430,6 +1430,13 @@ namespace Servy.Core.Config
 
         #endregion
 
+        #region Native Error Codes
+
+        /// <summary>Win32 ERROR_SERVICE_SPECIFIC_ERROR (1066); reported to the SCM so it reads dwServiceSpecificExitCode.</summary>
+        public const int ServiceSpecificErrorCode = 1066;
+
+        #endregion
+
         #region Public Methods
 
         /// <summary>

@@ -239,16 +239,16 @@
     <value>Security Alert: Importing configurations through file symbolic links or junctions is prohibited to prevent path redirection attacks.</value>
   </data>
   <data name="Msg_SecurityUncPathExportProhibited" xml:space="preserve">
-    <value>Security Alert: Exporting from UNC paths is prohibited to prevent malicious configuration injection.</value>
+    <value>Security Alert: Exporting to UNC paths is prohibited to prevent configuration exfiltration.</value>
   </data>
   <data name="Msg_SecurityNetworkDriveExportProhibited" xml:space="preserve">
-    <value>Security Alert: Exporting from network drives (including mapped UNC shares) is prohibited.</value>
+    <value>Security Alert: Exporting to network drives (including mapped UNC shares) is prohibited.</value>
   </data>
   <data name="Msg_SecurityDirReparsePointExportProhibited" xml:space="preserve">
-    <value>Security Alert: Exporting configurations through directory junctions or symlinks is prohibited to prevent path redirection attacks.</value>
+    <value>Security Alert: Exporting configurations to directory junctions or symlinks is prohibited to prevent path redirection attacks.</value>
   </data>
   <data name="Msg_SecurityFileReparsePointExportProhibited" xml:space="preserve">
-    <value>Security Alert: Exporting configurations through file symbolic links or junctions is prohibited to prevent path redirection attacks.</value>
+    <value>Security Alert: Exporting configurations to file symbolic links or junctions is prohibited to prevent path redirection attacks.</value>
   </data>
   <data name="Msg_SecurityReservedDeviceName" xml:space="preserve">
     <value>Security Alert: '{0}' is a reserved Windows device name and cannot be used.</value>

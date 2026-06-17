@@ -56,13 +56,13 @@ namespace Servy.Core.Services
         /// <summary>Enable health monitoring.</summary>
         public bool EnableHealthMonitoring { get; set; } = AppConfig.DefaultEnableHealthMonitoring;
 
-        /// <summary>Heartbeat interval in seconds for the process. If 0, health monitoring is disabled.</summary>
+        /// <summary>Heartbeat interval in seconds for the process. Only used when <see cref="EnableHealthMonitoring"/> is true; must be between <see cref="AppConfig.MinHeartbeatInterval"/> and <see cref="AppConfig.MaxHeartbeatInterval"/>.</summary>
         public int HeartbeatInterval { get; set; } = AppConfig.DefaultHeartbeatInterval;
 
-        /// <summary>Maximum number of failed health checks before the service is considered unhealthy. If 0, health monitoring is disabled.</summary>
+        /// <summary>Maximum number of failed health checks before the service is considered unhealthy. Only used when <see cref="EnableHealthMonitoring"/> is true.</summary>
         public int MaxFailedChecks { get; set; } = AppConfig.DefaultMaxFailedChecks;
 
-        /// <summary>Recovery action to take if the service fails. If None, health monitoring is disabled.</summary>
+        /// <summary>Recovery action to take if the service fails. Only used when <see cref="EnableHealthMonitoring"/> is true.</summary>
         public RecoveryAction RecoveryAction { get; set; } = AppConfig.DefaultRecoveryAction;
 
         /// <summary>Whether to run recovery action even if the process exits successfully. </summary>
