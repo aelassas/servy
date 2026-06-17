@@ -64,7 +64,7 @@ namespace Servy.Core.Services
                     if (!SourceNameValidator.IsMatch(_sourceName))
                     {
                         throw new SecurityException($"Invalid Event Source name: '{_sourceName}'. " +
-                            "Only alphanumeric characters, dots, hyphens, and underscores are allowed.");
+                            "Only alphanumeric characters, spaces, dots, hyphens, and underscores are allowed.");
                     }
 
                     // 2. ROBUST ESCAPING: Use standard XML escaping

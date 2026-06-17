@@ -40,8 +40,8 @@ namespace Servy.CLI.Validation
         /// </returns>
         public CommandResult Validate(InstallServiceOptions opts)
         {
-            // Note: Add a mapping step here (e.g., opts.ToServiceDto()) 
-            // Any int.TryParse format failures during mapping should return an early CommandResult.Fail.
+            // Map raw CLI strings to a ServiceDto first; any int/enum parse failure
+            // short-circuits to CommandResult.Fail before the core validation runs.
             if (!TryMapToDto(opts, out var dto, out var mappingError))
             {
                 return CommandResult.Fail(mappingError);

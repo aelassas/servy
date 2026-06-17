@@ -36,9 +36,9 @@ namespace Servy.Core.Security
         /// Caches the machine-unique entropy to optimize performance and ensure thread-safe initialization.
         /// </summary>
         /// <remarks>
-        /// This field uses <see cref="Lazy{T}"/> to ensure that the machine-specific entropy is only 
-        /// retrieved from the registry once. Caching this value avoids redundant registry I/O operations 
-        /// and string-to-byte conversions during subsequent calls to <see cref="GetKey"/> or <see cref="GetIV"/>.
+        /// The factory may run more than once under concurrent first access and only the published value is 
+        /// shared. Caching this value avoids redundant registry I/O operations and string-to-byte conversions 
+        /// during subsequent calls to <see cref="GetKey"/> or <see cref="GetIV"/>.
         /// </remarks>
         private static readonly Lazy<byte[]> MachineEntropy = new Lazy<byte[]>(GetMachineEntropy, LazyThreadSafetyMode.PublicationOnly);
 

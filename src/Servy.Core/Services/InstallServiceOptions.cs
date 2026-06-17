@@ -29,7 +29,7 @@ namespace Servy.Core.Services
         /// <summary>The service startup type (Automatic, Manual, Disabled).</summary>
         public ServiceStartType StartType { get; set; } = AppConfig.DefaultStartupType;
 
-        /// <summary>Optional process priority for the service. Defaults to Normal.</summary>
+        /// <summary>Optional process priority for the service. Defaults to <see cref="AppConfig.DefaultProcessPriority"/>.</summary>
         public ProcessPriority ProcessPriority { get; set; } = AppConfig.DefaultProcessPriority;
 
         /// <summary>Whether to enable the console user interface for the service.</summary>
@@ -49,7 +49,7 @@ namespace Servy.Core.Services
 
         /// <summary>
         /// Gets or sets a value indicating whether to use local system time for log rotation.
-        /// Default is <c>false</c> (UTC).
+        /// Defaults to <see cref="AppConfig.DefaultUseLocalTimeForRotation"/>.
         /// </summary>
         public bool UseLocalTimeForRotation { get; set; } = AppConfig.DefaultUseLocalTimeForRotation;
 
@@ -110,7 +110,7 @@ namespace Servy.Core.Services
         /// <summary>Optional path for pre-launch standard error redirection. If null, no redirection is performed.</summary>
         public string PreLaunchStderrPath { get; set; }
 
-        /// <summary>Pre-launch script timeout in seconds. Default is 30 seconds.</summary>
+        /// <summary>Pre-launch script timeout in seconds. Defaults to <see cref="AppConfig.DefaultPreLaunchTimeoutSeconds"/>.</summary>
         public int PreLaunchTimeout { get; set; } = AppConfig.DefaultPreLaunchTimeoutSeconds;
 
         /// <summary>Pre-launch script retry attempts.</summary>
