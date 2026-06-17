@@ -241,7 +241,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void ApplyLanguageFixes_RuntimesDetection_AppliesExpectedArgumentsAndVariables(string fileName, bool isPython)
         {
             var psi = new ProcessStartInfo { FileName = fileName, Arguments = "-version" };
-            ProcessLauncher.ApplyLanguageFixes(psi);
+            ProcessLauncher.ApplyLanguageFixes(psi, logger: null);
 
             if (isPython)
             {
@@ -260,8 +260,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             var psiNull = new ProcessStartInfo { FileName = null };
             var psiEmpty = new ProcessStartInfo { FileName = string.Empty };
 
-            var exceptionNull = Record.Exception(() => ProcessLauncher.ApplyLanguageFixes(psiNull));
-            var exceptionEmpty = Record.Exception(() => ProcessLauncher.ApplyLanguageFixes(psiEmpty));
+            var exceptionNull = Record.Exception(() => ProcessLauncher.ApplyLanguageFixes(psiNull, logger: null));
+            var exceptionEmpty = Record.Exception(() => ProcessLauncher.ApplyLanguageFixes(psiEmpty, logger: null));
 
             Assert.Null(exceptionNull);
             Assert.Null(exceptionEmpty);
@@ -271,7 +271,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void ApplyLanguageFixes_JavaWithExistingEncodingProperty_DoesNotOverwriteArguments()
         {
             var psi = new ProcessStartInfo { FileName = "java.exe", Arguments = "-Dfile.encoding=ISO-8859-1 -jar target.jar" };
-            ProcessLauncher.ApplyLanguageFixes(psi);
+            ProcessLauncher.ApplyLanguageFixes(psi, logger: null);
 
             // Logic should skip prepending UTF-8 properties if a definition is already matched
             Assert.StartsWith("-Dfile.encoding=ISO-8859-1", psi.Arguments);
@@ -284,7 +284,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             var psi = new ProcessStartInfo { FileName = "python.exe" };
             psi.Environment["PYTHONUTF8"] = "CUSTOM_USER_VALUE"; // Explicit definition
 
-            ProcessLauncher.ApplyLanguageFixes(psi);
+            ProcessLauncher.ApplyLanguageFixes(psi, logger: null);
 
             // Verify the helper branch rule 'if (!psi.Environment.ContainsKey(key))' bypassed replacing it
             Assert.Equal("CUSTOM_USER_VALUE", psi.Environment["PYTHONUTF8"]);

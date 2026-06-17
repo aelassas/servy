@@ -28,7 +28,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         private ServiceRowViewModel CreateViewModel()
         {
             return new ServiceRowViewModel(
-                new Service { Name = "S" },
+                new Service { Name = "S", Pid = 123 },
                 _serviceCommandsMock.Object,
                 _cursorServiceMock.Object
             );

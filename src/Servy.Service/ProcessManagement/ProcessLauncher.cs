@@ -110,7 +110,7 @@ namespace Servy.Service.ProcessManagement
             }
 
             // 4. Apply runtime-specific fixes
-            ApplyLanguageFixes(psi);
+            ApplyLanguageFixes(psi, logger);
 
             // 5. Launch the process
             var process = factory.Create(psi, logger);
@@ -371,7 +371,8 @@ namespace Servy.Service.ProcessManagement
         /// Detection is strictly scoped to the executable filename and extension to avoid false positives from directory paths.
         /// </summary>
         /// <param name="psi">The start info to modify.</param>
-        public static void ApplyLanguageFixes(ProcessStartInfo psi)
+        /// <param name="logger">The logger instance for operational telemetry.</param>
+        public static void ApplyLanguageFixes(ProcessStartInfo psi, IServyLogger logger)
         {
             if (psi == null || string.IsNullOrEmpty(psi.FileName))
             {
@@ -386,7 +387,7 @@ namespace Servy.Service.ProcessManagement
             try { isPython = PythonExeRegex.IsMatch(fileNameOnly); }
             catch (RegexMatchTimeoutException ex)
             {
-                Logger.Warn($"ApplyLanguageFixes: Python detection regex timed out on '{fileNameOnly}' ({ex.Message}); assuming not Python.");
+                logger?.Warn($"ApplyLanguageFixes: Python detection regex timed out on '{fileNameOnly}' ({ex.Message}); assuming not Python.");
                 isPython = false;
             }
 
@@ -418,7 +419,7 @@ namespace Servy.Service.ProcessManagement
                 }
                 catch (RegexMatchTimeoutException ex)
                 {
-                    Logger.Warn($"ApplyLanguageFixes: -Dfile.encoding detection regex timed out on Java arguments ({ex.Message}); assuming not present.");
+                    logger?.Warn($"ApplyLanguageFixes: -Dfile.encoding detection regex timed out on Java arguments ({ex.Message}); assuming not present.");
                     hasEncoding = false;
                 }
 

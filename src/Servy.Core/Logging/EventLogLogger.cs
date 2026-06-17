@@ -33,7 +33,7 @@ namespace Servy.Core.Logging
 
         #region ILogger implementation
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public string Prefix { get; }
 
         /// <summary>

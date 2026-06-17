@@ -93,14 +93,14 @@ namespace Servy.Core.Security
 
         #region IProtectedKeyProvider Implementation
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public byte[] GetKey()
         {
             ThrowIfDisposed();
             return GetCachedOrGenerate(ref _cachedKey, _keyFilePath, 32);
         }
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public byte[] GetIV()
         {
             ThrowIfDisposed();
