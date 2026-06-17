@@ -147,7 +147,7 @@ namespace Servy.UI.Design
         /// <summary>
         /// Returns Manual startup type as a safe default for design-time.
         /// </summary>
-        public ServiceStartType? GetServiceStartupType(string serviceName, CancellationToken cancellationToken = default)
+        public ServiceStartType GetServiceStartupType(string serviceName, CancellationToken cancellationToken = default)
             => ServiceStartType.Manual;
 
         /// <summary>
