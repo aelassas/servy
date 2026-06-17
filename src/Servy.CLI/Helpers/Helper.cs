@@ -104,10 +104,12 @@ namespace Servy.CLI.Helpers
         /// <returns>True if parsing succeeds; otherwise false.</returns>
         public static bool TryParseFileType(string? input, out ConfigFileType fileType, out string error)
         {
-            if (string.IsNullOrWhiteSpace(input)
-                || !Enum.TryParse(input, true, out fileType)
-                || !Enum.IsDefined(typeof(ConfigFileType), fileType)
-                || char.IsDigit(input.Trim()[0]))
+            var trimmed = input?.Trim();
+            if (string.IsNullOrEmpty(trimmed)
+                || trimmed.IndexOf(',') >= 0
+                || char.IsDigit(trimmed[0])
+                || !Enum.TryParse(trimmed, true, out fileType)
+                || !Enum.IsDefined(typeof(ConfigFileType), fileType))
             {
                 fileType = default;
                 error = Strings.Msg_InvalidConfigFileType;
