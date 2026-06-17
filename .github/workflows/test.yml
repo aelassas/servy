@@ -112,7 +112,7 @@ jobs:
       # -----------------------------------------------------
       - name: Merge and normalize coverage paths (PowerShell)
         shell: pwsh
-        if: ${{ always() && matrix.upload_coverage == true }}
+        if: ${{ matrix.upload_coverage == true }}
         run: |
           $workspace = $env:GITHUB_WORKSPACE
           $fixedDir = Join-Path $workspace "TestResults\fixed"
@@ -162,7 +162,7 @@ jobs:
       # Third-Party Metrics Tracking Uploads (x64 Only Context)
       # -----------------------------------------------------
       - name: Import Codecov Public GPG Key
-        if: ${{ always() && matrix.upload_coverage == true }}
+        if: ${{ matrix.upload_coverage == true }}
         continue-on-error: true
         shell: bash
         run: |
@@ -179,7 +179,7 @@ jobs:
         id: codecov
         continue-on-error: true
         uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe #v5.5.4
-        if: ${{ always() && matrix.upload_coverage == true }}
+        if: ${{ matrix.upload_coverage == true }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}          
           files: TestResults/fixed/coverage.cobertura.xml
@@ -193,7 +193,7 @@ jobs:
         id: coveralls
         continue-on-error: true
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b #v2.36
-        if: ${{ always() && matrix.upload_coverage == true }}
+        if: ${{ matrix.upload_coverage == true }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           base-path: ${{ github.workspace }}
@@ -204,7 +204,7 @@ jobs:
           COVERALLS_GIT_BRANCH: ${{ github.ref_name }}
 
       - name: Notify Metrics Platform Status in case of failure
-        if: ${{ always() && matrix.upload_coverage == true && (steps.codecov.outcome == 'failure' || steps.coveralls.outcome == 'failure') }}
+        if: ${{ matrix.upload_coverage == true && (steps.codecov.outcome == 'failure' || steps.coveralls.outcome == 'failure') }}
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b #v7.1.0
         with:
           script: |

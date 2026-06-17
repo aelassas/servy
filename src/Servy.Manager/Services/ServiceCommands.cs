@@ -13,7 +13,6 @@ using Servy.Manager.Resources;
 using Servy.Manager.Validation;
 using Servy.UI.Services;
 using System.Collections.Concurrent;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -849,24 +848,17 @@ namespace Servy.Manager.Services
         }
 
         /// <summary>
-        /// Attempts to launch an external process and logs a warning if the start operation fails.
+        /// Attempts to launch an external process.
         /// </summary>
         /// <param name="process">The <see cref="Process"/> instance configured with the necessary start information.</param>
         /// <remarks>
-        /// This method does not throw an exception on failure; instead, it utilizes the 
-        /// <see cref="Logger.Warn(string)"/> method to record the failed attempt to launch 
-        /// the external configuration tool.
+        /// Failures returning false are logged; launch exceptions propagate to the caller.
         /// </remarks>
         private void StartProcess(Process process)
         {
-            try
+            if (!process.Start())
             {
-                if (!process.Start())
-                    Logger.Warn($"Failed to start external process {_appConfig.DesktopAppPublishPath}.");
-            }
-            catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException)
-            {
-                Logger.Warn($"Failed to start external process {_appConfig.DesktopAppPublishPath}. {ex.Message}");
+                Logger.Warn($"Failed to start external process {_appConfig.DesktopAppPublishPath}.");
             }
         }
 
