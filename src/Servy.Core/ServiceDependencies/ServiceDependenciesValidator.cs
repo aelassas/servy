@@ -4,9 +4,12 @@ using System.Text.RegularExpressions;
 
 namespace Servy.Core.ServiceDependencies
 {
+    /// <summary>
+    /// Validates user-entered Windows service dependency lists (semicolon- or newline-separated service names).
+    /// </summary>
     public static class ServiceDependenciesValidator
     {
-        // Allowed characters updated: letters, digits, hyphen, underscore, period, spaces, and dollar sign ($)
+        // letters, digits, hyphen, underscore, period, spaces, and dollar sign ($)
         private static readonly Regex ValidServiceNameRegex = new Regex(@"^[a-zA-Z0-9_.\-$ ]+$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
         /// <summary>

@@ -147,34 +147,34 @@ namespace Servy.Models
         public string? FailureProgramParameters { get; set; }
 
         /// <summary>
-        /// Environment Variables.
+        /// Gets or sets the environment variables configured for the service.
         /// Format: key=value, one per line or separated by semicolons.
         /// </summary>
         public string? EnvironmentVariables { get; set; }
 
         /// <summary>
-        /// Windows Service Dependencies.
+        /// Gets or sets the defined Windows service dependencies.
         /// Format: ServiceName, one per line or separated by semicolons.
         /// </summary>
         public string? ServiceDependencies { get; set; }
 
         /// <summary>
-        /// Indicates whether to run the Windows Service as the Local System account.
+        /// Gets or sets a value indicating whether to run the Windows Service as the Local System account.
         /// </summary>
         public bool RunAsLocalSystem { get; set; }
 
         /// <summary>
-        /// The service account username (e.g., <c>.\username</c>, <c>DOMAIN\username</c>).
+        /// Gets or sets the service account username (e.g., <c>.\username</c>, <c>DOMAIN\username</c>).
         /// </summary>
         public string? UserAccount { get; set; }
 
         /// <summary>
-        /// The password for the service account.
+        /// Gets or sets the password for the service account.
         /// </summary>
         public string? Password { get; set; }
 
         /// <summary>
-        /// The confirmation of the service account password.
+        /// Gets or sets the confirmation copy of the service account password.
         /// </summary>
         public string? ConfirmPassword { get; set; }
 
@@ -244,7 +244,7 @@ namespace Servy.Models
 
         /// <summary>
         /// Gets or sets a value indicating whether debug logs are enabled.
-        /// When enabled, environment variables and process parameters are recorded in the Windows Event Log. 
+        /// When enabled, environment variables and process parameters are recorded in the Servy.Service.log file.
         /// Not recommended for production environments, as these logs may contain sensitive information.
         /// </summary>
         public bool EnableDebugLogs { get; set; }
@@ -260,44 +260,43 @@ namespace Servy.Models
         public string? StopTimeout { get; set; }
 
         /// <summary>
-        /// Optional path to an executable that runs before the service stops.
+        /// Gets or sets the optional path to an executable that runs before the service stops.
         /// </summary>
         public string? PreStopExecutablePath { get; set; }
 
         /// <summary>
-        /// Optional startup directory for the pre-stop executable.
+        /// Gets or sets the optional startup directory for the pre-stop executable.
         /// </summary>
         public string? PreStopStartupDirectory { get; set; }
 
         /// <summary>
-        /// Optional parameters for the pre-stop executable.
+        /// Gets or sets the optional parameters for the pre-stop executable.
         /// </summary>
         public string? PreStopParameters { get; set; }
 
         /// <summary>
-        /// Maximum time in seconds to wait for the pre-stop executable to complete.
+        /// Gets or sets the maximum time in seconds to wait for the pre-stop executable to complete.
         /// </summary>
         public string? PreStopTimeoutSeconds { get; set; }
 
         /// <summary>
-        /// Whether to log pre-stop failure as error.
+        /// Gets or sets a value indicating whether to log pre-stop failure as an error.
         /// </summary>
         public bool PreStopLogAsError { get; set; }
 
         /// <summary>
-        /// Optional path to an executable that runs after the service stops.
+        /// Gets or sets the optional path to an executable that runs after the service stops.
         /// </summary>
         public string? PostStopExecutablePath { get; set; }
 
         /// <summary>
-        /// Optional startup directory for the post-stop executable.
+        /// Gets or sets the optional startup directory for the post-stop executable.
         /// </summary>
         public string? PostStopStartupDirectory { get; set; }
 
         /// <summary>
-        /// Optional parameters for the post-stop executable.
+        /// Gets or sets the optional parameters for the post-stop executable.
         /// </summary>
         public string? PostStopParameters { get; set; }
-
     }
 }

@@ -956,7 +956,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public ServiceStartType? GetServiceStartupType(string? serviceName, CancellationToken cancellationToken = default(CancellationToken))
+        public ServiceStartType GetServiceStartupType(string? serviceName, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));

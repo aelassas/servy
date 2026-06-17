@@ -11,8 +11,8 @@ namespace Servy.Core.Logging
 {
     /// <summary>
     /// Provides a thread-safe, fail-silent static logging utility for the Servy ecosystem.
-    /// Uses <see cref="RotatingStreamWriter"/> to ensure logs are rotated based on size 
-    /// while preventing unbounded file growth.
+    /// Uses <see cref="RotatingStreamWriter"/> to rotate logs by size and/or date interval
+    /// (daily, weekly, monthly), preventing unbounded file growth.
     /// </summary>
     public static class Logger
     {
