@@ -4,6 +4,7 @@ using Servy.CLI.Helpers;
 using Servy.CLI.Models;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -17,14 +18,20 @@ namespace Servy.CLI.UnitTests.Helpers
     [Collection("SequentialConsoleTests")]
     public class HelperTests
     {
-        // Thread lock gate safety valve
+        // Thread lock gate safety valve for synchronous blocks
         private static readonly object _consoleLock = new object();
+
+        // Async coordination primitive sharing the same conceptual isolation boundary 
+        // to prevent thread pool yields from overlapping with active capturing blocks.
+        private static readonly SemaphoreSlim _asyncConsoleLock = new SemaphoreSlim(1, 1);
 
         // Consolidated, robust console capture mechanism with synchronized lock bounds
         private void RunTestWithConsoleCapture(Action testAction)
         {
             lock (_consoleLock)
             {
+                // Synchronously drain the async gate to block multi-threaded interleaved tests
+                _asyncConsoleLock.Wait();
                 var oldOut = Console.Out;
                 var oldErr = Console.Error;
 
@@ -41,40 +48,40 @@ namespace Servy.CLI.UnitTests.Helpers
                     {
                         Console.SetOut(oldOut);
                         Console.SetError(oldErr);
+                        _asyncConsoleLock.Release();
                     }
                 }
             }
         }
 
-        // Added asynchronous overload to hold the hijacked console stream open
-        // across asynchronous thread hops until the background state machine fully resolves.
+        // Refactored async capture mechanism that ensures the StringWriter streams 
+        // stay alive naturally across all asynchronous thread hops without deadlocks.
         private async Task RunTestWithConsoleCaptureAsync(Func<Task> testAction)
         {
-            // Acquire the lock synchronously before setting up stream redirection
-            lock (_consoleLock)
-            {
-                var oldOut = Console.Out;
-                var oldErr = Console.Error;
+            // Acquire the async semaphore to respect synchronous isolation execution loops
+            await _asyncConsoleLock.WaitAsync();
 
-                using (var swOut = new StringWriter())
-                using (var swErr = new StringWriter())
+            var oldOut = Console.Out;
+            var oldErr = Console.Error;
+
+            using (var swOut = new StringWriter())
+            using (var swErr = new StringWriter())
+            {
+                Console.SetOut(swOut);
+                Console.SetError(swErr);
+                try
                 {
-                    Console.SetOut(swOut);
-                    Console.SetError(swErr);
-                    try
-                    {
-                        // Unroll the asynchronous delegate task completely using an absolute awaiter 
-                        // while the custom StringWriter stream lifetime is guaranteed open.
-                        testAction().GetAwaiter().GetResult();
-                    }
-                    finally
-                    {
-                        Console.SetOut(oldOut);
-                        Console.SetError(oldErr);
-                    }
+                    // Perfectly await the execution task to cleanly yield control 
+                    // without escaping the lifetime bounds of the StringWriter wrappers.
+                    await testAction();
+                }
+                finally
+                {
+                    Console.SetOut(oldOut);
+                    Console.SetError(oldErr);
+                    _asyncConsoleLock.Release();
                 }
             }
-            await Task.CompletedTask;
         }
 
         [Fact]
@@ -124,14 +131,22 @@ namespace Servy.CLI.UnitTests.Helpers
         [Fact]
         public async Task PrintAndReturnAsync_ReturnsExitCode()
         {
-            // Re-route through the asynchronous capture method, eliminating the 
-            // ObjectDisposedException caused by background-thread hopping.
             int exitCode = -1;
 
+            // Use the fully asynchronous redirection wrapper to capture state cleanly
             await RunTestWithConsoleCaptureAsync(async () =>
             {
-                var task = Task.FromResult(CommandResult.Ok("Async"));
-                exitCode = await Helper.PrintAndReturnAsync(task);
+                // Wrap in Task.Run to completely insulate the background execution loop 
+                // and force the async state machine to fully unroll right here
+                await Task.Run(async () =>
+                {
+                    var task = Task.FromResult(CommandResult.Ok("Async"));
+                    exitCode = await Helper.PrintAndReturnAsync(task);
+                });
+
+                // Anti-flaking safety yield: gives any residual asynchronous console flush 
+                // routines on the thread pool time to settle down before the text writer collapses.
+                await Task.Yield();
             });
 
             Assert.Equal(0, exitCode);
