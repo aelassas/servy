@@ -32,7 +32,7 @@ namespace Servy.Service.ProcessManagement
         /// </para>
         /// </remarks>
         private static readonly Regex JavaFileEncodingRegex = new Regex(
-            @"(^|\s)-Dfile\.encoding([=\s]|$)",
+            @"(^|\s)(-J)?-Dfile\.encoding([=\s]|$)",
             RegexOptions.Compiled | RegexOptions.CultureInvariant, // Java property names are case-sensitive
             AppConfig.InputRegexTimeout);
 

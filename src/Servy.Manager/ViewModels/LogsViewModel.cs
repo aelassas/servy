@@ -430,7 +430,7 @@ namespace Servy.Manager.ViewModels
         /// Cancels any ongoing search and cleans up the cancellation token.
         /// Maintained as an alias for <see cref="Dispose()"/> to ensure backward compatibility.
         /// </summary>
-        public void Cleanup()
+        public void CancelSearch()
         {
             // Use Interlocked to ensure we only dispose the token once
             var oldCts = Interlocked.Exchange(ref _cancellationTokenSource, null);
@@ -438,7 +438,6 @@ namespace Servy.Manager.ViewModels
             {
                 Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
-            ScrollLogsToTopRequested = null;
         }
 
         /// <summary>
@@ -451,7 +450,8 @@ namespace Servy.Manager.ViewModels
             if (_isDisposed) return;
             if (disposing)
             {
-                Cleanup();
+                CancelSearch();
+                ScrollLogsToTopRequested = null;
             }
             _isDisposed = true;
         }
