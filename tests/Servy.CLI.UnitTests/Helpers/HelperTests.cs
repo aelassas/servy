@@ -153,6 +153,7 @@ namespace Servy.CLI.UnitTests.Helpers
         [InlineData("invalid", ConfigFileType.Xml, false)]
         [InlineData("123", ConfigFileType.Xml, false)]
         [InlineData("", ConfigFileType.Xml, false)]
+        [InlineData("xml,json", ConfigFileType.Xml, false)]
         public void TryParseFileType_InputValidation_ReturnsExpected(string input, ConfigFileType expectedType, bool expectedResult)
         {
             bool result = Helper.TryParseFileType(input, out ConfigFileType actualType, out string error);

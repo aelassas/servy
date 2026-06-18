@@ -134,7 +134,8 @@ function Show-Notification {
 
     # Initialize Notification
     $toast = New-Object Windows.UI.Notifications.ToastNotification($serializedXml)
-    $tag = "Servy-$($TimeCreated.ToString('yyyyMMddHHmmssfff'))-$($ServiceName -replace '\s','')"
+    $ts  = $TimeCreated.ToString('yyyyMMddHHmmssfff', [System.Globalization.CultureInfo]::InvariantCulture)
+    $tag = "Servy-$ts-$($ServiceName -replace '\s','')"
     $tag = $tag.Substring(0, [Math]::Min($tag.Length, $MaxToastTagLength)) # Max $MaxToastTagLength chars
     $toast.Tag = $tag
     $toast.Group = "Servy" # cluster all Servy toasts together

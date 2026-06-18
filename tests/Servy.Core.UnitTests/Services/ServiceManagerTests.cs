@@ -927,7 +927,7 @@ namespace Servy.Core.UnitTests.Services
             // Pass 2: The internal verification read inside UninstallServiceAsync (returns legacy record to authorize drop)
             // Pass 3: The post-uninstall lookup in InstallServiceAsync to populate target properties (returns null)
             _mockServiceRepository
-                .SetupSequence(x => x.GetByNameAsync(options.ServiceName, false, It.IsAny<CancellationToken>()))
+                .SetupSequence(x => x.GetByNameAsync(options.ServiceName, true, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(legacyDbRecord)   // Pass 1
                 .ReturnsAsync(legacyDbRecord)   // Pass 2
                 .ReturnsAsync((ServiceDto?)null); // Pass 3
@@ -1007,7 +1007,7 @@ namespace Servy.Core.UnitTests.Services
             var legacyDbRecord = new ServiceDto { Name = "serviceä" };
 
             _mockServiceRepository
-                .Setup(x => x.GetByNameAsync(options.ServiceName, false, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetByNameAsync(options.ServiceName, true, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(legacyDbRecord);
 
             _mockWindowsServiceApi
@@ -1067,7 +1067,7 @@ namespace Servy.Core.UnitTests.Services
             var legacyDbRecord = new ServiceDto { Name = "serviceä" };
 
             _mockServiceRepository
-                .Setup(x => x.GetByNameAsync(options.ServiceName, false, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetByNameAsync(options.ServiceName, true, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(legacyDbRecord);
 
             _mockWindowsServiceApi
@@ -1103,7 +1103,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Configure the repository to satisfy both the root read and the uninstallation validation checks
             _mockServiceRepository
-                .SetupSequence(x => x.GetByNameAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
+                .SetupSequence(x => x.GetByNameAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(legacyDbRecord)  // Pass 1: InstallServiceAsync validation gate
                 .ReturnsAsync(legacyDbRecord)  // Pass 2: UninstallServiceAsync internal authorization gate
                 .ReturnsAsync((ServiceDto?)null); // Pass 3: Post-uninstall target validation step
@@ -1178,7 +1178,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Configure the repository to satisfy both the root read and the uninstallation validation checks
             _mockServiceRepository
-                .SetupSequence(x => x.GetByNameAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
+                .SetupSequence(x => x.GetByNameAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(legacyDbRecord)  // Pass 1: Root pre-install layout validation check
                 .ReturnsAsync(legacyDbRecord)  // Pass 2: UninstallServiceAsync internal authorization gate
                 .ReturnsAsync((ServiceDto?)null); // Pass 3: Post-uninstall target validation step
