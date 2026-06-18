@@ -80,7 +80,7 @@ namespace Servy.Service.Helpers
         /// </remarks>
         private static readonly Regex MaskingRegex = new Regex(
             // 1. Keyword: Negative lookarounds allow _, ., and - as valid boundaries without consuming them
-            @"(?i)(?<![a-zA-Z0-9])(" + string.Join("|", SensitiveKeyWords.Select(Regex.Escape)) + @")(?![a-zA-Z0-9])" +
+            @"(?i)(?<![a-zA-Z0-9])(" + string.Join("|", SensitiveKeyWords.Select(Regex.Escape)) + @")(?:_[A-Za-z0-9]+)*(?![a-zA-Z0-9])" +
 
             // 2. Separator & Value (Two Branches)
             @"(?:" +
@@ -532,7 +532,7 @@ namespace Servy.Service.Helpers
         /// </summary>
         /// <param name="args">The raw string of executable arguments.</param>
         /// <returns>A string with masked credentials, or the original string if no sensitive patterns are found.</returns>
-        private string MaskRawArguments(string args)
+        public string MaskRawArguments(string args)
         {
             if (string.IsNullOrWhiteSpace(args)) return args;
 
@@ -543,9 +543,46 @@ namespace Servy.Service.Helpers
                     // m.Groups[1] is the Keyword
                     // m.Groups[2] is the Explicit Separator (Branch A)
                     // m.Groups[3] is the Space Separator (Branch B)
-                    string separator = m.Groups[2].Success ? m.Groups[2].Value : m.Groups[3].Value;
+                    bool isBranchA = m.Groups[2].Success;
+                    string separator = isBranchA ? m.Groups[2].Value : m.Groups[3].Value;
 
-                    return $"{m.Groups[1].Value}{separator}********";
+                    string fullMatch = m.Value;
+
+                    if (isBranchA)
+                    {
+                        // BRANCH A: Explicit Separators (:, =, /)
+                        // Locate the explicit separator token to preserve full composite key names (e.g., PASSWORD_HASH=)
+                        int sepIndex = fullMatch.IndexOf(separator, StringComparison.Ordinal);
+                        string keyPart = sepIndex >= 0 ? fullMatch.Substring(0, sepIndex) : m.Groups[1].Value;
+
+                        return $"{keyPart}{separator}********";
+                    }
+                    else
+                    {
+                        // BRANCH B: Space Separator
+                        // Find where the first space separator context resides inside the match sequence
+                        int sepIndex = fullMatch.IndexOf(separator, StringComparison.Ordinal);
+
+                        if (sepIndex >= 0)
+                        {
+                            string keyPart = fullMatch.Substring(0, sepIndex);
+                            string remainingValue = fullMatch.Substring(sepIndex + separator.Length);
+
+                            // Multi-word lookahead space boundaries check:
+                            // If the matched value text block contains an embedded space, the actual secret 
+                            // token is situated at the very end of this string sequence.
+                            int lastSpaceInValue = remainingValue.LastIndexOf(' ');
+                            if (lastSpaceInValue >= 0)
+                            {
+                                string intermediateText = remainingValue.Substring(0, lastSpaceInValue);
+                                return $"{keyPart}{separator}{intermediateText} ********";
+                            }
+
+                            return $"{keyPart}{separator}********";
+                        }
+
+                        return $"{m.Groups[1].Value}{separator}********";
+                    }
                 });
             }
             catch (RegexMatchTimeoutException)

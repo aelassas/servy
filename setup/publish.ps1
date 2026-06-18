@@ -171,7 +171,7 @@ try {
             $taskDest = Join-Path $packageFolder "taskschd"
             [void](New-Item -Path $taskDest -ItemType Directory -Force)
             
-            Get-ChildItem -Path $taskSource -Recurse -Exclude 'smtp-cred.xml','*.dat','*.log' |
+            Get-ChildItem -Path $taskSource -Recurse -Exclude 'smtp-cred.xml','*.dat','*.log','*.test.ps1' |
                 Copy-Item -Destination {
                     Join-Path $taskDest $_.FullName.Substring($taskSource.Length).TrimStart('\')
                 } -Force

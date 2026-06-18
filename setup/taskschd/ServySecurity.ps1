@@ -74,7 +74,7 @@ function Protect-SensitiveString {
     # Constructed via concatenation to avoid multi-line here-string whitespace issues.
     # Branch B (space separator) consumes multi-word unquoted values up to the next
     # command-flag delimiter (-x / /x), so multi-token secrets are fully masked.
-    $regexPattern = "(?i)(?<![a-zA-Z0-9])($keyPattern)(?![a-zA-Z0-9])" +
+    $regexPattern = "(?i)(?<![a-zA-Z0-9])($keyPattern)(?:_[A-Za-z0-9]+)*(?![a-zA-Z0-9])" +
         "(?:" +
             # BRANCH A: Explicit Separators (:, =, /)
             "(\s*[:=]\s*|/)" +
@@ -95,7 +95,7 @@ function Protect-SensitiveString {
     $evaluator = [System.Text.RegularExpressions.MatchEvaluator] {
         param($m)
         $sep = if ($m.Groups[2].Success) { $m.Groups[2].Value } else { $m.Groups[3].Value }
-        return "$($m.Groups[1].Value)$sep********"
+        return "$($m.Groups[0].Value -replace [regex]::Escape($m.Groups[2].Value + $m.Groups[3].Value + $m.Value.Split($sep)[-1]), '')$sep********"
     }
 
     try {
