@@ -78,17 +78,17 @@ function Protect-SensitiveString {
         "(?:" +
             # BRANCH A: Explicit Separators (:, =, /)
             "(\s*[:=]\s*|/)" +
-            "(?:`"[^`"]*`"|'[^']*'|(?:[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*))" +
+            "(?>`"[^`"]*`"|'[^']*'|(?:[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*))" +
             "|" +
             # BRANCH B: Space Separator
             "(\s+)(?![\-/]+[a-zA-Z])" +
-            "(?:`"[^`"]*`"|'[^']*'|(?:[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*))" +
+            "(?>`"[^`"]*`"|'[^']*'|(?:[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*))" +
         ")"
 
     $maskingRegex = New-Object System.Text.RegularExpressions.Regex (
         $regexPattern,
         [System.Text.RegularExpressions.RegexOptions]::None,
-        [TimeSpan]::FromMilliseconds(200)
+        [TimeSpan]::FromMilliseconds(2000)
     )
 
     # Use MatchEvaluator to conditionally extract the matched separator group (A or B)

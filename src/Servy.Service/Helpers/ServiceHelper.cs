@@ -79,25 +79,27 @@ namespace Servy.Service.Helpers
         /// multi-word values that do not look like subsequent CLI flags.
         /// </remarks>
         private static readonly Regex MaskingRegex = new Regex(
-            // 1. Keyword: Negative lookarounds allow _, ., and - as valid boundaries without consuming them
-            @"(?i)(?<![a-zA-Z0-9])(" + string.Join("|", SensitiveKeyWords.Select(Regex.Escape)) + @")(?:_[A-Za-z0-9]+)*(?![a-zA-Z0-9])" +
+             // 1. Keyword: Negative lookarounds allow _, ., and - as valid boundaries without consuming them
+             @"(?i)(?<![a-zA-Z0-9])(" + string.Join("|", SensitiveKeyWords.Select(Regex.Escape)) + @")(?:_[A-Za-z0-9]+)*(?![a-zA-Z0-9])" +
 
-            // 2. Separator & Value (Two Branches)
-            @"(?:" +
-                // BRANCH A: Explicit Separators (:, =, /)
-                // Aggressively consumes spaces for unquoted strings (e.g., "KEY=---BEGIN RSA---") 
-                // as long as the next word isn't another CLI flag.
-                @"(\s*[:=]\s*|/)" +
-                @"(?:""[^""]*""|'[^']*'|(?:[^\s""']+(?:\s+(?![\-/]+[a-zA-Z])[^\s""']+)*))" +
-                @"|" +
-                // BRANCH B: Space Separator
-                // Consumes unquoted strings, supporting multi-word values (e.g., "my secret pass")
-                // but stops consuming if it detects a subsequent CLI flag.
-                @"(\s+)(?![\-/]+[a-zA-Z])" +
-                @"(?:""[^""]*""|'[^']*'|(?:[^\s""']+(?:\s+(?![\-/]+[a-zA-Z])[^\s""']+)*))" +
-            @")",
-            RegexOptions.Compiled,
-            AppConfig.InputRegexTimeout);
+             // 2. Separator & Value (Two Branches)
+             @"(?:" +
+                 // BRANCH A: Explicit Separators (:, =, /)
+                 // Aggressively consumes spaces for unquoted strings (e.g., "KEY=---BEGIN RSA---") 
+                 // as long as the next word isn't another CLI flag.
+                 // Wrapped in an atomic group (?>...) to prevent catastrophic backtracking on nested multi-word evaluations.
+                 @"(\s*[:=]\s*|/)" +
+                 @"(?>""[^""]*""|'[^']*'|(?:[^\s""']+(?:\s+(?![\-/]+[a-zA-Z])[^\s""']+)*))" +
+                 @"|" +
+                 // BRANCH B: Space Separator
+                 // Consumes unquoted strings, supporting multi-word values (e.g., "my secret pass")
+                 // but stops consuming if it detects a subsequent CLI flag.
+                 // Wrapped in an atomic group (?>...) to prevent catastrophic backtracking on nested multi-word evaluations.
+                 @"(\s+)(?![\-/]+[a-zA-Z])" +
+                 @"(?>""[^""]*""|'[^']*'|(?:[^\s""']+(?:\s+(?![\-/]+[a-zA-Z])[^\s""']+)*))" +
+             @")",
+             RegexOptions.Compiled,
+             AppConfig.InputRegexTimeout);
 
         #endregion
 
