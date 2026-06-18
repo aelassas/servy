@@ -233,7 +233,7 @@ namespace Servy.Core.Services
 
             // HARDENING: Check database via UNICODE_NOCASE to intercept if this service or a linguistic 
             // variation of it already exists before running native SCM queries.
-            var existingDbService = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: false, cancellationToken);
+            var existingDbService = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: true, cancellationToken);
             bool isUpdateMode = existingDbService != null;
 
             // Track if we successfully executed an aggressive purge of a casing layout duplicate
