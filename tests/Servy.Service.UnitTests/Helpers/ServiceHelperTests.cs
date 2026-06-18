@@ -525,6 +525,126 @@ namespace Servy.Service.UnitTests.Helpers
 
         #endregion
 
+        #region MaskRawArguments Tests
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void MaskRawArguments_NullOrWhitespace_ReturnsOriginalValue(string input)
+        {
+            // Act
+            var result = _helper.MaskRawArguments(input);
+
+            // Assert
+            Assert.Equal(input, result);
+        }
+
+        [Fact]
+        public void MaskRawArguments_NoSensitivePatterns_ReturnsOriginalValue()
+        {
+            // Arrange
+            string input = "myapp.exe --port 8080 --host localhost";
+
+            // Act
+            var result = _helper.MaskRawArguments(input);
+
+            // Assert
+            Assert.Equal(input, result);
+        }
+
+        [Theory]
+        [InlineData("PASSWORD_HASH=hunter2", "PASSWORD_HASH=********")]
+        [InlineData("SECRET_DATA=sensitive_payload", "SECRET_DATA=********")]
+        [InlineData("PASSWORD_ENC: encrypted_blob", "PASSWORD_ENC: ********")]
+        [InlineData("myapp.exe --password_hash secret_value", "myapp.exe --password_hash ********")]
+        public void MaskRawArguments_WithCompositeUnderscoreSuffix_SuccessfullyMasksSecret(string input, string expected)
+        {
+            // Act
+            var result = _helper.MaskRawArguments(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("MY_PASSWORD=hunter2", "MY_PASSWORD=********")]
+        [InlineData("MY_PASSWORD_HASH=hunter2", "MY_PASSWORD_HASH=********")]
+        public void MaskRawArguments_WithPrefixAndSuffixModifiers_PreservesKeyContextAndMasksValue(string input, string expected)
+        {
+            // Act
+            var result = _helper.MaskRawArguments(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("API_KEY: my-secret-token", "API_KEY: ********")]
+        [InlineData("API_KEY/my-secret-token", "API_KEY/********")]
+        [InlineData("DATABASE_PASSWORD=secret", "DATABASE_PASSWORD=********")]
+        public void MaskRawArguments_BranchA_ExplicitSeparators_MasksCorrectly(string input, string expected)
+        {
+            // Act
+            var result = _helper.MaskRawArguments(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("myapp.exe --password mysecret", "myapp.exe --password ********")]
+        [InlineData("CONNSTR my server address password", "CONNSTR my server address ********")]
+        public void MaskRawArguments_BranchB_SpaceSeparators_MasksCorrectly(string input, string expected)
+        {
+            // Act
+            var result = _helper.MaskRawArguments(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData("PASSWORD=\"secret value with spaces\"", "PASSWORD=********")]
+        [InlineData("PASSWORD='secret value with spaces'", "PASSWORD=********")]
+        public void MaskRawArguments_WithQuotedValues_MasksWholeQuotedString(string input, string expected)
+        {
+            // Act
+            var result = _helper.MaskRawArguments(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void MaskRawArguments_WithSubsequentCliFlags_StopsConsumingAtNextFlag()
+        {
+            // Arrange
+            string input = "myapp.exe --password mysecret --verbose";
+            string expected = "myapp.exe --password ******** --verbose";
+
+            // Act
+            var result = _helper.MaskRawArguments(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void MaskRawArguments_FalsePositiveBoundaryExemption_DoesNotMaskNonSensitiveExtensions()
+        {
+            // Arrange
+            string input = "PASSWORDLESS login attempt";
+
+            // Act
+            var result = _helper.MaskRawArguments(input);
+
+            // Assert
+            Assert.Equal(input, result); // Should remain completely untouched
+        }
+
+        #endregion
+
         #region Helpers
 
         private static string GetBaseDirectory()
