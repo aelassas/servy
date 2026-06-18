@@ -605,10 +605,10 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 var vm = CreateViewModel();
 
-                vm.Cleanup();
+                vm.CancelSearch();
 
                 // After cleanup, a second call should not throw
-                var exception = Record.Exception(() => vm.Cleanup());
+                var exception = Record.Exception(() => vm.CancelSearch());
                 Assert.Null(exception);
             }
             finally

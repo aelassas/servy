@@ -347,7 +347,7 @@ namespace Servy.Manager.Views
             dependenciesVm?.StopMonitoring();
 
             // Stop ongoing search in Logs tab
-            logsVm?.Cleanup();
+            logsVm?.CancelSearch();
 
             // Run search for main tab if applicable
             if (vm.ServicesView.IsEmpty)
@@ -389,7 +389,7 @@ namespace Servy.Manager.Views
             perfVm?.StartMonitoring();
 
             // Stop ongoing search in Logs tab
-            logsVm?.Cleanup();
+            logsVm?.CancelSearch();
 
             return Task.CompletedTask;
         }
@@ -429,7 +429,7 @@ namespace Servy.Manager.Views
             consoleVM?.StartMonitoring();
 
             // Stop ongoing search in Logs tab
-            logsVm?.Cleanup();
+            logsVm?.CancelSearch();
 
             return Task.CompletedTask;
         }
@@ -469,7 +469,7 @@ namespace Servy.Manager.Views
             dependenciesVM?.StartMonitoring();
 
             // Stop ongoing search in Logs tab
-            logsVm?.Cleanup();
+            logsVm?.CancelSearch();
 
             return Task.CompletedTask;
         }
@@ -637,7 +637,7 @@ namespace Servy.Manager.Views
                 GetPerformanceVm()?.Dispose();
                 GetConsoleVm()?.Dispose();
                 GetDependenciesVm()?.Dispose();
-                GetLogsVm()?.Cleanup();
+                GetLogsVm()?.CancelSearch();
             }
             catch (Exception ex)
             {
