@@ -65,9 +65,12 @@ jobs:
       # ----------------------------
       - name: Create total LoC badge
         id: loc_total
+        env:
+          PROD_LINES: ${{ steps.loc_prod.outputs.total_lines }}
+          TESTS_LINES: ${{ steps.loc_tests.outputs.total_lines }}
         run: |
           # Compute total
-          TOTAL=$(( ${{ steps.loc_prod.outputs.total_lines }} + ${{ steps.loc_tests.outputs.total_lines }} ))
+          TOTAL=$(( PROD_LINES + TESTS_LINES ))
           echo "Total LoC: $TOTAL"
 
           # Force locale for printf to add commas
@@ -95,15 +98,15 @@ jobs:
       # Summary
       # ----------------------------
       - name: Summary
+        env:
+          PROD_SUMMARY: ${{ steps.loc_prod.outputs.total_lines }}
+          TESTS_SUMMARY: ${{ steps.loc_tests.outputs.total_lines }}
+          TOTAL_SUMMARY: ${{ steps.loc_total.outputs.total_lines }}
         run: |
-          PROD=${{ steps.loc_prod.outputs.total_lines }}
-          TESTS=${{ steps.loc_tests.outputs.total_lines }}
-          TOTAL=${{ steps.loc_total.outputs.total_lines }}
-
           echo "### LoC Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- Prod:  $PROD lines" >> $GITHUB_STEP_SUMMARY
-          echo "- Tests: $TESTS lines" >> $GITHUB_STEP_SUMMARY
-          echo "- Total: $TOTAL lines" >> $GITHUB_STEP_SUMMARY
+          echo "- Prod:  $PROD_SUMMARY lines" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests: $TESTS_SUMMARY lines" >> $GITHUB_STEP_SUMMARY
+          echo "- Total: $TOTAL_SUMMARY lines" >> $GITHUB_STEP_SUMMARY
 
       # ----------------------------
       # Deploy badges

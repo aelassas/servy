@@ -123,7 +123,7 @@ function Copy-CommonArtifacts {
         [void](New-Item -Path $taskSchdDest -ItemType Directory -Force)
 
         # Use Get-ChildItem -Recurse -Exclude to ensure the exclusion propagates to all levels
-        Get-ChildItem -Path $taskSchdSource -Recurse -Exclude 'smtp-cred.xml','*.dat','*.log' |
+        Get-ChildItem -Path $taskSchdSource -Recurse -Exclude 'smtp-cred.xml','*.dat','*.log', '*.test.ps1', 'temp.ps1' |
             Copy-Item -Destination {
                 Join-Path $taskSchdDest $_.FullName.Substring($taskSchdSource.Length).TrimStart('\')
             } -Force

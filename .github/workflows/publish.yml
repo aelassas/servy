@@ -612,7 +612,11 @@ jobs:
           if (-not (Test-Path $destPath)) { New-Item -Path $destPath -ItemType Directory -Force }
 
           Get-ChildItem -Path $sourcePath -Recurse -File |
-              Where-Object { $_.Name -notin @('smtp-cred.xml') -and $_.Extension -notin @('.dat','.log') } |
+              Where-Object { 
+                  $_.Name -notin @('smtp-cred.xml') -and 
+                  $_.Extension -notin @('.dat','.log') -and 
+                  $_.Name -notlike '*.test.ps1'
+              } |
               ForEach-Object {
                   # Calculate relative path to maintain subdirectory structure in the destination
                   $rel = $_.FullName.Substring((Resolve-Path $sourcePath).Path.Length + 1)
