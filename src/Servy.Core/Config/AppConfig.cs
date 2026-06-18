@@ -663,10 +663,10 @@ namespace Servy.Core.Config
         /// The default timeout in milliseconds for regular expression matching operations.
         /// </summary>
         /// <remarks>
-        /// A 200ms timeout is used as a security measure to prevent Regular Expression Denial of Service (ReDoS) 
+        /// A 2000ms timeout is used as a security measure to prevent Regular Expression Denial of Service (ReDoS) 
         /// attacks while providing enough headroom for complex service name or log filtering patterns.
         /// </remarks>
-        public const int InputRegexTimeoutMs = 200;
+        public const int InputRegexTimeoutMs = 2_000;
 
         /// <summary>
         /// Gets a <see cref="TimeSpan"/> representation of the <see cref="InputRegexTimeoutMs"/>.
