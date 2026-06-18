@@ -56,12 +56,14 @@ function Write-ServyLog {
                 New-Item -ItemType Directory -Path $logDir -Force | Out-Null
             }
 
+            $inv = [System.Globalization.CultureInfo]::InvariantCulture
+
             # Handle log rotation if it exceeds max size (Now safely inside the Mutex)
             if (Test-Path $absPath) {
                 $fileInfo = Get-Item $absPath
                 if ($fileInfo.Length -gt $MaxSizeBytes) {
                     # Rotate using local time to maintain chronologic consistency
-                    $localTime = Get-Date -Format "yyyyMMdd-HHmmss-fff"
+                    $localTime = (Get-Date).ToString('yyyyMMdd-HHmmss-fff', $inv)
                     $ext = [System.IO.Path]::GetExtension($absPath)
                     $baseName = [System.IO.Path]::GetFileNameWithoutExtension($absPath)
                     
@@ -91,7 +93,7 @@ function Write-ServyLog {
             }
 
             # Enforce consistent UTF-8 logging with no BOM/UTF-16LE mix-ups
-            $timestampedMsg = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $Message"
+            $timestampedMsg = "$((Get-Date).ToString('yyyy-MM-dd HH:mm:ss', $inv)) - $Message"
             
             # Use FileStream with FileShare.None inside the Mutex lock. 
             # This completely eliminates interleaved lines or swallowed "file in use" exceptions.
