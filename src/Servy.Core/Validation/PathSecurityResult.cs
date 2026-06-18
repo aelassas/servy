@@ -67,7 +67,7 @@
         /// Creates a successful <see cref="PathSecurityResult"/> encapsulating a verified path token.
         /// </summary>
         /// <param name="path">The raw filesystem path string that passed security clearance invariants.</param>
-        /// <returns>A initialized success descriptor containing a valid <see cref="ValidatedPath"/> instance.</returns>
+        /// <returns>An initialized success descriptor containing a valid <see cref="ValidatedPath"/> instance.</returns>
         internal static PathSecurityResult Success(string path) => new PathSecurityResult(new ValidatedPath(path));
 
         /// <summary>

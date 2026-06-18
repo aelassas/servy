@@ -140,7 +140,10 @@ namespace Servy.Core.Services
         /// <param name="serviceName">The unique internal name of the service.</param>
         /// <param name="cancellationToken">Optional cancellation token for the dependency query.</param>
         /// <returns>
-        /// A <see cref="ServiceDependencyNode"/> representing the recursive dependency hierarchy, or <c>null</c> if the service could not be found or dependencies could not be resolved.
+        /// A <see cref="ServiceDependencyNode"/> representing the recursive dependency hierarchy,
+        /// or <c>null</c> if the service is not installed. Services that cannot be fully resolved
+        /// (e.g. access denied) are represented by placeholder nodes within the returned tree;
+        /// unexpected failures propagate as exceptions rather than returning <c>null</c>.
         /// </returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="serviceName"/> is null, empty, or only contains whitespace.</exception>
         ServiceDependencyNode GetDependencies(string serviceName, CancellationToken cancellationToken = default);
