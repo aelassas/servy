@@ -1036,7 +1036,6 @@ namespace Servy.Core.UnitTests.IO
                     }, CancellationToken.None);
 
                     startedSignal.Wait(2000, CancellationToken.None);
-                    Thread.Sleep(50); // Ensure the background retry loop has fully engaged its delay
 
                     locker.Dispose(); // Release lock to let retry succeed
                     await rotateTask;
