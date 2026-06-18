@@ -190,6 +190,65 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
+        public async Task UpsertBatchAsync_WithExistingRecords_PreservesRuntimeStateAndCredentialsInBulk()
+        {
+            // Arrange
+            var existingService1 = new ServiceDto
+            {
+                Name = "BatchPreserve1",
+                ExecutablePath = "old1.exe",
+                Pid = 5050,
+                RunAsLocalSystem = true,
+                Password = "SECRET_HASH:KeepMe"
+            };
+            var existingService2 = new ServiceDto
+            {
+                Name = "BatchPreserve2",
+                ExecutablePath = "old2.exe",
+                Pid = 6060,
+                RunAsLocalSystem = false,
+                UserAccount = "SrvUser",
+                Password = "SECRET_HASH:KeepMe2"
+            };
+
+            await _repository.AddAsync(existingService1, CancellationToken.None);
+            await _repository.AddAsync(existingService2, CancellationToken.None);
+
+            // Create an incoming batch with changed paths/credentials that should be protected by the pre-fetch map
+            var incomingBatch = new List<ServiceDto>
+            {
+                new ServiceDto { Name = "BATCHPRESERVE1", ExecutablePath = "new1.exe", Pid = 0, RunAsLocalSystem = false, Password = "Overwritten" }, // Mismatched casing to test collation resilience
+                new ServiceDto { Name = "BatchPreserve2", ExecutablePath = "new2.exe", Pid = 1111, UserAccount = "NewUser", Password = "Changed" },
+                new ServiceDto { Name = "BatchNewItem3", ExecutablePath = "brand_new.exe", Pid = 0 } // Verification for non-existent incoming elements
+            };
+
+            // Act
+            int affectedRows = await _repository.UpsertBatchAsync(incomingBatch, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(3, affectedRows); // 2 updates + 1 insert
+
+            var item1 = await _repository.GetByNameAsync("BatchPreserve1", decrypt: false, CancellationToken.None);
+            Assert.NotNull(item1);
+            Assert.Equal("new1.exe", item1.ExecutablePath);
+            Assert.Equal(5050, item1.Pid); // Preserved
+            Assert.True(item1.RunAsLocalSystem); // Preserved
+            Assert.Equal("SECRET_HASH:KeepMe", item1.Password); // Preserved
+
+            var item2 = await _repository.GetByNameAsync("BatchPreserve2", decrypt: false, CancellationToken.None);
+            Assert.NotNull(item2);
+            Assert.Equal("new2.exe", item2.ExecutablePath);
+            Assert.Equal(6060, item2.Pid); // Preserved
+            Assert.Equal("SrvUser", item2.UserAccount); // Preserved
+            Assert.Equal("SECRET_HASH:KeepMe2", item2.Password); // Preserved
+
+            var item3 = await _repository.GetByNameAsync("BatchNewItem3", decrypt: false, CancellationToken.None);
+            Assert.NotNull(item3);
+            Assert.Equal("brand_new.exe", item3.ExecutablePath);
+            Assert.True(item3.Id > 0); // Assigned correctly
+        }
+
+        [Fact]
         public async Task DeleteAsync_ByNameAndId_RemovesTargetEntries()
         {
             // Arrange

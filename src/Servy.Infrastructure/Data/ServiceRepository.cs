@@ -149,17 +149,51 @@ namespace Servy.Infrastructure.Data
             var serviceList = services?.ToList();
             if (serviceList == null || !serviceList.Any()) return 0;
 
-            // 1. Create encrypted clones for database storage
-            var encryptedServices = serviceList.Select(CreateEncryptedClone).ToList();
-
-            // Preserve runtime state and credentials for each incoming DTO
-            foreach (var dto in encryptedServices)
+            // 1. Bulk pre-fetching dictionary optimization to bypass N+1 sequential row reads.
+            var existingMap = new Dictionary<string, ServiceDto>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < serviceList.Count; i += AppConfig.DbBatchIdSyncChunkSize)
             {
-                await PatchRuntimeStateAsync(
-                    incoming: dto,
-                    preserveExistingRuntimeState: true,
-                    preserveExistingCredentials: true,
-                    cancellationToken: cancellationToken);
+                var currentChunk = serviceList.Skip(i).Take(AppConfig.DbBatchIdSyncChunkSize).ToList();
+                var chunkNames = currentChunk.Select(s => s.Name).Where(n => !string.IsNullOrEmpty(n)).ToList();
+
+                if (chunkNames.Any())
+                {
+                    var existingRows = (await _dapper.QueryAsync<ServiceDto>(
+                        "SELECT * FROM Services WHERE Name COLLATE UNICODE_NOCASE IN @chunkNames",
+                        new { chunkNames },
+                        cancellationToken: cancellationToken)).ToList();
+
+                    foreach (var row in existingRows)
+                    {
+                        if (!string.IsNullOrEmpty(row.Name))
+                        {
+                            // CRITICAL: Decrypt the existing DB record back to plain text 
+                            // so that ApplyRuntimeState passes clear values to CreateEncryptedClone
+                            SafeDecrypt(row);
+                            existingMap[row.Name] = row;
+                        }
+                    }
+                }
+            }
+
+            // 2. Patch runtime state and credentials on raw plain-text objects,
+            // then create isolated encrypted clones for safe database persistence.
+            var encryptedServices = new List<ServiceDto>();
+            foreach (var rawDto in serviceList)
+            {
+                var localClone = (ServiceDto)rawDto.Clone();
+
+                if (!string.IsNullOrEmpty(localClone.Name) && existingMap.TryGetValue(localClone.Name, out var existing))
+                {
+                    ApplyRuntimeState(
+                        incoming: localClone,
+                        existing: existing,
+                        preserveExistingRuntimeState: true,
+                        preserveExistingCredentials: true);
+                }
+
+                // Encrypt the finalized object properties cleanly right before pushing to disk
+                encryptedServices.Add(CreateEncryptedClone(localClone));
             }
 
             var sql = $@"
@@ -169,20 +203,15 @@ namespace Servy.Infrastructure.Data
                 {SqlConstants.UpsertSet};";
 
             // Wrap the entire batch sequence in an explicit transaction to enforce snapshot isolation.
-            // This prevents concurrent mutations from creating skewed or missing ID references.
             using (var tx = _dapper.BeginTransaction())
             {
-                // 2. Execute the batch upsert within the transaction scope 
+                // 3. Execute the batch upsert within the transaction scope 
                 var affectedRows = await _dapper.ExecuteAsync(sql, encryptedServices, transaction: tx, cancellationToken: cancellationToken);
 
-                // 3. Sync IDs back to the original DTOs
-                // SQLite has a default limit of 999 parameters. For larger batches, 
-                // we process the ID sync in chunks to avoid 'Too many SQL variables' errors.
+                // 4. Sync IDs back to the original DTOs
                 for (int i = 0; i < serviceList.Count; i += AppConfig.DbBatchIdSyncChunkSize)
                 {
                     var currentChunk = serviceList.Skip(i).Take(AppConfig.DbBatchIdSyncChunkSize).ToList();
-
-                    // Pass original names; let SQLite lower both sides in the SQL itself
                     var names = currentChunk.Select(s => s.Name).Where(n => !string.IsNullOrEmpty(n)).ToList();
 
                     var idMap = (await _dapper.QueryAsync<(int Id, string Name)>(
@@ -192,13 +221,10 @@ namespace Servy.Infrastructure.Data
                         cancellationToken: cancellationToken))
                         .ToDictionary(x => x.Name, x => x.Id, StringComparer.OrdinalIgnoreCase);
 
-                    // Update the original DTO references
                     foreach (var service in currentChunk)
                     {
                         if (string.IsNullOrEmpty(service.Name)) continue;
 
-                        // OrdinalIgnoreCase here handles the mapping between the 
-                        // user's input (MyService) and the DB's stored casing (myservice).
                         if (idMap.TryGetValue(service.Name, out var id))
                         {
                             service.Id = id;
@@ -206,9 +232,7 @@ namespace Servy.Infrastructure.Data
                     }
                 }
 
-                // Commit all changes atomically only after the DTO ID fields have been successfully resolved
                 tx.Commit();
-
                 return affectedRows;
             }
         }
