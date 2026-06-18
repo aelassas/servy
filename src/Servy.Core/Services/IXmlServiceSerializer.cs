@@ -12,7 +12,7 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="xml">The XML string representing a <see cref="ServiceDto"/>.</param>
         /// <returns>
-        /// The deserialized <see cref="ServiceDto"/> instance, or <c>null</c> if deserialization fails.
+        /// The deserialized <see cref="ServiceDto"/> instance, or <c>null</c> if the input is null/empty or deserialization fails.
         /// </returns>
         ServiceDto? Deserialize(string? xml);
 

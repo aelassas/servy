@@ -12,7 +12,7 @@ namespace Servy.Core.Security
         /// Encrypts the specified plain text data.
         /// </summary>
         /// <param name="plainText">The plain text data to encrypt.</param>
-        /// <returns>A versioned, base64-encoded encrypted string with an integration marker prefix.</returns>
+        /// <returns>A versioned, base64-encoded encrypted string with a version/encryption marker prefix (e.g. <c>SERVY_ENC:v2:</c>).</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="plainText"/> is null.</exception>
         /// <exception cref="ArgumentException">Thrown when <paramref name="plainText"/> is empty.</exception>
         /// <exception cref="ObjectDisposedException">Thrown if the underlying cryptographic provider instance has already been disposed.</exception>

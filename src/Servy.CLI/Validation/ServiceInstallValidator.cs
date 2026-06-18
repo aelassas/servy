@@ -49,8 +49,7 @@ namespace Servy.CLI.Validation
 
             if (!result.IsValid)
             {
-                // CLI reports the first issue. Errors are prioritized over warnings 
-                // to ensure blocking issues are addressed first.
+                // CLI reports the first (blocking) error; ValidationResult only contains errors.
                 var firstIssue = result.Errors.First();
                 return CommandResult.Fail(firstIssue);
             }

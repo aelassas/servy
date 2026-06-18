@@ -20,7 +20,10 @@
         /// sub-component or background task.
         /// </remarks>
         /// <param name="prefix">The string to prepend to messages in the new scoped logger.</param>
-        /// <returns>A new <see cref="IServyLogger"/> instance configured with the specified prefix.</returns>
+        /// <returns>
+        /// A new <see cref="IServyLogger"/> instance configured with the specified prefix,
+        /// or the current logger instance unchanged when <paramref name="prefix"/> is null or whitespace.
+        /// </returns>
         IServyLogger CreateScoped(string prefix);
 
         /// <summary>

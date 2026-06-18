@@ -216,7 +216,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 {
                     var viewModel = CreateIsolatedViewModel();
 
-                    // Use constructor signatures. Pass isCyclic = true parameter onto root to simulate a cyclic loop.
+                    // Create a circular Dependencies edge (root -> child -> root) to exercise the ExpandAll recursion/cycle guard;
+                    // the isCycle constructor flag is unrelated and left false.
                     var childNode = new ServiceDependencyNode("ChildService", "Friendly Child", isRunning: false, isCyclic: false);
                     var rootNode = new ServiceDependencyNode("RootService", "Friendly Root", isRunning: false, isCyclic: false);
 

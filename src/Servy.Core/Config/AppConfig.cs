@@ -1520,8 +1520,8 @@ namespace Servy.Core.Config
         /// <param name="fileName">The base name of the executable (without the .exe extension).</param>
         /// <returns>The fully qualified path to the executable; callers must verify with File.Exists.</returns>
         /// <remarks>
-        /// In <c>DEBUG</c> mode, this resolves to the resource directory within the repository root to facilitate 
-        /// development without requiring manual file copying. In <c>RELEASE</c> mode, it checks the application's 
+        /// In <c>DEBUG</c> mode, this resolves to the application's base directory (the build output folder), 
+        /// where the required executables are copied during the build. In <c>RELEASE</c> mode, it checks the application's 
         /// base directory (supporting unit tests/portable use) before falling back to the hardened <c>ProgramData</c> vault.
         /// </remarks>
         private static string ResolveExe(string fileName)

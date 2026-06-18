@@ -140,12 +140,12 @@ namespace Servy.Core.Services
         /// Changes the optional configuration parameters of a service using a raw pointer.
         /// </summary>
         /// <param name="hService">A handle to the service.</param>
-        /// <param name="dwInfoLevel">The configuration information to be changed.</param>
+        /// <param name="dwInfoLevel">The configuration information level to be set.</param>
         /// <param name="lpInfo">A pointer to the buffer that contains the new configuration data.</param>
         /// <returns>Returns true if the function succeeds; otherwise, false.</returns>
         bool ChangeServiceConfig2(
             SafeServiceHandle hService,
-           uint dwInfoLevel,
+            uint dwInfoLevel,
             IntPtr lpInfo
         );
 

@@ -69,7 +69,7 @@ namespace Servy.UI.Bootstrapping
 
         /// <summary>
         /// Gets or sets an action to extract project-specific settings from the 
-        /// loaded <see cref="IConfigurationRoot"/>.
+        /// loaded <see cref="IConfiguration"/>.
         /// </summary>
         /// <remarks>
         /// This is called during the initialization sequence after the shared configuration 
