@@ -209,9 +209,13 @@ namespace Servy.Infrastructure.Data
                 var affectedRows = await _dapper.ExecuteAsync(sql, encryptedServices, transaction: tx, cancellationToken: cancellationToken);
 
                 // 4. Sync IDs back to the original DTOs
+                // SQLite has a default limit of 999 parameters. For larger batches, 
+                // we process the ID sync in chunks to avoid 'Too many SQL variables' errors.
                 for (int i = 0; i < serviceList.Count; i += AppConfig.DbBatchIdSyncChunkSize)
                 {
                     var currentChunk = serviceList.Skip(i).Take(AppConfig.DbBatchIdSyncChunkSize).ToList();
+
+                    // Pass original names; let SQLite lower both sides in the SQL itself
                     var names = currentChunk.Select(s => s.Name).Where(n => !string.IsNullOrEmpty(n)).ToList();
 
                     var idMap = (await _dapper.QueryAsync<(int Id, string Name)>(
@@ -221,10 +225,13 @@ namespace Servy.Infrastructure.Data
                         cancellationToken: cancellationToken))
                         .ToDictionary(x => x.Name, x => x.Id, StringComparer.OrdinalIgnoreCase);
 
+                    // Update the original DTO references
                     foreach (var service in currentChunk)
                     {
                         if (string.IsNullOrEmpty(service.Name)) continue;
 
+                        // OrdinalIgnoreCase here handles the mapping between the 
+                        // user's input (MyService) and the DB's stored casing (myservice).
                         if (idMap.TryGetValue(service.Name, out var id))
                         {
                             service.Id = id;
@@ -232,7 +239,9 @@ namespace Servy.Infrastructure.Data
                     }
                 }
 
+                // Commit all changes atomically only after the DTO ID fields have been successfully resolved
                 tx.Commit();
+
                 return affectedRows;
             }
         }
