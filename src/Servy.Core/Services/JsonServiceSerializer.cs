@@ -44,6 +44,15 @@ namespace Servy.Core.Services
                 // Returning null fulfills the contract: "returns null if deserialization fails"
                 return null;
             }
+            catch (Exception ex)
+            {
+                // Broad catch-all layer to protect against secondary runtime anomalies,
+                // such as custom contract faults or helper assignment errors.
+                Logger.Error("JSON Deserialization encountered a failure.", ex);
+
+                // Returning null fulfills the contract: "returns null if deserialization fails"
+                return null;
+            }
         }
 
         /// <inheritdoc />
