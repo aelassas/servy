@@ -34,10 +34,10 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <remarks>
         /// The pattern extracts the process name and process ID (PID) from lines formatted as:
-        /// <c>notepad.exe        pid: 1234   type: File     123: C:\Path\To\File.dll</c>
+        /// <c>service.exe        pid: 1234   type: File     123: C:\Path\To\File.dll</c>
         /// <list type="bullet">
         /// <item>
-        /// <description><c>name</c>: Captures the executable name (e.g., "notepad.exe").</description>
+        /// <description><c>name</c>: Captures the executable name (e.g., "service.exe").</description>
         /// </item>
         /// <item>
         /// <description><c>pid</c>: Captures the numerical process identifier (e.g., "1234").</description>
