@@ -637,7 +637,7 @@ namespace Servy.Manager.Views
                 GetPerformanceVm()?.Dispose();
                 GetConsoleVm()?.Dispose();
                 GetDependenciesVm()?.Dispose();
-                GetLogsVm()?.CancelSearch();
+                GetLogsVm()?.Dispose();
             }
             catch (Exception ex)
             {
