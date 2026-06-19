@@ -56,7 +56,7 @@ namespace Servy.Service.ProcessManagement
         /// <summary>
         /// Whether to enable the console user interface for the service.
         /// </summary>
-        public bool EnableConsoleUI { get; set; }
+        public bool EnableConsoleUI { get; set; } = false;
 
         #endregion
 

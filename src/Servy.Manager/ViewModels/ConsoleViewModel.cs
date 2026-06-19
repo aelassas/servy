@@ -461,7 +461,7 @@ namespace Servy.Manager.ViewModels
 
                     // 5. Start Live Tailing, passing the Session ID
                     // Start StdOut tailer if the result and path are valid
-                    if (outRes != null && !string.IsNullOrEmpty(stdoutPath))
+                    if (outRes != null && !string.IsNullOrWhiteSpace(stdoutPath))
                     {
                         StartLiveTail(stdoutPath, LogType.StdOut, outRes.Position, outRes.CreationTime, sessionId, token);
                     }

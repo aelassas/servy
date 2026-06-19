@@ -8,10 +8,10 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Servy.CLI.Resources
-{
-
-
+namespace Servy.CLI.Resources {
+    using System;
+    
+    
     /// <summary>
     ///   Une classe de ressource fortement typée destinée, entre autres, à la consultation des chaînes localisées.
     /// </summary>
@@ -250,6 +250,15 @@ namespace Servy.CLI.Resources
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Preparing environment....
+        /// </summary>
+        public static string Msg_PreparingEnvironment {
+            get {
+                return ResourceManager.GetString("Msg_PreparingEnvironment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service &apos;{0}&apos; restarted successfully..
         /// </summary>
         public static string Msg_RestartSuccess {
@@ -367,7 +376,7 @@ namespace Servy.CLI.Resources
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Wrapper executable not found at: %ProgramData%\Servy\Servy.Service.CLI.Net48.exe. Ensure Servy is properly installed..
+        ///   Recherche une chaîne localisée semblable à Wrapper executable not found at: %ProgramData%\Servy\Servy.Service.CLI.exe. Ensure Servy is properly installed..
         /// </summary>
         public static string Msg_WrapperNotFound {
             get {

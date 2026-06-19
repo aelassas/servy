@@ -1,4 +1,5 @@
-﻿using Servy.Core.Config;
+﻿using Servy.CLI.Resources;
+using Servy.Core.Config;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -26,8 +27,9 @@ namespace Servy.CLI.Helpers
         /// This method runs the spinner on a background task and cancels it automatically
         /// when the action completes. The console line is cleared after the spinner stops.
         /// </remarks>
-        public static async Task RunWithLoadingAnimation(Func<Task> action, string message = "Preparing environment...")
+        public static async Task RunWithLoadingAnimation(Func<Task> action, string message = null)
         {
+            message = message ?? Strings.Msg_PreparingEnvironment;
             var spinnerChars = new[] { '|', '/', '-', '\\' };
             var spinnerIndex = 0;
 

@@ -920,7 +920,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public ServiceControllerStatus? GetServiceStatus(string serviceName, CancellationToken cancellationToken = default(CancellationToken))
+        public ServiceControllerStatus? GetServiceStatus(string serviceName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
@@ -961,7 +961,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public ServiceStartType GetServiceStartupType(string serviceName, CancellationToken cancellationToken = default(CancellationToken))
+        public ServiceStartType GetServiceStartupType(string serviceName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
@@ -1021,7 +1021,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc/>
-        public List<ServiceInfo> GetAllServices(CancellationToken cancellationToken = default(CancellationToken))
+        public List<ServiceInfo> GetAllServices(CancellationToken cancellationToken = default)
         {
             var results = new ConcurrentBag<ServiceInfo>();
 
