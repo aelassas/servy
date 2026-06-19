@@ -43,7 +43,7 @@ namespace Servy.Manager.Mappers
 
             double? cpuUsage = null;
             long? ramUsage = null;
-            if (calculatePerf && service.Pid.HasValue && processHelper != null)
+            if (calculatePerf && service.Pid.HasValue)
             {
                 var processMetrics = await Task.Run(() => processHelper.GetProcessTreeMetrics(service.Pid.Value), cancellationToken);
                 cpuUsage = processMetrics.CpuUsage;

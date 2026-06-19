@@ -39,9 +39,10 @@ namespace Servy.Core.Services
                     return dto;
                 }
             }
-            catch (Exception ex) when (ex is InvalidOperationException || ex is XmlException)
+            catch (Exception ex)
             {
-                // XmlException contains line info, but InvalidOperationException (thrown by XmlSerializer)
+                // Drill down to locate explicit parsing line data if present.
+                // XmlException contains line info directly, but InvalidOperationException (thrown by XmlSerializer)
                 // often wraps the actual XmlException as an InnerException.
                 var xmlEx = (ex as XmlException) ?? (ex.InnerException as XmlException);
                 int lineNumber = xmlEx?.LineNumber ?? 0;

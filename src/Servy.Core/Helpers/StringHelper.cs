@@ -98,7 +98,7 @@ namespace Servy.Core.Helpers
         /// in environment variable values. Attempting to parse strings containing these 
         /// characters will result in a <see cref="FormatException"/>.
         /// </remarks>
-        public static string Escape(string value)
+        public static string Escape(string? value)
         {
             if (value == null)
                 return string.Empty;

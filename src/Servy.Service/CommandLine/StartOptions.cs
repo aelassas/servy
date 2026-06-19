@@ -198,7 +198,7 @@ namespace Servy.Service.CommandLine
         /// never written to the Windows Event Log or shown by the CLI / PowerShell module.
         /// Not recommended for production environments, as these logs may contain sensitive information.
         /// </summary>
-        public bool EnableDebugLogs { get; set; } = false;
+        public bool EnableDebugLogs { get; set; } = AppConfig.DefaultEnableDebugLogs;
 
         /// <summary>
         /// Gets or sets the maximum number of rotated log files to keep. 

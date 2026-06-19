@@ -129,9 +129,9 @@ namespace Servy.Core.Services
         /// Sets the description text for a Windows service.
         /// </summary>
         /// <param name="serviceHandle">A valid handle to the target Windows service.</param>
-        /// <param name="description">The description string to assign.</param>
+        /// <param name="description">The description string to assign. A null value removes the description.</param>
         /// <exception cref="Win32Exception">Thrown if the native configuration change fails.</exception>
-        internal void SetServiceDescription(SafeServiceHandle serviceHandle, string description)
+        internal void SetServiceDescription(SafeServiceHandle serviceHandle, string? description)
         {
             IntPtr pDescription = IntPtr.Zero;
             try
