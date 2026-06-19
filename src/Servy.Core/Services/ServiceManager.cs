@@ -235,7 +235,7 @@ namespace Servy.Core.Services
             bool legacyDroppedFromDb = false;
             ServiceDto? legacyBackupDto = null;
 
-            // If the database has a record under a different casing layout (e.g. 'notepadä' vs 'notepadÄ'),
+            // If the database has a record under a different casing layout (e.g. 'serviceä' vs 'serviceÄ'),
             // the Windows SCM will treat them as two entirely different entities. We must aggressively drop the old 
             // casing layout registration from the OS before proceeding to avoid split-brain or orphaned processes.
             if (isUpdateMode && !string.Equals(existingDbService!.Name, options.ServiceName, StringComparison.Ordinal))
