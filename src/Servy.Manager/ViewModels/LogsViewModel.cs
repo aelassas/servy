@@ -37,6 +37,7 @@ namespace Servy.Manager.ViewModels
         private string _keyword = string.Empty;
         private CancellationTokenSource? _cancellationTokenSource;
         private readonly BulkObservableCollection<LogEntryModel> _logs = new BulkObservableCollection<LogEntryModel>();
+        private EventLogLevel? _selectedLevel = EventLogLevel.All;
         private string? _selectedLogMessage;
         private string? _footerText;
         private bool _isDisposed;
@@ -241,8 +242,6 @@ namespace Servy.Manager.ViewModels
                 }
             }
         }
-
-        private EventLogLevel? _selectedLevel = EventLogLevel.All;
 
         /// <summary>
         /// Gets or sets the currently selected log level filter.

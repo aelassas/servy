@@ -12,7 +12,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
-
+  
+  <data name="Msg_PreparingEnvironment" xml:space="preserve">
+    <value>Preparing environment...</value>
+  </data>
   <data name="Msg_InvalidValue" xml:space="preserve">
     <value>Invalid value.</value>
   </data>
