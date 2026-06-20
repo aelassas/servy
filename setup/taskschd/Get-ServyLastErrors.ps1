@@ -21,7 +21,7 @@
     
     Requirements:
       - PowerShell 5.1 or later.
-      - Windows Vista / Windows Server 2008 or newer.
+      - Windows 7 SP1 / Windows Server 2008 R2 or newer (required by PowerShell 5.1).
       - Note: This script is NOT compatible with Windows XP or Server 2003 
         due to the dependency on the Get-WinEvent cmdlet.
 
