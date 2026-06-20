@@ -310,24 +310,24 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<int?> GetServicePidAsync(string serviceName, CancellationToken cancellationToken = default)
+        public virtual async Task<int?> GetServicePidAsync(string name, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(serviceName)) return null;
+            if (string.IsNullOrWhiteSpace(name)) return null;
             const string sql = "SELECT Pid FROM Services WHERE Name = @Name COLLATE UNICODE_NOCASE LIMIT 1;";
-            var pid = await ResolveByNameAsync<int?>(sql, serviceName, cancellationToken: cancellationToken);
+            var pid = await ResolveByNameAsync<int?>(sql, name, cancellationToken: cancellationToken);
             return pid;
         }
 
         /// <inheritdoc />
-        public virtual async Task<ServiceConsoleStateDto> GetServiceConsoleStateAsync(string serviceName, CancellationToken cancellationToken = default)
+        public virtual async Task<ServiceConsoleStateDto> GetServiceConsoleStateAsync(string name, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(serviceName)) return null;
+            if (string.IsNullOrWhiteSpace(name)) return null;
             const string sql = @"
                 SELECT Pid, ActiveStdoutPath, ActiveStderrPath 
                 FROM Services 
                 WHERE Name = @Name COLLATE UNICODE_NOCASE
                 LIMIT 1;";
-            var dto = await ResolveByNameAsync<ServiceConsoleStateDto>(sql, serviceName, cancellationToken: cancellationToken);
+            var dto = await ResolveByNameAsync<ServiceConsoleStateDto>(sql, name, cancellationToken: cancellationToken);
             return dto;
         }
 

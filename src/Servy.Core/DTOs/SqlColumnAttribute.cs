@@ -22,7 +22,7 @@ namespace Servy.Core.DTOs
         public SqlColumnAttribute(string sqlType)
         {
             if (string.IsNullOrWhiteSpace(sqlType))
-                throw new ArgumentException("SQL type cannot be null or empty.", nameof(sqlType));
+                throw new ArgumentException("SQL type cannot be null, empty or whitespace.", nameof(sqlType));
 
             SqlType = sqlType;
         }

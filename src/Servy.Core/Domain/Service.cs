@@ -333,13 +333,13 @@ namespace Servy.Core.Domain
         /// Gets or sets the absolute file path where standard output is currently being redirected.
         /// Returns <see langword="null"/> if the service is not redirected or not running.
         /// </summary>
-        public string ActiveStdoutPath { get; set; } = null;
+        public string ActiveStdoutPath { get; set; }
 
         /// <summary>
         /// Gets or sets the absolute file path where standard error output is currently being redirected.
         /// Returns <see langword="null"/> if the service is not redirected or not running.
         /// </summary>
-        public string ActiveStderrPath { get; set; } = null;
+        public string ActiveStderrPath { get; set; }
 
         /// <summary>
         /// Optional path to an executable that runs before the service stops.

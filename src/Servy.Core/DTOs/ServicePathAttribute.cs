@@ -5,7 +5,7 @@ namespace Servy.Core.DTOs
     /// <summary>
     /// Specifies that a property represents a system path that requires validation during service import or installation.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public class ServicePathAttribute : Attribute
     {
         /// <summary>
@@ -31,6 +31,8 @@ namespace Servy.Core.DTOs
         /// <param name="required"><c>true</c> if the path must be provided and cannot be null or whitespace.</param>
         public ServicePathAttribute(string label, bool isFile = true, bool required = false)
         {
+            if (string.IsNullOrWhiteSpace(label))
+                throw new ArgumentException("label cannot be null, empty or whitespace.", nameof(label));
             Label = label;
             IsFile = isFile;
             Required = required;

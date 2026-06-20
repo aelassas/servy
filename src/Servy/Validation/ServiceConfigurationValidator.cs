@@ -51,7 +51,7 @@ namespace Servy.Validation
             var result = _serviceValidationRules.Validate(dto, wrapperExePath, confirmPassword);
 
             // Display critical errors first
-            if (result.Errors.Any())
+            if (!result.IsValid)
             {
                 await _messageBoxService.ShowErrorAsync(result.Errors.First(), UiAppConfig.Caption);
                 return false;
