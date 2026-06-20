@@ -34,7 +34,7 @@ namespace Servy.Service.CommandLine
         public ProcessPriorityClass Priority { get; set; } = StartOptionsParser.MapPriority(AppConfig.DefaultProcessPriority);
 
         /// <summary>
-        /// Whether to enable the console user interface for the service.
+        /// Gets or sets a value indicating whether to enable the console user interface for the service.
         /// </summary>
         public bool EnableConsoleUI { get; set; }
 
@@ -100,7 +100,6 @@ namespace Servy.Service.CommandLine
         /// Defaults to 3.
         /// </summary>
         public int MaxRestartAttempts { get; set; } = AppConfig.DefaultMaxRestartAttempts;
-
 
         /// <summary>
         /// Gets or sets the full path to the failure program to run.
@@ -232,48 +231,47 @@ namespace Servy.Service.CommandLine
         public int StopTimeoutInSeconds { get; set; } = AppConfig.DefaultStopTimeout;
 
         /// <summary>
-        /// Optional path to an executable that runs before the service stops.
+        /// Gets or sets the optional path to an executable that runs before the service stops.
         /// </summary>
         [ServicePath("Pre-stop executable path", isFile: true)]
         public string? PreStopExecutablePath { get; set; }
 
         /// <summary>
-        /// Optional startup directory for the pre-stop executable.
+        /// Gets or sets the optional startup directory for the pre-stop executable.
         /// </summary>
         [ServicePath("Pre-stop startup directory", isFile: false)]
         public string? PreStopWorkingDirectory { get; set; }
 
         /// <summary>
-        /// Optional parameters for the pre-stop executable.
+        /// Gets or sets the optional parameters for the pre-stop executable.
         /// </summary>
         public string? PreStopExecutableArgs { get; set; }
 
         /// <summary>
-        /// Maximum time in seconds to wait for the pre-stop executable to complete.
+        /// Gets or sets the maximum time in seconds to wait for the pre-stop executable to complete.
         /// </summary>
         public int PreStopTimeoutInSeconds { get; set; } = AppConfig.DefaultPreStopTimeoutSeconds;
 
         /// <summary>
-        /// Whether to log pre-stop failure as error.
+        /// Gets or sets a value indicating whether pre-stop failure is logged as an error.
         /// </summary>
         public bool PreStopLogAsError { get; set; }
 
         /// <summary>
-        /// Optional path to an executable that runs after the service stops.
+        /// Gets or sets the optional path to an executable that runs after the service stops.
         /// </summary>
         [ServicePath("Post-stop executable path", isFile: true)]
         public string? PostStopExecutablePath { get; set; }
 
         /// <summary>
-        /// Optional startup directory for the post-stop executable.
+        /// Gets or sets the optional startup directory for the post-stop executable.
         /// </summary>
         [ServicePath("Post-stop startup directory", isFile: false)]
         public string? PostStopWorkingDirectory { get; set; }
 
         /// <summary>
-        /// Optional parameters for the post-stop executable.
+        /// Gets or sets the optional parameters for the post-stop executable.
         /// </summary>
         public string? PostStopExecutableArgs { get; set; }
-
     }
 }

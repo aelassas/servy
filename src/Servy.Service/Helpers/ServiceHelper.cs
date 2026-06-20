@@ -239,7 +239,7 @@ namespace Servy.Service.Helpers
                     : options.WorkingDirectory;
 
                 // 2. Establish the absolute floor (System32)
-                string system32 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32");
+                string system32 = Environment.GetFolderPath(Environment.SpecialFolder.System);
 
                 // 3. derive fallback from ExecutablePath with explicit guards
                 // This avoids ArgumentNullException on older runtimes and handles malformed roots
