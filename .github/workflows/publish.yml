@@ -615,6 +615,7 @@ jobs:
               Where-Object { 
                   $_.Name -notin @('smtp-cred.xml') -and 
                   $_.Extension -notin @('.dat','.log') -and 
+                  $_.Name -notin @('temp.ps1') -and 
                   $_.Name -notlike '*.test.ps1'
               } |
               ForEach-Object {

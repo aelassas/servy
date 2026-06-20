@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Validates that the Task Scheduler publish exclusion filtering logic works correctly.
+    Validates that the Task Scheduler publish.yml exclusion filtering logic works correctly.
 .DESCRIPTION
     Creates an ephemeral local sandbox environment, runs the hardened recursive copy block,
     and verifies that excluded items (*.test.ps1, .dat, .log, smtp-cred.xml) are blocked
@@ -40,7 +40,8 @@ $MockFiles = @(
     @("ServySecurity.test.ps1", $false), # Hardened exclusion wildcard rule
     @("SubFolder\Nested.test.ps1", $false), # Nested wildcard rule
     @("state.dat", $false),          # Prohibited extension rule
-    @("trace.log", $false)           # Prohibited extension rule
+    @("trace.log", $false),          # Prohibited extension rule
+    @("temp.ps1", $false)            # Prohibited temp.ps1 rule
 )
 
 # Populate test matrix data onto the filesystem
@@ -62,6 +63,7 @@ Get-ChildItem -Path $sourcePath -Recurse -File |
     Where-Object { 
         $_.Name -notin @('smtp-cred.xml') -and 
         $_.Extension -notin @('.dat','.log') -and 
+        $_.Name -notin @('temp.ps1') -and 
         $_.Name -notlike '*.test.ps1'
     } |
     ForEach-Object {

@@ -74,7 +74,7 @@ function Write-ServyLog {
                     if ([System.IO.File]::Exists($target)) {
                         $attempt = 0
                         do {
-                            if ($attempt -gt 0) { Start-Sleep -Milliseconds 1; $localTime = Get-Date -Format "yyyyMMdd-HHmmss-fff" }
+                            if ($attempt -gt 0) { Start-Sleep -Milliseconds 1; $localTime = (Get-Date).ToString('yyyyMMdd-HHmmss-fff', $inv) }
                             $rotatedFileName = "{0}_{1}{2}" -f $baseName, $localTime, $ext
                             $target = Join-Path $logDir $rotatedFileName
                             $attempt++
