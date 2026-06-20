@@ -173,7 +173,7 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             var options = new StartOptions { WorkingDirectory = " ", ExecutablePath = null };
-            string system32 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32");
+            string system32 = Environment.GetFolderPath(Environment.SpecialFolder.System);
             var mockLog = new Mock<IServyLogger>();
 
             // Act

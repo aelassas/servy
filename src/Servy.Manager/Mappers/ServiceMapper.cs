@@ -95,8 +95,8 @@ namespace Servy.Manager.Mappers
             };
             if (item is ConsoleService consoleService)
             {
-                service.StdoutPath = consoleService.StdoutPath;
-                service.StderrPath = consoleService.StderrPath;
+                service.StdoutPath = consoleService.StdoutPath ?? string.Empty;
+                service.StderrPath = consoleService.StderrPath ?? string.Empty;
             }
             return service;
         }

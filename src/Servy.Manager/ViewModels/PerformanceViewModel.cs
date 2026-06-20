@@ -386,14 +386,9 @@ namespace Servy.Manager.ViewModels
         {
             if (!clearView) return;
 
-            // Clear graph collections to reset the UI visualizations
-            CpuPointCollection = new PointCollection();
-            CpuFillPoints = new PointCollection();
-            RamPointCollection = new PointCollection();
-            RamFillPoints = new PointCollection();
-
-            _cpuValues.Clear();
-            _ramValues.Clear();
+            // Explicitly invoke ResetGraphs to clear collections and seed histories
+            // with PerformanceHistoryCapacity zeros symmetrically.
+            ResetGraphs();
         }
 
         #endregion
