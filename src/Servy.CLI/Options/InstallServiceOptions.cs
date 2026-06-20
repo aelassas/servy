@@ -244,7 +244,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("envVars", HelpText = "Environment variables for the process. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';' and \\\\ to escape '\\'. Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin. SECURITY WARNING: Use the " + AppConfig.EnvironmentVariablesEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
+        [Option("envVars", HelpText = "Environment variables for the process. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';', \\\\ to escape '\\', and %% to escape '%' (collapses to a single '%'). Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin. SECURITY WARNING: Use the " + AppConfig.EnvironmentVariablesEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
         public string? EnvironmentVariables { get; set; }
 
         /// <summary>
@@ -317,7 +317,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("preLaunchEnv", HelpText = "Environment variables for the pre-launch executable. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';' and \\\\ to escape '\\'. Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin. SECURITY WARNING: Use the " + AppConfig.PreLaunchEnvironmentVariablesEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
+        [Option("preLaunchEnv", HelpText = "Environment variables for the pre-launch executable. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';', \\\\ to escape '\\', and %% to escape '%' (collapses to a single '%'). Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin. SECURITY WARNING: Use the " + AppConfig.PreLaunchEnvironmentVariablesEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
         public string? PreLaunchEnvironmentVariables { get; set; }
 
         /// <summary>

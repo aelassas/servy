@@ -7,7 +7,7 @@ namespace Servy.CLI.Options
     /// </summary>
     [Verb(
         "status",
-        HelpText = "Get the current status of a Windows service. Possible results: Stopped, StartPending, StopPending, Running, ContinuePending, PausePending, Paused."
+        HelpText = "Get the current status of a Windows service. Possible results: NotInstalled, Stopped, StartPending, StopPending, Running, ContinuePending, PausePending, Paused."
     )]
     public class ServiceStatusOptions : GlobalOptionsBase
     {
