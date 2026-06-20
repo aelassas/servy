@@ -990,14 +990,14 @@ function Install-ServyService {
     # Process Configuration
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
-    [ValidateScript({ 
-        if (Test-Path $_ -PathType Leaf) { $true } 
-        else { throw "Executable not found: $_" } 
+    [ValidateScript({
+        if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
+        else { throw "Executable not found: $_" }
       })]
     [string] $Path,
 
     [ValidateScript({ 
-        if (Test-Path $_ -PathType Container) { $true } 
+        if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
         else { throw "Startup directory not found: $_" } 
       })]
     [string] $StartupDir,
@@ -1073,13 +1073,13 @@ function Install-ServyService {
     [int] $MaxRestartAttempts,
 
     [ValidateScript({ 
-        if (Test-Path $_ -PathType Leaf) { $true } 
+        if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
         else { throw "Failure program executable not found: $_" } 
       })]
     [string] $FailureProgramPath,
 
     [ValidateScript({ 
-        if (Test-Path $_ -PathType Container) { $true } 
+        if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
         else { throw "Failure program startup directory not found: $_" } 
       })]
     [string] $FailureProgramStartupDir,
@@ -1107,13 +1107,13 @@ function Install-ServyService {
 
     # Pre-launch
     [ValidateScript({ 
-        if (Test-Path $_ -PathType Leaf) { $true } 
+        if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
         else { throw "Pre-launch executable not found: $_" } 
       })]
     [string] $PreLaunchPath,
 
     [ValidateScript({ 
-        if (Test-Path $_ -PathType Container) { $true } 
+        if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
         else { throw "Pre-launch startup directory not found: $_" } 
       })]
     [string] $PreLaunchStartupDir,
@@ -1149,13 +1149,13 @@ function Install-ServyService {
 
     # Post-launch
     [ValidateScript({ 
-        if (Test-Path $_ -PathType Leaf) { $true } 
+        if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
         else { throw "Post-launch executable not found: $_" } 
       })]
     [string] $PostLaunchPath,
 
     [ValidateScript({ 
-        if (Test-Path $_ -PathType Container) { $true } 
+        if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
         else { throw "Post-launch startup directory not found: $_" } 
       })]
     [string] $PostLaunchStartupDir,
@@ -1168,13 +1168,13 @@ function Install-ServyService {
 
     # Pre-stop
     [ValidateScript({ 
-        if (Test-Path $_ -PathType Leaf) { $true } 
+        if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
         else { throw "Pre-stop executable not found: $_" } 
       })]
     [string] $PreStopPath,
 
     [ValidateScript({ 
-        if (Test-Path $_ -PathType Container) { $true } 
+        if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
         else { throw "Pre-stop startup directory not found: $_" } 
       })]
     [string] $PreStopStartupDir,
@@ -1189,13 +1189,13 @@ function Install-ServyService {
 
     # Post-stop
     [ValidateScript({ 
-        if (Test-Path $_ -PathType Leaf) { $true } 
+        if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
         else { throw "Post-stop executable not found: $_" } 
       })]
     [string] $PostStopPath,
 
     [ValidateScript({ 
-        if (Test-Path $_ -PathType Container) { $true } 
+        if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Container) { $true }
         else { throw "Post-stop startup directory not found: $_" } 
       })]
     [string] $PostStopStartupDir,
