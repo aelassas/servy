@@ -207,7 +207,8 @@ namespace Servy.Manager
                     );
 
                     var fileDialogService = new FileDialogService();
-                    var messageBoxService = new MessageBoxService(new WpfUiDispatcher());
+                    var uiDispatcher = Services.GetRequiredService<IUiDispatcher>();
+                    var messageBoxService = new MessageBoxService(uiDispatcher);
                     var helpService = new HelpService(messageBoxService);
                     var serviceValidationRules = new ServiceValidationRules(processHelper);
                     var serviceConfigurationValidator = new ServiceConfigurationValidator(messageBoxService, serviceValidationRules);
@@ -221,7 +222,6 @@ namespace Servy.Manager
                     MainViewModel? viewModel = null;
                     Action<string> removeServiceProxy = (name) => viewModel?.RemoveService(name);
                     Func<Task> refreshProxy = () => viewModel != null ? viewModel.Refresh() : Task.CompletedTask;
-                    var uiDispatcher = Services.GetRequiredService<IUiDispatcher>();
 
                     var serviceCommands = new ServiceCommands(
                         serviceManager,
