@@ -37,7 +37,7 @@ namespace Servy.Core.Validation
             {
                 var errorMsg = $"{Strings.Msg_InvalidPath}: {ex.Message}";
                 Logger.Error(errorMsg);
-                return PathSecurityResult.Fail(errorMsg);
+                return PathSecurityResult.Fail(PathSecurityFailureKind.InvalidArgument, errorMsg);
             }
 
             // UNC Path Block (Infiltration / Exfiltration Guard)
@@ -46,7 +46,7 @@ namespace Servy.Core.Validation
             {
                 var errorMsg = mode == FileMode.Open ? Strings.Msg_SecurityUncPathProhibited : Strings.Msg_SecurityUncPathExportProhibited;
                 Logger.Error(errorMsg);
-                return PathSecurityResult.Fail(errorMsg);
+                return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
             }
 
             // Mapped Network Drive Guard
@@ -60,7 +60,7 @@ namespace Servy.Core.Validation
                     {
                         var errorMsg = mode == FileMode.Open ? Strings.Msg_SecurityNetworkDriveProhibited : Strings.Msg_SecurityNetworkDriveExportProhibited;
                         Logger.Error(errorMsg);
-                        return PathSecurityResult.Fail(errorMsg);
+                        return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
                     }
                 }
             }
@@ -74,7 +74,7 @@ namespace Servy.Core.Validation
             {
                 var errorMsg = mode == FileMode.Open ? Strings.Msg_SecurityDirReparsePointProhibited : Strings.Msg_SecurityDirReparsePointExportProhibited;
                 Logger.Error(errorMsg);
-                return PathSecurityResult.Fail(errorMsg);
+                return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
             }
 
             // Guard against file-level symbolic links
@@ -84,7 +84,7 @@ namespace Servy.Core.Validation
             {
                 var errorMsg = mode == FileMode.Open ? Strings.Msg_SecurityFileReparsePointProhibited : Strings.Msg_SecurityFileReparsePointExportProhibited;
                 Logger.Error(errorMsg);
-                return PathSecurityResult.Fail(errorMsg);
+                return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
             }
 
             // Reserved Device Name Block (DOS Guard)
@@ -99,7 +99,7 @@ namespace Servy.Core.Validation
             {
                 var errorMsg = string.Format(Strings.Msg_SecurityReservedDeviceName, normalizedSegment);
                 Logger.Error(errorMsg);
-                return PathSecurityResult.Fail(errorMsg);
+                return PathSecurityResult.Fail(PathSecurityFailureKind.InvalidArgument, errorMsg);
             }
 
             // System Protection Guard
@@ -121,7 +121,7 @@ namespace Servy.Core.Validation
             {
                 var errorMsg = string.Format(mode == FileMode.Open ? Strings.Msg_SecurityProtectedDirectory : Strings.Msg_SecurityProtectedDirectoryExport, violatedFolder);
                 Logger.Error(errorMsg);
-                return PathSecurityResult.Fail(errorMsg);
+                return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
             }
 
             // Extension Validation
@@ -132,7 +132,7 @@ namespace Servy.Core.Validation
             {
                 var errorMsg = string.Format(Strings.Msg_SecurityInvalidFileType, extension);
                 Logger.Error(errorMsg);
-                return PathSecurityResult.Fail(errorMsg);
+                return PathSecurityResult.Fail(PathSecurityFailureKind.InvalidArgument, errorMsg);
             }
 
             // Existence Check (Only required for Input/Import modes)
@@ -140,7 +140,7 @@ namespace Servy.Core.Validation
             {
                 var errorMsg = string.Format(Strings.Msg_ImportFileNotFound, fullPath);
                 Logger.Error(errorMsg);
-                return PathSecurityResult.Fail(errorMsg);
+                return PathSecurityResult.Fail(PathSecurityFailureKind.InvalidArgument, errorMsg);
             }
 
             // Handle Resolution (Final Target Verification)
@@ -153,7 +153,7 @@ namespace Servy.Core.Validation
                 if (safeHandle.IsInvalid)
                 {
                     fileStream.Dispose();
-                    return PathSecurityResult.Fail(Strings.Msg_SecurityHandleInvalid);
+                    return PathSecurityResult.Fail(PathSecurityFailureKind.Security, Strings.Msg_SecurityHandleInvalid);
                 }
 
                 uint requiredSize = NativeMethods.GetFinalPathNameByHandle(safeHandle, null, 0, NativeMethods.VOLUME_NAME_DOS);
@@ -165,7 +165,7 @@ namespace Servy.Core.Validation
                     fileStream.Dispose();
                     var errorMsg = Strings.Msg_SecurityHandleSizeProbeFailed;
                     Logger.Error(errorMsg);
-                    return PathSecurityResult.Fail(errorMsg);
+                    return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
                 }
 
                 var pathBuilder = new StringBuilder((int)requiredSize);
@@ -177,7 +177,7 @@ namespace Servy.Core.Validation
                     fileStream.Dispose();
                     var errorMsg = Strings.Msg_SecurityHandleSerializationFailed;
                     Logger.Error(errorMsg);
-                    return PathSecurityResult.Fail(errorMsg);
+                    return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
                 }
 
                 string finalPathName = pathBuilder.ToString();
@@ -201,7 +201,7 @@ namespace Servy.Core.Validation
                     fileStream.Dispose();
                     var errorMsg = mode == FileMode.Open ? Strings.Msg_SecurityResolvedUncDestination : Strings.Msg_SecurityResolvedUncDestinationExport;
                     Logger.Error(errorMsg);
-                    return PathSecurityResult.Fail(errorMsg);
+                    return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
                 }
 
                 // Re-check protected folders against the RESOLVED native kernel path
@@ -216,7 +216,7 @@ namespace Servy.Core.Validation
                     fileStream.Dispose();
                     var errorMsg = string.Format(mode == FileMode.Open ? Strings.Msg_SecurityProtectedDirectory : Strings.Msg_SecurityProtectedDirectoryExport, resolvedViolation);
                     Logger.Error(errorMsg);
-                    return PathSecurityResult.Fail(errorMsg);
+                    return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
                 }
 
                 stream = fileStream;
@@ -227,7 +227,7 @@ namespace Servy.Core.Validation
             {
                 var errorMsg = string.Format(Strings.Msg_SecurityHandleValidationFailed, ex.Message);
                 Logger.Error(errorMsg);
-                return PathSecurityResult.Fail(errorMsg);
+                return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
             }
             finally
             {

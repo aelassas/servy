@@ -462,9 +462,22 @@ namespace Servy.Core.UnitTests.Security
 
         private T GetPrivateField<T>(object obj, string fieldName)
         {
-            var field = obj.GetType().GetField(fieldName,
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            return (T)field.GetValue(obj);
+            var type = obj.GetType();
+            System.Reflection.FieldInfo fieldInfo = null;
+
+            // Walk up the inheritance hierarchy until the private field is found
+            while (type != null && fieldInfo == null)
+            {
+                fieldInfo = type.GetField(fieldName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                type = type.BaseType;
+            }
+
+            if (fieldInfo == null)
+            {
+                throw new ArgumentException($"Field '{fieldName}' could not be found on type {obj.GetType().Name} or its base classes.");
+            }
+
+            return (T)fieldInfo.GetValue(obj);
         }
 
         #endregion

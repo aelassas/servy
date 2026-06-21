@@ -1,6 +1,28 @@
 ﻿namespace Servy.Core.Validation
 {
     /// <summary>
+    /// Specifies the high-level classification category of a path validation failure.
+    /// Used to securely map runtime rejections to their proper exception variants independent of the active UI culture.
+    /// </summary>
+    public enum PathSecurityFailureKind
+    {
+        /// <summary>
+        /// No validation rule was broken. The path is secure.
+        /// </summary>
+        None,
+
+        /// <summary>
+        /// A structural system security boundary was crossed (e.g., UNC exfiltration, protected system directory, or reparse redirection).
+        /// </summary>
+        Security,
+
+        /// <summary>
+        /// An invalid syntax, parameter, extension type, or formatting rule error occurred.
+        /// </summary>
+        InvalidArgument
+    }
+
+    /// <summary>
     /// A secure token representing a file path that has successfully passed all defense-in-depth security invariants.
     /// The constructor is intentionally hidden to prevent arbitrary instantiation outside of the security gate.
     /// </summary>
@@ -32,6 +54,11 @@
         public bool IsValid { get; }
 
         /// <summary>
+        /// Gets the classification category of the structural rule violation.
+        /// </summary>
+        public PathSecurityFailureKind FailureKind { get; }
+
+        /// <summary>
         /// Gets the validated path token containing the verified path string. 
         /// Guaranteed to be non-null when <see cref="IsValid"/> is <c>true</c>; otherwise, <c>null</c>.
         /// </summary>
@@ -50,16 +77,19 @@
         private PathSecurityResult(ValidatedPath path)
         {
             IsValid = true;
+            FailureKind = PathSecurityFailureKind.None;
             ValidPath = path;
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PathSecurityResult"/> class representing a failed validation.
         /// </summary>
+        /// <param name="kind">The architectural category of the path error rule.</param>
         /// <param name="error">The descriptive validation failure error string.</param>
-        private PathSecurityResult(string error)
+        private PathSecurityResult(PathSecurityFailureKind kind, string error)
         {
             IsValid = false;
+            FailureKind = kind;
             ErrorMessage = error;
         }
 
@@ -71,10 +101,11 @@
         internal static PathSecurityResult Success(string path) => new PathSecurityResult(new ValidatedPath(path));
 
         /// <summary>
-        /// Creates a failed <see cref="PathSecurityResult"/> capturing a validation rule violation error string.
+        /// Creates a failed <see cref="PathSecurityResult"/> capturing a validation rule violation error string and classification kind.
         /// </summary>
+        /// <param name="kind">The architectural category of the path rule restriction broken.</param>
         /// <param name="error">The descriptive error explaining the security or infrastructural restriction trip.</param>
         /// <returns>An initialized failure descriptor containing an explicit error message.</returns>
-        internal static PathSecurityResult Fail(string error) => new PathSecurityResult(error);
+        internal static PathSecurityResult Fail(PathSecurityFailureKind kind, string error) => new PathSecurityResult(kind, error);
     }
 }

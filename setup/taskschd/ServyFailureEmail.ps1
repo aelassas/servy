@@ -152,7 +152,7 @@ function Send-NotificationEmail {
     [string]$FallbackLogFile
   )
 
-  # LOGIC: Masking is now performed by the caller before HTML encoding. 
+  # Masking is now performed by the caller before HTML encoding. 
   # This ensures the regex tail (?:"[^"]*"|'[^']*'|\S+) matches full quoted strings 
   # before quotes are converted to &quot; or &#39;.
 
@@ -178,7 +178,7 @@ function Send-NotificationEmail {
   $smtpPort = if ([int]::TryParse($rawPort, [ref]$portRef)) { $portRef } else { 0 }
   
   # 3. Safe SSL Preference Resolution (Case-insensitive, defaults to true)
-  # LOGIC: Casts to string and trims whitespace to prevent parsing errors. 
+  # Casts to string and trims whitespace to prevent parsing errors. 
   # Uses case-insensitive regex '(?i)' to match "false", "FALSE", "False", or "0".
   $useSsl = if ($rawUseSsl  -match '^(?i)(false|0)$') { $false }        else { $true }
 
@@ -348,14 +348,14 @@ foreach ($evt in $eventsToProcess) {
   $parsed = ConvertFrom-ServyEventMessage -Message $evt.Message
 
   # 1. MASKING (Stage 1: Plain Text)
-  # LOGIC: We mask the raw strings before any HTML encoding occurs.
+  # We mask the raw strings before any HTML encoding occurs.
   # This ensures the regex successfully captures PASSWORD="my secret token" 
   # before it becomes PASSWORD=&quot;my secret token&quot;
   $maskedLogText = Protect-SensitiveString -Text $parsed.LogText
   $maskedServiceName = Protect-SensitiveString -Text $parsed.ServiceName
 
   # 2. ENCODING (Stage 2: Markup Preparation)
-  # Logic: Now that secrets are replaced with asterisks, we can safely convert 
+  # Now that secrets are replaced with asterisks, we can safely convert 
   # any remaining metacharacters to HTML entities.
   $safeLogText = ConvertTo-HtmlSafe -Text $maskedLogText
   $safeServiceName = ConvertTo-HtmlSafe -Text $maskedServiceName

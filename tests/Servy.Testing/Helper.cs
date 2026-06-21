@@ -174,7 +174,7 @@ namespace Servy.Testing
         /// <typeparam name="T">The return type value of the function.</typeparam>
         /// <param name="func">The synchronous function to execute.</param>
         /// <param name="createApp">If true, initializes a WPF <see cref="Application"/> instance within the thread.</param>
-        /// <returns>Returns the calculated tracking value asset evaluated inside the thread apartment context.</returns>
+        /// <returns>The value returned by <paramref name="func"/>, evaluated on the STA thread.</returns>
         public static T RunOnSTA<T>(Func<T> func, bool createApp = false)
         {
             T result = default;

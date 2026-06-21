@@ -155,6 +155,7 @@
     </Compile>
     <Compile Include="Security\ISecureData.cs" />
     <Compile Include="Security\SecureDataIntegrityException.cs" />
+    <Compile Include="Security\SecureDisposable.cs" />
     <Compile Include="Security\SecureXml.cs" />
     <Compile Include="Services\IJsonServiceSerializer.cs" />
     <Compile Include="Services\IJsonServiceValidator.cs" />

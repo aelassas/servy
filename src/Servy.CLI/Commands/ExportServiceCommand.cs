@@ -171,11 +171,11 @@ namespace Servy.CLI.Commands
 
                 string error = validationResult.ErrorMessage ?? "Security Guard Failure: Target file handle validation rejected.";
 
-                // Keep structural compatibility with old explicit exceptions
-                if (error.Contains("Access Denied") || error.Contains("Security Alert"))
+                if (validationResult.FailureKind == PathSecurityFailureKind.Security)
                 {
                     throw new SecurityException(error);
                 }
+
                 throw new ArgumentException(error);
             }
 

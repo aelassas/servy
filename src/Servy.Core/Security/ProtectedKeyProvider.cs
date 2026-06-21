@@ -21,7 +21,7 @@ namespace Servy.Core.Security
     /// Each instance manages its own key and IV file paths, utilizing in-memory caching to optimize
     /// performance and minimize DPAPI/Disk I/O roundtrips.
     /// </summary>
-    public class ProtectedKeyProvider : IProtectedKeyProvider, IDisposable
+    public class ProtectedKeyProvider : SecureDisposable, IProtectedKeyProvider
     {
         #region Security & Synchronization Settings
 
@@ -588,62 +588,12 @@ namespace Servy.Core.Security
 
         #endregion
 
-        #region IDisposable Implementation
+        #region SecureDisposable Overrides
 
-        /// <summary>
-        /// Performs strict memory-zeroing of the cached cryptographic material.
-        /// </summary>
-        public void Dispose()
+        /// <inheritdoc />
+        protected override void ZeroSensitiveData()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        /// Finalizes an instance of the <see cref="ProtectedKeyProvider"/> class.
-        /// </summary>
-        /// <remarks>
-        /// The finalizer ensures that sensitive cryptographic material is zeroed out in memory 
-        /// even if the consumer fails to call <see cref="Dispose()"/> explicitly.
-        /// </remarks>
-        ~ProtectedKeyProvider()
-        {
-            Dispose(false);
-        }
-
-        /// <summary>
-        /// Releases the unmanaged resources used by the <see cref="ProtectedKeyProvider"/> and optionally releases the managed resources.
-        /// </summary>
-        /// <param name="disposing">
-        /// <see langword="true"/> to release both managed and unmanaged resources; 
-        /// <see langword="false"/> to release only unmanaged resources.
-        /// </param>
-        /// <remarks>
-        /// This implementation uses <see cref="Interlocked.Exchange(ref int, int)"/> as an atomic guard to ensure memory 
-        /// zeroing occurs only once. Managed resource cleanup involves zeroing sensitive cached key material.
-        /// </remarks>
-        protected virtual void Dispose(bool disposing)
-        {
-            // 1. ATOMIC GUARD: Flip the flag BEFORE wiping memory.
-            if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
-
-            // 2. ZEROING runs in BOTH paths - managed keys are still reachable from the finalizer
-            // and zeroing them is non-allocating, finalizer-safe, and idempotent.
             InvalidateCache();
-        }
-
-        /// <summary>
-        /// Throws an <see cref="ObjectDisposedException"/> if this instance has already been disposed.
-        /// </summary>
-        /// <remarks>
-        /// Utilizes <see cref="Volatile.Read(ref int)"/> to ensure the disposal state is accurately 
-        /// synchronized across CPU caches without the overhead of a full lock.
-        /// </remarks>
-        /// <exception cref="ObjectDisposedException">Thrown if the provider has been disposed.</exception>
-        private void ThrowIfDisposed()
-        {
-            if (Volatile.Read(ref _disposed) != 0)
-                throw new ObjectDisposedException(GetType().Name);
         }
 
         #endregion

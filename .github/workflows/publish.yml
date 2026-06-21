@@ -97,7 +97,7 @@ jobs:
           
           Write-Host "Downloading Inno Setup v$version..."
           
-          # Resilient down-stream retry loop framework wrapper protection implementation pass
+          # Download with retry to survive transient network failures
           $retries = [int]$env:MAX_RETRIES
           for ($i = 0; $i -lt $retries; $i++) {
               try {
