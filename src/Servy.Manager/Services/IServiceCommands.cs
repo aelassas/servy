@@ -17,7 +17,7 @@ namespace Servy.Manager.Services
         /// <param name="calculatePerf">Whether to calculate CPU and RAM for the services.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A collection of <see cref="Service"/> objects that match the search.</returns>
-        Task<List<Service?>> SearchServicesAsync(string? searchText, bool calculatePerf, CancellationToken cancellationToken = default);
+        Task<List<Service>> SearchServicesAsync(string? searchText, bool calculatePerf, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Starts the specified service.

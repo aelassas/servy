@@ -357,7 +357,7 @@ namespace Servy.Manager
 
         #endregion
 
-        #region Events
+        #region Application Lifecycle
 
         /// <summary>
         /// Called when the WPF application starts.

@@ -24,7 +24,7 @@
         /// A new <see cref="IServyLogger"/> instance configured with the specified prefix,
         /// or the current logger instance unchanged when <paramref name="prefix"/> is null or whitespace.
         /// </returns>
-        IServyLogger CreateScoped(string prefix);
+        IServyLogger CreateScoped(string? prefix);
 
         /// <summary>
         /// Sets the minimum log level to be recorded. 

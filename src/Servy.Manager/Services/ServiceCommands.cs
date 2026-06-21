@@ -144,7 +144,7 @@ namespace Servy.Manager.Services
         #region IServiceCommands Implementation
 
         /// <inheritdoc />
-        public async Task<List<Service?>> SearchServicesAsync(string? searchText, bool calculatePerf, CancellationToken cancellationToken = default)
+        public async Task<List<Service>> SearchServicesAsync(string? searchText, bool calculatePerf, CancellationToken cancellationToken = default)
         {
             var results = await _serviceRepository.SearchAsync(
                 searchText ?? string.Empty, decrypt: false, cancellationToken);
@@ -178,6 +178,7 @@ namespace Servy.Manager.Services
                 // to prevent NullReferenceExceptions during UI data binding.
                 return services
                     .Where(s => s != null)
+                    .Cast<Service>()
                     .ToList();
             }
         }
@@ -472,7 +473,7 @@ namespace Servy.Manager.Services
             try
             {
                 string pidValue = service.Pid.Value.ToString();
-                string serviceName = service.Name ?? "Unknown";
+                string serviceName = service.Name ?? "<unknown>";
 
                 bool success = false;
 

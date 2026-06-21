@@ -847,7 +847,7 @@ namespace Servy.Core.Services
                     sc.Stop();
 
                     // Replace blocking WaitForStatus with an async polling loop to respect cancellation
-                    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                    var stopwatch = Stopwatch.StartNew();
                     var timeoutSpan = TimeSpan.FromSeconds(timeout);
 
                     while (sc.Status != ServiceControllerStatus.Stopped)

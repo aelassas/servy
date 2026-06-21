@@ -93,7 +93,7 @@ namespace Servy.Core.Logging
         }
 
         /// <inheritdoc/>
-        public IServyLogger CreateScoped(string prefix)
+        public IServyLogger CreateScoped(string? prefix)
         {
             if (string.IsNullOrWhiteSpace(prefix))
             {
@@ -391,7 +391,7 @@ namespace Servy.Core.Logging
             public void Dispose() { /* no-op; parent owns the EventLog */ }
 
             /// <inheritdoc/>
-            public IServyLogger CreateScoped(string prefix) => CreateScopedInstance(prefix);
+            public IServyLogger CreateScoped(string? prefix) => CreateScopedInstance(prefix);
 
             /// <summary>
             /// Factory method to construct a new scoped logger instance, ensuring proper prefix hierarchy 
@@ -401,7 +401,7 @@ namespace Servy.Core.Logging
             /// <returns>
             /// An <see cref="IServyLogger"/> representing the child scope, or <c>this</c> if the prefix is null or whitespace.
             /// </returns>
-            private IServyLogger CreateScopedInstance(string prefix)
+            private IServyLogger CreateScopedInstance(string? prefix)
             {
                 if (string.IsNullOrWhiteSpace(prefix))
                 {
