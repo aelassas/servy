@@ -73,9 +73,11 @@ function Protect-SensitiveString {
     
     # Constructed via concatenation to avoid multi-line here-string whitespace issues.
     # Branch B (space separator) consumes multi-word unquoted values up to the next
-    # command-flag delimiter (-x / /x), so multi-token secrets are fully masked.
+    # command-flag delimiter (-x / /x). To maintain architecture safety constraints,
+    # only the final whitespace-delimited token of an unquoted value is masked;
+    # multi-word unquoted sequences are partially redacted.
     $regexPattern = "(?i)(?<![a-zA-Z0-9])($keyPattern)(?:_[A-Za-z0-9]+)*(?![a-zA-Z0-9])" +
-        "(?:" +
+        "(?" +
             # BRANCH A: Explicit Separators (:, =, /)
             "(\s*[:=]\s*|/)" +
             "(?>`"[^`"]*`"|'[^']*'|(?:[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*))" +

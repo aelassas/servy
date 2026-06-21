@@ -10,7 +10,7 @@ namespace Servy.Core.Security
     /// Implements salted HKDF for key separation and follows strict memory-zeroing protocols for all sensitive buffers.
     /// Designed for a Singleton lifetime; internal keys are immutable after construction.
     /// </summary>
-    public class SecureData : ISecureData
+    public class SecureData : SecureDisposable, ISecureData
     {
         private static readonly byte[] HkdfV2EncInfo = Encoding.UTF8.GetBytes("V2_AES_ENCRYPTION");
         private static readonly byte[] HkdfV2HmacInfo = Encoding.UTF8.GetBytes("V2_HMAC_AUTHENTICATION");
@@ -19,7 +19,6 @@ namespace Servy.Core.Security
         private readonly byte[]? _v1StaticIv;
         private readonly byte[] _v2EncryptionKey;
         private readonly byte[] _v2HmacKey;
-        private int _disposed;
 
         private const string EncryptMarker = "SERVY_ENC:";
         private const string V2Marker = EncryptMarker + "v2:";
@@ -191,10 +190,10 @@ namespace Servy.Core.Security
         /// <exception cref="ArgumentException">Thrown if <paramref name="cipherText"/> is empty.</exception>
         /// <exception cref="SecureDataIntegrityException">
         /// Thrown when:
-        ///  - a marked v2 payload fails HMAC or AES decryption (tampering or corruption);
-        ///  - a marked v1 payload is supplied while AllowLegacyV1Decryption is false;
-        ///  - the input has no marker but is strict Base64 and legacy decryption is disabled;
-        ///  - the marker version is unrecognized.
+        ///   - a marked v2 payload fails HMAC or AES decryption (tampering or corruption);
+        ///   - a marked v1 payload is supplied while AllowLegacyV1Decryption is false;
+        ///   - the input has no marker but is strict Base64 and legacy decryption is disabled;
+        ///   - the marker version is unrecognized.
         /// </exception>
         /// <exception cref="CryptographicException">Thrown when legacy v1 decryption is enabled but AES decryption fails.</exception>
         public string Decrypt(string cipherText)
@@ -415,7 +414,6 @@ namespace Servy.Core.Security
                     }
                 }
             }
-
             finally
             {
                 // Security hygiene: Wipe the combined buffer (containing IV and Ciphertext) from the heap.
@@ -475,62 +473,17 @@ namespace Servy.Core.Security
             return true;
         }
 
-        /// <summary>
-        /// Performs strict memory-zeroing of all sensitive cryptographic key material.
-        /// </summary>
-        public void Dispose()
+        #region SecureDisposable Overrides
+
+        /// <inheritdoc />
+        protected override void ZeroSensitiveData()
         {
-            // Pass 'true' because we are being called explicitly by the user's code.
-            Dispose(true);
-
-            // Tell the GC that this object no longer needs its Finalizer called.
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        /// Finalizes an instance of the <see cref="SecureData"/> class.
-        /// </summary>
-        /// <remarks>
-        /// The finalizer ensures that sensitive cryptographic material is zeroed out in memory 
-        /// even if the consumer fails to call <see cref="Dispose()"/> explicitly.
-        /// </remarks>
-        ~SecureData()
-        {
-            Dispose(false);
-        }
-
-        /// <summary>
-        /// Releases the unmanaged resources used by the <see cref="SecureData"/> and optionally releases the managed resources.
-        /// </summary>
-        /// <param name="disposing">
-        /// <see langword="true"/> to release both managed and unmanaged resources; 
-        /// <see langword="false"/> to release only unmanaged resources.
-        /// </param>
-        protected virtual void Dispose(bool disposing)
-        {
-            // 1. ATOMIC GUARD: Flip the flag BEFORE wiping memory.
-            // Interlocked.Exchange returns the original value. If it wasn't 0 (False), 
-            // another thread has already initiated disposal.
-            if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
-
-            // 2. ZEROING runs in BOTH paths - managed keys are still reachable from the finalizer
-            // and zeroing them is non-allocating, finalizer-safe, and idempotent.
             if (_v1MasterKey != null) CryptographicOperations.ZeroMemory(_v1MasterKey);
             if (_v1StaticIv != null) CryptographicOperations.ZeroMemory(_v1StaticIv);
             if (_v2EncryptionKey != null) CryptographicOperations.ZeroMemory(_v2EncryptionKey);
             if (_v2HmacKey != null) CryptographicOperations.ZeroMemory(_v2HmacKey);
         }
 
-        /// <summary>
-        /// Throws an <see cref="ObjectDisposedException"/> if this instance has already been disposed.
-        /// </summary>
-        private void ThrowIfDisposed()
-        {
-            // Use Volatile.Read to ensure we see the latest state across CPU cores 
-            // without the overhead of a full lock.
-            if (Volatile.Read(ref _disposed) != 0)
-                throw new ObjectDisposedException(GetType().Name);
-        }
-
+        #endregion
     }
 }

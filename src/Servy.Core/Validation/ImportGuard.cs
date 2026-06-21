@@ -33,7 +33,7 @@ namespace Servy.Core.Validation
                 {
                     var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, securityCheck.ValidPath!.ResolvedPath);
                     Logger.Error(errorMsg);
-                    return PathSecurityResult.Fail(errorMsg);
+                    return PathSecurityResult.Fail(PathSecurityFailureKind.InvalidArgument, errorMsg);
                 }
 
                 // Success: Set content output and return validated path token

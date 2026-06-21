@@ -47,10 +47,7 @@ namespace Servy.Core.Services
         /// <summary>Size threshold in bytes that triggers a log rotation. Only used when <see cref="EnableSizeRotation"/> is true; the value is clamped to a minimum of 1 MB.</summary>
         public long RotationSizeInBytes { get; set; } = AppConfig.ToBytes(AppConfig.DefaultRotationSizeMB);
 
-        /// <summary>
-        /// Gets or sets a value indicating whether to use local system time for log rotation.
-        /// Defaults to <see cref="AppConfig.DefaultUseLocalTimeForRotation"/>.
-        /// </summary>
+        /// <summary>Use local system time (instead of UTC) for log rotation. Defaults to <see cref="AppConfig.DefaultUseLocalTimeForRotation"/>.</summary>
         public bool UseLocalTimeForRotation { get; set; } = AppConfig.DefaultUseLocalTimeForRotation;
 
         /// <summary>Enable health monitoring.</summary>

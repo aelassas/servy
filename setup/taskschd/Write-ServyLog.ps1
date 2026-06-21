@@ -23,8 +23,7 @@ function Write-ServyLog {
             $hashString = [System.BitConverter]::ToString($hashBytes).Replace('-', '')
         } finally {
             $sha.Dispose()
-        }
-        
+        }        
         
         try {
             $mutex = New-Object System.Threading.Mutex($false, "Global\ServyLog_$hashString")
