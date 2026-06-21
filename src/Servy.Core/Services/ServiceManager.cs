@@ -1053,7 +1053,7 @@ namespace Servy.Core.Services
                             Name = service.ServiceName,
                             Status = MapStatus(service.Status),
                             StartupType = MapStartupType(service),
-                            LogOnAs = null,
+                            LogOnAs = string.Empty,
                             Description = string.Empty,
                         };
 
@@ -1211,7 +1211,7 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="nativeStatus">The system status to map.</param>
         /// <returns>An internal <see cref="Enums.ServiceStatus"/> representation.</returns>
-        private Enums.ServiceStatus MapStatus(ServiceControllerStatus nativeStatus)
+        private static ServiceStatus MapStatus(ServiceControllerStatus nativeStatus)
         {
             switch (nativeStatus)
             {

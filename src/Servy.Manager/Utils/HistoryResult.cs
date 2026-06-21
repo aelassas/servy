@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Servy.Manager.Models;
+﻿using Servy.Manager.Models;
 
 namespace Servy.Manager.Utils
 {

@@ -2519,7 +2519,7 @@ namespace Servy.Service
         /// <returns><see langword="true"/> if the process succeeded or failures are ignored; otherwise <see langword="false"/>.</returns>
         private bool StartPreStopProcess(StartOptions options)
         {
-            if (_options == null || string.IsNullOrWhiteSpace(options.PreStopExecutablePath))
+            if (options == null || string.IsNullOrWhiteSpace(options.PreStopExecutablePath))
             {
                 _logger?.Info("No pre-stop executable configured. Skipping.");
                 return true;
@@ -2544,9 +2544,9 @@ namespace Servy.Service
                 // 1. Prepare Environment and Arguments
                 var args = options.PreStopExecutableArgs ?? string.Empty;
 
-                var workingDir = string.IsNullOrWhiteSpace(_options.PreStopWorkingDirectory)
-                    ? _options.WorkingDirectory
-                    : _options.PreStopWorkingDirectory;
+                var workingDir = string.IsNullOrWhiteSpace(options.PreStopWorkingDirectory)
+                    ? options.WorkingDirectory
+                    : options.PreStopWorkingDirectory;
 
                 // 2. Configure Launch Options
                 var effectiveTimeoutMs = ClampTimeout(options.PreStopTimeoutInSeconds);

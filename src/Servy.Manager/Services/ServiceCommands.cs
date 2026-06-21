@@ -147,7 +147,7 @@ namespace Servy.Manager.Services
         public async Task<List<Service>> SearchServicesAsync(string? searchText, bool calculatePerf, CancellationToken cancellationToken = default)
         {
             var results = await _serviceRepository.SearchAsync(
-                searchText ?? string.Empty, decrypt: false, cancellationToken);
+                searchText ?? string.Empty, decrypt: false, cancellationToken).ConfigureAwait(false);
 
             // Implemented SemaphoreSlim throttling aligned with sibling paths to prevent unbounded thread pool 
             // exhaustion during concurrent GetProcessTreeMetrics heavy OS calls.
