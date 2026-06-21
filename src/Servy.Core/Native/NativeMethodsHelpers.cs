@@ -69,7 +69,7 @@ namespace Servy.Core.Native
         public static void ValidateCredentials(string username, string password)
         {
             if (string.IsNullOrWhiteSpace(username))
-                throw new ArgumentException("username cannot be null, empty or whitespace.", nameof(username));
+                throw new ArgumentException("username cannot be empty or whitespace.", nameof(username));
 
             username = username.Trim();
 

@@ -114,7 +114,6 @@ namespace Servy.Core.Validation
             if (
                 !importMode
                 && (!dto.RunAsLocalSystem.HasValue || !dto.RunAsLocalSystem.Value)
-                && !string.IsNullOrWhiteSpace(dto.UserAccount)
                 )
             {
                 try
