@@ -2423,7 +2423,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.Equal(ServiceStartType.Automatic, result[0].StartupType);
-            Assert.Empty(result[0].LogOnAs); // Stayed null because bytesNeeded was 0
+            Assert.Empty(result[0].LogOnAs); // Stayed empty because bytesNeeded was 0
         }
 
         [Theory]
