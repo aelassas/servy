@@ -150,7 +150,7 @@ namespace Servy.CLI.UnitTests.Commands
             var filePath = Path.Combine(_tempDir, "denied_extension.txt");
 
             var ex = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, "data"));
-            Assert.IsType<SecurityException>(ex.InnerException);
+            Assert.IsType<ArgumentException>(ex.InnerException);
             Assert.Equal(string.Format(Core.Resources.Strings.Msg_SecurityInvalidFileType, ".txt"), ex.InnerException.Message);
         }
 
@@ -186,7 +186,7 @@ namespace Servy.CLI.UnitTests.Commands
                 var ex = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, "new config payload"));
 
                 // Unwraps target reflection errors to expose the inner thrown exception rule
-                Assert.IsType<ArgumentException>(ex.InnerException);
+                Assert.IsType<SecurityException>(ex.InnerException);
                 Assert.Contains(string.Format(Core.Resources.Strings.Msg_SecurityHandleValidationFailed, string.Empty), ex.InnerException.Message);
             }
         }
@@ -225,7 +225,7 @@ namespace Servy.CLI.UnitTests.Commands
             var reflectEx = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, content));
 
             // 2. Assert against the actual unwrapped inner exception
-            var actualEx = Assert.IsType<SecurityException>(reflectEx.InnerException);
+            var actualEx = Assert.IsType<ArgumentException>(reflectEx.InnerException);
             Assert.Contains(".txt", actualEx.Message);
 
             // Transactional Rollback Integrity Assertions
@@ -244,7 +244,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Act & Assert
             var reflectEx = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, content));
-            var actualEx = Assert.IsType<SecurityException>(reflectEx.InnerException);
+            var actualEx = Assert.IsType<ArgumentException>(reflectEx.InnerException);
 
             bool matchedExpectedSecurityRules = actualEx.Message.Contains("COM1") ||
                                                 actualEx.Message.Contains("UNC");
@@ -269,7 +269,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Act & Assert
             var reflectEx = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, "content"));
-            Assert.IsType<SecurityException>(reflectEx.InnerException);
+            Assert.IsType<ArgumentException>(reflectEx.InnerException);
 
             // Assert
             Assert.False(Directory.Exists(generatedSubDir), "The dynamic folder leaf created during this call should be cleanly rolled back.");
@@ -290,7 +290,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Act & Assert
             var reflectEx = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, "{ }"));
-            Assert.IsType<SecurityException>(reflectEx.InnerException);
+            Assert.IsType<ArgumentException>(reflectEx.InnerException);
 
             // Assert: Verify that the fallback mechanism inside the finally block caught the failure,
             // executed the loop tracking arrays, and cleanly wiped the orphaned directories!
