@@ -184,6 +184,7 @@ namespace Servy.Manager.Services
                 // to prevent NullReferenceExceptions during UI data binding.
                 return services
                     .Where(s => s != null)
+                    .Cast<Service>()
                     .ToList();
             }
         }
@@ -478,7 +479,7 @@ namespace Servy.Manager.Services
             try
             {
                 string pidValue = service.Pid.Value.ToString();
-                string serviceName = service.Name ?? "Unknown";
+                string serviceName = service.Name ?? "<unknown>";
 
                 bool success = false;
 
