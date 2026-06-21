@@ -242,17 +242,26 @@ namespace Servy.CLI.UnitTests.Commands
             var filePath = Path.Combine(deepSubDir, "COM1.json");
             var content = "{ }";
 
-            // Act & Assert
+            // Act
             var reflectEx = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, content));
-            var actualEx = Assert.IsType<ArgumentException>(reflectEx.InnerException);
+            var actualEx = reflectEx.InnerException;
+            Assert.NotNull(actualEx);
 
-            bool matchedExpectedSecurityRules = actualEx.Message.Contains("COM1") ||
-                                                actualEx.Message.Contains("UNC");
+            // Assert
+            bool isValidExceptionType = actualEx is ArgumentException || actualEx is SecurityException;
+            Assert.True(isValidExceptionType, $"Expected ArgumentException or SecurityException, but caught: {actualEx.GetType().Name}");
 
-            Assert.True(matchedExpectedSecurityRules,
-                $"The security guard rejected the path, but with an unexpected message profile: '{actualEx.Message}'");
+            // If it's a modern argument rejection, execute the localized syntax verification check
+            if (actualEx is ArgumentException)
+            {
+                bool matchedExpectedSecurityRules = actualEx.Message.Contains("COM1") ||
+                                                    actualEx.Message.Contains("UNC");
 
-            // Assert file system state left no permanent footprint
+                Assert.True(matchedExpectedSecurityRules,
+                    $"The security guard rejected the path, but with an unexpected message profile: '{actualEx.Message}'");
+            }
+
+            // Assert file system state left no permanent footprint across both frameworks
             Assert.False(File.Exists(filePath));
             Assert.False(Directory.Exists(deepSubDir), "The directory allocated for the device name target should be atomically removed on error.");
         }
