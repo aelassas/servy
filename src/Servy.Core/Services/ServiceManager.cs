@@ -75,7 +75,7 @@ namespace Servy.Core.Services
         /// <param name="lpDependencies">A double null-terminated string of dependencies.</param>
         /// <param name="displayName">The display name to show in the Services console.</param>
         /// <exception cref="Win32Exception">Thrown when a native API call fails to open or change the service.</exception>
-        public void UpdateServiceConfig(
+        internal void UpdateServiceConfig(
             SafeScmHandle scmHandle,
             string serviceName,
             string description,
@@ -1268,10 +1268,8 @@ namespace Servy.Core.Services
         /// <exception cref="Win32Exception">Thrown when the Win32 subsystem encounters an infrastructural or security impediment.</exception>
         private string? GetServiceDescription(SafeServiceHandle svcHandle)
         {
-            int bytesNeeded = 0;
-
             // Invoke Pass 1: Size-Probe using an intentional null destination pointer
-            _windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, IntPtr.Zero, 0, ref bytesNeeded);
+            _windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, IntPtr.Zero, 0, out int bytesNeeded);
 
             // Intercept the native error state immediately before any subsequent C# evaluations occur
             int errorCode = _win32ErrorProvider.GetLastWin32Error();
@@ -1291,7 +1289,7 @@ namespace Servy.Core.Services
             IntPtr ptr = Marshal.AllocHGlobal(bytesNeeded);
             try
             {
-                if (_windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, ptr, bytesNeeded, ref bytesNeeded))
+                if (_windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, ptr, bytesNeeded, out int pcbBytesNeeded))
                 {
                     var descStruct = Marshal.PtrToStructure<SERVICE_DESCRIPTION>(ptr);
                     return Marshal.PtrToStringAuto(descStruct.lpDescription);
@@ -1314,7 +1312,6 @@ namespace Servy.Core.Services
         private bool IsDelayedStart(SafeServiceHandle svcHandle)
         {
             var info = new SERVICE_DELAYED_AUTO_START_INFO();
-            int bytesNeeded = 0;
             int structSize = Marshal.SizeOf(typeof(SERVICE_DELAYED_AUTO_START_INFO));
 
             return _windowsServiceApi.QueryServiceConfig2(
@@ -1322,7 +1319,7 @@ namespace Servy.Core.Services
                 SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
                 ref info,
                 structSize,
-                ref bytesNeeded) && info.fDelayedAutostart;
+                out int bytesNeeded) && info.fDelayedAutostart;
         }
 
         /// <summary>
