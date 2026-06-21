@@ -53,7 +53,7 @@ namespace Servy.ViewModels
         /// Raises the <see cref="PropertyChanged"/> event for the specified property name.
         /// </summary>
         /// <param name="propertyName">Name of the property that changed.</param>
-        private void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

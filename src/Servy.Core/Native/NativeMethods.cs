@@ -426,7 +426,7 @@ namespace Servy.Core.Native
             uint dwInfoLevel,
             ref SERVICE_DELAYED_AUTO_START_INFO lpBuffer,
             int cbBufSize,
-            ref int pcbBytesNeeded);
+            out int pcbBytesNeeded);
 
         /// <summary>Retrieves optional configuration parameters using a raw buffer pointer.</summary>
         [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
@@ -435,7 +435,7 @@ namespace Servy.Core.Native
             uint dwInfoLevel,
             IntPtr lpBuffer,
             int cbBufSize,
-            ref int pcbBytesNeeded);
+            out int pcbBytesNeeded);
 
         /// <summary>Changes the configuration parameters of a service.</summary>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]

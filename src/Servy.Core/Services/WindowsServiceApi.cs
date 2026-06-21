@@ -140,8 +140,8 @@ namespace Servy.Core.Services
             uint dwInfoLevel,
             ref SERVICE_DELAYED_AUTO_START_INFO lpBuffer,
             int cbBufSize,
-            ref int pcbBytesNeeded)
-            => NativeMethods.QueryServiceConfig2(hService, dwInfoLevel, ref lpBuffer, cbBufSize, ref pcbBytesNeeded);
+            out int pcbBytesNeeded)
+            => NativeMethods.QueryServiceConfig2(hService, dwInfoLevel, ref lpBuffer, cbBufSize, out pcbBytesNeeded);
 
         /// <inheritdoc />
         [ExcludeFromCodeCoverage]
@@ -150,13 +150,13 @@ namespace Servy.Core.Services
             uint dwInfoLevel,
             IntPtr lpBuffer,
             int cbBufSize,
-            ref int pcbBytesNeeded)
+            out int pcbBytesNeeded)
             => NativeMethods.QueryServiceConfig2(
                 hService,
                 dwInfoLevel,
                 lpBuffer,
                 cbBufSize,
-                ref pcbBytesNeeded);
+                out pcbBytesNeeded);
 
         /// <inheritdoc />
         public IEnumerable<WindowsServiceInfo> GetServices()

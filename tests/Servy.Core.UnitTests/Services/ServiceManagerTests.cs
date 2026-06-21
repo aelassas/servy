@@ -2097,7 +2097,7 @@ namespace Servy.Core.UnitTests.Services
                         3, // SERVICE_CONFIG_DELAYED_AUTO_START_INFO
                         ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny,
                         It.IsAny<int>(),
-                        ref It.Ref<int>.IsAny))
+                        out It.Ref<int>.IsAny))
                         .Returns(new QueryConfig2DelayedStartDelegate((SafeServiceHandle h, uint lvl, ref SERVICE_DELAYED_AUTO_START_INFO info, int sz, ref int req) =>
                         {
                             info.fDelayedAutostart = isDelayed;
@@ -2146,7 +2146,7 @@ namespace Servy.Core.UnitTests.Services
                     3, // SERVICE_CONFIG_DELAYED_AUTO_START_INFO
                     ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny,
                     It.IsAny<int>(),
-                    ref It.Ref<int>.IsAny))
+                    out It.Ref<int>.IsAny))
                     .Returns(new QueryConfig2DelayedStartDelegate((SafeServiceHandle h, uint lvl, ref SERVICE_DELAYED_AUTO_START_INFO info, int sz, ref int req) =>
                     {
                         // Branch Coverage: Force the 'if (ok && info.fDelayedAutostart)' check to evaluate to false
@@ -2194,7 +2194,7 @@ namespace Servy.Core.UnitTests.Services
                     3, // SERVICE_CONFIG_DELAYED_AUTO_START_INFO
                     ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny,
                     It.IsAny<int>(),
-                    ref It.Ref<int>.IsAny))
+                    out It.Ref<int>.IsAny))
                 .Returns(false);
 
             // Act
@@ -2411,10 +2411,10 @@ namespace Servy.Core.UnitTests.Services
             // 1. Force 'bytesNeeded > 0' to be FALSE for User/Description
             int zero = 0;
             _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig(svcHandle, IntPtr.Zero, 0, out zero)).Returns(false);
-            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(svcHandle, 1, IntPtr.Zero, 0, ref zero)).Returns(false);
+            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(svcHandle, 1, IntPtr.Zero, 0, out zero)).Returns(false);
 
             // 2. Force 'info.fDelayedAutostart' to be FALSE (Coverage for THIRD branch)
-            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(svcHandle, 3, ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny, It.IsAny<int>(), ref It.Ref<int>.IsAny))
+            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(svcHandle, 3, ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny, It.IsAny<int>(), out It.Ref<int>.IsAny))
                 .Returns(new QueryConfig2DelayedStartDelegate((SafeServiceHandle h, uint lvl, ref SERVICE_DELAYED_AUTO_START_INFO info, int sz, ref int req) =>
                 {
                     // Branch Coverage: This ensures 'info.fDelayedAutostart' is false 
@@ -2544,7 +2544,7 @@ namespace Servy.Core.UnitTests.Services
             // Robust simulation of the dual-pass QueryServiceConfig2 pattern for descriptions
             int descStructSize = Marshal.SizeOf<SERVICE_DESCRIPTION>();
             _mockWindowsServiceApi.
-                Setup(x => x.QueryServiceConfig2(It.IsAny<SafeServiceHandle>(), SERVICE_CONFIG_DESCRIPTION, It.IsAny<IntPtr>(), It.IsAny<int>(), ref It.Ref<int>.IsAny))
+                Setup(x => x.QueryServiceConfig2(It.IsAny<SafeServiceHandle>(), SERVICE_CONFIG_DESCRIPTION, It.IsAny<IntPtr>(), It.IsAny<int>(), out It.Ref<int>.IsAny))
                 .Returns(new QueryConfig2Delegate((SafeServiceHandle h, uint dwInfoLevel, IntPtr buf, int size, ref int bytesNeeded) =>
                 {
                     if (buf == IntPtr.Zero)
@@ -2569,13 +2569,13 @@ namespace Servy.Core.UnitTests.Services
                 3, // SERVICE_CONFIG_DELAYED_AUTO_START_INFO
                 ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny,
                 It.IsAny<int>(),
-                ref It.Ref<int>.IsAny))
-                 .Returns(new QueryConfig2DelayedStartDelegate((SafeServiceHandle h, uint lvl, ref SERVICE_DELAYED_AUTO_START_INFO info, int sz, ref int req) =>
-                 {
-                     req = Marshal.SizeOf<SERVICE_DELAYED_AUTO_START_INFO>();
-                     info.fDelayedAutostart = true;
-                     return true; // ok = true
-                 }));
+                out It.Ref<int>.IsAny))
+                .Returns(new QueryConfig2DelayedStartDelegate((SafeServiceHandle h, uint lvl, ref SERVICE_DELAYED_AUTO_START_INFO info, int sz, ref int req) =>
+                {
+                    req = Marshal.SizeOf<SERVICE_DELAYED_AUTO_START_INFO>();
+                    info.fDelayedAutostart = true;
+                    return true; // ok = true
+                }));
 
             // Act
             var result = _serviceManager.GetAllServices(CancellationToken.None);
@@ -2644,7 +2644,7 @@ namespace Servy.Core.UnitTests.Services
                 NativeMethods.SERVICE_CONFIG_DESCRIPTION,
                 It.IsAny<IntPtr>(),
                 It.IsAny<int>(),
-                ref It.Ref<int>.IsAny))
+                out It.Ref<int>.IsAny))
                 .Returns(new QueryConfig2Delegate((SafeServiceHandle h, uint lvl, IntPtr buf, int size, ref int req) =>
                 {
                     if (buf == IntPtr.Zero)
@@ -2732,7 +2732,7 @@ namespace Servy.Core.UnitTests.Services
                 SERVICE_CONFIG_DESCRIPTION,
                 It.IsAny<IntPtr>(),
                 It.IsAny<int>(),
-                ref It.Ref<int>.IsAny))
+                out It.Ref<int>.IsAny))
                 .Returns(new QueryConfig2Delegate((SafeServiceHandle h, uint lvl, IntPtr buf, int size, ref int req) =>
                 {
                     if (buf == IntPtr.Zero)

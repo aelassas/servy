@@ -22,23 +22,23 @@ namespace Servy.Core.Config
         /// Gets the name of the Windows Event Log channel used for logging and querying.
         /// Default is "Application".
         /// </summary>
-        public static readonly string EventLogName = "Application";
+        public const string EventLogName = "Application";
 
         /// <summary>
         /// The name of the Windows service and the associated Event Log source.
         /// Used for service registration and writing logs to the Windows Event Viewer.
         /// </summary>
-        public static readonly string EventSource = "Servy";
+        public const string EventSource = "Servy";
 
         /// <summary>
         /// Servy's official documentation link.
         /// </summary>
-        public static readonly string DocumentationLink = "https://github.com/aelassas/servy/wiki";
+        public const string DocumentationLink = "https://github.com/aelassas/servy/wiki";
 
         /// <summary>
         /// Latest GitHub release link.
         /// </summary>
-        public static readonly string LatestReleaseLink = "https://github.com/aelassas/servy/releases/latest";
+        public const string LatestReleaseLink = "https://github.com/aelassas/servy/releases/latest";
 
         /// <summary>
         /// Command-line argument used to bypass hardware acceleration and force 
@@ -79,7 +79,7 @@ namespace Servy.Core.Config
         /// The default file name of the Sysinternals Handle executable used to detect
         /// processes holding handles to files. Typically <c>handle64.exe</c> on 64-bit systems.
         /// </summary>
-        public static readonly string HandleExeFileName = "handle64";
+        public const string HandleExeFileName = "handle64";
 
         /// <summary>
         /// Gets the full file name of the Sysinternals Handle executable, including the ".exe" extension.
@@ -89,7 +89,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// The base file name (without extension) of the Servy Service UI executable.
         /// </summary>
-        public static readonly string ServyServiceUIFileName = "Servy.Service.Net48";
+        public const string ServyServiceUIFileName = "Servy.Service.Net48";
 
         /// <summary>
         /// The full file name (with extension) of the Servy Service UI executable.

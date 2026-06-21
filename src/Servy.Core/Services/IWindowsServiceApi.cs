@@ -192,7 +192,7 @@ namespace Servy.Core.Services
             uint dwInfoLevel,
             ref SERVICE_DELAYED_AUTO_START_INFO lpBuffer,
             int cbBufSize,
-            ref int pcbBytesNeeded);
+            out int pcbBytesNeeded);
 
         /// <summary>
         /// Retrieves optional configuration information for a service using a raw pointer.
@@ -208,7 +208,7 @@ namespace Servy.Core.Services
             uint dwInfoLevel,
             IntPtr lpBuffer,
             int cbBufSize,
-            ref int pcbBytesNeeded);
+            out int pcbBytesNeeded);
 
         /// <summary>
         /// Gets all installed Windows services on the system.
