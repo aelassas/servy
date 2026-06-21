@@ -316,7 +316,7 @@ namespace Servy.Manager.ViewModels
             }
 
             double currentMax = 0;
-            if (!isCpu && valueHistory.Count > 0)
+            if (valueHistory.Count > 0)
             {
                 // A foreach over a Queue<T> uses a struct enumerator (0 bytes allocated).
                 // This is microscopically fast for 100 items and guarantees perfect accuracy.
@@ -328,8 +328,11 @@ namespace Servy.Manager.ViewModels
                     }
                 }
             }
-            // CPU is always 0-100%, RAM scale is dynamic based on usage
-            double displayMax = isCpu ? 100.0 : Math.Max(currentMax * 1.2, _ramDisplayMax);
+
+            // Scale dynamically if multi-process trees breach normalized boundaries, maintaining rational floor metrics
+            double displayMax = isCpu
+                ? Math.Max(currentMax * 1.2, 100.0)
+                : Math.Max(currentMax * 1.2, _ramDisplayMax);
 
             var lineBuffer = isCpu ? _cpuBuffer : _ramBuffer;
             var fillBuffer = isCpu ? _cpuFillBuffer : _ramFillBuffer;
