@@ -294,6 +294,10 @@ namespace Servy.Manager.Utils
                     {
                         consecutiveFailures++;
 
+                        // CRITICAL: Erase any mid-flush carry over memory state because the outer loop
+                        // is re-opening the file and rescanning parameters cleanly from the disk layout context.
+                        carryOverFragment = string.Empty;
+
                         // CIRCUIT BREAKER: Suppress continuous log spam for recurring permanent failures.
                         if (consecutiveFailures == 1 || consecutiveFailures % AppConfig.LogTailerErrorLogThrottlingInterval == 0)
                         {
