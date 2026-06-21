@@ -21,9 +21,13 @@ namespace Servy.Service.ProcessManagement
         /// </summary>
         /// <remarks>
         /// <para>
-        /// The pattern <c>(^|\s)-Dfile\.encoding([=\s]|$)</c> is designed to avoid false positives by ensuring the 
+        /// The pattern <c>(^|\s)(-J)?-Dfile\.encoding([=\s]|$)</c> is designed to avoid false positives by ensuring the 
         /// flag is at the start of the string or preceded by whitespace, and followed by an assignment or a delimiter. 
         /// This prevents matching similar substrings inside file paths or JAR names.
+        /// </para>
+        /// <para>
+        /// The optional <c>(-J)?</c> prefix group handles compiler contexts, ensuring that the alternative 
+        /// <c>javac</c> parameter format (<c>-J-Dfile.encoding</c>) is successfully intercepted.
         /// </para>
         /// <para>
         /// This regex uses <see cref="RegexOptions.Compiled"/> for performance during process startup and 

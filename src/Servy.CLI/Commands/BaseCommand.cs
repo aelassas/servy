@@ -96,7 +96,7 @@ namespace Servy.CLI.Commands
         /// <param name="operation">The core delegate wrapping the actual asynchronous SCM manipulation step.</param>
         /// <param name="successMessageFormatter">A string manipulation delegate used to generate uniform success notification logs.</param>
         /// <param name="preCheck">An optional delegate invocation layer that performs specialized pre-flight verification assertions.</param>
-        /// <param name="onSuccess">An optional post-execution synchronous block hook to trigger repository syncing or state flushing cascades.</param>
+        /// <param name="onSuccess">An optional asynchronous callback, awaited after the operation succeeds, used to synchronize repository state (e.g. DB upsert). Failures are caught and logged as a warning without failing the command.</param>
         /// <param name="cancellationToken">A cancellation token tracking task state abandonment flags across runtime pools.</param>
         /// <returns>An asynchronous task returning a definitive <see cref="CommandResult"/> representing pipeline execution outcomes.</returns>
         /// <exception cref="System.Security.SecurityException">Thrown when the ambient operational thread lacks administrative privileges.</exception>
