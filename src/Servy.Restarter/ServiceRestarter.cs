@@ -189,9 +189,9 @@ namespace Servy.Restarter
                     controller.WaitForStatus(targetStatus, remaining);
                     return;
                 }
-                catch (InvalidOperationException)
+                catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
                 {
-                    // Still transitional, wait a bit before the next poll
+                    // Still transitional or experiencing transient SCM access blocks; wait before the next poll
                     var remaining = timeout - stopwatch.Elapsed;
                     if (remaining <= TimeSpan.Zero) break;
                     Thread.Sleep((int)Math.Min(AppConfig.ServiceRestarterPollIntervalMs, remaining.TotalMilliseconds));
