@@ -132,7 +132,6 @@ finally {
         catch { }
     }
     else {
-        # Log failure layout directly to the tracking stream for automated log monitoring parses
         if ($scriptHadError) {
             Write-Warning "Build execution terminated with errors. Non-zero exit code enforced for automation handler."
         }

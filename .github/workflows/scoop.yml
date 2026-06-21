@@ -62,7 +62,7 @@ jobs:
           $out = "$InstallerDir\servy-${env:VERSION}-x64-installer.exe"
           Write-Host "Downloading Servy installer from $url"
           
-          # Resilient network fetch wrapper matching the organizational framework conventions
+          # Retry to survive transient network failures
           $retries = [int]$env:MAX_RETRIES
           for ($i = 0; $i -lt $retries; $i++) {
               try {

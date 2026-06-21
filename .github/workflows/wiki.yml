@@ -34,7 +34,7 @@ jobs:
             exit 1
           fi
 
-          # 2. # Collect any filenames containing non-ASCII bytes. `|| true` keeps the
+          # 2. Collect any filenames containing non-ASCII bytes. `|| true` keeps the
           # pipeline from failing the step when grep finds no matches (exit 1).
           # We then fail the build only if the captured list is non-empty.
           NON_ASCII_FILES=$(find . -path ./.git -prune -o -type f -print | grep -P '[^\x00-\x7F]' || true)

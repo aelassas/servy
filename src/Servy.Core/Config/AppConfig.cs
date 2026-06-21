@@ -1451,8 +1451,6 @@ namespace Servy.Core.Config
         /// </remarks>
         public const string PostStopParametersEnvVarName = "SERVY_POST_STOP_PARAMETERS";
 
-
-
         /// <summary>
         /// Controls whether the system will process legacy v1 (unauthenticated) ciphertexts.
         /// </summary>
