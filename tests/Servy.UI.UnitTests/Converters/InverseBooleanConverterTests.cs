@@ -32,13 +32,13 @@ namespace Servy.UI.UnitTests.Converters
         [InlineData(null)]
         [InlineData("string")]
         [InlineData(123)]
-        public void Convert_WhenValueIsNotBool_ReturnsTrue(object input)
+        public void Convert_WhenValueIsNotBool_ReturnsBindingDoNothing(object input)
         {
             // Act
             var result = _converter.Convert(input, typeof(bool), null, CultureInfo.InvariantCulture);
 
             // Assert
-            Assert.True((bool)result);
+            Assert.Equal(Binding.DoNothing, result);
         }
 
         #endregion

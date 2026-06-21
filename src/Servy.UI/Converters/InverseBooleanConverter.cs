@@ -21,7 +21,7 @@ namespace Servy.UI.Converters
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is bool b) return !b;
-            return true;
+            return Binding.DoNothing;
         }
 
         /// <summary>
