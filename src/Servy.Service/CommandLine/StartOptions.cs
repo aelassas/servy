@@ -36,7 +36,7 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Gets or sets a value indicating whether to enable the console user interface for the service.
         /// </summary>
-        public bool EnableConsoleUI { get; set; }
+        public bool EnableConsoleUI { get; set; } = AppConfig.DefaultEnableConsoleUI;
 
         /// <summary>
         /// Gets or sets the path to the standard output log file.
@@ -63,12 +63,12 @@ namespace Servy.Service.CommandLine
         /// <para>Set to <c>false</c> to use Coordinated Universal Time (UTC). 
         /// This ensures a consistent, 24-hour rotation interval regardless of time zone or DST changes.</para>
         /// </remarks>
-        public bool UseLocalTimeForRotation { get; set; }
+        public bool UseLocalTimeForRotation { get; set; } = AppConfig.DefaultUseLocalTimeForRotation;
 
         /// <summary>
         /// Gets or sets a value indicating whether health monitoring is enabled.
         /// </summary>
-        public bool EnableHealthMonitoring { get; set; }
+        public bool EnableHealthMonitoring { get; set; } = AppConfig.DefaultEnableHealthMonitoring;
 
         /// <summary>
         /// Gets or sets the heartbeat interval in seconds for health monitoring.
@@ -88,7 +88,7 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Gets or sets a flag for running recovery action even if the process exits successfully.
         /// </summary>
-        public bool RecoveryOnCleanExit { get; set; }
+        public bool RecoveryOnCleanExit { get; set; } = AppConfig.DefaultRecoveryOnCleanExit;
 
         /// <summary>
         /// Gets or sets the name of the Windows service.
@@ -255,7 +255,7 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Gets or sets a value indicating whether pre-stop failure is logged as an error.
         /// </summary>
-        public bool PreStopLogAsError { get; set; }
+        public bool PreStopLogAsError { get; set; } = AppConfig.DefaultPreStopLogAsError;
 
         /// <summary>
         /// Gets or sets the optional path to an executable that runs after the service stops.
