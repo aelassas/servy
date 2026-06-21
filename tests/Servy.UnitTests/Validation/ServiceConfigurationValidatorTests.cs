@@ -56,7 +56,7 @@ namespace Servy.UnitTests.Validation
         public async Task Validate_ValidationPasses_ReturnsTrue()
         {
             // Arrange: Provide a DTO that passes validation rules
-            var dto = new ServiceDto { Name = "ValidService", ExecutablePath = @"C:\ValidService.exe" };
+            var dto = new ServiceDto { Name = "ValidService", ExecutablePath = @"C:\ValidService.exe", RunAsLocalSystem = true };
 
             _mockProcessHelper.Setup(p => p.ValidatePath(dto.ExecutablePath, true)).Returns(true);
 
