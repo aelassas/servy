@@ -74,8 +74,9 @@ namespace Servy.Service.Helpers
         /// multi-word values that do not look like subsequent CLI flags.
         /// </remarks>
         private static readonly Regex MaskingRegex = new Regex(
-             // 1. Keyword: Negative lookarounds allow _, ., and - as valid boundaries without consuming them
-             @"(?i)(?<![a-zA-Z0-9])(" + string.Join("|", SensitiveKeyWords.Select(Regex.Escape)) + @")(?:_[A-Za-z0-9]+)*(?![a-zA-Z0-9])" +
+             // 1. Keyword: Negative lookarounds allow _, ., and - as valid boundaries without consuming them.
+             // Suffix group pulled inside the 'key' named capture parenthesis to safeguard composite descriptors.
+             @"(?i)(?<![a-zA-Z0-9])(?<key>(?:" + string.Join("|", SensitiveKeyWords.Select(Regex.Escape)) + @")(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])" +
 
              // 2. Separator & Value (Two Branches)
              @"(?:" +
@@ -83,15 +84,15 @@ namespace Servy.Service.Helpers
                  // Aggressively consumes spaces for unquoted strings (e.g., "KEY=---BEGIN RSA---") 
                  // as long as the next word isn't another CLI flag.
                  // Wrapped in an atomic group (?>...) to prevent catastrophic backtracking on nested multi-word evaluations.
-                 @"(\s*[:=]\s*|/)" +
-                 @"(?>""[^""]*""|'[^']*'|(?:[^\s""']+(?:\s+(?![\-/]+[a-zA-Z])[^\s""']+)*))" +
+                 @"(?<sep>\s*[:=]\s*|/)" +
+                 @"(?<val>""[^""]*""|'[^']*'|(?:[^\s""']+(?:\s+(?![\-/]+[a-zA-Z])[^\s""']+)*))" +
                  @"|" +
                  // BRANCH B: Space Separator
                  // Consumes unquoted strings, supporting multi-word values (e.g., "my secret pass")
                  // but stops consuming if it detects a subsequent CLI flag.
                  // Wrapped in an atomic group (?>...) to prevent catastrophic backtracking on nested multi-word evaluations.
-                 @"(\s+)(?![\-/]+[a-zA-Z])" +
-                 @"(?>""[^""]*""|'[^']*'|(?:[^\s""']+(?:\s+(?![\-/]+[a-zA-Z])[^\s""']+)*))" +
+                 @"(?<sep>\s+)(?![\-/]+[a-zA-Z])" +
+                 @"(?<val>""[^""]*""|'[^']*'|(?:[^\s""']+(?:\s+(?![\-/]+[a-zA-Z])[^\s""']+)*))" +
              @")",
              RegexOptions.Compiled,
              AppConfig.InputRegexTimeout);
@@ -535,49 +536,26 @@ namespace Servy.Service.Helpers
             {
                 return MaskingRegex.Replace(args, m =>
                 {
-                    // m.Groups[1] is the Keyword
-                    // m.Groups[2] is the Explicit Separator (Branch A)
-                    // m.Groups[3] is the Space Separator (Branch B)
-                    bool isBranchA = m.Groups[2].Success;
-                    string separator = isBranchA ? m.Groups[2].Value : m.Groups[3].Value;
+                    string key = m.Groups["key"].Value;
+                    string sep = m.Groups["sep"].Value;
+                    string val = m.Groups["val"].Value;
 
-                    string fullMatch = m.Value;
-
-                    if (isBranchA)
+                    // Cleanly catch encapsulated quoted string allocations first to block space-splitting leaks
+                    if ((val.StartsWith("\"", StringComparison.Ordinal) && val.EndsWith("\"", StringComparison.Ordinal)) ||
+                        (val.StartsWith("'", StringComparison.Ordinal) && val.EndsWith("'", StringComparison.Ordinal)))
                     {
-                        // BRANCH A: Explicit Separators (:, =, /)
-                        // Locate the explicit separator token to preserve full composite key names (e.g., PASSWORD_HASH=)
-                        int sepIndex = fullMatch.IndexOf(separator, StringComparison.Ordinal);
-                        string keyPart = sepIndex >= 0 ? fullMatch.Substring(0, sepIndex) : m.Groups[1].Value;
-
-                        return $"{keyPart}{separator}********";
+                        return $"{key}{sep}********";
                     }
-                    else
+
+                    // Branch B unquoted fallback: isolate and mask only the final whitespace-delimited argument token
+                    int lastSpaceInValue = val.LastIndexOf(' ');
+                    if (lastSpaceInValue >= 0)
                     {
-                        // BRANCH B: Space Separator
-                        // Find where the first space separator context resides inside the match sequence
-                        int sepIndex = fullMatch.IndexOf(separator, StringComparison.Ordinal);
-
-                        if (sepIndex >= 0)
-                        {
-                            string keyPart = fullMatch.Substring(0, sepIndex);
-                            string remainingValue = fullMatch.Substring(sepIndex + separator.Length);
-
-                            // Multi-word lookahead space boundaries check:
-                            // If the matched value text block contains an embedded space, the actual secret 
-                            // token is situated at the very end of this string sequence.
-                            int lastSpaceInValue = remainingValue.LastIndexOf(' ');
-                            if (lastSpaceInValue >= 0)
-                            {
-                                string intermediateText = remainingValue.Substring(0, lastSpaceInValue);
-                                return $"{keyPart}{separator}{intermediateText} ********";
-                            }
-
-                            return $"{keyPart}{separator}********";
-                        }
-
-                        return $"{m.Groups[1].Value}{separator}********";
+                        string intermediateText = val.Substring(0, lastSpaceInValue + 1);
+                        return $"{key}{sep}{intermediateText}********";
                     }
+
+                    return $"{key}{sep}********";
                 });
             }
             catch (RegexMatchTimeoutException)
