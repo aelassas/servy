@@ -129,4 +129,54 @@
   <data name="Msg_InvalidEnumValue" xml:space="preserve">
     <value>Invalid value for {0}: '{1}'. Valid options: {2}</value>
   </data>
+
+  <data name="Msg_InstallServiceAction" xml:space="preserve">
+    <value>install service '{0}'</value>
+  </data>
+  <data name="Msg_InstallServiceSuggestion" xml:space="preserve">
+    <value>Ensure the executable path is correct, the service name is not already in use, and you are running with Administrator privileges.</value>
+  </data>
+  <data name="Msg_StartServiceAction" xml:space="preserve">
+    <value>start service '{0}'</value>
+  </data>
+  <data name="Msg_StartServiceSuggestion" xml:space="preserve">
+    <value>Ensure the service is installed, the executable path is valid, and the service account has 'Log On As Service' rights.</value>
+  </data>
+  <data name="Msg_StopServiceAction" xml:space="preserve">
+    <value>stop service '{0}'</value>
+  </data>
+  <data name="Msg_StopServiceSuggestion" xml:space="preserve">
+    <value>Ensure you have Administrator privileges. If the service is unresponsive, you may need to terminate the process manually via Task Manager.</value>
+  </data>
+  <data name="Msg_RestartServiceAction" xml:space="preserve">
+    <value>restart service '{0}'</value>
+  </data>
+  <data name="Msg_RestartServiceSuggestion" xml:space="preserve">
+    <value>Ensure the service is currently installed and that your account has sufficient permissions to stop and start services.</value>
+  </data>
+  <data name="Msg_UninstallServiceAction" xml:space="preserve">
+    <value>uninstall service '{0}'</value>
+  </data>
+  <data name="Msg_UninstallServiceSuggestion" xml:space="preserve">
+    <value>Ensure the service is stopped before uninstalling and that you are running this command as an Administrator.</value>
+  </data>
+  <data name="Msg_ServiceStatusAction" xml:space="preserve">
+    <value>query status for service '{0}'</value>
+  </data>
+  <data name="Msg_ServiceStatusSuggestion" xml:space="preserve">
+    <value>Verify the service name is spelled correctly and that it is currently installed on this system.</value>
+  </data>
+  <data name="Msg_ExportServiceAction" xml:space="preserve">
+    <value>export configuration for service '{0}'</value>
+  </data>
+  <data name="Msg_ExportServiceSuggestion" xml:space="preserve">
+    <value>Ensure the service exists in the database and you have write permissions to the destination path.</value>
+  </data>
+  <data name="Msg_ImportServiceAction" xml:space="preserve">
+    <value>import configuration from '{0}'</value>
+  </data>
+  <data name="Msg_ImportServiceSuggestion" xml:space="preserve">
+    <value>Check that the file path is correct, the file format is valid JSON or XML, and you have read permissions.</value>
+  </data>
+
 </root>

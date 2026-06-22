@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Servy.Core.Security;
+using System;
 using System.IO;
 using System.Linq;
 using System.Security.AccessControl;
 using System.Security.Principal;
-using Servy.Core.Security;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Security
@@ -24,20 +24,24 @@ namespace Servy.Core.UnitTests.Security
         [InlineData("   ")]
         public void CreateSecureDirectory_PathIsNullOrWhiteSpace_ThrowsArgumentException(string invalidPath)
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentException>(() => SecurityHelper.CreateSecureDirectory(invalidPath));
         }
 
         [Fact]
         public void CreateSecureDirectory_ExistingDirectory_UpgradesSecurity()
         {
+            // Arrange
             var path = Path.Combine(_testBaseDir, "UpgradeDir");
             Directory.CreateDirectory(path);
 
             var initialAcl = new DirectoryInfo(path).GetAccessControl();
             Assert.False(initialAcl.AreAccessRulesProtected);
 
+            // Act
             SecurityHelper.CreateSecureDirectory(path);
 
+            // Assert
             var finalAcl = new DirectoryInfo(path).GetAccessControl();
             Assert.True(finalAcl.AreAccessRulesProtected);
         }
@@ -121,9 +125,19 @@ namespace Servy.Core.UnitTests.Security
             // Assert
             var acl = new DirectoryInfo(path).GetAccessControl();
             var rules = acl.GetAccessRules(true, false, typeof(SecurityIdentifier))
-                           .Cast<FileSystemAccessRule>();
+                           .Cast<FileSystemAccessRule>()
+                           .ToList();
 
-            Assert.Contains(rules, r => r.IdentityReference == currentUserSid && r.FileSystemRights == FileSystemRights.FullControl);
+            // If running as Administrator, current user is already covered via the broad group ACE block
+            if (isAdmin)
+            {
+                var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+                Assert.Contains(rules, r => r.IdentityReference == adminSid && r.FileSystemRights == FileSystemRights.FullControl);
+            }
+            else
+            {
+                Assert.Contains(rules, r => r.IdentityReference == currentUserSid && r.FileSystemRights == FileSystemRights.FullControl);
+            }
         }
 
         [Fact]
@@ -194,12 +208,25 @@ namespace Servy.Core.UnitTests.Security
             Assert.Equal(2, rules.Count);
         }
 
-        // Helper to invoke the internal method via reflection
+        /// <summary>
+        /// Helper to invoke the internal method via reflection.
+        /// </summary>
+        /// <param name="security">The security descriptor context.</param>
+        /// <param name="sid">The identity reference SID target.</param>
+        /// <param name="breakInheritance"><c>true</c> to break DACL cascading.</param>
         private void InvokeApplySecurityRules(DirectorySecurity security, IdentityReference sid, bool breakInheritance = true)
         {
-            var method = typeof(SecurityHelper).GetMethod("ApplySecurityRules",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            // Arrange & Act: Search across both Public and NonPublic bindings to ensure resolution matches the public core
+            var method = typeof(SecurityHelper)
+                .GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
+                .FirstOrDefault(m => m.Name == "ApplySecurityRules" && m.GetParameters().Length == 3);
 
+            if (method == null)
+            {
+                throw new InvalidOperationException("Could not locate the 'ApplySecurityRules' method on SecurityHelper via reflection hooks.");
+            }
+
+            // Assert & Execute
             method.Invoke(null, new object[] { security, sid, breakInheritance });
         }
 

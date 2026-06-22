@@ -43,8 +43,8 @@ namespace Servy.CLI.Commands
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
         public async Task<CommandResult> ExecuteAsync(ExportServiceOptions opts, CancellationToken cancellationToken = default)
         {
-            var action = $"export configuration for service '{opts.ServiceName}'";
-            var suggestion = "Ensure the service exists in the database and you have write permissions to the destination path.";
+            var action = string.Format(Strings.Msg_ExportServiceAction, opts.ServiceName);
+            var suggestion = Strings.Msg_ExportServiceSuggestion;
 
             return await ExecuteWithHandlingAsync("export", action, suggestion, async () =>
             {

@@ -32,8 +32,8 @@ namespace Servy.CLI.Commands
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
         public CommandResult Execute(ServiceStatusOptions opts, CancellationToken cancellationToken = default)
         {
-            var action = $"query status for service '{opts.ServiceName}'";
-            var suggestion = "Verify the service name is spelled correctly and that it is currently installed on this system.";
+            var action = string.Format(Strings.Msg_ServiceStatusAction, opts.ServiceName);
+            var suggestion = Strings.Msg_ServiceStatusSuggestion;
 
             return ExecuteWithHandling("status", action, suggestion, () =>
             {

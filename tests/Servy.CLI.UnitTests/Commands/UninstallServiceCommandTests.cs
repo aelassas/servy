@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
+using Servy.CLI.Resources;
 using Servy.Core.Common;
 using Servy.Core.Data;
 using Servy.Core.Services;
@@ -99,7 +100,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.Success);
-            Assert.Contains("Failed to uninstall service 'TestService'", result.Message);
+            Assert.Contains(string.Format(Strings.Msg_UninstallServiceAction, "TestService"), result.Message);
         }
     }
 }

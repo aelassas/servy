@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
+using Servy.CLI.Resources;
 using Servy.Core.Services;
 using System;
 using System.ServiceProcess;
@@ -61,7 +62,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.Success);
-            Assert.Contains("Failed to query status for service 'TestService'", result.Message);
+            Assert.Contains(string.Format(Strings.Msg_ServiceStatusAction, "TestService"), result.Message);
         }
 
     }

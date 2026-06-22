@@ -74,8 +74,8 @@ namespace Servy.CLI.Commands
         [SuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "linker.xml")]
         public async Task<CommandResult> ExecuteAsync(ImportServiceOptions opts, CancellationToken cancellationToken = default)
         {
-            var action = $"import configuration from '{opts.Path}'";
-            var suggestion = "Check that the file path is correct, the file format is valid JSON or XML, and you have read permissions.";
+            var action = string.Format(Strings.Msg_ImportServiceAction, opts.Path);
+            var suggestion = Strings.Msg_ImportServiceSuggestion;
 
             return await ExecuteWithHandlingAsync("import", action, suggestion, async () =>
             {

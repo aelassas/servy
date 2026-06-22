@@ -490,29 +490,14 @@ namespace Servy.Core.Security
 
                     // Apply explicit file-level ACLs to the temp file
                     var fs = new FileSecurity();
-                    var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
-                    var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
                     SecurityIdentifier currentUserSid;
-                    bool isAdmin;
                     using (var identity = WindowsIdentity.GetCurrent())
                     {
-                        var principal = new WindowsPrincipal(identity);
-                        isAdmin = principal.IsInRole(WindowsBuiltInRole.Administrator);
                         currentUserSid = identity.User;
                     }
 
-                    // Match the folder's inheritance logic
-                    fs.SetAccessRuleProtection(isProtected: !isChildOfRoot, preserveInheritance: isChildOfRoot);
-
-                    // Explicitly grant Full Control to SYSTEM and Administrators
-                    fs.AddAccessRule(new FileSystemAccessRule(systemSid, FileSystemRights.FullControl, AccessControlType.Allow));
-                    fs.AddAccessRule(new FileSystemAccessRule(adminSid, FileSystemRights.FullControl, AccessControlType.Allow));
-
-                    // Grant operational continuity to the current user (prevents self-lockout on external paths)
-                    if (currentUserSid != null && !currentUserSid.Equals(systemSid) && !isAdmin)
-                    {
-                        fs.AddAccessRule(new FileSystemAccessRule(currentUserSid, FileSystemRights.FullControl, AccessControlType.Allow));
-                    }
+                    // Thread the canonical policy parameters through the central SecurityHelper core
+                    SecurityHelper.ApplySecurityRules(fs, currentUserSid, breakInheritance: !isChildOfRoot);
 
                     new FileInfo(tempPath).SetAccessControl(fs);
 

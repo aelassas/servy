@@ -39,8 +39,8 @@ namespace Servy.CLI.Commands
         /// <returns>A <see cref="Task{CommandResult}"/> indicating the success or failure of the operation.</returns>
         public async Task<CommandResult> ExecuteAsync(UninstallServiceOptions opts, CancellationToken cancellationToken = default)
         {
-            var action = $"uninstall service '{opts.ServiceName}'";
-            var suggestion = "Ensure the service is stopped before uninstalling and that you are running this command as an Administrator.";
+            var action = string.Format(Strings.Msg_UninstallServiceAction, opts.ServiceName);
+            var suggestion = Strings.Msg_UninstallServiceSuggestion;
 
             return await ExecuteServiceOperationAsync(
                 commandName: "uninstall",

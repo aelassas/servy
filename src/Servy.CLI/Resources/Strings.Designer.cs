@@ -97,6 +97,24 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à export configuration for service &apos;{0}&apos;.
+        /// </summary>
+        public static string Msg_ExportServiceAction {
+            get {
+                return ResourceManager.GetString("Msg_ExportServiceAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Ensure the service exists in the database and you have write permissions to the destination path..
+        /// </summary>
+        public static string Msg_ExportServiceSuggestion {
+            get {
+                return ResourceManager.GetString("Msg_ExportServiceSuggestion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à {0} configuration exported successfully to: {1}.
         /// </summary>
         public static string Msg_ExportSuccess {
@@ -169,11 +187,47 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à import configuration from &apos;{0}&apos;.
+        /// </summary>
+        public static string Msg_ImportServiceAction {
+            get {
+                return ResourceManager.GetString("Msg_ImportServiceAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Check that the file path is correct, the file format is valid JSON or XML, and you have read permissions..
+        /// </summary>
+        public static string Msg_ImportServiceSuggestion {
+            get {
+                return ResourceManager.GetString("Msg_ImportServiceSuggestion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à {0} configuration imported successfully..
         /// </summary>
         public static string Msg_ImportSuccessNoInstall {
             get {
                 return ResourceManager.GetString("Msg_ImportSuccessNoInstall", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à install service &apos;{0}&apos;.
+        /// </summary>
+        public static string Msg_InstallServiceAction {
+            get {
+                return ResourceManager.GetString("Msg_InstallServiceAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Ensure the executable path is correct, the service name is not already in use, and you are running with Administrator privileges..
+        /// </summary>
+        public static string Msg_InstallServiceSuggestion {
+            get {
+                return ResourceManager.GetString("Msg_InstallServiceSuggestion", resourceCulture);
             }
         }
         
@@ -277,6 +331,24 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à restart service &apos;{0}&apos;.
+        /// </summary>
+        public static string Msg_RestartServiceAction {
+            get {
+                return ResourceManager.GetString("Msg_RestartServiceAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Ensure the service is currently installed and that your account has sufficient permissions to stop and start services..
+        /// </summary>
+        public static string Msg_RestartServiceSuggestion {
+            get {
+                return ResourceManager.GetString("Msg_RestartServiceSuggestion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service &apos;{0}&apos; restarted successfully..
         /// </summary>
         public static string Msg_RestartSuccess {
@@ -322,6 +394,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à query status for service &apos;{0}&apos;.
+        /// </summary>
+        public static string Msg_ServiceStatusAction {
+            get {
+                return ResourceManager.GetString("Msg_ServiceStatusAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Failed to retrieve status for service &apos;{0}&apos;..
         /// </summary>
         public static string Msg_ServiceStatusFailure {
@@ -340,11 +421,56 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Verify the service name is spelled correctly and that it is currently installed on this system..
+        /// </summary>
+        public static string Msg_ServiceStatusSuggestion {
+            get {
+                return ResourceManager.GetString("Msg_ServiceStatusSuggestion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à start service &apos;{0}&apos;.
+        /// </summary>
+        public static string Msg_StartServiceAction {
+            get {
+                return ResourceManager.GetString("Msg_StartServiceAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Ensure the service is installed, the executable path is valid, and the service account has &apos;Log On As Service&apos; rights..
+        /// </summary>
+        public static string Msg_StartServiceSuggestion {
+            get {
+                return ResourceManager.GetString("Msg_StartServiceSuggestion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service &apos;{0}&apos; started successfully..
         /// </summary>
         public static string Msg_StartSuccess {
             get {
                 return ResourceManager.GetString("Msg_StartSuccess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à stop service &apos;{0}&apos;.
+        /// </summary>
+        public static string Msg_StopServiceAction {
+            get {
+                return ResourceManager.GetString("Msg_StopServiceAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Ensure you have Administrator privileges. If the service is unresponsive, you may need to terminate the process manually via Task Manager..
+        /// </summary>
+        public static string Msg_StopServiceSuggestion {
+            get {
+                return ResourceManager.GetString("Msg_StopServiceSuggestion", resourceCulture);
             }
         }
         
@@ -363,6 +489,24 @@ namespace Servy.CLI.Resources {
         public static string Msg_SuggestionTemplate {
             get {
                 return ResourceManager.GetString("Msg_SuggestionTemplate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à uninstall service &apos;{0}&apos;.
+        /// </summary>
+        public static string Msg_UninstallServiceAction {
+            get {
+                return ResourceManager.GetString("Msg_UninstallServiceAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Ensure the service is stopped before uninstalling and that you are running this command as an Administrator..
+        /// </summary>
+        public static string Msg_UninstallServiceSuggestion {
+            get {
+                return ResourceManager.GetString("Msg_UninstallServiceSuggestion", resourceCulture);
             }
         }
         

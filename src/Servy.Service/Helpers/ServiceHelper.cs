@@ -494,7 +494,7 @@ namespace Servy.Service.Helpers
         /// </summary>
         /// <param name="vars">The collection of environment variables to process.</param>
         /// <returns>A semicolon-separated string of key-value pairs, or "None" if the collection is null.</returns>
-        private string EnvironmentVariablesToString(IEnumerable<EnvironmentVariable> vars)
+        private static string EnvironmentVariablesToString(IEnumerable<EnvironmentVariable> vars)
         {
             if (vars == null) return "None";
 
@@ -535,7 +535,7 @@ namespace Servy.Service.Helpers
         /// </summary>
         /// <param name="args">The raw string of executable arguments.</param>
         /// <returns>A string with masked credentials, or the original string if no sensitive patterns are found.</returns>
-        internal string MaskRawArguments(string args)
+        internal static string MaskRawArguments(string args)
         {
             if (string.IsNullOrWhiteSpace(args)) return args;
 
