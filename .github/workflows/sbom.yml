@@ -57,8 +57,7 @@ jobs:
           $version = $env:INPUT_VERSION
 
           if ($version -notmatch '^\d+\.\d+$') {
-            Write-Error "Invalid version format '$version'. Expected Major.Minor (e.g. 4.2)."
-            exit 1
+            throw "Invalid version format '$version'. Expected Major.Minor (e.g. 4.2)."
           }
 
           Write-Host "Version format validated: $version"

@@ -57,11 +57,11 @@ foreach ($ProjFile in $RawTestProjects) {
     Write-Host "Building $($Proj)..." -ForegroundColor Cyan
     $Platform = "x64"
     & $MsbuildPath $Proj /p:Configuration=Debug /p:Platform=$Platform /p:DebugType=portable /p:DebugSymbols=true /verbosity:minimal
-    if ($LASTEXITCODE -ne 0) { Write-Error "Build failed for $Proj"; exit $LASTEXITCODE }
+    if ($LASTEXITCODE -ne 0) { Write-Host "Build failed for $Proj"; exit $LASTEXITCODE }
 
     $DllPath = Join-Path $ProjDir "bin\${Platform}\Debug\${ProjName}.dll"
     if (-not (Test-Path $DllPath)) {
-        Write-Error "Could not find built DLL: $DllPath"
+        Write-Host "Could not find built DLL: $DllPath"
         exit 1
     }
 
@@ -95,7 +95,7 @@ foreach ($ProjFile in $RawTestProjects) {
         --include-directory "$ProjDir" `
         $excludeArgs
 
-    if ($LASTEXITCODE -ne 0) { Write-Error "coverlet failed for $ProjName"; exit $LASTEXITCODE }
+    if ($LASTEXITCODE -ne 0) { Write-Host "coverlet failed for $ProjName"; exit $LASTEXITCODE }
 }
 
 # Generate a global coverage report
@@ -108,6 +108,6 @@ reportgenerator `
     -assemblyfilters:"-*.UnitTests;-*.IntegrationTests;-Servy.Testing;-Servy.Restarter.Net48" `
     -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/*.Designer.cs;-**/obj/**/*"
 
-if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed"; exit $LASTEXITCODE }
+if ($LASTEXITCODE -ne 0) { Write-Host "reportgenerator failed"; exit $LASTEXITCODE }
 
 Write-Host "Coverage report generated at $CoverageReportDir"
