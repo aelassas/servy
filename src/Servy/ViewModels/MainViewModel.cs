@@ -873,7 +873,7 @@ namespace Servy.ViewModels
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync, name: nameof(CheckUpdatesCommand));
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialogAsync, name: nameof(OpenAboutDialogCommand));
 
-            ClearFormCommand = new AsyncCommand(ClearFormAsync);
+            ClearFormCommand = new AsyncCommand(ClearFormAsync, _ => !IsBusy, name: nameof(ClearFormCommand));
 
             IsManagerAppAvailable = _appConfig.IsManagerAppAvailable;
             _appConfig.PropertyChanged += AppConfig_PropertyChanged;

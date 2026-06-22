@@ -586,6 +586,7 @@ namespace Servy.Manager.ViewModels
             catch (Exception ex)
             {
                 Logger.Error($"Failed to search services from main tab.", ex);
+                await _messageBoxService.ShowWarningAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
             }
             finally
             {
