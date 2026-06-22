@@ -906,9 +906,9 @@ namespace Servy.ViewModels
         /// </summary>
         private void AppConfig_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e?.PropertyName == nameof(IAppConfiguration.IsManagerAppAvailable))
+            if (e.PropertyName == nameof(IAppConfiguration.IsManagerAppAvailable) && sender is IAppConfiguration cfg)
             {
-                IsManagerAppAvailable = ((IAppConfiguration)sender).IsManagerAppAvailable;
+                IsManagerAppAvailable = cfg.IsManagerAppAvailable;
             }
         }
 

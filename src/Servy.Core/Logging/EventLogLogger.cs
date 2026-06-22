@@ -118,6 +118,8 @@ namespace Servy.Core.Logging
         /// <inheritdoc/>
         public void Debug(string message, Exception ex = null)
         {
+            if (string.IsNullOrEmpty(message)) return;
+
             if ((LogLevel)_currentLogLevel <= LogLevel.Debug)
             {
                 // Debug logs are traditionally skipped for Event Log to avoid clutter, 
@@ -209,6 +211,8 @@ namespace Servy.Core.Logging
             bool isEventLogSinkEnabled,
             Action<string, Exception> fileSink)
         {
+            if (string.IsNullOrEmpty(message)) return;
+
             if ((LogLevel)_currentLogLevel <= targetLevel)
             {
                 var fullMessage = formatSelector(ex != null ? $"{message}\n{ex}" : message);
@@ -349,6 +353,8 @@ namespace Servy.Core.Logging
             /// <inheritdoc/>
             public void Debug(string message, Exception ex = null)
             {
+                if (string.IsNullOrEmpty(message)) return;
+
                 if ((LogLevel)_currentLogLevel <= LogLevel.Debug)
                 {
                     Logger.Debug(Format(message), ex);

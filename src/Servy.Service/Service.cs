@@ -1799,7 +1799,7 @@ namespace Servy.Service
             switch (_recoveryAction)
             {
                 case RecoveryAction.RestartService:
-                    _serviceHelper.RestartService(_logger, _serviceName);
+                    _serviceHelper.RestartService(_serviceName, _logger);
                     break;
 
                 case RecoveryAction.RestartProcess:

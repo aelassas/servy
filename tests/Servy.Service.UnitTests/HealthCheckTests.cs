@@ -177,7 +177,7 @@ namespace Servy.Service.UnitTests
                     It.IsAny<CancellationToken>()))
                 .Verifiable();
 
-            helper.Setup(h => h.RestartService(It.IsAny<IServyLogger>(), It.IsAny<string>())).Verifiable();
+            helper.Setup(h => h.RestartService(It.IsAny<string>(), It.IsAny<IServyLogger>())).Verifiable();
 
             helper.Setup(h => h.RestartComputer(It.IsAny<IServyLogger>())).Verifiable();
 
@@ -217,7 +217,7 @@ namespace Servy.Service.UnitTests
                             It.IsAny<CancellationToken>()), Times.Once);
                         break;
                     case RecoveryAction.RestartService:
-                        helper.Verify(h => h.RestartService(It.IsAny<IServyLogger>(), service.ServiceName), Times.Once);
+                        helper.Verify(h => h.RestartService(service.ServiceName, It.IsAny<IServyLogger>()), Times.Once);
                         break;
                     case RecoveryAction.RestartComputer:
                         helper.Verify(h => h.RestartComputer(It.IsAny<IServyLogger>()), Times.Once);

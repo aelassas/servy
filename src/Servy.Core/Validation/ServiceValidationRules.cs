@@ -28,7 +28,7 @@ namespace Servy.Core.Validation
         }
 
         /// <inheritdoc/>
-        public ValidationResult Validate(ServiceDto dto, string wrapperExePath = null, string confirmPassword = "", bool importMode = false)
+        public ValidationResult Validate(ServiceDto dto, string wrapperExePath = null, string confirmPassword = null, bool importMode = false)
         {
             var result = new ValidationResult();
 

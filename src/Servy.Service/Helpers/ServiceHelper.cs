@@ -356,7 +356,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public void RestartService(IServyLogger logger, string serviceName)
+        public void RestartService(string serviceName, IServyLogger logger)
         {
             try
             {

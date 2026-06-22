@@ -518,6 +518,8 @@ namespace Servy.Core.Logging
         /// <param name="ex">An optional <see cref="Exception"/> context structure hook to process and bind.</param>
         private static void WriteLeveled(LogLevel targetLevel, string message, Exception ex)
         {
+            if (string.IsNullOrEmpty(message)) return;
+
             if ((LogLevel)_currentLogLevel <= targetLevel)
             {
                 Log(targetLevel, ex != null ? $"{message} | Exception: {FormatException(ex)}" : message);

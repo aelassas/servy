@@ -122,7 +122,7 @@ namespace Servy.Service.Helpers
         /// <remarks>
         /// This should be used when the service is registered with the Service Control Manager.
         /// </remarks>
-        void RestartService(IServyLogger logger, string serviceName);
+        void RestartService(string serviceName, IServyLogger logger);
 
         /// <summary>
         /// Restarts the computer.

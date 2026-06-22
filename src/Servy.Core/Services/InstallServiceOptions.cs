@@ -62,10 +62,10 @@ namespace Servy.Core.Services
         /// <summary>Recovery action to take if the service fails. Only used when <see cref="EnableHealthMonitoring"/> is true.</summary>
         public RecoveryAction RecoveryAction { get; set; } = AppConfig.DefaultRecoveryAction;
 
-        /// <summary>Whether to run recovery action even if the process exits successfully. </summary>
+        /// <summary>Whether to run recovery action even if the process exits successfully. Only used when <see cref="EnableHealthMonitoring"/> is true.</summary>
         public bool RecoveryOnCleanExit { get; set; } = AppConfig.DefaultRecoveryOnCleanExit;
 
-        /// <summary>Maximum number of restart attempts if the service fails.</summary>
+        /// <summary>Maximum number of restart attempts if the service fails. Only used when <see cref="EnableHealthMonitoring"/> is true.</summary>
         public int MaxRestartAttempts { get; set; } = AppConfig.DefaultMaxRestartAttempts;
 
         /// <summary>Failure program path.</summary>
@@ -137,7 +137,7 @@ namespace Servy.Core.Services
         /// <summary>Enables rotation based on the date interval specified by <see cref="DateRotationType"/>.</summary>
         public bool EnableDateRotation { get; set; } = AppConfig.DefaultEnableDateRotation;
 
-        /// <summary>Defines the date-based rotation schedule (daily, weekly, or monthly).</summary>
+        /// <summary>Defines the date-based rotation schedule (daily, weekly, or monthly). Only used when <see cref="EnableDateRotation"/> is true.</summary>
         public DateRotationType DateRotationType { get; set; } = AppConfig.DefaultDateRotationType;
 
         /// <summary>The timeout in seconds to wait for the process to start successfully before considering the startup as failed.</summary>
