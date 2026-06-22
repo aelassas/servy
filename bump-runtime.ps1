@@ -49,6 +49,7 @@ param(
     [Parameter(Mandatory = $true, Position = 0)]
     [ValidatePattern("^\d+\.\d+$")]
     [string]$Version,
+    [ValidatePattern("^\d+$")]
     [string]$SdkPatch = "100",
     [switch]$DryRun
 )
@@ -91,7 +92,8 @@ function Update-Files {
         [Parameter(Mandatory)] $Files,
         [Parameter(Mandatory)] [string]$Pattern,
         [Parameter(Mandatory)] [string]$Replacement,
-        [Parameter(Mandatory)] [bool]$DryRun
+        [Parameter(Mandatory)] [bool]$DryRun,
+        [switch]$ExpectMatch
     )
 
     foreach ($file in $Files) {
@@ -100,6 +102,9 @@ function Update-Files {
         
         if (-not (Test-Path $path)) {
             Write-Warning "Skipping missing file: $path"
+            if ($ExpectMatch) {
+                $script:HadFailure = $true
+            }
             continue
         }
 
@@ -123,6 +128,10 @@ function Update-Files {
                     [System.IO.File]::WriteAllText($path, $newContent, $encoding)
                     Write-Host "UPDATED ($($encoding.BodyName)): $path" -ForegroundColor Green
                 }
+            } elseif ($ExpectMatch) {
+                # A pattern missing condition on a targeted file is treated as an unrecoverable migration failure.
+                Write-Warning "No version patterns matching '$Pattern' were located in explicitly-targeted path: $path"
+                $script:HadFailure = $true
             }
         }
         catch {
@@ -142,20 +151,10 @@ $bulkFiles = Get-ChildItem -Path $baseDir -Recurse -Include *.ps1, *.iss, *.cspr
 Update-Files -Files $bulkFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
 
 # 2. Specific Config/Workflow updates (Safe Pathing & Broadened Workflows)
-$specificFiles = @(
-    (Join-Path $baseDir "src\Servy.Core\Config\AppConfig.cs")
-)
+$workflowFiles = @($(Join-Path $baseDir ".github\workflows\publish.yml"))
 
-# Defend against future workflow files by sweeping the entire .github/workflows directory
-$workflowsDir = Join-Path $baseDir ".github\workflows"
-if (Test-Path $workflowsDir) {
-    $workflowFiles = Get-ChildItem -Path $workflowsDir -Filter *.yml -ErrorAction SilentlyContinue
-    if ($workflowFiles) {
-        $specificFiles += $workflowFiles.FullName
-    }
-}
-
-Update-Files -Files $specificFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
+# Explicit targets must match version patterns to proceed safely
+Update-Files -Files $workflowFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun -ExpectMatch
 
 # 3. Update global.json SDK version to match the new TFM major via regex to perfectly preserve original file formatting
 $globalJsonFile = Join-Path $baseDir "global.json"
@@ -164,7 +163,7 @@ if (Test-Path $globalJsonFile) {
     $globalJsonPattern     = '("version"\s*:\s*")\d+\.\d+\.\d+'
     $globalJsonReplacement = "`${1}$Version.$SdkPatch"
     
-    Update-Files -Files @($globalJsonFile) -Pattern $globalJsonPattern -Replacement $globalJsonReplacement -DryRun:$DryRun
+    Update-Files -Files @($globalJsonFile) -Pattern $globalJsonPattern -Replacement $globalJsonReplacement -DryRun:$DryRun -ExpectMatch
 }
 
 # -----------------------------
@@ -173,9 +172,15 @@ if (Test-Path $globalJsonFile) {
 Write-Host "`n========================================="
 Write-Host "            SUMMARY"
 Write-Host "========================================="
-Write-Host "Files scanned:      $script:totalFilesScanned"
-Write-Host "Files modified:     $script:filesModified"
-Write-Host "Total replacements: $script:totalReplacements"
+if ($DryRun) {
+    Write-Host "Files scanned:                    $script:totalFilesScanned"
+    Write-Host "Files that would be modified:     $script:filesModified"
+    Write-Host "Replacements that would be made:  $script:totalReplacements"
+} else {
+    Write-Host "Files scanned:      $script:totalFilesScanned"
+    Write-Host "Files modified:     $script:filesModified"
+    Write-Host "Total replacements: $script:totalReplacements"
+}
 
 if ($script:HadFailure) {
     if ($DryRun) {

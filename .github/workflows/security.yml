@@ -60,10 +60,7 @@ jobs:
           # Fetch structured analysis data directly via JSON serialization to avoid brittle string matching
           $rawJson = dotnet list Servy.sln package --vulnerable --include-transitive --format json
           
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "dotnet list package --vulnerable failed (exit $LASTEXITCODE)."
-            exit 1
-          }
+          if ($LASTEXITCODE -ne 0) { throw "dotnet list package --vulnerable failed (exit $LASTEXITCODE)." }
 
           # Pass the raw array through the pipeline instead of using -InputObject.
           # The pipeline streams the strings sequentially, and ConvertFrom-Json automatically
@@ -85,8 +82,7 @@ jobs:
           if ($hasVuln) {
             # Print human-readable output to logs for rapid local manual triage
             dotnet list Servy.sln package --vulnerable --include-transitive
-            Write-Error "Vulnerable NuGet packages detected in Servy.sln - see the package list above."
-            exit 1
+            throw "Vulnerable NuGet packages detected in Servy.sln - see the package list above."
           }
           else {
             Write-Host "No vulnerable NuGet packages found in Servy.sln." -ForegroundColor Green

@@ -84,8 +84,7 @@ function Invoke-StandardPublish {
     # Step 1: Build and Publish
     $projectPath = Join-Path $ProjectDir "$ProjectName.csproj"
     if (-not (Test-Path $projectPath)) {
-        Write-Error "Project file not found: $projectPath"
-        return
+        throw "Project file not found: $projectPath"
     }
 
     Write-Host "=== Publishing $ProjectName.csproj ===" -ForegroundColor Cyan

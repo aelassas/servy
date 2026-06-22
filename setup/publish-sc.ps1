@@ -91,7 +91,6 @@ try {
 }
 catch {
     Write-Error "Configuration Failed: $($_.Exception.Message)"
-    exit 1
 }
 
 # ========================
@@ -142,7 +141,6 @@ if (Test-Path $installerPath) {
     }
 } else {
     Write-Error "Installer executable not found at $installerPath after Inno Setup build."
-    exit 1
 }
 
 # ========================
@@ -176,7 +174,6 @@ try {
 }
 catch {
     Write-Error "Packaging failed: $_"
-    exit 1
 }
 finally {
     # ALWAYS clean up the temporary workspace folder, even on failure

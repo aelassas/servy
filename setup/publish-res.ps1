@@ -61,8 +61,7 @@ $sourceDir = Join-Path $scriptDir "..\src\$ProjectName"
 
 # Prevent Resolve-Path errors on clean environments
 if (-not (Test-Path $sourceDir)) {
-    Write-Error "CRITICAL: Project directory not found at $sourceDir"
-    return
+    throw "CRITICAL: Project directory not found at $sourceDir"
 }
 
 # Ensure the target resources folder exists, but resolve its full path first
@@ -76,8 +75,7 @@ if (-not (Test-Path $TargetResourcesFolder)) {
 # ---------------------------------------------------------------------------------
 $publishScript = Join-Path $sourceDir "publish.ps1"
 if (-not (Test-Path $publishScript)) {
-    Write-Error "Required script not found: $publishScript"
-    return
+    throw "Required script not found: $publishScript"
 }
 
 Write-Host "=== [$ProjectName] Running publish.ps1 ==="

@@ -96,10 +96,7 @@ jobs:
               
               Invoke-Git update-index --chmod=+x ./bump-version.ps1
               ./bump-version.ps1 -Version $env:NEXT_VERSION
-              if ($LASTEXITCODE -ne 0) {
-                  Write-Error "bump-version.ps1 failed with exit $LASTEXITCODE on branch $branch"
-                  exit $LASTEXITCODE
-              }
+              if ($LASTEXITCODE -ne 0) { throw "bump-version.ps1 failed with exit $LASTEXITCODE on branch $branch" }
 
               # Using porcelain check consistently to prevent silent skips across branches.
               if (git status --porcelain) {

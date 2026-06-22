@@ -67,7 +67,10 @@ foreach ($ProjFile in $RawTestProjects) {
     )
 
     & dotnet @dotnetArgs
-    if ($LASTEXITCODE -ne 0) { Write-Error "dotnet test failed for $Proj"; exit $LASTEXITCODE }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "dotnet test failed for $Proj (exit $LASTEXITCODE)" -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
 }
 
 # Generate a global coverage report
@@ -79,6 +82,6 @@ reportgenerator `
     -reporttypes:Html `
     -assemblyfilters:"-*.UnitTests;-*.IntegrationTests;-Servy.Testing" `
     -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/*.Designer.cs;-**/obj/**/*"
-if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed"; exit $LASTEXITCODE }
+if ($LASTEXITCODE -ne 0) { Write-Host "reportgenerator failed"; exit $LASTEXITCODE }
 
 Write-Host "Coverage report generated at $CoverageReportDir"
