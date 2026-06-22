@@ -8,8 +8,10 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Servy.Manager.Resources
-{
+namespace Servy.Manager.Resources {
+    using System;
+    
+    
     /// <summary>
     ///   Une classe de ressource fortement typée destinée, entre autres, à la consultation des chaînes localisées.
     /// </summary>
@@ -266,7 +268,7 @@ namespace Servy.Manager.Resources
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à User Session.
+        ///   Recherche une chaîne localisée semblable à Log On As.
         /// </summary>
         public static string Column_LogOnAs {
             get {
