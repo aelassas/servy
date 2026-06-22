@@ -398,7 +398,7 @@ namespace Servy.Manager.ViewModels
             catch (Exception ex)
             {
                 Logger.Error($"Failed to search logs.", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
+                await _messageBoxService.ShowWarningAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
             }
             finally
             {
