@@ -98,7 +98,7 @@ namespace Servy.Service.CommandLine
 
         /// <summary>
         /// Gets or sets the maximum number of restart attempts allowed for the child process.
-        /// Defaults to 3.
+        /// Defaults to <see cref="AppConfig.DefaultMaxRestartAttempts"/>.
         /// </summary>
         public int MaxRestartAttempts { get; set; } = AppConfig.DefaultMaxRestartAttempts;
 
@@ -158,19 +158,19 @@ namespace Servy.Service.CommandLine
 
         /// <summary>
         /// Gets or sets the timeout of pre-launch script.
-        /// Defaults to 30 seconds.
+        /// Defaults to <see cref="AppConfig.DefaultPreLaunchTimeoutSeconds"/>.
         /// </summary>
         public int PreLaunchTimeoutInSeconds { get; set; } = AppConfig.DefaultPreLaunchTimeoutSeconds;
 
         /// <summary>
         /// Gets or sets the pre-launch script retry attempts.
-        /// Defaults to 0.
+        /// Defaults to <see cref="AppConfig.DefaultPreLaunchRetryAttempts"/>.
         /// </summary>
         public int PreLaunchRetryAttempts { get; set; } = AppConfig.DefaultPreLaunchRetryAttempts;
 
         /// <summary>
         /// Gets or sets the ignore failure option of pre-launch script.
-        /// Defaults to false.
+        /// Defaults to <see cref="AppConfig.DefaultPreLaunchIgnoreFailure"/>.
         /// </summary>
         public bool PreLaunchIgnoreFailure { get; set; } = AppConfig.DefaultPreLaunchIgnoreFailure;
 
@@ -202,7 +202,8 @@ namespace Servy.Service.CommandLine
 
         /// <summary>
         /// Gets or sets the maximum number of rotated log files to keep. 
-        /// Defaults to 0 (unlimited).
+        /// Defaults to <see cref="AppConfig.DefaultMaxRotations"/>.
+        /// 0 means unlimited.
         /// </summary>
         public int MaxRotations { get; set; } = AppConfig.DefaultMaxRotations;
 
