@@ -609,7 +609,7 @@ jobs:
           # Task Scheduler setup - Hardened Recursive Copy
           $destPath = Join-Path $pkg "taskschd"
           $sourcePath = "setup\taskschd"
-          if (-not (Test-Path $destPath)) { New-Item -Path $destPath -ItemType Directory -Force }
+          if (-not (Test-Path $destPath)) { New-Item -Path $destPath -ItemType Directory -Force | Out-Null }
 
           Get-ChildItem -Path $sourcePath -Recurse -File |
               Where-Object { 

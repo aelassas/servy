@@ -128,7 +128,7 @@ jobs:
 
           git commit -m "chore(choco): update package for version ${env:VERSION}"
 
-          $maxRetries = 5
+          $maxRetries = [int]$env:MAX_RETRIES
           $retryCount = 0
           $pushSuccess = $false
 

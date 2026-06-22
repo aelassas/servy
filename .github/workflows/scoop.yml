@@ -145,7 +145,7 @@ jobs:
             git add $manifestPath
             git commit -m "chore: update setup/scoop/servy.json to version $env:VERSION"
              
-            $maxRetries = 5
+            $maxRetries = [int]$env:MAX_RETRIES
             $retryCount = 0
             $pushSuccess = $false
 
@@ -203,7 +203,7 @@ jobs:
             git add $manifestPath
             git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
              
-            $maxRetries = 5
+            $maxRetries = [int]$env:MAX_RETRIES
             $retryCount = 0
             $pushSuccess = $false
 

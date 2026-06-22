@@ -82,7 +82,7 @@ namespace Servy.Manager.Mappers
         /// It includes polymorphic handling: if the input is a <see cref="ConsoleService"/>, the 
         /// <c>StdoutPath</c> and <c>StderrPath</c> properties are also preserved in the resulting model.
         /// </remarks>
-        public static Service? ToModel(ServiceItemBase item)
+        public static Service? ToModel(ServiceItemBase? item)
         {
             if (item == null) return null;
             var service = new Service
