@@ -82,11 +82,11 @@ namespace Servy.Core.Helpers
         {
             // Reject null/blank paths before any filesystem or ACL work
             if (string.IsNullOrWhiteSpace(connectionString))
-                throw new ArgumentNullException(nameof(connectionString));
+                throw new ArgumentException("connectionString cannot be null or whitespace", nameof(connectionString));
             if (string.IsNullOrWhiteSpace(aesKeyFilePath))
-                throw new ArgumentNullException(nameof(aesKeyFilePath));
+                throw new ArgumentException("aesKeyFilePath cannot be null or whitespace", nameof(aesKeyFilePath));
             if (string.IsNullOrWhiteSpace(aesIVFilePath))
-                throw new ArgumentNullException(nameof(aesIVFilePath));
+                throw new ArgumentException("aesIVFilePath cannot be null or whitespace", nameof(aesIVFilePath));
 
             // 1. Utilize the BCL's robust connection string builder
             DbConnectionStringBuilder builder;

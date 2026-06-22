@@ -14,11 +14,11 @@ namespace Servy.Design
         public Task<bool> StartService(string serviceName, CancellationToken cancellationToken = default) => Task.FromResult(true);
         public Task<bool> StopService(string serviceName, CancellationToken cancellationToken = default) => Task.FromResult(true);
         public Task<bool> RestartService(string serviceName, CancellationToken cancellationToken = default) => Task.FromResult(true);
-        public Task ExportXmlConfig(string confirmPassword) => Task.CompletedTask;
-        public Task ExportJsonConfig(string confirmPassword) => Task.CompletedTask;
-        public Task ImportXmlConfig() => Task.CompletedTask;
-        public Task ImportJsonConfig() => Task.CompletedTask;
-        public Task OpenManager() => Task.CompletedTask;
+        public Task ExportXmlConfig(string confirmPassword, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task ExportJsonConfig(string confirmPassword, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task ImportXmlConfig(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task ImportJsonConfig(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task OpenManager(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
     }
 }

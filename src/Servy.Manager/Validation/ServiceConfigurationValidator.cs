@@ -4,6 +4,7 @@ using Servy.Manager.Config;
 using Servy.UI.Services;
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Servy.Manager.Validation
@@ -29,20 +30,15 @@ namespace Servy.Manager.Validation
             _serviceValidationRules = serviceValidationRules ?? throw new ArgumentNullException(nameof(serviceValidationRules));
         }
 
-        /// <summary>
-        /// Validates the provided service configuration and displays a message box if any issues are found.
-        /// </summary>
-        /// <param name="dto">The service configuration data to validate.</param>
-        /// <returns>
-        /// A task representing the asynchronous validation operation. 
-        /// The result is <see langword="true"/> if the configuration is valid; otherwise, <see langword="false"/>.
-        /// </returns>
+        /// <inheritdoc/>
         /// <remarks>
         /// This implementation follows a fail-fast approach, showing only the first identified 
         /// error to prevent overwhelming the user with multiple dialog boxes.
         /// </remarks>
-        public async Task<bool> ValidateAsync(ServiceDto dto)
+        public async Task<bool> ValidateAsync(ServiceDto dto, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             // Delegate core validation logic to the centralized rules engine
             var result = _serviceValidationRules.Validate(dto, importMode: true);
 

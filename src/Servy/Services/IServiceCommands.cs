@@ -78,15 +78,17 @@ namespace Servy.Services
         /// Exports the service configuration to an XML file selected by the user.
         /// </summary>
         /// <param name="confirmPassword">The confirmation of the service account password.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        Task ExportXmlConfig(string confirmPassword);
+        Task ExportXmlConfig(string confirmPassword, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Exports the service configuration to a JSON file selected by the user.
         /// </summary>
         /// <param name="confirmPassword">The confirmation of the service account password.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        Task ExportJsonConfig(string confirmPassword);
+        Task ExportJsonConfig(string confirmPassword, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Opens a file dialog to select an XML configuration file for a service,
@@ -94,8 +96,9 @@ namespace Servy.Services
         /// and maps the values to the main view model.
         /// Shows an error message if the XML is invalid, deserialization fails, or any exception occurs.
         /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        Task ImportXmlConfig();
+        Task ImportXmlConfig(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Opens a file dialog to select a JSON configuration file for a service,
@@ -103,13 +106,15 @@ namespace Servy.Services
         /// and maps the values to the main view model.
         /// Shows an error message if the JSON is invalid, deserialization fails, or any exception occurs.
         /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        Task ImportJsonConfig();
+        Task ImportJsonConfig(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Opens Servy Manager to manage services.
         /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        Task OpenManager();
+        Task OpenManager(CancellationToken cancellationToken = default);
     }
 }

@@ -120,7 +120,7 @@ namespace Servy.Core.Domain
         /// Whether to enable the console user interface for the service.
         /// When enabled, stdout/stderr redirection is disabled, and the service runs in a console window.
         /// </summary>
-        public bool EnableConsoleUI { get; set; }
+        public bool EnableConsoleUI { get; set; } = AppConfig.DefaultEnableConsoleUI;
 
         /// <summary>
         /// Gets or sets the optional file path for redirecting standard output.
@@ -317,7 +317,7 @@ namespace Servy.Core.Domain
         /// never written to the Windows Event Log or shown by the CLI / PowerShell module.
         /// Not recommended for production environments, as these logs may contain sensitive information.
         /// </summary>
-        public bool EnableDebugLogs { get; set; } = false;
+        public bool EnableDebugLogs { get; set; } = AppConfig.DefaultEnableDebugLogs;
 
         /// <summary>
         /// Gets or sets the timeout in seconds to wait for the process to start successfully before considering the startup as failed.
@@ -364,7 +364,7 @@ namespace Servy.Core.Domain
         /// <summary>
         /// Whether to log pre-stop failure as error.
         /// </summary>
-        public bool PreStopLogAsError { get; set; }
+        public bool PreStopLogAsError { get; set; } = AppConfig.DefaultPreStopLogAsError;
 
         /// <summary>
         /// Optional path to an executable that runs after the service stops.

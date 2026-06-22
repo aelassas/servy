@@ -30,7 +30,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("Data Source=db.db;", "key.aes", "")]
         public void EnsureFolders_NullOrWhitespaceArgs_Throws(string conn, string key, string iv)
         {
-            Assert.Throws<ArgumentNullException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv));
+            Assert.Throws<ArgumentException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv));
         }
 
         [Fact]

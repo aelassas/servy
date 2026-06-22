@@ -251,7 +251,7 @@ namespace Servy.UnitTests.ViewModels
         public async Task ManagerCommand_Calls_OpenManager()
         {
             await _viewModel.ManagerCommand.ExecuteAsync(null);
-            _serviceCommandsMock.Verify(s => s.OpenManager(), Times.Once);
+            _serviceCommandsMock.Verify(s => s.OpenManager(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         #endregion
@@ -379,7 +379,7 @@ namespace Servy.UnitTests.ViewModels
         {
             _viewModel.ConfirmPassword = "SecretPassword123";
             await _viewModel.ExportXmlCommand.ExecuteAsync(null);
-            _serviceCommandsMock.Verify(m => m.ExportXmlConfig("SecretPassword123"), Times.Once);
+            _serviceCommandsMock.Verify(m => m.ExportXmlConfig("SecretPassword123", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -387,21 +387,21 @@ namespace Servy.UnitTests.ViewModels
         {
             _viewModel.ConfirmPassword = "SecretPassword123";
             await _viewModel.ExportJsonCommand.ExecuteAsync(null);
-            _serviceCommandsMock.Verify(m => m.ExportJsonConfig("SecretPassword123"), Times.Once);
+            _serviceCommandsMock.Verify(m => m.ExportJsonConfig("SecretPassword123", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task ImportXmlCommand_Calls_ImportXmlConfig()
         {
             await _viewModel.ImportXmlCommand.ExecuteAsync(null);
-            _serviceCommandsMock.Verify(m => m.ImportXmlConfig(), Times.Once);
+            _serviceCommandsMock.Verify(m => m.ImportXmlConfig(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task ImportJsonCommand_Calls_ImportJsonConfig()
         {
             await _viewModel.ImportJsonCommand.ExecuteAsync(null);
-            _serviceCommandsMock.Verify(m => m.ImportJsonConfig(), Times.Once);
+            _serviceCommandsMock.Verify(m => m.ImportJsonConfig(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         #endregion

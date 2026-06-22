@@ -1452,10 +1452,10 @@ namespace Servy.ViewModels
         {
             return new ServiceDto
             {
-                Name = ServiceName ?? string.Empty,
-                DisplayName = ServiceDisplayName ?? string.Empty,
+                Name = ServiceName,
+                DisplayName = ServiceDisplayName,
                 Description = ServiceDescription,
-                ExecutablePath = ProcessPath ?? string.Empty,
+                ExecutablePath = ProcessPath,
                 StartupDirectory = StartupDirectory,
                 Parameters = ProcessParameters,
                 StartupType = (int)SelectedStartupType,

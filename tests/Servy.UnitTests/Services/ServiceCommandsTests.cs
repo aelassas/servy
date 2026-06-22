@@ -155,7 +155,7 @@ namespace Servy.UnitTests.Services
             var dto = new ServiceDto { Name = "LocalSysService", UserAccount = "OldUser", Password = "OldPassword" };
 
             _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
-            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), "abc")).ReturnsAsync(true);
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), "abc", It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             // Act
             await sut.InstallService(config, CancellationToken.None);
@@ -174,7 +174,7 @@ namespace Servy.UnitTests.Services
             var dto = new ServiceDto { Name = "InvalidService" };
 
             _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
-            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(false);
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             // Act
             var result = await sut.InstallService(config, CancellationToken.None);
@@ -193,7 +193,7 @@ namespace Servy.UnitTests.Services
             var dto = new ServiceDto { Name = "ExistingService" };
 
             _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
-            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _serviceManagerMock.Setup(m => m.IsServiceInstalled("ExistingService", It.IsAny<CancellationToken>())).Returns(true);
             _messageBoxService.Setup(m => m.ShowConfirmAsync(Resources.Strings.Msg_ServiceAlreadyExists, UiAppConfig.Caption)).ReturnsAsync(false);
 
@@ -214,7 +214,7 @@ namespace Servy.UnitTests.Services
             var dto = new ServiceDto { Name = "FailingInstallation" };
 
             _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
-            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Failure("Access Denied OS Driver Error"));
 
@@ -235,7 +235,7 @@ namespace Servy.UnitTests.Services
             var dto = new ServiceDto { Name = "SecureService" };
 
             _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
-            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new UnauthorizedAccessException());
 
@@ -256,7 +256,7 @@ namespace Servy.UnitTests.Services
             var dto = new ServiceDto { Name = "CrashingService" };
 
             _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
-            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception("Fatal Kernel Loop"));
 
@@ -465,7 +465,7 @@ namespace Servy.UnitTests.Services
 
             var dto = new ServiceDto { Name = "BadExport" };
             _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
-            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "password")).ReturnsAsync(false);
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "password", It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             // Act
             await sut.ExportXmlConfig("password");
@@ -485,7 +485,7 @@ namespace Servy.UnitTests.Services
 
             var dto = new ServiceDto { Name = "CrashExport" };
             _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
-            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "password")).ReturnsAsync(true);
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "password", It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             // Emulating an internal static/serializer fault path execution
             _modelToServiceDtoMock.Setup(m => m()).Throws(new IOException("Disk Full / Access Denied"));
@@ -601,7 +601,7 @@ namespace Servy.UnitTests.Services
             string errorOut = null;
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out errorOut)).Returns(true);
             _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(sampleDto);
-            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(sampleDto, It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(false);
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(sampleDto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             try
             {
@@ -803,7 +803,7 @@ namespace Servy.UnitTests.Services
 
             var dto = new ServiceDto { Name = "BadJsonExport" };
             _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
-            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "secretPassword")).ReturnsAsync(false);
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "secretPassword", It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             // Act
             await sut.ExportJsonConfig("secretPassword");
@@ -823,7 +823,7 @@ namespace Servy.UnitTests.Services
 
             var dto = new ServiceDto { Name = "CrashJsonExport" };
             _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
-            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "secretPassword")).ReturnsAsync(true);
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "secretPassword", It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             // Force evaluation down the catch lane by breaking dependencies on data extraction execution
             _modelToServiceDtoMock.Setup(m => m()).Throws(new UnauthorizedAccessException("I/O Lock Encountered"));
@@ -853,7 +853,8 @@ namespace Servy.UnitTests.Services
             _serviceConfigurationValidator.Setup(d => d.ValidateAsync(
                 It.IsAny<ServiceDto>(),
                 It.IsAny<string>(),
-                It.IsAny<string>()))
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
             bool delegateWasInvoked = false;
@@ -879,7 +880,8 @@ namespace Servy.UnitTests.Services
                 new Func<string>(() => path),
                 spyExportAction,
                 "JSON",
-                "Success"
+                "Success",
+                CancellationToken.None,
             });
 
             await task;
@@ -909,7 +911,7 @@ namespace Servy.UnitTests.Services
             _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out validationError)).Returns(true);
             _xmlServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(expectedDto);
 
-            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(expectedDto, It.IsAny<string>(), It.IsAny<string>()))
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(expectedDto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
             bool bindActionWasExecuted = false;
@@ -953,7 +955,7 @@ namespace Servy.UnitTests.Services
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out validationError)).Returns(true);
             _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(expectedDto);
 
-            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(expectedDto, It.IsAny<string>(), It.IsAny<string>()))
+            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(expectedDto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
             bool bindActionWasExecuted = false;

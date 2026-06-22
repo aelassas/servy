@@ -590,7 +590,7 @@ namespace Servy.Manager.ViewModels
                 // Step 7: restore button text and IsBusy
                 if (ReferenceEquals(Volatile.Read(ref _cts), newCts))
                 {
-                    _cursorService?.ResetCursor();
+                    _cursorService.ResetCursor();
                     SearchButtonText = Strings.Button_Search;
                     IsBusy = false;
                 }

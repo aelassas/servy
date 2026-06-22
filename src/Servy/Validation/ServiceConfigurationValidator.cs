@@ -4,6 +4,7 @@ using Servy.Core.Validation;
 using Servy.UI.Services;
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Servy.Validation
@@ -29,22 +30,15 @@ namespace Servy.Validation
             _serviceValidationRules = serviceValidationRules ?? throw new ArgumentNullException(nameof(serviceValidationRules));
         }
 
-        /// <summary>
-        /// Validates the specified service configuration and displays a message box if validation fails.
-        /// </summary>
-        /// <param name="dto">The service configuration data to validate.</param>
-        /// <param name="wrapperExePath">The optional path to the service wrapper executable.</param>
-        /// <param name="confirmPassword">The password confirmation string to compare against the configuration's password.</param>
-        /// <returns>
-        /// A task that represents the asynchronous validation operation. 
-        /// The task result contains <see langword="true"/> if validation passed; otherwise, <see langword="false"/>.
-        /// </returns>
+        /// <inheritdoc/>
         /// <remarks>
         /// This implementation follows a fail-fast approach, showing only the first identified 
         /// error to prevent overwhelming the user with multiple dialog boxes.
         /// </remarks>
-        public async Task<bool> ValidateAsync(ServiceDto dto, string wrapperExePath = null, string confirmPassword = null)
+        public async Task<bool> ValidateAsync(ServiceDto dto, string wrapperExePath = null, string confirmPassword = null, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (dto == null) return false;
 
             // Delegate logic to the shared Core rules engine
