@@ -956,14 +956,14 @@ namespace Servy.Manager.UnitTests.Services
         }
 
         [Fact]
-        public async Task ExportServiceConfigAsync_NullServiceArgument_ShowsError()
+        public async Task ExportServiceConfigAsync_NullServiceArgument_ShowsNothing()
         {
             // Arrange
             var sut = CreateServiceCommands();
 
             // Act & Assert
             await sut.ExportServiceToXmlAsync(null, CancellationToken.None);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
         }
 
         #endregion

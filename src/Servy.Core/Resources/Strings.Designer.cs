@@ -205,11 +205,56 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à {0} deserialization resulted in an empty service definition..
+        /// </summary>
+        public static string Msg_ImportEmptyDefinition {
+            get {
+                return ResourceManager.GetString("Msg_ImportEmptyDefinition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à [Import] File not found: {0}.
         /// </summary>
         public static string Msg_ImportFileNotFound {
             get {
                 return ResourceManager.GetString("Msg_ImportFileNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à {0} input cannot be empty or whitespace..
+        /// </summary>
+        public static string Msg_ImportInputEmptyOrWhitespace {
+            get {
+                return ResourceManager.GetString("Msg_ImportInputEmptyOrWhitespace", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Invalid {0} structure: {1}.
+        /// </summary>
+        public static string Msg_ImportInvalidStructure {
+            get {
+                return ResourceManager.GetString("Msg_ImportInvalidStructure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à {0} payload exceeds the maximum allowed size of {1} MB..
+        /// </summary>
+        public static string Msg_ImportPayloadTooLarge {
+            get {
+                return ResourceManager.GetString("Msg_ImportPayloadTooLarge", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à {0} structure error: {1}.
+        /// </summary>
+        public static string Msg_ImportStructureError {
+            get {
+                return ResourceManager.GetString("Msg_ImportStructureError", resourceCulture);
             }
         }
         

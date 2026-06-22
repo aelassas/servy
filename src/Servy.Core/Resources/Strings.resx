@@ -185,6 +185,21 @@
   <data name="Msg_StartupError_Format" xml:space="preserve">
     <value>Startup error: {0}</value>
   </data>
+  <data name="Msg_ImportInputEmptyOrWhitespace" xml:space="preserve">
+    <value>{0} input cannot be empty or whitespace.</value>
+  </data>
+  <data name="Msg_ImportPayloadTooLarge" xml:space="preserve">
+    <value>{0} payload exceeds the maximum allowed size of {1} MB.</value>
+  </data>
+  <data name="Msg_ImportInvalidStructure" xml:space="preserve">
+    <value>Invalid {0} structure: {1}</value>
+  </data>
+  <data name="Msg_ImportStructureError" xml:space="preserve">
+    <value>{0} structure error: {1}</value>
+  </data>
+  <data name="Msg_ImportEmptyDefinition" xml:space="preserve">
+    <value>{0} deserialization resulted in an empty service definition.</value>
+  </data>
   <data name="Msg_ImportFileNotFound" xml:space="preserve">
     <value>[Import] File not found: {0}</value>
   </data>

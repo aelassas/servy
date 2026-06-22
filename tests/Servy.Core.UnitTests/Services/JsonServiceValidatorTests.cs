@@ -24,36 +24,60 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void TryValidate_NullOrEmptyJson_ReturnsFalse()
         {
-            var result = _validator.TryValidate(null, out var error);
-            Assert.False(result);
-            Assert.Equal("JSON input cannot be null or empty.", error);
+            // Arrange
+            var expectedError = string.Format(Strings.Msg_ImportInputEmptyOrWhitespace, "JSON");
 
-            result = _validator.TryValidate("  ", out error);
+            // Act
+            var result = _validator.TryValidate(null, out var error);
+
+            // Assert
             Assert.False(result);
-            Assert.Equal("JSON input cannot be null or empty.", error);
+            Assert.Equal(expectedError, error);
+
+            // Act
+            result = _validator.TryValidate("  ", out error);
+
+            // Assert
+            Assert.False(result);
+            Assert.Equal(expectedError, error);
         }
 
         [Fact]
         public void TryValidate_InvalidJsonFormat_ReturnsFalse()
         {
+            // Arrange
             // Structural JSON failure
-            var result = _validator.TryValidate("{ 'invalid': 'json' ", out var error);
+            var invalidJson = "{ 'invalid': 'json' ";
+            var expectedPrefix = string.Format(Strings.Msg_ImportInvalidStructure, "JSON", string.Empty).TrimEnd();
+
+            // Act
+            var result = _validator.TryValidate(invalidJson, out var error);
+
+            // Assert
             Assert.False(result);
-            Assert.StartsWith("Invalid JSON structure:", error);
+            Assert.StartsWith(expectedPrefix, error);
         }
 
         [Fact]
         public void TryValidate_ValidJson_ButNullObject_ReturnsFalse()
         {
+            // Arrange
             // Valid JSON syntax for a null literal
-            var result = _validator.TryValidate("null", out var error);
+            var json = "null";
+            var expectedError = string.Format(Strings.Msg_ImportEmptyDefinition, "JSON");
+
+            // Act
+            var result = _validator.TryValidate(json, out var error);
+
+            // Assert
             Assert.False(result);
-            Assert.Equal("JSON deserialization resulted in an empty service definition.", error);
+            Assert.Equal(expectedError, error);
         }
 
         [Fact]
         public void TryValidate_DomainValidationFailure_ReturnsFalse()
         {
+            // Arrange
             // Testing the shared ServiceValidator.ValidateDto branch via Description length
             var dto = new ServiceDto
             {
@@ -65,8 +89,10 @@ namespace Servy.Core.UnitTests.Services
 
             _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
 
+            // Act
             var result = _validator.TryValidate(json, out var error);
 
+            // Assert
             Assert.False(result);
             Assert.Equal(string.Format(Strings.Msg_DisplayNameLengthReached, AppConfig.MaxDisplayNameLength), error);
         }
@@ -75,6 +101,7 @@ namespace Servy.Core.UnitTests.Services
         [InlineData(0)] // Below threshold
         public void TryValidate_InvalidStopTimeout_ReturnsFalse(int invalidTimeout)
         {
+            // Arrange
             var dto = new ServiceDto
             {
                 Name = "TestService",
@@ -85,8 +112,10 @@ namespace Servy.Core.UnitTests.Services
 
             _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
 
+            // Act
             var result = _validator.TryValidate(json, out var error);
 
+            // Assert
             Assert.False(result);
             Assert.Equal(string.Format(Strings.Msg_InvalidStopTimeout, AppConfig.MinStopTimeout, AppConfig.MaxStopTimeout), error);
         }
@@ -94,6 +123,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void TryValidate_InvalidExecutablePath_ReturnsFalse()
         {
+            // Arrange
             // Triggers the ProcessHelper.ValidatePath branch
             var dto = new ServiceDto
             {
@@ -104,8 +134,10 @@ namespace Servy.Core.UnitTests.Services
 
             _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(false);
 
+            // Act
             var result = _validator.TryValidate(json, out var error);
 
+            // Assert
             Assert.False(result);
             Assert.Equal(Strings.Msg_InvalidPath, error);
         }
@@ -113,6 +145,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void TryValidate_ValidServiceDto_ReturnsTrue()
         {
+            // Arrange
             var dto = new ServiceDto
             {
                 Name = "TestService",
@@ -123,8 +156,10 @@ namespace Servy.Core.UnitTests.Services
 
             _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
 
+            // Act
             var result = _validator.TryValidate(json, out var error);
 
+            // Assert
             Assert.True(result);
             Assert.Null(error);
         }

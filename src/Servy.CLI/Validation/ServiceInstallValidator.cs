@@ -1,10 +1,10 @@
 ﻿using CommandLine;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
+using Servy.CLI.Resources;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
-using Servy.Core.Resources;
 using Servy.Core.Validation;
 using System;
 using System.Globalization;
@@ -56,7 +56,7 @@ namespace Servy.CLI.Validation
                 return CommandResult.Fail(firstIssue);
             }
 
-            var successMsg = string.Format(Strings.Msg_ValidationPassed, opts.ServiceName);
+            var successMsg = string.Format(Core.Resources.Strings.Msg_ValidationPassed, opts.ServiceName);
             Logger.Info(successMsg);
 
             return CommandResult.Ok(successMsg);
@@ -175,7 +175,7 @@ namespace Servy.CLI.Validation
             int result;
             if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out result)) return result;
 
-            error = string.Format("Invalid integer format for {0}: '{1}'", GetOptionName(propertyName), val);
+            error = string.Format(Strings.Msg_InvalidIntegerFormat, GetOptionName(propertyName), val);
             return null;
         }
 
@@ -222,7 +222,7 @@ namespace Servy.CLI.Validation
                 ? string.Join(" | ", Enum.GetNames(enumType))
                 : string.Join(", ", Enum.GetNames(enumType));
 
-            error = string.Format("Invalid value for {0}: '{1}'. Valid options: {2}",
+            error = string.Format(Strings.Msg_InvalidEnumValue,
                 GetOptionName(propertyName), val, optionsList);
             return null;
         }

@@ -7,7 +7,7 @@ namespace Servy.Core.Security
     /// Provides an abstraction for securely encrypting and decrypting data.
     /// Implementations are expected to be thread-safe and handle internal cryptographic key material lifecycle management.
     /// </summary>
-    public interface ISecureData : IDisposable
+    public interface ISecureData: IDisposable
     {
         /// <summary>
         /// Encrypts the specified plain text data.

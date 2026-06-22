@@ -445,8 +445,6 @@ namespace Servy.Services
         {
             try
             {
-                _cursorService.SetWaitCursor();
-
                 if (!await IsServiceNameValid(serviceName)) return false;
 
                 if (!_serviceManager.IsServiceInstalled(serviceName, cancellationToken))
@@ -460,6 +458,8 @@ namespace Servy.Services
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, Caption);
                     return false;
                 }
+
+                _cursorService.SetWaitCursor();
 
                 var res = await operation(serviceName);
                 if (res.IsSuccess)

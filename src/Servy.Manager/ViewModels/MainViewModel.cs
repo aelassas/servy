@@ -292,19 +292,19 @@ namespace Servy.Manager.ViewModels
         /// Initializes a new instance of <see cref="MainViewModel"/>.
         /// </summary>
         public MainViewModel(
-              IServiceManager serviceManager,
-              IServiceRepository serviceRepository,
-              IServiceCommands serviceCommands,
-              IHelpService helpService,
-              IMessageBoxService messageBoxService,
-              PerformanceViewModel performanceVM,
-              ConsoleViewModel consoleVM,
-              DependenciesViewModel dependenciesVM,
-              IAppConfiguration appConfig,
-              ICursorService cursorService,
-              IProcessHelper processHelper,
-              Dispatcher dispatcher = null
-              )
+           IServiceManager serviceManager,
+           IServiceRepository serviceRepository,
+           IServiceCommands serviceCommands,
+           IHelpService helpService,
+           IMessageBoxService messageBoxService,
+           PerformanceViewModel performanceVM,
+           ConsoleViewModel consoleVM,
+           DependenciesViewModel dependenciesVM,
+           IAppConfiguration appConfig,
+           ICursorService cursorService,
+           IProcessHelper processHelper,
+           Dispatcher dispatcher = null
+           )
         {
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
@@ -312,8 +312,8 @@ namespace Servy.Manager.ViewModels
             ServiceCommands = _serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
-            _helpService = helpService;
-            _messageBoxService = messageBoxService;
+            _helpService = helpService ?? throw new ArgumentNullException(nameof(helpService));
+            _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
             _dispatcher = dispatcher ?? Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
             _selectAll = false;
 
@@ -657,11 +657,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task OpenDocumentationAsync(object parameter)
         {
-            if (_helpService == null)
-            {
-                Logger.Warn("Help service is not available.");
-                return;
-            }
             await _helpService.OpenDocumentationAsync(UiAppConfig.Caption);
         }
 
@@ -670,11 +665,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task CheckUpdatesAsync(object parameter)
         {
-            if (_helpService == null)
-            {
-                Logger.Warn("Help service is not available.");
-                return;
-            }
             await _helpService.CheckUpdatesAsync(UiAppConfig.Caption);
         }
 
@@ -683,11 +673,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task OpenAboutDialogAsync(object parameter)
         {
-            if (_helpService == null)
-            {
-                Logger.Warn("Help service is not available.");
-                return;
-            }
             await _helpService.OpenAboutDialogAsync(
                string.Format(Strings.Text_About,
                Core.Config.AppConfig.Version,
@@ -775,12 +760,6 @@ namespace Servy.Manager.ViewModels
         {
             try
             {
-                if (_messageBoxService == null)
-                {
-                    Logger.Warn("MessageBoxService is not available. Cannot confirm bulk operation.");
-                    return;
-                }
-
                 // 1. Identify selected and installed services
                 var selectedServices = _services
                     .Where(s => s.IsInstalled && s.IsChecked)

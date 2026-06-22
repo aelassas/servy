@@ -131,7 +131,7 @@ namespace Servy.Core.DTOs
         public int? MaxRotations { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to use local system time for log rotation.
+        /// Whether to use local system time for log rotation.
         /// </summary>
         /// <remarks>
         /// <para>Default is <c>false</c> (UTC).</para>
@@ -180,21 +180,21 @@ namespace Servy.Core.DTOs
         public int? MaxRestartAttempts { get; set; }
 
         /// <summary>
-        /// Gets or sets the path to the process to run on failure.
+        /// Path to the process to run on failure.
         /// </summary>
         [ServicePath("failure program executable path", isFile: true)]
         [SqlColumn("TEXT")]
         public string FailureProgramPath { get; set; }
 
         /// <summary>
-        /// Gets or sets the working directory for the failure program.
+        /// Working directory for the failure program.
         /// </summary>
         [ServicePath("failure program startup directory", isFile: false)]
         [SqlColumn("TEXT")]
         public string FailureProgramStartupDirectory { get; set; }
 
         /// <summary>
-        /// Gets or sets the command-line parameters for the failure program.
+        /// Command-line parameters for the failure program.
         /// </summary>
         [SqlColumn("TEXT")]
         public string FailureProgramParameters { get; set; }
@@ -351,8 +351,7 @@ namespace Servy.Core.DTOs
         public int? PreviousStopTimeout { get; set; }
 
         /// <summary>
-        /// Gets or sets the absolute file path where standard output is currently being redirected.
-        /// Returns <see langword="null"/> if the service is not redirected or not running.
+        /// Absolute file path where standard output is currently being redirected; null if not redirected or not running.
         /// </summary>
         [JsonIgnore]
         [XmlIgnore]
@@ -360,8 +359,7 @@ namespace Servy.Core.DTOs
         public string ActiveStdoutPath { get; set; }
 
         /// <summary>
-        /// Gets or sets the absolute file path where standard error output is currently being redirected.
-        /// Returns <see langword="null"/> if the service is not redirected or not running.
+        /// Absolute file path where standard error output is currently being redirected; null if not redirected or not running.
         /// </summary>
         [JsonIgnore]
         [XmlIgnore]
@@ -451,6 +449,7 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeParameters() => !string.IsNullOrWhiteSpace(Parameters);
         public bool ShouldSerializeStartupType() => StartupType.HasValue;
         public bool ShouldSerializePriority() => Priority.HasValue;
+        public bool ShouldSerializeEnableConsoleUI() => EnableConsoleUI.HasValue;
         public bool ShouldSerializeStdoutPath() => !string.IsNullOrWhiteSpace(StdoutPath);
         public bool ShouldSerializeStderrPath() => !string.IsNullOrWhiteSpace(StderrPath);
         public bool ShouldSerializeEnableSizeRotation() => EnableSizeRotation.HasValue;
@@ -493,7 +492,6 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializePostStopExecutablePath() => !string.IsNullOrWhiteSpace(PostStopExecutablePath);
         public bool ShouldSerializePostStopStartupDirectory() => !string.IsNullOrWhiteSpace(PostStopStartupDirectory);
         public bool ShouldSerializePostStopParameters() => !string.IsNullOrWhiteSpace(PostStopParameters);
-        public bool ShouldSerializeEnableConsoleUI() => EnableConsoleUI.HasValue;
 
         #endregion
     }

@@ -1,13 +1,10 @@
 ﻿using Moq;
-using CommandLine;
-using Servy.CLI.Models;
 using Servy.CLI.Options;
+using Servy.CLI.Resources;
 using Servy.CLI.Validation;
 using Servy.Core.DTOs;
-using Servy.Core.Enums;
 using Servy.Core.Validation;
 using System;
-using System.Collections.Generic;
 using Xunit;
 
 namespace Servy.CLI.UnitTests.Validation
@@ -28,7 +25,7 @@ namespace Servy.CLI.UnitTests.Validation
         [Fact]
         public void Constructor_NullRules_ThrowsArgumentNullException()
         {
-            // Act & Assert
+            // Arrange & Act & Assert
             var ex = Assert.Throws<ArgumentNullException>(() => new ServiceInstallValidator(null));
             Assert.Equal("serviceValidationRules", ex.ParamName);
         }
@@ -44,12 +41,15 @@ namespace Servy.CLI.UnitTests.Validation
             var opts = CreateValidOptions();
             opts.ServiceStartType = "CorruptEnumValue"; // Triggers MapEnum error branch
 
+            // Determine expected option flag matching internal mapping logic
+            var expectedError = string.Format(Strings.Msg_InvalidEnumValue, "--startupType", "CorruptEnumValue", string.Empty).TrimEnd();
+
             // Act
             var result = _validator.Validate(opts);
 
             // Assert
             Assert.False(result.Success);
-            Assert.Contains("Invalid value for --startupType: 'CorruptEnumValue'", result.Message);
+            Assert.StartsWith(expectedError, result.Message);
             _rulesMock.Verify(r => r.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
         }
 
@@ -60,12 +60,14 @@ namespace Servy.CLI.UnitTests.Validation
             var opts = CreateValidOptions();
             opts.RotationSize = "NotAnInteger"; // Triggers MapInt error branch
 
+            var expectedError = string.Format(Strings.Msg_InvalidIntegerFormat, "--rotationSize", "NotAnInteger");
+
             // Act
             var result = _validator.Validate(opts);
 
             // Assert
             Assert.False(result.Success);
-            Assert.Contains("Invalid integer format for --rotationSize: 'NotAnInteger'", result.Message);
+            Assert.Equal(expectedError, result.Message);
             _rulesMock.Verify(r => r.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
         }
 
@@ -118,9 +120,7 @@ namespace Servy.CLI.UnitTests.Validation
         {
             // Arrange
             var opts = CreateValidOptions();
-            var validationResult = new ValidationResult
-            {
-            };
+            var validationResult = new ValidationResult { };
             validationResult.Errors.Add("First Core Error Rule Violation");
             validationResult.Errors.Add("Second Core Error");
             _rulesMock.Setup(r => r.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(validationResult);
@@ -184,6 +184,7 @@ namespace Servy.CLI.UnitTests.Validation
         [Fact]
         public void GetOptionName_NonExistentPropertyName_ReturnsProvidedStringFallback()
         {
+            // Arrange
             // Since GetOptionName is private, we invoke it securely via reflection to test 
             // the early loop boundary: `if (prop == null) return propertyName;`
             var method = typeof(ServiceInstallValidator).GetMethod("GetOptionName",
