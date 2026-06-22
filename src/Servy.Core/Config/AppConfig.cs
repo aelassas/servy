@@ -343,14 +343,12 @@ namespace Servy.Core.Config
         public const bool DefaultEnableConsoleUI = false;
 
         /// <summary>
-        /// Gets a value indicating whether the service should run under the 
-        /// LocalSystem account by default. Default is <c>true</c>.
+        /// The default value for <c>RunAsLocalSystem</c>. Default is <c>true</c>.
         /// </summary>
         public const bool DefaultRunAsLocalSystem = true;
 
         /// <summary>
-        /// Gets a value indicating whether verbose debug-level logging is enabled by default.
-        /// Default is <c>false</c>.
+        /// The default value for <c>EnableDebugLogs</c>. Default is <c>false</c>.
         /// </summary>
         public const bool DefaultEnableDebugLogs = false;
 
@@ -358,8 +356,7 @@ namespace Servy.Core.Config
         public const DateRotationType DefaultLogRollingInterval = DateRotationType.None;
 
         /// <summary>
-        /// Gets a value indicating whether process health monitoring (heartbeat checks) 
-        /// is enabled by default. Default is <c>false</c>.
+        /// The default value for <c>EnableHealthMonitoring</c>. Default is <c>false</c>.
         /// </summary>
         public const bool DefaultEnableHealthMonitoring = false;
 
@@ -452,8 +449,7 @@ namespace Servy.Core.Config
         public const int DefaultPreLaunchRetryAttempts = 0;
 
         /// <summary>
-        /// Gets a value indicating whether the service should continue starting if the 
-        /// pre-launch executable fails. Default is <c>false</c>.
+        /// The default value for <c>PreLaunchIgnoreFailure</c>. Default is <c>false</c>.
         /// </summary>
         public const bool DefaultPreLaunchIgnoreFailure = false;
 
@@ -463,20 +459,17 @@ namespace Servy.Core.Config
         public const int DefaultPreStopTimeoutSeconds = 5;
 
         /// <summary>
-        /// Gets a value indicating whether failures in the pre-stop executable should 
-        /// be logged as Errors. Default is <c>false</c> (logged as Warnings).
+        /// The default value for <c>PreStopLogAsError</c>. Default is <c>false</c>.
         /// </summary>
         public const bool DefaultPreStopLogAsError = false;
 
         /// <summary>
-        /// Gets a value indicating whether size-based log rotation is enabled by default.
-        /// Default is <c>false</c>.
+        /// The default value for <c>EnableSizeRotation</c>. Default is <c>false</c>.
         /// </summary>
         public const bool DefaultEnableSizeRotation = false;
 
         /// <summary>
-        /// Gets a value indicating whether date-based log rotation is enabled by default.
-        /// Default is <c>false</c>.
+        /// The default value for <c>EnableDateRotation</c>. Default is <c>false</c>.
         /// </summary>
         public const bool DefaultEnableDateRotation = false;
 

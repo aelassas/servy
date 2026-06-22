@@ -123,7 +123,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             Assert.False(result.Success);
-            Assert.Contains("Failed to export configuration for service 'svc'", result.Message);
+            Assert.Contains(string.Format(Strings.Msg_ExportServiceAction, "svc"), result.Message);
         }
 
         #endregion

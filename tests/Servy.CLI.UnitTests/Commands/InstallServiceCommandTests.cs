@@ -171,7 +171,7 @@ namespace Servy.CLI.UnitTests.Commands
 
                 // Assert
                 Assert.False(result.Success);
-                Assert.Contains($"Failed to install service '{options.ServiceName}'", result.Message);
+                Assert.Contains(string.Format(Strings.Msg_InstallServiceAction, options.ServiceName), result.Message);
             }
             finally
             {

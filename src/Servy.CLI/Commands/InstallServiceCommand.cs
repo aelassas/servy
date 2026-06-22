@@ -41,8 +41,8 @@ namespace Servy.CLI.Commands
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
         public async Task<CommandResult> ExecuteAsync(Options.InstallServiceOptions opts, CancellationToken cancellationToken = default)
         {
-            var action = $"install service '{opts.ServiceName}'";
-            var suggestion = "Ensure the executable path is correct, the service name is not already in use, and you are running with Administrator privileges.";
+            var action = string.Format(Strings.Msg_InstallServiceAction, opts.ServiceName);
+            var suggestion = Strings.Msg_InstallServiceSuggestion;
 
             return await ExecuteWithHandlingAsync("install", action, suggestion, async () =>
             {

@@ -203,18 +203,24 @@ namespace Servy.Core.Helpers
 
                 // Find target PIDs directly from the snapshot - no Process.GetProcesses() needed.
                 var targetPids = new List<int>();
+                var anyProtected = false;
                 foreach (var kvp in completeSnapshot)
                 {
                     string snapName = StripExe(kvp.Value.Name ?? string.Empty);
 
-                    if (string.Equals(snapName, normalizedName, StringComparison.OrdinalIgnoreCase)
-                        && !protectedPids.Contains(kvp.Key))
+                    if (string.Equals(snapName, normalizedName, StringComparison.OrdinalIgnoreCase))
                     {
+                        if (protectedPids.Contains(kvp.Key))
+                        {
+                            Logger.Warn($"Execution blocked: Attempted to kill protected process '{normalizedName}' (PID {kvp.Key}).");
+                            anyProtected = true;
+                            continue;
+                        }
                         targetPids.Add(kvp.Key);
                     }
                 }
 
-                if (targetPids.Count == 0) return true;
+                if (targetPids.Count == 0) return !anyProtected; // true only when genuinely nothing matched
 
                 // Open handles ONLY for the small subset we plan to act on.
                 var targets = new List<Process>();

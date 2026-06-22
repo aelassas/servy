@@ -529,7 +529,7 @@ namespace Servy.Service.UnitTests.Helpers
         public void MaskRawArguments_NullOrWhitespace_ReturnsOriginalValue(string? input)
         {
             // Act
-            var result = _helper.MaskRawArguments(input);
+            var result = ServiceHelper.MaskRawArguments(input);
 
             // Assert
             Assert.Equal(input, result);
@@ -542,7 +542,7 @@ namespace Servy.Service.UnitTests.Helpers
             string input = "myapp.exe --port 8080 --host localhost";
 
             // Act
-            var result = _helper.MaskRawArguments(input);
+            var result = ServiceHelper.MaskRawArguments(input);
 
             // Assert
             Assert.Equal(input, result);
@@ -556,7 +556,7 @@ namespace Servy.Service.UnitTests.Helpers
         public void MaskRawArguments_WithCompositeUnderscoreSuffix_SuccessfullyMasksSecret(string input, string expected)
         {
             // Act
-            var result = _helper.MaskRawArguments(input);
+            var result = ServiceHelper.MaskRawArguments(input);
 
             // Assert
             Assert.Equal(expected, result);
@@ -568,7 +568,7 @@ namespace Servy.Service.UnitTests.Helpers
         public void MaskRawArguments_WithPrefixAndSuffixModifiers_PreservesKeyContextAndMasksValue(string input, string expected)
         {
             // Act
-            var result = _helper.MaskRawArguments(input);
+            var result = ServiceHelper.MaskRawArguments(input);
 
             // Assert
             Assert.Equal(expected, result);
@@ -581,7 +581,7 @@ namespace Servy.Service.UnitTests.Helpers
         public void MaskRawArguments_BranchA_ExplicitSeparators_MasksCorrectly(string input, string expected)
         {
             // Act
-            var result = _helper.MaskRawArguments(input);
+            var result = ServiceHelper.MaskRawArguments(input);
 
             // Assert
             Assert.Equal(expected, result);
@@ -593,7 +593,7 @@ namespace Servy.Service.UnitTests.Helpers
         public void MaskRawArguments_BranchB_SpaceSeparators_MasksCorrectly(string input, string expected)
         {
             // Act
-            var result = _helper.MaskRawArguments(input);
+            var result = ServiceHelper.MaskRawArguments(input);
 
             // Assert
             Assert.Equal(expected, result);
@@ -605,7 +605,7 @@ namespace Servy.Service.UnitTests.Helpers
         public void MaskRawArguments_WithQuotedValues_MasksWholeQuotedString(string input, string expected)
         {
             // Act
-            var result = _helper.MaskRawArguments(input);
+            var result = ServiceHelper.MaskRawArguments(input);
 
             // Assert
             Assert.Equal(expected, result);
@@ -619,7 +619,7 @@ namespace Servy.Service.UnitTests.Helpers
             string expected = "myapp.exe --password ******** --verbose";
 
             // Act
-            var result = _helper.MaskRawArguments(input);
+            var result = ServiceHelper.MaskRawArguments(input);
 
             // Assert
             Assert.Equal(expected, result);
@@ -632,7 +632,7 @@ namespace Servy.Service.UnitTests.Helpers
             string input = "PASSWORDLESS login attempt";
 
             // Act
-            var result = _helper.MaskRawArguments(input);
+            var result = ServiceHelper.MaskRawArguments(input);
 
             // Assert
             Assert.Equal(input, result); // Should remain completely untouched
