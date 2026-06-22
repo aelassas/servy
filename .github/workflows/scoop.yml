@@ -126,10 +126,7 @@ jobs:
         run: |
           . "$env:TEMP\ScoopUtils.ps1"
           $manifestPath = "setup/scoop/servy.json"
-          if (-Not (Test-Path $manifestPath)) {
-              Write-Error "Manifest not found at $manifestPath"
-              exit 1
-          }
+          if (-Not (Test-Path $manifestPath)) { throw "Manifest not found at $manifestPath" }
 
           # Load and update JSON
           $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json

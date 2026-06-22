@@ -245,7 +245,7 @@ namespace Servy.Manager.ViewModels
             var stateSnapshot = serviceDto?.Clone() as ServiceConsoleStateDto;
 
             // Drop this tick if the user switched services while we were awaiting the DB call.
-            if (!ReferenceEquals(currentSelection, _selectedService)) return;
+            if (!ReferenceEquals(currentSelection, _selectedService) || token.IsCancellationRequested) return;
 
             if (stateSnapshot?.Pid == null)
             {

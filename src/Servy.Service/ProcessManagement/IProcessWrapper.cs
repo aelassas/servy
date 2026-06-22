@@ -1,5 +1,5 @@
-﻿using System.Diagnostics;
-using Servy.Core.Config;
+﻿using Servy.Core.Config;
+using System.Diagnostics;
 
 namespace Servy.Service.ProcessManagement
 {
@@ -54,12 +54,12 @@ namespace Servy.Service.ProcessManagement
         DateTime StartTime { get; }
 
         /// <summary>
-        /// Standard output stream of the process.
+        /// Gets the standard output stream of the associated process.
         /// </summary>
         StreamReader StandardOutput { get; }
 
         /// <summary>
-        /// Standard error stream of the process.
+        /// Gets the standard error stream of the associated process.
         /// </summary>
         StreamReader StandardError { get; }
 
@@ -74,12 +74,12 @@ namespace Servy.Service.ProcessManagement
         ProcessPriorityClass PriorityClass { get; set; }
 
         /// <summary>
-        /// Process start information, including the executable path, arguments, and other settings.
+        /// Gets the process start information, including the executable path, arguments, and other settings.
         /// </summary>
         ProcessStartInfo StartInfo { get; }
 
         /// <summary>
-        /// Underlying Process.
+        /// Gets the underlying <see cref="Process"/> instance.
         /// </summary>
         Process UnderlyingProcess { get; }
 
