@@ -87,20 +87,27 @@ namespace Servy.CLI.UnitTests.Helpers
         [Fact]
         public void GetVerbName_ValidOptionsClass_ReturnsName()
         {
+            // Arrange & Act
             var name = Helper.GetVerbName<TestOptions>();
+
+            // Assert
             Assert.Equal("testverb", name);
         }
 
         [Fact]
         public void GetVerbName_InvalidOptionsClass_ThrowsException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<InvalidOperationException>(() => Helper.GetVerbName<string>());
         }
 
         [Fact]
         public void GetVerbs_ReturnsAssemblyVerbsIncludingVersion()
         {
+            // Arrange & Act
             var verbs = Helper.GetVerbs();
+
+            // Assert
             Assert.Contains("version", verbs);
             Assert.Contains("--version", verbs);
             Assert.NotEmpty(verbs);
@@ -111,8 +118,13 @@ namespace Servy.CLI.UnitTests.Helpers
         {
             RunTestWithConsoleCapture(() =>
             {
+                // Arrange
                 var result = CommandResult.Ok("Success!");
+
+                // Act
                 int exitCode = Helper.PrintAndReturn(result);
+
+                // Assert
                 Assert.Equal(0, exitCode);
             });
         }
@@ -122,8 +134,13 @@ namespace Servy.CLI.UnitTests.Helpers
         {
             RunTestWithConsoleCapture(() =>
             {
+                // Arrange
                 var result = CommandResult.Fail("Error!", 1);
+
+                // Act
                 int exitCode = Helper.PrintAndReturn(result);
+
+                // Assert
                 Assert.Equal(1, exitCode);
             });
         }
@@ -131,24 +148,18 @@ namespace Servy.CLI.UnitTests.Helpers
         [Fact]
         public async Task PrintAndReturnAsync_ReturnsExitCode()
         {
+            // Arrange
             int exitCode = -1;
+            var task = Task.FromResult(CommandResult.Ok("Async"));
 
             // Use the fully asynchronous redirection wrapper to capture state cleanly
             await RunTestWithConsoleCaptureAsync(async () =>
             {
-                // Wrap in Task.Run to completely insulate the background execution loop 
-                // and force the async state machine to fully unroll right here
-                await Task.Run(async () =>
-                {
-                    var task = Task.FromResult(CommandResult.Ok("Async"));
-                    exitCode = await Helper.PrintAndReturnAsync(task);
-                });
-
-                // Anti-flaking safety yield: gives any residual asynchronous console flush 
-                // routines on the thread pool time to settle down before the text writer collapses.
-                await Task.Yield();
+                // Act: Await execution directly within the console capture boundary context
+                exitCode = await Helper.PrintAndReturnAsync(task);
             });
 
+            // Assert
             Assert.Equal(0, exitCode);
         }
 
@@ -161,7 +172,10 @@ namespace Servy.CLI.UnitTests.Helpers
         [InlineData("xml,json", ConfigFileType.Xml, false)]
         public void TryParseFileType_InputValidation_ReturnsExpected(string input, ConfigFileType expectedType, bool expectedResult)
         {
+            // Arrange & Act
             bool result = Helper.TryParseFileType(input, out ConfigFileType actualType, out string error);
+
+            // Assert
             Assert.Equal(expectedResult, result);
             if (expectedResult)
             {
