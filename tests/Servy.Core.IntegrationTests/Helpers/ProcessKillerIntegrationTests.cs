@@ -143,15 +143,27 @@ namespace Servy.Core.IntegrationTests.Helpers
         [Fact]
         public void KillChildren_TargetParent_KillsOnlyDescendants()
         {
+            // Arrange
             var (parent, child) = SpawnProcessTree();
 
-            _processKiller.KillChildren(parent.Id);
+            try
+            {
+                // Act
+                _processKiller.KillChildren(parent.Id);
 
-            // Allow OS time to process termination signals
-            Thread.Sleep(500);
+                // Allow OS time to process termination signals completely
+                Thread.Sleep(500);
 
-            Assert.True(child.HasExited, "The child process should have been terminated.");
-            Assert.False(parent.HasExited, "The parent process should remain alive.");
+                // Assert
+                Assert.True(child.HasExited, "The child process should have been terminated.");
+                Assert.False(parent.HasExited, "The parent process should remain alive.");
+            }
+            finally
+            {
+                // Clean up processes safely if assertions fail to prevent runner zombie leaks
+                try { if (parent != null && !parent.HasExited) parent.Kill(); } catch { }
+                try { if (child != null && !child.HasExited) child.Kill(); } catch { }
+            }
         }
 
         /// <summary>
@@ -374,8 +386,8 @@ namespace Servy.Core.IntegrationTests.Helpers
                 UseShellExecute = false,
                 CreateNoWindow = true,
 
-                // 3. FIX: Move execution context to a neutral location to bypass restricted bin folders
-                WorkingDirectory = tempPath
+                // 3. Move execution context to a neutral location to bypass restricted bin folders
+                WorkingDirectory = tempPath,
             };
 
             var parentProcess = Process.Start(psi);
@@ -393,8 +405,26 @@ namespace Servy.Core.IntegrationTests.Helpers
             }
 
             Assert.True(childPid > 0, "Failed to resolve child process ID from the orchestration script.");
+
             var childProcess = Process.GetProcessById(childPid);
             _trackedProcesses.Add(childProcess);
+
+            // ==================================================================
+            // HARDENING REMEDY: Force wait until the child's execution handles 
+            // are fully synchronized and registered in the OS topology tables.
+            // ==================================================================
+            try
+            {
+                // Wait for the process to fully initialize its startup thread window handles/loops.
+                // Gives up safely after 5 seconds if the process terminates prematurely.
+                childProcess.WaitForInputIdle(5000);
+            }
+            catch (InvalidOperationException)
+            {
+                // Expected fallback if the process has no graphical loop shell, 
+                // in which case a minor sleep ensures safe kernel table catch-up.
+                Thread.Sleep(200);
+            }
 
             return (parentProcess, childProcess);
         }
