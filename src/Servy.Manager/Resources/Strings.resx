@@ -176,7 +176,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Startup Type</value>
   </data>
   <data name="Column_LogOnAs" xml:space="preserve">
-    <value>User Session</value>
+    <value>Log On As</value>
   </data>
 
   <!--Status-->
