@@ -249,11 +249,14 @@ namespace Servy.Manager.ViewModels
 
             if (stateSnapshot?.Pid == null)
             {
-                ResetConsole();
-                currentSelection.Pid = null;
-                currentSelection.StdoutPath = null;
-                currentSelection.StderrPath = null;
-                CopyPidCommand?.RaiseCanExecuteChanged();
+                if (currentSelection.Pid != null)      // only act on the running -> stopped transition
+                {
+                    ResetConsole();
+                    currentSelection.Pid = null;
+                    currentSelection.StdoutPath = null;
+                    currentSelection.StderrPath = null;
+                    CopyPidCommand?.RaiseCanExecuteChanged();
+                }
                 return;
             }
 

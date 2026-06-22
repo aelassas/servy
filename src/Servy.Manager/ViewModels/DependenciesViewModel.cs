@@ -184,9 +184,12 @@ namespace Servy.Manager.ViewModels
 
             if (!currentPid.HasValue)
             {
-                ResetPid();
-                currentSelection.Pid = null;
-                CopyPidCommand?.RaiseCanExecuteChanged();
+                if (currentSelection.Pid != null)      // only act on the running -> stopped transition
+                {
+                    ResetPid();
+                    currentSelection.Pid = null;
+                    CopyPidCommand?.RaiseCanExecuteChanged();
+                }
                 return;
             }
 

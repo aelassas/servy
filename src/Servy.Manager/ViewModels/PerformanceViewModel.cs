@@ -232,9 +232,12 @@ namespace Servy.Manager.ViewModels
 
             if (!currentPid.HasValue)
             {
-                ResetGraphs();
-                currentSelection.Pid = null;
-                CopyPidCommand?.RaiseCanExecuteChanged();
+                if (currentSelection.Pid != null)      // only act on the running -> stopped transition
+                {
+                    currentSelection.Pid = null;
+                    ResetGraphs();
+                    CopyPidCommand?.RaiseCanExecuteChanged();
+                }
                 return;
             }
 
