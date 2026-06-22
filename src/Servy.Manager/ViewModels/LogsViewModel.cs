@@ -268,7 +268,7 @@ namespace Servy.Manager.ViewModels
         /// Gets the list of all available log levels for filtering.
         /// Used to populate a dropdown in the UI.
         /// </summary>
-        public static List<EventLogLevel> LogLevels => GetLogLevels();
+        public static IReadOnlyList<EventLogLevel> LogLevels { get; } = GetLogLevels();
 
         #endregion
 
