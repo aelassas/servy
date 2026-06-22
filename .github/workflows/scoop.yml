@@ -23,8 +23,9 @@ on:
         required: false
       run_extras_pr:
         description: 'Also update ScoopInstaller/Extras?'
+        type: boolean
         required: false
-        default: 'false'
+        default: false
 
 concurrency:
   group: scoop-${{ github.ref }}
@@ -154,7 +155,7 @@ jobs:
                     git rebase --abort 2>$null
                     git merge  --abort 2>$null
 
-                    Write-Host "Attempting in-repo Scoop update push (Attempt $($retryCount + 1))..."
+                    Write-Host "Attempting in-repo Scoop update push (Attempt $($retryCount + 1))...";
                      
                     git pull --rebase=merges --autostash origin main
                     if ($LASTEXITCODE -ne 0) { throw "git pull failed" }
