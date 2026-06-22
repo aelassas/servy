@@ -17,8 +17,8 @@ namespace Servy.Core.Security
 
         private readonly byte[]? _v1MasterKey;
         private readonly byte[]? _v1StaticIv;
-        private readonly byte[] _v2EncryptionKey;
-        private readonly byte[] _v2HmacKey;
+        private readonly byte[]? _v2EncryptionKey;
+        private readonly byte[]? _v2HmacKey;
 
         private const string EncryptMarker = "SERVY_ENC:";
         private const string V2Marker = EncryptMarker + "v2:";
@@ -117,7 +117,7 @@ namespace Servy.Core.Security
 
                 // Initialize AES-256 with the derived V2 encryption key
                 using var aes = Aes.Create();
-                aes.Key = _v2EncryptionKey;
+                aes.Key = _v2EncryptionKey!;
 
                 // 1. PRE-CALCULATION: Determine exact buffer requirements
                 // Get the exact ciphertext size (including PKCS7 padding)
@@ -389,7 +389,7 @@ namespace Servy.Core.Security
                 // 3. DECRYPTION: Direct AES execution
                 using (var aes = Aes.Create())
                 {
-                    aes.Key = _v2EncryptionKey;
+                    aes.Key = _v2EncryptionKey!;
 
                     // Pre-allocate the output buffer for plaintext. 
                     // In PKCS7, plaintext length is always <= ciphertext length.

@@ -716,7 +716,7 @@ namespace Servy.Manager.Services
         {
             try
             {
-                if (service == null) throw new ArgumentNullException(nameof(service));
+                if (service == null || string.IsNullOrWhiteSpace(service.Name)) return;
 
                 var path = getFilePath();
                 if (string.IsNullOrEmpty(path)) return;

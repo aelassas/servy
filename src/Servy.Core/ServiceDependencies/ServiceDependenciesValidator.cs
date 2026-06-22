@@ -21,7 +21,7 @@ namespace Servy.Core.ServiceDependencies
         /// <param name="input">Raw input string with service dependencies.</param>
         /// <param name="errors">List of validation error messages.</param>
         /// <returns>True if all service names are valid; otherwise false.</returns>
-        public static bool Validate(string input, out List<string> errors)
+        public static bool Validate(string? input, out List<string> errors)
         {
             errors = new List<string>();
 

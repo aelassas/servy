@@ -75,14 +75,14 @@ namespace Servy.Core.Services
         /// Marks the specified service for deletion from the service control manager database.
         /// </summary>
         /// <param name="hService">Handle to the service.</param>
-        /// <returns><c>true</c> if the operation succeeds; otherwise, <c>false</c>.</returns>
+        /// <returns><see langword="true"/> if the operation succeeds; otherwise, <see langword="false"/>.</returns>
         bool DeleteService(SafeServiceHandle hService);
 
         /// <summary>
         /// Closes a handle to a service control manager or service object.
         /// </summary>
         /// <param name="hSCObject">Handle to close.</param>
-        /// <returns><c>true</c> if the handle is successfully closed; otherwise, <c>false</c>.</returns>
+        /// <returns><see langword="true"/> if the handle is successfully closed; otherwise, <see langword="false"/>.</returns>
         bool CloseServiceHandle(IntPtr hSCObject);
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace Servy.Core.Services
         /// <param name="hService">Handle to the service.</param>
         /// <param name="dwControl">The control code to send.</param>
         /// <param name="lpServiceStatus">Receives the latest status information about the service.</param>
-        /// <returns><c>true</c> if the operation succeeds; otherwise, <c>false</c>.</returns>
+        /// <returns><see langword="true"/> if the operation succeeds; otherwise, <see langword="false"/>.</returns>
         bool ControlService(SafeServiceHandle hService, int dwControl, ref SERVICE_STATUS lpServiceStatus);
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace Servy.Core.Services
         /// <param name="lpServiceStartName">The name of the account under which the service runs.</param>
         /// <param name="lpPassword">The password for the specified account.</param>
         /// <param name="lpDisplayName">The new display name of the service.</param>
-        /// <returns><c>true</c> if the configuration is successfully changed; otherwise, <c>false</c>.</returns>
+        /// <returns><see langword="true"/> if the configuration is successfully changed; otherwise, <see langword="false"/>.</returns>
         bool ChangeServiceConfig(
             SafeServiceHandle hService,
             uint dwServiceType,
@@ -127,9 +127,9 @@ namespace Servy.Core.Services
         /// Changes the optional configuration parameters of a service using a description structure.
         /// </summary>
         /// <param name="hService">Handle to the service.</param>
-        /// <param name="dwInfoLevel">The information level of the configuration to change.</param>
+        /// <param name="dwInfoLevel">The configuration information level to be set.</param>
         /// <param name="lpInfo">A reference to the new configuration information.</param>
-        /// <returns><c>true</c> if the configuration is successfully changed; otherwise, <c>false</c>.</returns>
+        /// <returns><see langword="true"/> if the configuration is successfully changed; otherwise, <see langword="false"/>.</returns>
         bool ChangeServiceConfig2(
             SafeServiceHandle hService,
             uint dwInfoLevel,
@@ -142,7 +142,7 @@ namespace Servy.Core.Services
         /// <param name="hService">A handle to the service.</param>
         /// <param name="dwInfoLevel">The configuration information level to be set.</param>
         /// <param name="lpInfo">A pointer to the buffer that contains the new configuration data.</param>
-        /// <returns>Returns true if the function succeeds; otherwise, false.</returns>
+        /// <returns><see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.</returns>
         bool ChangeServiceConfig2(
             SafeServiceHandle hService,
             uint dwInfoLevel,
@@ -158,7 +158,7 @@ namespace Servy.Core.Services
         /// <returns><see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.</returns>
         bool ChangeServiceConfig2(
             SafeServiceHandle hService,
-           uint dwInfoLevel,
+            uint dwInfoLevel,
             ref SERVICE_DELAYED_AUTO_START_INFO lpInfo
         );
 
@@ -169,7 +169,7 @@ namespace Servy.Core.Services
         /// <param name="lpServiceConfig">A pointer to a buffer that receives the configuration information.</param>
         /// <param name="cbBufSize">The size of the buffer, in bytes.</param>
         /// <param name="pcbBytesNeeded">Receives the number of bytes needed if the function fails with ERROR_INSUFFICIENT_BUFFER.</param>
-        /// <returns>If the function succeeds, the return value is true. If it fails, the return value is false.</returns>
+        /// <returns><see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.</returns>
         bool QueryServiceConfig(
             SafeServiceHandle hService,
             IntPtr lpServiceConfig,
@@ -196,11 +196,11 @@ namespace Servy.Core.Services
         /// Retrieves optional configuration information for a service using a raw pointer.
         /// </summary>
         /// <param name="hService">A handle to the service.</param>
-        /// <param name="dwInfoLevel">The configuration information level to query (e.g., description).</param>
+        /// <param name="dwInfoLevel">The configuration information level to query.</param>
         /// <param name="lpBuffer">A pointer to the buffer that receives the service configuration information.</param>
         /// <param name="cbBufSize">The size of the buffer, in bytes.</param>
         /// <param name="pcbBytesNeeded">Receives the number of bytes needed if the buffer is too small.</param>
-        /// <returns>If the function succeeds, the return value is true. If it fails, the return value is false.</returns>
+        /// <returns><see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.</returns>
         bool QueryServiceConfig2(
             SafeServiceHandle hService,
             uint dwInfoLevel,

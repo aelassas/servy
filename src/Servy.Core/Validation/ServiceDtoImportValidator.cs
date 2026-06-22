@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
+using Servy.Core.Resources;
 using System.Text;
 
 namespace Servy.Core.Validation
@@ -49,7 +50,7 @@ namespace Servy.Core.Validation
 
             if (string.IsNullOrWhiteSpace(content))
             {
-                errorMessage = $"{FormatName} input cannot be null or empty.";
+                errorMessage = string.Format(Strings.Msg_ImportInputEmptyOrWhitespace, FormatName);
                 return false;
             }
 
@@ -58,7 +59,7 @@ namespace Servy.Core.Validation
             long byteLength = Encoding.UTF8.GetByteCount(content);
             if (byteLength > AppConfig.MaxConfigFileSizeBytes)
             {
-                errorMessage = $"{FormatName} payload exceeds the maximum allowed size of {AppConfig.MaxConfigFileSizeMB} MB.";
+                errorMessage = string.Format(Strings.Msg_ImportPayloadTooLarge, FormatName, AppConfig.MaxConfigFileSizeMB);
                 Logger.Warn($"{FormatName} Import Blocked: Payload size limit exceeded.");
                 return false;
             }
@@ -74,20 +75,20 @@ namespace Servy.Core.Validation
             // This prevents the first catch from consuming unrelated exceptions when TException is narrowed.
             catch (Exception ex) when (ex is TException || (ex is InvalidOperationException && ex.InnerException is TException))
             {
-                errorMessage = $"Invalid {FormatName} structure: {ex.Message}";
+                errorMessage = string.Format(Strings.Msg_ImportInvalidStructure, FormatName, ex.Message);
                 Logger.Error($"{FormatName} parsing error during import", ex);
                 return false;
             }
             catch (Exception ex) // Catch-all for unexpected parser exceptions
             {
-                errorMessage = $"{FormatName} structure error: {ex.Message}";
+                errorMessage = string.Format(Strings.Msg_ImportStructureError, FormatName, ex.Message);
                 Logger.Error($"{FormatName} parsing error during import", ex);
                 return false;
             }
 
             if (dto == null)
             {
-                errorMessage = $"{FormatName} deserialization resulted in an empty service definition.";
+                errorMessage = string.Format(Strings.Msg_ImportEmptyDefinition, FormatName);
                 return false;
             }
 

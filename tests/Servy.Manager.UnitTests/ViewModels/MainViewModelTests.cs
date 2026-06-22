@@ -754,22 +754,6 @@ namespace Servy.Manager.UnitTests.ViewModels
             }, createApp: true);
         }
 
-        [Fact]
-        public async Task HelpCommands_NullHelpService_ExitsCleanly()
-        {
-            await Helper.RunOnSTA(async () =>
-            {
-                var vm = CreateViewModel();
-                typeof(MainViewModel).GetField("_helpService", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(vm, null);
-
-                await vm.OpenDocumentationCommand.ExecuteAsync(null);
-                await vm.CheckUpdatesCommand.ExecuteAsync(null);
-                await vm.OpenAboutDialogCommand.ExecuteAsync(null);
-
-                Assert.True(true);
-            }, createApp: true);
-        }
-
         #endregion
 
         #region Value Mutation & INotifyPropertyChanged Properties

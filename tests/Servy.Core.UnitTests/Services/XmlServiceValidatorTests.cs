@@ -33,46 +33,75 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void TryValidate_NullOrEmptyXml_ReturnsFalse()
         {
-            var result = _validator.TryValidate(null, out var error);
-            Assert.False(result);
-            Assert.Equal("XML input cannot be null or empty.", error);
+            // Arrange
+            var expectedError = string.Format(Strings.Msg_ImportInputEmptyOrWhitespace, "XML");
 
-            result = _validator.TryValidate("   ", out error);
+            // Act
+            var result = _validator.TryValidate(null, out var error);
+
+            // Assert
             Assert.False(result);
-            Assert.Equal("XML input cannot be null or empty.", error);
+            Assert.Equal(expectedError, error);
+
+            // Act
+            result = _validator.TryValidate("   ", out error);
+
+            // Assert
+            Assert.False(result);
+            Assert.Equal(expectedError, error);
         }
 
         [Fact]
         public void TryValidate_InvalidXml_ReturnsFalse()
         {
+            // Arrange
             // Missing closing tag
-            var result = _validator.TryValidate("<ServiceDto><Name>Test</Name>", out var error);
+            var invalidXml = "<ServiceDto><Name>Test</Name>";
+            var expectedPrefix = string.Format(Strings.Msg_ImportInvalidStructure, "XML", string.Empty).TrimEnd();
+
+            // Act
+            var result = _validator.TryValidate(invalidXml, out var error);
+
+            // Assert
             Assert.False(result);
-            Assert.StartsWith("Invalid XML structure:", error);
+            Assert.StartsWith(expectedPrefix, error);
         }
 
         [Fact]
         public void TryValidate_XmlNotMatchingServiceDto_ReturnsFalse()
         {
+            // Arrange
             // Valid XML, but doesn't map to ServiceDto properties
             var xml = "<NotServiceDto><Foo>bar</Foo></NotServiceDto>";
+            var expectedPrefix = string.Format(Strings.Msg_ImportStructureError, "XML", string.Empty).TrimEnd();
+
+            // Act
             var result = _validator.TryValidate(xml, out var error);
+
+            // Assert
             Assert.False(result);
-            Assert.Contains("XML structure error:", error);
+            Assert.Contains(expectedPrefix, error);
         }
 
         [Fact]
         public void TryValidate_DeserializedDtoIsNull_ReturnsFalse()
         {
+            // Arrange
             var xml = "<ServiceDto xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:nil=\"true\" />";
+            var expectedError = string.Format(Strings.Msg_ImportEmptyDefinition, "XML");
+
+            // Act
             var result = _validator.TryValidate(xml, out var error);
+
+            // Assert
             Assert.False(result);
-            Assert.Equal("XML deserialization resulted in an empty service definition.", error);
+            Assert.Equal(expectedError, error);
         }
 
         [Fact]
         public void TryValidate_DomainValidationFailure_ReturnsFalse()
         {
+            // Arrange
             // Name length is a Domain check via ServiceValidator.ValidateDto
             var dto = new ServiceDto
             {
@@ -81,8 +110,10 @@ namespace Servy.Core.UnitTests.Services
             };
             var xml = Serialize(dto);
 
+            // Act
             var result = _validator.TryValidate(xml, out var error);
 
+            // Assert
             Assert.False(result);
             Assert.Contains(string.Format(Strings.Msg_ServiceNameLengthReached, AppConfig.MaxServiceNameLength), error);
         }
@@ -91,6 +122,7 @@ namespace Servy.Core.UnitTests.Services
         [InlineData(-1)]
         public void TryValidate_InvalidTimeout_ReturnsFalse(int invalidTimeout)
         {
+            // Arrange
             var dto = new ServiceDto
             {
                 Name = "TestService",
@@ -101,8 +133,10 @@ namespace Servy.Core.UnitTests.Services
 
             _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
 
+            // Act
             var result = _validator.TryValidate(xml, out var error);
 
+            // Assert
             Assert.False(result);
             Assert.Equal(string.Format(Strings.Msg_InvalidStartTimeout, AppConfig.MinStartTimeout, AppConfig.MaxStartTimeout), error);
         }
@@ -110,6 +144,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void TryValidate_InvalidExecutablePath_ReturnsFalse()
         {
+            // Arrange
             var dto = new ServiceDto
             {
                 Name = "MyService",
@@ -119,8 +154,10 @@ namespace Servy.Core.UnitTests.Services
 
             _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(false);
 
+            // Act
             var result = _validator.TryValidate(xml, out var error);
 
+            // Assert
             Assert.False(result);
             Assert.Equal(Strings.Msg_InvalidPath, error);
         }
@@ -128,6 +165,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void TryValidate_ValidXml_ReturnsTrue()
         {
+            // Arrange
             var dto = new ServiceDto
             {
                 Name = "MyService",
@@ -138,8 +176,10 @@ namespace Servy.Core.UnitTests.Services
 
             _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
 
+            // Act
             var result = _validator.TryValidate(xml, out var error);
 
+            // Assert
             Assert.True(result);
             Assert.Null(error);
         }

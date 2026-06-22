@@ -196,11 +196,29 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Invalid value for {0}: &apos;{1}&apos;. Valid options: {2}.
+        /// </summary>
+        public static string Msg_InvalidEnumValue {
+            get {
+                return ResourceManager.GetString("Msg_InvalidEnumValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Invalid executable path: {0}. Ensure the file exists and is accessible..
         /// </summary>
         public static string Msg_InvalidExecutablePath {
             get {
                 return ResourceManager.GetString("Msg_InvalidExecutablePath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Invalid integer format for {0}: &apos;{1}&apos;.
+        /// </summary>
+        public static string Msg_InvalidIntegerFormat {
+            get {
+                return ResourceManager.GetString("Msg_InvalidIntegerFormat", resourceCulture);
             }
         }
         

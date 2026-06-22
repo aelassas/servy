@@ -4,7 +4,7 @@
     /// Provides access to the AES encryption key and initialization vector (IV)
     /// used for secure password encryption and decryption.
     /// </summary>
-    public interface IProtectedKeyProvider
+    public interface IProtectedKeyProvider : IDisposable
     {
         /// <summary>
         /// Gets the AES encryption key.
