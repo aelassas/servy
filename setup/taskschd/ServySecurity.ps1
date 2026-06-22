@@ -76,15 +76,16 @@ function Protect-SensitiveString {
     # command-flag delimiter (-x / /x). To maintain architecture safety constraints,
     # only the final whitespace-delimited token of an unquoted value is masked;
     # multi-word unquoted sequences are partially redacted.
-    $regexPattern = "(?i)(?<![a-zA-Z0-9])($keyPattern)(?:_[A-Za-z0-9]+)*(?![a-zA-Z0-9])" +
-        "(?" +
+    # Suffix matching logic pulled inside the (?<key>...) group boundary to protect composite keys.
+    $regexPattern = "(?i)(?<![a-zA-Z0-9])(?<key>(?:$keyPattern)(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])" +
+        "(?:" +
             # BRANCH A: Explicit Separators (:, =, /)
-            "(\s*[:=]\s*|/)" +
-            "(?>`"[^`"]*`"|'[^']*'|(?:[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*))" +
+            "(?<sep>\s*[:=]\s*|/)" +
+            "(?<val>`"[^`"]*`"|'[^']*'|(?:[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*))" +
             "|" +
             # BRANCH B: Space Separator
-            "(\s+)(?![\-/]+[a-zA-Z])" +
-            "(?>`"[^`"]*`"|'[^']*'|(?:[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*))" +
+            "(?<sep>\s+)(?![\-/]+[a-zA-Z])" +
+            "(?<val>`"[^`"]*`"|'[^']*'|(?:[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*))" +
         ")"
 
     $maskingRegex = New-Object System.Text.RegularExpressions.Regex (
@@ -96,8 +97,23 @@ function Protect-SensitiveString {
     # Use MatchEvaluator to conditionally extract the matched separator group (A or B)
     $evaluator = [System.Text.RegularExpressions.MatchEvaluator] {
         param($m)
-        $sep = if ($m.Groups[2].Success) { $m.Groups[2].Value } else { $m.Groups[3].Value }
-        return "$($m.Groups[0].Value -replace [regex]::Escape($m.Groups[2].Value + $m.Groups[3].Value + $m.Value.Split($sep)[-1]), '')$sep********"
+        
+        $key = $m.Groups["key"].Value
+        $sep = $m.Groups["sep"].Value
+        $val = $m.Groups["val"].Value
+
+        # Use foolproof native string manipulation to check encapsulation boundaries safely
+        if (($val.StartsWith('"') -and $val.EndsWith('"')) -or ($val.StartsWith("'") -and $val.EndsWith("'"))) {
+            return "$key$sep********"
+        }
+
+        # Branch B unquoted fallback logic
+        $lastTokenIndex = $val.LastIndexOf(' ')
+        if ($lastTokenIndex -ge 0) {
+            return "$key$sep$($val.Substring(0, $lastTokenIndex + 1))********"
+        }
+
+        return "$key$sep********"
     }
 
     try {

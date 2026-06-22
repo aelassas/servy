@@ -59,7 +59,10 @@ foreach ($case in $testCases) {
 Write-Host "----------------------------------------------------------" -ForegroundColor Cyan
 if ($failedCount -eq 0) {
     Write-Host "ALL $passedCount TESTS PASSED SUCCESSFULLY!" -ForegroundColor Green
+    Write-Host "==========================================================" -ForegroundColor Cyan
+    exit 0
 } else {
     Write-Host "SUITE COMPLETE: $passedCount Passed, $failedCount Failed." -ForegroundColor Red
+    Write-Host "==========================================================" -ForegroundColor Cyan
+    exit 1
 }
-Write-Host "==========================================================" -ForegroundColor Cyan
