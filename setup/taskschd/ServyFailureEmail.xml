@@ -7,11 +7,7 @@
   <Triggers>
     <EventTrigger>
       <Enabled>true</Enabled>
-      <Subscription>
-        &lt;QueryList&gt;&lt;Query Id="0" Path="Application"&gt;&lt;Select
-        Path="Application"&gt;*[System[Provider[@Name='Servy'] and
-        (Level=2)]]&lt;/Select&gt;&lt;/Query&gt;&lt;/QueryList&gt;
-      </Subscription>
+      <Subscription>&lt;QueryList&gt;&lt;Query Id="0" Path="Application"&gt;&lt;Select Path="Application"&gt;*[System[Provider[@Name='Servy'] and (Level=2)]]&lt;/Select&gt;&lt;/Query&gt;&lt;/QueryList&gt;</Subscription>
     </EventTrigger>
   </Triggers>
   <Principals>

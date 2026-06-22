@@ -58,7 +58,7 @@ namespace Servy.Manager.ViewModels
         private readonly IAppConfiguration _appConfig;
         private readonly IProcessHelper _processHelper;
 
-        private bool _disposed;
+        private bool _isDisposed;
 
         #endregion
 
@@ -292,19 +292,19 @@ namespace Servy.Manager.ViewModels
         /// Initializes a new instance of <see cref="MainViewModel"/>.
         /// </summary>
         public MainViewModel(
-           IServiceManager serviceManager,
-           IServiceRepository serviceRepository,
-           IServiceCommands serviceCommands,
-           IHelpService helpService,
-           IMessageBoxService messageBoxService,
-           PerformanceViewModel performanceVM,
-           ConsoleViewModel consoleVM,
-           DependenciesViewModel dependenciesVM,
-           IAppConfiguration appConfig,
-           ICursorService cursorService,
-           IProcessHelper processHelper,
-           Dispatcher dispatcher = null
-           )
+            IServiceManager serviceManager,
+            IServiceRepository serviceRepository,
+            IServiceCommands serviceCommands,
+            IHelpService helpService,
+            IMessageBoxService messageBoxService,
+            PerformanceViewModel performanceVM,
+            ConsoleViewModel consoleVM,
+            DependenciesViewModel dependenciesVM,
+            IAppConfiguration appConfig,
+            ICursorService cursorService,
+            IProcessHelper processHelper,
+            Dispatcher dispatcher = null
+            )
         {
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
@@ -375,7 +375,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private void AppConfig_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(IAppConfiguration.IsDesktopAppAvailable))
+            if (e?.PropertyName == nameof(IAppConfiguration.IsDesktopAppAvailable))
             {
                 IsConfiguratorEnabled = _appConfig.IsDesktopAppAvailable;
             }
@@ -386,7 +386,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private void Service_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(ServiceRowViewModel.IsChecked))
+            if (e?.PropertyName == nameof(ServiceRowViewModel.IsChecked))
             {
                 UpdateSelectAllState();
                 OnPropertyChanged(nameof(HasSelectedServices));
@@ -482,6 +482,12 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task SearchServicesAsync(object parameter)
         {
+            if (_dispatcher == null)
+            {
+                Logger.Warn("Dispatcher is not available. Cannot perform search.");
+                return;
+            }
+
             // Thread-safe CTS swap
             var newCts = new CancellationTokenSource();
             var token = newCts.Token;
@@ -602,7 +608,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task ConfigureServiceAsync(object parameter)
         {
-            await ServiceCommands.ConfigureServiceAsync(parameter as Service);
+            await ServiceCommands.ConfigureServiceAsync(parameter as Service, cancellationToken: _cts?.Token ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -626,27 +632,39 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private Task StartSelectedAsync(object parameter) =>
             ExecuteBulkOperationAsync(
-                s => ServiceCommands.StartServiceAsync(s, showMessageBox: false),
+                (s, token) =>
+                {
+                    return ServiceCommands.StartServiceAsync(s, showMessageBox: false, cancellationToken: token);
+                },
                 Strings.Confirm_StartSelectedServices,
-                "Failed to start selected services");
+                "Failed to start selected services",
+                _cts?.Token ?? CancellationToken.None);
 
         /// <summary>
         /// Stop all selected services.
         /// </summary>
         private Task StopSelectedAsync(object parameter) =>
             ExecuteBulkOperationAsync(
-                s => ServiceCommands.StopServiceAsync(s, showMessageBox: false),
+                (s, token) =>
+                {
+                    return ServiceCommands.StopServiceAsync(s, showMessageBox: false, cancellationToken: token);
+                },
                 Strings.Confirm_StopSelectedServices,
-                "Failed to stop selected services");
+                "Failed to stop selected services",
+                _cts?.Token ?? CancellationToken.None);
 
         /// <summary>
         /// Restart all selected services.
         /// </summary>
         private Task RestartSelectedAsync(object parameter) =>
             ExecuteBulkOperationAsync(
-                s => ServiceCommands.RestartServiceAsync(s, showMessageBox: false),
+                (s, token) =>
+                {
+                    return ServiceCommands.RestartServiceAsync(s, showMessageBox: false, cancellationToken: token);
+                },
                 Strings.Confirm_RestartSelectedServices,
-                "Failed to restart selected services");
+                "Failed to restart selected services",
+                _cts?.Token ?? CancellationToken.None);
 
         #endregion
 
@@ -702,13 +720,10 @@ namespace Servy.Manager.ViewModels
 
             if (_refreshTimer != null)
             {
-                _refreshTimer.Stop();            // Stop the timer
+                _refreshTimer.Stop();         // Stop the timer
                 _refreshTimer.Tick -= OnTick; // Unsubscribe event
                 _refreshTimer = null;
             }
-
-            // Dispose the command engine to clean up semaphores
-            ServiceCommands?.Dispose();
         }
 
         /// <summary>
@@ -754,12 +769,15 @@ namespace Servy.Manager.ViewModels
         /// Executes a bulk operation on all selected and installed services.
         /// </summary>
         private async Task ExecuteBulkOperationAsync(
-            Func<Service, Task<bool>> operation,
+            Func<Service, CancellationToken, Task<bool>> operation,
             string confirmMessage,
-            string logErrorMessage)
+            string logErrorMessage,
+            CancellationToken token)
         {
             try
             {
+                token.ThrowIfCancellationRequested();
+
                 // 1. Identify selected and installed services
                 var selectedServices = _services
                     .Where(s => s.IsInstalled && s.IsChecked)
@@ -786,12 +804,14 @@ namespace Servy.Manager.ViewModels
                 {
                     var operationTasks = selectedServices.Select(async service =>
                     {
-                        await throttler.WaitAsync().ConfigureAwait(false);
+                        await throttler.WaitAsync(token).ConfigureAwait(false);
                         try
                         {
+                            token.ThrowIfCancellationRequested();
+
                             // If operation() modifies UI-bound properties (like Status), it must do 
                             // so safely. If this hangs, check what 'operation' is doing internally.
-                            bool success = await operation(service).ConfigureAwait(false);
+                            bool success = await operation(service, token).ConfigureAwait(false);
                             return new { ServiceName = service?.Name ?? string.Empty, Success = success };
                         }
                         finally
@@ -823,6 +843,10 @@ namespace Servy.Manager.ViewModels
                         }
                     })).Task; // Await the inner Task produced by Func<Task>
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected cleanup execution path on application close
             }
             catch (Exception ex)
             {
@@ -857,7 +881,7 @@ namespace Servy.Manager.ViewModels
                 }
 
                 // 1. Take snapshot of services safely
-                List<Service> snapshot;
+                var snapshot = new List<Service>();
                 lock (_servicesLock)
                 {
                     snapshot = _services.Select(r => r.Service).ToList();
@@ -998,7 +1022,7 @@ namespace Servy.Manager.ViewModels
                 var update = new ServiceUpdateInfo(service);
 
                 // 1. Evaluate OS Status First
-                if (allServices.TryGetValue(service.Name, out var info) && info != null)
+                if (allServices != null && !string.IsNullOrWhiteSpace(service.Name) && allServices.TryGetValue(service.Name, out var info) && info != null)
                 {
                     update.IsInstalled = true;
                     update.Status = info.Status;
@@ -1226,7 +1250,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         protected virtual void Dispose(bool disposing)
         {
-            if (_disposed) return;
+            if (_isDisposed) return;
 
             if (disposing)
             {
@@ -1257,7 +1281,7 @@ namespace Servy.Manager.ViewModels
                 ServiceCommands?.Dispose();
             }
 
-            _disposed = true;
+            _isDisposed = true;
         }
 
         #endregion
