@@ -63,7 +63,7 @@ foreach ($dep in $requiredDependencies) {
         try {
             # Best-effort: the 'Servy' event source may not be registered, so guard with try/catch.
             Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_DEPENDENCY_ERROR `
-                -EntryType Error -Message $errorMsg -ErrorAction Stop
+                -EntryType Warning -Message $errorMsg -ErrorAction Stop
         } catch {
             # 2. Fallback to stderr if Event Log fails (or source isn't registered)
             Write-Error $errorMsg
