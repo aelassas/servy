@@ -775,6 +775,8 @@ namespace Servy.Manager.Services
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var path = getFilePath();
                 if (string.IsNullOrEmpty(path)) return;
 
@@ -800,7 +802,7 @@ namespace Servy.Manager.Services
                     return;
                 }
 
-                if (!await _serviceConfigurationValidator.ValidateAsync(dto)) return;
+                if (!await _serviceConfigurationValidator.ValidateAsync(dto, cancellationToken: cancellationToken)) return;
 
                 var res = await ExecuteLockedAsync(dto.Name, () =>
                     _serviceRepository.UpsertAsync(
@@ -821,6 +823,10 @@ namespace Servy.Manager.Services
                     Logger.Error($"Failed to import {formatName} config from {path}");
                     await _messageBoxService.ShowErrorAsync(errorMessage, UiAppConfig.Caption);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {

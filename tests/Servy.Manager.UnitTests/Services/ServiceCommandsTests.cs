@@ -110,7 +110,7 @@ namespace Servy.Manager.UnitTests.Services
             File.WriteAllText(tempFile, json);
 
             _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
-            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>())).ReturnsAsync(true);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1)
@@ -183,7 +183,7 @@ namespace Servy.Manager.UnitTests.Services
 
             string? outErr = null;
             _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
-            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>())).ReturnsAsync(true);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1)
@@ -262,7 +262,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Assert
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_FailedToLoadJson, UiAppConfig.Caption), Times.Once);
-            _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(It.IsAny<ServiceDto>()), Times.Never);
+            _serviceConfigurationValidatorMock.Verify(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()), Times.Never);
 
             if (File.Exists(tempFile)) File.Delete(tempFile);
         }
@@ -281,7 +281,7 @@ namespace Servy.Manager.UnitTests.Services
             string? outErr = null;
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
             _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(new ServiceDto { Name = "InvalidDomain" });
-            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>())).ReturnsAsync(false);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             // Act
             await sut.ImportJsonConfigAsync(TestContext.Current.CancellationToken);
@@ -306,7 +306,7 @@ namespace Servy.Manager.UnitTests.Services
             string? outErr = null;
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
             _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(new ServiceDto { Name = "FailedUpsert" });
-            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>())).ReturnsAsync(true);
+            _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
             // Act
@@ -804,7 +804,7 @@ namespace Servy.Manager.UnitTests.Services
             var service = new Service { Name = "NoPidService", Pid = null };
 
             // Act
-            await sut.CopyPidAsync(service);
+            await sut.CopyPidAsync(service, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             _uiDispatcherMock.Verify(d => d.InvokeAsync(It.IsAny<Func<bool>>()), Times.Never);
@@ -822,7 +822,7 @@ namespace Servy.Manager.UnitTests.Services
                 .ReturnsAsync(true);
 
             // Act
-            await sut.CopyPidAsync(service);
+            await sut.CopyPidAsync(service, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             _uiDispatcherMock.Verify(d => d.InvokeAsync(It.IsAny<Func<bool>>()), Times.Once);
@@ -841,7 +841,7 @@ namespace Servy.Manager.UnitTests.Services
                 .ReturnsAsync(false);
 
             // Act
-            await sut.CopyPidAsync(service);
+            await sut.CopyPidAsync(service, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             // Verifies that the internal retry loop honored Core.Config.AppConfig.ClipboardComMaxRetries (typically 3 or 5)
@@ -860,7 +860,7 @@ namespace Servy.Manager.UnitTests.Services
                 .ThrowsAsync(new InvalidOperationException("Fatal thread context exception"));
 
             // Act
-            await sut.CopyPidAsync(service);
+            await sut.CopyPidAsync(service, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);

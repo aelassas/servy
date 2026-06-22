@@ -73,7 +73,7 @@ namespace Servy.UI.Design
         public Task<IEnumerable<ServiceDto>> GetAllAsync(bool decrypt = true, CancellationToken cancellationToken = default)
             => Task.FromResult(Enumerable.Empty<ServiceDto>());
 
-        public Task<IEnumerable<ServiceDto>> SearchAsync(string keyword, bool decrypt = true, CancellationToken cancellationToken = default)
+        public Task<IEnumerable<ServiceDto>> SearchAsync(string? keyword, bool decrypt = true, CancellationToken cancellationToken = default)
             => Task.FromResult(Enumerable.Empty<ServiceDto>());
 
         public Task<string> ExportXmlAsync(string? name, CancellationToken cancellationToken = default)

@@ -3,7 +3,7 @@
     /// <summary>
     /// Defines methods for logging informational, warning, and error messages.
     /// </summary>
-    public interface IServyLogger: IDisposable
+    public interface IServyLogger : IDisposable
     {
         /// <summary>
         /// Gets the optional prefix to be prepended to every log message 

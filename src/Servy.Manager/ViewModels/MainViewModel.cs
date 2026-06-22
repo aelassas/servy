@@ -499,7 +499,7 @@ namespace Servy.Manager.ViewModels
                 FooterText = string.Empty; // Clear footer text before search
 
                 // Step 1: show "Searching..." immediately
-                _cursorService?.SetWaitCursor();
+                _cursorService.SetWaitCursor();
                 SearchButtonText = Strings.Button_Searching;
                 IsBusy = true;
 
@@ -591,7 +591,7 @@ namespace Servy.Manager.ViewModels
                 // Step 7: restore button text and IsBusy
                 if (ReferenceEquals(Volatile.Read(ref _cts), newCts))
                 {
-                    _cursorService?.ResetCursor();
+                    _cursorService.ResetCursor();
                     SearchButtonText = Strings.Button_Search;
                     IsBusy = false;
                 }

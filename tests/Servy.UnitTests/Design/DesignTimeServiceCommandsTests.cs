@@ -22,11 +22,11 @@ namespace Servy.UnitTests.Design
             // Act & Assert - Task.CompletedTask returning methods
             var exception = await Record.ExceptionAsync(async () =>
             {
-                await commands.ExportXmlConfig("password");
-                await commands.ExportJsonConfig("password");
-                await commands.ImportXmlConfig();
-                await commands.ImportJsonConfig();
-                await commands.OpenManager();
+                await commands.ExportXmlConfig("password", cancellationToken: TestContext.Current.CancellationToken);
+                await commands.ExportJsonConfig("password", cancellationToken: TestContext.Current.CancellationToken);
+                await commands.ImportXmlConfig(cancellationToken: TestContext.Current.CancellationToken);
+                await commands.ImportJsonConfig(cancellationToken: TestContext.Current.CancellationToken);
+                await commands.OpenManager(cancellationToken: TestContext.Current.CancellationToken);
             });
 
             Assert.Null(exception);

@@ -110,7 +110,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange
             var sut = new TestServiceSearchViewModel(_cursorServiceMock.Object, _uiDispatcherMock.Object, _serviceCommandsMock.Object);
-            var mockRawServices = new List<Service?> { new Service { Name = "ServyCore" } };
+            var mockRawServices = new List<Service> { new Service { Name = "ServyCore" } };
 
             _serviceCommandsMock
                 .Setup(s => s.SearchServicesAsync("Servy", false, It.IsAny<CancellationToken>()))
@@ -185,7 +185,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange
             var sut = new TestServiceSearchViewModel(_cursorServiceMock.Object, _uiDispatcherMock.Object, _serviceCommandsMock.Object);
-            var tcs = new TaskCompletionSource<List<Service?>>();
+            var tcs = new TaskCompletionSource<List<Service>>();
 
             _serviceCommandsMock
                 .Setup(s => s.SearchServicesAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
@@ -200,7 +200,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             // Force execution to proceed past the await boundary loop frame
             executionTokenSource!.Cancel();
-            tcs.SetResult(new List<Service?> { new Service { Name = "StaleResult" } });
+            tcs.SetResult(new List<Service> { new Service { Name = "StaleResult" } });
 
             await executionTask;
 

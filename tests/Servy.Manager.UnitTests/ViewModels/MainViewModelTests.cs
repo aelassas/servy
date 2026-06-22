@@ -202,7 +202,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 var currentDispatcher = Dispatcher.CurrentDispatcher;
                 var vm = CreateViewModel(currentDispatcher);
-                var services = new List<Service?>
+                var services = new List<Service>
                 {
                     new Service { Name = "S1", IsInstalled = true },
                     new Service { Name = "S2", IsInstalled = true }
@@ -709,7 +709,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _helpServiceMock.Setup(h => h.OpenAboutDialogAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
                 _serviceCommandsMock.Setup(c => c.SearchServicesAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()))
-                                    .ReturnsAsync(new List<Service?>());
+                                    .ReturnsAsync(new List<Service>());
 
                 // Establish a clean, thread-bound message pump loop frame
                 var frame = new DispatcherFrame();

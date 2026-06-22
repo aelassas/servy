@@ -331,7 +331,7 @@ namespace Servy.Services
                 cancellationToken: cancellationToken);
 
         /// <inheritdoc/>
-        public Task ExportXmlConfig(string? confirmPassword) =>
+        public Task ExportXmlConfig(string? confirmPassword, CancellationToken cancellationToken = default) =>
             ExportConfigAsync(
                 confirmPassword,
                 () => _dialogService.SaveXml(Strings.SaveFileDialog_XmlTitle),
@@ -340,7 +340,7 @@ namespace Servy.Services
                 Strings.ExportXml_Success);
 
         /// <inheritdoc/>
-        public Task ExportJsonConfig(string? confirmPassword) =>
+        public Task ExportJsonConfig(string? confirmPassword, CancellationToken cancellationToken = default) =>
             ExportConfigAsync(
                 confirmPassword,
                 () => _dialogService.SaveJson(Strings.SaveFileDialog_JsonTitle),
@@ -349,7 +349,7 @@ namespace Servy.Services
                 Strings.ExportJson_Success);
 
         /// <inheritdoc/>
-        public Task ImportXmlConfig() =>
+        public Task ImportXmlConfig(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
                 _dialogService.OpenXml,
                 (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
@@ -358,7 +358,7 @@ namespace Servy.Services
                 Strings.Msg_FailedToLoadXml);
 
         /// <inheritdoc/>
-        public Task ImportJsonConfig() =>
+        public Task ImportJsonConfig(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
                 _dialogService.OpenJson,
                 (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
@@ -367,8 +367,10 @@ namespace Servy.Services
                 Strings.Msg_FailedToLoadJson);
 
         /// <inheritdoc/>
-        public async Task OpenManager()
+        public async Task OpenManager(CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (string.IsNullOrWhiteSpace(_appConfig.ManagerAppPublishPath) || !File.Exists(_appConfig.ManagerAppPublishPath))
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_ManagerAppNotFound, Caption);
@@ -395,6 +397,10 @@ namespace Servy.Services
                         Logger.Warn($"Failed to start external process {_appConfig.ManagerAppPublishPath}.");
                     }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -511,6 +517,7 @@ namespace Servy.Services
         /// <param name="exportAction">A delegate that performs the actual serialization and file writing for the specific format.</param>
         /// <param name="formatName">A display-friendly name of the format (e.g., "XML", "JSON") used for logging and error reporting.</param>
         /// <param name="successMessage">The localized message to display in the UI upon successful completion.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task representing the asynchronous export operation.</returns>
         /// <remarks>
         /// This method ensures that the domain model is mapped to a DTO and strictly validated before any file I/O occurs, 
@@ -521,10 +528,13 @@ namespace Servy.Services
             Func<string?> getFilePath,
             Action<ServiceDto?, string> exportAction,
             string formatName,
-            string successMessage)
+            string successMessage,
+            CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var path = getFilePath();
                 if (string.IsNullOrEmpty(path)) return;
 
@@ -532,13 +542,17 @@ namespace Servy.Services
 
                 var dto = _modelToServiceDto();
 
-                if (!await _serviceConfigurationValidator.ValidateAsync(dto: dto, wrapperExePath: null, confirmPassword: confirmPassword))
+                if (!await _serviceConfigurationValidator.ValidateAsync(dto: dto, wrapperExePath: null, confirmPassword: confirmPassword, cancellationToken: cancellationToken))
                     return;
 
                 exportAction(dto, path);
 
                 Logger.Info($"Service configuration exported to {formatName} at: {path}");
                 await _messageBoxService.ShowInfoAsync(successMessage, Caption);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -561,6 +575,7 @@ namespace Servy.Services
         /// <param name="deserialize">A delegate that converts the raw file content into a <see cref="ServiceDto"/>.</param>
         /// <param name="formatName">A display-friendly name of the format (e.g., "XML", "JSON") used for logging.</param>
         /// <param name="loadErrorMessage">The localized message to display if the file content cannot be mapped to the DTO.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task representing the asynchronous import operation.</returns>
         /// <remarks>
         /// The import process follows a multi-stage security gate:
@@ -574,10 +589,13 @@ namespace Servy.Services
             Func<string, (bool IsValid, string? ErrorMsg)> validateContent,
             Func<string, ServiceDto?> deserialize,
             string formatName,
-            string loadErrorMessage)
+            string loadErrorMessage,
+            CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var path = getFilePath();
                 if (string.IsNullOrEmpty(path)) return;
 
@@ -605,7 +623,7 @@ namespace Servy.Services
                     return;
                 }
 
-                if (!await _serviceConfigurationValidator.ValidateAsync(dto))
+                if (!await _serviceConfigurationValidator.ValidateAsync(dto, cancellationToken: cancellationToken))
                 {
                     Logger.Info($"{formatName} File '{path}' not valid.");
                     return;
@@ -613,6 +631,10 @@ namespace Servy.Services
 
                 Logger.Info($"Service configuration imported from {formatName} at: {path}");
                 _bindServiceDtoToModel(dto);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {

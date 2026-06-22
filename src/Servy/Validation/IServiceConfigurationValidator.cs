@@ -8,20 +8,16 @@ namespace Servy.Validation
     public interface IServiceConfigurationValidator
     {
         /// <summary>
-        /// Validates the configuration of the specified service.
+        /// Validates the specified service configuration and displays a message box if validation fails.
         /// </summary>
-        /// <param name="dto">
-        /// The <see cref="ServiceDto"/> containing the service configuration to validate.
-        /// </param>
-        /// <param name="wrapperExePath">
-        /// Optional path to the wrapper executable, used for validation.
-        /// </param>
-        /// <param name="confirmPassword">
-        /// The confirmation of the service account password.
-        /// </param>
+        /// <param name="dto">The service configuration data to validate.</param>
+        /// <param name="wrapperExePath">The optional path to the service wrapper executable.</param>
+        /// <param name="confirmPassword">The password confirmation string to compare against the configuration's password.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
-        /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the configuration is valid; otherwise <c>false</c>.
+        /// A task that represents the asynchronous validation operation. 
+        /// The task result contains <see langword="true"/> if validation passed; otherwise, <see langword="false"/>.
         /// </returns>
-        Task<bool> ValidateAsync(ServiceDto? dto, string? wrapperExePath = null, string? confirmPassword = null);
+        Task<bool> ValidateAsync(ServiceDto? dto, string? wrapperExePath = null, string? confirmPassword = null, CancellationToken cancellationToken = default);
     }
 }

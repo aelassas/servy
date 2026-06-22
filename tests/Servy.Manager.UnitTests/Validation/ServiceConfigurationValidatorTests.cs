@@ -55,7 +55,7 @@ namespace Servy.Manager.UnitTests.Validation
                 .Returns(validResult);
 
             // Act
-            var result = await _validator.ValidateAsync(dto);
+            var result = await _validator.ValidateAsync(dto, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);
@@ -80,7 +80,7 @@ namespace Servy.Manager.UnitTests.Validation
                 .Returns(invalidResult);
 
             // Act
-            var result = await _validator.ValidateAsync(dto);
+            var result = await _validator.ValidateAsync(dto, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);

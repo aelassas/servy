@@ -220,9 +220,12 @@ namespace Servy.Manager.ViewModels
             get => _selectedLog;
             set
             {
-                _selectedLog = value;
-                SelectedLogMessage = value?.Message ?? string.Empty;
-                OnPropertyChanged();
+                if (!ReferenceEquals(_selectedLog, value))
+                {
+                    _selectedLog = value;
+                    SelectedLogMessage = value?.Message ?? string.Empty;
+                    OnPropertyChanged();
+                }
             }
         }
 
@@ -252,8 +255,11 @@ namespace Servy.Manager.ViewModels
             get => _selectedLevel;
             set
             {
-                _selectedLevel = value;
-                OnPropertyChanged(nameof(SelectedLevel));
+                if (_selectedLevel != value)
+                {
+                    _selectedLevel = value;
+                    OnPropertyChanged(nameof(SelectedLevel));
+                }
             }
         }
 

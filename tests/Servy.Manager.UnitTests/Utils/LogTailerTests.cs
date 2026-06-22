@@ -57,8 +57,8 @@ namespace Servy.Manager.UnitTests.Utils
             var tailer = new LogTailer();
 
             // Act
-            var resultNull = await tailer.GetHistoryAsync(null, LogType.StdOut, 10);
-            var resultEmpty = await tailer.GetHistoryAsync(string.Empty, LogType.StdOut, 10);
+            var resultNull = await tailer.GetHistoryAsync(null, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
+            var resultEmpty = await tailer.GetHistoryAsync(string.Empty, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.NotNull(resultNull);
@@ -75,7 +75,7 @@ namespace Servy.Manager.UnitTests.Utils
             string missingPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.log");
 
             // Act
-            var result = await tailer.GetHistoryAsync(missingPath, LogType.StdOut, 10);
+            var result = await tailer.GetHistoryAsync(missingPath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.NotNull(result);
@@ -90,7 +90,7 @@ namespace Servy.Manager.UnitTests.Utils
             File.WriteAllText(_tempFilePath, string.Empty);
 
             // Act
-            var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10);
+            var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.NotNull(result);
@@ -108,7 +108,7 @@ namespace Servy.Manager.UnitTests.Utils
             File.WriteAllLines(_tempFilePath, linesToWrite);
 
             // Act
-            var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 3);
+            var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 3, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(3, result?.Lines.Count);
@@ -124,7 +124,7 @@ namespace Servy.Manager.UnitTests.Utils
             File.WriteAllLines(_tempFilePath, new[] { "Line1", "Line2" });
 
             // Act
-            var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10);
+            var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(2, result?.Lines.Count);
@@ -210,7 +210,7 @@ namespace Servy.Manager.UnitTests.Utils
             // Act
             // We invoke GetHistoryAsync directly. Since the file does not exist,
             // the LoadHistory method will trigger the FileNotFoundException catch block.
-            var result = await tailer.GetHistoryAsync(nonExistentPath, LogType.StdOut, 10);
+            var result = await tailer.GetHistoryAsync(nonExistentPath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.NotNull(result);

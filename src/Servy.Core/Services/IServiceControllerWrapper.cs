@@ -5,7 +5,7 @@ namespace Servy.Core.Services
     /// <summary>
     /// Defines an abstraction for controlling and monitoring the status of a Windows service.
     /// </summary>
-    public interface IServiceControllerWrapper: IDisposable
+    public interface IServiceControllerWrapper : IDisposable
     {
         /// <summary>
         /// Gets the service name.

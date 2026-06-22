@@ -15,9 +15,9 @@ namespace Servy.Manager.Design
         /// <summary>
         /// Returns an empty list of services to satisfy design-time search bindings.
         /// </summary>
-        public Task<List<Service?>> SearchServicesAsync(string? searchText, bool calculatePerf, CancellationToken cancellationToken = default)
+        public Task<List<Service>> SearchServicesAsync(string? searchText, bool calculatePerf, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(new List<Service?>());
+            return Task.FromResult(new List<Service>());
         }
 
         public Task<bool> StartServiceAsync(Service? service, bool showMessageBox = true, CancellationToken cancellationToken = default)

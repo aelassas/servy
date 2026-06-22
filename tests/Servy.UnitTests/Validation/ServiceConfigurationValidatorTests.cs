@@ -32,7 +32,7 @@ namespace Servy.UnitTests.Validation
         [Fact]
         public async Task Validate_NullDto_ReturnsFalse()
         {
-            var result = await _validator.ValidateAsync(null);
+            var result = await _validator.ValidateAsync(null, cancellationToken: TestContext.Current.CancellationToken);
             Assert.False(result);
             _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
@@ -45,7 +45,7 @@ namespace Servy.UnitTests.Validation
                                         // This relies on the actual logic within ServiceValidationRules.Validate
 
             // Act
-            var result = await _validator.ValidateAsync(dto);
+            var result = await _validator.ValidateAsync(dto, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -61,7 +61,7 @@ namespace Servy.UnitTests.Validation
             _mockProcessHelper.Setup(p => p.ValidatePath(dto.ExecutablePath, true)).Returns(true);
 
             // Act
-            var result = await _validator.ValidateAsync(dto);
+            var result = await _validator.ValidateAsync(dto, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);

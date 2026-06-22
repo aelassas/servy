@@ -131,9 +131,7 @@ namespace Servy.Manager
             }
         }
 
-        /// <summary>
-        /// Gets the dependencies refresh interval in milliseconds.
-        /// </summary>
+        /// <inheritdoc/>
         public int DependenciesRefreshIntervalInMs { get; private set; }
 
         /// <inheritdoc/>

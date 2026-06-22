@@ -32,7 +32,7 @@ namespace Servy.Manager.UnitTests.Design
                 await commands.ExportServiceToJsonAsync(testService, TestContext.Current.CancellationToken);
                 await commands.ImportXmlConfigAsync(TestContext.Current.CancellationToken);
                 await commands.ImportJsonConfigAsync(TestContext.Current.CancellationToken);
-                await commands.CopyPidAsync(testService);
+                await commands.CopyPidAsync(testService, TestContext.Current.CancellationToken);
                 commands.Dispose();
             });
 
