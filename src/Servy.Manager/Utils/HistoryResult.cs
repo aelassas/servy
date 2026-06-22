@@ -35,7 +35,7 @@ namespace Servy.Manager.Utils
         /// <param name="lines">The list of initial log lines.</param>
         /// <param name="position">The file pointer position after the read.</param>
         /// <param name="creationTime">The creation timestamp of the source file.</param>
-        public HistoryResult(List<LogLine> lines, long position, DateTime creationTime)
+        public HistoryResult(List<LogLine>? lines, long position, DateTime creationTime)
         {
             // We still accept List<T> in the constructor for convenience, 
             // but it is stored and exposed as IReadOnlyList.

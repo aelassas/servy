@@ -361,7 +361,7 @@ namespace Servy.Manager.Services
                         return false;
                     }
 
-                    await Task.Run(() => RemoveService(service));
+                    RemoveService(service);
                     return true;
                 }
                 catch (Exception ex)

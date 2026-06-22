@@ -31,14 +31,14 @@ namespace Servy.Validation
         /// This implementation follows a fail-fast approach, showing only the first identified 
         /// error to prevent overwhelming the user with multiple dialog boxes.
         /// </remarks>
-        public async Task<bool> ValidateAsync(ServiceDto? dto, string? wrapperExePath = null, string? confirmPassword = null, CancellationToken cancellationToken = default)
+        public async Task<bool> ValidateAsync(ServiceDto? dto, string? wrapperExePath = null, string? confirmPassword = null, bool importMode = false, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             if (dto == null) return false;
 
             // Delegate logic to the shared Core rules engine
-            var result = _serviceValidationRules.Validate(dto, wrapperExePath, confirmPassword);
+            var result = _serviceValidationRules.Validate(dto, wrapperExePath, confirmPassword, importMode: importMode);
 
             // Display critical errors first
             if (!result.IsValid)

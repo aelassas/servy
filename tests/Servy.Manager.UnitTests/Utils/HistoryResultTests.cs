@@ -41,7 +41,7 @@ namespace Servy.Manager.UnitTests.Utils
             var expectedCreationTime = DateTime.UtcNow;
 
             // Act
-            var result = new HistoryResult(nullLines!, expectedPosition, expectedCreationTime);
+            var result = new HistoryResult(nullLines, expectedPosition, expectedCreationTime);
 
             // Assert
             // Verifies the null-coalescing branch (lines ?? new List<LogLine>()) evaluated successfully

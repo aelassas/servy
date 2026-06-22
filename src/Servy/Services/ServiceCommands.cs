@@ -623,7 +623,7 @@ namespace Servy.Services
                     return;
                 }
 
-                if (!await _serviceConfigurationValidator.ValidateAsync(dto, cancellationToken: cancellationToken))
+                if (!await _serviceConfigurationValidator.ValidateAsync(dto, importMode: true, cancellationToken: cancellationToken))
                 {
                     Logger.Info($"{formatName} File '{path}' not valid.");
                     return;
