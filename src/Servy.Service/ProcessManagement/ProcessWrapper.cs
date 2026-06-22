@@ -309,7 +309,7 @@ namespace Servy.Service.ProcessManagement
 
             if (!process.WaitForExit(postKillWaitMs))
             {
-                _logger?.Warn($"Process '{process.Format()}' killed, but did not exit within {postKillWaitMs / 1000.0}s.");
+                _logger?.Warn($"Process '{process.Format()}' killed, but did not exit within {postKillWaitMs / (double)AppConfig.MillisecondsPerSecond}s.");
             }
 
             return false;

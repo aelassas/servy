@@ -12,7 +12,7 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public ServiceDto? Deserialize(string? json)
         {
-            // Branch 1: Covered by Deserialize_NullOrEmpty_ReturnsNull
+            // Initial guard: null/empty input deserializes to null per contract
             if (string.IsNullOrWhiteSpace(json))
                 return null;
 

@@ -407,7 +407,7 @@ namespace Servy.Service.UnitTests.Helpers
                 _mockProcessHelper.Setup(p => p.Start(It.IsAny<ProcessStartInfo>())).Returns((Process?)null);
 
                 // Act
-                _helper.RestartService(mockLog.Object, "TestService");
+                _helper.RestartService("TestService", mockLog.Object);
 
                 // Assert
                 mockLog.Verify(l => l.Error("Failed to start Servy.Restarter.exe.", It.IsAny<Exception>()), Times.Once);

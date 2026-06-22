@@ -64,6 +64,16 @@ namespace Servy.Service.ProcessManagement
         StreamReader StandardError { get; }
 
         /// <summary>
+        /// Gets the window handle of the main window for the associated process.
+        /// </summary>
+        IntPtr MainWindowHandle { get; }
+
+        /// <summary>
+        /// Gets or sets the overall priority category for the associated process.
+        /// </summary>
+        ProcessPriorityClass PriorityClass { get; set; }
+
+        /// <summary>
         /// Process start information, including the executable path, arguments, and other settings.
         /// </summary>
         ProcessStartInfo StartInfo { get; }
@@ -159,16 +169,6 @@ namespace Servy.Service.ProcessManagement
         /// </summary>
         /// <returns><c>true</c> if the main window has been successfully closed; otherwise, <c>false</c>.</returns>
         bool CloseMainWindow();
-
-        /// <summary>
-        /// Gets the window handle of the main window for the associated process.
-        /// </summary>
-        IntPtr MainWindowHandle { get; }
-
-        /// <summary>
-        /// Gets or sets the overall priority category for the associated process.
-        /// </summary>
-        ProcessPriorityClass PriorityClass { get; set; }
 
         /// <summary>
         /// Begins asynchronous read operations on the redirected standard output stream of the application.

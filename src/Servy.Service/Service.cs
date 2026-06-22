@@ -1920,7 +1920,7 @@ namespace Servy.Service
             switch (_recoveryAction)
             {
                 case RecoveryAction.RestartService:
-                    _serviceHelper.RestartService(_logger!, _serviceName!);
+                    _serviceHelper.RestartService(_serviceName!, _logger);
                     break;
 
                 case RecoveryAction.RestartProcess:
@@ -1931,7 +1931,7 @@ namespace Servy.Service
                         _realArgs!,
                         _workingDir!,
                         _environmentVariables,
-                        _logger!,
+                        _logger,
                         ClampTimeout(_options?.StopTimeoutInSeconds ?? AppConfig.DefaultStopTimeout),
                         _cancellationSource?.Token ?? CancellationToken.None
                     );
@@ -1941,7 +1941,7 @@ namespace Servy.Service
                     try
                     {
                         _isRebooting = true;
-                        _serviceHelper.RestartComputer(_logger!);
+                        _serviceHelper.RestartComputer(_logger);
                     }
                     catch
                     {

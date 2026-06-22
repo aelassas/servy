@@ -226,7 +226,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public void EnsureValidWorkingDirectory(StartOptions options, IServyLogger logger)
+        public void EnsureValidWorkingDirectory(StartOptions options, IServyLogger? logger)
         {
             // Check if the current directory is missing, malformed, or physically non-existent
             if (string.IsNullOrWhiteSpace(options.WorkingDirectory) ||
@@ -284,7 +284,7 @@ namespace Servy.Service.Helpers
                     string realArgs,
                     string workingDir,
                     List<EnvironmentVariable> environmentVariables,
-                    IServyLogger logger,
+                    IServyLogger? logger,
                     int stopTimeoutMs,
                     CancellationToken cancellationToken = default)
         {
@@ -350,7 +350,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public void RestartService(IServyLogger logger, string serviceName)
+        public void RestartService(string serviceName, IServyLogger? logger)
         {
             try
             {
@@ -424,7 +424,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public void RestartComputer(IServyLogger logger)
+        public void RestartComputer(IServyLogger? logger)
         {
             try
             {

@@ -46,6 +46,6 @@ namespace Servy.Core.Validation
         /// </item>
         /// </list>
         /// </remarks>
-        ValidationResult Validate(ServiceDto? dto, string? wrapperExePath = null, string? confirmPassword = "", bool importMode = false);
+        ValidationResult Validate(ServiceDto? dto, string? wrapperExePath = null, string? confirmPassword = null, bool importMode = false);
     }
 }

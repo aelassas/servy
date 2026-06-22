@@ -81,7 +81,7 @@ namespace Servy.Service.Helpers
         /// </summary>
         /// <param name="options">The startup options containing the working directory to validate.</param>
         /// <param name="logger">The logger to write warnings to.</param>
-        void EnsureValidWorkingDirectory(StartOptions options, IServyLogger logger);
+        void EnsureValidWorkingDirectory(StartOptions options, IServyLogger? logger);
 
         /// <summary>
         /// Attempts to restart the given process by:
@@ -107,7 +107,7 @@ namespace Servy.Service.Helpers
             string realArgs,
             string workingDir,
             List<EnvironmentVariable> environmentVariables,
-            IServyLogger logger,
+            IServyLogger? logger,
             int stopTimeoutMs,
             CancellationToken cancellationToken = default);
 
@@ -119,7 +119,7 @@ namespace Servy.Service.Helpers
         /// <remarks>
         /// This should be used when the service is registered with the Service Control Manager.
         /// </remarks>
-        void RestartService(IServyLogger logger, string serviceName);
+        void RestartService(string serviceName, IServyLogger? logger);
 
         /// <summary>
         /// Restarts the computer.
@@ -129,7 +129,7 @@ namespace Servy.Service.Helpers
         /// This operation requires appropriate privileges and will cause a system reboot.
         /// Use with extreme caution.
         /// </remarks>
-        void RestartComputer(IServyLogger logger);
+        void RestartComputer(IServyLogger? logger);
 
         /// <summary>
         /// Informs the Service Control Manager (SCM) that the service needs additional time to start,
