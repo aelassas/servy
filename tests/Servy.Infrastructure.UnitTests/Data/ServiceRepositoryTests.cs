@@ -565,7 +565,9 @@ namespace Servy.Infrastructure.UnitTests.Data
                 PreStopParameters = "encrypted_pre_stop_params",
                 PostStopParameters = "encrypted_post_stop_params",
             };
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
+            _mockDapper
+                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(dto);
             _mockSecureData.Setup(s => s.Decrypt("encrypted")).Returns("plain");
             _mockSecureData.Setup(s => s.Decrypt("encrypted_vars")).Returns("v1=val1;v2=val2");
             _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_vars")).Returns("v3=val3");
@@ -594,7 +596,9 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task GetByIdAsync_EmptyPassword()
         {
             var dto = new ServiceDto { Id = 1, Password = null };
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
+            _mockDapper
+                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(dto);
 
             var repo = CreateRepository();
             var result = await repo.GetByIdAsync(1, true, CancellationToken.None);
@@ -864,7 +868,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             };
 
             _mockDapper
-                .Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
+                .Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(list);
 
             _mockSecureData.Setup(s => s.Decrypt("e1")).Returns("p1");
@@ -921,7 +925,9 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task Search_DecryptsPasswords()
         {
             var list = new List<ServiceDto> { new ServiceDto { Name = "A", Password = "e1" } };
-            _mockDapper.Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(list);
+            _mockDapper
+                .Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(list);
             _mockSecureData.Setup(s => s.Decrypt("e1")).Returns("p1");
 
             var repo = CreateRepository();
@@ -949,7 +955,9 @@ namespace Servy.Infrastructure.UnitTests.Data
                     PostStopParameters = "encrypted_post_stop_params",
                 }
             };
-            _mockDapper.Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(list);
+            _mockDapper
+                .Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(list);
             _mockSecureData.Setup(s => s.Decrypt("e1")).Returns("p1");
             _mockSecureData.Setup(s => s.Decrypt("encrypted_vars")).Returns("vars");
             _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_vars")).Returns("pre_vars");
@@ -1294,10 +1302,11 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
             var poisonDto = new ServiceDto { Id = 77, Name = "PoisonRow", Description = "Original Description", Password = "poison_payload" };
 
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
-                       .ReturnsAsync(poisonDto);
+            _mockDapper
+                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(poisonDto);
 
-            // FIX: Throw a TimeoutException directly from the secure data engine mock.
+            // Throw a TimeoutException directly from the secure data engine mock.
             // When DecryptDto catches this, it wraps it inside the single InvalidOperationException
             // that HandleCorruptServiceDecryption expects to unwrap via ex.InnerException.
             _mockSecureData.Setup(s => s.Decrypt(It.IsAny<string>()))

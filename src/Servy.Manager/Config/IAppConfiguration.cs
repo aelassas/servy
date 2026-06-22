@@ -54,12 +54,12 @@ namespace Servy.Manager.Config
         int LogsWindowDays { get; }
 
         /// <summary>
-        /// Delay in milliseconds to debounce search keystrokes before filtering in console tab.
+        /// Gets the delay, in milliseconds, used to debounce search keystrokes before filtering.
         /// </summary>
         int SearchDebounceDelayMs { get; }
 
         /// <summary>
-        /// Maximum number of concurrent Service Control Manager (SCM) operations 
+        /// Gets the maximum number of concurrent Service Control Manager (SCM) operations
         /// permitted during bulk lifecycle tasks (start, stop, or restart).
         /// </summary>
         /// <remarks>

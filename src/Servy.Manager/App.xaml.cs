@@ -215,7 +215,7 @@ namespace Servy.Manager
                     var cursorService = new CursorService();
 
                     // 2. Initialize Standalone ViewModels
-                    var logsVm = new LogsViewModel(this, eventLogService, cursorService);
+                    var logsVm = new LogsViewModel(this, eventLogService, cursorService, messageBoxService);
 
                     // Break the circular dependency using local proxy functions
                     MainViewModel viewModel = null;

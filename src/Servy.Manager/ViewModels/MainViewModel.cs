@@ -24,6 +24,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Threading;
+using UiHelper = Servy.UI.Helpers.Helper;
 
 namespace Servy.Manager.ViewModels
 {
@@ -758,7 +759,7 @@ namespace Servy.Manager.ViewModels
         /// during the last operation.
         /// </summary>
         private void SetFooterText(Stopwatch stopwatch) =>
-            FooterText = UI.Helpers.Helper.GetRowsInfo(
+            FooterText = UiHelper.GetRowsInfo(
                 count: _services.Count,
                 duration: stopwatch.Elapsed,
                 noneFormat: Strings.Footer_Service_None,

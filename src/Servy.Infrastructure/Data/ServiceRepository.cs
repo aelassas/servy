@@ -1,5 +1,4 @@
-﻿using Dapper;
-using Servy.Core.Config;
+﻿using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
@@ -249,7 +248,7 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
-            var sql = "DELETE FROM Services WHERE Id = @Id;";
+            const string sql = "DELETE FROM Services WHERE Id = @Id;";
             return await _dapper.ExecuteAsync(sql, new { Id = id }, cancellationToken: cancellationToken);
         }
 
@@ -272,9 +271,8 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<ServiceDto> GetByIdAsync(int id, bool decrypt = true, CancellationToken cancellationToken = default)
         {
-            var sql = "SELECT * FROM Services WHERE Id = @Id;";
-            var cmd = new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken);
-            var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(cmd);
+            const string sql = "SELECT * FROM Services WHERE Id = @Id;";
+            var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(sql, new { Id = id }, cancellationToken: cancellationToken);
 
             if (decrypt) SafeDecrypt(dto);
             return dto;
@@ -334,9 +332,8 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<IEnumerable<ServiceDto>> GetAllAsync(bool decrypt = true, CancellationToken cancellationToken = default)
         {
-            var sql = "SELECT * FROM Services ORDER BY Name COLLATE UNICODE_NOCASE ASC;";
-            var cmd = new CommandDefinition(sql, cancellationToken: cancellationToken);
-            var list = await _dapper.QueryAsync<ServiceDto>(cmd);
+            const string sql = "SELECT * FROM Services ORDER BY Name COLLATE UNICODE_NOCASE ASC;";
+            var list = await _dapper.QueryAsync<ServiceDto>(sql, cancellationToken: cancellationToken);
 
             if (decrypt) SafeDecryptAll(list, cancellationToken);
 
@@ -366,8 +363,7 @@ namespace Servy.Infrastructure.Data
 
             var pattern = $"%{escapedKeyword}%";
 
-            var cmd = new CommandDefinition(sql, new { Pattern = pattern }, cancellationToken: cancellationToken);
-            var list = (await _dapper.QueryAsync<ServiceDto>(cmd)).ToList();
+            var list = (await _dapper.QueryAsync<ServiceDto>(sql, new { Pattern = pattern }, cancellationToken: cancellationToken)).ToList();
 
             if (decrypt) SafeDecryptAll(list, cancellationToken);
 

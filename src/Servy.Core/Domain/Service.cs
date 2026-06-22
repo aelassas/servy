@@ -117,7 +117,7 @@ namespace Servy.Core.Domain
         public ProcessPriority Priority { get; set; } = AppConfig.DefaultProcessPriority;
 
         /// <summary>
-        /// Whether to enable the console user interface for the service.
+        /// Gets or sets a value indicating whether to enable the console user interface for the service.
         /// When enabled, stdout/stderr redirection is disabled, and the service runs in a console window.
         /// </summary>
         public bool EnableConsoleUI { get; set; } = AppConfig.DefaultEnableConsoleUI;
@@ -155,7 +155,7 @@ namespace Servy.Core.Domain
         public DateRotationType DateRotationType { get; set; } = AppConfig.DefaultDateRotationType;
 
         /// <summary>
-        /// Maximum number of rotated log files to keep. 
+        /// Gets or sets the maximum number of rotated log files to keep. 
         /// Set to 0 for unlimited.
         /// </summary>
         public int MaxRotations { get; set; } = AppConfig.DefaultMaxRotations;
@@ -296,22 +296,22 @@ namespace Servy.Core.Domain
         public bool PreLaunchIgnoreFailure { get; set; } = AppConfig.DefaultPreLaunchIgnoreFailure;
 
         /// <summary>
-        /// Optional path to an executable that runs after the service starts.
+        /// Gets or sets an optional path to an executable that runs after the service starts.
         /// </summary>
         public string PostLaunchExecutablePath { get; set; }
 
         /// <summary>
-        /// Optional startup directory for the post-launch executable.
+        /// Gets or sets an optional startup directory for the post-launch executable.
         /// </summary>
         public string PostLaunchStartupDirectory { get; set; }
 
         /// <summary>
-        /// Optional parameters for the post-launch executable.
+        /// Gets or sets optional parameters for the post-launch executable.
         /// </summary>
         public string PostLaunchParameters { get; set; }
 
         /// <summary>
-        /// Whether debug logs are enabled.
+        /// Gets or sets a value indicating whether debug logs are enabled.
         /// When enabled, environment variables and process parameters are recorded in the local
         /// log file at <c>%ProgramData%\Servy\logs\Servy.Service.log</c>. Sensitive data is
         /// never written to the Windows Event Log or shown by the CLI / PowerShell module.
@@ -342,42 +342,42 @@ namespace Servy.Core.Domain
         public string ActiveStderrPath { get; set; }
 
         /// <summary>
-        /// Optional path to an executable that runs before the service stops.
+        /// Gets or sets an optional path to an executable that runs before the service stops.
         /// </summary>
         public string PreStopExecutablePath { get; set; }
 
         /// <summary>
-        /// Optional startup directory for the pre-stop executable.
+        /// Gets or sets an optional startup directory for the pre-stop executable.
         /// </summary>
         public string PreStopStartupDirectory { get; set; }
 
         /// <summary>
-        /// Optional parameters for the pre-stop executable.
+        /// Gets or sets optional parameters for the pre-stop executable.
         /// </summary>
         public string PreStopParameters { get; set; }
 
         /// <summary>
-        /// Maximum time in seconds to wait for the pre-stop executable to complete.
+        /// Gets or sets the maximum time in seconds to wait for the pre-stop executable to complete.
         /// </summary>
         public int PreStopTimeoutSeconds { get; set; } = AppConfig.DefaultPreStopTimeoutSeconds;
 
         /// <summary>
-        /// Whether to log pre-stop failure as error.
+        /// Gets or sets a value indicating whether to log pre-stop failure as error.
         /// </summary>
         public bool PreStopLogAsError { get; set; } = AppConfig.DefaultPreStopLogAsError;
 
         /// <summary>
-        /// Optional path to an executable that runs after the service stops.
+        /// Gets or sets an optional path to an executable that runs after the service stops.
         /// </summary>
         public string PostStopExecutablePath { get; set; }
 
         /// <summary>
-        /// Optional startup directory for the post-stop executable.
+        /// Gets or sets an optional startup directory for the post-stop executable.
         /// </summary>
         public string PostStopStartupDirectory { get; set; }
 
         /// <summary>
-        /// Optional parameters for the post-stop executable.
+        /// Gets or sets optional parameters for the post-stop executable.
         /// </summary>
         public string PostStopParameters { get; set; }
 
@@ -599,6 +599,5 @@ namespace Servy.Core.Domain
         }
 
         #endregion
-
     }
 }

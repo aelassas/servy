@@ -26,6 +26,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IEventLogService> _eventLogServiceMock;
         private readonly Mock<ICursorService> _cursorServiceMock;
         private readonly Mock<IProcessKiller> _mockProcessKiller;
+        private readonly Mock<IMessageBoxService> _mockMessageBoxService;
 
         public LogsViewModelTests()
         {
@@ -33,6 +34,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             _eventLogServiceMock = new Mock<IEventLogService>();
             _cursorServiceMock = new Mock<ICursorService>();
             _mockProcessKiller = new Mock<IProcessKiller>();
+            _mockMessageBoxService = new Mock<IMessageBoxService>();
 
             _appConfigurationMock.Setup(c => c.LogsWindowDays).Returns(7);
         }
@@ -42,7 +44,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             return new LogsViewModel(
                 _appConfigurationMock.Object,
                 _eventLogServiceMock.Object,
-                _cursorServiceMock.Object);
+                _cursorServiceMock.Object,
+                _mockMessageBoxService.Object);
         }
 
         #region Constructor Guard Clauses & Initialization Tests
@@ -51,21 +54,28 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void Constructor_NullAppConfig_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => new LogsViewModel(
-                null, _eventLogServiceMock.Object, _cursorServiceMock.Object));
+                null, _eventLogServiceMock.Object, _cursorServiceMock.Object, _mockMessageBoxService.Object));
         }
 
         [Fact]
         public void Constructor_NullEventLogService_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => new LogsViewModel(
-                _appConfigurationMock.Object, null, _cursorServiceMock.Object));
+                _appConfigurationMock.Object, null, _cursorServiceMock.Object, _mockMessageBoxService.Object));
         }
 
         [Fact]
         public void Constructor_NullCursorService_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => new LogsViewModel(
-                _appConfigurationMock.Object, _eventLogServiceMock.Object, null));
+                _appConfigurationMock.Object, _eventLogServiceMock.Object, null, _mockMessageBoxService.Object));
+        }
+
+        [Fact]
+        public void Constructor_NullMessageBoxService_ThrowsArgumentNullException()
+        {
+            Assert.Throws<ArgumentNullException>(() => new LogsViewModel(
+                _appConfigurationMock.Object, _eventLogServiceMock.Object, _cursorServiceMock.Object, null));
         }
 
         [Fact]

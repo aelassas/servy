@@ -32,6 +32,7 @@ namespace Servy.Manager.ViewModels
         private readonly IAppConfiguration _appConfig;
         private readonly IEventLogService _eventLogService;
         private readonly ICursorService _cursorService;
+        private readonly IMessageBoxService _messageBoxService;
         private bool _isBusy;
         private string _searchButtonText = Strings.Button_Search;
         private LogEntryModel _selectedLog;
@@ -299,11 +300,17 @@ namespace Servy.Manager.ViewModels
         /// <param name="appConfig">Application configuration settings.</param>
         /// <param name="eventLogService">Service used to fetch event logs.</param>
         /// <param name="cursorService">Service used to control the cursor state.</param>
-        public LogsViewModel(IAppConfiguration appConfig, IEventLogService eventLogService, ICursorService cursorService)
+        /// <param name="messageBoxService">Service used to display modal dialogs (e.g. error popups).</param>
+        public LogsViewModel(
+            IAppConfiguration appConfig,
+            IEventLogService eventLogService,
+            ICursorService cursorService,
+            IMessageBoxService messageBoxService)
         {
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _eventLogService = eventLogService ?? throw new ArgumentNullException(nameof(eventLogService));
             _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
+            _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
 
             FromDate = DateTime.Now.AddDays(-_appConfig.LogsWindowDays);
             ToDate = DateTime.Now; // Default to now
@@ -391,6 +398,7 @@ namespace Servy.Manager.ViewModels
             catch (Exception ex)
             {
                 Logger.Error($"Failed to search logs.", ex);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
             }
             finally
             {
