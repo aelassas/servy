@@ -24,10 +24,5 @@
         /// Label for the Network Service built-in account, used for services requiring network-aware identity.
         /// </summary>
         public const string NetworkService = "Network Service";
-
-        /// <summary>
-        /// Event Viewer Source Name for Servy Manager.
-        /// </summary>
-        public const string EventSource = "ServyManager";
     }
 }

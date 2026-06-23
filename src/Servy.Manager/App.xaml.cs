@@ -12,9 +12,6 @@ using Servy.UI.Bootstrapping;
 using Servy.UI.Services;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-#if !DEBUG
-using System.Diagnostics;
-#endif
 using System.IO;
 using System.Windows;
 using Servy.Manager.Config;

@@ -84,37 +84,6 @@ namespace Servy.Core.EnvironmentVariables
         }
 
         /// <summary>
-        /// Counts occurrences of a character that are not escaped by an odd number of preceding backslashes.
-        /// </summary>
-        /// <param name="str">The input string to check.</param>
-        /// <param name="ch">The character to count.</param>
-        /// <returns>The number of unescaped occurrences of the specified character.</returns>
-        public static int CountUnescapedChar(string str, char ch)
-        {
-            int count = 0;
-            int backslashRun = 0;
-
-            for (int i = 0; i < str.Length; i++)
-            {
-                char c = str[i];
-                bool isEscaped = (backslashRun & 1) == 1;
-
-                if (c == ch)
-                {
-                    // If not escaped, count it
-                    if (!isEscaped)
-                    {
-                        count++;
-                    }
-                }
-
-                backslashRun = (c == '\\') ? backslashRun + 1 : 0;
-            }
-
-            return count;
-        }
-
-        /// <summary>
         /// Unescapes backslash-escaped characters, converting escaped equals, semicolons, quotes, newlines, and backslashes into their literal equivalents.
         /// </summary>
         /// <param name="input">The input string to unescape.</param>

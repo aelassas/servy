@@ -186,11 +186,11 @@ namespace Servy.Manager.Services
         /// <inheritdoc />
         public Task<bool> StartServiceAsync(Service? service, bool showMessageBox = true, CancellationToken cancellationToken = default) =>
             ExecuteServiceCommandAsync(
-                service, 
-                d => d.Start(cancellationToken), 
-                ServiceStatus.Running, 
-                Strings.Msg_ServiceStarted, 
-                checkDisabled: true, 
+                service,
+                d => d.Start(cancellationToken),
+                ServiceStatus.Running,
+                Strings.Msg_ServiceStarted,
+                checkDisabled: true,
                 showMessageBox: showMessageBox,
                 cancellationToken: cancellationToken);
 
@@ -842,7 +842,7 @@ namespace Servy.Manager.Services
         private void RemoveService(Service? service)
         {
             if (service == null) throw new ArgumentNullException(nameof(service));
-            _removeServiceCallback?.Invoke(service.Name!);
+            _removeServiceCallback.Invoke(service.Name!);
         }
 
         /// <summary>
@@ -850,8 +850,7 @@ namespace Servy.Manager.Services
         /// </summary>
         private async Task RefreshServices()
         {
-            if (_refreshCallback != null)
-                await _refreshCallback();
+            await _refreshCallback();
         }
 
         /// <summary>

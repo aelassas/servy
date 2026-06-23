@@ -93,27 +93,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
         #endregion
 
-        #region CountUnescapedChar Tests
-
-        /// <summary>
-        /// Verifies that <see cref="EscapedTokenizer.CountUnescapedChar"/> only increments for unescaped occurrences.
-        /// </summary>
-        [Theory]
-        [InlineData("a;b;c", ';', 2)]
-        [InlineData("a\\;b;c", ';', 1)]
-        [InlineData("a\\;b\\;c", ';', 0)]
-        [InlineData("\\\\;\\\\;", ';', 2)] // Even backslashes are unescaped
-        public void CountUnescapedChar_BranchCoverage_ReturnsCorrectCount(string input, char ch, int expected)
-        {
-            // Act
-            int result = EscapedTokenizer.CountUnescapedChar(input, ch);
-
-            // Assert
-            Assert.Equal(expected, result);
-        }
-
-        #endregion
-
         #region Unescape Tests
 
         /// <summary>

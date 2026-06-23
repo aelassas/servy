@@ -54,10 +54,7 @@ runs:
             }
         }
 
-        if (-not $tag) {
-            Write-Error "No tag provided or fallback found. Set tag via input, trigger a release, or push a tag."
-            exit 1
-        }
+        if (-not $tag) { throw "No tag provided or fallback found. Set tag via input, trigger a release, or push a tag." }
 
         $version = $tag -replace '^[vV]', ''         # e.g. v1.1 / V1.1 -> 1.1
         Write-Host "Using resolved tag: $tag"

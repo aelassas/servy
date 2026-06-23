@@ -13,7 +13,7 @@
 function Assert-LastExitCode {
     param([string]$ErrorMessage)
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        Write-Host "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
         exit $LASTEXITCODE
     }
 }
