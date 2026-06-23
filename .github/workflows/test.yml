@@ -77,7 +77,7 @@ jobs:
               
               $dllPath = "tests\$projName\bin\x64\Debug\$projName.dll"
               if (-Not (Test-Path $dllPath)) {
-                  Write-Error "Test DLL not found: $dllPath"
+                  Write-Host "::error::Test DLL not found: $dllPath"
                   $failed = $true
                   continue
               }
@@ -136,13 +136,12 @@ jobs:
                   
               if ($LASTEXITCODE -ne 0) { 
                   $failed = $true 
-                  Write-Error "Tests failed for project: $projName"
+                  Write-Host "::error::Tests failed for project: $projName"
               }
           }
 
           if ($failed) { 
               Write-Error "One or more test projects failed. Review the logs above."
-              exit 1 
           }
 
       - name: Build Solution (Release)
@@ -206,10 +205,7 @@ jobs:
         shell: pwsh
         run: |
           dotnet tool install --global dotnet-reportgenerator-globaltool --version $env:REPORTGENERATOR_VERSION
-          if ($LASTEXITCODE -ne 0) {
-              Write-Error "reportgenerator install failed (exit $LASTEXITCODE)"
-              exit $LASTEXITCODE
-          }
+          if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator install failed (exit $LASTEXITCODE)" }
 
       - name: Merge coverage reports
         shell: pwsh
@@ -217,7 +213,7 @@ jobs:
           # Find all newly generated cobertura files dynamically          
           # Updated the filter to match the new unique filenames          
           $reports = Get-ChildItem -Path . -Recurse -Filter "*coverage.cobertura.xml" | Where-Object { $_.FullName -notmatch "CoverageMerged" }
-          if ($reports.Count -eq 0) { Write-Error "No coverage files found!"; exit 1 }
+          if ($reports.Count -eq 0) { Write-Error "No coverage files found!" }
           
           $reportPaths = $reports.FullName -join ";"
           
@@ -229,7 +225,7 @@ jobs:
               "-reporttypes:Cobertura" `
               "-assemblyfilters:-*.UnitTests;-*.IntegrationTests;-Servy.Testing;-Servy.Restarter.Net48" `
               -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/*.Designer.cs;-**/obj/**/*"
-          if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
+          if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed (exit $LASTEXITCODE)" }
 
       - name: Normalize coverage paths (PowerShell)
         shell: pwsh
@@ -238,7 +234,7 @@ jobs:
           if (-Not (Test-Path $fixedDir)) { New-Item -ItemType Directory -Path $fixedDir | Out-Null }
         
           $mergedFile = "CoverageMerged\Cobertura.xml"
-          if (-Not (Test-Path $mergedFile)) { Write-Error "$mergedFile not found"; exit 1 }
+          if (-Not (Test-Path $mergedFile)) { Write-Error "$mergedFile not found" }
 
           $content = Get-Content $mergedFile -Raw
           $content = [regex]::Replace($content, 'filename="([^"]*)"', {

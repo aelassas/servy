@@ -634,6 +634,7 @@ namespace Servy.Manager.Views
                 if (DataContext is MainViewModel vm)
                 {
                     vm.StopRefreshTimer();
+                    vm.Dispose();
                 }
 
                 GetPerformanceVm()?.Dispose();
