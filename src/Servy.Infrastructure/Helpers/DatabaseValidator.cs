@@ -21,14 +21,14 @@ namespace Servy.Infrastructure.Helpers
         /// </remarks>
         public static bool IsSqliteVersionSafe(out string? currentVersion)
         {
-            return ValidateVersion(System.Data.SQLite.SQLiteConnection.SQLiteVersion, out currentVersion);
+            currentVersion = System.Data.SQLite.SQLiteConnection.SQLiteVersion;
+            return ValidateVersion(currentVersion);
         }
 
         /// <summary>
         /// Validates a specific version string against the minimum security requirements.
         /// </summary>
         /// <param name="versionText">The raw version string to validate (e.g., "3.50.4").</param>
-        /// <param name="currentVersion">When this method returns, contains the original <paramref name="versionText"/>.</param>
         /// <returns>
         /// <see langword="true"/> if the string is a valid version and meets security thresholds; 
         /// otherwise, <see langword="false"/>.
@@ -38,10 +38,8 @@ namespace Servy.Infrastructure.Helpers
         /// if (DatabaseValidator.ValidateVersion("3.50.4", out _)) { /* Safe */ }
         /// </code>
         /// </example>
-        public static bool ValidateVersion(string? versionText, out string? currentVersion)
+        public static bool ValidateVersion(string? versionText)
         {
-            currentVersion = versionText;
-
             return Version.TryParse(versionText, out var sqlVersion) &&
                    sqlVersion >= AppConfig.MinRequiredSqliteVersion;
         }

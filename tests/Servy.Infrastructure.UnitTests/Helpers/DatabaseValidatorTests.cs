@@ -56,22 +56,10 @@ namespace Servy.Infrastructure.Tests.Helpers
         public void IsSqliteVersionSafeInternal_CoverageTest(string? inputVersion, bool expectedResult)
         {
             // Act
-            bool actualResult = DatabaseValidator.ValidateVersion(inputVersion, out string? currentVersion);
+            bool actualResult = DatabaseValidator.ValidateVersion(inputVersion);
 
             // Assert
             Assert.Equal(expectedResult, actualResult);
-            Assert.Equal(inputVersion, currentVersion); // Ensures currentVersion is assigned correctly
         }
-
-        [Fact]
-        public void IsSqliteVersionSafeInternal_OutputsExactInput()
-        {
-            // This specifically tests the "currentVersion = versionToValidate" assignment
-            string myInput = "9.9.9-test";
-            DatabaseValidator.ValidateVersion(myInput, out string? output);
-
-            Assert.Equal(myInput, output);
-        }
-
     }
 }

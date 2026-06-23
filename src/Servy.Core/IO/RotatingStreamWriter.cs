@@ -118,8 +118,9 @@ namespace Servy.Core.IO
             _timeProvider = timeProvider ?? (() => _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow);
 
             var now = _timeProvider();
-            var lastWriteTime = useLocalTimeForRotation ? File.GetLastWriteTime(path) : File.GetLastWriteTimeUtc(path);
-            _lastRotationDate = File.Exists(path) ? lastWriteTime : now; // baseline for date rotation
+            _lastRotationDate = File.Exists(path)
+                ? (useLocalTimeForRotation ? File.GetLastWriteTime(path) : File.GetLastWriteTimeUtc(path))
+                : now; // baseline for date rotation
             _maxRotations = maxRotations;
         }
 
