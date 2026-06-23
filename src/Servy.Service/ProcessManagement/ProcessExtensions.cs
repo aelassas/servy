@@ -117,8 +117,10 @@ namespace Servy.Service.ProcessManagement
                     continue;
 
                 // Only process the child if we haven't seen it before to short-circuit cycles
-                foreach (int childPid in childrenPids.Where(visited.Add))
+                foreach (int childPid in childrenPids)
                 {
+                    if (!visited.Add(childPid)) continue; // already seen -> cycle guard
+
                     Process validChild = TryResolveValidChild(childPid, current.StartTime, snapshotTime);
                     if (validChild != null)
                     {

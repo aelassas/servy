@@ -40,21 +40,21 @@ namespace Servy.Manager.ViewModels
 
             StartCommand = new AsyncCommand(
                 StartServiceAsync,
-                _ => CanExecuteServiceCommand(_) && Service?.IsInstalled == true && Service?.Status == ServiceStatus.Stopped,
+                _ => CanExecuteServiceCommand(_) && Service.IsInstalled == true && Service.Status == ServiceStatus.Stopped,
                 name: nameof(StartCommand));
             StopCommand = new AsyncCommand(StopServiceAsync,
-                _ => CanExecuteServiceCommand(_) && Service?.IsInstalled == true && Service?.Status == ServiceStatus.Running,
+                _ => CanExecuteServiceCommand(_) && Service.IsInstalled == true && Service.Status == ServiceStatus.Running,
                 name: nameof(StopCommand));
             RestartCommand = new AsyncCommand(RestartServiceAsync,
-                _ => CanExecuteServiceCommand(_) && Service?.IsInstalled == true && Service?.Status == ServiceStatus.Running,
+                _ => CanExecuteServiceCommand(_) && Service.IsInstalled == true && Service.Status == ServiceStatus.Running,
                 name: nameof(RestartCommand));
             ConfigureCommand = new AsyncCommand(ConfigureServiceAsync,
                 name: nameof(ConfigureCommand));
             InstallCommand = new AsyncCommand(InstallServiceAsync,
-                CanExecuteServiceCommand, // We don't check Service?.IsInstalled != true to allow re-installing an installed service to update its configuration in DB and SCM
+                CanExecuteServiceCommand, // We don't check Service.IsInstalled != true to allow re-installing an installed service to update its configuration in DB and SCM
                 name: nameof(InstallCommand));
             UninstallCommand = new AsyncCommand(UninstallServiceAsync,
-                _ => CanExecuteServiceCommand(_) && Service?.IsInstalled == true,
+                _ => CanExecuteServiceCommand(_) && Service.IsInstalled == true,
                 name: nameof(UninstallCommand));
             RemoveCommand = new AsyncCommand(RemoveServiceAsync,
                 CanExecuteServiceCommand,
@@ -66,7 +66,7 @@ namespace Servy.Manager.ViewModels
                 CanExecuteServiceCommand, name: nameof(ExportJsonCommand));
 
             CopyPidCommand = new AsyncCommand(CopyPidAsync,
-                _ => CanExecuteServiceCommand(_) && Service?.Pid != null,
+                _ => CanExecuteServiceCommand(_) && Service.Pid != null,
                 name: nameof(CopyPidCommand));
         }
 
@@ -270,7 +270,7 @@ namespace Servy.Manager.ViewModels
         /// <returns>True if service is valid; otherwise false.</returns>
         private bool CanExecuteServiceCommand(object parameter)
         {
-            return Service != null && !string.IsNullOrWhiteSpace(Service.Name);
+            return !string.IsNullOrWhiteSpace(Service.Name);
         }
 
         /// <summary>
@@ -286,7 +286,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                Logger.Error($"Service command failed for {Service?.Name}.", ex);
+                Logger.Error($"Service command failed for {Service.Name}.", ex);
             }
             finally
             {
@@ -325,7 +325,7 @@ namespace Servy.Manager.ViewModels
         {
             if (!_disposed)
             {
-                if (disposing && Service != null)
+                if (disposing)
                 {
                     // CRITICAL: Unsubscribe to release the reference held by the Service model.
                     // This allows the Garbage Collector to reclaim this ViewModel instance.
