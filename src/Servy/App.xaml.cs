@@ -13,9 +13,6 @@ using Servy.ViewModels;
 using Servy.Views;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-#if !DEBUG
-using System.Diagnostics;
-#endif
 using System.IO;
 using System.Windows;
 using Servy.Config;

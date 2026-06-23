@@ -64,11 +64,6 @@ namespace Servy.Core.Services
 
         /// <inheritdoc />
         [ExcludeFromCodeCoverage]
-        public bool CloseServiceHandle(IntPtr hSCObject)
-            => NativeMethods.CloseServiceHandle(hSCObject);
-
-        /// <inheritdoc />
-        [ExcludeFromCodeCoverage]
         public bool ControlService(SafeServiceHandle hService, int dwControl, ref SERVICE_STATUS lpServiceStatus)
             => NativeMethods.ControlService(hService, dwControl, ref lpServiceStatus);
 

@@ -340,7 +340,7 @@ namespace Servy.Service.Helpers
                     }
                 }
 
-                startProcess?.Invoke(realExePath, realArgs, workingDir, environmentVariables, cancellationToken);
+                startProcess.Invoke(realExePath, realArgs, workingDir, environmentVariables, cancellationToken);
 
                 logger?.Info("Process restarted.");
             }

@@ -649,12 +649,6 @@ namespace Servy.Core.Helpers
             // This catches (.CON, .CON.txt, ..PRN, AUX.log, or service.LPT1) uniformly.
             string[] segments = serviceName.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
 
-            // If the split resulted in zero segments but the name wasn't empty, it was comprised entirely of dots
-            if (segments.Length == 0 && serviceName.Length > 0)
-            {
-                return (false, Strings.Msg_InvalidServiceName);
-            }
-
             foreach (var segment in segments)
             {
                 // Ensure case-insensitive evaluation against the reserved DOS device names blocklist

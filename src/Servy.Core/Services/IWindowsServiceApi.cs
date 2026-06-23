@@ -81,13 +81,6 @@ namespace Servy.Core.Services
         bool DeleteService(SafeServiceHandle hService);
 
         /// <summary>
-        /// Closes a handle to a service control manager or service object.
-        /// </summary>
-        /// <param name="hSCObject">Handle to close.</param>
-        /// <returns><see langword="true"/> if the handle is successfully closed; otherwise, <see langword="false"/>.</returns>
-        bool CloseServiceHandle(IntPtr hSCObject);
-
-        /// <summary>
         /// Sends a control code to a service.
         /// </summary>
         /// <param name="hService">Handle to the service.</param>

@@ -202,22 +202,22 @@ namespace Servy.Manager.Services
 
         /// <inheritdoc />
         public Task<bool> StopServiceAsync(Service service, bool showMessageBox = true, CancellationToken cancellationToken = default) =>
-            ExecuteServiceCommandAsync(service, 
-                d => d.Stop(cancellationToken), 
-                ServiceStatus.Stopped, 
-                Strings.Msg_ServiceStopped, 
-                checkDisabled: false, 
-                showMessageBox: showMessageBox, 
+            ExecuteServiceCommandAsync(service,
+                d => d.Stop(cancellationToken),
+                ServiceStatus.Stopped,
+                Strings.Msg_ServiceStopped,
+                checkDisabled: false,
+                showMessageBox: showMessageBox,
                 cancellationToken: cancellationToken);
 
         /// <inheritdoc />
         public Task<bool> RestartServiceAsync(Service service, bool showMessageBox = true, CancellationToken cancellationToken = default) =>
             ExecuteServiceCommandAsync(service,
-                d => d.Restart(cancellationToken), 
-                ServiceStatus.Running, 
-                Strings.Msg_ServiceRestarted, 
-                checkDisabled: true, 
-                showMessageBox: showMessageBox, 
+                d => d.Restart(cancellationToken),
+                ServiceStatus.Running,
+                Strings.Msg_ServiceRestarted,
+                checkDisabled: true,
+                showMessageBox: showMessageBox,
                 cancellationToken: cancellationToken);
 
         /// <inheritdoc />
@@ -847,7 +847,7 @@ namespace Servy.Manager.Services
         private void RemoveService(Service service)
         {
             if (service == null) throw new ArgumentNullException(nameof(service));
-            _removeServiceCallback?.Invoke(service.Name);
+            _removeServiceCallback.Invoke(service.Name);
         }
 
         /// <summary>
@@ -855,8 +855,7 @@ namespace Servy.Manager.Services
         /// </summary>
         private async Task RefreshServices()
         {
-            if (_refreshCallback != null)
-                await _refreshCallback();
+            await _refreshCallback();
         }
 
         /// <summary>

@@ -92,8 +92,6 @@ namespace Servy.Core.UnitTests.Services
                 ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
-
             var options = new InstallServiceOptions
             {
                 ServiceName = serviceName,
@@ -159,8 +157,6 @@ namespace Servy.Core.UnitTests.Services
                It.IsAny<IntPtr>()
                ))
                .Returns(true);
-
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
             var options = new InstallServiceOptions
             {
@@ -466,9 +462,6 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny)).Returns(true);
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), It.IsAny<IntPtr>())).Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle.DangerousGetHandle())).Returns(true);
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle.DangerousGetHandle())).Returns(true);
-
             var options = new InstallServiceOptions
             {
                 ServiceName = serviceName,
@@ -557,9 +550,6 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(It.IsAny<SafeServiceHandle>(), It.IsAny<uint>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny)).Returns(false);
 
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle.DangerousGetHandle())).Returns(true);
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle.DangerousGetHandle())).Returns(true);
-
             var options = new InstallServiceOptions
             {
                 ServiceName = serviceName,
@@ -633,9 +623,6 @@ namespace Servy.Core.UnitTests.Services
                It.IsAny<IntPtr>()))
                .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle.DangerousGetHandle())).Returns(true);
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle.DangerousGetHandle())).Returns(true);
-
             var options = new InstallServiceOptions
             {
                 ServiceName = serviceName,
@@ -704,9 +691,6 @@ namespace Servy.Core.UnitTests.Services
                It.IsAny<IntPtr>()
                ))
                .Returns(false);
-
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle.DangerousGetHandle())).Returns(true);
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle.DangerousGetHandle())).Returns(true);
 
             var options = new InstallServiceOptions
             {
@@ -784,9 +768,6 @@ namespace Servy.Core.UnitTests.Services
                 ))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle.DangerousGetHandle())).Returns(true);
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle.DangerousGetHandle())).Returns(true);
-
             var options = new InstallServiceOptions
             {
                 ServiceName = serviceName,
@@ -857,10 +838,7 @@ namespace Servy.Core.UnitTests.Services
                ))
                .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle.DangerousGetHandle())).Returns(true);
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle.DangerousGetHandle())).Returns(true);
-
-            var options = new Servy.Core.Services.InstallServiceOptions
+            var options = new InstallServiceOptions
             {
                 ServiceName = serviceName,
                 Description = description,
@@ -1289,8 +1267,6 @@ namespace Servy.Core.UnitTests.Services
                 ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle.DangerousGetHandle())).Returns(true);
-
             // Test 1: Verify UpdateServiceConfig executes without exception
             var exception1 = Record.Exception(() => _serviceManager.UpdateServiceConfig(
                 scmHandle,
@@ -1352,8 +1328,6 @@ namespace Servy.Core.UnitTests.Services
                 ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle.DangerousGetHandle())).Returns(true);
-
             Assert.Throws<Win32Exception>(() =>
                 _serviceManager.UpdateServiceConfig(
                     scmHandle,
@@ -1372,8 +1346,6 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
                .Returns(serviceHandle);
-
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle.DangerousGetHandle())).Returns(false);
 
             Assert.Throws<Win32Exception>(() =>
                 _serviceManager.UpdateServiceConfig(
@@ -1450,8 +1422,6 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "ServiceName", It.IsAny<uint>()))
                 .Returns(CreateServiceHandle(0));
 
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle.DangerousGetHandle())).Returns(true);
-
             var result = await _serviceManager.UninstallServiceAsync("ServiceName");
             Assert.False(result.IsSuccess);
         }
@@ -1488,12 +1458,6 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
                 .Returns(false);
-
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle.DangerousGetHandle()))
-                .Returns(true);
-
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle.DangerousGetHandle()))
-                .Returns(true);
 
             // Mock IServiceControllerWrapper to simulate service stopping quickly
             var mockController = new Mock<IServiceControllerWrapper>();
@@ -1559,12 +1523,6 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
-                .Returns(true);
-
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle.DangerousGetHandle()))
-                .Returns(true);
-
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle.DangerousGetHandle()))
                 .Returns(true);
 
             // Mock IServiceControllerWrapper to simulate service stopping quickly
@@ -1635,12 +1593,6 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
-                .Returns(true);
-
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle.DangerousGetHandle()))
-                .Returns(true);
-
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle.DangerousGetHandle()))
                 .Returns(true);
 
             // Mock the IServiceControllerWrapper to simulate service stopping over time
