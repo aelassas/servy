@@ -25,7 +25,7 @@ namespace Servy.Manager.Helpers
             }
             finally
             {
-                try { cts.Dispose(); } catch (ObjectDisposedException) { /* re-entrant */ }
+                cts.Dispose();
             }
         }
     }

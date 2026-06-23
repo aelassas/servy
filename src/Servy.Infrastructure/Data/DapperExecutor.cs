@@ -329,20 +329,8 @@ namespace Servy.Infrastructure.Data
             var connection = _dbContext.CreateConnection();
             try
             {
-                if (connection is DbConnection dbConn)
-                {
-                    await dbConn.OpenAsync(cancellationToken);
-                }
-                else
-                {
-                    connection.Open();
-                }
-
-                // BeginTransactionAsync exists on DbConnection in .NET 6+; fall back to sync otherwise.
-                var transaction = (connection is DbConnection dbConn2)
-                    ? await dbConn2.BeginTransactionAsync(cancellationToken)
-                    : connection.BeginTransaction();
-
+                await connection.OpenAsync(cancellationToken);
+                var transaction = await connection.BeginTransactionAsync(cancellationToken);
                 return new WrappedDbTransaction(connection, transaction);
             }
             catch

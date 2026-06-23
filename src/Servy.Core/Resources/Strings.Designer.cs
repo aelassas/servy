@@ -772,15 +772,6 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à The service name is too long. It must be 256 characters or fewer..
-        /// </summary>
-        public static string Msg_ServiceNameTooLong {
-            get {
-                return ResourceManager.GetString("Msg_ServiceNameTooLong", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service was removed successfully..
         /// </summary>
         public static string Msg_ServiceRemoved {

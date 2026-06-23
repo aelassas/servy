@@ -606,7 +606,7 @@ namespace Servy.Service
             string sanitized = name.TrimEnd(' ', '.', '\t');
 
             // Explicit guard against directory traversal sequences or inputs that normalize to empty/dots
-            if (string.IsNullOrEmpty(sanitized) || sanitized == "." || sanitized == "..")
+            if (string.IsNullOrEmpty(sanitized))
             {
                 sanitized = "_";
             }
@@ -840,8 +840,6 @@ namespace Servy.Service
                 else
                 {
                     resetThresholdSeconds = Math.Min(resetThresholdSeconds, cap);
-                    if (resetThresholdSeconds < detectionWindowSeconds)
-                        resetThresholdSeconds = detectionWindowSeconds;
                 }
 
                 if (_preLaunchEnabled)

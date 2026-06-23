@@ -772,15 +772,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Configuration file exceeds maximum size (10 MB)..
-        /// </summary>
-        public static string Msg_ConfigSizeLimitReached {
-            get {
-                return ResourceManager.GetString("Msg_ConfigSizeLimitReached", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Servy Desktop App not found..
         /// </summary>
         public static string Msg_DesktopAppNotFound {

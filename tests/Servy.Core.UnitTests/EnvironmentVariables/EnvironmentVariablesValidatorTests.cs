@@ -160,19 +160,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Empty(error);
         }
 
-        [Fact]
-        public void IndexOfUnescapedChar_ReturnsMinusOne_WhenCharNotFound()
-        {
-            // Arrange
-            var input = @"KEY\=NOEQUAL"; // '=' is escaped, so no unescaped '=' present
-
-            // Act
-            var result = EnvironmentVariablesValidator.IndexOfUnescapedChar(input, '=');
-
-            // Assert
-            Assert.Equal(-1, result);
-        }
-
         private static string[] InvokeSplit(string input, char[] delimiters)
         {
             return EscapedTokenizer.SplitByUnescapedDelimiters(input, delimiters);

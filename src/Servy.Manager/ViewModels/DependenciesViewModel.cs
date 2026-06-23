@@ -52,7 +52,7 @@ namespace Servy.Manager.ViewModels
 
                 _ = LoadDependencyTreeAsync(null);
 
-                CopyPidCommand?.RaiseCanExecuteChanged();
+                CopyPidCommand.RaiseCanExecuteChanged();
 
                 StopMonitoring();
                 StartMonitoring();
@@ -165,7 +165,7 @@ namespace Servy.Manager.ViewModels
                 {
                     ResetPid();
                     _hadSelectedService = false;
-                    CopyPidCommand?.RaiseCanExecuteChanged();
+                    CopyPidCommand.RaiseCanExecuteChanged();
                 }
                 return;
             }
@@ -182,7 +182,7 @@ namespace Servy.Manager.ViewModels
                 {
                     ResetPid();
                     currentSelection.Pid = null;
-                    CopyPidCommand?.RaiseCanExecuteChanged();
+                    CopyPidCommand.RaiseCanExecuteChanged();
                 }
                 return;
             }
@@ -190,7 +190,7 @@ namespace Servy.Manager.ViewModels
             if (currentSelection.Pid != currentPid)
             {
                 currentSelection.Pid = currentPid;
-                CopyPidCommand?.RaiseCanExecuteChanged();
+                CopyPidCommand.RaiseCanExecuteChanged();
             }
 
             SetPidText(currentSelection);

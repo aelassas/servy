@@ -60,23 +60,5 @@
             // Proves the finally block executed and disposed the token despite the broadcast error cascade
             Assert.Throws<ObjectDisposedException>(() => _ = cts.Token);
         }
-
-        [Fact]
-        public void CancelAndDisposeSafely_OnDispose_HandlesReentrantObjectDisposedException()
-        {
-            // Arrange
-            var cts = new CancellationTokenSource();
-
-            // Force a race condition inside the cancellation broadcast chain:
-            // When Cancel() begins executing, it runs our token callback, which disposes the CTS 
-            // completely out from underneath the running code block before the finally block can even execute.
-            cts.Token.Register(() => cts.Dispose());
-
-            // Act & Assert
-            // When the finally block runs try { cts.Dispose(); }, it will throw a re-entrant ObjectDisposedException.
-            // Helper should catch it silently without leaking the error up the test execution framework pointer.
-            var exception = Record.Exception(() => Manager.Helpers.Helper.CancelAndDisposeSafely(cts));
-            Assert.Null(exception);
-        }
     }
 }

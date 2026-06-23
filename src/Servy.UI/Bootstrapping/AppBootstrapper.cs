@@ -149,9 +149,11 @@ namespace Servy.UI.Bootstrapping
 
                 if (args.Exception is OutOfMemoryException)
                 {
-                    Logger.Error("Non-recoverable OutOfMemoryException detected. Shutting down.");
+                    // ROBUSTNESS CRASH STRATEGY: Intentionally let the process fail-fast on OOM.
+                    // Dropping the dead app.Shutdown call allows the exception to bubble up naturally
+                    // and trigger OS-level diagnostic handlers rather than hanging on a stalled event pump.
+                    Logger.Error("Non-recoverable OutOfMemoryException detected. Terminating process pipeline.");
                     args.Handled = false;
-                    app.Shutdown(1);
                     return;
                 }
 
