@@ -497,11 +497,13 @@ namespace Servy.Infrastructure.Data
                 Logger.Warn($"ApplyVersion4: orphan column(s) '{orphanList}' were preserved in 'Services_orphans_v4' for manual recovery. Drop that table once you have verified the data is no longer needed.");
             }
 
-            // Snapshot existing dependent objects (indexes, triggers, views) before dropping the table.
+            // Snapshot dependent indexes and triggers before dropping the table.
+            // (Views referencing Services survive DROP TABLE and re-bind by name after the rename,
+            //  so they need no snapshot; sqlite_master tbl_name never links views to base tables.)
             var dependents = connection.Query<(string Type, string Name, string Sql)>(
                 @"SELECT type, name, sql FROM sqlite_master 
                   WHERE tbl_name = 'Services' 
-                    AND type IN ('index', 'trigger', 'view') 
+                    AND type IN ('index', 'trigger') 
                     AND sql IS NOT NULL 
                     AND name <> 'idx_services_name_lower';",
                 transaction: transaction).ToList();
@@ -522,7 +524,7 @@ namespace Servy.Infrastructure.Data
             // --------------------------------------------------------------------------
             connection.Execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_lower ON Services(LOWER(Name));", transaction: transaction);
 
-            // Re-create all snapshot dependent indexes, triggers, and views
+            // Re-create all snapshot dependent indexes and triggers
             foreach (var dependent in dependents)
             {
                 try

@@ -305,7 +305,6 @@ namespace Servy.Manager.ViewModels
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _serviceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
-            ServiceCommands = _serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
             _helpService = helpService ?? throw new ArgumentNullException(nameof(helpService));
@@ -319,6 +318,7 @@ namespace Servy.Manager.ViewModels
             PerformanceVM = performanceVM ?? throw new ArgumentNullException(nameof(performanceVM));
             ConsoleVM = consoleVM ?? throw new ArgumentNullException(nameof(consoleVM));
             DependenciesVM = dependenciesVM ?? throw new ArgumentNullException(nameof(dependenciesVM));
+            ServiceCommands = _serviceCommands;
 
             ServicesView = new ListCollectionView(_services);
 
