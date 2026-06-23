@@ -13,6 +13,9 @@ namespace Servy.Core.Native
     {
         private const string SE_SERVICE_LOGON_NAME = "SeServiceLogonRight";
 
+        /// <summary>NTSTATUS: the referenced object name (e.g. LSA account entry) was not found.</summary>
+        private const int STATUS_OBJECT_NAME_NOT_FOUND = unchecked((int)0xC0000034);
+
         /// <summary>
         /// Ensures the specified account has the "Log on as a service" right.
         /// </summary>
@@ -119,7 +122,7 @@ namespace Servy.Core.Native
                 status = LsaEnumerateAccountRights(policy, sidPtr, out rightsPtr, out rightsCount);
 
                 // STATUS_OBJECT_NAME_NOT_FOUND -> the account has *no* rights at all
-                if (status == unchecked((int)0xC0000034))
+                if (status == STATUS_OBJECT_NAME_NOT_FOUND)
                 {
                     return false;
                 }

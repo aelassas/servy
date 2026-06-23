@@ -440,7 +440,7 @@ namespace Servy.Service
                 // Request timeout for startup to accommodate slow process
                 if (_options.StartTimeoutInSeconds > AppConfig.ScmStartupRequestThresholdSeconds) // Use a lower threshold to be safe
                 {
-                    _serviceHelper.RequestAdditionalTime(this, ClampTimeout(_options.StartTimeoutInSeconds + AppConfig.ScmStartupRequestBufferSeconds), _logger!);
+                    _serviceHelper.RequestAdditionalTime(this, ClampTimeout(_options.StartTimeoutInSeconds + AppConfig.ScmStartupRequestBufferSeconds), _logger);
                 }
 
                 // Set up attempts file
@@ -2559,7 +2559,7 @@ namespace Servy.Service
                     TimeoutMs = effectiveTimeoutMs,
                     WaitChunkMs = _waitChunkMs,
                     ScmAdditionalTimeMs = _scmAdditionalTimeMs,
-                    OnScmHeartbeat = time => _serviceHelper.RequestAdditionalTime(this, time, _logger!),
+                    OnScmHeartbeat = time => _serviceHelper.RequestAdditionalTime(this, time, _logger),
                     LogErrorAsWarning = !logAsError,
                     EnableConsoleUI = options.EnableConsoleUI,
                 };

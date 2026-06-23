@@ -13,7 +13,6 @@ namespace Servy.Core.Helpers
     /// <summary>
     /// Provides helper methods to query, start, and stop Servy services via ServiceController.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public class ServiceHelper : IServiceHelper
     {
         private readonly IServiceRepository _serviceRepository;
@@ -22,6 +21,7 @@ namespace Servy.Core.Helpers
         /// Initializes a new instance of the ServiceHelper class using the specified service repository.
         /// </summary>
         /// <param name="serviceRepository">The service repository used to access and manage service-related resources. Cannot be null.</param>
+        [ExcludeFromCodeCoverage]
         public ServiceHelper(IServiceRepository serviceRepository)
         {
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
@@ -30,6 +30,7 @@ namespace Servy.Core.Helpers
         #region Public Methods
 
         /// <inheritdoc />
+        [ExcludeFromCodeCoverage]
         public List<string> GetRunningServyUIServices()
         {
             var wrapperExes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -40,6 +41,7 @@ namespace Servy.Core.Helpers
         }
 
         /// <inheritdoc />
+        [ExcludeFromCodeCoverage]
         public List<string> GetRunningServyCLIServices()
         {
             var wrapperExes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -50,6 +52,7 @@ namespace Servy.Core.Helpers
         }
 
         /// <inheritdoc />
+        [ExcludeFromCodeCoverage]
         public List<string> GetRunningServyServices()
         {
             var wrapperExes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -61,6 +64,7 @@ namespace Servy.Core.Helpers
         }
 
         /// <inheritdoc />
+        [ExcludeFromCodeCoverage]
         public async Task StartServices(IEnumerable<string> services, CancellationToken cancellationToken = default)
         {
             // Create a bucket to collect any errors that occur
@@ -198,6 +202,7 @@ namespace Servy.Core.Helpers
         }
 
         /// <inheritdoc />
+        [ExcludeFromCodeCoverage]
         public async Task StopServices(IEnumerable<string> services, CancellationToken cancellationToken = default)
         {
             // Create a bucket to collect any errors that occur during the batch operation
@@ -363,6 +368,7 @@ namespace Servy.Core.Helpers
         /// It reads the <c>ImagePath</c> directly from the Registry, expands environment variables, 
         /// and safely parses out executable paths that contain quotes or command-line arguments.
         /// </remarks>
+        [ExcludeFromCodeCoverage]
         private List<string> GetRunningServices(HashSet<string> wrapperExes)
         {
             if (wrapperExes == null || wrapperExes.Count == 0)
