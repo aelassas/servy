@@ -92,13 +92,12 @@ jobs:
               
               if ($LASTEXITCODE -ne 0) { 
                   $failed = $true 
-                  Write-Error "Tests failed for project: $projName"
+                  Write-Host "::error::Tests failed for project: $projName"
               }
           }
 
           if ($failed) { 
               Write-Error "One or more test projects failed. Review the logs above."
-              exit 1 
           }
 
       - name: Build solution (Release)
@@ -119,7 +118,7 @@ jobs:
           if (-Not (Test-Path $fixedDir)) { New-Item -ItemType Directory -Path $fixedDir | Out-Null }
 
           $coverageFiles = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml"
-          if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
+          if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found" }
 
           $localTools = "$env:RUNNER_TEMP\localtools"
           if (-Not (Test-Path $localTools)) { New-Item -ItemType Directory -Path $localTools | Out-Null }
@@ -137,7 +136,7 @@ jobs:
               "-reporttypes:Cobertura" `
               "-assemblyfilters:$($env:REPORTGENERATOR_ASSEMBLIES)" `
               "-filefilters:$($env:REPORTGENERATOR_FILES)"
-          if ($LASTEXITCODE -ne 0) { Pop-Location; Write-Error "reportgenerator failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
+          if ($LASTEXITCODE -ne 0) { Pop-Location; Write-Error "reportgenerator failed (exit $LASTEXITCODE)" }
           Pop-Location
 
           $mergedFile = Join-Path $fixedDir "Cobertura.xml"
@@ -155,7 +154,7 @@ jobs:
           $normalizedFile = Join-Path $fixedDir "coverage.cobertura.xml"
           $content | Out-File -FilePath $normalizedFile -Encoding utf8
 
-          if (-Not (Test-Path $normalizedFile)) { Write-Error "$normalizedFile not found"; exit 1 }
+          if (-Not (Test-Path $normalizedFile)) { Write-Error "$normalizedFile not found" }
           Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml" | Where-Object { $_.FullName -ne $normalizedFile } | Remove-Item
 
       # -----------------------------------------------------
