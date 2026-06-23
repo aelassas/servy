@@ -9,6 +9,7 @@ using System.Data.SQLite;
 
 namespace Servy.Infrastructure.IntegrationTests.Data
 {
+    [Collection("SequentialDatabaseTests")]
     public class DapperExecutorIntegrationTests : IDisposable
     {
         // Concrete test spy subclassing DbConnection to bypass Moq's non-virtual limitation

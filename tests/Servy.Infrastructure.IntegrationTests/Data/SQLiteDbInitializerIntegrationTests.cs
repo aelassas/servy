@@ -6,6 +6,7 @@ using System.Reflection;
 
 namespace Servy.Infrastructure.IntegrationTests.Data
 {
+    [Collection("SequentialDatabaseTests")]
     public class SQLiteDbInitializerIntegrationTests
     {
         /// <summary>
