@@ -3,7 +3,7 @@
     /// <summary>
     /// Configuration file types.
     /// </summary>
-   public enum ConfigFileType
+    public enum ConfigFileType
     {
         /// <summary>
         /// Xml file configuration.
