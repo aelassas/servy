@@ -5,9 +5,6 @@ import logging
 import os
 import subprocess
 
-# Force stdout to UTF-8
-# sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_DIR = r"C:\test\logs"
 os.makedirs(LOG_DIR, exist_ok=True)
