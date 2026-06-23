@@ -105,16 +105,5 @@ namespace Servy.Core.EnvironmentVariables
             resultKind = EnvVarValidationResultKind.Success;
             return true;
         }
-
-        /// <summary>
-        /// Finds the index of the first unescaped occurrence of a character in a string. This method is maintained as a public wrapper for backward compatibility.
-        /// </summary>
-        /// <param name="str">The input string to search.</param>
-        /// <param name="ch">The character to find.</param>
-        /// <returns>The zero-based index of the first unescaped occurrence of the target character, or negative one if not found.</returns>
-        public static int IndexOfUnescapedChar(string str, char ch)
-        {
-            return EscapedTokenizer.IndexOfUnescapedChar(str, ch);
-        }
     }
 }

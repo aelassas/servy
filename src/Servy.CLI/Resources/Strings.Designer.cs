@@ -88,15 +88,6 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Configuration file &apos;{0}&apos; exceeds maximum size (10 MB)..
-        /// </summary>
-        public static string Msg_ConfigSizeLimitReached {
-            get {
-                return ResourceManager.GetString("Msg_ConfigSizeLimitReached", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à export configuration for service &apos;{0}&apos;.
         /// </summary>
         public static string Msg_ExportServiceAction {
@@ -120,15 +111,6 @@ namespace Servy.CLI.Resources {
         public static string Msg_ExportSuccess {
             get {
                 return ResourceManager.GetString("Msg_ExportSuccess", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à This field is required..
-        /// </summary>
-        public static string Msg_FieldRequired {
-            get {
-                return ResourceManager.GetString("Msg_FieldRequired", resourceCulture);
             }
         }
         
@@ -277,29 +259,11 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à The specified process path is invalid..
-        /// </summary>
-        public static string Msg_InvalidPath {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPath", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Invalid {0} in configuration. Ensure the path exists and is accessible..
         /// </summary>
         public static string Msg_InvalidPathInConfig {
             get {
                 return ResourceManager.GetString("Msg_InvalidPathInConfig", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Invalid value..
-        /// </summary>
-        public static string Msg_InvalidValue {
-            get {
-                return ResourceManager.GetString("Msg_InvalidValue", resourceCulture);
             }
         }
         
@@ -349,15 +313,6 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à A disabled service with this name already exists. Choose a different name..
-        /// </summary>
-        public static string Msg_ServiceDisabled {
-            get {
-                return ResourceManager.GetString("Msg_ServiceDisabled", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à The specified service is disabled..
         /// </summary>
         public static string Msg_ServiceDisabledError {
@@ -390,15 +345,6 @@ namespace Servy.CLI.Resources {
         public static string Msg_ServiceStatusAction {
             get {
                 return ResourceManager.GetString("Msg_ServiceStatusAction", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Failed to retrieve status for service &apos;{0}&apos;..
-        /// </summary>
-        public static string Msg_ServiceStatusFailure {
-            get {
-                return ResourceManager.GetString("Msg_ServiceStatusFailure", resourceCulture);
             }
         }
         

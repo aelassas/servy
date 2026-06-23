@@ -139,7 +139,7 @@ namespace Servy.Manager.ViewModels
                 _stderrPath = value?.StderrPath;
                 OnPropertyChanged(nameof(SelectedService));
 
-                CopyPidCommand?.RaiseCanExecuteChanged();
+                CopyPidCommand.RaiseCanExecuteChanged();
 
                 // Safe fire-and-forget
                 _ = SwitchServiceAsync(_stdoutPath, _stderrPath);
@@ -239,7 +239,7 @@ namespace Servy.Manager.ViewModels
                 {
                     ResetConsole();
                     _hadSelectedService = false;
-                    CopyPidCommand?.RaiseCanExecuteChanged();
+                    CopyPidCommand.RaiseCanExecuteChanged();
                 }
                 return;
             }
@@ -259,7 +259,7 @@ namespace Servy.Manager.ViewModels
                     currentSelection.Pid = null;
                     currentSelection.StdoutPath = null;
                     currentSelection.StderrPath = null;
-                    CopyPidCommand?.RaiseCanExecuteChanged();
+                    CopyPidCommand.RaiseCanExecuteChanged();
                 }
                 return;
             }
@@ -275,7 +275,7 @@ namespace Servy.Manager.ViewModels
                 currentSelection.StderrPath = stateSnapshot.ActiveStderrPath;
 
                 _ = SwitchServiceAsync(stateSnapshot.ActiveStdoutPath, stateSnapshot.ActiveStderrPath);
-                CopyPidCommand?.RaiseCanExecuteChanged();
+                CopyPidCommand.RaiseCanExecuteChanged();
             }
 
             SetPidText(currentSelection);

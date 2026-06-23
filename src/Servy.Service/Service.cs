@@ -583,8 +583,7 @@ namespace Servy.Service
             // 1. Strip trailing spaces, tabs, and periods as Windows ignores these on disk handles (Issue #2069 mitigation)
             string sanitized = name.TrimEnd(' ', '.', '\t');
 
-            // Explicit guard against directory traversal sequences or inputs that normalize to empty/dots
-            if (string.IsNullOrEmpty(sanitized) || sanitized == "." || sanitized == "..")
+            if (string.IsNullOrEmpty(sanitized))
             {
                 sanitized = "_";
             }
@@ -758,7 +757,6 @@ namespace Servy.Service
             ulong uptimeMilliseconds = GetTickCount64();
             DateTime systemBootTimeUtc = DateTime.UtcNow.AddMilliseconds(-(double)uptimeMilliseconds);
 
-
             // 1. Session Persistence Check
             // If the file's last modification occurred before the current system boot, 
             // the service is starting in a new OS session. We maintain the existing counter 
@@ -796,8 +794,6 @@ namespace Servy.Service
             else
             {
                 resetThresholdSeconds = Math.Min(resetThresholdSeconds, cap);
-                if (resetThresholdSeconds < detectionWindowSeconds)
-                    resetThresholdSeconds = detectionWindowSeconds;
             }
 
             if (_preLaunchEnabled)
