@@ -29,14 +29,9 @@ namespace Servy.UI.Bootstrapping
     [ExcludeFromCodeCoverage] // This class is inherently difficult to unit test due to its tight coupling with WPF application lifecycle and static dependencies.
     public class AppBootstrapper
     {
-        #region Private Static Fields
-
-        private static readonly object _errorDialogLock = new object();
-
-        #endregion
-
         #region Private Fields
 
+        private readonly object _errorDialogLock = new object();
         private readonly BootstrapperOptions _options;
         private readonly IProcessKiller _processKiller;
         private IConfiguration? _configuration;

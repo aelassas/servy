@@ -515,22 +515,13 @@ namespace Servy.Core.Helpers
 
             try
             {
-                try
-                {
-                    parentStartTime = parentProcess.StartTime;
-                }
-                catch (Exception)
-                {
-                    // keep MinValue if reading StartTime fails due to transient access limits
-                }
-
                 // ROBUSTNESS: Perform temporal identity validation BEFORE walking up the ancestor tree.
                 // This isolates PID recycling exploits at the boundary and blocks the walk from leaking into unrelated trees.
                 try
                 {
-                    // Verify the handle context directly using the cached or live process start time 
+                    // Verify the handle context directly using a single live process start time 
                     // to completely eliminate the PID-recycling exploit window.
-                    DateTime exactStartTime = parentStartTime == DateTime.MinValue ? parentProcess.StartTime : parentStartTime;
+                    DateTime exactStartTime = parentProcess.StartTime;
 
                     // If temporal attributes are inaccessible (exactStartTime or childStartTime is MinValue),
                     // abort the upward walk immediately. This eliminates the "kill blindly" fallback loop.
