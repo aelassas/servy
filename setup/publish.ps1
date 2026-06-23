@@ -71,7 +71,6 @@ try {
 
         if (-not (Test-Path $fullPath)) {
             Write-Error "Script not found: $fullPath"
-            return
         }
 
         Write-Host "`n=== Running: $fullPath ==="

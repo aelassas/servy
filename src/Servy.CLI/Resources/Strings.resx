@@ -28,9 +28,6 @@
   <data name="Msg_UnknownError" xml:space="preserve">
     <value>An unknown error occurred.</value>
   </data>
-  <data name="Msg_Preparing" xml:space="preserve">
-    <value>Preparing environment...</value>
-  </data>
   <data name="Msg_InvalidExecutablePath" xml:space="preserve">
     <value>Invalid executable path: {0}. Ensure the file exists and is accessible.</value>
   </data>

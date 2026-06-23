@@ -338,10 +338,10 @@ namespace Servy.Manager.Views
         private async Task HandleMainTabSelected(MainViewModel vm, PerformanceViewModel? perfVm, ConsoleViewModel? consoleVm, DependenciesViewModel? dependenciesVm, LogsViewModel? logsVm)
         {
             // Stop timers in performance tab
-            perfVm?.StopMonitoring(false);
+            perfVm?.StopMonitoring();
 
             // Stop timers in console tab
-            consoleVm?.StopMonitoring(false);
+            consoleVm?.StopMonitoring();
 
             // Stop timers in dependencies tab
             dependenciesVm?.StopMonitoring();
@@ -380,7 +380,7 @@ namespace Servy.Manager.Views
             vm.StopRefreshTimer();
 
             // Stop timers in console tab
-            consoleVM?.StopMonitoring(false);
+            consoleVM?.StopMonitoring();
 
             // Stop timers in dependencies tab
             dependenciesVM?.StopMonitoring();
@@ -420,7 +420,7 @@ namespace Servy.Manager.Views
             vm.StopRefreshTimer();
 
             // Stop timers in performance tab
-            perfVm?.StopMonitoring(false);
+            perfVm?.StopMonitoring();
 
             // Stop timers in dependencies tab
             dependenciesVM?.StopMonitoring();
@@ -460,10 +460,10 @@ namespace Servy.Manager.Views
             vm.StopRefreshTimer();
 
             // Stop timers in performance tab
-            perfVm?.StopMonitoring(false);
+            perfVm?.StopMonitoring();
 
             // Stop timers in console tab
-            consoleVM?.StopMonitoring(false);
+            consoleVM?.StopMonitoring();
 
             // Start timers in dependencies tab
             dependenciesVM?.StartMonitoring();
@@ -497,10 +497,10 @@ namespace Servy.Manager.Views
             vm.StopRefreshTimer();
 
             // Stop timers in performance tab
-            perfVm?.StopMonitoring(false);
+            perfVm?.StopMonitoring();
 
             // Stop timers in console tab
-            consoleVM?.StopMonitoring(false);
+            consoleVM?.StopMonitoring();
 
             // Stop timers in dependencies tab
             dependenciesVM?.StopMonitoring();

@@ -72,7 +72,7 @@ namespace Servy.Manager.ViewModels
 
                 ResetGraphs();
 
-                StopMonitoring(clearView: false); // clearView: false -> OnMonitoringStopped is still invoked but no-ops; we've already reset our view state above.
+                StopMonitoring();
                 StartMonitoring();
             }
         }
@@ -374,23 +374,6 @@ namespace Servy.Manager.ViewModels
                 RamPointCollection = lineBuffer.Clone();
                 RamFillPoints = fillBuffer.Clone();
             }
-        }
-
-        #endregion
-
-        #region Public Methods - Control
-
-        /// <summary>
-        /// Handles the specific logic for clearing graph visualizations when 
-        /// monitoring is stopped with the clearView flag set to true.
-        /// </summary>
-        protected override void OnMonitoringStopped(bool clearView)
-        {
-            if (!clearView) return;
-
-            // Explicitly invoke ResetGraphs to clear collections and seed histories
-            // with PerformanceHistoryCapacity zeros symmetrically.
-            ResetGraphs();
         }
 
         #endregion

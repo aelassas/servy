@@ -54,7 +54,7 @@ namespace Servy.Manager.ViewModels
 
                 CopyPidCommand?.RaiseCanExecuteChanged();
 
-                StopMonitoring(clearView: false); // clearView: false -> tree reload is already underway via LoadDependencyTreeAsync; no extra view clearing needed.
+                StopMonitoring();
                 StartMonitoring();
             }
         }
@@ -64,16 +64,10 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public bool IsServiceSelected { get => SelectedService != null; }
 
-        private ObservableCollection<ServiceDependencyNode> _dependencyTree = new ObservableCollection<ServiceDependencyNode>();
-
         /// <summary>
         /// Service dependency tree.
         /// </summary>
-        public ObservableCollection<ServiceDependencyNode> DependencyTree
-        {
-            get => _dependencyTree;
-            private set => Set(ref _dependencyTree, value);
-        }
+        public ObservableCollection<ServiceDependencyNode> DependencyTree { get; } = new ObservableCollection<ServiceDependencyNode>();
 
         #endregion
 
@@ -215,8 +209,6 @@ namespace Servy.Manager.ViewModels
         /// </param>
         private void SetExpansion(IEnumerable<ServiceDependencyNode> nodes, bool isExpanded)
         {
-            if (nodes == null) return;
-
             // Use a HashSet to track visited nodes and prevent infinite recursion in case of 
             // circular dependencies or shared nodes.
             var visited = new HashSet<ServiceDependencyNode>();

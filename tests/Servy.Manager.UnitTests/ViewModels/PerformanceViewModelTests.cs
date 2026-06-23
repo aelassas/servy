@@ -331,44 +331,6 @@ namespace Servy.Manager.UnitTests.ViewModels
             }, createApp: true);
         }
 
-        [Fact]
-        public void OnMonitoringStopped_ClearViewTrue_FlushesPointCollections()
-        {
-            Helper.RunOnSTA(() =>
-            {
-                // Preserve the original environment context firmly inside the thread scope boundary
-                var originalProvider = App.Services;
-
-                // Build an isolated runtime DI container to satisfy internal locator checks during constructor setup
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-
-                var localProvider = serviceCollection.BuildServiceProvider();
-                App.Services = localProvider;
-
-                try
-                {
-                    var vm = CreateViewModel();
-                    vm.CpuPointCollection.Add(new Point(10, 10));
-
-                    var methodInfo = typeof(PerformanceViewModel).GetMethod("OnMonitoringStopped", BindingFlags.NonPublic | BindingFlags.Instance);
-
-                    // Act
-                    methodInfo!.Invoke(vm, new object[] { true });
-
-                    // Assert
-                    Assert.Empty(vm.CpuPointCollection);
-                    Assert.Empty(vm.CpuFillPoints);
-                    Assert.Empty(vm.RamPointCollection);
-                    Assert.Empty(vm.RamFillPoints);
-                }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
-            }, createApp: true);
-        }
-
         #endregion
     }
 }

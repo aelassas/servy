@@ -31,7 +31,7 @@ namespace Servy.Manager.ViewModels
     {
         #region Private Fields
 
-        private readonly Dispatcher? _dispatcher;
+        private readonly Dispatcher _dispatcher;
         private readonly IServiceManager _serviceManager;
         private readonly IServiceRepository _serviceRepository;
         private readonly IMessageBoxService _messageBoxService;
@@ -478,12 +478,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task SearchServicesAsync(object? parameter)
         {
-            if (_dispatcher == null)
-            {
-                Logger.Warn("Dispatcher is not available. Cannot perform search.");
-                return;
-            }
-
             // Thread-safe CTS swap
             var newCts = new CancellationTokenSource();
             var token = newCts.Token;
@@ -824,7 +818,7 @@ namespace Servy.Manager.ViewModels
 
                     // 4. Handle results and UI feedback
                     // Correctly await the async Dispatcher operation to prevent fire-and-forget
-                    await await _dispatcher!.InvokeAsync(new Func<Task>(async () =>
+                    await await _dispatcher.InvokeAsync(new Func<Task>(async () =>
                     {
                         if (failed.Count == 0)
                         {
@@ -864,18 +858,6 @@ namespace Servy.Manager.ViewModels
             try
             {
                 token.ThrowIfCancellationRequested();
-
-                if (_serviceRepository == null)
-                {
-                    Logger.Warn("ServiceRepository is not available. Cannot refresh services.");
-                    return;
-                }
-
-                if (_serviceManager == null)
-                {
-                    Logger.Warn("ServiceManager is not available. Cannot refresh services.");
-                    return;
-                }
 
                 // 1. Take snapshot of services safely
                 var snapshot = new List<Service?>();
@@ -933,7 +915,7 @@ namespace Servy.Manager.ViewModels
                 // property changes happen in a controlled, sequential batch.
                 if (!uiUpdates.IsEmpty)
                 {
-                    await _dispatcher!.InvokeAsync(() =>
+                    await _dispatcher.InvokeAsync(() =>
                     {
                         foreach (var info in uiUpdates)
                         {
@@ -1169,7 +1151,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task SetBusyStateAsync(bool busy)
         {
-            await _dispatcher!.InvokeAsync(() =>
+            await _dispatcher.InvokeAsync(() =>
             {
                 IsBusy = busy;
                 if (busy)
@@ -1211,7 +1193,7 @@ namespace Servy.Manager.ViewModels
                 UpdateSelectAllState();
             };
 
-            if (_dispatcher!.CheckAccess())
+            if (_dispatcher.CheckAccess())
             {
                 action();
             }

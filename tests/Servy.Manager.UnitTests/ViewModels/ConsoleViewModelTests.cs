@@ -350,38 +350,6 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Resource Management & Disposal Tests
 
         [Fact]
-        public async Task OnMonitoringStopped_ClearViewTrue_ResetsConsole()
-        {
-            await Helper.RunOnSTA(async () =>
-            {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
-                {
-                    var vm = CreateViewModel();
-                    vm.Pid = "1234";
-                    vm.RawLines.Add(new LogLine("Test", LogType.StdOut));
-
-                    var methodInfo = typeof(ConsoleViewModel).GetMethod("OnMonitoringStopped", BindingFlags.NonPublic | BindingFlags.Instance);
-
-                    // Act
-                    methodInfo!.Invoke(vm, new object[] { true });
-
-                    // Assert
-                    Assert.Equal(UiConstants.NotAvailable, vm.Pid);
-                    Assert.Empty(vm.RawLines);
-                }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
-            });
-        }
-
-        [Fact]
         public async Task Dispose_CleansUpCancellationTokensAndEvents()
         {
             await Helper.RunOnSTA(async () =>

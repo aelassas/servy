@@ -74,7 +74,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Collection of logs displayed in the DataGrid.
         /// </summary>
-        public ICollectionView LogsView { get; private set; }
+        public ICollectionView LogsView { get; }
 
         /// <summary>
         /// Gets or sets a value indicating whether a background operation is in progress.

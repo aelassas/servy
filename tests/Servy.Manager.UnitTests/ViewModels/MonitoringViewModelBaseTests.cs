@@ -30,7 +30,6 @@ namespace Servy.Manager.UnitTests.ViewModels
             protected override int RefreshIntervalMs { get; }
 
             public bool IsOnMonitoringStoppedCalled { get; private set; }
-            public bool PassedClearViewParam { get; private set; }
 
             // Backing property to verify hosted selection variants
             public ServiceItemBase? MockedSelectedService { get; set; }
@@ -74,11 +73,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                 await _onTickHandler(GetCurrentMonitoringToken());
             }
 
-            protected override void OnMonitoringStopped(bool clearView)
+            protected override void OnMonitoringStopped()
             {
                 IsOnMonitoringStoppedCalled = true;
-                PassedClearViewParam = clearView;
-                base.OnMonitoringStopped(clearView);
+                base.OnMonitoringStopped();
             }
 
             public void ExposeDispose(bool disposing)
@@ -158,14 +156,13 @@ namespace Servy.Manager.UnitTests.ViewModels
             var previousCts = vm.ExposeCts;
 
             // Act
-            vm.StopMonitoring(clearView: true);
+            vm.StopMonitoring();
 
             // Assert
             Assert.Equal(0, vm.ExposeIsMonitoringFlag);
             Assert.False(vm.ExposeTimer!.IsEnabled);
             Assert.True(previousCts!.IsCancellationRequested);
             Assert.True(vm.IsOnMonitoringStoppedCalled);
-            Assert.True(vm.PassedClearViewParam);
         }
 
         [Fact]
