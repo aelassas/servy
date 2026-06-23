@@ -94,12 +94,12 @@ namespace Servy.Core.Validation
             }
 
             // 2. DEEP DOMAIN VALIDATION
-            var sanitizedName = (dto.Name ?? "Unknown").Replace("\r", "").Replace("\n", ""); // Sanitize the untrusted name to prevent log injection
             var validation = _serviceValidationRules.Validate(dto, importMode: true);
             if (!validation.IsValid)
             {
                 errorMessage = string.Join("\n", validation.Errors);
 
+                var sanitizedName = (dto.Name ?? "Unknown").Replace("\r", "").Replace("\n", ""); // Sanitize the untrusted name to prevent log injection
                 Logger.Warn($"{FormatName} Import Blocked: Logical violation for service '{sanitizedName}'. Reason: {errorMessage}");
                 return false;
             }

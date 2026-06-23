@@ -1148,8 +1148,9 @@ namespace Servy.Core.Services
                 if (svcHandle.IsInvalid) return;
 
                 // 3. Check token before each discrete native query.
-                // If the 2000ms timeout or user cancellation hits during GetServiceUser, 
-                // we skip the subsequent calls to keep the loop moving.
+                // If the per-service native-query timeout (AppConfig.PopulateNativeDetailsTimeoutMs)
+                // or user cancellation hits during GetServiceUser, we skip the subsequent
+                // calls to keep the loop moving.
 
                 cancellationToken.ThrowIfCancellationRequested();
                 info.LogOnAs = GetServiceUser(svcHandle) ?? ServiceAccounts.LocalSystem;  // confirmed null = LocalSystem (Win32 default)

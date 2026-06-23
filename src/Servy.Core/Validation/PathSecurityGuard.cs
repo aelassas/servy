@@ -196,7 +196,7 @@ namespace Servy.Core.Validation
 
                 bool finalIsUnc = unwrappedUnc || (Uri.TryCreate(normalizedPath, UriKind.Absolute, out var finalUri) && finalUri.IsUnc);
 
-                if (unwrappedUnc || normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) || finalIsUnc)
+                if (normalizedPath.StartsWith(@"\\", StringComparison.Ordinal) || finalIsUnc)
                 {
                     fileStream.Dispose();
                     var errorMsg = mode == FileMode.Open ? Strings.Msg_SecurityResolvedUncDestination : Strings.Msg_SecurityResolvedUncDestinationExport;

@@ -15,8 +15,8 @@ namespace Servy.Core.Services
         #region Fields
 
         private string _displayName;
-        private bool? _isRunning;
-        private bool? _isExpanded;
+        private bool _isRunning;
+        private bool _isExpanded;
 
         #endregion
 
@@ -49,20 +49,12 @@ namespace Servy.Core.Services
         /// <summary>
         /// Gets or sets a flag indicating if the service is running.
         /// </summary>
-        public bool IsRunning
-        {
-            get => _isRunning ?? false;
-            set => SetProperty(ref _isRunning, value);
-        }
+        public bool IsRunning { get => _isRunning; set => SetProperty(ref _isRunning, value); }
 
         /// <summary>
         /// Gets or sets a flag indicating if the service node is expanded.
         /// </summary>
-        public bool IsExpanded
-        {
-            get => _isExpanded ?? false;
-            set => SetProperty(ref _isExpanded, value);
-        }
+        public bool IsExpanded { get => _isExpanded; set => SetProperty(ref _isExpanded, value); }
 
         /// <summary>
         /// Gets the collection of services that this service

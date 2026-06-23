@@ -202,7 +202,7 @@ namespace Servy.Service.Helpers
                     string expanded = ExpandWithDictionary(original, passSnapshot, key, protectInjectedValues: true);
 
                     // Exponential growth guard
-                    if (expanded != null && expanded.Length > AppConfig.MaxEnvVarExpandedLength)
+                    if (!string.IsNullOrEmpty(expanded) && expanded.Length > AppConfig.MaxEnvVarExpandedLength)
                     {
                         Logger.Warn($"Expansion of '{key}' exceeded {AppConfig.MaxEnvVarExpandedLength} characters. Truncating to prevent memory exhaustion.");
 

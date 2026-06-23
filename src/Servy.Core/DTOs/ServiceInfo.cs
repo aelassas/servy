@@ -43,7 +43,7 @@ namespace Servy.Core.DTOs
         public ServiceInfo()
         {
             Status = ServiceStatus.None;
-            StartupType = ServiceStartType.Automatic;
+            StartupType = AppConfig.DefaultStartupType;
             LogOnAs = ServiceAccounts.LocalSystem;
             Description = string.Empty;
         }
