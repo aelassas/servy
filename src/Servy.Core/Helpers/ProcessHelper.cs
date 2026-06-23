@@ -104,8 +104,11 @@ namespace Servy.Core.Helpers
                 if (parentToChildren.TryGetValue(current, out var children))
                 {
                     // 3. Only process the child if we haven't seen it before
-                    foreach (var child in children.Where(visited.Add))
+                    foreach (var child in children)
                     {
+                        if (!visited.Add(child))
+                            continue;   // already seen - cycle/duplicate protection
+
                         // Validate child creation temporal boundary to ensure it is not a recycled PID phantom
                         try
                         {

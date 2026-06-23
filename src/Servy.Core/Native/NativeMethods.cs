@@ -343,7 +343,7 @@ namespace Servy.Core.Native
                 if (IsValidHandleInfo != other.IsValidHandleInfo) return true;
 
                 // 1. Primary Probe: Win32 File Index and Volume Serial Number (Most reliable)
-                if (IsValidHandleInfo && other.IsValidHandleInfo)
+                if (IsValidHandleInfo)   // other.IsValidHandleInfo is guaranteed equal here
                 {
                     if (FileIndex != other.FileIndex || VolumeSerialNumber != other.VolumeSerialNumber)
                         return true;

@@ -16,7 +16,7 @@ namespace Servy.Core.Native
     /// <summary>
     /// Native Helper methods.
     /// </summary>
-    public class NativeMethodsHelpers
+    public static class NativeMethodsHelpers
     {
         #region Helper Methods
 
