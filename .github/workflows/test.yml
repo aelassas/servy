@@ -192,7 +192,7 @@ jobs:
               & $vsTest @vsTestArgs
 
               if ($LASTEXITCODE -ne 0) {
-                  Write-Error "Tests failed in $($dll.Name)"
+                  Write-Host "::error::Tests failed in $($dll.Name)"
                   $failed = $true
               }
           }
