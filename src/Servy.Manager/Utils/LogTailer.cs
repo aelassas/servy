@@ -312,7 +312,7 @@ namespace Servy.Manager.Utils
         /// <summary>
         /// Just loads the history and returns the state without starting the tailing loop.
         /// </summary>
-        public async Task<HistoryResult?> GetHistoryAsync(string? path, LogType type, int maxLines, CancellationToken cancellationToken = default)
+        public async Task<HistoryResult> GetHistoryAsync(string? path, LogType type, int maxLines, CancellationToken cancellationToken = default)
         {
             if (Volatile.Read(ref _isDisposed) != 0) throw new ObjectDisposedException(nameof(LogTailer));
             long pos = 0;

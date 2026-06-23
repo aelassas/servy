@@ -49,7 +49,7 @@ namespace Servy.UI
         /// This method mutates the underlying list directly and raises a 
         /// single <see cref="NotifyCollectionChangedAction.Reset"/> event upon completion.
         /// </remarks>
-        public void AddRange(IEnumerable<T> items)
+        public void AddRange(IEnumerable<T>? items)
         {
             if (items == null) return;
 
