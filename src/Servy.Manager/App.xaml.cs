@@ -171,8 +171,6 @@ namespace Servy.Manager
             services.AddSingleton<IUiDispatcher, WpfUiDispatcher>();
             services.AddSingleton<IProcessHelper, ProcessHelper>();
             services.AddSingleton<IProcessKiller, ProcessKiller>();
-            services.AddSingleton<CpuUsageConverter>();
-            services.AddSingleton<RamUsageConverter>();
 
             Services = services.BuildServiceProvider();
 

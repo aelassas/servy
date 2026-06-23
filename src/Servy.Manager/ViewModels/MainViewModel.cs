@@ -483,12 +483,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task SearchServicesAsync(object parameter)
         {
-            if (_dispatcher == null)
-            {
-                Logger.Warn("Dispatcher is not available. Cannot perform search.");
-                return;
-            }
-
             // Thread-safe CTS swap
             var newCts = new CancellationTokenSource();
             var token = newCts.Token;
@@ -869,18 +863,6 @@ namespace Servy.Manager.ViewModels
             try
             {
                 token.ThrowIfCancellationRequested();
-
-                if (_serviceRepository == null)
-                {
-                    Logger.Warn("ServiceRepository is not available. Cannot refresh services.");
-                    return;
-                }
-
-                if (_serviceManager == null)
-                {
-                    Logger.Warn("ServiceManager is not available. Cannot refresh services.");
-                    return;
-                }
 
                 // 1. Take snapshot of services safely
                 var snapshot = new List<Service>();

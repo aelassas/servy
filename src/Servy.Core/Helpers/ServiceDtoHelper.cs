@@ -35,20 +35,15 @@ namespace Servy.Core.Helpers
             // we do not support importing custom identities. All imported services 
             // are forced to LocalSystem to ensure a valid, password-less baseline.
             // If you want to set a custom account you must set it manually after import.
-            bool hadUserAccount = !string.IsNullOrWhiteSpace(dto.UserAccount);
-            bool hadPassword = !string.IsNullOrWhiteSpace(dto.Password);
-            bool hadCustomIdentity = (dto.RunAsLocalSystem.HasValue && !dto.RunAsLocalSystem.Value) || hadUserAccount || hadPassword;
-
             dto.RunAsLocalSystem = AppConfig.DefaultRunAsLocalSystem;
             dto.UserAccount = null;
             dto.Password = null;
 
-            if (hadCustomIdentity)
-            {
-                Logger.Warn(
-                    $"Import: custom identity (UserAccount/Password/RunAsLocalSystem) was discarded for service '{dto.Name}' " +
-                    $"by the Global Identity Reset policy. The service will run as LocalSystem until the identity is set manually after import.");
-            }
+            // Log an informational notice to satisfy operator visibility requirements.
+            // Because serialization attributes strip identity data out of export manifests,
+            // this notice alerts administrators that the service defaults safely to LocalSystem.
+            Logger.Info($"Import: Service configuration applied for '{dto.Name}'. The Global Identity Reset policy enforces " +
+                        "the LocalSystem identity on all imported manifests. A custom account can be configured manually if required.");
 
             dto.EnableDebugLogs = dto.EnableDebugLogs ?? AppConfig.DefaultEnableDebugLogs;
 

@@ -144,7 +144,7 @@ namespace Servy.Manager.ViewModels
                 // Safe fire-and-forget
                 _ = SwitchServiceAsync(_stdoutPath, _stderrPath);
 
-                StopMonitoring(false); // Pass false so we don't clear the console
+                StopMonitoring();
                 StartMonitoring();
             }
         }
@@ -575,20 +575,6 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Public Methods
-
-        /// <summary>
-        /// Handles the specific logic for resetting the console view when 
-        /// monitoring is stopped with the clearView flag set to true.
-        /// </summary>
-        /// <param name="clearView">A value indicating whether to clear the console view.</param>
-        protected override void OnMonitoringStopped(bool clearView)
-        {
-            if (!clearView) return;
-
-            // Resets the console history and UI labels as required by 
-            // the console-specific implementation.
-            ResetConsole();
-        }
 
         /// <summary>
         /// Sets the selection active state, used to manage UI selection preservation during log updates.

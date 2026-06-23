@@ -29,8 +29,7 @@ $projects = @(
 foreach ($p in $projects) {
     dotnet-CycloneDX $p.Path --recursive --set-version "$FullSbomVersion" --output . --filename $p.File
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "dotnet-CycloneDX failed for $($p.Path) (exit $LASTEXITCODE)"
-        exit $LASTEXITCODE
+        throw "dotnet-CycloneDX failed for $($p.Path) (exit $LASTEXITCODE)"
     }
 }
 
@@ -38,6 +37,5 @@ foreach ($p in $projects) {
 $inputFiles = $projects | ForEach-Object { $_.File }
 cyclonedx merge --input-files $inputFiles --output-file "$OutputFile"
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "cyclonedx merge failed (exit $LASTEXITCODE)"
-    exit $LASTEXITCODE
+    throw "cyclonedx merge failed (exit $LASTEXITCODE)"
 }

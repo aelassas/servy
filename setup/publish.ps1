@@ -67,7 +67,6 @@ try {
     }
     catch {
         Write-Error "Configuration Failed: $($_.Exception.Message)"
-        return
     }
 
     # === Internal Functions ===
