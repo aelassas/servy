@@ -15,6 +15,7 @@ using Xunit;
 
 namespace Servy.Infrastructure.IntegrationTests.Data
 {
+    [Collection("SequentialDatabaseTests")]
     public class DapperExecutorIntegrationTests : IDisposable
     {
         #region Nested Test Spies and Stubs

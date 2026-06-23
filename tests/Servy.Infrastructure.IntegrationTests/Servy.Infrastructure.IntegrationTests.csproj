@@ -127,6 +127,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DatabaseTestCollection.cs" />
     <Compile Include="Data\DapperExecutorIntegrationTests.cs" />
     <Compile Include="Data\ServiceRepositoryIntegrationTests.cs" />
     <Compile Include="Data\SQLiteDbInitializerIntegrationTests.cs" />

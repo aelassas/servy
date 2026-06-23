@@ -82,13 +82,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
     }
 
-    [CollectionDefinition("ServiceRepositoryTests", DisableParallelization = true)]
-    public class ServiceRepositoryTestsCollection : ICollectionFixture<object>
-    {
-        // Enforces strict sequential isolation across the execution suite
-    }
-
-    [Collection("ServiceRepositoryTests")]
+    [Collection("SequentialDatabaseTests")]
     public class ServiceRepositoryIntegrationTests : IDisposable
     {
         private readonly TestDbContext _dbContext;

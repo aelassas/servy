@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Servy.Infrastructure.IntegrationTests.Data
 {
+    [Collection("SequentialDatabaseTests")]
     public class SQLiteDbInitializerIntegrationTests
     {
         /// <summary>
