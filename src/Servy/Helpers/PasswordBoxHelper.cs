@@ -50,8 +50,8 @@ namespace Servy.Helpers
         /// </summary>
         /// <param name="dp">The <see cref="DependencyObject"/> (should be a <see cref="PasswordBox"/>).</param>
         /// <returns>The current bound password string.</returns>
-        public static string GetBoundPassword(DependencyObject dp) =>
-            (string)dp.GetValue(BoundPasswordProperty);
+        public static string? GetBoundPassword(DependencyObject dp) =>
+            (string?)dp.GetValue(BoundPasswordProperty);
 
         /// <summary>
         /// Sets the bound password value for the specified <see cref="PasswordBox"/>.
