@@ -132,11 +132,10 @@ namespace Servy.Core.Helpers
                 .Select(Path.GetFullPath)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
-            var normalizedRoot = Path.GetFullPath(AppConfig.ProgramDataPath)
+            var canonicalRoot = Path.GetFullPath(AppConfig.ProgramDataPath);
+            var normalizedRoot = canonicalRoot
                 .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                 + Path.DirectorySeparatorChar;
-
-            var canonicalRoot = Path.GetFullPath(AppConfig.ProgramDataPath);
 
             foreach (var folder in subFolders)
             {

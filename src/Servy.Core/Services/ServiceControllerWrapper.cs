@@ -2,6 +2,7 @@
 using Servy.Core.Resources;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.ServiceProcess;
 using System.Threading;
@@ -218,10 +219,16 @@ namespace Servy.Core.Services
                 Logger.Debug($"Dependency '{serviceName}' unavailable: {ex.Message}");
                 return new ServiceDependencyNode(serviceName, string.Format(Strings.Msg_DependencyUnavailable, serviceName), false, false);
             }
-            catch (System.ComponentModel.Win32Exception ex)
+            catch (Win32Exception ex)
             {
                 Logger.Warn($"Win32 error resolving dependency '{serviceName}'.", ex);
-                return new ServiceDependencyNode(serviceName, string.Format(Strings.Msg_DependencyAccessDenied, serviceName), false, false);
+
+                // Discrimination filter targeting Win32 error code 5 (ERROR_ACCESS_DENIED)
+                string localizedMessage = ex.NativeErrorCode == 5
+                    ? string.Format(Strings.Msg_DependencyAccessDenied, serviceName)
+                    : string.Format(Strings.Msg_DependencyUnavailable, serviceName);
+
+                return new ServiceDependencyNode(serviceName, localizedMessage, false, false);
             }
         }
 
