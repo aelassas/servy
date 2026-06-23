@@ -54,7 +54,7 @@ namespace Servy.Infrastructure.Data
             // Scan and report legacy whitespace-padded rows on every initialization pass instead of dropping them.
             // Because unique indexes like 'idx_services_name_unique' permit 'foo' and ' foo ' to coexist under COLLATE UNICODE_NOCASE,
             // lookups that automatically trim keys first will hit the clean row. This satisfies the fallback evaluation predicate 
-            // of the read path, which causes the verbatim secondary check to never fire—leaving the padded legacy variant masked and unreachable.
+            // of the read path, which causes the verbatim secondary check to never fire-leaving the padded legacy variant masked and unreachable.
             try
             {
                 var legacyCollisions = connection.Query(@"

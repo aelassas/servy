@@ -21,6 +21,7 @@ namespace Servy.Manager.Views
         protected ServiceSearchUserControl()
         {
             Loaded += UserControl_Loaded;
+            Unloaded += (s, e) => (DataContext as ServiceSearchViewModelBase)?.Dispose();
         }
 
         /// <summary>
