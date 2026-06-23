@@ -277,8 +277,9 @@ namespace Servy.UI.Bootstrapping
                 {
                     try
                     {
+                        // Consolidated Fault Handling UI layer using localized resources consistently
                         MessageBox.Show(
-                            $"Critical Startup Fault: {ex.Message}",
+                            string.Format(Strings.Msg_StartupError_Format, ex.Message),
                             caption,
                             MessageBoxButton.OK,
                             MessageBoxImage.Error);
@@ -426,9 +427,9 @@ namespace Servy.UI.Bootstrapping
             }
             catch (Exception ex)
             {
-                Logger.Error("Startup error", ex);
-                MessageBox.Show(string.Format(Strings.Msg_StartupError_Format, ex.Message));
-                app.Shutdown(1); // Signal failure to the OS
+                // Rethrow the exception after tracking it to let the upper-level fault handling wrapper catch it deterministically.
+                Logger.Error("Startup initialization failed", ex);
+                throw;
             }
             finally
             {
