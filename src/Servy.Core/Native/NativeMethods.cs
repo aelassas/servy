@@ -14,10 +14,6 @@ namespace Servy.Core.Native
     {
         #region Constants
 
-        /// <summary>Required to query the status of a service.</summary>
-        public const int SERVICE_QUERY_STATUS = 0x0004;
-        /// <summary>Service start type: started by the service control manager when a process calls StartService.</summary>
-        public const int SERVICE_DEMAND_START = 0x00000003;
         /// <summary>Value used in ChangeServiceConfig to indicate no change to a parameter.</summary>
         public const uint SERVICE_NO_CHANGE = 0xFFFFFFFF;
         /// <summary>Control code to stop the service.</summary>
@@ -26,11 +22,6 @@ namespace Servy.Core.Native
         public const int SERVICE_CONFIG_DELAYED_AUTO_START_INFO = 0x00000003;
         /// <summary>Information level for QueryServiceConfig2/ChangeServiceConfig2: Service description.</summary>
         public const int SERVICE_CONFIG_DESCRIPTION = 1;
-
-        /// <summary>Access right to enumerate services in the SCM database.</summary>
-        public const uint SC_MANAGER_ENUMERATE_SERVICE = 0x0004;
-        /// <summary>Access right to query the configuration parameters of a service.</summary>
-        public const uint SERVICE_QUERY_CONFIG = 0x0001;
 
         /// <summary>Logon type: Interactive. Designed for users who will be using the computer interactively.</summary>
         public const int LOGON32_LOGON_INTERACTIVE = 2;
@@ -91,11 +82,20 @@ namespace Servy.Core.Native
 
         #region SCM Access Rights
 
+        /// <summary>Access right to enumerate services in the SCM database.</summary>
+        public const uint SC_MANAGER_ENUMERATE_SERVICE = 0x0004;
+
         /// <summary>Access right to connect to the Service Control Manager.</summary>
         public const uint SC_MANAGER_CONNECT = 0x0001;
 
         /// <summary>Access right to create a service object and add it to the database.</summary>
         public const uint SC_MANAGER_CREATE_SERVICE = 0x0002;
+
+        /// <summary>Required to query the status of a service.</summary>
+        public const int SERVICE_QUERY_STATUS = 0x0004;
+
+        /// <summary>Access right to query the configuration parameters of a service.</summary>
+        public const uint SERVICE_QUERY_CONFIG = 0x0001;
 
         #endregion
 
@@ -116,6 +116,9 @@ namespace Servy.Core.Native
         #endregion
 
         #region Service Configuration & Type Flags
+
+        /// <summary>Service start type: started by the service control manager when a process calls StartService.</summary>
+        public const int SERVICE_DEMAND_START = 0x00000003;
 
         /// <summary>Logs the error and continues the startup operation if the service fails to start.</summary>
         public const uint SERVICE_ERROR_NORMAL = 0x00000001;
