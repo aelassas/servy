@@ -63,14 +63,27 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Theory]
-        [InlineData("", "C:\\path.exe")]
-        [InlineData("Name", "")]
-        [InlineData(null, "C:\\path.exe")]
-        public void Validate_MissingVitalFields_ReturnsWarning(string name, string path)
+        [InlineData("", "C:\\path.exe", nameof(Strings.Msg_ServiceNameRequired))]
+        [InlineData(null, "C:\\path.exe", nameof(Strings.Msg_ServiceNameRequired))]
+        [InlineData("Name", "", nameof(Strings.Msg_ExecutablePathRequired))]
+        [InlineData("Name", null, nameof(Strings.Msg_ExecutablePathRequired))]
+        public void Validate_MissingVitalFields_ReturnsSpecificValidationError(string name, string path, string expectedResourceKey)
         {
+            // Arrange
             var dto = new ServiceDto { Name = name, ExecutablePath = path };
+
+            // Resolve the expected error string dynamically from resources based on the key
+            var expectedError = typeof(Strings)
+                .GetProperty(expectedResourceKey, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+                ?.GetValue(null) as string;
+
+            Assert.NotNull(expectedError);
+
+            // Act
             var result = _sut.Validate(dto);
-            Assert.Contains(Strings.Msg_ValidationError, result.Errors);
+
+            // Assert
+            Assert.Contains(expectedError, result.Errors);
         }
 
         [Fact]

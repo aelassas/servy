@@ -10,10 +10,10 @@ namespace Servy.Core.Logging
     /// <summary>
     /// Wraps <see cref="System.Diagnostics.Eventing.Reader.EventLogReader"/> to allow mocking in unit tests.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public class EventLogReader : IEventLogReader
     {
         /// <inheritdoc/>
+        [ExcludeFromCodeCoverage]
         public IEnumerable<ServyEventLogEntry> ReadEvents(EventLogQuery query, int maxReadCount)
         {
             using (var reader = new System.Diagnostics.Eventing.Reader.EventLogReader(query))
@@ -55,7 +55,7 @@ namespace Servy.Core.Logging
         /// A populated <see cref="ServyEventLogEntry"/> containing the formatted message,
         /// event id, level, provider name and timestamp pulled from <paramref name="evt"/>.
         /// </returns>
-        private static ServyEventLogEntry MapToDto(EventRecord evt)
+        internal static ServyEventLogEntry MapToDto(EventRecord evt)
         {
             int eventId = 0;
             DateTimeOffset time = DateTimeOffset.MinValue;
@@ -126,7 +126,7 @@ namespace Servy.Core.Logging
         /// local-offset arithmetic, which can trigger an <see cref="ArgumentOutOfRangeException"/> 
         /// for values approaching <see cref="DateTime.MinValue"/>.
         /// </remarks>
-        private static DateTimeOffset SafeToOffset(DateTime? raw)
+        internal static DateTimeOffset SafeToOffset(DateTime? raw)
         {
             if (!raw.HasValue) return DateTimeOffset.MinValue;
 

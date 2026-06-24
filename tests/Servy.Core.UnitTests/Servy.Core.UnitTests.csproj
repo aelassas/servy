@@ -136,6 +136,7 @@
     <Compile Include="Helpers\ProcessKillerTests.cs" />
     <Compile Include="Helpers\ServiceDtoHelperTests.cs" />
     <Compile Include="Helpers\ServiceHelperTests.cs" />
+    <Compile Include="Logging\EventLogReaderTests.cs" />
     <Compile Include="Logging\LoggetTests.cs" />
     <Compile Include="Logging\PowerShellEventIdsTests.cs" />
     <Compile Include="Native\HandleTests.cs" />

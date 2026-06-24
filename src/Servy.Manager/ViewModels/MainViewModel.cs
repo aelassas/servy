@@ -1238,8 +1238,6 @@ namespace Servy.Manager.ViewModels
 
             if (disposing)
             {
-                _appConfig.PropertyChanged -= AppConfig_PropertyChanged;
-
                 // Stop the main timer first so no more ticks reach ServiceCommands.
                 StopRefreshTimer();
 

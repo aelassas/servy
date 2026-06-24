@@ -18,7 +18,7 @@ namespace Servy.CLI.UnitTests.Helpers
     [Collection("SequentialConsoleTests")]
     public class HelperTests
     {
-        // Thread lock gate safety valve for synchronous blocks
+        // Thread lock gate safety valve for synchronous blocks and asynchronous capture orchestration
         private static readonly object _consoleLock = new object();
 
         // Async coordination primitive sharing the same conceptual isolation boundary 
@@ -35,21 +35,23 @@ namespace Servy.CLI.UnitTests.Helpers
                 var oldOut = Console.Out;
                 var oldErr = Console.Error;
 
-                using (var swOut = new StringWriter())
-                using (var swErr = new StringWriter())
+                try
                 {
-                    Console.SetOut(swOut);
-                    Console.SetError(swErr);
-                    try
+                    using (var swOut = new StringWriter())
+                    using (var swErr = new StringWriter())
                     {
+                        Console.SetOut(swOut);
+                        Console.SetError(swErr);
                         testAction();
                     }
-                    finally
-                    {
-                        Console.SetOut(oldOut);
-                        Console.SetError(oldErr);
-                        _asyncConsoleLock.Release();
-                    }
+                }
+                finally
+                {
+                    // CRITICAL: Ensure static console state restoration is guaranteed 
+                    // before releasing the execution gate primitive.
+                    Console.SetOut(oldOut);
+                    Console.SetError(oldErr);
+                    _asyncConsoleLock.Release();
                 }
             }
         }
@@ -58,29 +60,46 @@ namespace Servy.CLI.UnitTests.Helpers
         // stay alive naturally across all asynchronous thread hops without deadlocks.
         private async Task RunTestWithConsoleCaptureAsync(Func<Task> testAction)
         {
-            // Acquire the async semaphore to respect synchronous isolation execution loops
+            // Acquire the async semaphore first to block concurrent asynchronous execution entries
             await _asyncConsoleLock.WaitAsync();
 
-            var oldOut = Console.Out;
-            var oldErr = Console.Error;
+            TextWriter oldOut;
+            TextWriter oldErr;
 
-            using (var swOut = new StringWriter())
-            using (var swErr = new StringWriter())
+            // Enforce a strict synchronous lock guard while swapping static properties 
+            // to eliminate interleaving race conditions with synchronous test runs.
+            lock (_consoleLock)
             {
-                Console.SetOut(swOut);
-                Console.SetError(swErr);
-                try
+                oldOut = Console.Out;
+                oldErr = Console.Error;
+            }
+
+            try
+            {
+                using (var swOut = new StringWriter())
+                using (var swErr = new StringWriter())
                 {
+                    lock (_consoleLock)
+                    {
+                        Console.SetOut(swOut);
+                        Console.SetError(swErr);
+                    }
+
                     // Perfectly await the execution task to cleanly yield control 
                     // without escaping the lifetime bounds of the StringWriter wrappers.
                     await testAction();
                 }
-                finally
+            }
+            finally
+            {
+                // Unconditionally put back the original stdout/stderr streams within a 
+                // locked context immediately after the test action finishes execution.
+                lock (_consoleLock)
                 {
                     Console.SetOut(oldOut);
                     Console.SetError(oldErr);
-                    _asyncConsoleLock.Release();
                 }
+                _asyncConsoleLock.Release();
             }
         }
 

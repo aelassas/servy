@@ -74,8 +74,18 @@ namespace Servy.Infrastructure.Data
             }
             catch (Exception ex)
             {
-                // Shield the initialization boot pipeline from hard structural crashes if the 'Services' table layout does not yet exist.
-                Logger.Debug("Defensive validation padding check skipped because the base services table layout has not been instantiated yet.", ex);
+                // Explicitly check the master schema to distinguish between a benign first-boot 
+                // initialization and a genuine runtime query failure.
+                if (!TableExists(connection, "Services", transaction: null))
+                {
+                    Logger.Debug("Defensive validation padding check skipped because the base Services table layout has not been instantiated yet.", ex);
+                }
+                else
+                {
+                    // Escalated to Warn because the table exists, meaning an infrastructure anomaly 
+                    // (e.g., missing UNICODE_NOCASE collation, DB lock, corrupt file) silently disabled the detector.
+                    Logger.Warn("Legacy whitespace-padding anomaly scan failed to execute against the active Services table; zombie rows may go undetected this boot.", ex);
+                }
             }
 
             // Disable foreign keys temporarily for the duration of the migration process.

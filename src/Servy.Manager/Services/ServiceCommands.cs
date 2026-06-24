@@ -255,8 +255,8 @@ namespace Servy.Manager.Services
                         return;
                     }
 
-                    var serviceDomain = await GetServiceDomain(service.Name, cancellationToken);
-                    if (serviceDomain == null)
+                    var serviceDto = await _serviceRepository.GetByNameAsync(service.Name, decrypt: false, cancellationToken);
+                    if (serviceDto == null)
                     {
                         await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
                         return;
