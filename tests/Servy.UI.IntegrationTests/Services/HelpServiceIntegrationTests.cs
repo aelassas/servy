@@ -10,14 +10,14 @@ namespace Servy.UI.IntegrationTests.Services
     public class HelpServiceIntegrationTests
     {
         private readonly Mock<IMessageBoxService> _mockMessageBox;
-        private readonly UI.Services.HelpService _service;
+        private readonly HelpService _service;
         private const string Caption = "Help Test";
 
         public HelpServiceIntegrationTests()
         {
             _mockMessageBox = new Mock<IMessageBoxService>();
-            _service = new UI.Services.HelpService(_mockMessageBox.Object);
-            UI.Services.HelpService.IsHeadlessMode = true;
+            _service = new HelpService(_mockMessageBox.Object);
+            UiHeadless.IsEnabled = true;
         }
 
         #region Constructor Tests
@@ -93,7 +93,7 @@ namespace Servy.UI.IntegrationTests.Services
         public void NormalizeVersion_PartialVersionsWithNegativeFields_PadsMissingPartsToZero()
         {
             // Arrange
-            var method = typeof(UI.Services.HelpService).GetMethod("NormalizeVersion", BindingFlags.Static | BindingFlags.NonPublic);
+            var method = typeof(HelpService).GetMethod("NormalizeVersion", BindingFlags.Static | BindingFlags.NonPublic);
 
             // System.Version elements constructed with 2 parts assign -1 automatically to Build and Revision fields
             var incompleteVersion = new Version(4, 2);

@@ -12,7 +12,7 @@ namespace Servy.UI.IntegrationTests.Services
         public MessageBoxServiceIntegrationTests()
         {
             _service = new MessageBoxService(new WpfUiDispatcher());
-            MessageBoxService.IsHeadlessMode = true;
+            UiHeadless.IsEnabled = true;
         }
 
         #region Smoke Tests (Dispatcher Verification)

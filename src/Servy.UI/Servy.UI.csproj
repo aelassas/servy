@@ -111,6 +111,7 @@
     <Compile Include="Services\IUiDispatcher.cs" />
     <Compile Include="Services\MessageBoxService.cs" />
     <Compile Include="Services\WpfUiDispatcher.cs" />
+    <Compile Include="UiHeadless.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

@@ -19,11 +19,6 @@ namespace Servy.UI.Services
     /// </summary>
     public class HelpService : IHelpService
     {
-        /// <summary>
-        /// A hook for integration tests to prevent the browser from opening.
-        /// </summary>
-        public static bool IsHeadlessMode { get; set; }
-
         private readonly IMessageBoxService _messageBoxService;
 
         /// <summary>
@@ -179,7 +174,7 @@ namespace Servy.UI.Services
         private static void OpenExternalUrl(string url, string headlessLabel, string fallbackDebug)
         {
             var psi = new ProcessStartInfo { FileName = url, UseShellExecute = true };
-            if (IsHeadlessMode)
+            if (UiHeadless.IsEnabled)
             {
                 Console.WriteLine($"[HEADLESS INFO] {headlessLabel}: opening browser URL {psi.FileName}");
                 return;
