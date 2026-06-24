@@ -1,3 +1,4 @@
+#Requires -Version 5.1
 # Ensure the log function is loaded in the main script thread
 $ScriptDir = $PSScriptRoot
 $LogScriptPath = Join-Path $ScriptDir "Write-ServyLog.ps1"
@@ -27,12 +28,13 @@ $WorkerScript = {
     . $LogScript
     
     # Rapidly blast messages to stress test locking and trigger rotation races
+    $rng = [System.Random]::new()
     for ($i = 1; $i -le 100; $i++) {
         $Msg = "Worker {0:D2} | Payload Sequence {1:D3} | Testing Mutex Integrity" -f $WorkerId, $i
         Write-ServyLog -FilePath $FilePath -Message $Msg -MaxSizeBytes $MaxSize
         
         # Micro-sleep to vary execution interleaving slightly
-        [System.Threading.Thread]::Sleep([System.Random]::new().Next(1, 5))
+        [System.Threading.Thread]::Sleep($rng.Next(1, 5))
     }
 }
 
