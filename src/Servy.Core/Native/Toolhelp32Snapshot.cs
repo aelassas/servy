@@ -35,12 +35,33 @@ namespace Servy.Core.Native
         {
             var snapshotMap = new Dictionary<int, ProcessInfoNode>();
             var byParent = new Dictionary<int, List<int>>();
-            IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+            IntPtr snapshot = IntPtr.Zero;
+
+            // Bounded retry sequence matching Microsoft's explicit optimization guidance for busy systems
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+                if (snapshot != IntPtr.Zero && snapshot != INVALID_HANDLE_VALUE)
+                    break;
+
+                int err = Marshal.GetLastWin32Error();
+
+                // If it is a hard structural failure (e.g., Access Denied), abort immediately without wasting time in a loop
+                if (err != ERROR_BAD_LENGTH)
+                {
+                    Logger.Warn($"CreateToolhelp32Snapshot failed with a non-recoverable system error (Win32 error {err}). Process map build will be a no-op for this invocation.");
+                    return (snapshotMap, byParent);
+                }
+
+                // Small brief yield thread break to give the system process table time to settle down
+                Thread.Yield();
+            }
 
             if (snapshot == IntPtr.Zero || snapshot == INVALID_HANDLE_VALUE)
             {
-                int err = Marshal.GetLastWin32Error();
-                Logger.Warn($"CreateToolhelp32Snapshot failed (Win32 error {err}). Process map build will be a no-op for this invocation.");
+                Logger.Warn("CreateToolhelp32Snapshot kept failing transiently with ERROR_BAD_LENGTH after maximum retries; process map build is a no-op for this invocation.");
                 return (snapshotMap, byParent);
             }
 
