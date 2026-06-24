@@ -860,7 +860,7 @@ namespace Servy.Manager.ViewModels
                 token.ThrowIfCancellationRequested();
 
                 // 1. Take snapshot of services safely
-                var snapshot = new List<Service?>();
+                var snapshot = new List<Service>();
                 lock (_servicesLock)
                 {
                     snapshot = _services.Select(r => r.Service).ToList();
@@ -1233,8 +1233,6 @@ namespace Servy.Manager.ViewModels
 
             if (disposing)
             {
-                _appConfig.PropertyChanged -= AppConfig_PropertyChanged;
-
                 // Stop the main timer first so no more ticks reach ServiceCommands.
                 StopRefreshTimer();
 

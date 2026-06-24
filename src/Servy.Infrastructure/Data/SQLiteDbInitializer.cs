@@ -71,8 +71,18 @@ namespace Servy.Infrastructure.Data
             }
             catch (Exception ex)
             {
-                // Shield the initialization boot pipeline from hard structural crashes if the 'Services' table layout does not yet exist.
-                Logger.Debug("Defensive validation padding check skipped because the base services table layout has not been instantiated yet.", ex);
+                // Explicitly check the master schema to distinguish between a benign first-boot 
+                // initialization and a genuine runtime query failure.
+                if (!TableExists(connection, "Services", transaction: null))
+                {
+                    Logger.Debug("Defensive validation padding check skipped because the base Services table layout has not been instantiated yet.", ex);
+                }
+                else
+                {
+                    // Escalated to Warn because the table exists, meaning an infrastructure anomaly 
+                    // (e.g., missing UNICODE_NOCASE collation, DB lock, corrupt file) silently disabled the detector.
+                    Logger.Warn("Legacy whitespace-padding anomaly scan failed to execute against the active Services table; zombie rows may go undetected this boot.", ex);
+                }
             }
 
             // Disable foreign keys temporarily for the duration of the migration process.
@@ -303,7 +313,7 @@ namespace Servy.Infrastructure.Data
         /// <param name="tableName">The exact name of the table to look for.</param>
         /// <param name="transaction">The active atomic transaction.</param>
         /// <returns><c>true</c> if the table exists; otherwise, <c>false</c>.</returns>
-        private static bool TableExists(DbConnection connection, string tableName, DbTransaction transaction)
+        private static bool TableExists(DbConnection connection, string tableName, DbTransaction? transaction)
         {
             var result = connection.QueryFirstOrDefault<int>(
                 "SELECT 1 FROM sqlite_master WHERE type='table' AND name=@TableName;",

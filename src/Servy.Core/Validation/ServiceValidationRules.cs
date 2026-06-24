@@ -35,13 +35,19 @@ namespace Servy.Core.Validation
             if (dto == null)
             {
                 result.Errors.Add(Strings.Msg_ValidationError);
+                return result; // Stop early for completely missing payload configurations
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Name))
+            {
+                result.Errors.Add(Strings.Msg_ServiceNameRequired);
                 return result; // Stop early for missing vital fields
             }
 
-            if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.ExecutablePath))
+            if (string.IsNullOrWhiteSpace(dto.ExecutablePath))
             {
-                result.Errors.Add(Strings.Msg_ValidationError);
-                return result;
+                result.Errors.Add(Strings.Msg_ExecutablePathRequired);
+                return result; // Stop early for missing vital fields
             }
 
             var (isValidName, errorMsg) = Helper.IsServiceNameValid(dto.Name);

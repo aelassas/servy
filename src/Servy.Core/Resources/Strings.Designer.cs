@@ -187,6 +187,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service process path cannot be empty..
+        /// </summary>
+        public static string Msg_ExecutablePathRequired {
+            get {
+                return ResourceManager.GetString("Msg_ExecutablePathRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à A fatal error occurred and the application must close. Detailed diagnostics have been saved to the log file..
         /// </summary>
         public static string Msg_FatalError_Body {
@@ -768,6 +777,15 @@ namespace Servy.Core.Resources {
         public static string Msg_ServiceNameLengthReached {
             get {
                 return ResourceManager.GetString("Msg_ServiceNameLengthReached", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service name cannot be empty..
+        /// </summary>
+        public static string Msg_ServiceNameRequired {
+            get {
+                return ResourceManager.GetString("Msg_ServiceNameRequired", resourceCulture);
             }
         }
         

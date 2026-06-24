@@ -20,6 +20,12 @@
   <data name="Msg_ValidationError" xml:space="preserve">
     <value>Please fill in all required fields.</value>
   </data>
+  <data name="Msg_ServiceNameRequired" xml:space="preserve">
+    <value>Service name cannot be empty.</value>
+  </data>
+  <data name="Msg_ExecutablePathRequired" xml:space="preserve">
+    <value>Service process path cannot be empty.</value>
+  </data>
   <data name="Msg_ServiceNameContainsTrailingWhitespace" xml:space="preserve">
     <value>Service name cannot have trailing whitespace.</value>
   </data>
