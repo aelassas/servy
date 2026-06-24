@@ -77,15 +77,16 @@ function Protect-SensitiveString {
     # only the final whitespace-delimited token of an unquoted value is masked;
     # multi-word unquoted sequences are partially redacted.
     # Suffix matching logic pulled inside the (?<key>...) group boundary to protect composite keys.
+    # Atomic groups (?>...) re-applied inside named captures to prevent catastrophic backtracking timeouts.
     $regexPattern = "(?i)(?<![a-zA-Z0-9])(?<key>(?:$keyPattern)(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])" +
         "(?:" +
             # BRANCH A: Explicit Separators (:, =, /)
             "(?<sep>\s*[:=]\s*|/)" +
-            "(?<val>`"[^`"]*`"|'[^']*'|(?:[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*))" +
+            "(?<val>(?>`"[^`"]*`"|'[^']*'|(?:[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*)))" +
             "|" +
             # BRANCH B: Space Separator
             "(?<sep>\s+)(?![\-/]+[a-zA-Z])" +
-            "(?<val>`"[^`"]*`"|'[^']*'|(?:[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*))" +
+            "(?<val>(?>`"[^`"]*`"|'[^']*'|(?:[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*)))" +
         ")"
 
     $maskingRegex = New-Object System.Text.RegularExpressions.Regex (
