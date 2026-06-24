@@ -62,14 +62,7 @@ namespace Servy.Core.Security
                 }
                 catch (UnauthorizedAccessException ex) when (!IsAdministrator() && !breakInheritance)
                 {
-                    // GRACEFUL FALLBACK: 
-                    // If we are a non-admin service account managing a child folder, the Root Vault 
-                    // (parent folder) was already secured by the Administrator during installation.
-                    // Because breakInheritance is false, the OS is already enforcing security via 
-                    // inheritance, making it safe to proceed without crashing the service.
-                    Logger.Warn(
-                        $"Could not atomically create hardened directory '{path}' as non-admin. " +
-                        $"Falling back to standard environmental creation rules. Verify parent vault is secured. ({ex.Message})");
+                    HandleNonAdminFallback(ex, $"Could not atomically create hardened directory '{path}' as non-admin. Falling back to standard environmental creation rules. Verify parent vault is secured.");
                 }
             }
             else
@@ -93,14 +86,7 @@ namespace Servy.Core.Security
                 }
                 catch (UnauthorizedAccessException ex) when (!IsAdministrator() && !breakInheritance)
                 {
-                    // GRACEFUL FALLBACK: 
-                    // If we are a non-admin service account managing a child folder, the Root Vault 
-                    // (parent folder) was already secured by the Administrator during installation.
-                    // Because breakInheritance is false, the OS is already enforcing security via 
-                    // inheritance, making it safe to proceed without crashing the service.
-                    Logger.Warn(
-                        $"Could not write hardened ACL on '{path}' as non-admin. " +
-                        $"Falling back to inherited permissions from parent. Verify parent vault is secured. ({ex.Message})");
+                    HandleNonAdminFallback(ex, $"Could not write hardened ACL on '{path}' as non-admin. Falling back to inherited permissions from parent. Verify parent vault is secured.");
                 }
             }
         }
@@ -258,6 +244,21 @@ namespace Servy.Core.Security
             {
                 throw new UnauthorizedAccessException("This operation requires administrator privileges.");
             }
+        }
+
+        /// <summary>
+        /// Handles non-administrator filesystem operational fallback conditions safely when inheritance rules are active.
+        /// </summary>
+        /// <param name="ex">The underlying unauthorized access exception intercepted during directory configuration routines.</param>
+        /// <param name="message">The specific descriptive operational warning contextual payload message string to append to the log logs stream.</param>
+        private static void HandleNonAdminFallback(UnauthorizedAccessException ex, string message)
+        {
+            // GRACEFUL FALLBACK: 
+            // If we are a non-admin service account managing a child folder, the Root Vault 
+            // (parent folder) was already secured by the Administrator during installation.
+            // Because breakInheritance is false, the OS is already enforcing security via 
+            // inheritance, making it safe to proceed without crashing the service.
+            Logger.Warn($"{message} ({ex.Message})");
         }
     }
 }

@@ -42,7 +42,7 @@ namespace Servy.Core.Services
             EventLogLevel? level,
             DateTime? startDate,
             DateTime? endDate,
-            string keyword,
+            string? keyword,
             CancellationToken token = default)
         {
             return await Task.Run(() =>
