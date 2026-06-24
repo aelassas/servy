@@ -57,16 +57,6 @@ namespace Servy.CLI
         private const string ResourcesNamespace = "Servy.CLI.Resources";
 
         /// <summary>
-        /// The singleton instance of <see cref="SecureData"/> used for cryptographic operations.
-        /// </summary>
-        /// <remarks>
-        /// This field holds sensitive AES and HMAC key material in memory. 
-        /// It must be explicitly disposed of during application shutdown to trigger 
-        /// strict memory-zeroing protocols via <see cref="System.Security.Cryptography.CryptographicOperations.ZeroMemory"/>.
-        /// </remarks>
-        private static SecureData? _secureData;
-
-        /// <summary>
         /// Parses command-line arguments, invokes the appropriate command handlers,
         /// and returns an exit code indicating the success or failure of the operation.
         /// </summary>
@@ -90,6 +80,7 @@ namespace Servy.CLI
 
                 IAppDbContext? dbContext = null;
                 ProtectedKeyProvider? protectedKeyProvider = null;
+                SecureData? secureData = null;
                 try
                 {
                     var verbs = GetVerbs();
@@ -150,10 +141,10 @@ namespace Servy.CLI
                     dbContext = new AppDbContext(connectionString);
                     var dapperExecutor = new DapperExecutor(dbContext);
                     protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
-                    _secureData = new SecureData(protectedKeyProvider);
+                    secureData = new SecureData(protectedKeyProvider);
                     var xmlSerializer = new XmlServiceSerializer();
                     var jsonSerializer = new JsonServiceSerializer();
-                    var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer, jsonSerializer);
+                    var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
 
                     Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
                     var serviceManager = new ServiceManager(
@@ -288,7 +279,7 @@ namespace Servy.CLI
                 }
                 finally
                 {
-                    TryRun(() => _secureData?.Dispose(), nameof(_secureData));
+                    TryRun(() => secureData?.Dispose(), nameof(secureData));
                     TryRun(() => protectedKeyProvider?.Dispose(), nameof(protectedKeyProvider));
                     TryRun(() => dbContext?.Dispose(), nameof(dbContext));
                     TryRun(Logger.Shutdown, nameof(Logger.Shutdown));
