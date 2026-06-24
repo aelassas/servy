@@ -347,7 +347,6 @@ namespace Servy.Manager.ViewModels
                 Helpers.Helper.CancelAndDisposeSafely(oldCts);
             }
 
-
             try
             {
                 FooterText = string.Empty; // Clear footer text before search
@@ -363,19 +362,16 @@ namespace Servy.Manager.ViewModels
                 // Step 3: Update UI safely
                 token.ThrowIfCancellationRequested();
 
-                var batch = new List<LogEntryModel>(results.Count());
-                foreach (var result in results)
+                // Materialize the search results and construct the data model in a single pass
+                // to eliminate multiple enumeration overhead on potentially deferred underlying sequences.
+                var batch = results.Select(result => new LogEntryModel
                 {
-                    var entry = new LogEntryModel
-                    {
-                        Time = result.Time.LocalDateTime,
-                        Level = result.Level,
-                        EventId = result.EventId,
-                        Message = result.Message,
-                    };
+                    Time = result.Time.LocalDateTime,
+                    Level = result.Level,
+                    EventId = result.EventId,
+                    Message = result.Message,
+                }).ToList();
 
-                    batch.Add(entry);
-                }
                 _logs.Clear();
                 _logs.AddRange(batch);
 

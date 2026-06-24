@@ -1,5 +1,4 @@
-﻿using Servy.Core.Logging;
-using Servy.Service.Helpers;
+﻿using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using System;
 using System.Collections.Generic;
@@ -65,9 +64,11 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void ObjectDisposed_AccessingProperties_ThrowsObjectDisposedException()
         {
+            // Arrange
             var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\"");
             wrapper.Dispose();
 
+            // Act & Assert
             Assert.Throws<ObjectDisposedException>(() => wrapper.Id);
             Assert.Throws<ObjectDisposedException>(() => wrapper.HasExited);
             Assert.Throws<ObjectDisposedException>(() => wrapper.Handle);
@@ -99,6 +100,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Dispose_CalledMultipleTimes_BypassesSecondInvocationSafely()
         {
+            // Arrange
             var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\"");
 
             // Act
@@ -116,30 +118,37 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Start_And_WaitForExit_PopulatesPropertiesCorrectly()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 42\""))
             {
+                // Act
                 bool started = wrapper.Start();
 
+                // Assert: Immediately verify active-handle properties while the process lifecycle is valid
                 Assert.True(started);
                 Assert.True(wrapper.Id > 0);
                 Assert.NotNull(wrapper.StartInfo);
                 Assert.NotNull(wrapper.UnderlyingProcess);
                 Assert.True(wrapper.EnableRaisingEvents); // Constructor default
+                Assert.True(wrapper.StartTime > DateTime.MinValue);
 
-                // Wait for it to finish
+                string formatString = wrapper.Format();
+                Assert.Contains(wrapper.Id.ToString(), formatString);
+
+                // Act: Await terminal completion 
                 bool exited = wrapper.WaitForExit(5000);
 
+                // Assert: Verify post-execution properties
                 Assert.True(exited);
                 Assert.True(wrapper.HasExited);
                 Assert.Equal(42, wrapper.ExitCode);
-                Assert.True(wrapper.StartTime > DateTime.MinValue);
-                Assert.Contains(wrapper.Id.ToString(), wrapper.Format());
             }
         }
 
         [Fact]
         public void PropertySetters_UpdateUnderlyingProcess()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
             {
                 wrapper.Start();
@@ -152,6 +161,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.EnableRaisingEvents = false;
                 Assert.False(wrapper.EnableRaisingEvents);
 
+                // Cleanup
                 wrapper.Kill();
             }
         }
@@ -159,11 +169,11 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void NativeProperties_Getters_RetrieveValidOperatingSystemHandles()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
             {
-                wrapper.Start();
-
                 // Act
+                wrapper.Start();
                 IntPtr processHandle = wrapper.Handle;
                 IntPtr windowHandle = wrapper.MainWindowHandle;
 
@@ -171,6 +181,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.NotEqual(IntPtr.Zero, processHandle);
                 Assert.Equal(IntPtr.Zero, windowHandle); // Console window initialized with CreateNoWindow = true returns Zero
 
+                // Cleanup
                 wrapper.Kill();
             }
         }
@@ -182,6 +193,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void DataAndExitEvents_AddAndRemoveHandlers_MaintainsSubscriptionsWithoutExceptions()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\"", redirectOutput: true))
             {
                 DataReceivedEventHandler outputHandler = (s, e) => { };
@@ -210,12 +222,15 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public async Task WaitForExitOrTimeoutAsync_StaysAlive_ReturnsTrue()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             {
                 wrapper.Start();
 
+                // Act
                 bool isHealthy = await wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(1), CancellationToken.None);
 
+                // Assert
                 Assert.True(isHealthy);
                 wrapper.Kill();
             }
@@ -224,13 +239,16 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public async Task WaitForExitOrTimeoutAsync_ExitsEarly_ReturnsFalse()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
             {
                 wrapper.StartInfo.WorkingDirectory = Environment.SystemDirectory;
                 wrapper.Start();
 
+                // Act
                 bool isHealthy = await wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
 
+                // Assert
                 Assert.False(isHealthy);
             }
         }
@@ -238,14 +256,17 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public async Task WaitForExitOrTimeoutAsync_Cancellation_ThrowsTaskCanceledException()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
             using (var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500)))
             {
                 wrapper.Start();
 
+                // Act & Assert
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
                     wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(10), cts.Token));
 
+                // Cleanup
                 wrapper.Kill();
             }
         }
@@ -253,6 +274,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void WaitForExit_InfiniteBlock_ExecutesSuccessfullyOnTerminatedProcess()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
             {
                 wrapper.StartInfo.WorkingDirectory = Environment.SystemDirectory;
@@ -273,6 +295,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Stop_AlreadyExited_ReturnsNull()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
@@ -289,6 +312,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Stop_ForceKillFallback_ReturnsFalse_AndLogs()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"[Console]::TreatControlCAsInput = $true; while($true) { Start-Sleep 1 }\"", createNoWindow: true))
             {
                 wrapper.Start();
@@ -306,10 +330,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void StopDescendants_KillsEntireTree_AndHandlesRecursion()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"while ($true) { Start-Sleep 1 }\"", createNoWindow: true))
             {
                 wrapper.Start();
-
                 int parentPid = wrapper.Id;
                 DateTime parentStartTime = wrapper.StartTime;
 
@@ -335,6 +359,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void StopDescendants_NoActiveDescendantsFound_LogsAndExitsEarly()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
             {
                 wrapper.Start();
@@ -351,6 +376,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Kill_AlreadyExited_DoesNotThrow()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
@@ -367,6 +393,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Kill_CatchBranch_AccessViolationOrInvalidTargetState_LogsWarningSafely()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
@@ -391,6 +418,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void TryStopGracefullyOrKill_ExitedOrInvalidProcess_HandlesStateWithoutCrashing()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
@@ -413,10 +441,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void SendCtrlC_ProcessWithNoConsoleAttached_GracefullyReturnsFalseToFallbackChain()
         {
+            // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 5\""))
             {
                 wrapper.Start();
-
                 var privateMethod = typeof(ProcessWrapper).GetMethod("SendCtrlC", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
                 // Act - Invoke SendCtrlC directly on a wrapper targeting a windowless background task runner profile
@@ -425,6 +453,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 // Assert: True/False depends cleanly on native environment access, but path must complete without unhandled crashes.
                 Assert.NotNull(result);
 
+                // Cleanup
                 wrapper.Kill();
             }
         }
@@ -436,6 +465,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void RedirectStreams_EventsFireAndCanBeCanceled()
         {
+            // Arrange
             using (var outputFinished = new ManualResetEventSlim(false))
             using (var errorFinished = new ManualResetEventSlim(false))
             using (var wrapper = CreateWrapper(
@@ -464,10 +494,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     }
                 };
 
+                // Act
                 wrapper.Start();
-
-                // FIX: Removed Assert.NotNull(wrapper.StandardOutput) and Assert.NotNull(wrapper.StandardError)
-                // to prevent mixing synchronous readers with asynchronous event registration channels.
 
                 wrapper.BeginOutputReadLine();
                 wrapper.BeginErrorReadLine();
@@ -479,6 +507,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     new[] { outputFinished.WaitHandle, errorFinished.WaitHandle },
                     TimeSpan.FromSeconds(5));
 
+                // Assert
                 Assert.True(processExited, "Process should have exited within timeout.");
                 Assert.True(signalsReceived, "Did not receive expected stdout/stderr signals.");
                 Assert.Contains("HELLO_OUT", stdOut);

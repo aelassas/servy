@@ -510,7 +510,7 @@ namespace Servy.Manager.ViewModels
                 var sw = Stopwatch.StartNew();
                 var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, true, token), token);
                 sw.Stop();
-                Debug.WriteLine($"Created {results.Count} SearchServicesAsync in {sw.ElapsedMilliseconds} ms");
+                Logger.Debug($"Created {results.Count} SearchServicesAsync in {sw.ElapsedMilliseconds} ms");
 
                 // Step 4: fetch data & build VMs off UI thread
                 sw = Stopwatch.StartNew();
@@ -518,7 +518,7 @@ namespace Servy.Manager.ViewModels
                     results.Select(s => new ServiceRowViewModel(s, ServiceCommands, _cursorService)).ToList()
                 , token);
                 sw.Stop();
-                Debug.WriteLine($"Created {vms.Count} ServiceRowViewModels in {sw.ElapsedMilliseconds} ms");
+                Logger.Debug($"Created {vms.Count} ServiceRowViewModels in {sw.ElapsedMilliseconds} ms");
 
                 // Step 5: update collection on UI thread
                 await _dispatcher.InvokeAsync(() =>
@@ -872,10 +872,14 @@ namespace Servy.Manager.ViewModels
                 }
 
                 // 2. Fetch OS Info in bulk (Off UI thread)
+#if DEBUG
                 var stopwatch = Stopwatch.StartNew();
+#endif
                 var allServicesList = await Task.Run(() => _serviceManager.GetAllServices(token), token);
+#if DEBUG
                 stopwatch.Stop();
                 Debug.WriteLine($"GetAllServices finished in {stopwatch.ElapsedMilliseconds}ms");
+#endif
                 var allServicesDict = BuildUniqueNameDictionary(allServicesList, s => s.Name);
 
                 // 3. Fetch all Repository DTOs in bulk
