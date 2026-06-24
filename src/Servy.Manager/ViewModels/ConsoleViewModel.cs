@@ -480,6 +480,10 @@ namespace Servy.Manager.ViewModels
             {
                 Logger.Debug("Attempted to switch logs after disposal; ignoring.");
             }
+            catch (OperationCanceledException)
+            {
+                Logger.Debug("Service switch cancelled (superseded or disposing); ignoring.");
+            }
             catch (Exception ex)
             {
                 try
