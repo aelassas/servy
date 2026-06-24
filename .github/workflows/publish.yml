@@ -643,6 +643,8 @@ jobs:
             "$zip" `
             "$pkg"
 
+          if ($LASTEXITCODE -ne 0) { throw "7-Zip packaging failed with exit code $LASTEXITCODE" }
+
           Remove-Item $pkg -Recurse -Force
 
       - name: Upload portable package
