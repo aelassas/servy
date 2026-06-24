@@ -77,6 +77,21 @@ namespace Servy.Core.EnvironmentVariables
                 return false;
             }
 
+            // ROBUSTNESS: Guard the unescaped key against illegal character injections (CR, LF, Null-Terminator)
+            if (key.Contains("\n") || key.Contains("\r"))
+            {
+                errorMessage = string.Format(Strings.Msg_EnvironmentVariableForbiddenNewline, key);
+                resultKind = EnvVarValidationResultKind.ForbiddenNewline;
+                return false;
+            }
+
+            if (key.Contains("\0"))
+            {
+                errorMessage = string.Format(Strings.Msg_EnvironmentVariableKeyInvalidChars, key);
+                resultKind = EnvVarValidationResultKind.GeneralFailure;
+                return false;
+            }
+
             // 1. Trim whitespace first to expose structural quotes
             var trimmedValue = rawValue.Trim();
 

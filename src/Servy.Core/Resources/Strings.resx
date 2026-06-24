@@ -218,6 +218,9 @@
   <data name="Msg_EnvironmentVariableForbiddenNewline" xml:space="preserve">
     <value>Environment variable '{0}' contains a forbidden newline character. Multi-line values are not supported.</value>
   </data>
+  <data name="Msg_EnvironmentVariableKeyInvalidChars" xml:space="preserve">
+    <value>The environment variable key '{0}' contains illegal characters.</value>
+  </data>
 
   <data name="FileFilter_Executable" xml:space="preserve">
     <value>Executable files (*.exe)|*.exe|All files (*.*)|*.*</value>
