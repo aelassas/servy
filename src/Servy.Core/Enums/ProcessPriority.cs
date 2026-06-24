@@ -2,42 +2,29 @@
 {
     /// <summary>
     /// Defines the different levels of process priority that can be assigned to a process.
-    /// These priority levels influence how the operating system schedules CPU time for the process.
-    /// Lower priorities mean the process gets less CPU time compared to higher priorities.
-    /// Use RealTime priority with caution as it can starve other processes of CPU resources.
     /// </summary>
+    /// <remarks>
+    /// <b>CRITICAL NOTE:</b> These integers are persisted directly to the SQLite database configuration layer. 
+    /// Do not reorder or alter these values, as it will corrupt process configurations on existing installations.
+    /// </remarks>
     public enum ProcessPriority
     {
-        /// <summary>
-        /// The process runs only when the system is idle and other processes are not using the CPU.
-        /// This is the lowest priority level.
-        /// </summary>
-        Idle,
+        /// <summary>Lowest priority level; runs only when the system is idle.</summary>
+        Idle = 0,
 
-        /// <summary>
-        /// The process has below normal priority, less than normal but higher than idle.
-        /// </summary>
-        BelowNormal,
+        /// <summary>Below normal priority; higher than idle but less than normal.</summary>
+        BelowNormal = 1,
 
-        /// <summary>
-        /// The process has normal priority, which is the default priority for processes.
-        /// </summary>
-        Normal,
+        /// <summary>Normal priority; the default priority for processes.</summary>
+        Normal = 2,
 
-        /// <summary>
-        /// The process has above normal priority, higher than normal but lower than high.
-        /// </summary>
-        AboveNormal,
+        /// <summary>Above normal priority; higher than normal but lower than high.</summary>
+        AboveNormal = 3,
 
-        /// <summary>
-        /// The process has high priority, it receives more CPU time compared to normal priority.
-        /// </summary>
-        High,
+        /// <summary>High priority; receives significant CPU scheduling precedence.</summary>
+        High = 4,
 
-        /// <summary>
-        /// The process has real-time priority, the highest priority.
-        /// Use with caution as it can monopolize CPU resources and starve other processes.
-        /// </summary>
-        RealTime
+        /// <summary>Real-time priority; highest priority. Monopolizes CPU resources.</summary>
+        RealTime = 5
     }
 }
