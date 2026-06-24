@@ -195,7 +195,7 @@ namespace Servy.CLI
                         // Copy Sysinternals from embedded resources
                         if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
                         {
-                            Console.WriteLine($"Failed copying embedded resource: {AppConfig.HandleExe}");
+                            Logger.Warn($"Failed copying embedded resource: {AppConfig.HandleExeFileName}; process-tree handle features may be degraded.");
                         }
 
                         // Copy service executable from embedded resources
@@ -208,7 +208,7 @@ namespace Servy.CLI
                         // Copy debug symbols from embedded resources (only in debug builds)
                         if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
                         {
-                            Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
+                            Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
                         }
 #else
                         // Copy *.dll from embedded resources
