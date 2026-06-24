@@ -13,11 +13,6 @@ namespace Servy.UI.Services
         private readonly IUiDispatcher _dispatcher;
 
         /// <summary>
-        /// A hook for integration tests to prevent blocking modal dialogs in headless CI environments.
-        /// </summary>
-        public static bool IsHeadlessMode { get; set; }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="MessageBoxService"/> class.
         /// </summary>
         /// <param name="dispatcher">
@@ -32,7 +27,7 @@ namespace Servy.UI.Services
         /// <inheritdoc/>
         public async Task ShowInfoAsync(string? message, string caption)
         {
-            if (IsHeadlessMode)
+            if (UiHeadless.IsEnabled)
             {
                 Console.WriteLine($"[HEADLESS INFO] {caption}: {message}");
                 return;
@@ -48,7 +43,7 @@ namespace Servy.UI.Services
         /// <inheritdoc/>
         public async Task ShowWarningAsync(string? message, string caption)
         {
-            if (IsHeadlessMode)
+            if (UiHeadless.IsEnabled)
             {
                 Console.WriteLine($"[HEADLESS WARNING] {caption}: {message}");
                 return;
@@ -63,7 +58,7 @@ namespace Servy.UI.Services
         /// <inheritdoc/>
         public async Task ShowErrorAsync(string? message, string caption)
         {
-            if (IsHeadlessMode)
+            if (UiHeadless.IsEnabled)
             {
                 Console.WriteLine($"[HEADLESS ERROR] {caption}: {message}");
                 return;
@@ -78,7 +73,7 @@ namespace Servy.UI.Services
         /// <inheritdoc/>
         public async Task<bool> ShowConfirmAsync(string? message, string caption)
         {
-            if (IsHeadlessMode)
+            if (UiHeadless.IsEnabled)
             {
                 Console.WriteLine($"[HEADLESS CONFIRM] {caption}: {message} -> Auto-answering 'Yes'.");
                 return true; // Default to 'Yes' to allow happy-path CI flows

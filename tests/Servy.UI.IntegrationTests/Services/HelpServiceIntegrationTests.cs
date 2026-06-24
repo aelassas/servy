@@ -14,7 +14,7 @@ namespace Servy.UI.IntegrationTests.Services
         {
             _mockMessageBox = new Mock<IMessageBoxService>();
             _service = new HelpService(_mockMessageBox.Object);
-            HelpService.IsHeadlessMode = true;
+            UiHeadless.IsEnabled = true;
         }
 
         #region Constructor Tests
@@ -91,9 +91,9 @@ namespace Servy.UI.IntegrationTests.Services
         {
             // Arrange
             var method = typeof(HelpService).GetMethod("NormalizeVersion", BindingFlags.Static | BindingFlags.NonPublic);
-            
+
             // System.Version elements constructed with 2 parts assign -1 automatically to Build and Revision fields
-            var incompleteVersion = new Version(4, 2); 
+            var incompleteVersion = new Version(4, 2);
 
             // Act
             var result = (Version)method!.Invoke(null, new object[] { incompleteVersion })!;
