@@ -125,8 +125,8 @@ namespace Servy.CLI
                                      $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
 
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"[CRITICAL] Vulnerable SQLite version detected: {detectedVersion}");
-                        Console.WriteLine($"This version of Servy requires SQLite {AppConfig.MinRequiredSqliteVersion}+.");
+                        Console.Error.WriteLine($"[CRITICAL] Vulnerable SQLite version detected: {detectedVersion}");
+                        Console.Error.WriteLine($"This version of Servy requires SQLite {AppConfig.MinRequiredSqliteVersion}+.");
                         Console.ResetColor();
 
                         // Exit with a CLI-specific sentinel instead of a SCM Win32 error code
@@ -294,7 +294,7 @@ namespace Servy.CLI
                 catch (Exception ex)
                 {
                     Logger.Error("An unexpected error occurred in the main execution flow.", ex);
-                    Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+                    Console.Error.WriteLine($"An unexpected error occurred: {ex.Message}");
                     return (int)CliExitCode.Error;
                 }
                 finally
