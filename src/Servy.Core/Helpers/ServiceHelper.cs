@@ -1,10 +1,10 @@
-﻿using Microsoft.Win32;
-using Servy.Core.Config;
+﻿using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Logging;
 using Servy.Core.Native;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -361,8 +361,8 @@ namespace Servy.Core.Helpers
         #region Private Methods
 
         /// <summary>
-        /// Queries the Service Control Manager (SCM) and Windows Registry to find all active services 
-        /// associated with a specific set of executables.
+        /// Queries the Service Control Manager (SCM) via native Win32 APIs to safely find all active services 
+        /// associated with a specific set of executables without relying on registry subkey read capabilities.
         /// </summary>
         /// <param name="wrapperExes">The set of executable filenames to search for (e.g., "Servy.Service.exe").</param>
         /// <returns>A list containing the names of all currently running services that match any of the specified executables.</returns>
@@ -382,89 +382,118 @@ namespace Servy.Core.Helpers
 
             var result = new List<string>();
 
-            try
+            // Open a safe context handle wrapper to the Service Control Manager via NativeMethods
+            using (SafeScmHandle scmHandle = NativeMethods.OpenSCManager(null, null, NativeMethods.SC_MANAGER_CONNECT))
             {
-                // 1. Get all services via SCM
-                ServiceController[] services = ServiceController.GetServices();
+                if (scmHandle.IsInvalid)
+                {
+                    throw new InvalidOperationException("Failed to open Service Control Manager connection handle.", new Win32Exception(Marshal.GetLastWin32Error()));
+                }
+
                 try
                 {
-                    foreach (var sc in services)
+                    // 1. Get all services via SCM
+                    ServiceController[] services = ServiceController.GetServices();
+                    try
                     {
-                        // Only care about running services
-                        if (sc.Status != ServiceControllerStatus.Running)
-                            continue;
-
-                        // 2. Query Registry for the ImagePath (Binary Path)
-                        // SCM stores this in HKLM\SYSTEM\CurrentControlSet\Services\[ServiceName]
-                        string registryKeyPath = $@"SYSTEM\CurrentControlSet\Services\{sc.ServiceName}";
-                        using (var key = Registry.LocalMachine.OpenSubKey(registryKeyPath))
+                        foreach (var sc in services)
                         {
-                            if (key == null) continue;
+                            // Only care about running services
+                            if (sc.Status != ServiceControllerStatus.Running)
+                                continue;
 
-                            var pathName = key.GetValue("ImagePath")?.ToString();
-                            if (string.IsNullOrWhiteSpace(pathName)) continue;
-
-                            // 2a. Expand variables first (e.g., %SystemRoot% -> C:\Windows)
-                            string expandedPath = Environment.ExpandEnvironmentVariables(pathName);
-
-                            // 2b. Extract the actual exe path (Handling quotes and arguments)
-                            string exePath = null;
-                            int argc;
-
-                            // Call the native API
-                            IntPtr argsPtr = NativeMethods.CommandLineToArgvW(expandedPath, out argc);
-
-                            if (argsPtr != IntPtr.Zero)
+                            // Query ImagePath using native QueryServiceConfig to bypass the HKLM Registry permission wall completely
+                            using (SafeServiceHandle serviceHandle = NativeMethods.OpenService(scmHandle, sc.ServiceName, NativeMethods.SERVICE_QUERY_CONFIG))
                             {
+                                if (serviceHandle.IsInvalid)
+                                {
+                                    // If an individual service has been locked down from observation, log and fail-safe over it
+                                    Logger.Info($"Bypassing service metadata mapping context for '{sc.ServiceName}': Access Denied querying configuration descriptor.");
+                                    continue;
+                                }
+
+                                // Determine the buffer length constraint allocation requirements dynamically
+                                NativeMethods.QueryServiceConfig(serviceHandle, IntPtr.Zero, 0, out int bytesNeeded);
+                                int lastError = Marshal.GetLastWin32Error();
+
+                                if (lastError != NativeMethods.ERROR_INSUFFICIENT_BUFFER)
+                                    continue;
+
+                                IntPtr bufferPtr = Marshal.AllocHGlobal(bytesNeeded);
                                 try
                                 {
-                                    if (argc >= 1)
+                                    if (NativeMethods.QueryServiceConfig(serviceHandle, bufferPtr, bytesNeeded, out _))
                                     {
-                                        // Read the first pointer (index 0) from the array of pointers.
-                                        IntPtr firstArgPtr = Marshal.ReadIntPtr(argsPtr);
+                                        var config = Marshal.PtrToStructure<NativeMethods.QUERY_SERVICE_CONFIG>(bufferPtr);
 
-                                        // Convert the native Unicode string at that address into a C# string.
-                                        exePath = Marshal.PtrToStringUni(firstArgPtr);
+                                        // Marshal out the lpBinaryPathName pointer address fields safely since it's defined as IntPtr inside NativeMethods
+                                        string pathName = Marshal.PtrToStringAuto(config.lpBinaryPathName);
+
+                                        if (string.IsNullOrWhiteSpace(pathName)) continue;
+
+                                        // 2a. Expand variables first (e.g., %SystemRoot% -> C:\Windows)
+                                        string expandedPath = Environment.ExpandEnvironmentVariables(pathName);
+                                        string exePath = null;
+
+                                        // 2b. Extract the actual exe path (Handling quotes and arguments)
+                                        IntPtr argsPtr = NativeMethods.CommandLineToArgvW(expandedPath, out int argc);
+                                        if (argsPtr != IntPtr.Zero)
+                                        {
+                                            try
+                                            {
+                                                if (argc >= 1)
+                                                {
+                                                    // Read the first pointer (index 0) from the array of pointers.
+                                                    IntPtr firstArgPtr = Marshal.ReadIntPtr(argsPtr);
+
+                                                    // Convert the native Unicode string at that address into a C# string.
+                                                    exePath = Marshal.PtrToStringUni(firstArgPtr);
+                                                }
+                                            }
+                                            finally
+                                            {
+                                                // CRITICAL: We must free the memory allocated by shell32.dll
+                                                NativeMethods.LocalFree(argsPtr);
+                                            }
+                                        }
+
+                                        // 2c. Fallback and Comparison Logic
+                                        if (exePath == null)
+                                        {
+                                            exePath = expandedPath; // best-effort; Path.GetFileName below handles unquoted paths
+                                        }
+
+                                        try
+                                        {
+                                            var exeName = Path.GetFileName(exePath);
+                                            if (wrapperExes.Contains(exeName))
+                                            {
+                                                result.Add(sc.ServiceName);
+                                            }
+                                        }
+                                        catch (ArgumentException) { /* Handle invalid paths gracefully */ }
                                     }
                                 }
                                 finally
                                 {
-                                    // CRITICAL: We must free the memory allocated by shell32.dll
-                                    NativeMethods.LocalFree(argsPtr);
+                                    Marshal.FreeHGlobal(bufferPtr);
                                 }
                             }
-
-                            // 2c. Fallback and Comparison Logic
-                            if (exePath == null)
-                            {
-                                exePath = expandedPath; // best-effort; Path.GetFileName below handles unquoted paths
-                            }
-
-                            try
-                            {
-                                var exeName = Path.GetFileName(exePath);
-                                if (wrapperExes.Contains(exeName))
-                                {
-                                    result.Add(sc.ServiceName);
-                                }
-                            }
-                            catch (ArgumentException) { /* Handle invalid paths gracefully */ }
                         }
                     }
+                    finally
+                    {
+                        foreach (var sc in services)
+                            sc.Dispose();
+                    }
                 }
-                finally
+                catch (Exception ex)
                 {
-                    foreach (var sc in services)
-                        sc.Dispose();
+                    // Wrap any SCM failure in a deterministic exception type so callers
+                    // can distinguish a query failure from a successful empty result.
+                    var exeNames = string.Join(", ", wrapperExes);
+                    throw new InvalidOperationException($"Failed to query services for [{exeNames}] via SCM Native APIs.", ex);
                 }
-            }
-            catch (Exception ex)
-            {
-                // Wrap any SCM/registry failure in a deterministic exception type so callers
-                // can distinguish a query failure from a successful empty result.
-                var exeNames = string.Join(", ", wrapperExes);
-                throw new InvalidOperationException(
-                    $"Failed to query services for [{exeNames}] via SCM/Registry.", ex);
             }
 
             return result;
