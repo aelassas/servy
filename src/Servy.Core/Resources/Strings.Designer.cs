@@ -178,6 +178,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à The environment variable key &apos;{0}&apos; contains illegal characters..
+        /// </summary>
+        public static string Msg_EnvironmentVariableKeyInvalidChars {
+            get {
+                return ResourceManager.GetString("Msg_EnvironmentVariableKeyInvalidChars", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Each environment variable must contain an unescaped &apos;=&apos; character to separate the key from the value..
         /// </summary>
         public static string Msg_EnvironmentVariableMissingEquals {
