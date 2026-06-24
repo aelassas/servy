@@ -209,14 +209,14 @@ namespace Servy.CLI
                             : AppConfig.HandleExeX64FileName;
                         if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, handleExeFileName, "exe", false))
                         {
-                            Console.WriteLine($"Failed copying embedded resource: {handleExeFileName}");
+                            Logger.Warn($"Failed copying embedded resource: {handleExeFileName}; process-tree handle features may be degraded.");
                         }
 
 #if DEBUG
                         // Copy debug symbols from embedded resources (only in debug builds)
                         if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
                         {
-                            Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
+                            Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
                         }
 #endif
                     }
