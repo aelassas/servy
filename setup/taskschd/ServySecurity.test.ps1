@@ -1,3 +1,4 @@
+#Requires -Version 5.1
 # Dot-source the production script from the same directory securely
 . (Join-Path $PSScriptRoot "ServySecurity.ps1")
 
