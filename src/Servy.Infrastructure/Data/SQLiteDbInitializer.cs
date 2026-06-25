@@ -209,6 +209,7 @@ namespace Servy.Infrastructure.Data
             // Fetch full column definitions (name and type) from PRAGMA
             var tableInfo = connection.Query("PRAGMA table_info(Services);", transaction: transaction).ToList();
 
+            // DRY PASS: Derive hash set from raw metadata rows directly to save an extra query round-trip
             var existingColumns = new HashSet<string>(
                 tableInfo.Select(row => (string)row.name),
                 StringComparer.OrdinalIgnoreCase);
@@ -243,7 +244,7 @@ namespace Servy.Infrastructure.Data
 
             // 2. Detect Orphaned Columns (Present in DB, but not in SqlConstants)
             var orphans = existingColumns
-                .Except(expectedColumns, StringComparer.OrdinalIgnoreCase)
+                .MakeOrphanFilter(expectedColumns)
                 .ToList();
 
             if (orphans.Count > 0)
@@ -337,6 +338,17 @@ namespace Servy.Infrastructure.Data
                 .Select(c => c.Trim());
         }
 
+        /// <summary>
+        /// Queries the SQLite engine schema to map and return all current structural column fields for the Services table.
+        /// </summary>
+        private static HashSet<string> GetExistingColumnNames(DbConnection connection, DbTransaction transaction)
+        {
+            return new HashSet<string>(
+                connection.Query("PRAGMA table_info(Services);", transaction: transaction)
+                          .Select(row => (string)row.name),
+                StringComparer.OrdinalIgnoreCase);
+        }
+
         #region Migration Logic
 
         /// <summary>
@@ -418,11 +430,8 @@ namespace Servy.Infrastructure.Data
 
             connection.Execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_lower ON Services(LOWER(Name));", transaction: transaction);
 
-            var existingColumns = new HashSet<string>(
-                connection.Query("PRAGMA table_info(Services);", transaction: transaction)
-                          .Select(row => (string)row.name),
-                StringComparer.OrdinalIgnoreCase
-            );
+            // DRY PASS: Utilize centralized factory query engine helper
+            var existingColumns = GetExistingColumnNames(connection, transaction);
 
             // --- Intercept ambiguous legacy column and rename before dynamic column mapping ---
             if (existingColumns.Contains("EnableRotation") && !existingColumns.Contains("EnableSizeRotation"))
@@ -487,12 +496,8 @@ namespace Servy.Infrastructure.Data
             var createTableSql = $"CREATE TABLE IF NOT EXISTS Services_v4 (\n    {string.Join(",\n    ", columnDefinitions)}\n);";
             connection.Execute(createTableSql, transaction: transaction);
 
-            // --- Extract only the columns that actually exist in the old table ---
-            var existingColumns = new HashSet<string>(
-                connection.Query("PRAGMA table_info(Services);", transaction: transaction)
-                          .Select(row => (string)row.name),
-                StringComparer.OrdinalIgnoreCase
-            );
+            // --- Extract only the columns that actually exist in the old table using unified discovery helper ---
+            var existingColumns = GetExistingColumnNames(connection, transaction);
 
             var orphansBeforeRebuild = existingColumns
                 .Where(c => !expectedColumns.Contains(c, StringComparer.OrdinalIgnoreCase) && !"Id".Equals(c, StringComparison.OrdinalIgnoreCase))
@@ -616,9 +621,8 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         private static void AddColumnIfMissing(DbConnection conn, DbTransaction tx, int version, string columnName)
         {
-            var existing = new HashSet<string>(
-                conn.Query("PRAGMA table_info(Services);", transaction: tx).Select(r => (string)r.name),
-                StringComparer.OrdinalIgnoreCase);
+            // DRY PASS: Utilize centralized factory query engine helper
+            var existing = GetExistingColumnNames(conn, tx);
 
             if (!existing.Contains(columnName))
             {
@@ -639,9 +643,8 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         private static void RenameColumnIfExists(DbConnection conn, DbTransaction tx, int version, string oldName, string newName)
         {
-            var existing = new HashSet<string>(
-                conn.Query("PRAGMA table_info(Services);", transaction: tx).Select(r => (string)r.name),
-                StringComparer.OrdinalIgnoreCase);
+            // DRY PASS: Utilize centralized factory query engine helper
+            var existing = GetExistingColumnNames(conn, tx);
 
             if (existing.Contains(oldName) && !existing.Contains(newName))
             {
@@ -703,6 +706,14 @@ namespace Servy.Infrastructure.Data
             }
 
             return definition;
+        }
+
+        /// <summary>
+        /// Extension-like helper logic utilized to filter collection groups cleanly.
+        /// </summary>
+        private static IEnumerable<string> MakeOrphanFilter(this IEnumerable<string> source, HashSet<string> references)
+        {
+            return source.Except(references, StringComparer.OrdinalIgnoreCase);
         }
     }
 }
