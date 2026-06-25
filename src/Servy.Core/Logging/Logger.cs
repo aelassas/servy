@@ -429,9 +429,7 @@ namespace Servy.Core.Logging
                 : level.ToString().ToUpperInvariant(); // Fallback for safety
 
             // Sanitize message into a single-line representation for better scannability
-            var sanitizedMessage = LineBreakingRegex.Replace(message, " ; ");
-            sanitizedMessage = VerticalControlRegex.Replace(sanitizedMessage, " ");
-            sanitizedMessage = sanitizedMessage.Trim();
+            string sanitizedMessage = SanitizeToSingleLine(message);
 
             // Format: [2026-05-06 08:58:20.123+01:00] [INFO] | Message text  OR  [2026-05-06 08:58:20.123Z] [INFO] | Message text
             string logEntry = $"{FormatTimestampPrefix()} [{levelName}] | {sanitizedMessage}";
@@ -570,9 +568,7 @@ namespace Servy.Core.Logging
                 if (!string.IsNullOrWhiteSpace(current.StackTrace))
                 {
                     // Sanitize the stack trace for single-line output
-                    var sanitizedStack = LineBreakingRegex.Replace(current.StackTrace, " ; ");
-                    sanitizedStack = VerticalControlRegex.Replace(sanitizedStack, " ");
-                    sanitizedStack = sanitizedStack.Trim();
+                    var sanitizedStack = SanitizeToSingleLine(current.StackTrace);
 
                     sb.Append(" (at ").Append(sanitizedStack).Append(')');
                 }
@@ -658,6 +654,17 @@ namespace Servy.Core.Logging
             var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
             string tzMarker = _useLocalTimeForRotation ? now.ToString("zzz", CultureInfo.InvariantCulture) : "Z";
             return $"[{now.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}{tzMarker}]";
+        }
+
+        /// <summary>
+        /// Collapses any line breaks / vertical control chars into a single scannable line.
+        /// </summary>
+        /// <param name="text">Text to sanitize.</param>
+        private static string SanitizeToSingleLine(string text)
+        {
+            var s = LineBreakingRegex.Replace(text, " ; ");
+            s = VerticalControlRegex.Replace(s, " ");
+            return s.Trim();
         }
 
         #endregion

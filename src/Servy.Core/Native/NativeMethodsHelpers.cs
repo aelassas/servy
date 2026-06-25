@@ -280,7 +280,17 @@ namespace Servy.Core.Native
                         // Buffer size is configurable via AppConfig to get past common log headers/prologues.
                         // We also incorporate fs.Length to differentiate rotated logs that have identical prefixes but different sizes.
                         byte[] buffer = new byte[AppConfig.FileIdentityPrefixBytes];
-                        int read = fs.Read(buffer, 0, buffer.Length);
+
+                        int read = 0;
+                        int n;
+
+                        // ROBUSTNESS RETRY LOOP: Continuously drain the stream into the buffer until the requested
+                        // size limit is fully met or a definitive End-of-File (0 bytes returned) is reached.
+                        // This guarantees deterministic digest results across network-bound SMB or FAT32 streams.
+                        while (read < buffer.Length && (n = fs.Read(buffer, read, buffer.Length - read)) > 0)
+                        {
+                            read += n;
+                        }
 
                         if (read > 0)
                         {

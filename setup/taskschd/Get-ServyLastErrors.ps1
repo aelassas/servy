@@ -81,10 +81,10 @@ function Get-ServyLastErrors {
       return @() 
     }
 
-    $errorMsg = "Failed to query Windows event log for Servy errors: $_"
+    $errorMsg = "Servy Notification Error: Failed to query Windows event log for Servy errors: $_"
     try {
       # Fallback A: Try the Event Log
-      Write-EventLog -LogName Application -Source "Servy" -EventId $EventLogErrorId -EntryType Error -Message $errorMsg -ErrorAction Stop
+      Write-EventLog -LogName Application -Source "Servy" -EventId $EventLogErrorId -EntryType Warning -Message $errorMsg -ErrorAction Stop
     }
     catch {
       # Fallback B: Try the local file log
