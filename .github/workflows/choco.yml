@@ -52,26 +52,22 @@ jobs:
           manual_tag: ${{ github.event.inputs.tag }}
           release_tag: ${{ github.event.release.tag_name }}
 
-      - name: Download installer
+      - name: Stage Installer Download Target
         shell: pwsh
         run: |
           $url = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
           $out = "servy-${env:VERSION}-x64-installer.exe"
-          Write-Host "Downloading Servy installer from $url"
-          
-          # Defensive resilient download loop to protect against CDN propagation latency
-          $retries = [int]$env:MAX_RETRIES
-          for ($i = 0; $i -lt $retries; $i++) {
-              try {
-                  Invoke-WebRequest -Uri $url -OutFile $out -ErrorAction Stop
-                  break
-              }
-              catch {
-                  if ($i -eq ($retries - 1)) { throw "Failed to download installer after $retries attempts. Error: $_" }
-                  Write-Host "Transient download failure. Retrying in 3 seconds... (Attempt $($i + 1)/$retries)"
-                  Start-Sleep -Seconds 3
-              }
-          }
+          Write-Host "Staging Chocolatey asset lookup path from $url"
+          Add-Content -Path $env:GITHUB_ENV -Value "CHOCO_DOWNLOAD_URL=$url"
+          Add-Content -Path $env:GITHUB_ENV -Value "CHOCO_DOWNLOAD_OUT=$out"
+
+      - name: Download installer
+        uses: ./.github/actions/download-with-retry
+        with:
+          url: ${{ env.CHOCO_DOWNLOAD_URL }}
+          output_path: ${{ env.CHOCO_DOWNLOAD_OUT }}
+          asset_name: 'Servy Release Installer for Chocolatey'
+          max_retries: ${{ env.MAX_RETRIES }}
 
       - name: Compute SHA256
         shell: pwsh

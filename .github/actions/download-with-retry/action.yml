@@ -1,0 +1,49 @@
+# ==========================================================================================
+# Shared Composite Action - Resilient Download with Backoff Retry
+# ------------------------------------------------------------------------------------------
+# Centralizes network asset collection loops across the pipeline ecosystem.
+# Guarantees uniform backoff telemetry and error boundary management for transient downloads.
+# ==========================================================================================
+
+name: 'Download with Retry'
+description: 'Downloads a file via Invoke-WebRequest wrapped in a resilient backoff loop'
+
+inputs:
+  url:
+    description: 'The source URL of the file asset to download'
+    required: true
+  output_path:
+    description: 'The target destination file path on disk'
+    required: true
+  asset_name:
+    description: 'Descriptive name of the asset used in logging contexts'
+    required: true
+  max_retries:
+    description: 'Maximum number of network connection attempts before breaking out'
+    required: false
+    default: '5'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Execute Resilient Download Loop
+      shell: pwsh
+      run: |
+        $url = "${{ inputs.url }}"
+        $out = "${{ inputs.output_path }}"
+        $asset = "${{ inputs.asset_name }}"
+        $retries = [int]"${{ inputs.max_retries }}"
+        
+        for ($i = 0; $i < $retries; $i++) {
+            try {
+                Invoke-WebRequest -Uri $url -OutFile $out -ErrorAction Stop
+                break
+            }
+            catch {
+                if ($i -eq ($retries - 1)) { 
+                    throw "Failed to download $asset after $retries attempts. Error: $_" 
+                }
+                Write-Host "Transient download failure for $asset. Retrying in 3 seconds... (Attempt $($i + 1)/$retries)"
+                Start-Sleep -Seconds 3
+            }
+        }

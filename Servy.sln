@@ -181,6 +181,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-cyclonedx", "setup-cy
 		.github\actions\setup-cyclonedx\action.yml = .github\actions\setup-cyclonedx\action.yml
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "download-with-retry", "download-with-retry", "{DC8F9FE8-87F3-45D1-B7A7-A87A4D2C82CE}"
+	ProjectSection(SolutionItems) = preProject
+		.github\actions\download-with-retry\action.yml = .github\actions\download-with-retry\action.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -311,6 +316,7 @@ Global
 		{99D2C270-5AF9-482B-B8F4-780A6687554D} = {50795869-2933-430F-98BD-956C414ABBE4}
 		{BF373F26-8DEF-486B-8AE7-C38420BF50C0} = {FED01F22-71C4-4504-9BC6-217F6DE9F152}
 		{B2C6492F-B0F0-4AF1-A4CF-730FF719DE16} = {FED01F22-71C4-4504-9BC6-217F6DE9F152}
+		{DC8F9FE8-87F3-45D1-B7A7-A87A4D2C82CE} = {FED01F22-71C4-4504-9BC6-217F6DE9F152}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {93B02B52-77CF-4BAA-AD7E-08960E6D6482}
