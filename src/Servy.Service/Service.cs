@@ -1153,47 +1153,27 @@ namespace Servy.Service
             _ = SetConsoleCtrlHandler(null, false); // inherited
             _ = SetConsoleOutputCP(CP_UTF8);
 
-            var (expandedEnv, expandedArgs) = Helpers.ProcessHelper.ExpandAndAudit(environmentVariables, realArgs, _logger, "StartProcess");
-
-            _realExePath = realExePath;
-            _realArgs = expandedArgs;
-            _workingDir = workingDir;
-            _environmentVariables = environmentVariables ?? new List<EnvironmentVariable>();
-
             var enableConsoleUI = _options?.EnableConsoleUI == true;
 
-            // Configure the process start info
-            var psi = new ProcessStartInfo
-            {
-                FileName = _realExePath,
-                Arguments = _realArgs,
-                WorkingDirectory = _workingDir,
-                UseShellExecute = false,
-                // If UI support is enabled, we MUST show the window (in Session 0 it remains invisible)
-                // and we MUST NOT redirect, otherwise the child gets a File Handle instead of a Console Handle.
-                CreateNoWindow = !enableConsoleUI,
-                RedirectStandardOutput = !enableConsoleUI,
-                RedirectStandardError = !enableConsoleUI,
-            };
+            // Delegate ProcessStartInfo generation to the central factory engine
+            var psi = ProcessLauncher.CreateStartInfo(
+                realExePath,
+                realArgs,
+                workingDir,
+                environmentVariables,
+                enableConsoleUI,
+                _logger,
+                "StartProcess");
+
+            _realExePath = psi.FileName;
+            _realArgs = psi.Arguments;
+            _workingDir = psi.WorkingDirectory;
+            _environmentVariables = environmentVariables ?? new List<EnvironmentVariable>();
 
             if (enableConsoleUI)
             {
                 _logger?.Info("Console UI support enabled. Standard output is being rendered to an internal console; stdout/stderr redirection is bypassed.");
             }
-
-            if (!enableConsoleUI)
-            {
-                psi.StandardOutputEncoding = Encoding.UTF8;
-                psi.StandardErrorEncoding = Encoding.UTF8;
-            }
-
-            foreach (var envVar in expandedEnv)
-            {
-                psi.Environment[envVar.Key] = envVar.Value ?? string.Empty;
-            }
-
-            // Apply runtime-specific fixes
-            ProcessLauncher.ApplyLanguageFixes(psi, _logger);
 
             _childProcess = _processFactory.Create(psi, _logger);
 

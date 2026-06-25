@@ -156,20 +156,12 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public IEnumerable<WindowsServiceInfo> GetServices()
         {
-            var controllers = ServiceController.GetServices();
-            try
+            // DRY Unification: Outsource handle tracking and extraction mechanics to the central mapping pipeline
+            return ServiceControllerProvider.MapAndDisposeServices(s => new WindowsServiceInfo
             {
-                return controllers.Select(s => new WindowsServiceInfo
-                {
-                    ServiceName = s.ServiceName,
-                    DisplayName = s.DisplayName
-                }).ToList();
-            }
-            finally
-            {
-                foreach (var sc in controllers)
-                    sc.Dispose();
-            }
+                ServiceName = s.ServiceName,
+                DisplayName = s.DisplayName
+            });
         }
     }
 }

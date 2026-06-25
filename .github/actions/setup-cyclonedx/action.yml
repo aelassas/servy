@@ -33,6 +33,30 @@ runs:
     - name: Provision CycloneDX Environment
       shell: pwsh
       run: |
+        # --- Centralized Net Download Helper Primitives ---
+        function Invoke-DownloadWithRetry {
+            param(
+                [string]$Uri, 
+                [string]$OutFile, 
+                [string]$What, 
+                [int]$MaxRetries = 5, 
+                [int]$DelaySeconds = 3
+            )
+            for ($i = 0; $i -lt $MaxRetries; $i++) {
+                try {
+                    Invoke-WebRequest -Uri $Uri -OutFile $OutFile -ErrorAction Stop
+                    return
+                }
+                catch {
+                    if ($i -eq ($MaxRetries - 1)) {
+                        throw "Failed to download $What after $MaxRetries attempts. Error: $_"
+                    }
+                    Write-Host "Warning: Transient download interruption detected for $What. Retrying in $DelaySeconds seconds... (Attempt $($i + 1)/$MaxRetries)" -ForegroundColor Yellow
+                    Start-Sleep -Seconds $DelaySeconds
+                }
+            }
+        }
+
         # --- 1. CycloneDX CLI Install & Verify ---
         $v = "${{ inputs.cli_version }}"
         $cliHash = "${{ inputs.cli_hash }}"
@@ -47,20 +71,7 @@ runs:
         $outPath = "$cliDir\cyclonedx.exe"
         
         # Wrap download inside a defensive retry loop to withstand network instability
-        $maxRetries = 5
-        for ($i = 0; $i -lt $maxRetries; $i++) {
-            try {
-                Invoke-WebRequest -Uri $uri -OutFile $outPath -ErrorAction Stop
-                break
-            }
-            catch {
-                if ($i -eq ($maxRetries - 1)) {
-                    throw "Failed to download CycloneDX CLI executable after $maxRetries attempts. Error: $_"
-                }
-                Write-Host "Warning: Transient download interruption detected for CycloneDX CLI. Retrying in 3 seconds... (Attempt $($i + 1)/$maxRetries)" -ForegroundColor Yellow
-                Start-Sleep -Seconds 3
-            }
-        }
+        Invoke-DownloadWithRetry -Uri $uri -OutFile $outPath -What "CycloneDX CLI executable"
         
         # --- SECURITY CHECK: SHA256 PINNING ---
         Write-Host "Verifying SHA256 checksum of CycloneDX CLI..."
@@ -86,19 +97,7 @@ runs:
         $toolPkgPath = "$toolPkgDir\CycloneDX.$toolVersion.nupkg"
         
         # Wrap package payload resolution inside a defensive retry loop matching sibling actions
-        for ($i = 0; $i -lt $maxRetries; $i++) {
-            try {
-                Invoke-WebRequest -Uri $toolPkgUri -OutFile $toolPkgPath -ErrorAction Stop
-                break
-            }
-            catch {
-                if ($i -eq ($maxRetries - 1)) {
-                    throw "Failed to download CycloneDX .NET Tool nupkg after $maxRetries attempts. Error: $_"
-                }
-                Write-Host "Warning: Transient download interruption detected for CycloneDX NuGet package. Retrying in 3 seconds... (Attempt $($i + 1)/$maxRetries)" -ForegroundColor Yellow
-                Start-Sleep -Seconds 3
-            }
-        }
+        Invoke-DownloadWithRetry -Uri $toolPkgUri -OutFile $toolPkgPath -What "CycloneDX NuGet package"
 
         Write-Host "Verifying SHA256 checksum of CycloneDX .NET Tool package..."
         $actualToolHash = (Get-FileHash $toolPkgPath -Algorithm SHA256).Hash
@@ -121,4 +120,5 @@ runs:
 
         # Continue with the .NET tool installation using the isolated source configuration
         dotnet tool install --global CycloneDX --version $toolVersion --configfile "$toolPkgDir\nuget.config"
+        if ($LASTEXITCODE -ne 0) { throw "CycloneDX .NET tool install failed with exit code $LASTEXITCODE" }
         Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
