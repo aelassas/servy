@@ -136,6 +136,10 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="path">The full file path.</param>
         /// <returns>True if the directory exists or was created successfully; false otherwise.</returns>
+        /// <remarks>
+        /// This method acts as a non-throwing variant of <see cref="EnsureDirectoryExists(string?)"/>, catching and 
+        /// logging any filesystem access or authorization violations gracefully.
+        /// </remarks>
         public static bool CreateParentDirectory(string? path)
         {
             if (string.IsNullOrWhiteSpace(path))
@@ -150,12 +154,7 @@ namespace Servy.Core.Helpers
                 {
                     return false;
                 }
-
-                if (!Directory.Exists(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
-
+                EnsureDirectoryExists(path);
                 return true;
             }
             catch (Exception ex)

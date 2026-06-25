@@ -105,15 +105,7 @@ namespace Servy.Core.Logging
             lock (_lock)
             {
                 _fileName = fileName;
-                _currentLogLevel = (int)logLevel;
-                _dateRotationType = dateRotationType;
-                _useLocalTimeForRotation = useLocalTimeForRotation;
-
-                // Validates and bounds inputs to align initialization policies with runtime API constraints
-                _logRotationSizeMB = logRotationSizeMB > 0 ? logRotationSizeMB : AppConfig.DefaultRotationSizeMB;
-                _maxBackupLogFiles = maxBackupLogFiles >= 0 ? maxBackupLogFiles : DefaultMaxBackupLogFiles;
-
-                InternalInitialize();
+                Initialize(logLevel, logRotationSizeMB, dateRotationType, useLocalTimeForRotation, maxBackupLogFiles);
             }
         }
 

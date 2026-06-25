@@ -75,6 +75,19 @@ namespace Servy.Manager.Views.Tests
                 _mockServiceCommands.Object);
         }
 
+        /// <summary>
+        /// Centralized, non-blocking polling primitive helper to track asynchronous fire-and-forget processing blocks safely.
+        /// </summary>
+        private static async Task PollUntilTrueAsync(Func<bool> condition, int maxRetries = 25, int delayMs = 20)
+        {
+            int retries = 0;
+            while (!condition() && retries < maxRetries)
+            {
+                await Task.Delay(delayMs);
+                retries++;
+            }
+        }
+
         [Fact]
         public async Task UserControl_Loaded_WhenDataContextIsNull_DoesNotThrowAndCompletesSilently()
         {
@@ -131,13 +144,8 @@ namespace Servy.Manager.Views.Tests
                 control.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
                 viewModel.CommandTcs.SetResult(null);
 
-                // Non-blocking poll loop to follow asynchronous fire-and-forget processing blocks safely
-                int retries = 0;
-                while (!viewModel.ExecuteAsyncWasCalled && retries < 25)
-                {
-                    await Task.Delay(20);
-                    retries++;
-                }
+                // Centralized poll tracking handles asynchronous execution window
+                await PollUntilTrueAsync(() => viewModel.ExecuteAsyncWasCalled);
 
                 // Assert
                 Assert.True(viewModel.ExecuteAsyncWasCalled);
@@ -158,12 +166,8 @@ namespace Servy.Manager.Views.Tests
                 control.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
                 viewModel.CommandTcs.SetException(new OperationCanceledException());
 
-                int retries = 0;
-                while (!viewModel.ExecuteAsyncWasCalled && retries < 25)
-                {
-                    await Task.Delay(20);
-                    retries++;
-                }
+                // Centralized poll tracking handles asynchronous execution window
+                await PollUntilTrueAsync(() => viewModel.ExecuteAsyncWasCalled);
 
                 // Assert
                 Assert.True(viewModel.ExecuteAsyncWasCalled);
@@ -184,12 +188,8 @@ namespace Servy.Manager.Views.Tests
                 control.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
                 viewModel.CommandTcs.SetException(new InvalidOperationException("SCM Connection Refused"));
 
-                int retries = 0;
-                while (!viewModel.ExecuteAsyncWasCalled && retries < 25)
-                {
-                    await Task.Delay(20);
-                    retries++;
-                }
+                // Centralized poll tracking handles asynchronous execution window
+                await PollUntilTrueAsync(() => viewModel.ExecuteAsyncWasCalled);
 
                 // Give the internal Logger line a single dispatch sequence loop to write out traces cleanly
                 await Task.Delay(30);
