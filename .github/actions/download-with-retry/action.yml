@@ -34,7 +34,7 @@ runs:
         $asset = "${{ inputs.asset_name }}"
         $retries = [int]"${{ inputs.max_retries }}"
         
-        for ($i = 0; $i < $retries; $i++) {
+        for ($i = 0; $i -lt $retries; $i++) {
             try {
                 Invoke-WebRequest -Uri $url -OutFile $out -ErrorAction Stop
                 break
