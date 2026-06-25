@@ -31,8 +31,8 @@ def main():
             current_datetime = datetime.now().strftime("%Y%m%d %H:%M:%S.%f")[:-3]
             logging.info(f"{current_datetime} > (ctrlc_child) abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍")
             time.sleep(3)
-    except Exception as e:
-        logging.exception(f"Error in loop: {e}")
+    except Exception:
+        logging.exception("Error in loop")
 
 if __name__ == '__main__':
     try:

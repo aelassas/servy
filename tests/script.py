@@ -3,10 +3,8 @@ import sys
 import logging
 import os
 
-# Force stdout to UTF-8
-# sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-
-LOG_DIR = r"C:\test\logs"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_DIR = os.environ.get("SERVY_TEST_LOG_DIR", os.path.join(SCRIPT_DIR, "logs"))
 os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOG_DIR, "test_pre.log")
 
@@ -24,8 +22,8 @@ def main():
     try:
         current_datetime = datetime.now().strftime("%Y%m%d %H:%M:%S.%f")[:-3]
         logging.info(f"{current_datetime} > abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍")
-    except Exception as e:
-        logging.exception(f"Error in loop: {e}")
+    except Exception:
+        logging.exception("Error formatting/logging the timestamped line")
 
 if __name__ == '__main__':
     try:
