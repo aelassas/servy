@@ -91,7 +91,7 @@ jobs:
       - name: Install CycloneDX Tools
         uses: ./.github/actions/setup-cyclonedx
 
-      - name: Install Inno Setup from GitHub
+      - name: Stage Inno Setup Download Configuration
         shell: pwsh
         run: |
           # 1. Define version and paths
@@ -144,7 +144,7 @@ jobs:
           Start-Process ".\$installer" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
           if (-not (Test-Path $env:ISCC)) { throw "ISCC.exe not found at $env:ISCC" }
 
-      - name: Install 7zip from GitHub
+      - name: Stage 7zip Download Configuration
         shell: pwsh
         run: |
           # 1. Define version and paths
