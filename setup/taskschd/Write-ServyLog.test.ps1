@@ -54,10 +54,10 @@ $Jobs | Wait-Job | Out-Null
 # --- EVALUATION AND AUDIT PASS ---
 Write-Host "Analyzing log files for multi-process safety exceptions..." -ForegroundColor Cyan
 
-# Merge the job's warning stream into the pipeline cleanly without using an invalid -Stream flag
-$CapturedOutput = $Jobs | Receive-Job 3>&1
+# Merge ALL background streams (Success, Error, Warning, etc.) into our data pipeline
+$CapturedOutput = $Jobs | Receive-Job *>&1
 
-# Extract warnings matching our criteria
+# Extract warnings or errors matching our criteria
 $Warnings = $CapturedOutput | Where-Object { $_ -match "Servy Critical Logging Failure" }
 
 if ($Warnings) {
