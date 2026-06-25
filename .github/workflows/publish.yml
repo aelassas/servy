@@ -136,7 +136,7 @@ jobs:
           Start-Process ".\$installer" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
           if (-not (Test-Path $env:ISCC)) { throw "ISCC.exe not found at $env:ISCC" }
 
-      - name: Stage7zip Download Configuration
+      - name: Stage 7zip Download Configuration
         shell: pwsh
         run: |
           # 1. Define version and paths
