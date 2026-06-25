@@ -47,22 +47,26 @@ for ($id = 1; $id -le 5; $id++) {
 Write-Host "Waiting for all concurrent workers to complete processing..." -ForegroundColor Yellow
 $Jobs | Wait-Job | Out-Null
 
-# Clean up background jobs safely
-$Jobs | Remove-Job -Force
-Write-Host "All background writers finished execution." -ForegroundColor Green
-Write-Host "--------------------------------------------------" -ForegroundColor Gray
-
 # --- EVALUATION AND AUDIT PASS ---
 Write-Host "Analyzing log files for multi-process safety exceptions..." -ForegroundColor Cyan
 
-# 1. Look for IOExceptions or Mutex failure warnings captured inside streams
-$Warnings = Get-Job | Receive-Job | Where-Object { $_ -match "Servy Critical Logging Failure" }
+# Merge the job's warning stream into the pipeline cleanly without using an invalid -Stream flag
+$CapturedOutput = $Jobs | Receive-Job 3>&1
+
+# Extract warnings matching our criteria
+$Warnings = $CapturedOutput | Where-Object { $_ -match "Servy Critical Logging Failure" }
+
 if ($Warnings) {
     Write-Host "FAIL: Swallowed I/O exceptions or Mutex timeouts detected:" -ForegroundColor Red
     $Warnings | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkRed }
 } else {
     Write-Host "PASS: Zero unhandled or swallowed I/O serialization errors encountered." -ForegroundColor Green
 }
+
+# Clean up background jobs safely now that data collection has concluded
+$Jobs | Remove-Job -Force
+Write-Host "All background writers finished execution." -ForegroundColor Green
+Write-Host "--------------------------------------------------" -ForegroundColor Gray
 
 # 2. Count total successfully written entries across active and rotated segments
 Write-Host "Auditing total written line counts..." -ForegroundColor Cyan
@@ -84,9 +88,13 @@ Write-Host "  Active Log Lines:  $ActiveLines" -ForegroundColor Gray
 Write-Host "  Rotated Log Lines: $RotatedLines (Spread across $($RotatedFiles.Count) historical files)" -ForegroundColor Gray
 Write-Host "  Total Written:     $TotalLines / $ExpectedLines expected lines." -ForegroundColor White
 
-if ($TotalLines -eq $ExpectedLines) {
+if ($TotalLines -eq $ExpectedLines -and -not $Warnings) {
     Write-Host "SUCCESS: 100% of concurrent log entries were structurally preserved without line drops!" -ForegroundColor Green
 } else {
     $Deficit = $ExpectedLines - $TotalLines
-    Write-Host "FAIL: Missing data detected! Lost $Deficit log frames due to un-serialized write collisions." -ForegroundColor Red
+    if ($Deficit -gt 0) {
+        Write-Host "FAIL: Missing data detected! Lost $Deficit log frames due to un-serialized write collisions." -ForegroundColor Red
+    } else {
+        Write-Host "FAIL: Total line count matches, but tracking execution warnings were emitted." -ForegroundColor Red
+    }
 }
