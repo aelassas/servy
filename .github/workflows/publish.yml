@@ -83,6 +83,32 @@ jobs:
       - name: Install CycloneDX Tools
         uses: ./.github/actions/setup-cyclonedx
 
+      - name: Stage Inno Setup Download Configuration
+        shell: pwsh
+        run: |
+          # 1. Define version and paths
+          $version = $env:INNO_SETUP_VERSION
+          $expectedHash = $env:INNO_SETUP_HASH
+          
+          # Convert "6.6.1" to "6_6_1" for the URL directory
+          $urlVersion = $version.Replace(".", "_") 
+          $url = "https://github.com/jrsoftware/issrc/releases/download/is-$urlVersion/innosetup-$version.exe"
+          $installer = "innosetup.exe"
+          
+          Write-Host "Downloading Inno Setup v$version..."
+          
+          # DRY UNIFICATION: Outsource loop payload mechanics to our central action infrastructure
+          Add-Content -Path $env:GITHUB_ENV -Value "INNO_URL=$url"
+          Add-Content -Path $env:GITHUB_ENV -Value "INNO_OUT=$installer"
+
+      - name: Download Inno Setup Payload
+        uses: ./.github/actions/download-with-retry
+        with:
+          url: ${{ env.INNO_URL }}
+          output_path: ${{ env.INNO_OUT }}
+          asset_name: 'Inno Setup Installer'
+          max_retries: ${{ env.MAX_RETRIES }}
+
       - name: Verify and Install Inno Setup
         shell: pwsh
         run: |
@@ -110,7 +136,7 @@ jobs:
           Start-Process ".\$installer" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
           if (-not (Test-Path $env:ISCC)) { throw "ISCC.exe not found at $env:ISCC" }
 
-      - name: Install 7zip from GitHub
+      - name: Stage7zip Download Configuration
         shell: pwsh
         run: |
           # 1. Define version and paths
