@@ -108,11 +108,15 @@ namespace Servy.Core.Validation
                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
             };
 
-            var violatedFolder = protectedFolders
-                .FirstOrDefault(folder => !string.IsNullOrEmpty(folder) &&
-                                          fullPath.StartsWith(
-                                              folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
-                                              StringComparison.OrdinalIgnoreCase));
+            // Centralized Protected Directory Matcher Local Function
+            string? FindProtectedFolderViolation(string candidate) =>
+                protectedFolders.FirstOrDefault(folder =>
+                    !string.IsNullOrEmpty(folder) &&
+                    candidate.StartsWith(
+                        folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
+                        StringComparison.OrdinalIgnoreCase));
+
+            var violatedFolder = FindProtectedFolderViolation(fullPath);
 
             if (violatedFolder != null)
             {
@@ -201,12 +205,8 @@ namespace Servy.Core.Validation
                     return PathSecurityResult.Fail(PathSecurityFailureKind.Security, errorMsg);
                 }
 
-                // Re-check protected folders against the RESOLVED native kernel path
-                var resolvedViolation = protectedFolders.FirstOrDefault(folder =>
-                    !string.IsNullOrEmpty(folder) &&
-                    normalizedPath.StartsWith(
-                        folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
-                        StringComparison.OrdinalIgnoreCase));
+                // Re-check protected folders against the RESOLVED native kernel path using unified logic
+                var resolvedViolation = FindProtectedFolderViolation(normalizedPath);
 
                 if (resolvedViolation != null)
                 {

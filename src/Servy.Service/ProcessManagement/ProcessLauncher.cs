@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Config;
+using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System.Diagnostics;
@@ -47,6 +48,60 @@ namespace Servy.Service.ProcessManagement
             AppConfig.InputRegexTimeout);
 
         /// <summary>
+        /// Instantiates and configures a standard <see cref="ProcessStartInfo"/> with service-safe defaults,
+        /// environment block expansion, and cross-runtime language infrastructure corrections.
+        /// </summary>
+        /// <param name="executablePath">The full path or binary name of the external executable file to spawn.</param>
+        /// <param name="arguments">The raw command-line arguments to pass to the executable; can be null or empty.</param>
+        /// <param name="workingDirectory">The startup working directory for the process. If null or whitespace, defaults to the executable's directory location.</param>
+        /// <param name="environmentVariables">A list of <see cref="EnvironmentVariable"/> objects containing custom keys and values to inject into the execution scope.</param>
+        /// <param name="enableConsoleUI">If set to <c>true</c>, preserves standard I/O handles and shows the window; if <c>false</c>, hides the process window and redirects streams for logging capture.</param>
+        /// <param name="logger">The <see cref="IServyLogger"/> instance used to emit environmental auditing and telemetry data; can be null.</param>
+        /// <param name="auditContext">A descriptive keyword or method name specifying the operational scope to include in security audit trail logs.</param>
+        /// <returns>An initialized and configured <see cref="ProcessStartInfo"/> object ready to be passed to a process factory or wrapper instance.</returns>
+        public static ProcessStartInfo CreateStartInfo(
+            string executablePath,
+            string arguments,
+            string workingDirectory,
+            List<EnvironmentVariable> environmentVariables,
+            bool enableConsoleUI,
+            IServyLogger? logger,
+            string auditContext)
+        {
+            // 1. Resolve environment variables and arguments
+            var (expandedEnv, finalArgs) = Helpers.ProcessHelper.ExpandAndAudit(environmentVariables, arguments ?? string.Empty, logger, auditContext);
+
+            // 2. Configure ProcessStartInfo with unified defaults
+            var psi = new ProcessStartInfo
+            {
+                FileName = executablePath,
+                Arguments = finalArgs,
+                WorkingDirectory = workingDirectory ?? Path.GetDirectoryName(executablePath) ?? string.Empty,
+                UseShellExecute = false,
+                CreateNoWindow = !enableConsoleUI,
+                RedirectStandardOutput = !enableConsoleUI,
+                RedirectStandardError = !enableConsoleUI,
+            };
+
+            if (!enableConsoleUI)
+            {
+                psi.StandardOutputEncoding = Encoding.UTF8;
+                psi.StandardErrorEncoding = Encoding.UTF8;
+            }
+
+            // 3. Apply the environment block
+            foreach (var envVar in expandedEnv)
+            {
+                psi.Environment[envVar.Key] = envVar.Value ?? string.Empty;
+            }
+
+            // 4. Apply runtime-specific fixes
+            ApplyLanguageFixes(psi, logger);
+
+            return psi;
+        }
+
+        /// <summary>
         /// Orchestrates the initialization and startup of an external process based on the provided options.
         /// </summary>
         /// <remarks>
@@ -78,42 +133,25 @@ namespace Servy.Service.ProcessManagement
                     nameof(options));
             }
 
-            // 1. Resolve environment variables and arguments
-            var (expandedEnv, finalArgs) = Helpers.ProcessHelper.ExpandAndAudit(options.EnvironmentVariables, options.Arguments ?? string.Empty, logger);
-
-            // 2. Configure ProcessStartInfo with service-safe defaults
+            // 1. Delegate generation to our unified static factory step
             var redirectOutput = !options.EnableConsoleUI && options.RedirectToWriters && !options.FireAndForget;
-            var psi = new ProcessStartInfo
-            {
-                FileName = options.ExecutablePath,
-                Arguments = finalArgs,
-                WorkingDirectory = options.WorkingDirectory ?? Path.GetDirectoryName(options.ExecutablePath) ?? string.Empty,
-                UseShellExecute = false,
-                CreateNoWindow = !options.EnableConsoleUI,
-                RedirectStandardOutput = redirectOutput && !string.IsNullOrWhiteSpace(options.StdoutPath),
-                RedirectStandardError = redirectOutput && !string.IsNullOrWhiteSpace(options.StderrPath),
-            };
+            var psi = CreateStartInfo(
+                options.ExecutablePath,
+                options.Arguments ?? string.Empty,
+                options.WorkingDirectory!,
+                options.EnvironmentVariables!,
+                options.EnableConsoleUI,
+                logger,
+                "ProcessLauncher.Start");
 
-            if (psi.RedirectStandardOutput)
-            {
-                psi.StandardOutputEncoding = Encoding.UTF8;
-            }
+            // Overwrite redirection states explicitly since dependent side-hook tasks match tighter pipeline controls
+            psi.RedirectStandardOutput = redirectOutput && !string.IsNullOrWhiteSpace(options.StdoutPath);
+            psi.RedirectStandardError = redirectOutput && !string.IsNullOrWhiteSpace(options.StderrPath);
 
-            if (psi.RedirectStandardError)
-            {
-                psi.StandardErrorEncoding = Encoding.UTF8;
-            }
+            if (!psi.RedirectStandardOutput) psi.StandardOutputEncoding = null;
+            if (!psi.RedirectStandardError) psi.StandardErrorEncoding = null;
 
-            // 3. Apply the environment block
-            foreach (var envVar in expandedEnv)
-            {
-                psi.Environment[envVar.Key] = envVar.Value ?? string.Empty;
-            }
-
-            // 4. Apply runtime-specific fixes
-            ApplyLanguageFixes(psi, logger);
-
-            // 5. Launch the process
+            // 2. Launch the process
             var process = factory.Create(psi, logger);
 
             // ROBUSTNESS: Track ownership. If the method fails before returning, 
@@ -145,7 +183,7 @@ namespace Servy.Service.ProcessManagement
                 }
                 processStarted = true;
 
-                // 6. Handle execution mode
+                // 3. Handle execution mode
                 if (options.FireAndForget)
                 {
                     returnedOwnership = true;

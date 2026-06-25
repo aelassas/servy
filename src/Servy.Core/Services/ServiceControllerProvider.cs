@@ -30,12 +30,19 @@ namespace Servy.Core.Services
         {
             // Retrieve native ServiceController instances from the OS,
             // then map them to the custom wrapper using the provided factory.
+            return MapAndDisposeServices(sc => _factory(sc.ServiceName));
+        }
+
+        /// <summary>
+        /// Centralized unmanaged execution utility to safely project and drain ServiceController arrays.
+        /// </summary>
+        internal static T[] MapAndDisposeServices<T>(Func<ServiceController, T> projector)
+        {
             var controllers = ServiceController.GetServices();
             try
             {
-                return controllers
-                    .Select(sc => _factory(sc.ServiceName))
-                    .ToArray();
+                // Execute eager transformation to copy system metadata out before handle teardown
+                return controllers.Select(projector).ToArray();
             }
             finally
             {
