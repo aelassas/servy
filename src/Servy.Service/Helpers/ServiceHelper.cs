@@ -61,11 +61,20 @@ namespace Servy.Service.Helpers
         };
 
         /// <summary>
+        /// Centralized regular expression sub-pattern representing the optimized case-insensitive 
+        /// word boundaries and alternation maps for sensitive credential keys.
+        /// </summary>
+        private static readonly string KeywordBoundaryPattern =
+            // Keyword: Negative lookarounds allow _, ., and - as valid boundaries without consuming them.
+            // Suffix group pulled inside the 'key' named capture parenthesis to safeguard composite descriptors.
+            @"(?i)(?<![a-zA-Z0-9])(?<key>(?:" + string.Join("|", SensitiveKeyWords.Select(Regex.Escape)) + @")(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])";
+
+        /// <summary>
         /// A specialized regex for matching sensitive keys. 
         /// Uses the same boundary logic as MaskingRegex to avoid false positives like 'MONKEY_TYPE'.
         /// </summary>
         private static readonly Regex KeyMatcherRegex = new Regex(
-            @"(?i)(?<![a-zA-Z0-9])(" + string.Join("|", SensitiveKeyWords.Select(Regex.Escape)) + @")(?![a-zA-Z0-9])",
+            KeywordBoundaryPattern,
             RegexOptions.Compiled,
             AppConfig.InputRegexTimeout);
 
@@ -79,9 +88,8 @@ namespace Servy.Service.Helpers
         /// multi-word values that do not look like subsequent CLI flags.
         /// </remarks>
         private static readonly Regex MaskingRegex = new Regex(
-             // 1. Keyword: Negative lookarounds allow _, ., and - as valid boundaries without consuming them.
-             // Suffix group pulled inside the 'key' named capture parenthesis to safeguard composite descriptors.
-             @"(?i)(?<![a-zA-Z0-9])(?<key>(?:" + string.Join("|", SensitiveKeyWords.Select(Regex.Escape)) + @")(?:_[A-Za-z0-9]+)*)(?![a-zA-Z0-9])" +
+             // 1. Unified Keyword Pattern
+             KeywordBoundaryPattern +
 
              // 2. Separator & Value (Two Branches)
              @"(?:" +
