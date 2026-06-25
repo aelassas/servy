@@ -83,32 +83,6 @@ jobs:
       - name: Install CycloneDX Tools
         uses: ./.github/actions/setup-cyclonedx
 
-      - name: Install Inno Setup from GitHub
-        shell: pwsh
-        run: |
-          # 1. Define version and paths
-          $version = $env:INNO_SETUP_VERSION
-          $expectedHash = $env:INNO_SETUP_HASH
-          
-          # Convert "6.6.1" to "6_6_1" for the URL directory
-          $urlVersion = $version.Replace(".", "_") 
-          $url = "https://github.com/jrsoftware/issrc/releases/download/is-$urlVersion/innosetup-$version.exe"
-          $installer = "innosetup.exe"
-          
-          Write-Host "Downloading Inno Setup v$version..."
-          
-          # DRY UNIFICATION: Outsource loop payload mechanics to our central action infrastructure
-          Add-Content -Path $env:GITHUB_ENV -Value "INNO_URL=$url"
-          Add-Content -Path $env:GITHUB_ENV -Value "INNO_OUT=$installer"
-
-      - name: Download Inno Setup Payload
-        uses: ./.github/actions/download-with-retry
-        with:
-          url: ${{ env.INNO_URL }}
-          output_path: ${{ env.INNO_OUT }}
-          asset_name: 'Inno Setup Installer'
-          max_retries: ${{ env.MAX_RETRIES }}
-
       - name: Verify and Install Inno Setup
         shell: pwsh
         run: |
@@ -147,15 +121,15 @@ jobs:
           
           Write-Host "Downloading 7-Zip v$version..."
           
-          # DRY UNIFICATION: Stage locations for the shared action step
-          Add-Content -Path $env:GITHUB_ENV -Value "7Z_URL=$url"
-          Add-Content -Path $env:GITHUB_ENV -Value "7Z_OUT=$installer"
+          # Staged environment variable names updated to avoid numerical-starting parsing bugs
+          Add-Content -Path $env:GITHUB_ENV -Value "SEVENZ_URL=$url"
+          Add-Content -Path $env:GITHUB_ENV -Value "SEVENZ_OUT=$installer"
 
       - name: Download 7-Zip Payload
         uses: ./.github/actions/download-with-retry
         with:
-          url: ${{ env.7Z_URL }}
-          output_path: ${{ env.7Z_OUT }}
+          url: ${{ env.SEVENZ_URL }}
+          output_path: ${{ env.SEVENZ_OUT }}
           asset_name: '7-Zip Installer'
           max_retries: ${{ env.MAX_RETRIES }}
 
@@ -680,7 +654,7 @@ jobs:
       - name: Upload portable package
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
         with:
-          name: portable-7z
+          name: portable
           path: servy-${{ env.VERSION }}-${{ env.FRAMEWORK }}-x64-portable.7z
           if-no-files-found: error
           retention-days: 1
