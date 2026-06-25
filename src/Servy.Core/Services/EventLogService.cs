@@ -105,7 +105,8 @@ namespace Servy.Core.Services
                 string systemFilterString = string.Join(" and ", systemFilters);
                 string query = string.IsNullOrEmpty(systemFilterString) ? "*" : $"*[System[{systemFilterString}]]";
 
-                IEnumerable<ServyEventLogEntry> records;
+                var results = new List<ServyEventLogEntry>();
+
                 try
                 {
                     var eventQuery = new EventLogQuery(AppConfig.EventLogName, PathType.LogName, query)
@@ -113,8 +114,42 @@ namespace Servy.Core.Services
                         ReverseDirection = true   // newest events first, so the MaxResults cap keeps the most recent
                     };
 
-                    // This is where the service handle is requested and the query is validated
-                    records = _reader.ReadEvents(eventQuery, AppConfig.EventLogMaxResults * AppConfig.EventLogPrefetchCushion); // Generous cushion
+                    // Request the lazy iterator over the underlying EventLogReader.
+                    var records = _reader.ReadEvents(eventQuery, AppConfig.EventLogMaxResults * AppConfig.EventLogPrefetchCushion); // Generous cushion
+
+                    // ROBUSTNESS: The foreach enumeration loop must run within the try block.
+                    // Since ReadEvents is a lazy iterator, this is where the service handle is actually requested,
+                    // the query is validated, and hardware/permissions exceptions are thrown on MoveNext().
+                    foreach (var evt in records)
+                    {
+                        // The hidden enumerator disposal will cascade through to EventLogReader.ReadEvents
+                        // and dispose the EventLog handle on break/exception. Avoid holding 'records'
+                        // past this loop.
+                        token.ThrowIfCancellationRequested();
+
+                        var message = evt.Message ?? string.Empty;
+                        var provider = evt.ProviderName ?? string.Empty;
+
+                        // 1. Heuristic only meaningful in wildcard mode; the XPath provider filter handles non-empty source names exactly.
+                        // This prevents capturing unrelated system/app logs even when _sourceName is empty.
+                        if (string.IsNullOrEmpty(_sourceName) &&
+                            provider.IndexOf(AppConfig.EventSource, StringComparison.OrdinalIgnoreCase) < 0)
+                            continue;
+
+                        // 2. Formatting Check: Ensure it follows the Servy log pattern [Service] Message
+                        if (!message.Contains('[') || !message.Contains(']'))
+                            continue;
+
+                        // 3. Optional keyword filter
+                        if (!string.IsNullOrEmpty(keyword) &&
+                            message.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) < 0)
+                            continue;
+
+                        results.Add(evt);
+
+                        if (results.Count >= AppConfig.EventLogMaxResults)
+                            break;
+                    }
                 }
                 catch (EventLogException ex)
                 {
@@ -129,45 +164,10 @@ namespace Servy.Core.Services
                     throw new SecurityException("Access denied to Windows Event Log. Please ensure the application is running with sufficient privileges (Administrator).", ex);
                 }
 
-                var results = new List<ServyEventLogEntry>();
-
-                foreach (var evt in records)
-                {
-                    // records is a lazy iterator over the underlying EventLogReader; the foreach's
-                    // hidden enumerator disposal will cascade through to EventLogReader.ReadEvents
-                    // and dispose the EventLog handle on break/exception. Avoid holding 'records'
-                    // past this loop.
-                    token.ThrowIfCancellationRequested();
-
-                    var message = evt.Message ?? string.Empty;
-                    var provider = evt.ProviderName ?? string.Empty;
-
-                    // 1. Heuristic only meaningful in wildcard mode; the XPath provider filter handles non-empty source names exactly.
-                    // This prevents capturing unrelated system/app logs even when _sourceName is empty.
-                    if (string.IsNullOrEmpty(_sourceName) &&
-                        provider.IndexOf(AppConfig.EventSource, StringComparison.OrdinalIgnoreCase) < 0)
-                        continue;
-
-                    // 2. Formatting Check: Ensure it follows the Servy log pattern [Service] Message
-                    if (!message.Contains('[') || !message.Contains(']'))
-                        continue;
-
-                    // 3. Optional keyword filter
-                    if (!string.IsNullOrEmpty(keyword) &&
-                        message.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) < 0)
-                        continue;
-
-                    results.Add(evt);
-
-                    if (results.Count >= AppConfig.EventLogMaxResults)
-                        break;
-                }
-
                 return results
                     .OrderByDescending(r => r.Time)
                     .ToList();
             }, token);
         }
-
     }
 }
