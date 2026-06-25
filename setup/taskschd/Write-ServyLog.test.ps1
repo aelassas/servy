@@ -8,6 +8,10 @@ if (-not (Test-Path $LogScriptPath)) {
     return
 }
 
+# Define centralized test workload dimensions to eliminate magic number duplication
+$WorkerCount      = 5
+$WritesPerWorker  = 100
+
 # Define test file boundaries
 $TestLogPath = Join-Path $ScriptDir "test_output.log"
 $MaxLogSize = 10240 # Force rotation quickly at a tiny 10 KB threshold
@@ -22,14 +26,14 @@ Write-Host "Target Log Path: $TestLogPath" -ForegroundColor DarkGray
 
 # Definition block passed directly down into the isolated background processes
 $WorkerScript = {
-    param([string]$LogScript, [string]$FilePath, [int]$MaxSize, [int]$WorkerId)
+    param([string]$LogScript, [string]$FilePath, [int]$MaxSize, [int]$WorkerId, [int]$WritesCount)
     
     # Dot-source the logging mechanism inside the unique worker thread scope
     . $LogScript
     
     # Rapidly blast messages to stress test locking and trigger rotation races
     $rng = [System.Random]::new()
-    for ($i = 1; $i -le 100; $i++) {
+    for ($i = 1; $i -le $WritesCount; $i++) {
         $Msg = "Worker {0:D2} | Payload Sequence {1:D3} | Testing Mutex Integrity" -f $WorkerId, $i
         Write-ServyLog -FilePath $FilePath -Message $Msg -MaxSizeBytes $MaxSize
         
@@ -38,10 +42,10 @@ $WorkerScript = {
     }
 }
 
-# Launch 5 concurrent workers simultaneously
+# Launch concurrent workers simultaneously based on centralized configurations
 $Jobs = @()
-for ($id = 1; $id -le 5; $id++) {
-    $Jobs += Start-Job -ScriptBlock $WorkerScript -ArgumentList $LogScriptPath, $TestLogPath, $MaxLogSize, $id
+for ($id = 1; $id -le $WorkerCount; $id++) {
+    $Jobs += Start-Job -ScriptBlock $WorkerScript -ArgumentList $LogScriptPath, $TestLogPath, $MaxLogSize, $id, $WritesPerWorker
 }
 
 Write-Host "Waiting for all concurrent workers to complete processing..." -ForegroundColor Yellow
@@ -82,7 +86,7 @@ foreach ($file in $RotatedFiles) {
 }
 
 $TotalLines = $ActiveLines + $RotatedLines
-$ExpectedLines = 5 * 100 # 5 workers * 100 writes
+$ExpectedLines = $WorkerCount * $WritesPerWorker # Derived cleanly from centralized configuration variables
 
 Write-Host "  Active Log Lines:  $ActiveLines" -ForegroundColor Gray
 Write-Host "  Rotated Log Lines: $RotatedLines (Spread across $($RotatedFiles.Count) historical files)" -ForegroundColor Gray
