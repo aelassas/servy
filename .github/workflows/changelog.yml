@@ -42,13 +42,16 @@ jobs:
     permissions:
       contents: write
 
+    env:
+      MAX_RETRIES: 5
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4.3.1
         with:
           fetch-depth: 0
-          ref: main # Force checkout of the main branch, not the release tag          
-          
+          ref: main # Force checkout of the main branch, not the release tag
+
       - name: Initialize Git Script Helpers
         uses: ./.github/actions/setup-git-helpers
 
@@ -173,4 +176,6 @@ jobs:
           }
           git commit -m "docs: auto-update CHANGELOG.md"
 
-          Invoke-PushWithRetry -PullRef 'main' -PushRef 'HEAD:main' -MaxRetries 5
+          # Cast string environment variable value safely into an int outside parameter string contexts
+          $maxRetries = [int]$env:MAX_RETRIES
+          Invoke-PushWithRetry -PullRef 'main' -PushRef 'HEAD:main' -MaxRetries $maxRetries
