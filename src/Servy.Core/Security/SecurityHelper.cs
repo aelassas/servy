@@ -62,7 +62,7 @@ namespace Servy.Core.Security
                     // Create the directory with the hardened security descriptor in a single operation.
                     Directory.CreateDirectory(path, ds);
                 }
-                catch (UnauthorizedAccessException ex) when (!IsAdministrator() && !breakInheritance)
+                catch (UnauthorizedAccessException ex) when (!breakInheritance && !IsAdministrator())
                 {
                     HandleNonAdminFallback(ex, $"Could not atomically create hardened directory '{path}' as non-admin. Falling back to standard environmental creation rules. Verify parent vault is secured.");
                 }
@@ -86,7 +86,7 @@ namespace Servy.Core.Security
 
                     dirInfo.SetAccessControl(security);
                 }
-                catch (UnauthorizedAccessException ex) when (!IsAdministrator() && !breakInheritance)
+                catch (UnauthorizedAccessException ex) when (!breakInheritance && !IsAdministrator())
                 {
                     HandleNonAdminFallback(ex, $"Could not write hardened ACL on '{path}' as non-admin. Falling back to inherited permissions from parent. Verify parent vault is secured.");
                 }

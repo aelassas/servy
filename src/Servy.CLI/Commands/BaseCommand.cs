@@ -99,7 +99,6 @@ namespace Servy.CLI.Commands
         /// <param name="onSuccess">An optional asynchronous callback, awaited after the operation succeeds, used to synchronize repository state (e.g. DB upsert). Failures are caught and logged as a warning without failing the command.</param>
         /// <param name="cancellationToken">A cancellation token tracking task state abandonment flags across runtime pools.</param>
         /// <returns>An asynchronous task returning a definitive <see cref="CommandResult"/> representing pipeline execution outcomes.</returns>
-        /// <exception cref="System.Security.SecurityException">Thrown when the ambient operational thread lacks administrative privileges.</exception>
         protected async Task<CommandResult> ExecuteServiceOperationAsync(
             string commandName,
             string action,
