@@ -29,7 +29,6 @@ namespace Servy.Manager.ViewModels
 
         private CancellationTokenSource _loadTreeCts;
 
-        private bool _hadSelectedService;
         private bool _isDisposed;
         private readonly IAppConfiguration _appConfig;
         private readonly IMessageBoxService _messageBoxService;
@@ -158,23 +157,15 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <inheritdoc/>
-        protected override async Task OnTickAsync()
+        protected override void ResetMonitoringState()
         {
-            var token = GetCurrentMonitoringToken();
+            ResetPid();
+        }
 
-            var currentSelection = SelectedService;
-            if (currentSelection == null)
-            {
-                if (_hadSelectedService)
-                {
-                    ResetPid();
-                    _hadSelectedService = false;
-                    CopyPidCommand.RaiseCanExecuteChanged();
-                }
-                return;
-            }
-            _hadSelectedService = true;
-
+        /// <inheritdoc/>
+        protected override async Task ApplyTickAsync(ServiceItemBase selection, CancellationToken token)
+        {
+            var currentSelection = (DependencyService)selection;
             var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, token);
 
             // Drop this tick if the user switched services while we were awaiting the DB call.

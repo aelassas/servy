@@ -13,7 +13,6 @@ using Servy.Manager.Services;
 using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Services;
-using Servy.UI.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -24,7 +23,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Threading;
-using UiHelper = Servy.UI.Helpers.Helper;
 
 namespace Servy.Manager.ViewModels
 {
@@ -32,7 +30,7 @@ namespace Servy.Manager.ViewModels
     /// ViewModel for the main window of Servy Manager.
     /// Holds the list of services and exposes commands for managing them.
     /// </summary>
-    public class MainViewModel : ViewModelBase, IDisposable
+    public class MainViewModel : SearchableViewModelBase, IDisposable
     {
         #region Private Fields
 
@@ -41,17 +39,13 @@ namespace Servy.Manager.ViewModels
         private readonly IServiceRepository _serviceRepository;
         private readonly IMessageBoxService _messageBoxService;
         private readonly IHelpService _helpService;
-        private readonly ICursorService _cursorService;
 
         private CancellationTokenSource _cts;
 
         private DispatcherTimer _refreshTimer;
         private readonly BulkObservableCollection<ServiceRowViewModel> _services = new BulkObservableCollection<ServiceRowViewModel>();
-        private bool _isBusy;
-        private string _searchButtonText = Strings.Button_Search;
         private bool _isConfiguratorEnabled = false;
         private string _searchText;
-        private string _footerText;
         private bool? _selectAll;
         private bool _isUpdatingSelectAll;
         private readonly object _servicesLock = new object();
@@ -79,54 +73,6 @@ namespace Servy.Manager.ViewModels
         /// Get the dependencies view model.
         /// </summary>
         public DependenciesViewModel DependenciesVM { get; }
-
-        /// <summary>
-        /// Indicates whether a background operation is running.
-        /// </summary>
-        public bool IsBusy
-        {
-            get => _isBusy;
-            set
-            {
-                if (_isBusy != value)
-                {
-                    _isBusy = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets footer text displayed in the UI.
-        /// </summary>
-        public string FooterText
-        {
-            get => _footerText;
-            set
-            {
-                if (_footerText != value)
-                {
-                    _footerText = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Text displayed on the search button.
-        /// </summary>
-        public string SearchButtonText
-        {
-            get => _searchButtonText;
-            set
-            {
-                if (_searchButtonText != value)
-                {
-                    _searchButtonText = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
 
         /// <summary>
         /// Gets or sets the search text used for filtering or querying services.
@@ -305,13 +251,12 @@ namespace Servy.Manager.ViewModels
             ICursorService cursorService,
             IProcessHelper processHelper,
             Dispatcher dispatcher = null
-            )
+            ) : base(cursorService)
         {
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _serviceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
-            _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
             _helpService = helpService ?? throw new ArgumentNullException(nameof(helpService));
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
             _dispatcher = dispatcher ?? Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
@@ -483,120 +428,96 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task SearchServicesAsync(object parameter)
         {
-            // Thread-safe CTS swap
-            var newCts = new CancellationTokenSource();
-            var token = newCts.Token;
-            var oldCts = Interlocked.Exchange(ref _cts, newCts);
-            if (oldCts != null)
-            {
-                Helpers.Helper.CancelAndDisposeSafely(oldCts);
-            }
-
-            try
-            {
-                var stopwatch = Stopwatch.StartNew();
-
-                FooterText = string.Empty; // Clear footer text before search
-
-                // Step 1: show "Searching..." immediately
-                _cursorService.SetWaitCursor();
-                SearchButtonText = Strings.Button_Searching;
-                IsBusy = true;
-
-                // Step 2: allow WPF to repaint the button and show progress bar
-                await _dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
-
-                // Step 3: fetch data off UI thread
-                var sw = Stopwatch.StartNew();
-                var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, true, token), token);
-                sw.Stop();
-                Logger.Debug($"Created {results.Count} SearchServicesAsync in {sw.ElapsedMilliseconds} ms");
-
-                // Step 4: fetch data & build VMs off UI thread
-                sw = Stopwatch.StartNew();
-                var vms = await Task.Run(() =>
-                    results.Select(s => new ServiceRowViewModel(s, ServiceCommands, _cursorService)).ToList()
-                , token);
-                sw.Stop();
-                Logger.Debug($"Created {vms.Count} ServiceRowViewModels in {sw.ElapsedMilliseconds} ms");
-
-                // Step 5: update collection on UI thread
-                await _dispatcher.InvokeAsync(() =>
+            await ExecuteSearchPipelineAsync(
+                async (token) =>
                 {
-                    // Mutual exclusion: prevents the background refresh thread from
-                    // accessing the collection while we are rebuilding it.
-                    lock (_servicesLock)
+                    // Step 3: fetch data off UI thread
+                    var sw = Stopwatch.StartNew();
+                    var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, true, token), token);
+                    sw.Stop();
+                    Logger.Debug($"Created {results.Count} SearchServicesAsync in {sw.ElapsedMilliseconds} ms");
+
+                    // Step 4: fetch data & build VMs off UI thread
+                    sw = Stopwatch.StartNew();
+                    var vms = await Task.Run(() =>
+                        results.Select(s => new ServiceRowViewModel(s, ServiceCommands, _cursorService)).ToList()
+                    , token);
+                    sw.Stop();
+                    Logger.Debug($"Created {vms.Count} ServiceRowViewModels in {sw.ElapsedMilliseconds} ms");
+
+                    // Step 5: update collection on UI thread
+                    await _dispatcher.InvokeAsync(() =>
                     {
-                        // Explicitly dispose of existing ViewModels before clearing the collection
-                        foreach (var oldVm in _services)
+                        // Mutual exclusion: prevents the background refresh thread from
+                        // accessing the collection while we are rebuilding it.
+                        lock (_servicesLock)
                         {
-                            oldVm.PropertyChanged -= Service_PropertyChanged;
-                            oldVm.Dispose();
+                            // Explicitly dispose of existing ViewModels before clearing the collection
+                            foreach (var oldVm in _services)
+                            {
+                                oldVm.PropertyChanged -= Service_PropertyChanged;
+                                oldVm.Dispose();
+                            }
+
+                            _services.Clear();
+
+                            // 1. Hook up property changed events first
+                            foreach (var vm in vms)
+                            {
+                                vm.PropertyChanged += Service_PropertyChanged;
+                            }
+
+                            // 2. Add all items at once to trigger a single UI layout pass
+                            _services.AddRange(vms);
                         }
 
-                        _services.Clear();
+                        // Properties updated outside the lock to avoid potential nested UI notifications
+                        // while holding a synchronization primitive.
+                        SelectAll = false;
 
-                        // 1. Hook up property changed events first
-                        foreach (var vm in vms)
+                        // Notify that bulk action availability changed
+                        OnPropertyChanged(nameof(HasSelectedServices));
+                    }, DispatcherPriority.Background);
+
+                    // Step 6: refresh all service statuses and details in the background
+                    _ = Task.Run(async () =>
+                    {
+                        if (Interlocked.CompareExchange(ref _isRefreshingFlag, 1, 0) == 1)
+                            return;
+
+                        try
                         {
-                            vm.PropertyChanged += Service_PropertyChanged;
+                            await RefreshAllServicesAsync(token);
                         }
+                        catch (OperationCanceledException)
+                        {
+                            // expected when cancelled
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error($"RefreshAllServicesAsync failed.", ex);
+                        }
+                        finally { Interlocked.Exchange(ref _isRefreshingFlag, 0); }
+                    }, token);
 
-                        // 2. Add all items at once to trigger a single UI layout pass
-                        _services.AddRange(vms);
-                    }
-
-                    // Properties updated outside the lock to avoid potential nested UI notifications
-                    // while holding a synchronization primitive.
-                    SelectAll = false;
-
-                    // Notify that bulk action availability changed
-                    OnPropertyChanged(nameof(HasSelectedServices));
-                }, DispatcherPriority.Background);
-
-                stopwatch.Stop();
-                SetFooterText(stopwatch);
-
-                // Step 6: refresh all service statuses and details in the background
-                _ = Task.Run(async () =>
+                    return vms.Count;
+                },
+                noneFormat: Strings.Footer_Service_None,
+                oneFormat: Strings.Footer_Service_One,
+                manyFormat: Strings.Footer_Service_Many,
+                onPreFetchYieldAsync: async () =>
                 {
-                    if (Interlocked.CompareExchange(ref _isRefreshingFlag, 1, 0) == 1)
-                        return;
+                    // Step 2: allow WPF to repaint the button and show progress bar
+                    await _dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                });
+        }
 
-                    try
-                    {
-                        await RefreshAllServicesAsync(token);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // expected when cancelled
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error($"RefreshAllServicesAsync failed.", ex);
-                    }
-                    finally { Interlocked.Exchange(ref _isRefreshingFlag, 0); }
-                }, token);
-            }
-            catch (OperationCanceledException)
-            {
-                // expected when cancelled
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to search services from main tab.", ex);
-                await _messageBoxService.ShowWarningAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
-            }
-            finally
-            {
-                // Step 7: restore button text and IsBusy
-                if (ReferenceEquals(Volatile.Read(ref _cts), newCts))
-                {
-                    _cursorService.ResetCursor();
-                    SearchButtonText = Strings.Button_Search;
-                    IsBusy = false;
-                }
-            }
+        /// <summary>
+        /// When overridden in a derived class, provides a hook to display modal alert feedback if the underlying fetch sequence encounters an error.
+        /// </summary>
+        protected override async Task HandleSearchExceptionAsync(Exception ex)
+        {
+            await _messageBoxService.ShowWarningAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
         }
 
         /// <summary>
@@ -748,18 +669,6 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Helpers
-
-        /// <summary>
-        /// Updates the <see cref="FooterText"/> with the current service count and the time elapsed 
-        /// during the last operation.
-        /// </summary>
-        private void SetFooterText(Stopwatch stopwatch) =>
-            FooterText = UiHelper.GetRowsInfo(
-                count: _services.Count,
-                duration: stopwatch.Elapsed,
-                noneFormat: Strings.Footer_Service_None,
-                oneFormat: Strings.Footer_Service_One,
-                manyFormat: Strings.Footer_Service_Many);
 
         /// <summary>
         /// Executes a bulk operation on all selected and installed services.
@@ -1198,7 +1107,7 @@ namespace Servy.Manager.ViewModels
                 ServicesView.Refresh();
 
                 stopwatch.Stop();
-                SetFooterText(stopwatch);
+                ClearActiveSearchContext(); // Base telemetry reset handles clearing background jobs cleanly
                 UpdateSelectAllState();
             };
 
@@ -1244,6 +1153,7 @@ namespace Servy.Manager.ViewModels
             {
                 // Stop the main timer first so no more ticks reach ServiceCommands.
                 StopRefreshTimer();
+                ClearActiveSearchContext(); // Drain core abstract tokens
 
                 // Dispose child VMs so their timers/CTS/tailers stop before we tear down
                 // the shared ServiceCommands instance they still reference.

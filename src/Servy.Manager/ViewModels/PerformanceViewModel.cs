@@ -9,6 +9,7 @@ using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
@@ -37,7 +38,6 @@ namespace Servy.Manager.ViewModels
         private readonly IServiceRepository _serviceRepository;
         private readonly double _ramDisplayMax = 10; // Minimum RAM scale (MB) to avoid flat graphs for small processes
 
-        private bool _hadSelectedService;
         private readonly IAppConfiguration _appConfig;
         private readonly IProcessHelper _processHelper;
 
@@ -212,23 +212,15 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <inheritdoc/>
-        protected override async Task OnTickAsync()
+        protected override void ResetMonitoringState()
         {
-            var token = GetCurrentMonitoringToken();
+            ResetGraphs();
+        }
 
-            var currentSelection = SelectedService;
-            if (currentSelection == null)
-            {
-                if (_hadSelectedService)
-                {
-                    ResetGraphs();
-                    _hadSelectedService = false;
-                    CopyPidCommand?.RaiseCanExecuteChanged();
-                }
-                return;
-            }
-            _hadSelectedService = true;
-
+        /// <inheritdoc/>
+        protected override async Task ApplyTickAsync(ServiceItemBase selection, CancellationToken token)
+        {
+            var currentSelection = (PerformanceService)selection;
             var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, token);
 
             // Drop this tick if the user switched services while we were awaiting the DB call.

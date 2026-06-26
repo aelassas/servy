@@ -37,7 +37,6 @@ namespace Servy.Manager.ViewModels
         // Controls the lifecycle of the background LogTailer streams
         private CancellationTokenSource _tailingCts;
 
-        private bool _hadSelectedService;
         private string _consoleSearchText;
         private readonly int _maxLines;
         private string _stdoutPath;
@@ -228,23 +227,15 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <inheritdoc/>
-        protected override async Task OnTickAsync()
+        protected override void ResetMonitoringState()
         {
-            var token = GetCurrentMonitoringToken();
+            ResetConsole();
+        }
 
-            var currentSelection = SelectedService;
-            if (currentSelection == null)
-            {
-                if (_hadSelectedService)
-                {
-                    ResetConsole();
-                    _hadSelectedService = false;
-                    CopyPidCommand.RaiseCanExecuteChanged();
-                }
-                return;
-            }
-            _hadSelectedService = true;
-
+        /// <inheritdoc/>
+        protected override async Task ApplyTickAsync(ServiceItemBase selection, CancellationToken token)
+        {
+            var currentSelection = (ConsoleService)selection;
             var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection.Name, token);
             var stateSnapshot = serviceDto?.Clone() as ServiceConsoleStateDto;
 
@@ -518,7 +509,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="pos">The byte position to start reading from.</param>
         /// <param name="created">The file creation time for rotation detection.</param>
         /// <param name="sessionId">The session ID this tailer belongs to.</param>
-        /// /// <param name="cancellationToken">Cancellation token for the tailing task.</param>
+        /// <param name="cancellationToken">Cancellation token for the tailing task.</param>
         private void StartLiveTail(string path, LogType type, long pos, DateTime created, int sessionId, CancellationToken cancellationToken)
         {
             var tailer = new LogTailer();
