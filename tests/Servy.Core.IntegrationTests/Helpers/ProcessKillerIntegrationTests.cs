@@ -172,11 +172,12 @@ namespace Servy.Core.IntegrationTests.Helpers
                 // Act
                 _processKiller.KillChildren(parent.Id);
 
-                // Allow OS time to process termination signals completely
-                Thread.Sleep(500);
+                // Polling loop with refreshes to handle OS termination latency and eliminate CI flake
+                bool childExited = WaitForProcessExit(child, 5000);
+                parent.Refresh();
 
                 // Assert
-                Assert.True(child.HasExited, "The child process should have been terminated.");
+                Assert.True(childExited, "The child process should have been terminated.");
                 Assert.False(parent.HasExited, "The parent process should remain alive.");
             }
             finally
