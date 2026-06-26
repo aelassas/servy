@@ -489,7 +489,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                         });
 
                     var vm = CreateViewModel();
-                    var fieldInfo = typeof(LogsViewModel).GetField("_cancellationTokenSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+                    // Reflect on the declaring base class type where the active private field resides
+                    var fieldInfo = typeof(SearchableViewModelBase).GetField("_searchCts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
                     // Fetch the private 'Search' method directly using reflection to bypass AsyncCommand's 'IsRunning' re-entrancy guard
                     var searchMethod = typeof(LogsViewModel).GetMethod("Search", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);

@@ -34,6 +34,9 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Backing property to verify hosted selection variants
             public ServiceItemBase? MockedSelectedService { get; set; }
 
+            public bool IsResetMonitoringStateCalled { get; private set; }
+            public ServiceItemBase? LastAppliedSelection { get; private set; }
+
             public TestMonitoringViewModel(
                 ICursorService cursorService,
                 IUiDispatcher uiDispatcher,
@@ -53,7 +56,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             public int ExposeIsMonitoringFlag => Volatile.Read(ref _isMonitoringFlag);
             public int ExposeIsTickRunningFlag => Volatile.Read(ref _isTickRunningFlag);
 
-            // FIX: Connect the base abstraction hook to our local test control field
+            // Connect the base abstraction hook to our local test control field
             protected override ServiceItemBase? SelectedServiceItem => MockedSelectedService;
 
             public void ExposeOnTick()
@@ -65,18 +68,24 @@ namespace Servy.Manager.UnitTests.ViewModels
             public void ExposeSetPidText(ServiceItemBase? service)
             {
                 var method = typeof(MonitoringViewModelBase).GetMethod("SetPidText", BindingFlags.NonPublic | BindingFlags.Instance);
-                method!.Invoke(this, new object[] { service! });
-            }
-
-            protected override async Task OnTickAsync()
-            {
-                await _onTickHandler(GetCurrentMonitoringToken());
+                method!.Invoke(this, new object?[] { service });
             }
 
             protected override void OnMonitoringStopped()
             {
                 IsOnMonitoringStoppedCalled = true;
                 base.OnMonitoringStopped();
+            }
+
+            protected override void ResetMonitoringState()
+            {
+                IsResetMonitoringStateCalled = true;
+            }
+
+            protected override async Task ApplyTickAsync(ServiceItemBase selection, CancellationToken token)
+            {
+                LastAppliedSelection = selection;
+                await _onTickHandler(token);
             }
 
             public void ExposeDispose(bool disposing)
@@ -172,23 +181,32 @@ namespace Servy.Manager.UnitTests.ViewModels
             var vm = CreateViewModel();
 
             // Scenario 1: Not initialized yet -> Returns CancellationToken.None
+            // Act & Assert
             Assert.Equal(CancellationToken.None, vm.ExposeCurrentToken());
             Assert.False(vm.ExposeCurrentToken().IsCancellationRequested);
 
             // Scenario 2: Active monitoring session running -> Valid, live token
+            // Act
             vm.StartMonitoring();
             var activeToken = vm.ExposeCurrentToken();
+
+            // Assert
             Assert.True(activeToken.CanBeCanceled);
             Assert.False(activeToken.IsCancellationRequested);
 
             // Scenario 3: Monitoring session explicitly stopped -> Token is explicitly cancelled
+            // Act
             vm.StopMonitoring();
+
+            // Assert
             Assert.True(activeToken.IsCancellationRequested);
 
             // Scenario 4: After explicit Dispose -> Field becomes null, returns CancellationToken.None again
+            // Act
             vm.ExposeDispose(true);
             var postDisposeToken = vm.ExposeCurrentToken();
 
+            // Assert
             Assert.Equal(CancellationToken.None, postDisposeToken);
             Assert.False(postDisposeToken.IsCancellationRequested);
         }
@@ -226,6 +244,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 await tcs.Task;
             });
 
+            // Active a valid service snapshot context to bypass the outer selection guard check inside OnTick logic
+            vm.MockedSelectedService = new ConcreteServiceItem { Name = "LiveService", Pid = 9999 };
             vm.StartMonitoring();
 
             // Act - Trigger initial tick execution flow
@@ -250,6 +270,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange
             var vm = CreateViewModel(onTick: _ => throw new OperationCanceledException());
+            vm.MockedSelectedService = new ConcreteServiceItem { Name = "LiveService", Pid = 9999 };
             vm.StartMonitoring();
 
             // Act
@@ -265,6 +286,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange
             var vm = CreateViewModel(onTick: _ => throw new InvalidOperationException("SCM connection drop out panic."));
+            vm.MockedSelectedService = new ConcreteServiceItem { Name = "LiveService", Pid = 9999 };
             vm.StartMonitoring();
 
             // Act & Assert Loop Chain Simulation
@@ -302,14 +324,17 @@ namespace Servy.Manager.UnitTests.ViewModels
             var vm = CreateViewModel();
 
             // Scenario 1: SelectedServiceItem is completely null
+            // Act & Assert
             vm.MockedSelectedService = null;
             Assert.False(vm.CopyPidCommand.CanExecute(null));
 
             // Scenario 2: Service is set but Pid contains null value context
+            // Act & Assert
             vm.MockedSelectedService = new ConcreteServiceItem { Pid = null };
             Assert.False(vm.CopyPidCommand.CanExecute(null));
 
             // Scenario 3: Service is active and has a valid tracked operating system ID
+            // Act & Assert
             vm.MockedSelectedService = new ConcreteServiceItem { Pid = 4012 };
             Assert.True(vm.CopyPidCommand.CanExecute(null));
         }
@@ -321,24 +346,36 @@ namespace Servy.Manager.UnitTests.ViewModels
             var vm = CreateViewModel();
 
             // Branch 1: Null Service Item provided -> sets string text to N/A fallback string
+            // Act
             vm.Pid = "InitialText";
             vm.ExposeSetPidText(null);
+
+            // Assert
             Assert.Equal(UiConstants.NotAvailable, vm.Pid);
 
             // Branch 2: Valid Service Item but null numerical PID property
+            // Act
             var itemWithNullPid = new ConcreteServiceItem { Pid = null };
             vm.Pid = "SomeExistingPidValue";
             vm.ExposeSetPidText(itemWithNullPid);
+
+            // Assert
             Assert.Equal(UiConstants.NotAvailable, vm.Pid);
 
             // Branch 3: Valid Service Item containing active numeric tracking integer value
+            // Act
             var itemWithValidPid = new ConcreteServiceItem { Name = "Spooler", Pid = 1248 };
             vm.Pid = "OldText";
             vm.ExposeSetPidText(itemWithValidPid);
+
+            // Assert
             Assert.Equal("1248", vm.Pid);
 
             // Branch 4: Optimization match path logic -> Value stays same, skips redundant evaluations
+            // Act
             vm.ExposeSetPidText(itemWithValidPid);
+
+            // Assert
             Assert.Equal("1248", vm.Pid);
         }
 
@@ -369,10 +406,12 @@ namespace Servy.Manager.UnitTests.ViewModels
             var vm = CreateViewModel();
 
             // Scenario 1: SelectedServiceItem is completely null -> bypasses invoke loop sequence
+            // Act
             vm.MockedSelectedService = null;
             await vm.CopyPidCommand.ExecuteAsync(null);
 
             // Scenario 2: Service instance assigned but numerical Pid collection value is missing
+            // Act
             vm.MockedSelectedService = new ConcreteServiceItem { Pid = null };
             await vm.CopyPidCommand.ExecuteAsync(null);
 

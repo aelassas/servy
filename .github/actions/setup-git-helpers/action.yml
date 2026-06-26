@@ -1,0 +1,48 @@
+name: 'Setup Git Helpers'
+description: 'Installs reusable git utility script macros to the runner temporary environment context.'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Write git helpers to disk
+      shell: pwsh
+      run: |
+        @'
+        # Helper: run git and abort the step immediately on any non-zero exit code.
+        function Invoke-Git {
+            param([Parameter(Mandatory=$true,ValueFromRemainingArguments=$true)][string[]]$GitArgs)
+            & git @GitArgs
+            if ($LASTEXITCODE -ne 0) {
+                Write-Error "git $($GitArgs -join ' ') failed with exit $LASTEXITCODE"
+                exit $LASTEXITCODE
+            }
+        }
+
+        # Helper: standardized push with automated rebase-autostash fallback recovery loops
+        function Invoke-PushWithRetry {
+            param([string]$PullRef, [string]$PushRef, [int]$MaxRetries = 5)
+            for ($i = 0; $i -lt $MaxRetries; $i++) {
+                try {
+                    git rebase --abort 2>$null
+                    git merge  --abort 2>$null
+                    Write-Host "Attempting synchronized push sequence (Attempt $($i + 1))..."
+
+                    git pull --rebase=merges --autostash origin $PullRef
+                    if ($LASTEXITCODE -ne 0) { throw "git pull failed with exit code $LASTEXITCODE" }
+
+                    git push origin $PushRef
+                    if ($LASTEXITCODE -ne 0) { throw "git push failed with exit code $LASTEXITCODE" }
+
+                    Write-Host "Push operation completed successfully!"
+                    return
+                }
+                catch {
+                    if ($i -eq ($MaxRetries - 1)) { 
+                        throw "Push operation failed critically after $MaxRetries attempts: $($_.Exception.Message)" 
+                    }
+                    Write-Warning "$($_.Exception.Message). Retrying tracking sequence branch synchronization in 5 seconds..."
+                    Start-Sleep -Seconds 5
+                }
+            }
+        }
+        '@ | Out-File -FilePath "$env:RUNNER_TEMP\git-helpers.ps1" -Encoding utf8

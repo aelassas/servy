@@ -46,6 +46,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4.3.1
 
+      - name: Initialize Git Script Helpers
+        uses: ./.github/actions/setup-git-helpers
+
       - name: Set version vars
         uses: ./.github/actions/resolve-version
         with:
@@ -112,6 +115,7 @@ jobs:
       - name: Commit and Push (with Retry)
         shell: pwsh
         run: |
+          . "$env:RUNNER_TEMP\git-helpers.ps1"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add setup/choco/servy/*
@@ -124,44 +128,7 @@ jobs:
 
           git commit -m "chore(choco): update package for version ${env:VERSION}"
 
-          $maxRetries = [int]$env:MAX_RETRIES
-          $retryCount = 0
-          $pushSuccess = $false
-
-          while (-not $pushSuccess -and $retryCount -lt $maxRetries) {
-              try {
-                  # 1. Clean up any leftover state from a previous failed attempt
-                  git rebase --abort 2>$null
-                  git merge  --abort 2>$null
-
-                  Write-Host "Attempting to push (Attempt $($retryCount + 1))..."
-           
-                  # 2. Pull latest changes
-                  git pull --rebase=merges --autostash origin main
-                  if ($LASTEXITCODE -ne 0) { 
-                      throw "git pull failed with exit code $LASTEXITCODE" 
-                  }
-
-                  # 3. Push to main
-                  git push origin HEAD:main
-                  if ($LASTEXITCODE -ne 0) { 
-                      throw "git push failed with exit code $LASTEXITCODE" 
-                  }
-
-                  $pushSuccess = $true
-                  Write-Host "Push successful!"
-              }
-              catch {
-                  $retryCount++
-                  # Access the thrown message via $_.Exception.Message
-                  Write-Warning "Push failed: $($_.Exception.Message). Waiting 5 seconds before retry..."
-                  Start-Sleep -s 5
-              }
-          }
-
-          if (-not $pushSuccess) {
-              throw "Failed to push Chocolatey updates to main after $maxRetries attempts."
-          }
+          Invoke-PushWithRetry -PullRef 'main' -PushRef 'HEAD:main' -MaxRetries [int]$env:MAX_RETRIES
 
       - name: Check Chocolatey version
         shell: pwsh

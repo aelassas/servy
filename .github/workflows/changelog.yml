@@ -49,6 +49,9 @@ jobs:
           fetch-depth: 0
           ref: main # Force checkout of the main branch, not the release tag          
           
+      - name: Initialize Git Script Helpers
+        uses: ./.github/actions/setup-git-helpers
+
       - name: Update CHANGELOG.md
         shell: pwsh
         env:
@@ -156,6 +159,7 @@ jobs:
       - name: Commit and Push
         shell: pwsh
         run: |
+          . "$env:RUNNER_TEMP\git-helpers.ps1"
           git config core.autocrlf false
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -169,39 +173,4 @@ jobs:
           }
           git commit -m "docs: auto-update CHANGELOG.md"
 
-          $maxRetries = 5
-          $retryCount = 0
-          $pushSuccess = $false
-
-          while (-not $pushSuccess -and $retryCount -lt $maxRetries) {
-              try {
-                  git rebase --abort 2>$null
-                  git merge  --abort 2>$null
-
-                  Write-Host "Attempting to push Changelog (Attempt $($retryCount + 1))..."
-           
-                  # Pull latest changes using the autostash merging scheme
-                  git pull --rebase=merges --autostash origin main
-                  if ($LASTEXITCODE -ne 0) { 
-                      throw "git pull failed with exit code $LASTEXITCODE" 
-                  }
-
-                  # Push up to the tracking branch
-                  git push origin HEAD:main
-                  if ($LASTEXITCODE -ne 0) { 
-                      throw "git push failed with exit code $LASTEXITCODE" 
-                  }
-
-                  $pushSuccess = $true
-                  Write-Host "Changelog push successful!"
-              }
-              catch {
-                  $retryCount++
-                  Write-Warning "Changelog push failed: $($_.Exception.Message). Waiting 5 seconds before retry..."
-                  Start-Sleep -s 5
-              }
-          }
-
-          if (-not $pushSuccess) {
-              throw "Failed to push CHANGELOG.md updates to main after $maxRetries attempts."
-          }
+          Invoke-PushWithRetry -PullRef 'main' -PushRef 'HEAD:main' -MaxRetries 5

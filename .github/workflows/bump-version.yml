@@ -36,20 +36,8 @@ jobs:
         with:
           fetch-depth: 0
       # 1a. Write shared git helper to disk for use in subsequent steps
-      - name: Write git helper
-        shell: pwsh
-        run: |
-          @'
-          # Helper: run git and abort the step immediately on any non-zero exit code.
-          function Invoke-Git {
-              param([Parameter(Mandatory=$true,ValueFromRemainingArguments=$true)][string[]]$GitArgs)
-              & git @GitArgs
-              if ($LASTEXITCODE -ne 0) {
-                  Write-Error "git $($GitArgs -join ' ') failed with exit $LASTEXITCODE"
-                  exit $LASTEXITCODE
-              }
-          }
-          '@ | Out-File -FilePath "$env:RUNNER_TEMP\git-helpers.ps1" -Encoding utf8
+      - name: Initialize Git Script Helpers
+        uses: ./.github/actions/setup-git-helpers
       # 2. Determine the tag/version to use, support multiple trigger sources via composite action
       - name: Set version vars
         uses: ./.github/actions/resolve-version

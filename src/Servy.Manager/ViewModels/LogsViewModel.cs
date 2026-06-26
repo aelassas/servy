@@ -6,11 +6,8 @@ using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.UI;
 using Servy.UI.Commands;
-using Servy.UI.Helpers;
 using Servy.UI.Services;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Windows.Data;
 using System.Windows.Input;
 
@@ -20,27 +17,22 @@ namespace Servy.Manager.ViewModels
     /// ViewModel for the Logs tab in Servy Manager.
     /// Provides filtering, searching, and displaying log entries from the event log.
     /// </summary>
-    public class LogsViewModel : INotifyPropertyChanged, IDisposable
+    public class LogsViewModel : SearchableViewModelBase, IDisposable
     {
         #region Private Fields
 
         private readonly IAppConfiguration _appConfig;
         private readonly IEventLogService _eventLogService;
-        private readonly ICursorService _cursorService;
         private readonly IMessageBoxService _messageBoxService;
-        private bool _isBusy;
-        private string _searchButtonText = Strings.Button_Search;
         private LogEntryModel? _selectedLog;
         private DateTime? _fromDate;
         private DateTime? _fromDateMaxDate;
         private DateTime? _toDate;
         private DateTime? _toDateMinDate;
         private string _keyword = string.Empty;
-        private CancellationTokenSource? _cancellationTokenSource;
         private readonly BulkObservableCollection<LogEntryModel> _logs = new BulkObservableCollection<LogEntryModel>();
         private EventLogLevel? _selectedLevel = EventLogLevel.All;
         private string? _selectedLogMessage;
-        private string? _footerText;
         private bool _isDisposed;
 
         #endregion
@@ -52,21 +44,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public event Action? ScrollLogsToTopRequested;
 
-        /// <summary>
-        /// Occurs when a property value changes.
-        /// Used to update data bindings in the UI.
-        /// </summary>
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        /// <summary>
-        /// Raises the <see cref="PropertyChanged"/> event for the given property.
-        /// </summary>
-        /// <param name="propertyName">The name of the property that changed.</param>
-        private void OnPropertyChanged([CallerMemberName] string propertyName = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
         #endregion
 
         #region Properties
@@ -75,56 +52,6 @@ namespace Servy.Manager.ViewModels
         /// Collection of logs displayed in the DataGrid.
         /// </summary>
         public ICollectionView LogsView { get; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether a background operation is in progress.
-        /// Used to show a busy indicator in the UI.
-        /// </summary>
-        public bool IsBusy
-        {
-            get => _isBusy;
-            set
-            {
-                if (_isBusy != value)
-                {
-                    _isBusy = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets footer text displayed in the UI.
-        /// </summary>
-        public string? FooterText
-        {
-            get => _footerText;
-            set
-            {
-                if (_footerText != value)
-                {
-                    _footerText = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the text displayed on the search button.
-        /// Defaults to "Search" and changes to "Searching..." while a query is running.
-        /// </summary>
-        public string SearchButtonText
-        {
-            get => _searchButtonText;
-            set
-            {
-                if (_searchButtonText != value)
-                {
-                    _searchButtonText = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
 
         /// <summary>
         /// Gets or sets the starting date for filtering log entries.
@@ -300,11 +227,10 @@ namespace Servy.Manager.ViewModels
             IAppConfiguration appConfig,
             IEventLogService eventLogService,
             ICursorService cursorService,
-            IMessageBoxService messageBoxService)
+            IMessageBoxService messageBoxService) : base(cursorService)
         {
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _eventLogService = eventLogService ?? throw new ArgumentNullException(nameof(eventLogService));
-            _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
 
             FromDate = DateTime.Now.AddDays(-_appConfig.LogsWindowDays);
@@ -326,81 +252,45 @@ namespace Servy.Manager.ViewModels
         /// <param name="parameter">Optional command parameter (not used).</param>
         private async Task Search(object? parameter)
         {
-            var stopwatch = Stopwatch.StartNew();
-
-            // 1. Create the new token for THIS specific search
-            var newCts = new CancellationTokenSource();
-            var token = newCts.Token;
-
-            // 2. Atomic swap: the "Lazy" part. 
-            // If _cancellationTokenSource was null, oldCts is null.
-            // If a search was already running, oldCts is the previous one.
-            var oldCts = Interlocked.Exchange(ref _cancellationTokenSource, newCts);
-
-            if (oldCts != null)
-            {
-                Helpers.Helper.CancelAndDisposeSafely(oldCts);
-            }
-
-            try
-            {
-                FooterText = string.Empty; // Clear footer text before search
-
-                // Step 1: show "Searching..." immediately
-                _cursorService.SetWaitCursor();
-                SearchButtonText = Strings.Button_Searching;
-                IsBusy = true;
-
-                // Step 2: Run search in background
-                var results = await _eventLogService.SearchAsync(SelectedLevel, FromDate, ToDate, Keyword, token);
-
-                // Step 3: Update UI safely
-                token.ThrowIfCancellationRequested();
-
-                // Materialize the search results and construct the data model in a single pass
-                // to eliminate multiple enumeration overhead on potentially deferred underlying sequences.
-                var batch = results.Select(result => new LogEntryModel
+            await ExecuteSearchPipelineAsync(
+                async (token) =>
                 {
-                    Time = result.Time.LocalDateTime,
-                    Level = result.Level,
-                    EventId = result.EventId,
-                    Message = result.Message,
-                }).ToList();
+                    // Step 2: Run search in background
+                    var results = await _eventLogService.SearchAsync(SelectedLevel, FromDate, ToDate, Keyword, token);
 
-                _logs.Clear();
-                _logs.AddRange(batch);
+                    // Step 3: Update UI safely
+                    token.ThrowIfCancellationRequested();
 
-                // Scroll DataGrid to Top
-                ScrollLogsToTopRequested?.Invoke();
+                    // Materialize the search results and construct the data model in a single pass
+                    // to eliminate multiple enumeration overhead on potentially deferred underlying sequences.
+                    var batch = results.Select(result => new LogEntryModel
+                    {
+                        Time = result.Time.LocalDateTime,
+                        Level = result.Level,
+                        EventId = result.EventId,
+                        Message = result.Message,
+                    }).ToList();
 
-                stopwatch.Stop();
+                    _logs.Clear();
+                    _logs.AddRange(batch);
 
-                FooterText = Helper.GetRowsInfo(
-                    count: _logs.Count,
-                    duration: stopwatch.Elapsed,
-                    noneFormat: Strings.Footer_Log_None,
-                    oneFormat: Strings.Footer_Log_One,
-                    manyFormat: Strings.Footer_Log_Many);
-            }
-            catch (OperationCanceledException)
-            {
-                // Search was canceled; no action needed
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to search logs.", ex);
-                await _messageBoxService.ShowWarningAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
-            }
-            finally
-            {
-                // Step 4: restore button text and IsBusy
-                if (ReferenceEquals(Volatile.Read(ref _cancellationTokenSource), newCts))
-                {
-                    _cursorService.ResetCursor();
-                    SearchButtonText = Strings.Button_Search;
-                    IsBusy = false;
-                }
-            }
+                    // Scroll DataGrid to Top
+                    ScrollLogsToTopRequested?.Invoke();
+
+                    return _logs.Count;
+                },
+                noneFormat: Strings.Footer_Log_None,
+                oneFormat: Strings.Footer_Log_One,
+                manyFormat: Strings.Footer_Log_Many);
+        }
+
+        /// <summary>
+        /// Derived explicit error hook to pop alerts securely when errors occur.
+        /// </summary>
+        protected override async Task HandleSearchExceptionAsync(Exception ex)
+        {
+            Logger.Error($"Failed to search logs.", ex);
+            await _messageBoxService.ShowWarningAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
         }
 
         /// <summary>
@@ -422,9 +312,9 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <returns>Log levels.</returns>
         private static List<EventLogLevel> GetLogLevels() => Enum.GetValues(typeof(EventLogLevel))
-                                                            .Cast<EventLogLevel>()
-                                                            .Where(logLevel => logLevel != EventLogLevel.Critical && logLevel != EventLogLevel.Verbose)
-                                                            .ToList();
+                                                                    .Cast<EventLogLevel>()
+                                                                    .Where(logLevel => logLevel != EventLogLevel.Critical && logLevel != EventLogLevel.Verbose)
+                                                                    .ToList();
 
         #endregion
 
@@ -436,12 +326,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void CancelSearch()
         {
-            // Use Interlocked to ensure we only dispose the token once
-            var oldCts = Interlocked.Exchange(ref _cancellationTokenSource, null);
-            if (oldCts != null)
-            {
-                Helpers.Helper.CancelAndDisposeSafely(oldCts);
-            }
+            ClearActiveSearchContext(); // Triggers atomic infrastructure base teardown safely
         }
 
         /// <summary>
