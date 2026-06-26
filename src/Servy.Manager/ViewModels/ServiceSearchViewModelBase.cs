@@ -24,7 +24,7 @@ namespace Servy.Manager.ViewModels
         private string? _searchText;
         private string? _searchButtonText = Strings.Button_Search;
         private bool _isBusy;
-        private int _isDisposed = 0; // 0 = false, 1 = true
+        protected int _isDisposed = 0; // 0 = false, 1 = true
 
         #endregion
 

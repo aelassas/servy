@@ -1,4 +1,5 @@
-﻿using Servy.Core.Data;
+﻿using Servy.Core.Config;
+using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Manager.Config;
 using Servy.Manager.Design;
@@ -251,7 +252,7 @@ namespace Servy.Manager.ViewModels
             if (token.IsCancellationRequested) return;
             if (!ReferenceEquals(currentSelection, _selectedService)) return;
 
-            double rawRamMb = processMetrics.RamUsage / 1024d / 1024d;
+            double rawRamMb = processMetrics.RamUsage / (double)AppConfig.BytesInMegabyte;
 
             CpuUsage = _processHelper.FormatCpuUsage(processMetrics.CpuUsage);
             RamUsage = _processHelper.FormatRamUsage(processMetrics.RamUsage);
