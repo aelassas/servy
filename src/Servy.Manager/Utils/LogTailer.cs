@@ -372,7 +372,7 @@ namespace Servy.Manager.Utils
                     int count = (lastByte == (byte)'\n') ? 0 : 1;
 
                     long pos = fs.Length;
-                    byte[] buffer = new byte[4096];
+                    byte[] buffer = new byte[AppConfig.LogTailerHistoryScanBufferSize];
 
                     // Backwards scan for newline characters to locate the start of the last 'maxLines'
                     while (pos > 0 && count <= maxLines)

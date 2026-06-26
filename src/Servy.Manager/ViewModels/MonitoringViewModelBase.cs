@@ -50,11 +50,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private long _tickErrorCount = 0;
 
-        /// <summary>
-        /// Tracks whether the instance has already been disposed to prevent redundant cleanup.
-        /// </summary>
-        private bool _isDisposed;
-
         private string _pid = UiConstants.NotAvailable;
 
         /// <summary>
@@ -314,27 +309,28 @@ namespace Servy.Manager.ViewModels
         /// </param>
         protected override void Dispose(bool disposing)
         {
-            if (!_isDisposed)
+            if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
             {
-                if (disposing)
-                {
-                    var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
-                    if (oldMonitoringCts != null)
-                    {
-                        Helpers.Helper.CancelAndDisposeSafely(oldMonitoringCts);
-                    }
+                return;
+            }
 
-                    if (_timer != null)
-                    {
-                        _timer.Stop();
-                        _timer.Tick -= OnTick; // CRITICAL: Prevents the Dispatcher leak
-                        _timer = null;
-                    }
+            if (disposing)
+            {
+                var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
+                if (oldMonitoringCts != null)
+                {
+                    Helpers.Helper.CancelAndDisposeSafely(oldMonitoringCts);
                 }
 
-                base.Dispose(disposing);
-                _isDisposed = true;
+                if (_timer != null)
+                {
+                    _timer.Stop();
+                    _timer.Tick -= OnTick; // CRITICAL: Prevents the Dispatcher leak
+                    _timer = null;
+                }
             }
+
+            base.Dispose(disposing);
         }
     }
 }

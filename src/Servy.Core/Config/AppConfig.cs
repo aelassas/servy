@@ -581,6 +581,15 @@ namespace Servy.Core.Config
         public const int LogTailerUnhandledErrorRecoveryDelayMs = 1000;
 
         /// <summary>
+        /// The allocation buffer size in bytes used by the log tailer during background backward-scan file operations.
+        /// </summary>
+        /// <remarks>
+        /// This value directly controls the chunk size for sequential disk reads when parsing log file history 
+        /// up to the maximum line threshold, mitigating multiple small I/O calls on larger files.
+        /// </remarks>
+        public const int LogTailerHistoryScanBufferSize = 4096;
+
+        /// <summary>
         /// Defines the minimum execution duration threshold (in milliseconds) required to keep the splash screen visible.
         /// </summary>
         /// <remarks>

@@ -904,8 +904,7 @@ namespace Servy.Service
         /// </remarks>
         private int ClampTimeout(long timeout)
         {
-            // Use 1000L to force the multiplication into a 64-bit context before clamping
-            return (int)Math.Min(int.MaxValue, timeout * 1000L);
+            return (int)Math.Min(int.MaxValue, timeout * AppConfig.MillisecondsPerSecond);
         }
 
         /// <summary>
@@ -1528,7 +1527,7 @@ namespace Servy.Service
             {
                 // Calculate delay: Heartbeat interval minus a 5s buffer, minimum 5s.
                 var delayMs = Math.Max(ClampTimeout(_options.HeartbeatInterval) - AppConfig.RecoverySchedulingDelayMs, AppConfig.RecoverySchedulingDelayMs);
-                _logger?.Info($"[OnProcessExited] Failure threshold reached. Scheduling recovery in {delayMs / 1000}s...");
+                _logger?.Info($"[OnProcessExited] Failure threshold reached. Scheduling recovery in {delayMs / AppConfig.MillisecondsPerSecond}s...");
 
                 // Fire-and-forget the recovery task safely
                 _ = ScheduleRecoveryAsync(delayMs);
@@ -1634,7 +1633,7 @@ namespace Servy.Service
         {
             if (_recoveryActionEnabled)
             {
-                _healthCheckTimer = _timerFactory.Create(options.HeartbeatInterval * 1000.0);
+                _healthCheckTimer = _timerFactory.Create(options.HeartbeatInterval * (double)AppConfig.MillisecondsPerSecond);
                 _healthCheckTimer.Elapsed += CheckHealth;
                 _healthCheckTimer.AutoReset = true;
                 _healthCheckTimer.Start();

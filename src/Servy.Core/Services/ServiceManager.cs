@@ -414,7 +414,7 @@ namespace Servy.Core.Services
                         {
                             totalWaitTime += options.PreStopTimeout;
                         }
-                        uint finalTimeoutMs = (uint)totalWaitTime * 1000;
+                        uint finalTimeoutMs = (uint)totalWaitTime * AppConfig.MillisecondsPerSecond;
 
                         if (serviceCreated)
                         {
