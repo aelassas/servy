@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Servy.Core.Config;
 
 namespace Servy.Core.Security
 {
@@ -13,7 +14,7 @@ namespace Servy.Core.Security
         public static JsonSerializerSettings UntrustedDataSettings => new JsonSerializerSettings
         {
             TypeNameHandling = TypeNameHandling.None,
-            MaxDepth = 32,
+            MaxDepth = AppConfig.UntrustedJsonMaxDepth,
             MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
             NullValueHandling = NullValueHandling.Ignore
         };

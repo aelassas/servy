@@ -27,6 +27,15 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private const int PerformanceHistoryCapacity = 101;
 
+        /// <summary>
+        /// The scaling headroom multiplier applied above the observed peak memory footprint.
+        /// </summary>
+        /// <remarks>
+        /// This factor injects 20% vertical breathing room above the maximum data coordinate value 
+        /// in the chart's current window frame, preventing graph clipping at the top boundary.
+        /// </remarks>
+        private const double RamScaleHeadroom = 1.2;
+
         #endregion
 
         #region Fields
@@ -322,8 +331,8 @@ namespace Servy.Manager.ViewModels
 
             // Scale dynamically if multi-process trees breach normalized boundaries, maintaining rational floor metrics
             double displayMax = isCpu
-                ? Math.Max(currentMax * 1.2, 100.0)
-                : Math.Max(currentMax * 1.2, _ramDisplayMax);
+                ? Math.Max(currentMax * RamScaleHeadroom, 100.0)
+                : Math.Max(currentMax * RamScaleHeadroom, _ramDisplayMax);
 
             var lineBuffer = isCpu ? _cpuBuffer : _ramBuffer;
             var fillBuffer = isCpu ? _cpuFillBuffer : _ramFillBuffer;

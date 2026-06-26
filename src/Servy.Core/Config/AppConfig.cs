@@ -641,6 +641,15 @@ namespace Servy.Core.Config
         /// </remarks>
         public const int SplashMinDisplayPaddingMs = 500;
 
+        /// <summary>
+        /// The positional launch argument string passed to indicate whether the splash screen should be bypassed on application startup.
+        /// </summary>
+        /// <remarks>
+        /// This string value binds the producer contract in <c>ServiceCommands.OpenManager</c> directly with the consumer parsing engine 
+        /// in <c>AppBootstrapper.OnStartup</c>. Changing this configuration field guarantees that both boundaries remain synchronized.
+        /// </remarks>
+        public const string SkipSplashArgument = "false";
+
         #endregion
 
         #region Limits, Thresholds & Constraints
@@ -1082,6 +1091,16 @@ namespace Servy.Core.Config
         /// to avoid system-level instability or accidental kernel-space interference.
         /// </summary>
         public const int MaxReservedSystemPid = 4;
+
+        /// <summary>
+        /// The maximum allowed depth limit constraint when deserializing untrusted or external JSON data structures.
+        /// </summary>
+        /// <remarks>
+        /// This security-relevant hardening threshold strictly bounds structural recursion depth during token parsing. 
+        /// Enforcing an upper ceiling of 32 effectively blocks stack-exhaustion denial-of-service (DoS) exploits 
+        /// engineered via deeply nested malicious JSON payloads.
+        /// </remarks>
+        public const int UntrustedJsonMaxDepth = 32;
 
         #endregion
 

@@ -302,7 +302,12 @@ namespace Servy.UI.Bootstrapping
 
             if (positionalArgs.Count > 0)
             {
-                if (bool.TryParse(positionalArgs[0], out var parsed))
+                if (string.Equals(positionalArgs[0], AppConfig.SkipSplashArgument, StringComparison.OrdinalIgnoreCase))
+                {
+                    showSplash = false;
+                    if (positionalArgs.Count > 1) serviceName = positionalArgs[1];
+                }
+                else if (bool.TryParse(positionalArgs[0], out var parsed))
                 {
                     showSplash = parsed;
                     if (positionalArgs.Count > 1) serviceName = positionalArgs[1];

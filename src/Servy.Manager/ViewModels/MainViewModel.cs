@@ -794,8 +794,9 @@ namespace Servy.Manager.ViewModels
                 // We collect the updates in thread-safe bags instead of applying them immediately
                 var changedDtos = new System.Collections.Concurrent.ConcurrentBag<ServiceDto>();
                 var uiUpdates = new System.Collections.Concurrent.ConcurrentBag<ServiceUpdateInfo>();
+                int maxRefreshDegreeOfParallelism = Math.Max(1, Math.Min(Environment.ProcessorCount * 2, _appConfig.MaxBulkOperationParallelism));
 
-                using (var semaphore = new SemaphoreSlim(Environment.ProcessorCount))
+                using (var semaphore = new SemaphoreSlim(maxRefreshDegreeOfParallelism))
                 {
                     var tasks = snapshot.Select(async service =>
                     {
