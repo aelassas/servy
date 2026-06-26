@@ -31,12 +31,12 @@ namespace Servy.Manager.Validation
         /// This implementation follows a fail-fast approach, showing only the first identified 
         /// error to prevent overwhelming the user with multiple dialog boxes.
         /// </remarks>
-        public async Task<bool> ValidateAsync(ServiceDto dto, CancellationToken cancellationToken = default)
+        public async Task<bool> ValidateAsync(ServiceDto dto, bool importMode = false, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             // Delegate core validation logic to the centralized rules engine
-            var result = _serviceValidationRules.Validate(dto, importMode: true);
+            var result = _serviceValidationRules.Validate(dto, importMode: importMode);
 
             // Display critical errors first
             if (!result.IsValid)
