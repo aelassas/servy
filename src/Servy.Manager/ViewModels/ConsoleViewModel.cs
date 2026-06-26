@@ -39,7 +39,6 @@ namespace Servy.Manager.ViewModels
         private string? _stderrPath;
         private int _currentSessionId = 0; // Track the "active" switch request
         private volatile bool _isSelectionActive;
-        private bool _isDisposed;
         private readonly IAppConfiguration _appConfig;
 
         // Active tailers and their handlers to prevent memory leaks during service switching
@@ -380,10 +379,10 @@ namespace Servy.Manager.ViewModels
                 OnPropertyChanged(nameof(Pid));
 
                 // 2. Load History in parallel
-                int historyLimit = _maxLines / 2;
-
                 bool hasUniqueStderr = !string.IsNullOrWhiteSpace(stderrPath) &&
-                                       !string.Equals(stdoutPath, stderrPath, StringComparison.OrdinalIgnoreCase);
+                       !string.Equals(stdoutPath, stderrPath, StringComparison.OrdinalIgnoreCase);
+
+                int historyLimit = hasUniqueStderr ? _maxLines / 2 : _maxLines;
 
                 using (var stdoutHistoryTailer = new LogTailer())
                 using (var stderrHistoryTailer = new LogTailer())
@@ -595,37 +594,38 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         protected override void Dispose(bool disposing)
         {
-            if (!_isDisposed)
+            if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
             {
-                if (disposing)
+                return;
+            }
+
+            if (disposing)
+            {
+                // 1. Dispose active log tailers
+                StopActiveTailers();
+
+                // 2. Dispose Tailing CTS
+                var oldTailingCts = Interlocked.Exchange(ref _tailingCts, null);
+                if (oldTailingCts != null)
                 {
-                    // 1. Dispose active log tailers
-                    StopActiveTailers();
-
-                    // 2. Dispose Tailing CTS
-                    var oldTailingCts = Interlocked.Exchange(ref _tailingCts, null);
-                    if (oldTailingCts != null)
-                    {
-                        oldTailingCts.Cancel();
-                        oldTailingCts.Dispose();
-                    }
-
-                    // 3. Dispose Log Filter Debounce CTS
-                    var oldFilterCts = Interlocked.Exchange(ref _logFilterCts, null);
-                    if (oldFilterCts != null)
-                    {
-                        oldFilterCts.Cancel();
-                        oldFilterCts.Dispose();
-                    }
-
-                    // 4. Clear event invocation lists so the View can be collected even if it
-                    // forgot to unsubscribe (and so stray ticks don't reach a disposed View).
-                    RequestScroll = null;
+                    oldTailingCts.Cancel();
+                    oldTailingCts.Dispose();
                 }
 
-                base.Dispose(disposing);
-                _isDisposed = true;
+                // 3. Dispose Log Filter Debounce CTS
+                var oldFilterCts = Interlocked.Exchange(ref _logFilterCts, null);
+                if (oldFilterCts != null)
+                {
+                    oldFilterCts.Cancel();
+                    oldFilterCts.Dispose();
+                }
+
+                // 4. Clear event invocation lists so the View can be collected even if it
+                // forgot to unsubscribe (and so stray ticks don't reach a disposed View).
+                RequestScroll = null;
             }
+
+            base.Dispose(disposing);
         }
 
         #endregion

@@ -25,7 +25,6 @@ namespace Servy.Manager.ViewModels
 
         private CancellationTokenSource? _loadTreeCts;
 
-        private bool _isDisposed;
         private readonly IAppConfiguration _appConfig;
         private readonly IMessageBoxService _messageBoxService;
 
@@ -306,22 +305,23 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         protected override void Dispose(bool disposing)
         {
-            if (!_isDisposed)
+            if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
             {
-                if (disposing)
-                {
-                    // Dispose Tree Loading CTS
-                    var oldLoadTreeCts = Interlocked.Exchange(ref _loadTreeCts, null);
-                    if (oldLoadTreeCts != null)
-                    {
-                        oldLoadTreeCts.Cancel();
-                        oldLoadTreeCts.Dispose();
-                    }
-                }
-
-                base.Dispose(disposing);
-                _isDisposed = true;
+                return;
             }
+
+            if (disposing)
+            {
+                // Dispose Tree Loading CTS
+                var oldLoadTreeCts = Interlocked.Exchange(ref _loadTreeCts, null);
+                if (oldLoadTreeCts != null)
+                {
+                    oldLoadTreeCts.Cancel();
+                    oldLoadTreeCts.Dispose();
+                }
+            }
+
+            base.Dispose(disposing);
         }
 
         #endregion
