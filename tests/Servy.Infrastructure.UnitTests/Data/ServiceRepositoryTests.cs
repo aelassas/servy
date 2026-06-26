@@ -1337,7 +1337,9 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             // 2. Branch path verification: Inner Exception evaluates to Null fallback logic mapping
             methodInfo!.Invoke(repo, new object[] { dto, targetExNoInner });
-            Assert.Contains("[DECRYPTION FAILED: CryptographicException]", dto.Description);
+
+            // Expect the honest fallback exception type name instead of a fabricated placeholder string
+            Assert.Contains("[DECRYPTION FAILED: InvalidOperationException]", dto.Description);
 
             // 3. Branch path verification: Inner Exception matches concrete reference mapping layout rules
             var freshDto = new ServiceDto { Name = "Row2", Description = "Meta", Password = "ABC" };

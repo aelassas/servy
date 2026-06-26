@@ -742,7 +742,7 @@ namespace Servy.Infrastructure.Data
             if (dto == null) return;
 
             // Capture the original root cause name if available for actionable diagnostic feedback
-            string rootCauseName = ex.InnerException?.GetType().Name ?? "CryptographicException";
+            string rootCauseName = ex.InnerException?.GetType().Name ?? ex.GetType().Name;
 
             // Explicitly update descriptions to flag the target record in the UI
             dto.Description = $"[DECRYPTION FAILED: {rootCauseName}] The record's key or payload is corrupt. " +
