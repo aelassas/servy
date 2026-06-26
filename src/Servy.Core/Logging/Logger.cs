@@ -21,11 +21,6 @@ namespace Servy.Core.Logging
     public static class Logger
     {
         /// <summary>
-        /// Default maximum number of backup log files to keep. When the number of rotated files exceeds this limit, the oldest files will be deleted.
-        /// </summary>
-        public const int DefaultMaxBackupLogFiles = 10;
-
-        /// <summary>
         /// Logs folder path.
         /// </summary>
         public static readonly string LogsPath = Path.Combine(AppConfig.ProgramDataPath, "logs");
@@ -42,12 +37,6 @@ namespace Servy.Core.Logging
         /// </summary>
         private static readonly Regex VerticalControlRegex = new Regex(@"[\v\f]", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
-        /// <summary>
-        /// The maximum number of fallback log writes allowed per process lifetime.
-        /// Prevents unbounded growth of fallback log files if the primary logger continuously fails.
-        /// </summary>
-        private const int MaxFallbackWrites = 10;
-
         private static readonly object _lock = new object();
         private static volatile RotatingStreamWriter _writer;
 
@@ -63,7 +52,7 @@ namespace Servy.Core.Logging
         /// The maximum number of backup log files to keep. 
         /// Set to 0 to allow an unlimited number of backup files.
         /// </summary>
-        private static int _maxBackupLogFiles = DefaultMaxBackupLogFiles;
+        private static int _maxBackupLogFiles = AppConfig.LoggerDefaultMaxBackupLogFiles;
 
         // Counters to limit fallback file growth
         private static int _initFallbackWriteCount = 0;
@@ -103,7 +92,7 @@ namespace Servy.Core.Logging
             int logRotationSizeMB = AppConfig.DefaultRotationSizeMB,
             DateRotationType dateRotationType = DateRotationType.None,
             bool useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation,
-            int maxBackupLogFiles = DefaultMaxBackupLogFiles
+            int maxBackupLogFiles = AppConfig.LoggerDefaultMaxBackupLogFiles
             )
         {
             lock (_lock)
@@ -140,7 +129,7 @@ namespace Servy.Core.Logging
             int logRotationSizeMB = AppConfig.DefaultRotationSizeMB,
             DateRotationType dateRotationType = DateRotationType.None,
             bool useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation,
-            int maxBackupLogFiles = DefaultMaxBackupLogFiles
+            int maxBackupLogFiles = AppConfig.LoggerDefaultMaxBackupLogFiles
             )
         {
             lock (_lock)
@@ -151,7 +140,7 @@ namespace Servy.Core.Logging
 
                 // Validates and bounds inputs to align initialization policies with runtime API constraints
                 _logRotationSizeMB = logRotationSizeMB > 0 ? logRotationSizeMB : AppConfig.DefaultRotationSizeMB;
-                _maxBackupLogFiles = maxBackupLogFiles >= 0 ? maxBackupLogFiles : DefaultMaxBackupLogFiles;
+                _maxBackupLogFiles = maxBackupLogFiles >= 0 ? maxBackupLogFiles : AppConfig.LoggerDefaultMaxBackupLogFiles;
 
                 // Re-arm or cycle the writer if we have a valid baseline path,
                 // ensuring re-initialization requests that follow a Shutdown() do not silently lose their state.
@@ -207,7 +196,7 @@ namespace Servy.Core.Logging
                 try
                 {
                     // Fail-silent, but limit writes to prevent disk exhaustion
-                    if (Interlocked.Increment(ref _initFallbackWriteCount) <= MaxFallbackWrites)
+                    if (Interlocked.Increment(ref _initFallbackWriteCount) <= AppConfig.LoggerMaxFallbackWrites)
                     {
                         EnsureLogsDir();
                         File.AppendAllText(Path.Combine(LogsPath, "LoggerInitializationErrors.log"),
@@ -415,7 +404,7 @@ namespace Servy.Core.Logging
             {
                 try
                 {
-                    if (Interlocked.Increment(ref _logFallbackWriteCount) <= MaxFallbackWrites)
+                    if (Interlocked.Increment(ref _logFallbackWriteCount) <= AppConfig.LoggerMaxFallbackWrites)
                     {
                         EnsureLogsDir();
                         File.AppendAllText(Path.Combine(LogsPath, "LoggerWriteErrors.log"),
@@ -457,7 +446,7 @@ namespace Servy.Core.Logging
                 {
                     // Fail-silent, but limit writes to prevent disk exhaustion.
                     // Interlocked is critical here as Log() can be called concurrently from multiple threads.
-                    if (Interlocked.Increment(ref _logFallbackWriteCount) <= MaxFallbackWrites)
+                    if (Interlocked.Increment(ref _logFallbackWriteCount) <= AppConfig.LoggerMaxFallbackWrites)
                     {
                         EnsureLogsDir();
                         File.AppendAllText(Path.Combine(LogsPath, "LoggerWriteErrors.log"),

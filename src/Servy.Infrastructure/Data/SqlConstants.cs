@@ -8,6 +8,8 @@ namespace Servy.Infrastructure.Data
     /// </summary>
     public static class SqlConstants
     {
+        public const string ServicesTableName = "Services";
+
         // SINGLE SOURCE OF TRUTH: Add standard columns here.
         // Do NOT add 'Name' or 'PreviousStopTimeout' here, as they require special handling below.
         private static readonly string[] StandardColumns =

@@ -70,7 +70,7 @@ namespace Servy.Infrastructure.Data
             var encryptedService = CreateEncryptedClone(service);
 
             var sql = $@"
-                INSERT INTO Services ({SqlConstants.InsertColumns}) 
+                INSERT INTO {SqlConstants.ServicesTableName} ({SqlConstants.InsertColumns}) 
                 VALUES ({SqlConstants.InsertValues});
                 SELECT last_insert_rowid();";
 
@@ -92,7 +92,7 @@ namespace Servy.Infrastructure.Data
                 cancellationToken: cancellationToken);
 
             var sql = $@"
-                UPDATE Services SET
+                UPDATE {SqlConstants.ServicesTableName} SET
                 {SqlConstants.UpdateSet}
                 WHERE Id = @Id;";
 
@@ -111,7 +111,7 @@ namespace Servy.Infrastructure.Data
                 );
 
             var sql = $@"
-                UPDATE Services SET
+                UPDATE {SqlConstants.ServicesTableName} SET
                 {SqlConstants.UpdateSet}
                 WHERE Id = @Id;";
 
@@ -130,11 +130,11 @@ namespace Servy.Infrastructure.Data
                 cancellationToken: cancellationToken);
 
             var sql = $@"
-                INSERT INTO Services ({SqlConstants.InsertColumns}) 
+                INSERT INTO {SqlConstants.ServicesTableName} ({SqlConstants.InsertColumns}) 
                 VALUES ({SqlConstants.InsertValues})
                 ON CONFLICT(Name COLLATE UNICODE_NOCASE) DO UPDATE SET
                 {SqlConstants.UpsertSet};
-                SELECT id FROM Services WHERE Name = @Name COLLATE UNICODE_NOCASE;";
+                SELECT id FROM {SqlConstants.ServicesTableName} WHERE Name = @Name COLLATE UNICODE_NOCASE;";
 
             var id = await _dapper.ExecuteScalarAsync<int>(sql, encryptedService, cancellationToken: cancellationToken);
             service.Id = id;
@@ -158,7 +158,7 @@ namespace Servy.Infrastructure.Data
                 if (chunkNames.Any())
                 {
                     var existingRows = (await _dapper.QueryAsync<ServiceDto>(
-                        "SELECT * FROM Services WHERE Name COLLATE UNICODE_NOCASE IN @chunkNames",
+                        $"SELECT * FROM {SqlConstants.ServicesTableName} WHERE Name COLLATE UNICODE_NOCASE IN @chunkNames",
                         new { chunkNames },
                         cancellationToken: cancellationToken)).ToList();
 
@@ -196,7 +196,7 @@ namespace Servy.Infrastructure.Data
             }
 
             var sql = $@"
-                INSERT INTO Services ({SqlConstants.InsertColumns}) 
+                INSERT INTO {SqlConstants.ServicesTableName} ({SqlConstants.InsertColumns}) 
                 VALUES ({SqlConstants.InsertValues})
                 ON CONFLICT(Name COLLATE UNICODE_NOCASE) DO UPDATE SET
                 {SqlConstants.UpsertSet};";
@@ -218,7 +218,7 @@ namespace Servy.Infrastructure.Data
                     var names = currentChunk.Select(s => s.Name).Where(n => !string.IsNullOrEmpty(n)).ToList();
 
                     var idMap = (await _dapper.QueryAsync<(int Id, string Name)>(
-                        "SELECT Id, Name FROM Services WHERE Name COLLATE UNICODE_NOCASE IN @names",
+                        $"SELECT Id, Name FROM {SqlConstants.ServicesTableName} WHERE Name COLLATE UNICODE_NOCASE IN @names",
                         new { names },
                         transaction: tx,
                         cancellationToken: cancellationToken))
@@ -248,7 +248,7 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
-            const string sql = "DELETE FROM Services WHERE Id = @Id;";
+            string sql = $"DELETE FROM {SqlConstants.ServicesTableName} WHERE Id = @Id;";
             return await _dapper.ExecuteAsync(sql, new { Id = id }, cancellationToken: cancellationToken);
         }
 
@@ -257,7 +257,7 @@ namespace Servy.Infrastructure.Data
         {
             if (string.IsNullOrWhiteSpace(name)) return 0;
 
-            const string sql = "DELETE FROM Services WHERE Name = @Name COLLATE UNICODE_NOCASE;";
+            string sql = $"DELETE FROM {SqlConstants.ServicesTableName} WHERE Name = @Name COLLATE UNICODE_NOCASE;";
 
             return await ResolveWithLegacyFallbackAsync(
                 sql: sql,
@@ -271,7 +271,7 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<ServiceDto> GetByIdAsync(int id, bool decrypt = true, CancellationToken cancellationToken = default)
         {
-            const string sql = "SELECT * FROM Services WHERE Id = @Id;";
+            string sql = $"SELECT * FROM {SqlConstants.ServicesTableName} WHERE Id = @Id;";
             var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(sql, new { Id = id }, cancellationToken: cancellationToken);
 
             if (decrypt) SafeDecrypt(dto);
@@ -283,7 +283,7 @@ namespace Servy.Infrastructure.Data
         {
             if (string.IsNullOrWhiteSpace(name)) return null;
 
-            const string sql = "SELECT * FROM Services WHERE Name = @Name COLLATE UNICODE_NOCASE;";
+            string sql = $"SELECT * FROM {SqlConstants.ServicesTableName} WHERE Name = @Name COLLATE UNICODE_NOCASE;";
             var dto = await ResolveByNameAsync<ServiceDto>(sql, name, cancellationToken: cancellationToken);
 
             if (decrypt) SafeDecrypt(dto);
@@ -294,7 +294,7 @@ namespace Servy.Infrastructure.Data
         public virtual ServiceDto GetByName(string name, bool decrypt = true)
         {
             if (string.IsNullOrWhiteSpace(name)) return null;
-            const string sql = "SELECT * FROM Services WHERE Name = @Name COLLATE UNICODE_NOCASE;";
+            string sql = $"SELECT * FROM {SqlConstants.ServicesTableName} WHERE Name = @Name COLLATE UNICODE_NOCASE;";
 
             var dto = ResolveWithLegacyFallback<ServiceDto>(
                 sql: sql,
@@ -311,7 +311,7 @@ namespace Servy.Infrastructure.Data
         public virtual async Task<int?> GetServicePidAsync(string name, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(name)) return null;
-            const string sql = "SELECT Pid FROM Services WHERE Name = @Name COLLATE UNICODE_NOCASE LIMIT 1;";
+            string sql = $"SELECT Pid FROM {SqlConstants.ServicesTableName} WHERE Name = @Name COLLATE UNICODE_NOCASE LIMIT 1;";
             var pid = await ResolveByNameAsync<int?>(sql, name, cancellationToken: cancellationToken);
             return pid;
         }
@@ -320,9 +320,9 @@ namespace Servy.Infrastructure.Data
         public virtual async Task<ServiceConsoleStateDto> GetServiceConsoleStateAsync(string name, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(name)) return null;
-            const string sql = @"
+            string sql = $@"
                 SELECT Pid, ActiveStdoutPath, ActiveStderrPath 
-                FROM Services 
+                FROM {SqlConstants.ServicesTableName} 
                 WHERE Name = @Name COLLATE UNICODE_NOCASE
                 LIMIT 1;";
             var dto = await ResolveByNameAsync<ServiceConsoleStateDto>(sql, name, cancellationToken: cancellationToken);
@@ -332,7 +332,7 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<IEnumerable<ServiceDto>> GetAllAsync(bool decrypt = true, CancellationToken cancellationToken = default)
         {
-            const string sql = "SELECT * FROM Services ORDER BY Name COLLATE UNICODE_NOCASE ASC;";
+            string sql = $"SELECT * FROM {SqlConstants.ServicesTableName} ORDER BY Name COLLATE UNICODE_NOCASE ASC;";
             var list = await _dapper.QueryAsync<ServiceDto>(sql, cancellationToken: cancellationToken);
 
             if (decrypt) SafeDecryptAll(list, cancellationToken);
@@ -350,8 +350,8 @@ namespace Servy.Infrastructure.Data
 
             // Optimized query layout configuration. SQLite executes 'LIKE' operations case-insensitively for standard ASCII
             // elements inherently by default configuration, but leveraging explicit ESCAPE patterns protects complex paths.
-            var sql = @"
-                SELECT * FROM Services 
+            var sql = $@"
+                SELECT * FROM {SqlConstants.ServicesTableName} 
                 WHERE Name       LIKE @Pattern ESCAPE '\' 
                    OR Description LIKE @Pattern ESCAPE '\' 
                 ORDER BY Name COLLATE UNICODE_NOCASE ASC;";

@@ -1,4 +1,5 @@
-﻿using Servy.Core.Helpers;
+﻿using Servy.Core.Config;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Native;
 using Servy.Core.Resources;
@@ -130,9 +131,8 @@ namespace Servy.Core.Validation
 
             // Extension Validation
             string extension = Path.GetExtension(fullPath).ToLowerInvariant();
-            string[] allowedExtensions = { ".json", ".xml" };
 
-            if (!allowedExtensions.Contains(extension))
+            if (!AppConfig.AllowedConfigFileExtensions.Contains(extension))
             {
                 var errorMsg = string.Format(Strings.Msg_SecurityInvalidFileType, extension);
                 Logger.Error(errorMsg);

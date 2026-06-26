@@ -42,13 +42,18 @@ namespace Servy.CLI.UnitTests.Helpers
                     {
                         Console.SetOut(swOut);
                         Console.SetError(swErr);
+
                         testAction();
+
+                        // Explicitly restore static console output paths BEFORE the StringWriter streams
+                        // are disposed to prevent ObjectDisposedExceptions from trailing execution writes.
+                        Console.SetOut(oldOut);
+                        Console.SetError(oldErr);
                     }
                 }
                 finally
                 {
-                    // CRITICAL: Ensure static console state restoration is guaranteed 
-                    // before releasing the execution gate primitive.
+                    // CRITICAL: Ensure static console state restoration is guaranteed fallback safety
                     Console.SetOut(oldOut);
                     Console.SetError(oldErr);
                     _asyncConsoleLock.Release();
@@ -88,6 +93,12 @@ namespace Servy.CLI.UnitTests.Helpers
                     // Perfectly await the execution task to cleanly yield control 
                     // without escaping the lifetime bounds of the StringWriter wrappers.
                     await testAction();
+
+                    lock (_consoleLock)
+                    {
+                        Console.SetOut(oldOut);
+                        Console.SetError(oldErr);
+                    }
                 }
             }
             finally
@@ -135,33 +146,35 @@ namespace Servy.CLI.UnitTests.Helpers
         [Fact]
         public void PrintAndReturn_SuccessResult_PrintsGreenMessage()
         {
+            // Arrange
+            var result = CommandResult.Ok("Success!");
+            int exitCode = -1;
+
+            // Act
             RunTestWithConsoleCapture(() =>
             {
-                // Arrange
-                var result = CommandResult.Ok("Success!");
-
-                // Act
-                int exitCode = Helper.PrintAndReturn(result);
-
-                // Assert
-                Assert.Equal(0, exitCode);
+                exitCode = Helper.PrintAndReturn(result);
             });
+
+            // Assert
+            Assert.Equal(0, exitCode);
         }
 
         [Fact]
         public void PrintAndReturn_FailureResult_PrintsRedMessage()
         {
+            // Arrange
+            var result = CommandResult.Fail("Error!", 1);
+            int exitCode = -1;
+
+            // Act
             RunTestWithConsoleCapture(() =>
             {
-                // Arrange
-                var result = CommandResult.Fail("Error!", 1);
-
-                // Act
-                int exitCode = Helper.PrintAndReturn(result);
-
-                // Assert
-                Assert.Equal(1, exitCode);
+                exitCode = Helper.PrintAndReturn(result);
             });
+
+            // Assert
+            Assert.Equal(1, exitCode);
         }
 
         [Fact]
@@ -171,10 +184,9 @@ namespace Servy.CLI.UnitTests.Helpers
             int exitCode = -1;
             var task = Task.FromResult(CommandResult.Ok("Async"));
 
-            // Use the fully asynchronous redirection wrapper to capture state cleanly
+            // Act: Use the fully asynchronous redirection wrapper to capture state cleanly
             await RunTestWithConsoleCaptureAsync(async () =>
             {
-                // Act: Await execution directly within the console capture boundary context
                 exitCode = await Helper.PrintAndReturnAsync(task);
             });
 

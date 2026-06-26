@@ -115,7 +115,7 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Configuration file &apos;{0}&apos; exceeds maximum size (10 MB)..
+        ///   Recherche une chaîne localisée semblable à Configuration file &apos;{0}&apos; exceeds maximum size ({1} MB)..
         /// </summary>
         public static string Msg_ConfigSizeLimitReached {
             get {
