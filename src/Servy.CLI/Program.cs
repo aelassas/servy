@@ -193,7 +193,7 @@ namespace Servy.CLI
                         var resourceHelper = new ResourceHelper(sh, processKiller);
 
                         // Copy Sysinternals from embedded resources
-                        if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
+                        if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false, cancellationToken: cts.Token))
                         {
                             Logger.Warn($"Failed copying embedded resource: {AppConfig.HandleExeFileName}; process-tree handle features may be degraded.");
                         }
@@ -206,7 +206,7 @@ namespace Servy.CLI
 
 #if DEBUG
                         // Copy debug symbols from embedded resources (only in debug builds)
-                        if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
+                        if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false, cancellationToken: cts.Token))
                         {
                             Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
                         }
@@ -234,7 +234,7 @@ namespace Servy.CLI
 #endif
 
                         // Copy embedded resources
-                        if (!await resourceHelper.CopyResources(asm, ResourcesNamespace, resourceItems))
+                        if (!await resourceHelper.CopyResources(asm, ResourcesNamespace, resourceItems, cancellationToken: cts.Token))
                         {
                             throw new InvalidOperationException($"Failed to extract embedded resources. " +
                                 "CLI cannot start safely - see file log for details.");

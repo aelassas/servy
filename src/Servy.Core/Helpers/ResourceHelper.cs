@@ -1,5 +1,4 @@
 ﻿using Servy.Core.Config;
-using Servy.Core.Data;
 using Servy.Core.Logging;
 using System;
 using System.Collections.Generic;
@@ -7,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Servy.Core.Helpers
@@ -55,6 +55,7 @@ namespace Servy.Core.Helpers
         /// <param name="extension">The file extension (e.g., "exe" or "dll").</param>
         /// <param name="stopServices">Whether to stop services before copying the resource.</param>
         /// <param name="subfolder">Optional subfolder within the target directory.</param>
+        /// <param name="cancellationToken">An optional token to monitor for cancellation requests during execution.</param>
         /// <returns>
         /// True if the copy succeeded (or was not needed) AND all stopped services were successfully restarted; 
         /// otherwise, false.
@@ -65,7 +66,8 @@ namespace Servy.Core.Helpers
             string fileName,
             string extension,
             bool stopServices = true,
-            string subfolder = null)
+            string subfolder = null,
+            CancellationToken cancellationToken = default)
         {
             bool copyDone = false; // Tracks if the physical file copy succeeded
             string targetPath = null;
@@ -95,13 +97,18 @@ namespace Servy.Core.Helpers
                         if (stopServices && runningServices.Count > 0)
                         {
                             Logger.Info($"Stopping services before copying resource '{resourceName}': {string.Join(", ", runningServices)}");
-                            await _serviceHelper.StopServices(runningServices);
+                            // Forward the cancellation token to the polling routine
+                            await _serviceHelper.StopServices(runningServices, cancellationToken);
                         }
+
+                        // Check cancellation boundary right before process execution checks
+                        cancellationToken.ThrowIfCancellationRequested();
 
                         if (!TerminateBlockingProcesses(extension, targetFileName, targetPath))
                             return false;
 
-                        await Helper.WriteFileAtomicAsync(targetPath, (s, t) => resourceStream.CopyToAsync(s, BufferSize, t));
+                        // Plumb both parameters into the atomic writer loop context cleanly
+                        await Helper.WriteFileAtomicAsync(targetPath, (s, t) => resourceStream.CopyToAsync(s, BufferSize, t), cancellationToken);
                         copyDone = true; // File write succeeded natively within the execution path
                     }
                     finally
@@ -111,7 +118,9 @@ namespace Servy.Core.Helpers
                             try
                             {
                                 Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
-                                await _serviceHelper.StartServices(runningServices);
+
+                                // Force CancellationToken.None to avoid leaving services stopped if extraction was canceled midway
+                                await _serviceHelper.StartServices(runningServices, CancellationToken.None);
                             }
                             catch (Exception startEx)
                             {
@@ -219,6 +228,7 @@ namespace Servy.Core.Helpers
         /// If <c>true</c>, running Servy services will be stopped before copying and restarted afterward. 
         /// Default is <c>true</c>.
         /// </param>
+        /// <param name="cancellationToken">An optional token to monitor for cancellation requests during execution.</param>
         /// <returns>
         /// <c>true</c> if all resources were copied successfully or did not need copying; 
         /// otherwise, <c>false</c>.
@@ -244,7 +254,8 @@ namespace Servy.Core.Helpers
             Assembly assembly,
             string resourceNamespace,
             List<ResourceItem> resourceItems,
-            bool stopServices = true)
+            bool stopServices = true,
+            CancellationToken cancellationToken = default)
         {
             var res = true;
             try
@@ -293,10 +304,13 @@ namespace Servy.Core.Helpers
                 try
                 {
                     if (stopServices && runningServices.Count > 0)
-                        await _serviceHelper.StopServices(runningServices);
+                        await _serviceHelper.StopServices(runningServices, cancellationToken);
 
                     foreach (var resourceItem in resourceItems.Where(r => r.ShouldCopy))
                     {
+                        // Enforce early cancellation breaks per file element in the collection pass
+                        cancellationToken.ThrowIfCancellationRequested();
+
                         try
                         {
                             // ROBUSTNESS: Validate the embedded resource stream is physically accessible 
@@ -318,7 +332,7 @@ namespace Servy.Core.Helpers
                                     continue;
                                 }
 
-                                await Helper.WriteFileAtomicAsync(resourceItem.TargetPath, (s, t) => resourceStream.CopyToAsync(s, BufferSize, t));
+                                await Helper.WriteFileAtomicAsync(resourceItem.TargetPath, (s, t) => resourceStream.CopyToAsync(s, BufferSize, t), cancellationToken);
                                 Logger.Info($"Successfully copied embedded resource '{resourceItem.ResourceName}' to '{resourceItem.TargetPath}'.");
                             }
                         }
@@ -336,7 +350,7 @@ namespace Servy.Core.Helpers
                         try
                         {
                             Logger.Info($"Starting stopped services after copying resources: {string.Join(", ", runningServices)}");
-                            await _serviceHelper.StartServices(runningServices);
+                            await _serviceHelper.StartServices(runningServices, CancellationToken.None);
                         }
                         catch (Exception startEx)
                         {

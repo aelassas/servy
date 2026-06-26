@@ -375,7 +375,7 @@ namespace Servy.UI.Bootstrapping
                     };
 
 #if DEBUG
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: CancellationToken.None))
                     {
                         await app.Dispatcher.InvokeAsync(() => MessageBox.Show(string.Format(Resources.Strings.Msg_FailedCopyingEmbeddedResource_Format, $"{AppConfig.ServyServiceUIFileName}.pdb")));
                     }
@@ -401,7 +401,7 @@ namespace Servy.UI.Bootstrapping
                         new ResourceItem{ FileNameWithoutExtension = "System.Threading.Tasks.Extensions", Extension= "dll" },
                     });
 #endif
-                    if (!await resourceHelper.CopyResources(asm, _options.ResourcesNamespace, resourceItems))
+                    if (!await resourceHelper.CopyResources(asm, _options.ResourcesNamespace, resourceItems, cancellationToken: CancellationToken.None))
                     {
                         throw new InvalidOperationException($"Failed to extract embedded resources. Manager cannot start safely - see file log for details.");
                     }
