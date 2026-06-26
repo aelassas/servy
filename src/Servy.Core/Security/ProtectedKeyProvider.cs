@@ -558,11 +558,10 @@ namespace Servy.Core.Security
         {
             try
             {
-                using (var eventLog = new EventLog(AppConfig.EventLogName))
-                {
-                    eventLog.Source = AppConfig.EventSource;
-                    eventLog.WriteEntry($"[{AppConfig.EventSource}] {formattedMessage}", type, eventId);
-                }
+                // Delegate Event Log writes directly through the centralized infrastructure helper core
+                // to automatically inherit message truncation constraints and explicit prefix processing policies.
+                string structuredMessage = $"[{AppConfig.EventSource}] {formattedMessage}";
+                EventLogLogger.WriteRawToWindowsEventLog(AppConfig.EventLogName, AppConfig.EventSource, structuredMessage, type, eventId);
             }
             catch (Exception eventLogEx)
             {

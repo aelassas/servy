@@ -225,6 +225,41 @@ namespace Servy.Core.Logging
         }
 
         /// <summary>
+        /// Centralized wrapper used to write an entry to the Windows Event Log, enforcing message truncation rules
+        /// and providing lazily synchronized registration safeguards across all domains.
+        /// </summary>
+        /// <param name="logName">The target log file container directory name.</param>
+        /// <param name="source">The application identification handle mapping source reference token.</param>
+        /// <param name="message">The full string message layout definition data contents payload.</param>
+        /// <param name="type">The standard Windows event severity logging level context enumeration.</param>
+        /// <param name="eventId">The deterministic application metric system cross-reference tracker key integer.</param>
+        internal static void WriteRawToWindowsEventLog(string logName, string source, string message, EventLogEntryType type, int eventId)
+        {
+            try
+            {
+                // Source registration check: verify structural setup bounds ahead of writing entries
+                if (!EventLog.SourceExists(source))
+                {
+                    EventLog.CreateEventSource(source, logName);
+                }
+
+                var safeMessage = message.Length > AppConfig.EventLogMessageMaxChars
+                    ? message.Substring(0, AppConfig.EventLogMessageMaxChars) + "...[truncated]"
+                    : message;
+
+                using (var instanceLog = new EventLog(logName))
+                {
+                    instanceLog.Source = source;
+                    instanceLog.WriteEntry(safeMessage, type, eventId);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"EventLog raw static write failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Safely writes an entry to the Windows Event Log, truncating oversized messages
         /// and catching any transient I/O exceptions so the pipeline continues to file logging.
         /// </summary>
@@ -233,26 +268,13 @@ namespace Servy.Core.Logging
         /// <param name="eventId">The application-specific event identifier.</param>
         private void SafeWriteToEventLog(string message, EventLogEntryType type, int eventId)
         {
-            EventLog captured;
             lock (_eventLogLock)
             {
-                captured = _eventLog;
+                if (_eventLog == null) return;
             }
 
-            if (captured == null) return;
-
-            try
-            {
-                var safeMessage = message.Length > AppConfig.EventLogMessageMaxChars
-                    ? message.Substring(0, AppConfig.EventLogMessageMaxChars) + "...[truncated]"
-                    : message;
-
-                captured.WriteEntry(safeMessage, type, eventId);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"EventLog write failed: {ex.Message}");
-            }
+            // Threading the raw execution directly into the static shared utility layout context
+            WriteRawToWindowsEventLog(AppConfig.EventLogName, _source, message, type, eventId);
         }
 
         /// <summary>
