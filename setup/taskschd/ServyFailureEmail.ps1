@@ -54,34 +54,8 @@ $EVENT_ID_DEPENDENCY_ERROR = 3104
 # -------------------------------
 # 2. Imports
 # -------------------------------
-$requiredDependencies = @(
-    "Servy-Watermark.psm1",
-    "ServySecurity.ps1"
-)
-
-foreach ($dep in $requiredDependencies) {
-    $depPath = Join-Path $scriptDir $dep
-
-    if (-not (Test-Path $depPath)) {
-        $errorMsg = "Servy Notification Error: Required dependency not found at '$depPath'. Please ensure the file exists in the script directory."
-        
-        # 1. Attempt to log to Event Log for administrator visibility
-        try {
-            # Best-effort: the 'Servy' event source may not be registered, so guard with try/catch.
-            Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_DEPENDENCY_ERROR `
-                -EntryType Warning -Message $errorMsg -ErrorAction Stop
-        } catch {
-            # 2. Fallback to stderr if Event Log fails (or source isn't registered)
-            Write-Error $errorMsg
-        }
-
-        # 3. Exit with error code
-        exit 1
-    }
-
-    # File exists, proceed with dot-sourcing or importing
-    if ($dep -like "*.psm1") { Import-Module $depPath -Force } else { . $depPath }
-}
+$RequiredDependencies = @("Servy-Watermark.psm1", "ServySecurity.ps1")
+. (Join-Path $scriptDir "Import-ServyDependencies.ps1")
 
 function ConvertTo-HtmlSafe {
     <#
