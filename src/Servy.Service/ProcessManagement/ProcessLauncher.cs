@@ -155,7 +155,7 @@ namespace Servy.Service.ProcessManagement
             if (!psi.RedirectStandardOutput) psi.StandardOutputEncoding = null;
             if (!psi.RedirectStandardError) psi.StandardErrorEncoding = null;
 
-            // 5. Launch the process
+            // 2. Launch the process
             var process = factory.Create(psi, logger);
 
             // ROBUSTNESS: Track ownership. If the method fails before returning, 
@@ -187,7 +187,7 @@ namespace Servy.Service.ProcessManagement
                 }
                 processStarted = true;
 
-                // 6. Handle execution mode
+                // 3. Handle execution mode
                 if (options.FireAndForget)
                 {
                     returnedOwnership = true;
@@ -220,18 +220,11 @@ namespace Servy.Service.ProcessManagement
 
                                 if (stdoutWriter == null)
                                 {
-                                    FileStream stdoutFs = null;
-                                    try
+                                    // Outsource handwritten file generation block to helper
+                                    stdoutWriter = TryOpenAppendWriter(outPath, encoding, options.ExecutablePath, "stdout", logger);
+                                    if (stdoutWriter == null)
                                     {
-                                        Helper.EnsureDirectoryExists(outPath);
-                                        stdoutFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
-                                        stdoutWriter = new StreamWriter(stdoutFs, encoding) { AutoFlush = true };
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        stdoutFs?.Dispose();
                                         stdoutWriterFailed = true;
-                                        logger.Error($"Disabling stdout capture for '{options.ExecutablePath}' after open failure: {ex.Message}", ex);
                                         return;
                                     }
                                 }
@@ -264,18 +257,11 @@ namespace Servy.Service.ProcessManagement
 
                                     if (stdoutWriter == null)
                                     {
-                                        FileStream sharedFs = null;
-                                        try
+                                        // Utilize our unified log builder tool helper logic
+                                        stdoutWriter = TryOpenAppendWriter(outPath, encoding, options.ExecutablePath, "multiplexed stdout/stderr", logger);
+                                        if (stdoutWriter == null)
                                         {
-                                            Helper.EnsureDirectoryExists(outPath);
-                                            sharedFs = new FileStream(outPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
-                                            stdoutWriter = new StreamWriter(sharedFs, encoding) { AutoFlush = true };
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            sharedFs?.Dispose();
                                             stdoutWriterFailed = true;
-                                            logger.Error($"Disabling multiplexed stdout/stderr capture for '{options.ExecutablePath}' after open failure: {ex.Message}", ex);
                                             return;
                                         }
                                     }
@@ -288,18 +274,11 @@ namespace Servy.Service.ProcessManagement
 
                                     if (stderrWriter == null)
                                     {
-                                        FileStream stderrFs = null;
-                                        try
+                                        // Route calls seamlessly through shared infrastructure
+                                        stderrWriter = TryOpenAppendWriter(errPath, encoding, options.ExecutablePath, "stderr", logger);
+                                        if (stderrWriter == null)
                                         {
-                                            Helper.EnsureDirectoryExists(errPath);
-                                            stderrFs = new FileStream(errPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
-                                            stderrWriter = new StreamWriter(stderrFs, encoding) { AutoFlush = true };
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            stderrFs?.Dispose();
                                             stderrWriterFailed = true;
-                                            logger.Error($"Disabling stderr capture for '{options.ExecutablePath}' after open failure: {ex.Message}", ex);
                                             return;
                                         }
                                     }
@@ -338,7 +317,8 @@ namespace Servy.Service.ProcessManagement
             }
             catch (Exception ex)
             {
-                logger.Error($"Failed during synchronous execution or log flushing for '{options.ExecutablePath}'.", ex);
+                string pathValue = options.ExecutablePath ?? string.Empty;
+                logger.Error($"Failed during synchronous execution or log flushing for '{pathValue}'.", ex);
                 throw;
             }
             finally
@@ -355,10 +335,10 @@ namespace Servy.Service.ProcessManagement
 
                 if (!returnedOwnership && process != null)
                 {
+                    // ROBUSTNESS: If we didn't successfully return ownership, the process is orphaned.
+                    // We must kill the process tree before disposing the wrapper to avoid leaking child processes.
                     try
                     {
-                        // ROBUSTNESS: If we didn't successfully return ownership, the process is orphaned.
-                        // We must kill the process tree before disposing the wrapper to avoid leaking child processes.
                         // Check if the process actually started and is still running.
                         // process.Start() is the first entry in the try block; if any subsequent logic throws,
                         // we must ensure the child does not remain active and unsupervised.
@@ -502,5 +482,31 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
+        /// <summary>
+        /// Attempts to initialize a file log writer in append mode with broad thread-sharing permissions.
+        /// Handles directory generation and isolates structural resource allocation leaks.
+        /// </summary>
+        /// <param name="path">The target destination absolute disk path for log output.</param>
+        /// <param name="encoding">The character text encoding sequence configuration standard.</param>
+        /// <param name="exePath">The executable filename descriptor context used for telemetry boundaries.</param>
+        /// <param name="scope">The functional scope name identifier used in generating error logs.</param>
+        /// <param name="logger">The operational logging instance to output tracing to.</param>
+        /// <returns>An active autoflushing <see cref="StreamWriter"/> instance if initialization succeeds; otherwise, <c>null</c>.</returns>
+        private static StreamWriter TryOpenAppendWriter(string path, Encoding encoding, string exePath, string scope, IServyLogger logger)
+        {
+            FileStream fs = null;
+            try
+            {
+                Helper.EnsureDirectoryExists(path);
+                fs = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+                return new StreamWriter(fs, encoding) { AutoFlush = true };
+            }
+            catch (Exception ex)
+            {
+                fs?.Dispose();
+                logger.Error($"Disabling {scope} capture for '{exePath}' after open failure: {ex.Message}", ex);
+                return null;
+            }
+        }
     }
 }
