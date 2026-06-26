@@ -24,6 +24,9 @@ namespace Servy.Core.Mappers
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
+            // Hydrate raw property defaults cleanly via centralized core template logic
+            ServiceDtoHelper.HydrateDefaults(dto);
+
             return new Service(serviceManager)
             {
                 Name = dto.Name,
@@ -36,29 +39,29 @@ namespace Servy.Core.Mappers
                 StartupType = ConfigParser.ParseEnum(dto.StartupType, AppConfig.DefaultStartupType),
                 Priority = ConfigParser.ParseEnum(dto.Priority, AppConfig.DefaultProcessPriority),
 
-                EnableConsoleUI = dto.EnableConsoleUI ?? AppConfig.DefaultEnableConsoleUI,
+                EnableConsoleUI = dto.EnableConsoleUI!.Value,
 
                 StdoutPath = dto.StdoutPath,
                 StderrPath = dto.StderrPath,
-                EnableSizeRotation = dto.EnableSizeRotation ?? AppConfig.DefaultEnableSizeRotation,
-                RotationSize = dto.RotationSize ?? AppConfig.DefaultRotationSizeMB,
-                EnableDateRotation = dto.EnableDateRotation ?? AppConfig.DefaultEnableDateRotation,
+                EnableSizeRotation = dto.EnableSizeRotation!.Value,
+                RotationSize = dto.RotationSize!.Value,
+                EnableDateRotation = dto.EnableDateRotation!.Value,
 
                 // Validate Enum ranges
                 DateRotationType = ConfigParser.ParseEnum(dto.DateRotationType, AppConfig.DefaultDateRotationType),
 
-                MaxRotations = dto.MaxRotations ?? AppConfig.DefaultMaxRotations,
-                UseLocalTimeForRotation = dto.UseLocalTimeForRotation ?? AppConfig.DefaultUseLocalTimeForRotation,
-                EnableHealthMonitoring = dto.EnableHealthMonitoring ?? AppConfig.DefaultEnableHealthMonitoring,
-                HeartbeatInterval = dto.HeartbeatInterval ?? AppConfig.DefaultHeartbeatInterval,
-                MaxFailedChecks = dto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks,
+                MaxRotations = dto.MaxRotations!.Value,
+                UseLocalTimeForRotation = dto.UseLocalTimeForRotation!.Value,
+                EnableHealthMonitoring = dto.EnableHealthMonitoring!.Value,
+                HeartbeatInterval = dto.HeartbeatInterval!.Value,
+                MaxFailedChecks = dto.MaxFailedChecks!.Value,
 
                 // Validate Enum ranges
                 RecoveryAction = ConfigParser.ParseEnum(dto.RecoveryAction, AppConfig.DefaultRecoveryAction),
 
-                RecoveryOnCleanExit = dto.RecoveryOnCleanExit ?? AppConfig.DefaultRecoveryOnCleanExit,
+                RecoveryOnCleanExit = dto.RecoveryOnCleanExit!.Value,
 
-                MaxRestartAttempts = dto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
+                MaxRestartAttempts = dto.MaxRestartAttempts!.Value,
                 FailureProgramPath = dto.FailureProgramPath,
                 FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory,
                 FailureProgramParameters = dto.FailureProgramParameters,
@@ -73,20 +76,20 @@ namespace Servy.Core.Mappers
                 PreLaunchEnvironmentVariables = dto.PreLaunchEnvironmentVariables,
                 PreLaunchStdoutPath = dto.PreLaunchStdoutPath,
                 PreLaunchStderrPath = dto.PreLaunchStderrPath,
-                PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds,
-                PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts ?? AppConfig.DefaultPreLaunchRetryAttempts,
-                PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure ?? AppConfig.DefaultPreLaunchIgnoreFailure,
+                PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds!.Value,
+                PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts!.Value,
+                PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure!.Value,
 
                 PostLaunchExecutablePath = dto.PostLaunchExecutablePath,
                 PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory,
                 PostLaunchParameters = dto.PostLaunchParameters,
 
-                EnableDebugLogs = dto.EnableDebugLogs ?? AppConfig.DefaultEnableDebugLogs,
+                EnableDebugLogs = dto.EnableDebugLogs!.Value,
 
                 DisplayName = dto.DisplayName ?? string.Empty,
 
-                StartTimeout = dto.StartTimeout ?? AppConfig.DefaultStartTimeout,
-                StopTimeout = dto.StopTimeout ?? AppConfig.DefaultStopTimeout,
+                StartTimeout = dto.StartTimeout!.Value,
+                StopTimeout = dto.StopTimeout!.Value,
 
                 Pid = dto.Pid,
                 ActiveStdoutPath = dto.ActiveStdoutPath,
@@ -95,14 +98,13 @@ namespace Servy.Core.Mappers
                 PreStopExecutablePath = dto.PreStopExecutablePath,
                 PreStopStartupDirectory = dto.PreStopStartupDirectory,
                 PreStopParameters = dto.PreStopParameters,
-                PreStopTimeoutSeconds = dto.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds,
-                PreStopLogAsError = dto.PreStopLogAsError ?? AppConfig.DefaultPreStopLogAsError,
+                PreStopTimeoutSeconds = dto.PreStopTimeoutSeconds!.Value,
+                PreStopLogAsError = dto.PreStopLogAsError!.Value,
 
                 PostStopExecutablePath = dto.PostStopExecutablePath,
                 PostStopStartupDirectory = dto.PostStopStartupDirectory,
                 PostStopParameters = dto.PostStopParameters,
             };
         }
-
     }
 }

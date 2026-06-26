@@ -11,7 +11,7 @@
 # Enforce script-root execution safety bounds
 $ScriptDir = Split-Path -Path $MyInvocation.MyCommand.Definition -Parent
 
-# DRY UNIFICATION: Push location with try-finally to guarantee location rollback on script termination or failure
+# Push location with try-finally to guarantee location rollback on script termination or failure
 Push-Location -Path $ScriptDir
 try {
     # ---------------------------------------------------------------------

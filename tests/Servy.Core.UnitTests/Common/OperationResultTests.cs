@@ -1,8 +1,6 @@
-﻿using System;
-using Servy.Core.Common;
-using Xunit;
+﻿using Servy.Core.Common;
 
-namespace Servy.Tests.Core.Common
+namespace Servy.Core.UnitTests.Common
 {
     public class OperationResultTests
     {
