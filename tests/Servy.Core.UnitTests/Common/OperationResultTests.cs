@@ -2,7 +2,7 @@
 using Servy.Core.Common;
 using Xunit;
 
-namespace Servy.Tests.Core.Common
+namespace Servy.Core.UnitTests.Common
 {
     public class OperationResultTests
     {

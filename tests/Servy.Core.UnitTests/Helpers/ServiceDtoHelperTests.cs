@@ -3,7 +3,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Xunit;
 
-namespace Servy.UnitTests.Core.Helpers
+namespace Servy.Core.UnitTests.Helpers
 {
     public class ServiceDtoHelperTests
     {

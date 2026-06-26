@@ -8,43 +8,24 @@ namespace Servy.Core.Helpers
     /// Provides utility methods for managing and augmenting <see cref="ServiceDto"/> objects.
     /// </summary>
     /// <remarks>
-    /// This helper is primarily used during the deserialization of XML and JSON configurations 
+    /// This helper is used during the deserialization of XML and JSON configurations 
     /// to ensure that all required service parameters are populated with production-grade 
     /// defaults defined in <see cref="AppConfig"/>.
     /// </remarks>
     public static class ServiceDtoHelper
     {
         /// <summary>
-        /// Populates null nullable properties that have production defaults in <see cref="AppConfig"/>
-        /// (startup, priority, timeouts, log rotation, health monitoring, pre-launch/pre-stop options).
-        /// Optional free-form fields (paths, parameters, hooks, dependencies) without defaults remain null.
-        /// Additionally, unconditionally resets RunAsLocalSystem/UserAccount/Password to a
-        /// password-less LocalSystem baseline (Global Identity Reset on Import policy).
+        /// Populates null nullable properties with their matching system configurations sourced from <see cref="AppConfig"/>.
+        /// This ensures structural parameter completeness across business contexts without executing side-effect identity mutations.
         /// </summary>
-        /// <param name="dto">The service DTO to hydrate. If null, the method returns immediately.</param>
-        public static void ApplyDefaultsAndResetIdentity(ServiceDto dto)
+        /// <param name="dto">The service data transfer object layout to populate.</param>
+        public static void HydrateDefaults(ServiceDto dto)
         {
             if (dto == null) return;
 
             // Identity & Behavior
             dto.StartupType = dto.StartupType ?? (int)AppConfig.DefaultStartupType;
             dto.Priority = dto.Priority ?? (int)AppConfig.DefaultProcessPriority;
-
-            // POLICY: Global Identity Reset on Import
-            // To maintain architectural simplicity across all interfaces (UI, CLI, PS), 
-            // we do not support importing custom identities. All imported services 
-            // are forced to LocalSystem to ensure a valid, password-less baseline.
-            // If you want to set a custom account you must set it manually after import.
-            dto.RunAsLocalSystem = AppConfig.DefaultRunAsLocalSystem;
-            dto.UserAccount = null;
-            dto.Password = null;
-
-            // Log an informational notice to satisfy operator visibility requirements.
-            // Because serialization attributes strip identity data out of export manifests,
-            // this notice alerts administrators that the service defaults safely to LocalSystem.
-            Logger.Info($"Import: Service configuration applied for '{dto.Name}'. The Global Identity Reset policy enforces " +
-                        "the LocalSystem identity on all imported manifests. A custom account can be configured manually if required.");
-
             dto.EnableDebugLogs = dto.EnableDebugLogs ?? AppConfig.DefaultEnableDebugLogs;
 
             // Timeouts
@@ -78,6 +59,37 @@ namespace Servy.Core.Helpers
             // Lifecycle Hooks (Pre-Stop)
             dto.PreStopTimeoutSeconds = dto.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds;
             dto.PreStopLogAsError = dto.PreStopLogAsError ?? AppConfig.DefaultPreStopLogAsError;
+        }
+
+        /// <summary>
+        /// Populates null nullable properties that have production defaults in <see cref="AppConfig"/>
+        /// (startup, priority, timeouts, log rotation, health monitoring, pre-launch/pre-stop options).
+        /// Optional free-form fields (paths, parameters, hooks, dependencies) without defaults remain null.
+        /// Additionally, unconditionally resets RunAsLocalSystem/UserAccount/Password to a
+        /// password-less LocalSystem baseline (Global Identity Reset on Import policy).
+        /// </summary>
+        /// <param name="dto">The service DTO to hydrate. If null, the method returns immediately.</param>
+        public static void ApplyDefaultsAndResetIdentity(ServiceDto dto)
+        {
+            if (dto == null) return;
+
+            // Hydrate structural parameters via our unified local template method
+            HydrateDefaults(dto);
+
+            // POLICY: Global Identity Reset on Import
+            // To maintain architectural simplicity across all interfaces (UI, CLI, PS), 
+            // we do not support importing custom identities. All imported services 
+            // are forced to LocalSystem to ensure a valid, password-less baseline.
+            // If you want to set a custom account you must set it manually after import.
+            dto.RunAsLocalSystem = AppConfig.DefaultRunAsLocalSystem;
+            dto.UserAccount = null;
+            dto.Password = null;
+
+            // Log an informational notice to satisfy operator visibility requirements.
+            // Because serialization attributes strip identity data out of export manifests,
+            // this notice alerts administrators that the service defaults safely to LocalSystem.
+            Logger.Info($"Import: Service configuration applied for '{dto.Name}'. The Global Identity Reset policy enforces " +
+                        "the LocalSystem identity on all imported manifests. A custom account can be configured manually if required.");
         }
     }
 }
