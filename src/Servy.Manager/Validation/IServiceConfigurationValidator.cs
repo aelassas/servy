@@ -18,6 +18,6 @@ namespace Servy.Manager.Validation
         /// A task representing the asynchronous validation operation. 
         /// The result is <see langword="true"/> if the configuration is valid; otherwise, <see langword="false"/>.
         /// </returns>
-        Task<bool> ValidateAsync(ServiceDto dto, CancellationToken cancellationToken = default);
+        Task<bool> ValidateAsync(ServiceDto dto, bool importMode = false, CancellationToken cancellationToken = default);
     }
 }

@@ -809,7 +809,7 @@ namespace Servy.Manager.Services
                     return;
                 }
 
-                if (!await _serviceConfigurationValidator.ValidateAsync(dto, cancellationToken: cancellationToken)) return;
+                if (!await _serviceConfigurationValidator.ValidateAsync(dto, importMode: true, cancellationToken: cancellationToken)) return;
 
                 var res = await ExecuteLockedAsync(dto.Name, () =>
                     _serviceRepository.UpsertAsync(
