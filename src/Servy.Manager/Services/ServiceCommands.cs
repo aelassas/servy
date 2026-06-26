@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Common;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -231,14 +232,14 @@ namespace Servy.Manager.Services
                     return;
                 }
 
-                var forceFlag = _appConfig.ForceSoftwareRendering ? $" {Core.Config.AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
+                var forceFlag = _appConfig.ForceSoftwareRendering ? $" {AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
 
                 using (var process = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = _appConfig.DesktopAppPublishPath,
-                        Arguments = $"\"false\"{forceFlag}", // Pass false to skip splash screen
+                        Arguments = $"\"{AppConfig.SkipSplashArgument}\"{forceFlag}", // Pass false to skip splash screen
                         UseShellExecute = true,
                     }
                 })
@@ -307,7 +308,7 @@ namespace Servy.Manager.Services
 
                     string wrapperExeDir = null;
 #if DEBUG
-                    wrapperExeDir = Path.GetFullPath(Core.Config.AppConfig.ServyServiceManagerDebugFolder);
+                    wrapperExeDir = Path.GetFullPath(AppConfig.ServyServiceManagerDebugFolder);
                     if (!Directory.Exists(wrapperExeDir))
                     {
                         await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidWrapperExePath, UiAppConfig.Caption);
@@ -484,7 +485,7 @@ namespace Servy.Manager.Services
                 bool success = false;
 
                 // Move the retry loop outside the Dispatcher to prevent UI freezing
-                for (int i = 0; i < Core.Config.AppConfig.ClipboardComMaxRetries; i++)
+                for (int i = 0; i < AppConfig.ClipboardComMaxRetries; i++)
                 {
                     // Accessing the Clipboard requires the STA thread (UI Thread)
                     // We invoke only the granular action on the dispatcher
@@ -512,9 +513,9 @@ namespace Servy.Manager.Services
 
                     // If we failed, wait asynchronously before trying again.
                     // This allows the UI thread to remain responsive during the wait.
-                    if (i < Core.Config.AppConfig.ClipboardComMaxRetries - 1)
+                    if (i < AppConfig.ClipboardComMaxRetries - 1)
                     {
-                        await Task.Delay(Core.Config.AppConfig.ClipboardComRetryDelayMs, cancellationToken: cancellationToken);
+                        await Task.Delay(AppConfig.ClipboardComRetryDelayMs, cancellationToken: cancellationToken);
                     }
                 }
 
@@ -525,7 +526,7 @@ namespace Servy.Manager.Services
                 }
                 else
                 {
-                    Logger.Warn($"Failed to copy PID {pidValue} for {serviceName} after {Core.Config.AppConfig.ClipboardComMaxRetries} attempts.");
+                    Logger.Warn($"Failed to copy PID {pidValue} for {serviceName} after {AppConfig.ClipboardComMaxRetries} attempts.");
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_PidCopyFailed, UiAppConfig.Caption);
                 }
             }

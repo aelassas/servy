@@ -390,7 +390,7 @@ namespace Servy.Services
                     {
                         FileName = _appConfig.ManagerAppPublishPath,
                         UseShellExecute = true,
-                        Arguments = $"\"false\"{forceFlag}", // Pass false to skip splash screen
+                        Arguments = $"\"{AppConfig.SkipSplashArgument}\"{forceFlag}", // Pass false to skip splash screen
                     }
                 })
                 {

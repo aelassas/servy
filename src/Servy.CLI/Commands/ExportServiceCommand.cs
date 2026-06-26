@@ -104,8 +104,10 @@ namespace Servy.CLI.Commands
         /// </summary>
         /// <param name="userPath">The target file path provided via the CLI.</param>
         /// <param name="content">The serialized configuration string.</param>
-        /// <exception cref="SecurityException">Thrown if the path targets a protected system directory or a UNC path.</exception>
-        /// <exception cref="ArgumentException">Thrown if the path is a reserved device name or an unsupported file type.</exception>
+        /// <exception cref="SecurityException">Thrown when validation fails with a "Security Alert" or "Access Denied" message:
+        /// UNC path, reserved device name, unsupported file type, or a protected system directory.</exception>
+        /// <exception cref="ArgumentException">Thrown for any other validation failure (e.g. handle validation rejected).</exception>
+        /// <exception cref="IOException">Thrown if the directory chain cannot be created or the file cannot be written.</exception>
         private void SaveFile(string userPath, string content)
         {
             // Preliminary folder generation validation rule
