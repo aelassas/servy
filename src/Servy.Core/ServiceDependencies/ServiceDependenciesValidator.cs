@@ -31,19 +31,9 @@ namespace Servy.Core.ServiceDependencies
                 return true;
             }
 
-            // Split by semicolons or new lines (handle both \r\n and \n)
-            var separators = new[] { ';', '\r', '\n' };
-            var parts = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
-
-            for (int i = 0; i < parts.Length; i++)
+            // Strip matching split copy-paste loops and stream from centralized tokenizer helper
+            foreach (string serviceName in ServiceDependenciesParser.Tokenize(input))
             {
-                string serviceName = parts[i].Trim();
-
-                if (string.IsNullOrWhiteSpace(serviceName))
-                {
-                    continue; // skip empty entries
-                }
-
                 if (!ValidServiceNameRegex.IsMatch(serviceName))
                 {
                     errors.Add(string.Format(Strings.Msg_InvalidServiceDependencyName, serviceName));

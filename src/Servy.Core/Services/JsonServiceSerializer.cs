@@ -1,76 +1,49 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 using Servy.Core.DTOs;
-using Servy.Core.Helpers;
-using Servy.Core.Logging;
 using Servy.Core.Security;
 
 namespace Servy.Core.Services
 {
-    /// <inheritdoc />
-    public class JsonServiceSerializer : IJsonServiceSerializer
+    /// <inheritdoc cref="IJsonServiceSerializer" />
+    public class JsonServiceSerializer : ServiceDtoSerializer, IJsonServiceSerializer
     {
         /// <inheritdoc />
-        public ServiceDto? Deserialize(string? json)
+        protected override string FormatName => "JSON";
+
+        /// <inheritdoc />
+        protected override ServiceDto? DeserializeCore(string content)
         {
-            // Initial guard: null/empty input deserializes to null per contract
-            if (string.IsNullOrWhiteSpace(json))
-                return null;
-
-            try
-            {
-                // Attempt to deserialize using the secure settings
-                var dto = JsonConvert.DeserializeObject<ServiceDto>(json, JsonSecurity.UntrustedDataSettings);
-
-                // If deserialization succeeded, apply defaults (e.g., setting missing timeouts)
-                if (dto != null)
-                {
-                    ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);
-                }
-
-                return dto;
-            }
-            catch (JsonException ex)
-            {
-                // Newtonsoft's base JsonException does not carry line info.
-                // We cast to IJsonLineInfo to safely access coordinates if the exception provides them.
-                var lineInfo = ex as IJsonLineInfo;
-                int lineNumber = (lineInfo != null && lineInfo.HasLineInfo()) ? lineInfo.LineNumber : 0;
-                int linePosition = (lineInfo != null && lineInfo.HasLineInfo()) ? lineInfo.LinePosition : 0;
-                var lineInfoMessage = (lineNumber > 0 && linePosition > 0) ? $" at line {lineNumber}, position {linePosition}" : string.Empty;
-
-                Logger.Error($"JSON Deserialization failed{lineInfoMessage}.", ex);
-
-                // Returning null fulfills the contract: "returns null if deserialization fails"
-                return null;
-            }
-            catch (Exception ex)
-            {
-                // Broad catch-all layer to protect against secondary runtime anomalies,
-                // such as custom contract faults or helper assignment errors.
-                Logger.Error("JSON Deserialization encountered a failure.", ex);
-
-                // Returning null fulfills the contract: "returns null if deserialization fails"
-                return null;
-            }
+            // Attempt to deserialize using the secure settings
+            return JsonConvert.DeserializeObject<ServiceDto>(content, JsonSecurity.UntrustedDataSettings);
         }
 
         /// <inheritdoc />
-        public string? Serialize(ServiceDto? dto)
+        protected override string? SerializeCore(ServiceDto dto)
         {
-            if (dto == null)
-                return null;
+            // Use the exact same settings as deserialization to guarantee round-trip symmetry,
+            // while adding Formatting.Indented for human-readable output files.
+            return JsonConvert.SerializeObject(dto, Formatting.Indented, JsonSecurity.UntrustedDataSettings);
+        }
 
-            try
+        /// <inheritdoc />
+        protected override string FormatLineInfo(Exception ex)
+        {
+            if (ex is JsonException jsonEx)
             {
-                // Use the exact same settings as deserialization to guarantee round-trip symmetry,
-                // while adding Formatting.Indented for human-readable output files.
-                return JsonConvert.SerializeObject(dto, Formatting.Indented, JsonSecurity.UntrustedDataSettings);
+                // Newtonsoft's base JsonException does not carry line info.
+                // We cast to IJsonLineInfo to safely access coordinates if the exception provides them.
+                var lineInfo = jsonEx as IJsonLineInfo;
+                int lineNumber = (lineInfo != null && lineInfo.HasLineInfo()) ? lineInfo.LineNumber : 0;
+                int linePosition = (lineInfo != null && lineInfo.HasLineInfo()) ? lineInfo.LinePosition : 0;
+
+                if (lineNumber > 0 && linePosition > 0)
+                {
+                    return $" at line {lineNumber}, position {linePosition}";
+                }
             }
-            catch (Exception ex)
-            {
-                Logger.Error($"JSON Serialization failed for service: {dto.Name}", ex);
-                return null;
-            }
+
+            return string.Empty;
         }
     }
 }
