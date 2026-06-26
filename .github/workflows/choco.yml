@@ -37,7 +37,6 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write # Needed here to push commits back        
-
     env:
       MAX_RETRIES: 5
       SKIP_CHOCO_PUSH: ${{ github.event.inputs.skip_push || false }}
@@ -45,7 +44,6 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4.3.1
-
       - name: Initialize Git Script Helpers
         uses: ./.github/actions/setup-git-helpers
 
@@ -121,14 +119,16 @@ jobs:
           git add setup/choco/servy/*
            
           # Check if there is actually anything to commit
-          if (-not (git status --porcelain)) {
+          if (-not (git status --porcelain setup/choco/servy/*)) {
               Write-Host "No changes to commit. Skipping push."
               exit 0
           }
 
           git commit -m "chore(choco): update package for version ${env:VERSION}"
 
-          Invoke-PushWithRetry -PullRef 'main' -PushRef 'HEAD:main' -MaxRetries [int]$env:MAX_RETRIES
+          # Cast string environment value safely outside parameter bindings
+          $maxRetries = [int]$env:MAX_RETRIES
+          Invoke-PushWithRetry -PullRef 'main' -PushRef 'HEAD:main' -MaxRetries $maxRetries
 
       - name: Check Chocolatey version
         shell: pwsh
