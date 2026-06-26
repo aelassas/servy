@@ -197,7 +197,7 @@ namespace Servy.CLI
                         var resourceHelper = new ResourceHelper(sh, processKiller);
 
                         // Copy service executable from embedded resources
-                        if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe", true, true))
+                        if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe", true, true, cancellationToken: cts.Token))
                         {
                             throw new InvalidOperationException($"Failed to extract embedded resource '{AppConfig.ServyServiceCLIExe}'. " +
                                 "CLI cannot start safely - see file log for details.");
@@ -207,14 +207,14 @@ namespace Servy.CLI
                         var handleExeFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64
                             ? AppConfig.HandleExeARM64FileName
                             : AppConfig.HandleExeX64FileName;
-                        if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, handleExeFileName, "exe", false))
+                        if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, handleExeFileName, "exe", false, cancellationToken: cts.Token))
                         {
                             Logger.Warn($"Failed copying embedded resource: {handleExeFileName}; process-tree handle features may be degraded.");
                         }
 
 #if DEBUG
                         // Copy debug symbols from embedded resources (only in debug builds)
-                        if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
+                        if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false, cancellationToken: cts.Token))
                         {
                             Logger.Warn($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
                         }

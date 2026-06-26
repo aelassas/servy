@@ -362,7 +362,7 @@ namespace Servy.UI.Bootstrapping
                     var resourceHelper = new ResourceHelper(sh, _processKiller);
 
                     // Copy embedded files
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "exe"))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "exe", cancellationToken: CancellationToken.None))
                     {
                         string resourceName = $"{AppConfig.ServyServiceUIFileName}.exe";
                         throw new InvalidOperationException($"Failed to extract embedded resource '{resourceName}'. " +
@@ -373,7 +373,7 @@ namespace Servy.UI.Bootstrapping
                         ? AppConfig.HandleExeARM64FileName
                         : AppConfig.HandleExeX64FileName;
 
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, handleExeFileName, "exe", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, handleExeFileName, "exe", false, cancellationToken: CancellationToken.None))
                     {
                         string resourceName = $"{handleExeFileName}.exe";
                         Logger.Warn($"Failed to extract embedded resource '{resourceName}'. " +
@@ -382,7 +382,7 @@ namespace Servy.UI.Bootstrapping
                     }
 
 #if DEBUG
-                    await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "pdb", false);
+                    await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace!, AppConfig.ServyServiceUIFileName, "pdb", false, cancellationToken: CancellationToken.None);
 #endif
                     stopwatch.Stop();
 
