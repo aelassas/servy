@@ -252,7 +252,7 @@ namespace Servy.Core.Security
                 {
                     try
                     {
-                        owned = mutex.WaitOne(TimeSpan.FromSeconds(30));
+                        owned = mutex.WaitOne(TimeSpan.FromSeconds(AppConfig.KeyProviderMutexTimeoutSeconds));
                     }
                     catch (AbandonedMutexException)
                     {
@@ -339,8 +339,8 @@ namespace Servy.Core.Security
                             throw;
                         }
 
-                        // Exponential backoff: 100ms after attempt 0, 200ms after attempt 1
-                        Thread.Sleep(100 * (1 << attempt));
+                        // Exponential backoff
+                        Thread.Sleep(AppConfig.KeyProviderReadRetryBackoffBaseMs * (1 << attempt));
                     }
                 }
 

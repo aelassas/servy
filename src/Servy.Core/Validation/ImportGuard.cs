@@ -31,7 +31,7 @@ namespace Servy.Core.Validation
             {
                 if (fileStream.Length > AppConfig.MaxConfigFileSizeBytes)
                 {
-                    var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, securityCheck.ValidPath!.ResolvedPath);
+                    var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, securityCheck.ValidPath!.ResolvedPath, AppConfig.MaxConfigFileSizeMB);
                     Logger.Error(errorMsg);
                     return PathSecurityResult.Fail(PathSecurityFailureKind.InvalidArgument, errorMsg);
                 }

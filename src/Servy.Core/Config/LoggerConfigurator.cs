@@ -29,7 +29,7 @@ namespace Servy.Core.Config
 
             var logRotationSizeMB = ConfigParser.ParseInt(config["LogRotationSizeMB"], AppConfig.DefaultRotationSizeMB, "LogRotationSizeMB");
 
-            var maxBackupLogFiles = ConfigParser.ParseInt(config["MaxBackupLogFiles"], Logger.DefaultMaxBackupLogFiles, "MaxBackupLogFiles");
+            var maxBackupLogFiles = ConfigParser.ParseInt(config["MaxBackupLogFiles"], AppConfig.LoggerDefaultMaxBackupLogFiles, "MaxBackupLogFiles");
 
             var useLocalTimeForRotation = ConfigParser.ParseBool(config["UseLocalTimeForRotation"], AppConfig.DefaultUseLocalTimeForRotation, "UseLocalTimeForRotation");
 

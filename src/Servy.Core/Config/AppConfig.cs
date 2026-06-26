@@ -853,6 +853,17 @@ namespace Servy.Core.Config
         public const int LoggerMaxFormattedExceptionLength = 16384; // 16 KB cap to prevent log bloat
 
         /// <summary>
+        /// Default maximum number of backup log files to keep. When the number of rotated files exceeds this limit, the oldest files will be deleted.
+        /// </summary>
+        public const int LoggerDefaultMaxBackupLogFiles = 10;
+
+        /// <summary>
+        /// The maximum number of fallback log writes allowed per process lifetime.
+        /// Prevents unbounded growth of fallback log files if the primary logger continuously fails.
+        /// </summary>
+        public const int LoggerMaxFallbackWrites = 10;
+
+        /// <summary>
         /// The maximum character length permitted for a single Windows Event Log entry.
         /// </summary>
         /// <remarks>
@@ -1101,6 +1112,36 @@ namespace Servy.Core.Config
         /// engineered via deeply nested malicious JSON payloads.
         /// </remarks>
         public const int UntrustedJsonMaxDepth = 32;
+
+        /// <summary>
+        /// The maximum duration in seconds that a process will block while waiting to acquire 
+        /// the cross-process global synchronization mutex lock for protected cryptographic key operations.
+        /// </summary>
+        /// <remarks>
+        /// This value prevents application startup or installation deadlocks across multiple process 
+        /// boundaries (e.g., CLI, Service Wrapper, and UI Manager) by throwing a deterministic 
+        /// <see cref="TimeoutException"/> if the key material lock cannot be acquired within 30 seconds.
+        /// </remarks>
+        public const int KeyProviderMutexTimeoutSeconds = 30;
+
+        /// <summary>
+        /// The base backoff delay period in milliseconds used inside the exponential backoff 
+        /// strategy when retrying file-read IO operations on cryptographic keys.
+        /// </summary>
+        /// <remarks>
+        /// This 100ms base time multiplier governs the sleep window (<c>Base * (1 &lt;&lt; attempt)</c>) 
+        /// during retry loops, helping to safely resolve concurrent file-system access races on the raw key storage layer.
+        /// </remarks>
+        public const int KeyProviderReadRetryBackoffBaseMs = 100;
+
+        /// <summary>
+        /// The collection of lowercase file extensions allowed for service configuration file operations.
+        /// </summary>
+        /// <remarks>
+        /// This security policy centralizes the application's supported file types, keeping the validation 
+        /// boundaries in <c>PathSecurityGuard</c> synchronized with the file dialog filters and serializers.
+        /// </remarks>
+        public static readonly string[] AllowedConfigFileExtensions = { ".json", ".xml" };
 
         #endregion
 
