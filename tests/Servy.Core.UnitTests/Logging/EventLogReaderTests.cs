@@ -45,7 +45,7 @@ namespace Servy.Core.UnitTests.Logging
         public void SafeToOffset_WhenValidUtcDateTime_ReturnsCorrectUtcOffset()
         {
             // Arrange
-            var testTime = new DateTime(2026, 6, 24, 12, 0, 0, DateTimeKind.Unspecified);
+            var testTime = new DateTime(2026, 6, 24, 12, 0, 0, DateTimeKind.Utc);
 
             // Act
             var result = EventLogReader.SafeToOffset(testTime);

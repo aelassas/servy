@@ -131,9 +131,9 @@ namespace Servy.Core.Logging
             if (raw.Value < DateTime.MinValue.AddDays(1))
                 return DateTimeOffset.MinValue;
 
-            // If the framework passes it as explicitly UTC or Unspecified test vectors, 
+            // If the framework passes it as explicitly UTC, 
             // project it directly with a Zero offset to satisfy the UTC contract.
-            if (raw.Value.Kind == DateTimeKind.Utc || raw.Value.Kind == DateTimeKind.Unspecified)
+            if (raw.Value.Kind == DateTimeKind.Utc )
             {
                 return new DateTimeOffset(DateTime.SpecifyKind(raw.Value, DateTimeKind.Utc), TimeSpan.Zero);
             }
