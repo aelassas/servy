@@ -289,7 +289,7 @@ namespace Servy.Core.UnitTests.Logging
             const string truncationMarker = "... [truncated]";
             Assert.Contains(truncationMarker, content);
 
-            // FIX: Isolate the exact boundary text immediately preceding the truncation marker
+            // Isolate the exact boundary text immediately preceding the truncation marker
             int cutIndex = content.IndexOf(truncationMarker, StringComparison.Ordinal);
             string truncatedHead = content.Substring(0, cutIndex);
 

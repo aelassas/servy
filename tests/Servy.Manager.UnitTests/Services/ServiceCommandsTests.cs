@@ -539,7 +539,7 @@ namespace Servy.Manager.UnitTests.Services
             var service = new Service { Name = "TestService" };
 
 #if DEBUG
-            // CRITICAL FIX: Bypass the Directory.Exists check for DEBUG builds
+            // CRITICAL: Bypass the Directory.Exists check for DEBUG builds
             // by ensuring the expected directory actually exists in the test environment.
             var debugDir = Path.GetFullPath(Core.Config.AppConfig.ServyServiceManagerDebugFolder);
             try

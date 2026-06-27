@@ -619,10 +619,6 @@ namespace Servy.Manager.ViewModels
                     oldFilterCts.Cancel();
                     oldFilterCts.Dispose();
                 }
-
-                // 4. Clear event invocation lists so the View can be collected even if it
-                // forgot to unsubscribe (and so stray ticks don't reach a disposed View).
-                RequestScroll = null;
             }
 
             base.Dispose(disposing);

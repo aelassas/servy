@@ -128,7 +128,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             {
                 if (_forceSyncTransactionPath)
                 {
-                    // FIX: Hand execution flow back to the base framework layer.
+                    // Hand execution flow back to the base framework layer.
                     // The standard .NET base implementation routes directly down into 
                     // the synchronous BeginDbTransaction method below automatically.
                     return base.BeginDbTransactionAsync(isolationLevel, cancellationToken);
