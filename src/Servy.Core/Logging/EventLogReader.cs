@@ -114,12 +114,17 @@ namespace Servy.Core.Logging
         }
 
         /// <summary>
-        /// Safely converts a nullable <see cref="DateTime"/> to a local or universal <see cref="DateTimeOffset"/>.
+        /// Safely converts a nullable <see cref="DateTime"/> to a <see cref="DateTimeOffset"/>.
         /// </summary>
         /// <param name="raw">The source <see cref="DateTime"/> to convert.</param>
         /// <returns>
         /// The converted <see cref="DateTimeOffset"/>; or <see cref="DateTimeOffset.MinValue"/> if the input is null.
         /// </returns>
+        /// <remarks>
+        /// .evtx timestamps are persisted as UTC FILETIMEs. This method evaluates the incoming 
+        /// <see cref="DateTimeKind"/> to preserve correct offsets while preventing local-offset 
+        /// arithmetic overflows for values approaching <see cref="DateTime.MinValue"/>.
+        /// </remarks>
         internal static DateTimeOffset SafeToOffset(DateTime? raw)
         {
             if (!raw.HasValue) return DateTimeOffset.MinValue;
@@ -128,7 +133,14 @@ namespace Servy.Core.Logging
             if (raw.Value < DateTime.MinValue.AddDays(1))
                 return DateTimeOffset.MinValue;
 
-            // Convert cleanly preserving the ambient local offset provided by the OS event provider layer
+            // If the framework passes it as explicitly UTC or Unspecified test vectors, 
+            // project it directly with a Zero offset to satisfy the UTC contract.
+            if (raw.Value.Kind == DateTimeKind.Utc || raw.Value.Kind == DateTimeKind.Unspecified)
+            {
+                return new DateTimeOffset(DateTime.SpecifyKind(raw.Value, DateTimeKind.Utc), TimeSpan.Zero);
+            }
+
+            // Otherwise, handle it safely as local system time (observed as UTC+1 during local non-DST)
             return new DateTimeOffset(raw.Value);
         }
     }
