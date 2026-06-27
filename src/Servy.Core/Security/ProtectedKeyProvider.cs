@@ -63,7 +63,6 @@ namespace Servy.Core.Security
         private byte[] _cachedKey;
         private byte[] _cachedIv;
         private readonly object _cacheLock = new object();
-        private int _disposed;
 
         #endregion
 

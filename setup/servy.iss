@@ -107,7 +107,7 @@ Source: "..\src\Servy.Manager\bin\x64\Release\*.dll"; DestDir: "{app}"; Flags: i
 
 ; taskschd
 ; 1. Copy everything EXCEPT the config, credentials, transient state files, and test/temp scripts
-Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Excludes: "smtp-config.xml, smtp-cred.xml, last-processed-toast.dat, last-processed-email.dat, temp.ps1, *.test.ps1"; Flags: ignoreversion
+Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Excludes: "smtp-config.xml, smtp-cred.xml, *.dat, *.log, temp.ps1, *.test.ps1"; Flags: ignoreversion
 
 ; 2. Preserve the config file on upgrades
 Source: ".\taskschd\smtp-config.xml"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall

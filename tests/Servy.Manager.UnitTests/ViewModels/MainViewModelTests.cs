@@ -94,7 +94,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         private MainViewModel CreateViewModel(Dispatcher dispatcher = null)
         {
-            // FIX: Always fall back to the explicit thread-bound Dispatcher context
+            // Always fall back to the explicit thread-bound Dispatcher context
             // instead of cross-contaminating shared static application references.
             return new MainViewModel(
                 _serviceManagerMock.Object,
@@ -114,7 +114,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         private async Task FlushDispatcherAsync(Dispatcher dispatcher = null)
         {
-            // FIX: Utilize the specific current thread-apartment dispatcher to prevent cross-locks
+            // Utilize the specific current thread-apartment dispatcher to prevent cross-locks
             var targetDispatcher = dispatcher ?? Dispatcher.CurrentDispatcher;
             await targetDispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
         }
@@ -481,7 +481,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 }
                 finally
                 {
-                    // CRITICAL FIX: Breaking the frame loop causes PushFrame to exit 
+                    // CRITICAL Breaking the frame loop causes PushFrame to exit 
                     // the moment the async execution pipeline completes.
                     frame.Continue = false;
                 }
@@ -665,7 +665,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Branch 2: Worker Background Thread execution path (InvokeAsync fallback branch)
                 var frame = new DispatcherFrame();
 
-                // FIX: Hook directly into the collection's native change notification tracking loop.
+                // Hook directly into the collection's native change notification tracking loop.
                 // This ensures frame.Continue = false triggers ONLY when the item has physically 
                 // been removed from memory, removing priority races entirely.
                 System.Collections.Specialized.NotifyCollectionChangedEventHandler handler = null;

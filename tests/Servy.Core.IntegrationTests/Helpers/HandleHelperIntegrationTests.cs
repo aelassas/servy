@@ -186,7 +186,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             // handle.exe returns one line per handle found.
-            // FIX: Filter out potential concurrent background system handles (like security indexers) targeting our file
+            // Filter out potential concurrent background system handles (like security indexers) targeting our file
             var currentPid = Process.GetCurrentProcess().Id;
             var selfHandles = results.Where(r => r.ProcessId == currentPid).ToList();
 

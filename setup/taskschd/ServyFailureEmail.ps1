@@ -339,7 +339,7 @@ foreach ($evt in $eventsToProcess) {
   $subject = "Servy - $($parsed.ServiceName) Failure"
   $subject = Protect-SensitiveString -Text $subject
   
-  # ROBUSTNESS FIX: Sanitise the subject string value of CR/LF injection characters
+  # ROBUSTNESS: Sanitise the subject string value of CR/LF injection characters
   # explicitly to block .NET ArgumentException errors at the MailMessage property setter stage.
   $subject = $subject -replace "[\r\n]", ' '
 

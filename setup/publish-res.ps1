@@ -7,8 +7,8 @@
     Consolidated DRY script for .NET Framework 4.8 resources. This script performs the following steps:
     1. Runs the publish.ps1 script inside the specified source project.
     2. Copies the resulting executable and PDBs into the specified target Resources directory.
-    3. Renames the output artifacts to include a '.Net48' suffix to prevent collisions.
-    4. Optionally appends an additional suffix (e.g., '.CLI') if provided.
+    3. Optionally appends an additional suffix (e.g., '.CLI') if provided before '.Net48'.
+    4. Renames the output artifacts to include a '.Net48' suffix to prevent collisions.
     5. Ensures platform-specific outputs (x64) are handled.
     6. Optionally copies *.dll dependencies if requested.
     7. Optionally builds and copies Servy.Infrastructure.pdb (commented by default).
@@ -26,7 +26,7 @@
     Target platform. Default is "x64".
 
 .PARAMETER OutputSuffix
-    An optional suffix to append to the destination filename after '.Net48' (e.g., 'CLI').
+    An optional suffix to append to the destination filename before '.Net48' (e.g., 'CLI').
 
 .PARAMETER IncludeDlls
     If specified, copies all *.dll files from the build output to the resources folder.
@@ -112,11 +112,12 @@ $buildOutput = Join-Path $sourceDir "bin\$Platform\$Configuration"
 $sourceExe = Join-Path $buildOutput "$ProjectName.exe"
 $sourcePdb = Join-Path $buildOutput "$ProjectName.pdb"
 
-# Build the dynamic suffix
-$suffix = ".Net48"
+# Build the dynamic suffix - placing OutputSuffix before '.Net48'
+$suffix = ""
 if (-not [string]::IsNullOrWhiteSpace($OutputSuffix)) {
     $suffix += ".$OutputSuffix"
 }
+$suffix += ".Net48"
 
 $destExe = Join-Path $TargetResourcesFolder "$ProjectName$suffix.exe"
 $destPdb = Join-Path $TargetResourcesFolder "$ProjectName$suffix.pdb"
