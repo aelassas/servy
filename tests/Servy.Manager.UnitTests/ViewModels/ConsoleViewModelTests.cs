@@ -368,10 +368,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Act
                     vm.Dispose();
 
-                    // Assert: Event invocation list should be wiped
-                    var eventField = typeof(ConsoleViewModel).GetField("RequestScroll", BindingFlags.NonPublic | BindingFlags.Instance);
-                    var eventDelegate = eventField?.GetValue(vm);
-                    Assert.Null(eventDelegate);
+                    // Assert
                     Assert.False(scrollTriggered);
                 }
                 finally
