@@ -15,7 +15,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Error(string message, Exception? ex = null) => Errors.Add(message);
         public void Debug(string message, Exception? ex = null) { }
 
-        public IServyLogger CreateScoped(string prefix) => throw new NotImplementedException();
+        public IServyLogger CreateScoped(string? prefix) => throw new NotImplementedException();
         public void SetLogLevel(LogLevel level) { }
         public void SetIsEventLogEnabled(bool isEnabled) { }
         public void Dispose() { }

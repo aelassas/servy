@@ -1,11 +1,6 @@
 import time
 import sys
 
-# os.path.expandvars("%PYTHON_EXE%")
-# E:\dev\servy\src\tests\stdout.py
-# E:\dev\servy\python_stdout.txt
-# E:\dev\servy\python_stderr.txt
-
 try:
     while True:
         print("Hello, World!")

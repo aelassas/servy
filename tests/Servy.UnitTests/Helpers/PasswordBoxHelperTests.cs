@@ -21,7 +21,7 @@ namespace Servy.Helpers.UnitTests
 
                 // Act
                 PasswordBoxHelper.SetBoundPassword(passwordBox, expectedPassword);
-                string actualPassword = PasswordBoxHelper.GetBoundPassword(passwordBox);
+                string? actualPassword = PasswordBoxHelper.GetBoundPassword(passwordBox);
 
                 // Assert
                 Assert.Equal(expectedPassword, actualPassword);

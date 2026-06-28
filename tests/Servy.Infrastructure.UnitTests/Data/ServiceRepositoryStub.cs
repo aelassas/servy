@@ -69,7 +69,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
         public override Task<ServiceDto?> GetByNameAsync(string? name, bool decrypt = true, CancellationToken token = default)
         {
-            // Fixes the asymmetry bug by returning the same shape as GetByIdAsync
+            // Returns the same DTO shape as GetByIdAsync so name- and id-based lookups stay symmetric
             return _returnNullDto
                 ? Task.FromResult<ServiceDto?>(null)
                 : Task.FromResult<ServiceDto?>(CreateConsistentDto(1, name, decrypt));
@@ -80,7 +80,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             return Task.FromResult<IEnumerable<ServiceDto>>(new List<ServiceDto> { CreateConsistentDto(1, "StubService", decrypt) });
         }
 
-        public override Task<IEnumerable<ServiceDto>> SearchAsync(string keyword, bool decrypt = true, CancellationToken token = default)
+        public override Task<IEnumerable<ServiceDto>> SearchAsync(string? keyword, bool decrypt = true, CancellationToken token = default)
         {
             return Task.FromResult<IEnumerable<ServiceDto>>(new List<ServiceDto> { CreateConsistentDto(1, "StubService", decrypt) });
         }

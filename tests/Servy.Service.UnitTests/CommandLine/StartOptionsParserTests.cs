@@ -331,7 +331,7 @@ namespace Servy.Service.UnitTests.CommandLine
             var result = StartOptionsParser.MapPriority(corruptedPriority);
 
             // Assert
-            // Standard execution gracefully hits the fallback default condition path, issues an warning, and returns Normal
+            // Standard execution gracefully hits the fallback default condition path and returns Normal
             Assert.Equal(ProcessPriorityClass.Normal, result);
         }
 

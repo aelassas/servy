@@ -10,7 +10,7 @@ namespace Servy.UnitTests.Design
         {
             // Arrange
             var commands = new DesignTimeServiceCommands();
-            var dummyConfig = new ServiceConfiguration(); // Assuming ServiceConfiguration has a default constructor
+            var dummyConfig = new ServiceConfiguration();
 
             // Act & Assert - Boolean returning methods
             Assert.True(await commands.InstallService(dummyConfig, TestContext.Current.CancellationToken));

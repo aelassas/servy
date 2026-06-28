@@ -55,7 +55,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResource(
-                _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false);
+                _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result); // Should return true early
@@ -70,7 +70,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResource(
-                _mockAssembly.Object, "Servy.Resources", "lockedapp", "exe", stopServices: false);
+                _mockAssembly.Object, "Servy.Resources", "lockedapp", "exe", stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -85,7 +85,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResource(
-                _mockAssembly.Object, "Servy.Resources", "missingapp", "exe", stopServices: false);
+                _mockAssembly.Object, "Servy.Resources", "missingapp", "exe", stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result);
@@ -108,7 +108,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResource(
-                _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false);
+                _mockAssembly.Object, "Servy.Resources", fileName, extension, stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result);
@@ -126,7 +126,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResource(
-                nullAssembly, "Servy.Resources", "crashapp", "exe", stopServices: false);
+                nullAssembly, "Servy.Resources", "crashapp", "exe", stopServices: false, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result); // Caught successfully

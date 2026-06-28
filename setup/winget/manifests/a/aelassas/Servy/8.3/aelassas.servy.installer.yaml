@@ -2,8 +2,8 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
 
 # This manifest serves as a template for the installer manifest of the Servy application. 
-# It is not intended to be used directly, but rather to provide a structured format for defining 
-# the installation parameters and metadata for the Servy application.
+# It is not intended to be used directly, but rather to provide a structured format for defining
+# the version metadata for the Servy application.
 # It includes metadata about the application, such as its name, version, and installation details. 
 # The manifest is designed to be used with the Windows Package Manager (WinGet) to facilitate 
 # the installation and management of the Servy application on Windows systems.

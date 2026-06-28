@@ -443,7 +443,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     searchTask.GetAwaiter().GetResult();
 
                     // Assert
-                    // Assert
                     using (var enumerator = vm.LogsView.SourceCollection.Cast<LogEntryModel>().GetEnumerator())
                     {
                         Assert.True(enumerator.MoveNext());

@@ -22,7 +22,7 @@ namespace Servy.Infrastructure.Tests.Helpers
         [Theory]
         [InlineData("3.50.1", false)]  // Just below threshold
         [InlineData("3.50.2", true)]   // Exactly at threshold
-        [InlineData("3.50.4", true)]   // Your SourceGear version
+        [InlineData("3.50.4", true)]   // Above threshold
         [InlineData("4.0.0", true)]    // Future version
         [InlineData("invalid", false)] // Unparseable string
         public void SQLiteVersionComparison_LogicCheck(string versionToTest, bool expectedSafe)
