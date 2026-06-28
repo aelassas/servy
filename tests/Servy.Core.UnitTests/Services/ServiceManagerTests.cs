@@ -905,7 +905,7 @@ namespace Servy.Core.UnitTests.Services
                 Description = "Legacy Service Description String Layout"
             };
 
-            // serviceExtended Sequence to handle all 3 database verification reads:
+            // Extended Sequence to handle all 3 database verification reads:
             // Pass 1: The initial pre-install check in InstallServiceAsync (returns legacy record)
             // Pass 2: The internal verification read inside UninstallServiceAsync (returns legacy record to authorize drop)
             // Pass 3: The post-uninstall lookup in InstallServiceAsync to populate target properties (returns null)
@@ -1122,7 +1122,7 @@ namespace Servy.Core.UnitTests.Services
                 _mockServiceRepository.Object
             );
 
-            // serviceAllow OpenSCManager to pass cleanly so uninstallation completes.
+            // Allow OpenSCManager to pass cleanly so uninstallation completes.
             // Trip the cancellation token inside CreateService to simulate a user cancel mid-installation phase.
             var cts = new CancellationTokenSource();
             _mockWindowsServiceApi
@@ -1905,10 +1905,10 @@ namespace Servy.Core.UnitTests.Services
         public async Task RestartService_ShouldReturnFalse_WhenStopServiceFails()
         {
             // Arrange
-            // Simulate the service is already stopped so StopService returns true
+            // Service is Running so RestartService proceeds to stop it
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
 
-            // Simulate StartService throwing an exception, which should trigger catch and return false
+            // Simulate Stop() throwing, which should trigger the catch and return false
             _mockController.Setup(c => c.Stop()).Throws(new Exception("Boom!"));
 
             // Act

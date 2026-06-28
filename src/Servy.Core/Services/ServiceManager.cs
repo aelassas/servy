@@ -644,7 +644,7 @@ namespace Servy.Core.Services
                     return OperationResult.Failure("Failed to open Service Control Manager.");
                 }
 
-                // Added SERVICE_CHANGE_CONFIG to permit the start-type modification.
+                // SERVICE_CHANGE_CONFIG to permit the start-type modification.
                 uint uninstallRights = SERVICE_STOP | SERVICE_QUERY_STATUS | SERVICE_DELETE | SERVICE_CHANGE_CONFIG;
 
                 using (var serviceHandle = _windowsServiceApi.OpenService(scmHandle, serviceName, uninstallRights))

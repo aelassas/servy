@@ -94,7 +94,7 @@ namespace Servy.Testing
                 // We only write if the file isn't physically there.
                 if (File.Exists(HandleExePath)) return;
 
-                // Added FileShare.ReadWrite. On CI, Antivirus or Windows Indexer 
+                // FileShare.ReadWrite. On CI, Antivirus or Windows Indexer 
                 // often grab handles the millisecond a file is created.
                 using (FileStream fileStream = new FileStream(HandleExePath, FileMode.CreateNew, FileAccess.Write, FileShare.ReadWrite))
                 {

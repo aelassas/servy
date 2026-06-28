@@ -481,7 +481,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 }
                 finally
                 {
-                    // CRITICAL Breaking the frame loop causes PushFrame to exit 
+                    // CRITICAL: Breaking the frame loop causes PushFrame to exit 
                     // the moment the async execution pipeline completes.
                     frame.Continue = false;
                 }
@@ -503,13 +503,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var currentDispatcher = Dispatcher.CurrentDispatcher;
                 var vm = CreateViewModel(currentDispatcher);
 
-                // FIX 1: Explicitly mock the early-exit message dialog to return instantly!
+                // Explicitly mock the early-exit message dialog to return instantly!
                 _messageBoxServiceMock.Setup(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()))
                                       .Returns(Task.CompletedTask);
 
                 var frame = new DispatcherFrame();
 
-                // FIX 2: Route through the DispatcherFrame harness to ensure the thread remains isolated 
+                // Route through the DispatcherFrame harness to ensure the thread remains isolated 
                 // and responsive during execution steps.
                 _ = currentDispatcher.InvokeAsync(async () =>
                 {
