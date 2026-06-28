@@ -336,7 +336,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             var sql = $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority) VALUES (@Name, 'C:\\bin.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');";
             await _executor.ExecuteAsync(sql, new { Name = paddedName }, cancellationToken: CancellationToken.None);
 
-            // Act: UI calls lookup passing the cleaned/trimmed search context parameter
+            // Act: caller looks up using the raw untrimmed legacy name to exercise the untrimmed fallback path
             var resolvedRecord = await _repository.GetByNameAsync(paddedName, decrypt: false, CancellationToken.None);
 
             // Assert

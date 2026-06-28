@@ -362,7 +362,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [Theory]
         // Preceding the raw newline control bytes with a backslash keeps the record unified 
         // during the tokenizer phase. Then, Unescape strips the backslash, leaving the raw control byte
-        // inside 'value' to correctly trip your forbidden character exception.
+        // inside 'value' so the parser's forbidden-newline check is triggered.
         [InlineData("KEY=Line1\\\nLine2", "KEY")]
         [InlineData("KEY=Line1\\\rLine2", "KEY")]
         [InlineData("KEY=Line1\\\r\\\nLine2", "KEY")]
