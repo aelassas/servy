@@ -10,8 +10,8 @@
     /// </para>
     /// <para>
     /// Enabling this mode acts as a safety boundary when executing automated UI test harnesses, integration passes, 
-    /// or server-side continuous integration (CI) pipelines. When active, it suppresses non-blocking side-effects—such as 
-    /// launching external system web browsers—and automatically neutralizes or auto-answers modal dialog prompt containers.
+    /// or server-side continuous integration (CI) pipelines. When active, it suppresses non-blocking side-effects, such as 
+    /// launching external system web browsers, and automatically neutralizes or auto-answers modal dialog prompt containers.
     /// </para>
     /// </remarks>
     public static class UiHeadless
