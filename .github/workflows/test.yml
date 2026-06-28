@@ -92,13 +92,15 @@ jobs:
               $vsInstallPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
 
               if (-not $vsInstallPath) {
-                  throw "Visual Studio installation not found using vswhere."
+                  Write-Error "::error::Visual Studio installation not found using vswhere."
+                  exit 1
               }
 
               $vsTest = Join-Path $vsInstallPath "Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
 
               if (-not (Test-Path $vsTest)) {
-                  throw "Could not locate vstest.console.exe at expected path: $vsTest"
+                  Write-Error "::error::Could not locate vstest.console.exe at expected path: $vsTest"
+                  exit 1
               }
 
               Write-Host "Using vstest.console.exe at: $vsTest"
@@ -141,7 +143,8 @@ jobs:
           }
 
           if ($failed) { 
-              Write-Error "One or more test projects failed. Review the logs above."
+              Write-Error "::error::One or more test projects failed. Review the logs above."
+              exit 1
           }
 
       - name: Build Solution (Release)
@@ -167,7 +170,8 @@ jobs:
           $vsTest = $possiblePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
 
           if (-not $vsTest) {
-              throw "Could not locate vstest.console.exe on the runner."
+              Write-Error "::error::Could not locate vstest.console.exe on the runner."
+              exit 1
           }
 
           Write-Host "Using vstest.console.exe at: $vsTest" -ForegroundColor Cyan
@@ -176,7 +180,8 @@ jobs:
           $testDlls = Get-ChildItem -Path "tests" -Recurse -Include "*UnitTests.dll", "*IntegrationTests.dll" | Where-Object { $_.FullName -match "\\bin\\[A-Za-z0-9_]+\\Release\\" }
 
           if (-not $testDlls) {
-              throw "No test assemblies found for Release configuration!"
+              Write-Error "::error::No test assemblies found for Release configuration!"
+              exit 1
           }
 
           Write-Host "`nFound test assemblies:"
@@ -198,7 +203,8 @@ jobs:
           }
 
           if ($failed) {
-              throw "One or more Release test projects failed. Review the logs above."
+              Write-Error "::error::One or more Release test projects failed. Review the logs above."
+              exit 1
           }
 
       - name: Install ReportGenerator
