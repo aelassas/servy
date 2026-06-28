@@ -21,8 +21,7 @@ namespace Servy.Manager.UnitTests.Utils
 
         public void Dispose()
         {
-            // Note: We avoid deleting here if tests didn't clean up their tasks
-            // to prevent the "File in use" error in Dispose.
+            // Best-effort delete; swallow exceptions if a running test still holds the file open
             try
             {
                 if (File.Exists(_tempFilePath))

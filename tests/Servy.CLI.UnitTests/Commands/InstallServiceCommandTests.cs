@@ -5,7 +5,6 @@ using Servy.CLI.Resources;
 using Servy.CLI.Validation;
 using Servy.Core.Common;
 using Servy.Core.Config;
-using Servy.Core.Data;
 using Servy.Core.Services;
 using System;
 using System.IO;
@@ -40,7 +39,6 @@ namespace Servy.CLI.UnitTests.Commands
 
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
 
-            // Updated to use the new options object signature
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
 
@@ -92,7 +90,6 @@ namespace Servy.CLI.UnitTests.Commands
 
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
 
-            // Updated to use the new options object signature
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Failure("Failed to install service."));
 
@@ -127,7 +124,6 @@ namespace Servy.CLI.UnitTests.Commands
 
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
 
-            // Updated to use the new options object signature
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .Throws<UnauthorizedAccessException>();
 
@@ -162,7 +158,6 @@ namespace Servy.CLI.UnitTests.Commands
 
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
 
-            // Updated to use the new options object signature
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .Throws<Exception>();
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -17,20 +16,59 @@ namespace Servy.CLI.UnitTests
     [Collection("Servy.CLI.ConsoleTests")]
     public class ProgramTests : IDisposable
     {
+        private readonly string _tempConfigPath;
         private readonly TextWriter _originalConsoleOut;
         private readonly TextWriter _originalConsoleError;
-        private readonly string _testDbPath;
 
         public ProgramTests()
         {
-            // Intercept standard streams to capture pipeline logs and outputs
+            // Establish isolated files environment for execution runs
+            _tempConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.cli.json");
+
             _originalConsoleOut = Console.Out;
             _originalConsoleError = Console.Error;
 
-            // Define isolated test file paths
-            _testDbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Test.db");
-            string testConnection = string.Format("Data Source={0};Version=3;", _testDbPath);
+            // Generate a valid mock configuration structure to bypass missing setting errors
+            string fallbackDatabaseFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Test_Servy.db");
+            string testConnection = string.Format("Data Source={0};Version=3;", fallbackDatabaseFile);
+
+            string mockConfigJson = "{\r\n" +
+                "  \"ConnectionStrings\": {\r\n" +
+                "    \"DefaultConnection\": \"" + testConnection.Replace("\\", "\\\\") + "\"\r\n" +
+                "  },\r\n" +
+                "  \"Security\": {\r\n" +
+                "    \"AESKeyFilePath\": \"test_aes.key\",\r\n" +
+                "    \"AESIVFilePath\": \"test_aes.iv\"\r\n" +
+                "  }\r\n" +
+                "}";
+
+            File.WriteAllText(_tempConfigPath, mockConfigJson);
         }
+
+        #region Private Test Orchestration Helpers
+
+        /// <summary>
+        /// Encapsulates the console output redirection lifecycle to eliminate duplicate boilerplate blocks
+        /// across CLI execution integration test paths while protecting async background contexts.
+        /// </summary>
+        private async Task<int> RunWithConsoleCaptureAsync(Func<Task<int>> actBlock)
+        {
+            var originalOut = Console.Out;
+            using (var stringWriter = TextWriter.Synchronized(new StringWriter()))
+            {
+                try
+                {
+                    Console.SetOut(stringWriter);
+                    return await actBlock();
+                }
+                finally
+                {
+                    Console.SetOut(originalOut);
+                }
+            }
+        }
+
+        #endregion
 
         #region Console Validation Logic Branches
 
@@ -53,117 +91,65 @@ namespace Servy.CLI.UnitTests
         [Fact]
         public async Task Main_EmptyArguments_InjectsHelpVerbAndExitsWithSuccess()
         {
-            // 1. Capture the original writer so we can restore it later
-            var originalOut = Console.Out;
+            // Arrange
+            string[] emptyArgs = Array.Empty<string>();
 
-            // 2. Wrap the writer in a thread-safe synchronized boundary
-            using (var stringWriter = TextWriter.Synchronized(new StringWriter()))
+            // Act
+            int exitCode = await RunWithConsoleCaptureAsync(async () =>
             {
-                try
-                {
-                    // 3. Redirect
-                    Console.SetOut(stringWriter);
+                return await Program.Main(emptyArgs);
+            });
 
-                    // 4. Act
-                    string[] emptyArgs = Array.Empty<string>();
-                    int exitCode = await Program.Main(emptyArgs);
-
-                    // 5. Assert
-                    Assert.Equal((int)CliExitCode.Success, exitCode);
-                }
-                finally
-                {
-                    // 6. Restore original output BEFORE leaving the using block to protect background async threads
-                    Console.SetOut(originalOut);
-                }
-            }
+            // Assert
+            Assert.Equal((int)CliExitCode.Success, exitCode);
         }
 
         [Fact]
         public async Task Main_HelpFlagProvided_ReturnsSuccessExitCode()
         {
-            // 1. Capture the original writer
-            var originalOut = Console.Out;
+            // Arrange
+            string[] args = { "--help" };
 
-            // 2. Synchronized allocation
-            using (var stringWriter = TextWriter.Synchronized(new StringWriter()))
+            // Act
+            int exitCode = await RunWithConsoleCaptureAsync(async () =>
             {
-                try
-                {
-                    // 3. Redirect
-                    Console.SetOut(stringWriter);
+                return await Program.Main(args);
+            });
 
-                    // 4. Act
-                    string[] args = { "--help" };
-                    int exitCode = await Program.Main(args);
-
-                    // 5. Assert
-                    Assert.Equal((int)CliExitCode.Success, exitCode);
-                }
-                finally
-                {
-                    // 6. Restore
-                    Console.SetOut(originalOut);
-                }
-            }
+            // Assert
+            Assert.Equal((int)CliExitCode.Success, exitCode);
         }
 
         [Fact]
         public async Task Main_InvalidArgumentsProvided_ReturnsErrorExitCode()
         {
-            // 1. Capture the original writer
-            var originalOut = Console.Out;
+            // Arrange
+            string[] args = { "install", "--unsupported-option" };
 
-            // 2. Synchronized allocation
-            using (var stringWriter = TextWriter.Synchronized(new StringWriter()))
+            // Act
+            int exitCode = await RunWithConsoleCaptureAsync(async () =>
             {
-                try
-                {
-                    // 3. Redirect
-                    Console.SetOut(stringWriter);
+                return await Program.Main(args);
+            });
 
-                    // 4. Act
-                    string[] args = { "install", "--unsupported-option" };
-                    int exitCode = await Program.Main(args);
-
-                    // 5. Assert
-                    Assert.Equal((int)CliExitCode.Error, exitCode);
-                }
-                finally
-                {
-                    // 6. Restore
-                    Console.SetOut(originalOut);
-                }
-            }
+            // Assert
+            Assert.Equal((int)CliExitCode.Error, exitCode);
         }
 
         [Fact]
         public async Task Main_QuietFlagProvided_AltersExecutionToQuietPath()
         {
-            // 1. Capture the original writer
-            var originalOut = Console.Out;
+            // Arrange
+            string[] args = { "status", "--quiet" };
 
-            // 2. Synchronized allocation
-            using (var stringWriter = TextWriter.Synchronized(new StringWriter()))
+            // Act
+            int exitCode = await RunWithConsoleCaptureAsync(async () =>
             {
-                try
-                {
-                    // 3. Redirect
-                    Console.SetOut(stringWriter);
+                return await Program.Main(args);
+            });
 
-                    // 4. Act
-                    string[] args = { "status", "--quiet" };
-                    int exitCode = await Program.Main(args);
-
-                    // 5. Assert
-                    Assert.True(exitCode == (int)CliExitCode.Success || exitCode == (int)CliExitCode.Error);
-                }
-                finally
-                {
-                    // 6. Restore
-                    Console.SetOut(originalOut);
-                }
-            }
+            // Assert
+            Assert.True(exitCode == (int)CliExitCode.Success || exitCode == (int)CliExitCode.Error);
         }
 
         #endregion
@@ -173,30 +159,17 @@ namespace Servy.CLI.UnitTests
         [Fact]
         public async Task Main_InvalidArguments_ReturnsErrorExitCode()
         {
-            // 1. Capture the original writer
-            var originalOut = Console.Out;
+            // Arrange
+            string[] args = { "install", "--corrupt-flag-combination" };
 
-            // 2. Synchronized allocation
-            using (var stringWriter = TextWriter.Synchronized(new StringWriter()))
+            // Act
+            int exitCode = await RunWithConsoleCaptureAsync(async () =>
             {
-                try
-                {
-                    // 3. Redirect
-                    Console.SetOut(stringWriter);
+                return await Program.Main(args);
+            });
 
-                    // 4. Act
-                    string[] args = { "install", "--corrupt-flag-combination" };
-                    int exitCode = await Program.Main(args);
-
-                    // 5. Assert
-                    Assert.Equal((int)CliExitCode.Error, exitCode);
-                }
-                finally
-                {
-                    // 6. Restore
-                    Console.SetOut(originalOut);
-                }
-            }
+            // Assert
+            Assert.Equal((int)CliExitCode.Error, exitCode);
         }
 
         #endregion
@@ -207,19 +180,26 @@ namespace Servy.CLI.UnitTests
             Console.SetOut(_originalConsoleOut);
             Console.SetError(_originalConsoleError);
 
-            // Clean down created local artifacts to ensure zero tracking pollution across runs
+            // Clean environment layout files
             try
             {
-                if (File.Exists(_testDbPath))
+                if (File.Exists(_tempConfigPath))
                 {
-                    File.Delete(_testDbPath);
+                    File.Delete(_tempConfigPath);
                 }
+
                 if (File.Exists("test_aes.key")) File.Delete("test_aes.key");
                 if (File.Exists("test_aes.iv")) File.Delete("test_aes.iv");
+
+                string testDb = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Test_Servy.db");
+                if (File.Exists(testDb))
+                {
+                    File.Delete(testDb);
+                }
             }
             catch
             {
-                // Suppress locking race conditions safely on file cleanup
+                // Suppress file deletion locks on cleanup
             }
         }
     }
