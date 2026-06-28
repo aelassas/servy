@@ -60,9 +60,8 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void DisplayName_Getter_ShouldFallbackToServiceName_IfNull()
         {
-            // This covers the ?? branch in the getter
-            // To trigger this, we need to bypass the constructor's assignment if possible, 
-            // but since the constructor sets it, we test if the getter logic works.
+            // Passing null as displayName leaves the backing field null,
+            // so the getter's `?? ServiceName` fallback returns "svc".
             var node = new ServiceDependencyNode("svc", null!);
 
             // If the backing field is null, it should return ServiceName

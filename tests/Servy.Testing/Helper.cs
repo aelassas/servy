@@ -30,7 +30,8 @@ namespace Servy.Testing
         private static bool _applicationCreated;
 
         /// <summary>
-        /// Extracts the handle utility from the assembly's embedded resources to the base directory.
+        /// Extracts the architecture-appropriate Sysinternals handle binary
+        /// (handle64.exe, or handle64a.exe on ARM64) from embedded resources to the base directory.
         /// </summary>
         /// <exception cref="FileNotFoundException">Thrown when the embedded resource cannot be located in the manifest.</exception>
         public static void ExtractHandleExe()
@@ -85,9 +86,8 @@ namespace Servy.Testing
             {
                 if (stream == null) return;
 
-                // If the file somehow exists but _isExtracted was false, 
-                // FileMode.Create would fail if another process is even just reading it.
-                // We only write if the file isn't physically there.
+                // The file may already have been created by a concurrent extraction (or a previous run).
+                // Only write when it is not physically there; a lost race surfaces as ERROR_FILE_EXISTS below.
                 if (File.Exists(HandleExePath)) return;
 
                 // FileShare.ReadWrite. On CI, Antivirus or Windows Indexer 

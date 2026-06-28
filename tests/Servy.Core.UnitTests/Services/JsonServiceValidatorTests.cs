@@ -149,7 +149,7 @@ namespace Servy.Core.UnitTests.Services
             {
                 Name = "TestService",
                 ExecutablePath = "C:\\Windows\\System32\\calc.exe",
-                StopTimeout = 30000 // Valid 30s
+                StopTimeout = 30000 // Valid: 30000 seconds (~8.3h, under the 86400 max)
             };
             var json = JsonConvert.SerializeObject(dto);
 

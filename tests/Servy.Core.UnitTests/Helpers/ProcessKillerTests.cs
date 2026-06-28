@@ -4,7 +4,8 @@ using System.Diagnostics;
 namespace Servy.Core.UnitTests.Helpers
 {
     /// <summary>
-    /// Unit and Integration tests for the ProcessKiller utility.
+    /// Unit tests for the ProcessKiller utility (input validation and not-found logic).
+    /// Integration tests that spawn real processes live in ProcessKillerIntegrationTests.
     /// </summary>
     public class ProcessKillerTests : IDisposable
     {

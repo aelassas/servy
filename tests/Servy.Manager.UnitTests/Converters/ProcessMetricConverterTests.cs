@@ -70,8 +70,8 @@ namespace Servy.Manager.UnitTests.Converters
         {
             var originalProvider = App.Services;
 
-            // Arrange - Handled natively by the class constructor (App.Services is already null)
-            App.Services = null; // Hardened explicit initialization step to completely insulate thread hops
+            // Arrange
+            App.Services = null; // Force the 'no DI container' state so the constructor must use its DesignTimeProcessHelper fallback
 
             try
             {

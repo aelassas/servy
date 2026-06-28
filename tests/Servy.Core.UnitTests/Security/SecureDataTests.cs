@@ -336,7 +336,7 @@ namespace Servy.Core.UnitTests.Security
         {
             var sp = new SecureData(_mockProvider.Object);
 
-            // A v2 payload must be at least 48 bytes (16 IV + 32 HMAC + Ciphertext)
+            // A v2 payload must be at least 48 bytes (16-byte IV + 32-byte HMAC); ciphertext is additional.
             // We provide only 10 bytes here.
             var shortPayloadBase64 = Convert.ToBase64String(new byte[10]);
 
@@ -518,10 +518,8 @@ namespace Servy.Core.UnitTests.Security
         // Branch 4: Misplaced Padding ('=' not at the end)
         [InlineData("=abc", false)]      // Start
         [InlineData("a=bc", false)]      // Middle
-        [InlineData("ab=c", false)]      // Second to last (valid if at end, but here it's followed by 'c')
-                                         // Note: Base64 allows up to 2 padding chars at the very end (e.g., "aa==")
-                                         // This check: paddingIndex < value.Length - 2 specifically catches "=" in the first half 
-                                         // of a 4-char block.
+        [InlineData("ab=c", false)]      // '=' is second-to-last but the final char isn't '=' (rejected by the
+                                         // "trailing padding must be contiguous at the end" rule, not by paddingIndex < length-2)
 
         // Branch 5: Valid Base64 (The "Success" return)
         [InlineData("SGVsbG8=", true)]   // 1 padding
