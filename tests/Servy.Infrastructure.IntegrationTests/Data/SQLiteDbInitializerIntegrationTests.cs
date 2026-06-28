@@ -197,7 +197,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
                 Assert.True(version >= 4);
 
-                // 1. Verify the production active production table was rebuilt clean without the orphan
+                // 1. Verify the active production table was rebuilt clean without the orphan column
                 var columns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();
                 Assert.DoesNotContain("OldOrphanData", columns);
 

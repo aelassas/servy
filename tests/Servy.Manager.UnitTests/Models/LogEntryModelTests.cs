@@ -80,7 +80,7 @@ namespace Servy.Manager.UnitTests.Models
             logEntry.Level = EventLogLevel.Error;
 
             // Assert
-            Assert.False(anyPropertyChangedFired, "Setting the exact same Level reference value must skip raising notifications.");
+            Assert.False(anyPropertyChangedFired, "Setting Level to the same value must skip raising notifications.");
         }
 
         [Theory]

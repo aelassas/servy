@@ -94,8 +94,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             _spawnedProcesses.Add(childProcess);
 
             // 1. HARDEN STABILIZATION TIMING:
-            // Allow the PowerShell runtime environment to fully initialize, JIT, 
-            // allocate the 30MB block, and execute the garbage collection pass.
+            // Let PowerShell finish mapping its memory before sampling
             Thread.Sleep(2500);
 
             int childPid = childProcess.Id;
@@ -103,9 +102,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             // 2. CAPTURE METRICS BACK-TO-BACK:
             var singleMetrics = _sut.GetProcessMetrics(childPid);
             var treeMetrics = _sut.GetProcessTreeMetrics(childPid);
-
-            // 3. LOGGING FOR DIAGNOSTICS:
-            Logger.Info($"Single RAM: {singleMetrics.RamUsage}, Tree RAM: {treeMetrics.RamUsage}");
 
             // Assert
             Assert.True(singleMetrics.RamUsage > 0, "Root process RAM should be captured.");

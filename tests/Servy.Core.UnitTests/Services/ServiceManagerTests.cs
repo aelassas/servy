@@ -2187,11 +2187,9 @@ namespace Servy.Core.UnitTests.Services
             var svcHandle = CreateServiceHandle(2);
 
             // We need at least one service to enter the loop
-            // Warning: ServiceController is hard to instantiate without a real service.
-            // If this fails, consider changing IServiceControllerProvider to return a wrapper.
-            var mockService = new ServiceControllerWrapper("EventLog");
+            var service = new ServiceControllerWrapper("EventLog");
 
-            _mockServiceControllerProvider.Setup(x => x.GetServices()).Returns(new[] { mockService });
+            _mockServiceControllerProvider.Setup(x => x.GetServices()).Returns(new[] { service });
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>())).Returns(scmHandle);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, It.IsAny<string>(), It.IsAny<uint>())).Returns(svcHandle);
 
