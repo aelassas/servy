@@ -802,7 +802,8 @@ namespace Servy.Service.UnitTests
         public void OnErrorDataReceived_ValidData_WritesToStderrWriter()
         {
             // Arrange
-            // Change "err.log" to "test_stderr.log" so the StreamWriterFactory Setup matches it!
+            // StdErrPath must contain "stderr": the class-level IStreamWriterFactory mock
+            // routes on that substring and returns null for anything else.
             var options = new StartOptions
             {
                 ServiceName = "Test",

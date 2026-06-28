@@ -304,7 +304,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(invalidScmHandle);
 
-            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1074); // ERROR_SERVICE_MARKED_FOR_DELETE
+            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1074); // ERROR_SERVICE_DEPENDENCY_DELETED
 
             // --- Act & Assert 2 ---
             var result2 = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
