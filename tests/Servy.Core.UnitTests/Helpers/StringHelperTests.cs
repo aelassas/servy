@@ -137,6 +137,7 @@ namespace Servy.Core.UnitTests.Helpers
             // - VAR4: '"' in value
             // - VAR5: '\' in value
             // - VAR6: combinations of multiple escaped chars
+            // - VAR7: escaped '=' in the KEY (not the value)
             var rawVars = string.Join(";", new[]
             {
                 "VAR1=val1",

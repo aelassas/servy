@@ -149,7 +149,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         public async Task SearchServicesAsync_NullServiceCommands_AbortsGracefully()
         {
             var sut = new TestServiceSearchViewModel(_cursorServiceMock.Object, _uiDispatcherMock.Object, _serviceCommandsMock.Object);
-            sut.ServiceCommands = null; // Force bypass assignment checks via reflection swap
+            sut.ServiceCommands = null; // Simulate the dependency being cleared after construction
 
             await sut.SearchCommand.ExecuteAsync(null);
 
