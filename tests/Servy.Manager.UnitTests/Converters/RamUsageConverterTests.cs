@@ -38,7 +38,7 @@ namespace Servy.Manager.UnitTests.Converters
                 var converter = new RamUsageConverter();
                 long input = 1024 * 1024 * 10; // 10MB
 
-                // Setup the mock behavior safely within this locked instance thread loop
+                // Collection serialization (DisableParallelization) keeps the global App.Services swap safe
                 _mockProcessHelper.Setup(h => h.FormatRamUsage(input)).Returns("10.0 MB");
 
                 // Act

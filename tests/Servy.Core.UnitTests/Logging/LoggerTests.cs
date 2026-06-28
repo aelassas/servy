@@ -186,39 +186,25 @@ namespace Servy.Core.UnitTests.Logging
         [InlineData("Line1\fLine2", "Line1 Line2")]       // Form Feed
         public void Log_SanitizesMessage_MaintainsSingleLineContract(string rawMessage, string expectedFragment)
         {
-            // Arrange: Generate an isolated unique filename specific to this InlineData iteration run
-            // to eliminate interleaving contamination and protect internal contract layout checks.
-            string isolatedFileName = $"SanitizationTest_{Guid.NewGuid():N}.log";
-            string isolatedFullPath = Path.Combine(Logger.LogsPath, isolatedFileName);
+            // Arrange
+            // Pure instance isolation is guaranteed cleanly via sequential collection serialization constraints
+            // and the distinct constructor allocation mappings.
+            Logger.Initialize(_testFileName);
 
-            try
-            {
-                if (File.Exists(isolatedFullPath))
-                {
-                    File.Delete(isolatedFullPath);
-                }
-                Logger.Initialize(isolatedFileName);
+            // Act
+            Logger.Info(rawMessage);
+            Logger.Shutdown();
 
-                // Act
-                Logger.Info(rawMessage);
-                Logger.Shutdown();
+            // Assert
+            string[] lines = File.ReadAllLines(_fullLogPath);
 
-                // Assert
-                string[] lines = File.ReadAllLines(isolatedFullPath);
+            // Trace target element dynamically to insulate the assertion loop from background thread telemetry noise
+            int matchingIndex = Array.FindIndex(lines, l => l.Contains(expectedFragment));
+            Assert.True(matchingIndex >= 0, $"Expected log entry containing fragment '{expectedFragment}' was not found.");
 
-                // Trace target element dynamically to insulate the assertion loop from background thread telemetry noise
-                int matchingIndex = Array.FindIndex(lines, l => l.Contains(expectedFragment));
-                Assert.True(matchingIndex >= 0, $"Expected log entry containing fragment '{expectedFragment}' was not found.");
-
-                string targetLine = lines[matchingIndex];
-                Assert.DoesNotContain("\n", targetLine);
-                Assert.DoesNotContain("\r", targetLine);
-            }
-            finally
-            {
-                Logger.Shutdown();
-                try { if (File.Exists(isolatedFullPath)) File.Delete(isolatedFullPath); } catch { }
-            }
+            string targetLine = lines[matchingIndex];
+            Assert.DoesNotContain("\n", targetLine);
+            Assert.DoesNotContain("\r", targetLine);
         }
 
         #endregion
@@ -234,39 +220,46 @@ namespace Servy.Core.UnitTests.Logging
             {
                 try
                 {
-                    throw new InvalidOperationException("Inner fail");
+                    try
+                    {
+                        throw new InvalidOperationException("Inner fail");
+                    }
+                    catch (Exception inner)
+                    {
+                        throw new ApplicationException("Outer fail\nMultiline", inner);
+                    }
                 }
-                catch (Exception inner)
+                catch (Exception caught)
                 {
-                    throw new ApplicationException("Outer fail\nMultiline", inner);
+                    ex = caught; // This successfully captures the ApplicationException
                 }
+
+                Logger.Initialize(_testFileName);
+
+                // Act
+                Logger.Error("Exception test", ex);
+                Logger.Shutdown();
+
+                // Assert
+                string content = File.ReadAllText(_fullLogPath);
+
+                // 1. Verify exception unrolling and string replacement patterns work
+                Assert.Contains("Outer fail ; Multiline", content);
+                Assert.Contains(" [Inner -> InvalidOperationException: Inner fail", content);
+                Assert.Contains("]", content); // Closing brackets
+
+                // 2. Isolate the exact formatted exception segment text block
+                int exceptionMessageIndex = content.IndexOf("Exception test");
+                string exceptionSegment = content.Substring(exceptionMessageIndex).TrimEnd();
+
+                // 3. Confirm that the isolated exception text contains zero raw line breaks
+                Assert.DoesNotContain("\r", exceptionSegment);
+                Assert.DoesNotContain("\n", exceptionSegment);
             }
-            catch (Exception caught)
+            catch (Exception unexpected)
             {
-                ex = caught; // This successfully captures the ApplicationException
+                Assert.Fail($"Test threw an unexpected exception during execution: {unexpected.Message}");
             }
-
-            Logger.Initialize(_testFileName);
-
-            // Act
-            Logger.Error("Exception test", ex);
-            Logger.Shutdown();
-
-            // Assert
-            string content = File.ReadAllText(_fullLogPath);
-
-            // 1. Verify exception unrolling and string replacement patterns work
-            Assert.Contains("Outer fail ; Multiline", content);
-            Assert.Contains(" [Inner -> InvalidOperationException: Inner fail", content);
-            Assert.Contains("]", content); // Closing brackets
-
-            // 2. Isolate the exact formatted exception segment text block
-            int exceptionMessageIndex = content.IndexOf("Exception test");
-            string exceptionSegment = content.Substring(exceptionMessageIndex).TrimEnd();
-
-            // 3. Confirm that the isolated exception text contains zero raw line breaks
-            Assert.DoesNotContain("\r", exceptionSegment);
-            Assert.DoesNotContain("\n", exceptionSegment);
         }
 
         [Fact]
@@ -541,17 +534,8 @@ namespace Servy.Core.UnitTests.Logging
         public void SetUseLocalTimeForRotation_UpdatesTimestampTimezoneFormat()
         {
             // Arrange
-            // Generate a completely isolated unique file for this test instance 
-            // to shield it against async logs from parallel test runner assemblies.
-            string isolatedFileName = $"IsolationTimezoneTest_{Guid.NewGuid():N}.log";
-            string isolatedFullPath = Path.Combine(Logger.LogsPath, isolatedFileName);
-
-            if (File.Exists(isolatedFullPath))
-            {
-                File.Delete(isolatedFullPath);
-            }
-
-            Logger.Initialize(isolatedFileName, useLocalTimeForRotation: false);
+            // Absolute test boundaries are governed securely via strict sequential test serialization rules.
+            Logger.Initialize(_testFileName, useLocalTimeForRotation: false);
 
             // Act
             Logger.Info("Message UTC");
@@ -560,7 +544,7 @@ namespace Servy.Core.UnitTests.Logging
             Logger.Shutdown();
 
             // Assert
-            string[] lines = File.ReadAllLines(isolatedFullPath);
+            string[] lines = File.ReadAllLines(_fullLogPath);
 
             // Extract the targeted indices explicitly using their message payloads 
             // so background threads firing logs into the static entity won't disrupt verification.
@@ -575,9 +559,6 @@ namespace Servy.Core.UnitTests.Logging
 
             // Validate the second log entry uses the local timezone offset (e.g., +02:00 or -05:00)
             Assert.Matches(@"[+-]\d{2}:\d{2}\] \[INFO\] \|", lines[localIndex]);
-
-            // Teardown isolated resource cleanly
-            try { if (File.Exists(isolatedFullPath)) File.Delete(isolatedFullPath); } catch { }
         }
 
         #endregion
@@ -602,10 +583,14 @@ namespace Servy.Core.UnitTests.Logging
         [Fact]
         public void Shutdown_WhenAlreadyShutdown_DoesNotThrow()
         {
+            // Arrange
             Logger.Initialize(_testFileName);
             Logger.Shutdown();
 
+            // Act
             var ex = Record.Exception(() => Logger.Shutdown());
+
+            // Assert
             Assert.Null(ex); // Graceful no-op on secondary shutdown
         }
 

@@ -107,8 +107,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Arrange: Simulate an old V0 database
                 conn.Execute($"CREATE TABLE Services ({string.Join(", ", colDefs)});");
 
-                // Insert duplicates out of chronological order to explicitly verify MIN(Id) behavior.
-                // Row 1 (Id=1): TestService, Row 2 (Id=2): testservice, Row 3 (Id=3): TESTSERVICE.
+                // Insert three case-duplicates sequentially (Id 1..3); dedup must keep MIN(Id)=1,
+                // so a last-write-wins/MAX(Id) implementation would fail the assertion below.
                 conn.Execute($"{insertTemplate(insertCols)} ({string.Join(", ", insertVals1)});");
                 conn.Execute($"{insertTemplate(insertCols)} ({string.Join(", ", insertVals2)});");
                 conn.Execute($"{insertTemplate(insertCols)} ({string.Join(", ", insertVals3)});");

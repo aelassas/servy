@@ -10,8 +10,8 @@ namespace Servy.Core.UnitTests.Helpers
         public void ApplyDefaults_WhenAllPropertiesAreNull_PopulatesEveryDefault()
         {
             // Arrange: Create a DTO where all nullable properties are null
-            // Note: Since you added initializers to the DTO, we explicitly set them to null 
-            // to test the "ApplyDefaults" logic for incomplete imports.
+            // Note: ServiceDto has field initializers, so explicitly null
+            // every nullable property to exercise ApplyDefaults on an incomplete import.
             var dto = new ServiceDto
             {
                 StartupType = null,
