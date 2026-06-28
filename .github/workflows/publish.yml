@@ -535,7 +535,7 @@ jobs:
         run: |
           # Note the inclusion of $env:FRAMEWORK in the original path
           $originalPath = "setup/servy-$env:VERSION-$env:FRAMEWORK-x64-installer.exe"
-          $signPathName = "servy-x64-installer.exe"
+          $signPathName = "servy-net48-x64-installer.exe"
           $unsignedDir = "unsigned_installer_staging"
           $signPathTarget = "$unsignedDir/$signPathName"
           
@@ -566,14 +566,14 @@ jobs:
           signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-installer.outputs.artifact-id }}'
-          artifact-configuration-slug: 'servy-installer'
+          artifact-configuration-slug: 'servy-installer-net48'
           wait-for-completion: true
           output-artifact-directory: ${{ env.SIGNED_INSTALLER_DIR }}
 
       - name: Prepare signed installer for release
         shell: pwsh
         run: |
-          $source = "$env:SIGNED_INSTALLER_DIR/servy-x64-installer.exe"
+          $source = "$env:SIGNED_INSTALLER_DIR/servy-net48-x64-installer.exe"
           $targetDir = "release_installer_staging"
           # Re-inject the framework tag into the final release name
           $targetPath = "$targetDir/servy-$env:VERSION-$env:FRAMEWORK-x64-installer.exe"
