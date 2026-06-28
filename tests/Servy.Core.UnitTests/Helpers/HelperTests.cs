@@ -298,7 +298,7 @@ namespace Servy.Core.UnitTests.Helpers
         /// </summary>
         [Theory]
         [InlineData(" MyService")] // Leading space
-        [InlineData("  MyService")] // Both
+        [InlineData("  MyService")] // Multiple leading spaces
         public void IsServiceNameValid_UntrimmedLeadingWhitespace_ReturnsTrimError(string input)
         {
             // Act
@@ -314,7 +314,7 @@ namespace Servy.Core.UnitTests.Helpers
         /// </summary>
         [Theory]
         [InlineData("MyService ")] // Trailing space
-        [InlineData("MyService  ")] // Both
+        [InlineData("MyService  ")] // Multiple trailing spaces
         public void IsServiceNameValid_UntrimmedTrailingWhitespace_ReturnsTrimError(string input)
         {
             // Act

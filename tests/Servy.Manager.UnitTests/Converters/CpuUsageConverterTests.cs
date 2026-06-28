@@ -39,7 +39,7 @@ namespace Servy.Manager.UnitTests.Converters
                 var converter = new CpuUsageConverter();
                 double input = 1.25;
 
-                // Updated expectation to match the actual rounding behavior (1.3%)
+                // CPU usage is rounded half-up to one decimal place (1.25 -> 1.3%)
                 string expectedFormattedValue = "1.3%";
 
                 _mockProcessHelper.Setup(h => h.FormatCpuUsage(input)).Returns(expectedFormattedValue);

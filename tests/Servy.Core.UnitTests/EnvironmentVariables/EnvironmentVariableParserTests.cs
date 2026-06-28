@@ -317,7 +317,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [InlineData("KEY=\\\"hello\\\"", "\"hello\"")]
 
         // 2. Multiple literal quotes: Bypasses stripping.
-        // Parser Input: KEY=\"\"\"\" -> Result: ""
+        // Parser Input: KEY=\"\" -> Result: ""
         [InlineData("KEY=\\\"\\\"", "\"\"")]
 
         // 3. Structural quotes: Stripping is triggered because it starts/ends with ".

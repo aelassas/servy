@@ -1,8 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Helpers;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Helpers
@@ -120,7 +118,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(30, 10, 0, 55)]  // attempts = 1 -> baseline(30) + buffer(15) + prelaunch(10*1) + backoff(0)
         [InlineData(30, 10, 1, 66)]  // attempts = 2 -> baseline(30) + buffer(15) + prelaunch(10*2) + backoff(1)
         [InlineData(30, 10, 2, 78)]  // attempts = 3 -> baseline(30) + buffer(15) + prelaunch(10*3) + backoff(1 + 2 = 3)
-        public void CalculateStartTimeout_WithRetryAttempts_ScalesPreLaunchAndAddsExponentialBackoff(
+        public void CalculateStartTimeout_WithRetryAttempts_ScalesPreLaunchAndAddsCappedLinearBackoff(
             int? configuredTimeout,
             int preLaunchTimeoutSeconds,
             int preLaunchRetryAttempts,
