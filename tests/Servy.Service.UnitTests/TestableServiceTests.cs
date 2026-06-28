@@ -79,7 +79,7 @@ namespace Servy.Service.UnitTests
             mockHelper.Verify(h => h.GetArgs(), Times.Once);
             mockHelper.Verify(h => h.ParseOptions(serviceRepository.Object, fullArgs), Times.Once);
 
-            // Verify logger promotion and disposal of the root
+            // Verify logger promotion
             mockRootLogger.Verify(l => l.CreateScoped(expectedOptions.ServiceName), Times.Once);
             // The root logger must NOT be disposed because the scoped logger
             // delegates its underlying EventLog/File operations to it.

@@ -91,7 +91,9 @@ namespace Servy.UI.UnitTests.Commands
         [Fact]
         public void RaiseCanExecuteChanged_DoesNotThrow()
         {
-            // Verifies the call to CommandManager.InvalidateRequerySuggested
+            // Verifies RaiseCanExecuteChanged() is safe to call (does not throw)
+            // from a standard thread. CommandManager.InvalidateRequerySuggested is a
+            // static WPF call and is not directly verifiable here.
             var command = new RelayCommand<string>(_ => { });
             var exception = Record.Exception(() => command.RaiseCanExecuteChanged());
             Assert.Null(exception);

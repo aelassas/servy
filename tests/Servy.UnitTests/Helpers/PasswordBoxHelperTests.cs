@@ -85,8 +85,7 @@ namespace Servy.Helpers.UnitTests
                 var passwordBox = new PasswordBox();
                 passwordBox.Password = "OriginalControlPassword";
 
-                // Explicitly set the internal IsUpdating property to true via reflection or 
-                // by accessing the private field to simulate an active internal update loop.
+                // Set the internal IsUpdating attached property to true via reflection to simulate an active internal update loop
                 var isUpdatingPropertyField = typeof(PasswordBoxHelper).GetField("IsUpdatingProperty",
                     System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
 

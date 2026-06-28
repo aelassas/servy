@@ -44,7 +44,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
 
-            // Create a dummy Servy.Service.exe for the test
+            // Create a dummy Servy.Service.CLI.Net48.exe for the test
             var wrapperExePath = AppConfig.GetServyCLIServicePath();
             Directory.CreateDirectory(Path.GetDirectoryName(wrapperExePath));
             File.WriteAllText(wrapperExePath, "dummy content");
