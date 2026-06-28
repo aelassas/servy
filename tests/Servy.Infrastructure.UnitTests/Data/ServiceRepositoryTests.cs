@@ -1160,7 +1160,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
         #endregion
 
-        #region Newly Added Targeted Coverage Branch Tests
+        #region Private Helper Branch Coverage Tests
 
         [Fact]
         public async Task PatchRuntimeStateAsync_ExistingNotNull_ExecutesApplyRuntimeState()
@@ -1276,8 +1276,8 @@ namespace Servy.Infrastructure.UnitTests.Data
                            .Throws(new FormatException("Invalid base64 string layout"));
 
             // Act & Assert
-            // Since GetByIdAsync calls SafeDecrypt (which catches InvalidOperationException), we bypass that hook
-            // by hitting DecryptDto directly via reflection or mocking inside an automated pipeline array context
+            // GetByIdAsync calls SafeDecrypt (which catches InvalidOperationException), so we invoke the
+            // private DecryptDto directly via reflection to observe the raw wrapped exception it throws.
             var methodInfo = typeof(ServiceRepository).GetMethod("DecryptDto",
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
 

@@ -123,7 +123,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             File.WriteAllText(_legalXmlPath, "<ServiceDto><Name>Test</Name></ServiceDto>");
 
-            // "ini" passes TryParseFileType validation as a valid enum member but triggers the fallback default branch inside ExecuteAsync
+            // "ini" is not a member of ConfigFileType, so TryParseFileType rejects it up-front and ExecuteAsync returns Msg_InvalidConfigFileType.
             var opts = new ImportServiceOptions { ConfigFileType = "ini", Path = _legalXmlPath };
 
             // Act

@@ -1,12 +1,5 @@
-﻿using Servy.Core.Logging;
-using Servy.Service.ProcessManagement;
-using System;
-using System.Collections.Generic;
+﻿using Servy.Service.ProcessManagement;
 using System.Diagnostics;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Servy.Service.IntegrationTests.ProcessManagement
 {

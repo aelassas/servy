@@ -1,11 +1,6 @@
 import time
 import sys
 
-# os.path.expandvars("%PYTHON_EXE%")
-# E:\dev\servy\src\tests\stdout-stderr.py
-# E:\dev\servy\python_stdout_stderr.txt
-# E:\dev\servy\python_stdout_stderr.txt
-
 ONE_MEGABYTE = 1024 * 1024
 data = b'a' * ONE_MEGABYTE
 data_err = b'b' * ONE_MEGABYTE

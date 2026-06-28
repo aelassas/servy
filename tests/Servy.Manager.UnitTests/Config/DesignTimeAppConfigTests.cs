@@ -26,8 +26,6 @@ namespace Servy.Manager.UnitTests.Config
             Assert.Equal(AppConfig.DefaultConsoleMaxLines, config.ConsoleMaxLines);
             Assert.Equal(AppConfig.DefaultLogsWindowDays, config.LogsWindowDays);
             Assert.Equal(300, config.SearchDebounceDelayMs);
-
-            // Testing public property vs interface implementation
             Assert.Equal(AppConfig.DefaultMaxBulkOperationParallelism, config.MaxBulkOperationParallelism);
 
             // Assert - Paths

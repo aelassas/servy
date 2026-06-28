@@ -310,8 +310,8 @@ namespace Servy.Core.UnitTests.Security
             var tampered = "SERVY_ENC:v2:!!!NotBase64!!!";
 
             // Act & Assert
-            // We expect a FormatException (from Base64 decoding) or a 
-            // SecureDataIntegrityException if you chose to wrap it.
+            // Invalid Base64 strings must always be caught and wrapped by the cryptographic 
+            // provider to guarantee a deterministic SecureDataIntegrityException surface.
             Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(tampered));
         }
 
