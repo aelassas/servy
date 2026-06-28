@@ -208,15 +208,15 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void Serialize_InvalidDtoStateOrSerializationFailure_CatchesExceptionAndReturnsNull()
         {
-            // Arrange: A broken initialization sequence that forces XmlSerializer to trip can be 
-            // simulated by passing a class type mapping variant that mismatches, but since ServiceDto 
-            // is basic, we force an invalid runtime structural parameter exception or corrupted data loop.
+            // Arrange
+            // Passing a derived type that the ServiceDto-typed XmlSerializer doesn't know about
+            // makes XmlSerializer.Serialize throw, exercising the catch -> returns null.
             var invalidDto = new InvalidServiceDtoMock();
             var serializer = new XmlSerializer(typeof(ServiceDto));
 
             // Act
             // Passing an object that cannot be typed safely as ServiceDto into the cast block
-            var result = _serializer.Serialize(invalidDto as ServiceDto);
+            var result = _serializer.Serialize(invalidDto);
 
             // Assert
             Assert.Null(result);

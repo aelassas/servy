@@ -15,13 +15,13 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData(0, "0.0%")]        // zero case
-        [InlineData(0.03, "0.0%")]     // zero case
+        [InlineData(0, "0.0%")]      // zero case
+        [InlineData(0.03, "0.0%")]   // small non-zero rounds down to 0.0%
         [InlineData(1.0, "1.0%")]    // integer case
         [InlineData(1.04, "1.0%")]   // two decimals
         [InlineData(1.05, "1.1%")]   // two decimals
         [InlineData(1.06, "1.1%")]   // two decimals
-        [InlineData(1.1, "1.1%")]    // one decimal -> force two decimals
+        [InlineData(1.1, "1.1%")]    // already one decimal, formatted as-is
         [InlineData(1.23, "1.2%")]   // two decimals
         [InlineData(1.34, "1.3%")]   // rounding down
         [InlineData(1.35, "1.4%")]   // rounding up
