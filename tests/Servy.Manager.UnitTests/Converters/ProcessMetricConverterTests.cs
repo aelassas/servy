@@ -22,10 +22,6 @@ namespace Servy.Manager.UnitTests.Converters
         {
             public IProcessHelper ExposedProcessHelper => ProcessHelper;
 
-            // Add an explicit constructor overload that lets the unit test bypass global statics
-            // and force the evaluation of fallback assignments deterministically if necessary.
-            public TestMetricConverter() : base() { }
-
             protected override string Format(double value)
             {
                 // Simple pass-through mock evaluation string

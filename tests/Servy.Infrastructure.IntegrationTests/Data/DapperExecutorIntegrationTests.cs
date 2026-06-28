@@ -100,7 +100,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             }
         }
 
-        // NESTED CLASS: Place inside your DapperExecutorIntegrationTests class block
         private class FlexibleDbConnectionStub : DbConnection
         {
             private readonly bool _forceSyncTransactionPath;

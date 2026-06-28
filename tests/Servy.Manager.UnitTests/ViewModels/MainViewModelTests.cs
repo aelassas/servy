@@ -106,13 +106,6 @@ namespace Servy.Manager.UnitTests.ViewModels
             );
         }
 
-        private async Task FlushDispatcherAsync(Dispatcher? dispatcher = null)
-        {
-            // Utilize the specific current thread-apartment dispatcher to prevent cross-locks
-            var targetDispatcher = dispatcher ?? Dispatcher.CurrentDispatcher;
-            await targetDispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
-        }
-
         #region Constructors & Properties
 
         [Fact]

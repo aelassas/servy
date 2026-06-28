@@ -99,7 +99,7 @@ namespace Servy.Core.UnitTests.Security
             // Verify preservation: LocalService should still be there
             Assert.Contains(rules, r => r.IdentityReference == localServiceSid);
 
-            // Verify purge: Everyone should be GONE (This was the fix)
+            // Verify purge: Everyone should be GONE
             Assert.DoesNotContain(rules, r => r.IdentityReference == everyoneSid);
 
             // Verify standard high-privilege accounts exist
