@@ -368,7 +368,7 @@ namespace Servy.Infrastructure.Data
                 columnDefinitions.Add($"{col} {GetSqlType(col)}");
             }
 
-            // Added IF NOT EXISTS to prevent concurrent racer crashes.
+            // IF NOT EXISTS to prevent concurrent racer crashes.
             var createTableSql = $"CREATE TABLE IF NOT EXISTS {SqlConstants.ServicesTableName} (\n    {string.Join(",\n    ", columnDefinitions)}\n);";
             connection.Execute(createTableSql, transaction: transaction);
 

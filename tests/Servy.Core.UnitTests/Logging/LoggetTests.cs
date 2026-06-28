@@ -434,7 +434,7 @@ namespace Servy.Core.UnitTests.Logging
             // 2. The number of closing brackets must match the number of opened ones.
             Assert.Equal(openTokensCount, closeBracketsCount);
 
-            // 3. FIXED: The structural brackets close out the entire string block 
+            // 3. The structural brackets close out the entire string block 
             // after the final exception's stack trace context.
             Assert.EndsWith("]]]", exceptionSegment);
             Assert.Contains("Third inner level fault (at ", exceptionSegment);

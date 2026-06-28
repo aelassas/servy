@@ -59,7 +59,7 @@ namespace Servy.Core.UnitTests.Mappers
                 EnableDateRotation = true,
                 DateRotationType = (int)DateRotationType.Weekly,
                 MaxRotations = 5,
-                UseLocalTimeForRotation = true, // Added
+                UseLocalTimeForRotation = true, 
                 EnableDebugLogs = true,
                 EnableHealthMonitoring = false,
                 HeartbeatInterval = 90,
@@ -86,16 +86,16 @@ namespace Servy.Core.UnitTests.Mappers
                 PostLaunchExecutablePath = @"C:\apps\post_launch\post_launch.exe",
                 PostLaunchParameters = "--post-param1",
                 PostLaunchStartupDirectory = @"C:\apps\post_launch\",
-                StartTimeout = 40, // Added
-                StopTimeout = 50,  // Added
-                PreStopExecutablePath = @"C:\prestop.exe", // Added
-                PreStopStartupDirectory = @"C:\prestop",    // Added
-                PreStopParameters = "-pre-stop",           // Added
-                PreStopTimeoutSeconds = 15,                // Added
-                PreStopLogAsError = true,                 // Added
-                PostStopExecutablePath = @"C:\poststop.exe", // Added
-                PostStopStartupDirectory = @"C:\poststop",   // Added
-                PostStopParameters = "-post-stop"           // Added
+                StartTimeout = 40, 
+                StopTimeout = 50,  
+                PreStopExecutablePath = @"C:\prestop.exe", 
+                PreStopStartupDirectory = @"C:\prestop",    
+                PreStopParameters = "-pre-stop",           
+                PreStopTimeoutSeconds = 15,                
+                PreStopLogAsError = true,                 
+                PostStopExecutablePath = @"C:\poststop.exe", 
+                PostStopStartupDirectory = @"C:\poststop",   
+                PostStopParameters = "-post-stop"           
             };
 
             // Act
@@ -116,7 +116,7 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(dto.EnableDateRotation, service.EnableDateRotation);
             Assert.Equal(dto.DateRotationType, (int)service.DateRotationType);
             Assert.Equal(dto.MaxRotations, service.MaxRotations);
-            Assert.Equal(dto.UseLocalTimeForRotation, service.UseLocalTimeForRotation); // Added
+            Assert.Equal(dto.UseLocalTimeForRotation, service.UseLocalTimeForRotation); 
             Assert.Equal(dto.EnableDebugLogs, service.EnableDebugLogs);
             Assert.Equal(dto.EnableHealthMonitoring, service.EnableHealthMonitoring);
             Assert.Equal(dto.HeartbeatInterval, service.HeartbeatInterval);
@@ -205,11 +205,7 @@ namespace Servy.Core.UnitTests.Mappers
             };
 
             // Act & Assert
-            // We wrap the call in a lambda. Assert.Throws will catch the exception 
-            // and fail the test if the exception is not thrown.
             var ex = Assert.Throws<ArgumentNullException>(() => ServiceMapper.ToDomain(null!, dto));
-
-            // Optional: Verify which parameter caused the exception
             Assert.Equal("serviceManager", ex.ParamName);
         }
 

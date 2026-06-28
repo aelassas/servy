@@ -78,7 +78,6 @@ namespace Servy.Service.Helpers
         /// within raw command-line argument strings.
         /// </summary>
         /// <remarks>
-        /// Added support for quoted values and preserved separators.
         /// The value pattern handles both quoted strings and standard tokens, including
         /// multi-word values that do not look like subsequent CLI flags.
         /// </remarks>

@@ -47,7 +47,7 @@ namespace Servy.Core.UnitTests.Logging
 
             string content = File.ReadAllText(filePath);
 
-            // Added multiline anchoring regex rules (`^\s*`) to explicitly defend against 
+            // Multiline anchoring regex rules (`^\s*`) to explicitly defend against 
             // parsing commented-out descriptors or secondary block strings higher up in the script layout.
             string pattern = $@"^\s*{Regex.Escape(variableName)}\s*=\s*(\d+)";
             var match = Regex.Match(content, pattern, RegexOptions.Multiline);
