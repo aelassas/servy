@@ -93,7 +93,7 @@ namespace Servy.Core.UnitTests.Helpers
         public void EnsureFolders_AESKeyPath_NoDirectory_ThrowsInvalidOperationException()
         {
             var conn = $"Data Source={Path.Combine(_tempDir, "db", "Servy.db")};";
-            var key = "key.aes"; // no folder -> Path.GetDirectoryName returns null
+            var key = "key.aes"; // no folder -> Path.GetDirectoryName returns "" (empty)
             var iv = Path.Combine(_tempDir, "iv", "iv.aes");
 
             var ex = Assert.Throws<InvalidOperationException>(() =>
@@ -107,7 +107,7 @@ namespace Servy.Core.UnitTests.Helpers
         {
             var conn = $"Data Source={Path.Combine(_tempDir, "db", "Servy.db")};";
             var key = Path.Combine(_tempDir, "key", "key.aes");
-            var iv = "iv.aes"; // no folder -> Path.GetDirectoryName returns null
+            var iv = "iv.aes"; // no folder -> Path.GetDirectoryName returns "" (empty)
 
             var ex = Assert.Throws<InvalidOperationException>(() =>
                 AppFoldersHelper.EnsureFolders(conn, key, iv));

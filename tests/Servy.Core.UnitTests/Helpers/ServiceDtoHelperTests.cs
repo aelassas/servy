@@ -101,9 +101,7 @@ namespace Servy.Core.UnitTests.Helpers
             ServiceDto? dto = null;
 
             // Act & Assert
-            // This verifies the helper is null-safe (if you add a null check)
-            // If you don't have a null check, this is a good reminder to add: 
-            // if (dto == null) return;
+            // ApplyDefaultsAndResetIdentity returns immediately on null (see ServiceDtoHelper)
             var exception = Record.Exception(() => ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto!));
             Assert.Null(exception);
         }

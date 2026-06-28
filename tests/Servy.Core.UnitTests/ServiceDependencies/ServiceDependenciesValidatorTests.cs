@@ -68,7 +68,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [Fact]
         public void Validate_NameWithSpecialCharacters_ReturnsFalse()
         {
-            // Changed from '$' to '@' to ensure invalid characters are still rejected correctly
+            // '@' is rejected as an invalid service-name character
             var result = ServiceDependenciesValidator.Validate("Service@Name", out var errors);
 
             Assert.False(result);
@@ -78,7 +78,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [Fact]
         public void Validate_MixedValidAndInvalidNames_ReturnsFalse()
         {
-            // 'MSSQL$SQLEXPRESS' is now treated as valid, while 'Bad Service' and 'Another@Bad' fail
+            // 'MSSQL$SQLEXPRESS' is treated as valid, while 'Bad#Service' and 'Another@Bad' fail
             var input = "MSSQL$SQLEXPRESS;Bad#Service;Another@Bad";
             var result = ServiceDependenciesValidator.Validate(input, out var errors);
 

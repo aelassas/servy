@@ -141,12 +141,12 @@ namespace Servy.Core.UnitTests.Helpers
             int preLaunchTimeout = 5;
             int highRetryAttempts = 20;
 
-            int baseFloor = AppConfig.DefaultServiceStartTimeoutSeconds; // 30
-            int buffer = AppConfig.ScmTimeoutBufferSeconds;              // 7
-            int maxBackoffCapPerIteration = AppConfig.PreLaunchRetryMaxDelayMs / 1000; // e.g. 30000ms / 1000 = 30s
+            int baseFloor = AppConfig.DefaultServiceStartTimeoutSeconds;
+            int buffer = AppConfig.ScmTimeoutBufferSeconds;
+            int maxBackoffCapPerIteration = AppConfig.PreLaunchRetryMaxDelayMs / 1000;
 
-            int attempts = highRetryAttempts + 1; // 21
-            int expectedTotalPreLaunch = attempts * preLaunchTimeout; // 21 * 5 = 105
+            int attempts = highRetryAttempts + 1;
+            int expectedTotalPreLaunch = attempts * preLaunchTimeout;
 
             // Manually evaluate the expected capped loop calculation to pin the assertion pattern matrix
             int expectedTotalBackoff = 0;
@@ -194,8 +194,6 @@ namespace Servy.Core.UnitTests.Helpers
             int negativeAttempts = -5; // Malformed payload input parameters baseline check
             int preLaunchTimeout = 10;
 
-            // Math.Max(0, -5) + 1 => 1 attempt execution block. 
-            // Expected: 30 (floor) + 7 (buffer) + 10 (prelaunch * 1) + 0 (backoff loop skips) = 47
             int expectedTimeout = AppConfig.DefaultServiceStartTimeoutSeconds +
                                   AppConfig.ScmTimeoutBufferSeconds +
                                   preLaunchTimeout;

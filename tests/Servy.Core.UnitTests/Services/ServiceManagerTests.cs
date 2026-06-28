@@ -63,7 +63,7 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(scmHandle);
 
             _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Core.DTOs.ServiceDto
+                .ReturnsAsync(new ServiceDto
                 {
                     Name = serviceName,
                     Description = "desc",
@@ -131,7 +131,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Mock an exact name match to bypass the Unicode layout hardening block safely
             _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Core.DTOs.ServiceDto
+                .ReturnsAsync(new ServiceDto
                 {
                     Name = serviceName,
                     Description = "desc",
@@ -1583,7 +1583,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService" });
+                .ReturnsAsync(new ServiceDto { Name = "TestService" });
 
             // Act
             var result = await _serviceManager.StartServiceAsync("TestService", cancellationToken: TestContext.Current.CancellationToken);
@@ -1608,7 +1608,7 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(ServiceControllerStatus.Running);
 
             _mockServiceRepository.Setup(r => r.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Core.DTOs.ServiceDto
+                .ReturnsAsync(new ServiceDto
                 {
                     Name = serviceName,
                     PreLaunchExecutablePath = @"C:\Apps\pre-launch.exe"
@@ -1625,8 +1625,6 @@ namespace Servy.Core.UnitTests.Services
 
             // Verify that the loop actually checked the SCM for updates
             _mockController.Verify(c => c.Refresh(), Times.AtLeastOnce);
-
-            // REMOVED: WaitForStatus verify, as it is no longer used in the async version
         }
 
         [Fact]
@@ -1645,7 +1643,7 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(ServiceControllerStatus.Running);
 
             _mockServiceRepository.Setup(r => r.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Core.DTOs.ServiceDto
+                .ReturnsAsync(new ServiceDto
                 {
                     Name = serviceName,
                     StartTimeout = 5
@@ -1662,8 +1660,6 @@ namespace Servy.Core.UnitTests.Services
 
             // Verify that we are now using Refresh() to get updated status from the SCM
             _mockController.Verify(c => c.Refresh(), Times.AtLeastOnce);
-
-            // REMOVED: WaitForStatus verification (it's no longer in the code)
         }
 
         [Fact]
@@ -1672,7 +1668,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(null as Core.DTOs.ServiceDto);
+                .ReturnsAsync(null as ServiceDto);
 
             // Act
             var result = await _serviceManager.StartServiceAsync("TestService", cancellationToken: TestContext.Current.CancellationToken);
@@ -1687,7 +1683,7 @@ namespace Servy.Core.UnitTests.Services
         {
             _mockController.Setup(c => c.Status).Throws<InvalidOperationException>();
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService", StopTimeout = 10 });
+                .ReturnsAsync(new ServiceDto { Name = "TestService", StopTimeout = 10 });
 
             var result = await _serviceManager.StartServiceAsync("TestService", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -1700,7 +1696,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService" });
+                .ReturnsAsync(new ServiceDto { Name = "TestService" });
 
             // Act
             var result = await _serviceManager.StopServiceAsync("TestService", cancellationToken: TestContext.Current.CancellationToken);
@@ -1716,7 +1712,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(null as Core.DTOs.ServiceDto);
+                .ReturnsAsync(null as ServiceDto);
 
             // Act
             var result = await _serviceManager.StopServiceAsync("TestService", cancellationToken: TestContext.Current.CancellationToken);
@@ -1742,7 +1738,7 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(ServiceControllerStatus.Stopped);
 
             _mockServiceRepository.Setup(r => r.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Core.DTOs.ServiceDto
+                .ReturnsAsync(new ServiceDto
                 {
                     Name = serviceName,
                     PreStopExecutablePath = @"C:\Apps\pre-stop.exe"
@@ -1778,7 +1774,7 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(ServiceControllerStatus.Stopped); // Second poll (loop exits)
 
             _mockServiceRepository.Setup(r => r.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Core.DTOs.ServiceDto
+                .ReturnsAsync(new ServiceDto
                 {
                     Name = serviceName,
                     StopTimeout = stopTimeout
@@ -1795,8 +1791,6 @@ namespace Servy.Core.UnitTests.Services
 
             // Verify we polled for status (Refresh is called inside the loop)
             _mockController.Verify(c => c.Refresh(), Times.AtLeastOnce);
-
-            // IMPORTANT: Remove the WaitForStatus verify, it no longer exists in the logic!
         }
 
         [Fact]
@@ -1804,7 +1798,7 @@ namespace Servy.Core.UnitTests.Services
         {
             _mockController.Setup(c => c.Status).Throws<InvalidOperationException>();
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService", StopTimeout = 10 });
+                .ReturnsAsync(new ServiceDto { Name = "TestService", StopTimeout = 10 });
 
             var result = await _serviceManager.StopServiceAsync("TestService", cancellationToken: TestContext.Current.CancellationToken);
 
@@ -1827,7 +1821,7 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(ServiceControllerStatus.Running);     // 2nd Loop check (exit loop)
 
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService" });
+                .ReturnsAsync(new ServiceDto { Name = "TestService" });
 
             // Act
             var result = await _serviceManager.RestartServiceAsync("TestService", cancellationToken: TestContext.Current.CancellationToken);
@@ -1838,7 +1832,7 @@ namespace Servy.Core.UnitTests.Services
             _mockController.Verify(c => c.Stop(), Times.Once);
             _mockController.Verify(c => c.Start(), Times.Once);
 
-            // Now this will pass because we forced the loop to run at least once per phase
+            // Each phase (stop, start) polls the SCM once -> exactly 2 refreshes
             _mockController.Verify(c => c.Refresh(), Times.Exactly(2));
         }
 
@@ -1869,9 +1863,9 @@ namespace Servy.Core.UnitTests.Services
                .Returns(ServiceControllerStatus.Stopped); // 3. Start Entry (Triggers the Start() call)
 
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService" });
+                .ReturnsAsync(new ServiceDto { Name = "TestService" });
 
-            // This will now actually be invoked because the entry check sees "Stopped"
+            // Entry check sees "Stopped", so Start() is reached and throws
             _mockController.Setup(c => c.Start()).Throws(new Exception("Boom!"));
 
             // Act

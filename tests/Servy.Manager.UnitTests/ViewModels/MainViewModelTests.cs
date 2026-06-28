@@ -724,7 +724,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     }
                     finally
                     {
-                        // Lower the flag flag to release the message pump loop once the final task completes
+                        // Lower the flag to release the message pump loop once the final task completes
                         frame.Continue = false;
                     }
                 }, DispatcherPriority.Normal);

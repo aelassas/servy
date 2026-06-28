@@ -297,7 +297,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Extra buffer to ensure SCM doesn't kill the service before cleanup finishes.
         /// </summary>
-        public static readonly int ScmTimeoutBufferSeconds = 15;
+        public const int ScmTimeoutBufferSeconds = 15;
 
         /// <summary>
         /// The default maximum time (in seconds) to wait for a service to reach the 'Running' state.
