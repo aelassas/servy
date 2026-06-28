@@ -109,7 +109,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             public override void ChangeDatabase(string databaseName) { /* no-op */ }
         }
 
-        // DbConnection stub designed to gracefully simulate lack of asynchronous transaction support
         private class FlexibleDbConnectionStub : DbConnection
         {
             private readonly bool _forceSyncTransactionPath;
