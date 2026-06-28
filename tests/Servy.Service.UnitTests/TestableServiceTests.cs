@@ -210,7 +210,6 @@ namespace Servy.Service.UnitTests
                 _mockProcessKiller.Object
             );
 
-            // INJECT PRIVATE FIELD VIA REFLECTION HELPER HERE
             service.SetRecoveryActionEnabled(true);
 
             var options = new StartOptions

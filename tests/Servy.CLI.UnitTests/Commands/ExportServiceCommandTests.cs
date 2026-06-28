@@ -180,7 +180,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Exclusively open and lock down the target filesystem file channel before running SaveFile.
             // When SaveFile invokes PathSecurityGuard, it opens with FileMode.OpenOrCreate and FileAccess.ReadWrite.
             // Because our file handle context restricts any sharing options (FileShare.None), PathSecurityGuard
-            // will throw an IOException/UnauthorizedAccessException while trying to allocate the stream.
+            // will throw a SecurityException while trying to allocate the stream.
             using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
                 var ex = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, "new config payload"));

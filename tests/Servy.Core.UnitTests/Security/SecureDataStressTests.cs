@@ -19,7 +19,7 @@ namespace Servy.Core.UnitTests.Security
         {
             _output = output;
 
-            // Setup static keys for consistent testing
+            // Generate random keys; round-trip is verified within each run
             _testKey = new byte[32]; // AES-256
             _testIvV1 = new byte[16]; // AES Block Size
 

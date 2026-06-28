@@ -234,10 +234,10 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         // ====================================================================
-        // UPDATED REFLECTION TESTS (Targeting SplitByUnescapedDelimiters)
+        // SplitByUnescapedDelimiters branch-coverage tests
         // ====================================================================
 
-        private static string[] InvokeSplit(string input, char[] delimiters)
+        private static string[] Split(string input, char[] delimiters)
         {
             return EscapedTokenizer.SplitByUnescapedDelimiters(input, delimiters);
         }
@@ -248,29 +248,29 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             char[] delims = new[] { '=' };
 
             // no delimiter
-            var result = InvokeSplit("abc", delims);
+            var result = Split("abc", delims);
             Assert.Single(result);
             Assert.Equal("abc", result[0]);
 
             // unescaped delimiter
-            result = InvokeSplit("a=b", delims);
+            result = Split("a=b", delims);
             Assert.Equal(new[] { "a", "b" }, result);
 
             // escaped delimiter (odd backslashes)
-            result = InvokeSplit(@"a\=b", delims);
+            result = Split(@"a\=b", delims);
             Assert.Single(result);
             Assert.Equal(@"a\=b", result[0]);
 
             // even backslashes -> delimiter is unescaped
-            result = InvokeSplit(@"a\\=b", delims);
+            result = Split(@"a\\=b", delims);
             Assert.Equal(new[] { @"a\\", "b" }, result);
 
             // multiple unescaped delimiters
-            result = InvokeSplit("a=b=c", delims);
+            result = Split("a=b=c", delims);
             Assert.Equal(new[] { "a", "b", "c" }, result);
 
             // trailing delimiter
-            result = InvokeSplit("a=", delims);
+            result = Split("a=", delims);
             Assert.Equal(new[] { "a", string.Empty }, result);
         }
 
@@ -280,20 +280,20 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             char[] delims = new[] { '=' };
 
             // 1. j < 0 (delimiter at index 0)
-            var result = InvokeSplit("=a", delims);
+            var result = Split("=a", delims);
             Assert.Equal(new[] { string.Empty, "a" }, result);
 
             // 2. j >= 0 but previous char is NOT backslash
-            result = InvokeSplit("a=b", delims);
+            result = Split("a=b", delims);
             Assert.Equal(new[] { "a", "b" }, result);
 
             // 3. loop executes once (single backslash)
-            result = InvokeSplit(@"a\=b", delims);
+            result = Split(@"a\=b", delims);
             Assert.Single(result);
             Assert.Equal(@"a\=b", result[0]);
 
             // 4. loop executes multiple times (multiple backslashes)
-            result = InvokeSplit(@"a\\\=b", delims);
+            result = Split(@"a\\\=b", delims);
             Assert.Single(result);
             Assert.Equal(@"a\\\=b", result[0]);
         }

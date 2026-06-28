@@ -12,8 +12,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
     /// <summary>
     /// Integration tests for ProcessHelper. 
-    /// Verifies OS-level interactions including file system resolution, environment variable expansion, 
-    /// and native Windows process tree traversal.
+    /// Verifies ProcessHelper process-metric and process-tree aggregation behavior.
     /// </summary>
     [Collection("ProcessHelperIntegrationTests")]
     public class ProcessHelperIntegrationTests : IDisposable
