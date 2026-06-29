@@ -170,7 +170,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         /// CR and LF control characters as part of the token value rather than splitting records on them.
         /// </summary>
         [Fact]
-        public void SplitByUnescapedDelimiters_LiteralEscapedControlLineBreaks_DoesNotSplit()
+        public void SplitByUnescapedDelimiters_KeepsEscapedControlLineBreaksInternal()
         {
             // Arrange
             // Explicitly embedding literal escaped control character sequences into a single structural block

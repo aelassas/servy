@@ -1,9 +1,7 @@
-﻿using System;
+﻿using Servy.Manager.Converters;
+using Servy.UI.Constants;
 using System.Globalization;
 using System.Windows.Data;
-using Servy.Manager.Converters;
-using Servy.UI.Constants;
-using Xunit;
 
 namespace Servy.Manager.UnitTests.Converters
 {
@@ -12,7 +10,7 @@ namespace Servy.Manager.UnitTests.Converters
         private readonly PidConverter _converter = new PidConverter();
 
         [Fact]
-        public void Convert_NullValue_ReturnsUnknownPidConstant()
+        public void Convert_NullValue_ReturnsNotAvailablePlaceholder()
         {
             // Act
             var result = _converter.Convert(null!, typeof(string), null!, CultureInfo.InvariantCulture);

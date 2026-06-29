@@ -82,7 +82,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         }
 
         [Fact]
-        public void Parse_SingleNameWithDifferentLineEndings_StillWorks()
+        public void Parse_MultipleNamesSeparatedByBareCarriageReturn_ReturnsNullSeparatedString()
         {
             var result = ServiceDependenciesParser.Parse("ServiceA\rServiceB");
             Assert.Equal("ServiceA\0ServiceB\0\0", result);

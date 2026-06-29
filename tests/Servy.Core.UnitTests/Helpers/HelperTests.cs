@@ -75,7 +75,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void IsValidPath_TooLongPath_ThrowsAndReturnsFalse()
+        public void IsValidPath_TooLongPath_ReturnsFalse()
         {
             // Arrange
             var longFolder = new string('a', short.MaxValue);

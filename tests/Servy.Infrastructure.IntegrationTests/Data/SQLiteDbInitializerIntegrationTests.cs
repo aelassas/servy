@@ -45,7 +45,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public void Initialize_CatchesException_RollsBackTransaction()
+        public void Initialize_OnMigrationFailure_RollsBackTransactionAndRethrows()
         {
             using (var conn = CreateConnection())
             {

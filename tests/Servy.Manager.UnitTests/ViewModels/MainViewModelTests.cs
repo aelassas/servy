@@ -341,7 +341,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void RefreshAllServicesAsync_UpdatesUI_ResolvesGhostPids_AndFixesDBDrift()
+        public void GetServiceUpdateInfo_OsAndDbDrift_ResolvesGhostPidsAndUpdatesDto()
         {
             // Arrange
             var vm = CreateViewModel();
