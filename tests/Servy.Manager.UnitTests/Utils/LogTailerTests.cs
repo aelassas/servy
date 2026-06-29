@@ -196,47 +196,35 @@ namespace Servy.Manager.UnitTests.Utils
         {
             // Arrange
             var tailer = new LogTailer();
-            string raceFilePath = Path.Combine(Path.GetTempPath(), $"race_{Guid.NewGuid()}.log");
+            string lockTestPath = Path.Combine(Path.GetTempPath(), $"lock_race_{Guid.NewGuid()}.log");
 
-            // Generate a valid physical payload on disk so the file bypasses the early check '!File.Exists(path)'
-            File.WriteAllText(raceFilePath, "Historical line context payload stream\n");
+            // Generate a valid physical container on disk so it bypasses the early check '!File.Exists(path)'
+            File.WriteAllText(lockTestPath, "Historical line context payload stream\n");
 
             // Act
-            // Start an aggressive, tight-looped worker task targeting the deletion boundary.
-            // By yielding execution right before hitting the caller method, we dramatically optimize 
-            // the chance of hitting the exact microsecond window where File.Exists passes but the stream allocation fails.
-            using (var cts = new CancellationTokenSource())
+            // Lock the file exclusively using FileShare.None. This permits the structural File.Exists check
+            // inside LoadHistory to succeed, but guarantees the internal FileStream allocation loop step throws 
+            // an accessibility violation exception, cleanly returning an empty list without thread synchronization flakiness.
+            using (var exclusiveLock = new FileStream(lockTestPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
-                var deletionTask = Task.Run(() =>
-                {
-                    while (!cts.Token.IsCancellationRequested)
-                    {
-                        try
-                        {
-                            if (File.Exists(raceFilePath))
-                            {
-                                File.Delete(raceFilePath);
-                                break;
-                            }
-                        }
-                        catch { /* Spin through transitional system locks */ }
-                    }
-                }, TestContext.Current.CancellationToken);
-
-                // Small micro-delay ensures the thread pool worker is actively spinning on the target path 
-                // before the primary execution flow hits LoadHistory.
-                await Task.Delay(5, TestContext.Current.CancellationToken);
-
-                var result = await tailer.GetHistoryAsync(raceFilePath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
-
-                cts.Cancel();
-                await deletionTask;
+                var result = await tailer.GetHistoryAsync(lockTestPath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.NotNull(result);
-                // Collection must return empty, indicating either the early guard caught it 
-                // or the inner FileNotFoundException handled the deletion trace smoothly.
                 Assert.Empty(result.Lines);
+            }
+
+            // Cleanup post-lock container structures safely
+            try
+            {
+                if (File.Exists(lockTestPath))
+                {
+                    File.Delete(lockTestPath);
+                }
+            }
+            catch
+            {
+                // Swallow cleanup failures to protect runtime step bounds
             }
         }
 
