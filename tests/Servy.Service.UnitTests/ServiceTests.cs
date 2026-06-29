@@ -4,7 +4,6 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
@@ -13,8 +12,6 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.ServiceProcess;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -39,7 +36,6 @@ namespace Servy.Service.UnitTests
         private readonly Mock<ITimer> _mockTimer;
         private readonly Mock<IProcessWrapper> _mockProcess;
         private readonly Mock<IServiceRepository> _mockServiceRepository;
-        private readonly Mock<IProcessHelper> _mockProcessHelper;
         private readonly Mock<IProcessKiller> _mockProcessKiller;
 
         public ServiceTests(ITestOutputHelper output)
@@ -74,7 +70,6 @@ namespace Servy.Service.UnitTests
                 .Returns(_mockProcess.Object);
 
             _mockServiceRepository = new Mock<IServiceRepository>();
-            _mockProcessHelper = new Mock<IProcessHelper>();
             _mockProcessKiller = new Mock<IProcessKiller>();
 
             _service = new Service(
@@ -85,7 +80,6 @@ namespace Servy.Service.UnitTests
                 _mockProcessFactory.Object,
                 _mockPathValidator.Object,
                 _mockServiceRepository.Object,
-                _mockProcessHelper.Object,
                 _mockProcessKiller.Object
             );
         }
@@ -266,7 +260,6 @@ namespace Servy.Service.UnitTests
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
                 _mockServiceRepository.Object,
-                _mockProcessHelper.Object,
                 _mockProcessKiller.Object
             );
             service.SetChildProcess(mockProcess.Object);
@@ -301,7 +294,6 @@ namespace Servy.Service.UnitTests
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
                 _mockServiceRepository.Object,
-                _mockProcessHelper.Object,
                 _mockProcessKiller.Object
             );
             service.SetChildProcess(mockProcess.Object);
@@ -335,7 +327,6 @@ namespace Servy.Service.UnitTests
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
                 _mockServiceRepository.Object,
-                _mockProcessHelper.Object,
                 _mockProcessKiller.Object
             );
 
@@ -394,7 +385,6 @@ namespace Servy.Service.UnitTests
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
                 _mockServiceRepository.Object,
-                _mockProcessHelper.Object,
                 _mockProcessKiller.Object
             );
 
@@ -439,7 +429,6 @@ namespace Servy.Service.UnitTests
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
                 _mockServiceRepository.Object,
-                _mockProcessHelper.Object,
                 _mockProcessKiller.Object
             );
 

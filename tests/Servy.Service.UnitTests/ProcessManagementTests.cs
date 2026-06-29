@@ -3,7 +3,6 @@ using Servy.Core.Data;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
@@ -55,7 +54,6 @@ namespace Servy.Service.UnitTests
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
                 mockServiceRepository.Object,
-                _mockProcessHelper.Object,
                 _mockProcessKiller.Object
                 );
         }
