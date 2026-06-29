@@ -138,7 +138,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
-        public void CopyEmbeddedResourceSync_WhenResourceStreamNotFound_ReturnsFalse()
+        public void CopyEmbeddedResourceForceSync_WhenResourceStreamNotFound_ReturnsFalse()
         {
             // Arrange
             _mockProcessKiller.Setup(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);

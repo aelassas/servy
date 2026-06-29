@@ -94,7 +94,7 @@ namespace Servy.Core.UnitTests.Services
         #region Explicit Branch Coverage Tests for Query String Generation
 
         [Fact]
-        public async Task Search_EmptySystemFilterString_BuildsWildcardQuery()
+        public async Task SearchAsync_EmptySystemFilterString_BuildsWildcardQuery()
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
@@ -131,7 +131,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task Search_PopulatedSystemFilterString_BuildsSystemTagQuery()
+        public async Task SearchAsync_PopulatedSystemFilterString_BuildsSystemTagQuery()
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
@@ -169,7 +169,7 @@ namespace Servy.Core.UnitTests.Services
         #endregion
 
         [Fact]
-        public async Task Search_NoFilters_ReturnsResult()
+        public async Task SearchAsync_NoFilters_ReturnsResult()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(1, 2, DateTime.UtcNow, "[service] error happened");
@@ -185,7 +185,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task Search_WithLevelFilter_ReturnsCorrectLevel()
+        public async Task SearchAsync_WithLevelFilter_ReturnsCorrectLevel()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(2, 3, DateTime.UtcNow, "[service] warning");
@@ -201,7 +201,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task Search_WithStartDateAndEndDate_AppendsBothFilters()
+        public async Task SearchAsync_WithStartDateAndEndDate_AppendsBothFilters()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(3, 4, DateTime.UtcNow, "[service] info");
@@ -220,7 +220,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task Search_WithOnlyEndDate_AppendsFilterCorrectly()
+        public async Task SearchAsync_WithOnlyEndDate_AppendsFilterCorrectly()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(4, 0, DateTime.UtcNow, "[service] unknown level");
@@ -238,7 +238,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task Search_WithKeyword_AddsKeywordFilter()
+        public async Task SearchAsync_WithKeyword_AddsKeywordFilter()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "[service] servy failed");
@@ -254,7 +254,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task Search_MultipleEntries()
+        public async Task SearchAsync_MultipleEntries()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt1 = CreateFakeEvent(5, 2, DateTime.UtcNow, "[service] servy failed");
@@ -270,7 +270,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task Search_WithKeyword_EmptyResult()
+        public async Task SearchAsync_WithKeyword_EmptyResult()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "servy failed");
@@ -285,7 +285,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task Search_WithKeyword_NoMatch()
+        public async Task SearchAsync_WithKeyword_NoMatch()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "[service] servy failed");
@@ -300,7 +300,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task Search_WhenTimeCreatedIsNull_UsesDateTimeMinValue()
+        public async Task SearchAsync_WhenTimeCreatedIsNull_UsesDateTimeMinValue()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(6, 4, null, "[service] no time");
@@ -313,21 +313,6 @@ namespace Servy.Core.UnitTests.Services
 
             var entry = Assert.Single(result);
             Assert.Equal(DateTime.MinValue, entry.Time);
-        }
-
-        [Fact]
-        public async Task SearchAsync_ShouldReturnMinValueWhenTimeCreatedIsNull()
-        {
-            var mockReader = new Mock<IEventLogReader>();
-            var evt = CreateFakeEvent(1, 1, null, "[service] Test");
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>())).Returns(new[] { evt });
-
-            var service = CreateService(mockReader);
-
-            var results = await service.SearchAsync(null, null, null, null);
-
-            Assert.Single(results);
-            Assert.Equal(DateTime.MinValue, results.First().Time);
         }
 
         [Fact]

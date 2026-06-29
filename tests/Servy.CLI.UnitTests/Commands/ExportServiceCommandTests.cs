@@ -148,7 +148,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public void SaveFile_ShouldThrowSecurityException_WhenValidationFailsWithStandardError()
+        public void SaveFile_ShouldThrowArgumentException_WhenValidationFailsWithStandardError()
         {
             // Providing an invalid extension ("txt") routes to PathSecurityGuard's extension filter,
             // producing an error payload that does not contain "Access Denied" or "Security Alert".
@@ -177,7 +177,7 @@ namespace Servy.CLI.UnitTests.Commands
         #region SaveFile I/O Error Catch Boundary Checks
 
         [Fact]
-        public void SaveFile_ShouldThrowArgumentException_WhenFileStreamWriteFailsFromExternalLock()
+        public void SaveFile_ShouldThrowSecurityException_WhenFileStreamWriteFailsFromExternalLock()
         {
             var filePath = Path.Combine(_tempDir, "locked_out.json");
             File.WriteAllText(filePath, "original contents");
