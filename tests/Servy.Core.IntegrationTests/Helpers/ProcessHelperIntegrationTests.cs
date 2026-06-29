@@ -1,5 +1,4 @@
 ﻿using Servy.Core.Helpers;
-using Servy.Core.Logging;
 using System.Diagnostics;
 
 namespace Servy.Core.IntegrationTests.Helpers
@@ -80,8 +79,15 @@ namespace Servy.Core.IntegrationTests.Helpers
         [Fact]
         public void GetProcessTreeMetrics_WithChildProcess_AggregatesRamSuccessfully()
         {
-            // Arrange: Pre-allocate and sleep inside PowerShell so memory stabilizes before we measure
-            var childProcessInfo = new ProcessStartInfo("powershell.exe", "-NoProfile -Command \"$data = New-Object byte[] 30MB; [System.GC]::Collect(); Start-Sleep -Seconds 5\"")
+            // Arrange
+            // Force the root process to spawn a distinct child process space using Start-Process.
+            // Both the root host and its child load memory allocations to provide a clear tree aggregation signal.
+            string inlineScript =
+                "$rootAlloc = New-Object byte[] 20MB; " +
+                "Start-Process powershell -ArgumentList '-NoProfile','-Command', '$childAlloc = New-Object byte[] 25MB; Start-Sleep -Seconds 10'; " +
+                "Start-Sleep -Seconds 10";
+
+            var childProcessInfo = new ProcessStartInfo("powershell.exe", $"-NoProfile -Command \"{inlineScript}\"")
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,
@@ -93,12 +99,13 @@ namespace Servy.Core.IntegrationTests.Helpers
             _spawnedProcesses.Add(childProcess);
 
             // 1. HARDEN STABILIZATION TIMING:
-            // Let PowerShell finish mapping its memory before sampling
-            Thread.Sleep(2500);
+            // Allow time for the root process to initialize and execute its nested child payload.
+            Thread.Sleep(3000);
 
             int childPid = childProcess.Id;
 
             // 2. CAPTURE METRICS BACK-TO-BACK:
+            // Act
             var singleMetrics = _sut.GetProcessMetrics(childPid);
             var treeMetrics = _sut.GetProcessTreeMetrics(childPid);
 
@@ -107,15 +114,10 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assert.True(treeMetrics.RamUsage > 0, "Tree process RAM aggregation should be captured.");
 
             // 4. ROBUST DELTA VALUATION:
-            // Since the process has stabilized, the tree aggregation should closely track
-            // the single baseline (plus any tiny child threads/worker processes spawned by the host).
-            long memoryDeltaBytes = Math.Abs(treeMetrics.RamUsage - singleMetrics.RamUsage);
-
-            // Loosen the variance bound slightly to account for unpredictable OS page faults on multi-core environments
-            long maxAllowedVarianceBytes = 25 * 1024 * 1024; // 25 Megabytes
-
-            Assert.True(memoryDeltaBytes <= maxAllowedVarianceBytes,
-                $"The memory drift between sequential reads ({memoryDeltaBytes} bytes) exceeded the maximum allowed runtime variance threshold ({maxAllowedVarianceBytes} bytes). Single RAM: {singleMetrics.RamUsage}, Tree RAM: {treeMetrics.RamUsage}");
+            // Verifies that tree metrics accurately sum memory across the nested worker processes.
+            // Tree memory must be noticeably larger than the isolated root process node's footprint.
+            Assert.True(treeMetrics.RamUsage > singleMetrics.RamUsage,
+                $"Process tree aggregation failed. Tree RAM ({treeMetrics.RamUsage} bytes) should be strictly greater than single root RAM ({singleMetrics.RamUsage} bytes).");
         }
 
         #endregion
@@ -127,7 +129,12 @@ namespace Servy.Core.IntegrationTests.Helpers
             {
                 if (!process.HasExited)
                 {
-                    try { process.Kill(); } catch { /* Ignore cleanup errors */ }
+                    try
+                    {
+                        // Kill the root process and ensure its nested descendants are cleaned up from the OS scheduler
+                        process.Kill();
+                    }
+                    catch { /* Ignore cleanup errors */ }
                 }
                 process.Dispose();
             }

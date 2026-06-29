@@ -1,5 +1,4 @@
 ﻿using Moq;
-using Servy.Core.Data;
 using Servy.Core.Helpers;
 using System.Reflection;
 
@@ -121,7 +120,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         public async Task CopyEmbeddedResource_ThrowsException_CaughtByOuterCatch_ReturnsFalse()
         {
             // Arrange
-            // Passing a null assembly will trigger a NullReferenceException inside ShouldCopyResource when accessing assembly.Location
+            // Passing a null assembly throws a NullReferenceException at assembly.GetManifestResourceStream(...), which the outer catch converts to a false result
             Assembly nullAssembly = null!;
 
             // Act

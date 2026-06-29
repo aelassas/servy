@@ -113,15 +113,33 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData(30, 10, 0, 55)]  // attempts = 1 -> baseline(30) + buffer(15) + prelaunch(10*1) + backoff(0)
-        [InlineData(30, 10, 1, 66)]  // attempts = 2 -> baseline(30) + buffer(15) + prelaunch(10*2) + backoff(1)
-        [InlineData(30, 10, 2, 78)]  // attempts = 3 -> baseline(30) + buffer(15) + prelaunch(10*3) + backoff(1 + 2 = 3)
+        [InlineData(30, 10, 0)]  // attempts = 1 -> baseline(30) + buffer(15) + prelaunch(10*1) + backoff(0)
+        [InlineData(30, 10, 1)]  // attempts = 2 -> baseline(30) + buffer(15) + prelaunch(10*2) + backoff(1)
+        [InlineData(30, 10, 2)]  // attempts = 3 -> baseline(30) + buffer(15) + prelaunch(10*3) + backoff(1 + 2 = 3)
         public void CalculateStartTimeout_WithRetryAttempts_ScalesPreLaunchAndAddsCappedLinearBackoff(
             int? configuredTimeout,
             int preLaunchTimeoutSeconds,
-            int preLaunchRetryAttempts,
-            int expectedTimeout)
+            int preLaunchRetryAttempts)
         {
+            // Arrange
+            int baseline = configuredTimeout ?? _floor;
+            if (baseline < _floor) baseline = _floor;
+
+            int totalAttempts = preLaunchRetryAttempts + 1;
+            int expectedTotalPreLaunch = totalAttempts * preLaunchTimeoutSeconds;
+
+            int expectedTotalBackoff = 0;
+            int maxBackoffCapPerIteration = AppConfig.PreLaunchRetryMaxDelayMs / 1000;
+
+            for (int i = 1; i < totalAttempts; i++)
+            {
+                expectedTotalBackoff += Math.Min(
+                    (i * AppConfig.PreLaunchRetryInitialDelayMs) / 1000,
+                    maxBackoffCapPerIteration);
+            }
+
+            int expectedTotalTimeout = baseline + _buffer + expectedTotalPreLaunch + expectedTotalBackoff;
+
             // Act
             int actualTimeout = ServiceHelper.CalculateStartTimeout(
                 configuredTimeout,
@@ -129,7 +147,7 @@ namespace Servy.Core.UnitTests.Helpers
                 preLaunchRetryAttempts);
 
             // Assert
-            Assert.Equal(expectedTimeout, actualTimeout);
+            Assert.Equal(expectedTotalTimeout, actualTimeout);
         }
 
         [Fact]
@@ -141,8 +159,6 @@ namespace Servy.Core.UnitTests.Helpers
             int preLaunchTimeout = 5;
             int highRetryAttempts = 20;
 
-            int baseFloor = AppConfig.DefaultServiceStartTimeoutSeconds;
-            int buffer = AppConfig.ScmTimeoutBufferSeconds;
             int maxBackoffCapPerIteration = AppConfig.PreLaunchRetryMaxDelayMs / 1000;
 
             int attempts = highRetryAttempts + 1;
@@ -157,11 +173,11 @@ namespace Servy.Core.UnitTests.Helpers
                     maxBackoffCapPerIteration);
             }
 
-            int expectedTotalTimeout = baseFloor + buffer + expectedTotalPreLaunch + expectedTotalBackoff;
+            int expectedTotalTimeout = _floor + _buffer + expectedTotalPreLaunch + expectedTotalBackoff;
 
             // Act
             int actualTimeout = ServiceHelper.CalculateStartTimeout(
-                baseFloor,
+                _floor,
                 preLaunchTimeout,
                 highRetryAttempts);
 

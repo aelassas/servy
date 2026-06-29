@@ -276,7 +276,8 @@ namespace Servy.Core.UnitTests.Helpers
             if (attrBuilder != null)
                 assemblyBuilder.SetCustomAttribute(attrBuilder);
 
-            // Override GetExecutingAssembly() by running inside the dynamic assembly
+            // Pass the freshly-built dynamic assembly explicitly so GetBuiltWithFramework
+            // reads the BuiltWithFramework metadata from it instead of the executing assembly.
             return InvokeInAssembly(assemblyBuilder);
         }
 
