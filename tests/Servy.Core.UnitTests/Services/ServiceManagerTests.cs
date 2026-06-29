@@ -2734,7 +2734,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void GetDependencies_ControllerThrows_ShouldReturnNull()
+        public void GetDependencies_ControllerThrows_ShouldPropagateException()
         {
             // Arrange
             _mockController

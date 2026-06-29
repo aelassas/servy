@@ -185,7 +185,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         #region Event Modification Tracking Tests
 
         [Fact]
-        public void DataAndExitEvents_AddAndRemoveHandlers_MaintainsSubscriptionsWithoutExceptions()
+        public void DataAndExitEvents_AddThenRemoveHandlers_DoesNotThrowOnStart()
         {
             // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\"", redirectOutput: true))

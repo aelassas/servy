@@ -53,7 +53,7 @@ namespace Servy.Infrastructure.Tests.Helpers
         [InlineData("v3.50.2", false)] // Version.TryParse fails on leading characters
         [InlineData("", false)]
         [InlineData(null, false)]
-        public void IsSqliteVersionSafeInternal_CoverageTest(string? inputVersion, bool expectedResult)
+        public void ValidateVersion_CoverageTest(string? inputVersion, bool expectedResult)
         {
             // Act
             bool actualResult = DatabaseValidator.ValidateVersion(inputVersion);

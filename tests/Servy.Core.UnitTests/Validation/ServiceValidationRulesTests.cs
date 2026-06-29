@@ -84,7 +84,7 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Fact]
-        public void Validate_ExceedingLengthLimits_ReturnsErrors()
+        public void Validate_ExceedingDescriptionLength_ReturnsError()
         {
             var dto = CreateValidDto();
             dto.Description = new string('C', AppConfig.MaxDescriptionLength + 1);

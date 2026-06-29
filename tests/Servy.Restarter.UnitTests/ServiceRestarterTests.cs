@@ -267,7 +267,7 @@ namespace Servy.Restarter.UnitTests
         }
 
         [Fact]
-        public void HandleTransitionalError_LSAInterrogationContinuouslyThrowsInvalidOperationException_LoopsAndTimeouts()
+        public void HandleTransitionalError_StopAndRefreshKeepThrowing_LoopsAndTimesOut()
         {
             // Arrange
             _mockController.SetupSequence(c => c.Status)

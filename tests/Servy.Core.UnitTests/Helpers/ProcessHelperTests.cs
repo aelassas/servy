@@ -58,7 +58,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void ResolvePath_EmptyInput_ReturnsEmpty()
+        public void ResolvePath_EmptyInput_ReturnsNull()
         {
             var result = _processHelper.ResolvePath(string.Empty);
             Assert.Null(result);

@@ -17,7 +17,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("line1\nline2;line3", "line1;line2;line3")]
         [InlineData("line1\r\nline2\nline3\rline4", "line1;line2;line3;line4")]
         [InlineData("VAR1=value1\r\nVAR2=value2\nVAR3=value3\rVAR4=value4", "VAR1=value1;VAR2=value2;VAR3=value3;VAR4=value4")]
-        public void NormalizeString_ShouldHandleLineBreaksAndEscapeSemicolons(string? input, string expected)
+        public void NormalizeString_ReplacesLineBreaksWithSemicolons(string? input, string expected)
         {
             var result = StringHelper.NormalizeString(input);
             Assert.Equal(expected, result);

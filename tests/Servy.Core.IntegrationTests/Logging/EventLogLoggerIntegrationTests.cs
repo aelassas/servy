@@ -186,7 +186,7 @@ namespace Servy.Core.Logging.IntegrationTests
         }
 
         [Fact]
-        public void ScopedLogger_InheritsSettings_ButCanOverrideIsEventLogEnabled()
+        public void ScopedLogger_SetIsEventLogEnabled_PropagatesToParent()
         {
             string source = GenerateSourceName();
             using (var rootLogger = new EventLogLogger(source, LogLevel.Error, false))
