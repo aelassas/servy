@@ -196,7 +196,7 @@ namespace Servy.Core.UnitTests.Security
 
         [Theory]
         [InlineData("")]
-        public void Decrypt_Empty_ThrowsArgumentNullException(string? input)
+        public void Decrypt_Empty_ThrowsArgumentException(string? input)
         {
             // Arrange
             var sp = new SecureData(_mockProvider.Object);

@@ -132,7 +132,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
-        public void CopyEmbeddedResourceSync_Success_WritesFileToDisk()
+        public void CopyEmbeddedResourceForceSync_Success_WritesFileToDisk()
         {
             // Arrange
             string fileName = "syncapp";
@@ -155,7 +155,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
-        public void CopyEmbeddedResourceSync_ThrowsException_CaughtByOuterCatch_ReturnsFalse()
+        public void CopyEmbeddedResourceForceSync_ThrowsException_CaughtByOuterCatch_ReturnsFalse()
         {
             // Arrange - Force null ref to hit the catch block
             Assembly nullAssembly = null!;

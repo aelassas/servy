@@ -98,7 +98,7 @@ namespace Servy.Core.UnitTests.Helpers
         /// and a heavy pre-launch hook duration are evaluated together.
         /// </summary>
         [Fact]
-        public void CalculateStartTimeout_WithHighTimeoutAndPreLaunchHook_AccumulatesAllParametersSymmetrically()
+        public void CalculateStartTimeout_WithHighTimeoutAndPreLaunchHook_AddsBothToTotal()
         {
             // Arrange
             int highConfiguredValue = _floor + 120;

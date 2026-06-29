@@ -96,10 +96,10 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void FormatServiceDependencies_ShouldReturnNull_WhenInputIsNull()
+        public void FormatServiceDependencies_ShouldReturnEmpty_WhenInputIsNull()
         {
-            var result = StringHelper.FormatServiceDependencies(null!);
-            Assert.Empty(result!);
+            var result = StringHelper.FormatServiceDependencies(null);
+            Assert.Empty(result);
         }
 
         [Theory]
@@ -113,7 +113,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void Escape_NullInput_ReturnsEmptyString_UsingReflection()
+        public void Escape_NullInput_ReturnsEmptyString()
         {
             // Act
             var result = StringHelper.Escape(null!);
