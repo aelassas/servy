@@ -1,10 +1,8 @@
 ﻿using Moq;
-using Servy.Core.Data;
 using Servy.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Xunit;

@@ -1453,7 +1453,7 @@ namespace Servy.Core.UnitTests.Services
                 null))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<NativeMethods.SERVICE_STATUS>.IsAny))
+            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_STATUS>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
@@ -1519,7 +1519,7 @@ namespace Servy.Core.UnitTests.Services
                 null))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<NativeMethods.SERVICE_STATUS>.IsAny))
+            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_STATUS>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
@@ -1589,7 +1589,7 @@ namespace Servy.Core.UnitTests.Services
                 null))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<NativeMethods.SERVICE_STATUS>.IsAny))
+            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_STATUS>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
@@ -2040,7 +2040,7 @@ namespace Servy.Core.UnitTests.Services
                 _mockWindowsServiceApi
                     .Setup(api => api.QueryServiceConfig2(
                         It.IsAny<SafeServiceHandle>(), // Loose matching
-                        3, // SERVICE_CONFIG_DELAYED_AUTO_START_INFO
+                        SERVICE_CONFIG_DELAYED_AUTO_START_INFO, // SERVICE_CONFIG_DELAYED_AUTO_START_INFO
                         ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny,
                         It.IsAny<int>(),
                         out It.Ref<int>.IsAny))
@@ -2089,7 +2089,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi
                 .Setup(api => api.QueryServiceConfig2(
                     It.IsAny<SafeServiceHandle>(),
-                    3, // SERVICE_CONFIG_DELAYED_AUTO_START_INFO
+                    SERVICE_CONFIG_DELAYED_AUTO_START_INFO, // SERVICE_CONFIG_DELAYED_AUTO_START_INFO
                     ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny,
                     It.IsAny<int>(),
                     out It.Ref<int>.IsAny))
@@ -2137,7 +2137,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi
                 .Setup(api => api.QueryServiceConfig2(
                     It.IsAny<SafeServiceHandle>(),
-                    3, // SERVICE_CONFIG_DELAYED_AUTO_START_INFO
+                    SERVICE_CONFIG_DELAYED_AUTO_START_INFO, // SERVICE_CONFIG_DELAYED_AUTO_START_INFO
                     ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny,
                     It.IsAny<int>(),
                     out It.Ref<int>.IsAny))
@@ -2355,10 +2355,10 @@ namespace Servy.Core.UnitTests.Services
             // 1. Force 'bytesNeeded > 0' to be FALSE for User/Description
             int zero = 0;
             _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig(svcHandle, IntPtr.Zero, 0, out zero)).Returns(false);
-            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(svcHandle, 1, IntPtr.Zero, 0, out zero)).Returns(false);
+            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, IntPtr.Zero, 0, out zero)).Returns(false);
 
             // 2. Force 'info.fDelayedAutostart' to be FALSE (Coverage for THIRD branch)
-            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(svcHandle, 3, ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny, It.IsAny<int>(), out It.Ref<int>.IsAny))
+            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DELAYED_AUTO_START_INFO, ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny, It.IsAny<int>(), out It.Ref<int>.IsAny))
                 .Returns(new QueryConfig2DelayedStartDelegate((SafeServiceHandle h, uint lvl, ref SERVICE_DELAYED_AUTO_START_INFO info, int sz, ref int req) =>
                 {
                     // Branch Coverage: This ensures 'info.fDelayedAutostart' is false 
@@ -2510,7 +2510,7 @@ namespace Servy.Core.UnitTests.Services
             // Mock QueryServiceConfig2 for Delayed Auto-Start Info
             _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(
                 svcHandle,
-                3, // SERVICE_CONFIG_DELAYED_AUTO_START_INFO
+                SERVICE_CONFIG_DELAYED_AUTO_START_INFO, // SERVICE_CONFIG_DELAYED_AUTO_START_INFO
                 ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny,
                 It.IsAny<int>(),
                 out It.Ref<int>.IsAny))
@@ -2585,7 +2585,7 @@ namespace Servy.Core.UnitTests.Services
             // Mock QueryServiceConfig2 (Level 1: Description)
             _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(
                 It.IsAny<SafeServiceHandle>(),
-                NativeMethods.SERVICE_CONFIG_DESCRIPTION,
+                SERVICE_CONFIG_DESCRIPTION,
                 It.IsAny<IntPtr>(),
                 It.IsAny<int>(),
                 out It.Ref<int>.IsAny))

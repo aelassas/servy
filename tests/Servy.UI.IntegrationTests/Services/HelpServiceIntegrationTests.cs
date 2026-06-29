@@ -1,7 +1,11 @@
 ﻿using Moq;
+using Moq.Protected;
 using Servy.UI.Services;
 using System;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -34,7 +38,7 @@ namespace Servy.UI.IntegrationTests.Services
         #region OpenDocumentation Tests
 
         [Fact]
-        public async Task OpenDocumentation_WhenSuccessful_DoesNotShowError()
+        public async Task OpenDocumentation_InHeadlessMode_GracefullyDropsExecutionWithoutError()
         {
             // Note: Process.Start(psi) is hard to mock directly without a wrapper.
             // In a CI environment, this branch typically "hands off" or succeeds silently.
@@ -50,10 +54,13 @@ namespace Servy.UI.IntegrationTests.Services
         [Fact]
         public async Task OpenAboutDialog_InvokesMessageBox()
         {
+            // Arrange
             const string aboutText = "Servy v1.0";
 
+            // Act
             await _service.OpenAboutDialogAsync(aboutText, Caption);
 
+            // Assert
             _mockMessageBox.Verify(m => m.ShowInfoAsync(aboutText, Caption), Times.Once);
         }
 
@@ -64,25 +71,86 @@ namespace Servy.UI.IntegrationTests.Services
         [Fact]
         public async Task CheckUpdates_NoTagNameInJson_ShowsNoUpdates()
         {
+            // Arrange
             // Branch: if (string.IsNullOrEmpty(tagName))
-            // This requires the internal HttpClient to receive a specific response. 
-            // In a real test suite, you would inject an IHttpClientFactory, 
-            // but we can simulate the logic flow here.
+            var mockHandler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            mockHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent("{ 'name': 'Draft Release', 'tag_name': '' }")
+                });
 
-            // For the sake of covering the logic branch:
+            // Inject our mock handler directly into the existing static HttpClient instance
+            InjectMockHandlerIntoStaticClient(mockHandler.Object);
+
+            // Act
             await _service.CheckUpdatesAsync(Caption);
 
-            // If the API call fails or returns empty in the test environment, 
-            // it hits the catch block or the No Updates branch.
+            // Assert
+            _mockMessageBox.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), Caption), Times.Once);
         }
 
         [Fact]
         public async Task CheckUpdates_VersionIsOlder_ShowsNoUpdates()
         {
+            // Arrange
             // Branch: else { await _messageBoxService.ShowInfoAsync(Strings.Msg_NoUpdatesAvailable...) }
-            // Assuming AppConfig.Version is 1.0.0 and we simulate a 1.0.0 response.
-            // Implementation note: To fully test this, refactor HelpService to take 
-            // an HttpMessageHandler for mocking.
+            var mockHandler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            mockHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent("{ 'tag_name': 'v1.0.0' }")
+                });
+
+            // Inject our mock handler directly into the existing static HttpClient instance
+            InjectMockHandlerIntoStaticClient(mockHandler.Object);
+
+            // Act
+            await _service.CheckUpdatesAsync(Caption);
+
+            // Assert
+            _mockMessageBox.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), Caption), Times.Once);
+        }
+
+        #endregion
+
+        #region Private Mock Injection Framework
+
+        /// <summary>
+        /// Bypasses runtime initonly restrictions by modifying the private execution handler 
+        /// instance deep inside the existing static HttpClient instance.
+        /// </summary>
+        private void InjectMockHandlerIntoStaticClient(HttpMessageHandler mockHandler)
+        {
+            // 1. Extract the active static HttpClient instance from HelpService
+            var httpClientField = typeof(HelpService).GetField("_httpClient", BindingFlags.Static | BindingFlags.NonPublic);
+            var clientInstance = httpClientField?.GetValue(null) as HttpClient;
+
+            if (clientInstance == null) return;
+
+            // 2. HttpClient inherits '_handler' from HttpMessageInvoker in modern .NET runtimes
+            var handlerField = typeof(HttpMessageInvoker).GetField("_handler", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            // Fallback for older .NET Framework layouts if encountered
+            if (handlerField == null)
+            {
+                handlerField = typeof(HttpClient).GetField("_handler", BindingFlags.Instance | BindingFlags.NonPublic);
+            }
+
+            // 3. Force-write the mock handler into the instance field context cleanly
+            handlerField?.SetValue(clientInstance, mockHandler);
         }
 
         #endregion

@@ -1,4 +1,5 @@
-﻿using Servy.Core.Logging;
+﻿using Servy.Core.EnvironmentVariables;
+using Servy.Core.Logging;
 using Servy.Service.ProcessManagement;
 using System;
 using System.Collections.Generic;
@@ -332,20 +333,17 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
         #region Helpers & Mocks
 
-        private dynamic CreateOptions(string exe, string args, bool fireAndForget, int timeoutMs)
+        private ProcessLaunchOptions CreateOptions(string exe, string args, bool fireAndForget, int timeoutMs)
         {
-            Type t = typeof(ProcessLauncher).Assembly.GetType("Servy.Service.ProcessManagement.ProcessLaunchOptions")
-                     ?? throw new InvalidOperationException("ProcessLaunchOptions not found.");
-
-            dynamic options = Activator.CreateInstance(t);
-            options.ExecutablePath = exe;
-            options.Arguments = args;
-            options.FireAndForget = fireAndForget;
-            options.TimeoutMs = timeoutMs;
-            options.WaitChunkMs = 100;
-            options.EnvironmentVariables = new List<Servy.Core.EnvironmentVariables.EnvironmentVariable>();
-
-            return options;
+            return new ProcessLaunchOptions
+            {
+                ExecutablePath = exe,
+                Arguments = args,
+                FireAndForget = fireAndForget,
+                TimeoutMs = timeoutMs,
+                WaitChunkMs = 100,
+                EnvironmentVariables = new List<EnvironmentVariable>(),
+            };
         }
 
         private class MockStartFalseProcessFactory : IProcessFactory

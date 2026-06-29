@@ -91,7 +91,7 @@ namespace Servy.Service.UnitTests
             // Verify the internal counter incremented
             Assert.Equal(1, service.GetFailedChecks());
 
-            // Verify the log matches the new unified format "Health check failed (1/3)."
+            // Log format: "Health check failed (failedChecks/maxFailedChecks)."
             logger.Verify(l => l.Warn(It.Is<string>(s =>
                 s.Contains("Health check failed") && s.Contains("(1/3)")), It.IsAny<Exception>()),
                 Times.Once);
