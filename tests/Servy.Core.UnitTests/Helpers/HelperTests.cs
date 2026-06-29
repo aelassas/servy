@@ -130,16 +130,18 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData("file.txt")]               // no directory part, returns false
-        [InlineData("C:\\file.txt")]           // directory is "C:\"
-        [InlineData("C:\\folder\\file.txt")]   // directory is "C:\folder"
-        [InlineData("C:/folder/file.txt")]     // with forward slashes
+        [InlineData("file.txt")]
+        [InlineData("folder\\file.txt")]
+        [InlineData("folder/file.txt")]
+        [InlineData("deeply\\nested\\subfolder\\file.txt")]
         public void CreateParentDirectory_DirectoryExistsOrCreated_ReturnsTrue(string filePath)
         {
             // Arrange
             var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(tempDir);
 
+            // SANDBOX GUARD: By passing clean relative combinations, testFilePath is guaranteed 
+            // to resolve directly inside the safe, unique tempDir boundary layout.
             var testFilePath = Path.Combine(tempDir, filePath);
 
             try
@@ -151,7 +153,8 @@ namespace Servy.Core.UnitTests.Helpers
                 Assert.True(result);
 
                 var parentDir = Path.GetDirectoryName(testFilePath);
-                Assert.True(Directory.Exists(parentDir));
+                Assert.NotNull(parentDir);
+                Assert.True(Directory.Exists(parentDir), $"The expected parent directory container '{parentDir}' was not physically instantiated on disk.");
             }
             finally
             {

@@ -153,6 +153,10 @@
       <Project>{c41e0e90-cff6-4dfa-a042-59e4b31198a2}</Project>
       <Name>Servy.Service</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj">
+      <Project>{4bc9a435-c352-4953-82b8-b419b13e8f56}</Project>
+      <Name>Servy.Testing</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\..\packages\xunit.analyzers.1.27.0\analyzers\dotnet\cs\xunit.analyzers.dll" />

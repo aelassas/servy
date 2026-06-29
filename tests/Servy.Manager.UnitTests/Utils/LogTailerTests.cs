@@ -202,18 +202,48 @@ namespace Servy.Manager.UnitTests.Utils
         {
             // Arrange
             var tailer = new LogTailer();
-            // Use a path that is guaranteed not to exist, which is a cleaner way to 
-            // force the catch block than racing a File.Delete operation.
-            string nonExistentPath = Path.Combine(Path.GetTempPath(), $"race_{Guid.NewGuid()}.log");
+            string raceFilePath = Path.Combine(Path.GetTempPath(), $"race_{Guid.NewGuid()}.log");
+
+            // Generate a valid physical payload on disk so the file bypasses the early check '!File.Exists(path)'
+            File.WriteAllText(raceFilePath, "Historical line context payload stream\n");
 
             // Act
-            // We invoke GetHistoryAsync directly. Since the file does not exist,
-            // the LoadHistory method will trigger the FileNotFoundException catch block.
-            var result = await tailer.GetHistoryAsync(nonExistentPath, LogType.StdOut, 10);
+            // Start an aggressive, tight-looped worker task targeting the deletion boundary.
+            // By yielding execution right before hitting the caller method, we dramatically optimize 
+            // the chance of hitting the exact microsecond window where File.Exists passes but the stream allocation fails.
+            using (var cts = new CancellationTokenSource())
+            {
+                var deletionTask = Task.Run(() =>
+                {
+                    while (!cts.Token.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            if (File.Exists(raceFilePath))
+                            {
+                                File.Delete(raceFilePath);
+                                break;
+                            }
+                        }
+                        catch { /* Spin through transitional system locks */ }
+                    }
+                }, CancellationToken.None);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Empty(result.Lines); // Should return empty result list as defined in the catch block
+                // Small micro-delay ensures the thread pool worker is actively spinning on the target path 
+                // before the primary execution flow hits LoadHistory.
+                await Task.Delay(5, CancellationToken.None);
+
+                var result = await tailer.GetHistoryAsync(raceFilePath, LogType.StdOut, 10, cancellationToken: CancellationToken.None);
+
+                cts.Cancel();
+                await deletionTask;
+
+                // Assert
+                Assert.NotNull(result);
+                // Collection must return empty, indicating either the early guard caught it 
+                // or the inner FileNotFoundException handled the deletion trace smoothly.
+                Assert.Empty(result.Lines);
+            }
         }
 
         #endregion
