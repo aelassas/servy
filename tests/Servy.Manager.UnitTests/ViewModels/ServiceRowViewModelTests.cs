@@ -127,7 +127,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void StopCommand_ShouldCallStopServiceAsync_OnDispatcherThread()
+        public void StopCommand_ShouldCallStopServiceAsync()
         {
             var vm = CreateViewModel();
             var service = new Service { Name = "S" };

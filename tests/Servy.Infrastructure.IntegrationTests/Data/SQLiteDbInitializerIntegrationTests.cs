@@ -113,9 +113,9 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
                 // Insert three case-duplicates sequentially (Id 1..3); dedup must keep MIN(Id)=1,
                 // so a last-write-wins/MAX(Id) implementation would fail the assertion below.
-                conn.Execute($"{insertTemplate(insertCols)} ({string.Join(", ", insertVals1)});");
-                conn.Execute($"{insertTemplate(insertCols)} ({string.Join(", ", insertVals2)});");
-                conn.Execute($"{insertTemplate(insertCols)} ({string.Join(", ", insertVals3)});");
+                conn.Execute($"{InsertTemplate(insertCols)} ({string.Join(", ", insertVals1)});");
+                conn.Execute($"{InsertTemplate(insertCols)} ({string.Join(", ", insertVals2)});");
+                conn.Execute($"{InsertTemplate(insertCols)} ({string.Join(", ", insertVals3)});");
 
                 // Create the legacy non-unique index to trigger the index replacement branch
                 conn.Execute("CREATE INDEX idx_services_name_lower ON Services(LOWER(Name));");
@@ -145,7 +145,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             }
         }
 
-        private string insertTemplate(List<string> insertCols) =>
+        private static string InsertTemplate(List<string> insertCols) =>
             $"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ";
 
         #endregion

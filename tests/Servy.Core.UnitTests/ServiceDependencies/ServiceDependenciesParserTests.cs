@@ -6,21 +6,21 @@ namespace Servy.Core.UnitTests.ServiceDependencies
     public class ServiceDependenciesParserTests
     {
         [Fact]
-        public void Parse_NullInput_ReturnsNull()
+        public void Parse_NullInput_ReturnsNoDependencies()
         {
             var result = ServiceDependenciesParser.Parse(null);
             Assert.Equal(ServiceDependenciesParser.NoDependencies, result);
         }
 
         [Fact]
-        public void Parse_EmptyString_ReturnsNull()
+        public void Parse_EmptyString_ReturnsNoDependencies()
         {
             var result = ServiceDependenciesParser.Parse(string.Empty);
             Assert.Equal(ServiceDependenciesParser.NoDependencies, result);
         }
 
         [Fact]
-        public void Parse_WhitespaceOnly_ReturnsNull()
+        public void Parse_WhitespaceOnly_ReturnsNoDependencies()
         {
             var result = ServiceDependenciesParser.Parse("   \r\n  ");
             Assert.Equal(ServiceDependenciesParser.NoDependencies, result);
@@ -69,7 +69,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         }
 
         [Fact]
-        public void Parse_AllEmptyEntries_ReturnsNull()
+        public void Parse_AllEmptyEntries_ReturnsNoDependencies()
         {
             var result = ServiceDependenciesParser.Parse(";;\n\n;;");
             Assert.Equal(ServiceDependenciesParser.NoDependencies, result);
