@@ -18,9 +18,17 @@ namespace Servy.Core.Services
 {
     /// <summary>
     /// Provides methods to install, uninstall, start, stop, restart, and update Windows services.
-    /// Handles low-level Service Control Manager operations, configuration updates,
-    /// process monitoring, logging, and recovery options.
+    /// Acts as the central, unified orchestration engine for Windows Service lifecycle operations.
+    /// This hub deliberately aggregates low-level Windows Service Control Manager (SCM) interactions, 
+    /// Win32 P/Invoke boundaries, local system CRUD lifecycle management, parallel topology exploration, 
+    /// and service data synchronization mechanics.
     /// </summary>
+    /// <remarks>
+    /// Architectural Intent:
+    /// Leaving these domains combined ensures strict atomic synchronization between the operating system's native 
+    /// configuration states and the internal repository storage engine. This consolidation eliminates cross-process race 
+    /// conditions and transactional state drift during high-contention service installation, modification, and uninstallation.
+    /// </remarks>
     public class ServiceManager : IServiceManager
     {
         #region Private Fields
@@ -750,7 +758,7 @@ namespace Servy.Core.Services
         {
             if (_serviceRepository == null)
                 throw new InvalidOperationException("Service repository is not initialized. Cannot start service without a repository.");
-            if (string.IsNullOrWhiteSpace(serviceName)) 
+            if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentException("service name cannot be null or whitespace.", nameof(serviceName));
 
             int timeout = 0;
@@ -1033,8 +1041,8 @@ namespace Servy.Core.Services
                     {
                         throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
                     }
-                    
-                    
+
+
                     Parallel.ForEach(services, new ParallelOptions
                     {
                         CancellationToken = cancellationToken,
