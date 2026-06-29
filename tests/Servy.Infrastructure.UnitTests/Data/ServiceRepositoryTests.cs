@@ -1268,7 +1268,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task DecryptDto_CatchBlock_BubblesUpDescriptiveException()
+        public void DecryptDto_CatchBlock_BubblesUpDescriptiveException()
         {
             // Arrange
             var repo = CreateRepository();

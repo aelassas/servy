@@ -116,6 +116,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Helpers\HandleExeIntegrationTestBase.cs" />
     <Compile Include="Helpers\HandleHelperIntegrationTests.cs" />
     <Compile Include="Helpers\ProcessHelperIntegrationTests.cs" />
     <Compile Include="Helpers\ProcessKillerIntegrationTests.cs" />

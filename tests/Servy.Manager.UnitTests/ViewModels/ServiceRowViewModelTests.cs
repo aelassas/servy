@@ -7,6 +7,7 @@ using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -340,9 +341,12 @@ namespace Servy.Manager.UnitTests.ViewModels
             service.Status = ServiceStatus.Stopped;
             service.Pid = 0;
 
-            // Assert Notification Triggers
-            Assert.Contains(nameof(vm.IsSelected), propertiesChanged);
-            Assert.Contains(nameof(vm.IsChecked), propertiesChanged);
+            // Assert Notification Triggers & Optimization Coverage
+            // Verify that properties are modified, but duplicates are suppressed cleanly by equality guards
+            Assert.Equal(1, propertiesChanged.Count(p => p == nameof(vm.IsSelected)));
+            Assert.Equal(1, propertiesChanged.Count(p => p == nameof(vm.IsChecked)));
+
+            // Core model mutations should still stream through at-least-once via automatic forwarding hooks
             Assert.Contains(nameof(vm.Status), propertiesChanged);
             Assert.Contains(nameof(vm.Pid), propertiesChanged);
         }

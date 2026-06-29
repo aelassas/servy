@@ -70,7 +70,7 @@ namespace Servy.Core.UnitTests.Helpers
         {
             // Arrange: Set values that are specifically DIFFERENT from defaults
             const int customTimeout = 999;
-            const bool customToggle = true; // Assuming default is false
+            bool customToggle = !AppConfig.DefaultEnableSizeRotation; // guaranteed different from the default
 
             var dto = new ServiceDto
             {

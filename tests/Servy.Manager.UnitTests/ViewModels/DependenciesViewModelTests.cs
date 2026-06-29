@@ -51,10 +51,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         /// <summary>
-        /// Lazy initializer utility that instantiates the target ViewModel *only* after an explicit 
-        /// thread isolation lock has been acquired and a safe service provider context has been assigned.
+        /// Initializer utility that instantiates the target ViewModel.
         /// </summary>
-        private DependenciesViewModel CreateIsolatedViewModel()
+        private DependenciesViewModel CreateViewModel()
         {
             return new DependenciesViewModel(
                 _mockServiceRepository.Object,
@@ -140,7 +139,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    var viewModel = CreateIsolatedViewModel();
+                    var viewModel = CreateViewModel();
                     var mockService = new DependencyService { Name = "TestService", Pid = 1234 };
                     bool selectionChangedFired = false;
                     bool serviceSelectedFired = false;
@@ -181,7 +180,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    var viewModel = CreateIsolatedViewModel();
+                    var viewModel = CreateViewModel();
                     var mockService = new DependencyService { Name = "TestService" };
                     viewModel.SelectedService = mockService;
 
@@ -218,7 +217,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    var viewModel = CreateIsolatedViewModel();
+                    var viewModel = CreateViewModel();
 
                     // Create a circular Dependencies edge (root -> child -> root) to exercise the ExpandAll recursion/cycle guard;
                     // the isCycle constructor flag is unrelated and left false.
@@ -258,7 +257,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    var viewModel = CreateIsolatedViewModel();
+                    var viewModel = CreateViewModel();
 
                     // Use initialization constructors, then populate expansion state parameters sequentially
                     var childNode = new ServiceDependencyNode("Child", "Root Service") { IsExpanded = true };
@@ -294,7 +293,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    var viewModel = CreateIsolatedViewModel();
+                    var viewModel = CreateViewModel();
                     var mockService = new DependencyService { Name = "TestService", Pid = 5555 };
                     viewModel.SelectedService = mockService;
 
@@ -329,7 +328,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    var viewModel = CreateIsolatedViewModel();
+                    var viewModel = CreateViewModel();
                     viewModel.DependencyTree.Add(new ServiceDependencyNode("Stale", "Stale"));
                     viewModel.SelectedService = null;
 
@@ -364,7 +363,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 try
                 {
                     // Arrange
-                    var viewModel = CreateIsolatedViewModel();
+                    var viewModel = CreateViewModel();
                     var mockService = new DependencyService { Name = "ServyCore" };
                     var expectedRoot = new ServiceDependencyNode("ServyCore", "Friendly Core") { IsExpanded = false };
 
@@ -415,7 +414,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 try
                 {
                     // Arrange
-                    var viewModel = CreateIsolatedViewModel();
+                    var viewModel = CreateViewModel();
                     var mockService = new DependencyService { Name = "FaultyService" };
                     var exception = new InvalidOperationException("SCM Connection Error");
 
@@ -470,7 +469,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    var viewModel = CreateIsolatedViewModel();
+                    var viewModel = CreateViewModel();
 
                     var methodInfo = typeof(DesignTimeUiDispatcher).Assembly.GetType("Servy.Manager.ViewModels.DependenciesViewModel")?
                         .GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance)
@@ -510,7 +509,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    var viewModel = CreateIsolatedViewModel();
+                    var viewModel = CreateViewModel();
                     var mockService = new DependencyService { Name = "ActiveService", Pid = 999 };
                     viewModel.SelectedService = mockService;
 
@@ -548,7 +547,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    var viewModel = CreateIsolatedViewModel();
+                    var viewModel = CreateViewModel();
                     var mockService = new DependencyService { Name = "ActiveService", Pid = 100 };
                     viewModel.SelectedService = mockService;
 

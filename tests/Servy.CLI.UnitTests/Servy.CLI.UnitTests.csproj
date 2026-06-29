@@ -123,6 +123,7 @@
     <Compile Include="Commands\ExportServiceCommandTests.cs" />
     <Compile Include="Commands\ImportServiceCommandTests.cs" />
     <Compile Include="Commands\InstallServiceCommandTests.cs" />
+    <Compile Include="ConsoleTestCollection.cs" />
     <Compile Include="Helpers\ConsoleHelperTests.cs" />
     <Compile Include="Helpers\HelperTests.cs" />
     <Compile Include="Options\SensitiveOptionsTests.cs" />

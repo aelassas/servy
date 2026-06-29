@@ -11,9 +11,8 @@ namespace Servy.Core.IntegrationTests.Helpers
     /// <summary>
     /// Represents an exhaustive integration test suite for the ProcessKiller class, validating process tree termination, safelist protections, and file-lock release mechanisms.
     /// </summary>
-    public class ProcessKillerIntegrationTests : IDisposable
+    public class ProcessKillerIntegrationTests : HandleExeIntegrationTestBase, IDisposable
     {
-        private readonly string _handleExePath;
         private readonly ProcessKiller _processKiller;
         private readonly List<Process> _trackedProcesses;
         private readonly List<string> _tempFiles;
@@ -21,24 +20,11 @@ namespace Servy.Core.IntegrationTests.Helpers
         /// <summary>
         /// Initializes a new instance of the ProcessKillerIntegrationTests class, configuring tracking lists for safe teardown and ensuring necessary diagnostic utilities are extracted.
         /// </summary>
-        public ProcessKillerIntegrationTests()
+        public ProcessKillerIntegrationTests() : base()
         {
             _processKiller = new ProcessKiller();
             _trackedProcesses = new List<Process>();
             _tempFiles = new List<string>();
-
-            // 1. Force execution asset extraction to disk
-            Testing.Helper.ExtractHandleExe();
-
-            // 2. Fetch the resolved cross-architecture path string token
-            _handleExePath = Testing.Helper.HandleExePath;
-
-            // 3. CRITICAL DEFECT GUARD: Assert file physically exists right now
-            // If extraction fails due to directory locks, this stops the test context immediately with an explicit error.
-            Assert.True(File.Exists(_handleExePath), $"Lifecycle Extraction Fault: '{_handleExePath}' could not be verified on the local disk file table.");
-
-            // Auto-accept Sysinternals EULA in the registry hive context to prevent headless runner hangs
-            Testing.Helper.AcceptSysinternalsEula();
         }
 
         /// <summary>
@@ -397,9 +383,6 @@ namespace Servy.Core.IntegrationTests.Helpers
         /// <summary>
         /// Helper to poll for process exit with a timeout and explicit state refreshes.
         /// </summary>
-        /// <param name="process">The process to monitor.</param>
-        /// <param name="timeoutMs">Maximum wait time in milliseconds.</param>
-        /// <returns>True if the process exited; otherwise, false.</returns>
         private bool WaitForProcessExit(Process process, int timeoutMs)
         {
             if (process == null) return true;
@@ -417,15 +400,6 @@ namespace Servy.Core.IntegrationTests.Helpers
         /// <summary>
         /// Determines whether a specified process identifier (PID) is currently active and running in the operating system.
         /// </summary>
-        /// <param name="pid">The process identifier to check.</param>
-        /// <returns>
-        /// <c>true</c> if the process exists and has not exited; otherwise, <c>false</c> if the process is dead 
-        /// or no longer exists.
-        /// </returns>
-        /// <remarks>
-        /// This method safely catches the <see cref="ArgumentException"/> thrown by <see cref="Process.GetProcessById(int)"/> 
-        /// when a PID is missing from the active system process table, treating it as a non-active state.
-        /// </remarks>
         private static bool IsPidActive(int pid)
         {
             try
@@ -435,31 +409,22 @@ namespace Servy.Core.IntegrationTests.Helpers
             }
             catch (ArgumentException)
             {
-                // Process does not exist
                 return false;
             }
         }
 
         /// <summary>
         /// Spawns a PowerShell instance that subsequently launches a nested PowerShell task.
-        /// Utilizing a homogeneous process tree prevents native NtQueryInformationProcess struct mismatches
-        /// that occur when a 32-bit process attempts to query a 64-bit process's parent.
         /// </summary>
-        /// <returns>A tuple containing the initialized parent and child Process objects.</returns>
         private (Process Parent, Process Child) SpawnProcessTree()
         {
-            // 1. Locate the absolute path for PowerShell
             string psPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),
                 @"WindowsPowerShell\v1.0\powershell.exe");
 
-            // The payload for the child process to keep it alive
             string childScript = "while ($true) { Start-Sleep -Seconds 1 }";
             string encodedChildScript = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(childScript));
-
-            // Use a neutral temp path for all working directories
             string tempPath = Path.GetTempPath();
 
-            // 2. Inject absolute paths and explicit working directories into the inner script
             string psScript = $@"
                 $psi = New-Object System.Diagnostics.ProcessStartInfo
                 $psi.FileName = '{psPath.Replace(@"\", @"\\")}'
@@ -501,7 +466,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             var childProcess = Process.GetProcessById(childPid);
             _trackedProcesses.Add(childProcess);
 
-            // Force wait until the child's execution handles are fully synchronized and registered in OS topology tables.
             try
             {
                 childProcess.WaitForInputIdle(5000);
@@ -515,10 +479,8 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         /// <summary>
-        /// Spawns a PowerShell instance that opens an exclusive read lock on the specified file path, simulating a background worker that refuses to release I/O resources.
+        /// Spawns a PowerShell instance that opens an exclusive read lock on the specified file path.
         /// </summary>
-        /// <param name="filePath">The absolute path of the file to lock.</param>
-        /// <returns>The initialized Process object holding the lock.</returns>
         private Process SpawnFileLockingProcess(string filePath)
         {
             string psScript = $@"

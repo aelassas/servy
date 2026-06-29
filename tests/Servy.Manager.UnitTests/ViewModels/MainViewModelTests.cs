@@ -21,8 +21,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using Xunit;
-using Helper = Servy.Testing.Helper;
 using static Servy.Manager.ViewModels.MainViewModel;
+using Helper = Servy.Testing.Helper;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
@@ -112,11 +112,43 @@ namespace Servy.Manager.UnitTests.ViewModels
             );
         }
 
+        #region Private Message Pump Redirection Helpers
+
+        /// <summary>
+        /// Centralizes the message pump execution frame ceremony to eliminate copy-pasted boilerplate,
+        /// ensuring asynchronous operations push background tasks onto the STA apartment cleanly.
+        /// </summary>
+        private static void RunOnPump(Dispatcher dispatcher, Func<Task> action)
+        {
+            var frame = new DispatcherFrame();
+
+            _ = dispatcher.InvokeAsync(async () =>
+            {
+                try
+                {
+                    await action();
+                }
+                catch (Exception)
+                {
+                    // Suppress expected target exceptions to let the frame unwind cleanly
+                }
+                finally
+                {
+                    frame.Continue = false;
+                }
+            }, DispatcherPriority.Normal);
+
+            Dispatcher.PushFrame(frame);
+        }
+
+        #endregion
+
         #region Constructors & Properties
 
         [Fact]
         public void Constructor_NullGuards_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Helper.RunOnSTA(() =>
             {
                 Assert.Throws<ArgumentNullException>(() => new MainViewModel(null, _serviceRepositoryMock.Object, _serviceCommandsMock.Object, _helpServiceMock.Object, _messageBoxServiceMock.Object, _performanceViewModelMock.Object, _consoleViewModelMock.Object, _dependenciesViewModelMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelperMock.Object, Dispatcher.CurrentDispatcher));
@@ -128,6 +160,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_DesignTime_DoesNotThrow()
         {
+            // Arrange & Act & Assert
             Helper.RunOnSTA(() =>
             {
                 var vm = new MainViewModel();
@@ -138,12 +171,14 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Properties_SettersTriggerPropertyChanged()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
                 var changedProps = new List<string>();
                 vm.PropertyChanged += (s, e) => changedProps.Add(e.PropertyName);
 
+                // Act
                 vm.IsBusy = true;
                 vm.IsBusy = true;
                 vm.FooterText = "Test";
@@ -151,6 +186,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.SearchText = "Testing";
                 vm.IsConfiguratorEnabled = false;
 
+                // Assert
                 Assert.Contains(nameof(vm.IsBusy), changedProps);
                 Assert.Contains(nameof(vm.FooterText), changedProps);
                 Assert.Contains(nameof(vm.SearchButtonText), changedProps);
@@ -162,13 +198,16 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void ServiceCommands_Setter_UpdatesChildViewModels()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
                 var newCommands = new Mock<IServiceCommands>().Object;
 
+                // Act
                 vm.ServiceCommands = newCommands;
 
+                // Assert
                 Assert.Equal(newCommands, vm.PerformanceVM.ServiceCommands);
                 Assert.Equal(newCommands, vm.ConsoleVM.ServiceCommands);
                 Assert.Equal(newCommands, vm.DependenciesVM.ServiceCommands);
@@ -178,14 +217,17 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void AppConfig_PropertyChanged_UpdatesConfiguratorEnabled()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
                 _appConfigMock.Setup(c => c.IsDesktopAppAvailable).Returns(false);
 
+                // Act
                 _appConfigMock.Raise(c => c.PropertyChanged += null, new PropertyChangedEventArgs(nameof(IAppConfiguration.IsDesktopAppAvailable)));
                 _appConfigMock.Raise(c => c.PropertyChanged += null, new PropertyChangedEventArgs("OtherProperty"));
 
+                // Assert
                 Assert.False(vm.IsConfiguratorEnabled);
             }, createApp: true);
         }
@@ -199,6 +241,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var currentDispatcher = Dispatcher.CurrentDispatcher;
                 var vm = CreateViewModel(currentDispatcher);
                 var services = new List<Service>
@@ -210,29 +253,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _serviceCommandsMock.Setup(c => c.SearchServicesAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(services);
 
-                // Establish a clean, thread-bound message pump loop frame
-                var frame = new DispatcherFrame();
-
-                // Schedule the execution sequence onto the dispatcher queue channel.
-                _ = currentDispatcher.InvokeAsync(async () =>
+                // Act
+                RunOnPump(currentDispatcher, async () =>
                 {
-                    try
-                    {
-                        await vm.SearchCommand.ExecuteAsync(null);
-                    }
-                    finally
-                    {
-                        // Lower the flag to break out of the PushFrame pump below
-                        frame.Continue = false;
-                    }
-                }, DispatcherPriority.Normal);
+                    await vm.SearchCommand.ExecuteAsync(null);
+                });
 
-                // Start the active thread-apartment message loop pump.
-                // This forces the background loops spawned inside SearchServicesAsync to clear 
-                // their queues instantly without hitting cross-thread priority blockades.
-                Dispatcher.PushFrame(frame);
-
-                // Assertions - Safely run on the main thread after the pump unwinds
+                // Assert
                 var view = vm.ServicesView.Cast<ServiceRowViewModel>().ToList();
                 Assert.Equal(2, view.Count);
 
@@ -263,11 +290,14 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var vm = CreateViewModel();
                 typeof(MainViewModel).GetField("_dispatcher", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vm, null);
 
+                // Act
                 await vm.SearchCommand.ExecuteAsync(null);
 
+                // Assert
                 _serviceCommandsMock.Verify(c => c.SearchServicesAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             }, createApp: true);
         }
@@ -279,10 +309,12 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void TimerLifecycle_CreateStartStop_ManagesResourcesCorrectly()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
 
+                // Act & Assert
                 vm.CreateAndStartTimer();
                 var timerField = typeof(MainViewModel).GetField("_refreshTimer", BindingFlags.NonPublic | BindingFlags.Instance);
                 var timer = (DispatcherTimer)timerField.GetValue(vm);
@@ -300,11 +332,13 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void OnTick_OverlappingTicks_PreventedByInterlocked()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
                 var onTickMethod = typeof(MainViewModel).GetMethod("OnTick", BindingFlags.NonPublic | BindingFlags.Instance);
 
+                // Act & Assert
                 onTickMethod.Invoke(vm, new object[] { null, EventArgs.Empty });
                 onTickMethod.Invoke(vm, new object[] { null, EventArgs.Empty });
 
@@ -315,6 +349,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void RefreshAllServicesAsync_UpdatesUI_ResolvesGhostPids_AndFixesDBDrift()
         {
+            // Arrange
             var vm = CreateViewModel();
             var targetService = new Service
             {
@@ -350,6 +385,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             var calculateUpdateMethod = typeof(MainViewModel).GetMethod("GetServiceUpdateInfo",
                 BindingFlags.NonPublic | BindingFlags.Instance);
 
+            // Act
             var result = calculateUpdateMethod.Invoke(vm, new object[]
             {
                 targetService,
@@ -362,6 +398,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             var uiUpdateInfo = resultType.GetField("Item1").GetValue(result);
             var updatedDatabaseDto = (ServiceDto)resultType.GetField("Item2").GetValue(result);
 
+            // Assert
             Assert.NotNull(updatedDatabaseDto);
             Assert.Equal("DriftService", updatedDatabaseDto.Name);
             Assert.Equal("New OS Desc", updatedDatabaseDto.Description);
@@ -388,9 +425,11 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var vm = CreateViewModel();
                 var refreshMethod = typeof(MainViewModel).GetMethod("RefreshAllServicesAsync", BindingFlags.NonPublic | BindingFlags.Instance);
 
+                // Act & Assert
                 typeof(MainViewModel).GetField("_serviceManager", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vm, null);
                 await (Task)refreshMethod.Invoke(vm, new object[] { CancellationToken.None });
 
@@ -405,6 +444,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void GetServiceUpdateInfo_ExceptionBranch_ReturnsNullsSafely()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
@@ -413,8 +453,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var service = new Service { Name = "CrashService", Pid = 1234 };
                 _processHelperMock.Setup(p => p.GetProcessTreeMetrics(1234)).Throws(new Exception("Process performance counter corrupt"));
 
+                // Act
                 var result = getInfoMethod.Invoke(vm, new object[] { service, new Dictionary<string, ServiceInfo>(), new ServiceDto(), CancellationToken.None });
 
+                // Assert
                 Assert.NotNull(result);
 
                 var type = result.GetType();
@@ -457,33 +499,11 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             configureTest(vm);
 
-            // 2. Create a native WPF message pump execution frame controller
-            var frame = new DispatcherFrame();
-
-            // 3. Schedule the command execution block onto the local message queue.
-            // This allows the PushFrame mechanism below to boot up completely first.
-            _ = threadDispatcher.InvokeAsync(async () =>
+            // 2. Wrap via the unified message pump helper
+            RunOnPump(threadDispatcher, async () =>
             {
-                try
-                {
-                    await commandAction(vm);
-                }
-                catch (Exception)
-                {
-                    // Suppress expected target exceptions to let the frame unwind cleanly
-                }
-                finally
-                {
-                    // CRITICAL: Breaking the frame loop causes PushFrame to exit 
-                    // the moment the async execution pipeline completes.
-                    frame.Continue = false;
-                }
-            }, DispatcherPriority.Normal);
-
-            // 4. Start a live thread-bound Win32 message loop on the STA thread apartment.
-            // This handles InvokeAsync operations, background worker callbacks, and 
-            // nested message-box awaits sequentially without thread starvation.
-            Dispatcher.PushFrame(frame);
+                await commandAction(vm);
+            });
 
             await Task.CompletedTask;
         }
@@ -493,6 +513,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var currentDispatcher = Dispatcher.CurrentDispatcher;
                 var vm = CreateViewModel(currentDispatcher);
 
@@ -500,23 +521,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _messageBoxServiceMock.Setup(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()))
                                       .Returns(Task.CompletedTask);
 
-                var frame = new DispatcherFrame();
-
-                // Route through the DispatcherFrame harness to ensure the thread remains isolated 
-                // and responsive during execution steps.
-                _ = currentDispatcher.InvokeAsync(async () =>
+                // Act
+                RunOnPump(currentDispatcher, async () =>
                 {
-                    try
-                    {
-                        await vm.StartSelectedCommand.ExecuteAsync(null);
-                    }
-                    finally
-                    {
-                        frame.Continue = false;
-                    }
+                    await vm.StartSelectedCommand.ExecuteAsync(null);
                 });
-
-                Dispatcher.PushFrame(frame);
 
                 // Assert
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_NoServicesSelected, It.IsAny<string>()), Times.Once);
@@ -528,13 +537,13 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Uses our specialized bulk helper which completely encapsulates 
-                // the DispatcherFrame pump mechanics under the hood!
+                // Act
                 await SetupAndRunBulkOperation(vm =>
                 {
                     typeof(MainViewModel).GetField("_messageBoxService", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vm, null);
                 }, async vm => await vm.StartSelectedCommand.ExecuteAsync(null));
 
+                // Assert
                 _serviceCommandsMock.Verify(c => c.StartServiceAsync(It.IsAny<Service>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             }, createApp: true);
         }
@@ -544,11 +553,13 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Act
                 await SetupAndRunBulkOperation(vm =>
                 {
                     _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(false);
                 }, async vm => await vm.StartSelectedCommand.ExecuteAsync(null));
 
+                // Assert
                 _serviceCommandsMock.Verify(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>()), Times.Never);
             }, createApp: true);
         }
@@ -558,14 +569,17 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 _messageBoxServiceMock.Setup(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
+                // Act
                 await SetupAndRunBulkOperation(vm =>
                 {
                     _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
                     _serviceCommandsMock.Setup(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 }, async vm => await vm.StartSelectedCommand.ExecuteAsync(null));
 
+                // Assert
                 _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, It.IsAny<string>()), Times.Once);
             }, createApp: true);
         }
@@ -575,8 +589,10 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 _messageBoxServiceMock.Setup(m => m.ShowWarningAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
+                // Act
                 await SetupAndRunBulkOperation(vm =>
                 {
                     _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
@@ -585,6 +601,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     _serviceCommandsMock.Setup(c => c.StopServiceAsync(It.Is<Service>(s => s.Name == "S2"), false, It.IsAny<CancellationToken>())).ReturnsAsync(false);
                 }, async vm => await vm.StopSelectedCommand.ExecuteAsync(null));
 
+                // Assert
                 _messageBoxServiceMock.Verify(m => m.ShowWarningAsync(It.Is<string>(msg => msg.Contains("S2")), It.IsAny<string>()), Times.Once);
             }, createApp: true);
         }
@@ -594,14 +611,17 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 _messageBoxServiceMock.Setup(m => m.ShowWarningAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
 
+                // Act
                 await SetupAndRunBulkOperation(vm =>
                 {
                     _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
                     _serviceCommandsMock.Setup(c => c.RestartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>())).ReturnsAsync(false);
                 }, async vm => await vm.RestartSelectedCommand.ExecuteAsync(null));
 
+                // Assert
                 _messageBoxServiceMock.Verify(m => m.ShowWarningAsync(Strings.Msg_AllOperationsFailed, It.IsAny<string>()), Times.Once);
             }, createApp: true);
         }
@@ -611,8 +631,10 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var vmRef = (MainViewModel)null;
 
+                // Act
                 await SetupAndRunBulkOperation(vm =>
                 {
                     vmRef = vm;
@@ -630,6 +652,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     await vm.StartSelectedCommand.ExecuteAsync(null);
                 });
 
+                // Assert
                 Assert.False(vmRef.IsBusy);
                 _cursorServiceMock.Verify(c => c.ResetCursor(), Times.AtLeastOnce);
             }, createApp: true);
@@ -644,6 +667,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var currentDispatcher = Dispatcher.CurrentDispatcher;
                 var vm = CreateViewModel(currentDispatcher);
                 var collection = (BulkObservableCollection<ServiceRowViewModel>)typeof(MainViewModel).GetField("_services", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(vm);
@@ -651,45 +675,27 @@ namespace Servy.Manager.UnitTests.ViewModels
                 collection.Add(new ServiceRowViewModel(new Service { Name = "ToRemove" }, _serviceCommandsMock.Object, _cursorServiceMock.Object));
                 collection.Add(new ServiceRowViewModel(new Service { Name = "ToKeep" }, _serviceCommandsMock.Object, _cursorServiceMock.Object));
 
-                // Branch 1: Current Thread execution path (UI Thread context match)
+                // Act & Assert - Branch 1: Current Thread execution path (UI Thread context match)
                 vm.RemoveService("ToRemove");
                 Assert.Single(collection);
 
-                // Branch 2: Worker Background Thread execution path (InvokeAsync fallback branch)
-                var frame = new DispatcherFrame();
-
-                // Hook directly into the collection's native change notification tracking loop.
-                // This ensures frame.Continue = false triggers ONLY when the item has physically 
-                // been removed from memory, removing priority races entirely.
-                System.Collections.Specialized.NotifyCollectionChangedEventHandler handler = null;
-                handler = (s, e) =>
+                // Act - Branch 2: Worker Background Thread execution path (InvokeAsync fallback branch)
+                RunOnPump(currentDispatcher, async () =>
                 {
-                    if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Remove)
-                    {
-                        frame.Continue = false;
-                    }
-                };
-                collection.CollectionChanged += handler;
+                    // 1. Kick off the service removal on a background thread pool worker
+                    await Task.Run(() => vm.RemoveService("ToKeep"));
 
-                try
-                {
-                    // Kick off the background removal task
-                    _ = Task.Run(() => vm.RemoveService("ToKeep"));
+                    // 2. Yield and await a lower-priority operation on the local message pump.
+                    // This forces the pump to fully process the collection removal InvokeAsync action 
+                    // queued up by RemoveService before dropping the frame execution loop.
+                    await currentDispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+                });
 
-                    // Start the active thread message loop pump. It will stay open until 
-                    // the CollectionChanged event handler drops the Continue flag.
-                    Dispatcher.PushFrame(frame);
-                }
-                finally
-                {
-                    // Clean up event subscription to prevent memory profile leakage across suite runs
-                    collection.CollectionChanged -= handler;
-                }
-
-                // Assert: Guaranteed to be empty now that the pump has waited for the physical drop
+                // Assert
                 Assert.Empty(collection);
 
                 await Task.CompletedTask;
+
             }, createApp: true);
         }
 
@@ -698,6 +704,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var currentDispatcher = Dispatcher.CurrentDispatcher;
                 var vm = CreateViewModel(currentDispatcher);
                 var dummyService = new Service();
@@ -710,35 +717,19 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _serviceCommandsMock.Setup(c => c.SearchServicesAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()))
                                     .ReturnsAsync(new List<Service>());
 
-                // Establish a clean, thread-bound message pump loop frame
-                var frame = new DispatcherFrame();
-
-                // Schedule the complete sequential command execution suite onto the dispatcher queue channel.
-                _ = currentDispatcher.InvokeAsync(async () =>
+                // Act
+                RunOnPump(currentDispatcher, async () =>
                 {
-                    try
-                    {
-                        await vm.ConfigureCommand.ExecuteAsync(dummyService);
-                        await vm.ImportXmlCommand.ExecuteAsync(null);
-                        await vm.ImportJsonCommand.ExecuteAsync(null);
-                        await vm.OpenDocumentationCommand.ExecuteAsync(null);
-                        await vm.CheckUpdatesCommand.ExecuteAsync(null);
-                        await vm.OpenAboutDialogCommand.ExecuteAsync(null);
+                    await vm.ConfigureCommand.ExecuteAsync(dummyService);
+                    await vm.ImportXmlCommand.ExecuteAsync(null);
+                    await vm.ImportJsonCommand.ExecuteAsync(null);
+                    await vm.OpenDocumentationCommand.ExecuteAsync(null);
+                    await vm.CheckUpdatesCommand.ExecuteAsync(null);
+                    await vm.OpenAboutDialogCommand.ExecuteAsync(null);
 
-                        // This internally triggers SearchServicesAsync and handles the background workers safely
-                        await vm.Refresh();
-                    }
-                    finally
-                    {
-                        // Lower the flag to release the message pump loop once the final task completes
-                        frame.Continue = false;
-                    }
-                }, DispatcherPriority.Normal);
-
-                // Start the active thread-apartment message loop pump.
-                // This forces the background loops spawned inside 'Refresh' to clear their 
-                // InvokeAsync queues instantly without hitting cross-thread lock blockades.
-                Dispatcher.PushFrame(frame);
+                    // This internally triggers SearchServicesAsync and handles the background workers safely
+                    await vm.Refresh();
+                });
 
                 // Assertions - Verification metrics execute securely after the frame loop unrolls
                 _serviceCommandsMock.Verify(c => c.ConfigureServiceAsync(dummyService, It.IsAny<CancellationToken>()), Times.Once);
@@ -760,6 +751,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Properties_TriStateSelectAll_MutatesAndFiresNotification()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
@@ -783,8 +775,10 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 typeof(MainViewModel).GetField("_selectAll", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vm, true);
 
+                // Act
                 vm.SelectAll = null;
 
+                // Assert
                 Assert.True(selectAllChangedFired);
 
                 return true;
@@ -794,6 +788,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Properties_SearchText_MutatesAndUpdatesValue()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
@@ -803,8 +798,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                     if (e.PropertyName == nameof(vm.SearchText)) searchTextChangedFired = true;
                 };
 
+                // Act
                 vm.SearchText = "WexflowCoreEngine";
 
+                // Assert
                 Assert.Equal("WexflowCoreEngine", vm.SearchText);
                 Assert.True(searchTextChangedFired);
             }, createApp: true);
@@ -813,6 +810,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Properties_SearchButtonText_MutatesAndUpdatesValue()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
@@ -822,8 +820,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                     if (e.PropertyName == nameof(vm.SearchButtonText)) buttonTextChangedFired = true;
                 };
 
+                // Act
                 vm.SearchButtonText = Strings.Button_Searching;
 
+                // Assert
                 Assert.Equal(Strings.Button_Searching, vm.SearchButtonText);
                 Assert.True(buttonTextChangedFired);
             }, createApp: true);
@@ -832,12 +832,14 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void StandardUIProperties_MutateValues_RaisesNotificationsAndBypassesOnEquality()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
                 var changedProps = new List<string>();
                 vm.PropertyChanged += (s, e) => { if (e.PropertyName != null) changedProps.Add(e.PropertyName); };
 
+                // Act & Assert
                 vm.IsBusy = true;
                 Assert.True(vm.IsBusy);
                 Assert.Contains(nameof(vm.IsBusy), changedProps);
@@ -876,6 +878,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void SelectAll_Setter_CascadesCorrectlyToChildrenAndPreventsInfiniteLoops()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
@@ -893,8 +896,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                     if (e.PropertyName == nameof(vm.SelectAll)) selectAllNotified = true;
                 };
 
+                // Act
                 vm.SelectAll = true;
 
+                // Assert
                 Assert.True(childRow1.IsChecked);
                 Assert.True(childRow2.IsChecked);
                 Assert.False(childRow1.IsSelected);
@@ -916,6 +921,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void IsConfiguratorEnabled_MutatesValueAndFiresNotification()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
@@ -925,8 +931,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                     if (e.PropertyName == nameof(vm.IsConfiguratorEnabled)) notified = true;
                 };
 
+                // Act
                 vm.IsConfiguratorEnabled = !vm.IsConfiguratorEnabled;
 
+                // Assert
                 Assert.True(notified);
 
                 notified = false;
@@ -942,10 +950,12 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void AsyncCommands_AreExposedAndProperlyInitialized()
         {
+            // Arrange & Act
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
 
+                // Assert
                 Assert.NotNull(vm.SearchCommand);
                 Assert.NotNull(vm.ConfigureCommand);
                 Assert.NotNull(vm.ImportXmlCommand);
@@ -968,14 +978,11 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
-                // Preserve the original environment context firmly inside the thread scope boundary
                 var originalProvider = App.Services;
 
-                // Build an isolated runtime DI container to satisfy the base class locator check.
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_processKillerMock.Object);
 
-                // Build the provider instance explicitly and verify it isn't dropped by cross-thread assignments
                 var localProvider = serviceCollection.BuildServiceProvider();
                 App.Services = localProvider;
 
@@ -1009,7 +1016,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 }
                 finally
                 {
-                    // Clean up tracking boundaries to isolate adjacent concurrent test suites
                     App.Services = originalProvider;
                 }
             }, createApp: true);
@@ -1018,21 +1024,19 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void GetServiceUpdateInfo_StartupTypeNullInOsButPresentInDto_FallbackToDtoStartupType()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
-                // Arrange
                 var vm = CreateViewModel();
                 var getInfoMethod = typeof(MainViewModel).GetMethod("GetServiceUpdateInfo", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 var service = new Service { Name = "FallbackSvc", Status = ServiceStatus.Running };
 
-                // OS configuration returns null for the startup type sequence
                 var allServices = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase)
                 {
                     { "FallbackSvc", new ServiceInfo { Name = "FallbackSvc", Status = ServiceStatus.Running, StartupType = ServiceStartType.Disabled } }
                 };
 
-                // Database fallback contains a valid explicit configuration setting profile
                 var serviceDto = new ServiceDto { Name = "FallbackSvc", StartupType = (int)ServiceStartType.Disabled };
 
                 // Act
@@ -1048,16 +1052,16 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void GetServiceUpdateInfo_ServiceDtoNull_SetsRequiresPidUpdateTrueAndNewPidNull()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
-                // Arrange
                 var vm = CreateViewModel();
                 var getInfoMethod = typeof(MainViewModel).GetMethod("GetServiceUpdateInfo", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 var service = new Service { Name = "OrphanedSvc", Pid = 999 };
                 var allServices = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase);
 
-                // Act - Passing null for ServiceDto parameter
+                // Act
                 var result = getInfoMethod.Invoke(vm, new object[] { service, allServices, null, CancellationToken.None });
 
                 // Assert
@@ -1071,9 +1075,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void ApplyServiceUpdate_AppliesAllPropertiesSafelyToTargetUiService()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
-                // Arrange
                 var vm = CreateViewModel();
                 var applyMethod = typeof(MainViewModel).GetMethod("ApplyServiceUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -1122,9 +1126,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Service_PropertyChanged_IsCheckedPropertyName_TriggersSelectAllAndHasSelectedServicesCascade()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
-                // Arrange
                 var vm = CreateViewModel();
                 bool hasSelectedServicesNotified = false;
                 vm.PropertyChanged += (s, e) =>
@@ -1135,7 +1139,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 var handlerMethod = typeof(MainViewModel).GetMethod("Service_PropertyChanged", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                // Act - Simulate a child RowViewModel checking state mutation notification callback loop trigger
+                // Act
                 handlerMethod.Invoke(vm, new object[] { null, new PropertyChangedEventArgs(nameof(ServiceRowViewModel.IsChecked)) });
 
                 // Assert
@@ -1146,12 +1150,11 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void UpdateSelectAllState_CollectionEmpty_SetsSelectAllFalse()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
-                // Arrange
                 var vm = CreateViewModel();
 
-                // Clear out items securely to challenge collection edge loops
                 var servicesCollection = (BulkObservableCollection<ServiceRowViewModel>)typeof(MainViewModel)
                     .GetField("_services", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(vm);
                 servicesCollection.Clear();
@@ -1169,13 +1172,12 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Dispose_PerformanceAndChildViewModelsNotImplementIDisposable_BypassesGracefully()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
-                // Arrange
                 var uiDispatcherMock = new Mock<IUiDispatcher>();
                 uiDispatcherMock.Setup(d => d.YieldAsync()).Returns(Task.CompletedTask);
 
-                // Initialize standalone standard child instances that do NOT inherit or abstract from IDisposable directly
                 var mockPerformance = new Mock<PerformanceViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelperMock.Object, uiDispatcherMock.Object);
                 var mockConsole = new Mock<ConsoleViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object);
                 var mockDependencies = new Mock<DependenciesViewModel>(_serviceRepositoryMock.Object, _serviceManagerMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object, _messageBoxServiceMock.Object);
@@ -1195,7 +1197,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Dispatcher.CurrentDispatcher
                 );
 
-                // Act & Assert - Ensure standard layout teardowns do not experience casting violations or throw crashes
+                // Act & Assert
                 var exception = Record.Exception(() => vm.Dispose());
                 Assert.Null(exception);
             }, createApp: true);
@@ -1208,6 +1210,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Dispose_CleansUpTimersAndSubscriptions_SafelyHandlesDoubleDispose()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
@@ -1215,8 +1218,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var collection = (BulkObservableCollection<ServiceRowViewModel>)typeof(MainViewModel).GetField("_services", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(vm);
                 collection.Add(new ServiceRowViewModel(new Service(), _serviceCommandsMock.Object, _cursorServiceMock.Object));
 
+                // Act
                 vm.Dispose();
 
+                // Assert
                 Assert.Empty(collection);
 
                 var doubleDisposeException = Record.Exception(() => vm.Dispose());

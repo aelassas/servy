@@ -415,12 +415,15 @@ namespace Servy.Core.UnitTests.Services
 
             // MaxResults is 10,000 in EventLogService class.
             // We provide 10,001 items to force the 'break' to trigger.
-            const int limit = 10_000;
+            const int limit = AppConfig.EventLogMaxResults;
+
+            // Use ascending time values (+i) to provide unsorted mock data.
+            // This forces the production system's OrderByDescending method to actively reverse the pipeline.
             var excessiveResults = Enumerable.Range(1, limit + 1)
                 .Select(i => CreateFakeEvent(
                     id: i,
                     level: 4,
-                    time: DateTime.UtcNow.AddSeconds(-i), // Varying time for Sort coverage
+                    time: DateTime.UtcNow.AddSeconds(i), // Varying ascending time for genuine Sort coverage
                     message: $"[service] Message {i}"))
                 .ToList();
 
@@ -430,15 +433,20 @@ namespace Servy.Core.UnitTests.Services
             var service = CreateService(mockReader);
 
             // Act
-            var results = await service.SearchAsync(null, null, null, null);
+            var results = await service.SearchAsync(null, null, null, null, CancellationToken.None);
 
             // Assert
             // 1. Verify the loop broke exactly at the limit
-            Assert.Equal(limit, results.Count());
-
-            // 2. Verify the list is actually ordered (covers the .OrderByDescending branch)
             var resultsList = results.ToList();
-            Assert.True(resultsList[0].Time >= resultsList[1].Time, "Results should be ordered by descending time.");
+            Assert.Equal(limit, resultsList.Count);
+
+            // 2. Verify the list is fully ordered (covers the .OrderByDescending branch rigorously)
+            // Monotonic evaluation loop ensures no rogue elements breach sequence constraints down the array surface.
+            for (int k = 1; k < resultsList.Count; k++)
+            {
+                Assert.True(resultsList[k - 1].Time >= resultsList[k].Time,
+                    $"Results are out of sequence at index {k}. Elements must be monotonically ordered by descending time across the entire dataset.");
+            }
         }
     }
 }

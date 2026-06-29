@@ -42,7 +42,7 @@ namespace Servy.Service.Helpers
         /// from being parsed during the fixed-point expansion loop. Uses the Unicode Replacement 
         /// Character (\uFFFD) to guarantee no collisions with legitimate user input.
         /// </summary>
-        private const string PercentEscapeToken = "\uFFFD_SERVY_ESC_PERCENT_\uFFFD";
+        internal const string PercentEscapeToken = "\uFFFD_SERVY_ESC_PERCENT_\uFFFD";
 
         /// <summary>
         /// Protected system variables that should never be overridden by user configuration

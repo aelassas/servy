@@ -273,8 +273,7 @@ namespace Servy.Service.UnitTests
             helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
                          It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                          It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                  .Callback(() =>
-                  {
+                  .Callback(() => {
                       // 1. Mark process as healthy to prevent trailing threads from starting a second failure cycle
                       processHasExited = false;
 
@@ -287,7 +286,6 @@ namespace Servy.Service.UnitTests
             service.SetRecoveryAction(RecoveryAction.RestartProcess);
             service.SetFailedChecks(0);
 
-            // Act
             int calls = 20;
             var startingGun = new TaskCompletionSource<bool>();
             var tasks = new List<Task>();
@@ -300,9 +298,10 @@ namespace Servy.Service.UnitTests
                     // All 20 threads will spin up and pause right here
                     await startingGun.Task;
                     service.InvokeCheckHealth(null, null);
-                }));
+                }, CancellationToken.None));
             }
 
+            // Act
             // FIRE THE STARTING GUN! 
             // This releases all 20 tasks simultaneously, guaranteeing maximum contention
             // and a true test of the semaphore, regardless of the CPU core count.
@@ -310,17 +309,17 @@ namespace Servy.Service.UnitTests
 
             // Wait for the recovery to be triggered by the background threads. 
             // Increased to 15 seconds to prevent timeouts on slow GitHub CI runners.
-            var completedTask = await Task.WhenAny(recoveryTriggered.Task, Task.Delay(TimeSpan.FromSeconds(15)));
+            var completedTask = await Task.WhenAny(recoveryTriggered.Task, Task.Delay(TimeSpan.FromSeconds(15), CancellationToken.None));
 
             if (completedTask != recoveryTriggered.Task)
             {
                 Assert.Fail("Timeout: RestartProcess was never called. The CI Thread Pool might be starved.");
             }
 
-            // CRITICAL: GitHub CI runners are slow. Even though recovery triggered, the remaining 17 
-            // concurrent calls need ample time to wake up, process the healthy state, and exit gracefully.
-            // 2000ms ensures the 2-core runner finishes its queue before we hit the Mock.Verify.
-            await Task.Delay(2000);
+            // DETRMINISTIC SYNCHRONIZATION POINT: 
+            // Instead of counting on an arbitrary sleep to give the remaining workers room to finish,
+            // we await all tasks to safely drop out of the pool threads before processing verifications.
+            await Task.WhenAll(tasks);
 
             // Assert
             logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed")), It.IsAny<Exception>()), Times.Exactly(3));
@@ -330,6 +329,5 @@ namespace Servy.Service.UnitTests
                           It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
                           Times.Once);
         }
-
     }
 }

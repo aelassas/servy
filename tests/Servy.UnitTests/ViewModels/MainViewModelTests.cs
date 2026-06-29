@@ -9,7 +9,6 @@ using Servy.Services;
 using Servy.UI.Services;
 using Servy.ViewModels;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;

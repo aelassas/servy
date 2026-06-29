@@ -21,30 +21,16 @@ namespace Servy.Core.IntegrationTests.Helpers
     /// These tests require handle.exe to be present and the runner to be elevated.
     /// </summary>
     [Collection("HandleHelperIntegrationTests")]
-    public class HandleHelperIntegrationTests : IDisposable
+    public class HandleHelperIntegrationTests : HandleExeIntegrationTestBase, IDisposable
     {
-        private readonly string _handleExePath;
         private readonly List<string> _tempFiles = new List<string>();
         private readonly List<FileStream> _openedStreams = new List<FileStream>();
 
         /// <summary>
-        /// Initializes the test class by ensuring handle64.exe is extracted from resources.
+        /// Initializes the test class by inheriting from the shared tool extraction baseline.
         /// </summary>
-        public HandleHelperIntegrationTests()
+        public HandleHelperIntegrationTests() : base()
         {
-            // 1. Force execution asset extraction to disk
-            Testing.Helper.ExtractHandleExe();
-
-            // 2. Fetch the resolved cross-architecture path string token
-            _handleExePath = Testing.Helper.HandleExePath;
-
-            // 3. CRITICAL DEFECT GUARD: Assert file physically exists right now
-            // If extraction fails due to directory locks, this stops the test context immediately with an explicit error.
-            Assert.True(File.Exists(_handleExePath), $"Lifecycle Extraction Fault: '{_handleExePath}' could not be verified on the local disk file table.");
-
-            // Auto-accept Sysinternals EULA in the registry hive context to prevent headless runner hangs
-            Testing.Helper.AcceptSysinternalsEula();
-
             try
             {
                 // Cold-start driver check
@@ -94,7 +80,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         [Fact]
         public void GetProcessesUsingFile_ShouldThrow_WhenPathsAreNullOrEmpty()
         {
-            // Assert
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentException>(() => HandleHelper.GetProcessesUsingFile("", "C:\\test.txt"));
             Assert.Throws<ArgumentException>(() => HandleHelper.GetProcessesUsingFile("handle.exe", ""));
         }
