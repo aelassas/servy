@@ -1,4 +1,5 @@
 ﻿using Servy.Service.ProcessManagement;
+using Servy.Testing;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
@@ -149,7 +150,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     int psCount = descendants.Count(d => GetSafeProcessName(d).Equals("powershell", StringComparison.OrdinalIgnoreCase));
                     return descendants.Count >= 2 && psCount >= 2;
 
-                }, TimeSpan.FromSeconds(20));
+                }, TimeSpan.FromSeconds(TestTimeouts.ProcessTreeTimeoutSeconds));
 
                 if (root.HasExited)
                 {
@@ -157,7 +158,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 }
 
                 // Assert
-                Assert.True(treeStabilized, $"Tree failed to stabilize within 20s. Found {descendants.Count} descendants.");
+                Assert.True(treeStabilized, $"Tree failed to stabilize within {TestTimeouts.ProcessTreeTimeoutSeconds}s. Found {descendants.Count} descendants.");
 
                 int finalPsCount = descendants.Count(d => GetSafeProcessName(d).Equals("powershell", StringComparison.OrdinalIgnoreCase));
                 Assert.True(finalPsCount >= 2, $"Expected at least 2 nested powershell processes. Found: {finalPsCount}");
@@ -249,7 +250,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             string BuildScript(int currentDepth)
             {
                 if (currentDepth == 0)
-                    return "Start-Sleep -Seconds 15";
+                    return $"Start-Sleep -Seconds {TestTimeouts.ChildSleepSeconds}";
 
                 string innerScript = BuildScript(currentDepth - 1);
                 string encodedInner = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(innerScript));
@@ -297,7 +298,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 return lastResults.Any(p => GetSafeProcessName(p).Equals(targetName, StringComparison.OrdinalIgnoreCase));
 
-            }, TimeSpan.FromSeconds(15));
+            }, TimeSpan.FromSeconds(TestTimeouts.ChildTimeoutSeconds));
 
             if (root.HasExited)
             {
@@ -307,7 +308,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             if (!found)
             {
                 string foundNames = string.Join(", ", lastResults.Select(GetSafeProcessName));
-                throw new TimeoutException($"Failed to find '{targetName}' child process within 15 seconds. Found instead: [{foundNames}]");
+                throw new TimeoutException($"Failed to find '{targetName}' child process within {TestTimeouts.ChildTimeoutSeconds} seconds. Found instead: [{foundNames}]");
             }
 
             return lastResults;

@@ -23,25 +23,24 @@ namespace Servy.Manager.UnitTests.Converters
         [Fact]
         public void Convert_ValidDouble_ReturnsFormattedString()
         {
+            // Arrange
             var originalProvider = App.Services;
             var serviceCollection = new ServiceCollection();
 
-            // Seed both framework required guards and our target execution formatting mock
             serviceCollection.AddSingleton(_mockProcessKiller.Object);
             serviceCollection.AddSingleton(_mockProcessHelper.Object);
 
+            // Service registration must precede constructor execution 
+            // to satisfy the constructor's immediate ServiceProvider lookup check.
             App.Services = serviceCollection.BuildServiceProvider();
 
             try
             {
-                // Arrange
-                var converter = new CpuUsageConverter();
                 double input = 1.25;
-
-                // CPU usage is rounded half-up to one decimal place (1.25 -> 1.3%)
-                string expectedFormattedValue = "1.3%";
+                string expectedFormattedValue = "Mocked 1.3%"; // Distinct text layout ensures absolute validation isolation
 
                 _mockProcessHelper.Setup(h => h.FormatCpuUsage(input)).Returns(expectedFormattedValue);
+                var converter = new CpuUsageConverter();
 
                 // Act
                 var result = converter.Convert(input, typeof(string), null!, CultureInfo.CurrentUICulture);
@@ -61,15 +60,16 @@ namespace Servy.Manager.UnitTests.Converters
         [InlineData(100)] // Integer, not a double
         public void Convert_InvalidOrNullValue_ReturnsUnknownPlaceholder(object? input)
         {
+            // Arrange
             var originalProvider = App.Services;
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton(_mockProcessKiller.Object);
             serviceCollection.AddSingleton(_mockProcessHelper.Object);
+
             App.Services = serviceCollection.BuildServiceProvider();
 
             try
             {
-                // Arrange
                 var converter = new CpuUsageConverter();
 
                 // Act
@@ -87,15 +87,16 @@ namespace Servy.Manager.UnitTests.Converters
         [Fact]
         public void ConvertBack_ReturnsDoNothing()
         {
+            // Arrange
             var originalProvider = App.Services;
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton(_mockProcessKiller.Object);
             serviceCollection.AddSingleton(_mockProcessHelper.Object);
+
             App.Services = serviceCollection.BuildServiceProvider();
 
             try
             {
-                // Arrange
                 var converter = new CpuUsageConverter();
 
                 // Act

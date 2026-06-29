@@ -1840,6 +1840,10 @@ namespace Servy.Core.UnitTests.Services
         public async Task RestartService_ShouldReturnFalse_WhenStopServiceFails()
         {
             // Arrange
+            // Provide a valid service instance lookup from the repository to prevent early lookup exit
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ServiceDto { Name = "TestService" });
+
             // Service is Running so RestartService proceeds to stop it
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
 
@@ -1851,6 +1855,10 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.False(result.IsSuccess);
+
+            // Explicitly check that the propagated message originated from the thrown exception,
+            // proving that execution successfully targeted the live sc.Stop() intercept wrapper rather than data validation.
+            Assert.Contains("Boom!", result.ErrorMessage);
         }
 
         [Fact]

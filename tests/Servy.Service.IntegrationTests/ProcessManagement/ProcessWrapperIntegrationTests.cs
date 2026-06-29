@@ -1,4 +1,5 @@
 ﻿using Servy.Service.ProcessManagement;
+using Servy.Testing;
 using System.Diagnostics;
 
 namespace Servy.Service.IntegrationTests.ProcessManagement
@@ -129,7 +130,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.Contains(wrapper.Id.ToString(), formatString);
 
                 // Act: Await terminal completion 
-                bool exited = wrapper.WaitForExit(5000);
+                bool exited = wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
 
                 // Assert: Verify post-execution properties
                 Assert.True(exited);
@@ -251,7 +252,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         {
             // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
-            using (var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500)))
+            using (var cts = new CancellationTokenSource(TestTimeouts.ProcessWrapperCancellationDelay))
             {
                 wrapper.Start();
 
@@ -292,7 +293,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
-                wrapper.WaitForExit(5000);
+                wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
 
                 // Act
                 bool? result = wrapper.Stop(1000);
@@ -311,7 +312,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.Start();
 
                 // Act: Force graceful timeout expiration to trigger process.Kill fallback loop branch
-                bool? result = wrapper.Stop(50);
+                bool? result = wrapper.Stop(TestTimeouts.ProcessWrapperStopTimeoutMs);
 
                 // Assert
                 Assert.False(result);
@@ -330,7 +331,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 int parentPid = wrapper.Id;
                 DateTime parentStartTime = wrapper.StartTime;
 
-                Thread.Sleep(500);
+                Thread.Sleep(TestTimeouts.ProcessWrapperStopDescendantsTimeoutMs);
 
                 // Act
                 wrapper.StopDescendants(parentPid, parentStartTime, 1000);
@@ -373,7 +374,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
-                wrapper.WaitForExit(5000);
+                wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
 
                 // Act
                 var exception = Record.Exception(() => wrapper.Kill());
@@ -390,7 +391,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
-                wrapper.WaitForExit(5000);
+                wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
 
                 // Force disposal of underlying process resources to trigger an internal exception layout cascade when Kill handles execute
                 wrapper.UnderlyingProcess.Close();
@@ -415,7 +416,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\""))
             {
                 wrapper.Start();
-                wrapper.WaitForExit(5000);
+                wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
 
                 // Act - Force internal Win32 interop execution flow via TryStopGracefullyOrKill private method mapping
                 var privateMethod = typeof(ProcessWrapper).GetMethod("TryStopGracefullyOrKill", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -493,7 +494,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.BeginOutputReadLine();
                 wrapper.BeginErrorReadLine();
 
-                bool processExited = wrapper.WaitForExit(10000);
+                bool processExited = wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMsGenerous);
                 wrapper.UnderlyingProcess.WaitForExit();
 
                 bool signalsReceived = WaitHandle.WaitAll(

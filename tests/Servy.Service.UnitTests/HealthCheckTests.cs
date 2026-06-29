@@ -4,11 +4,11 @@ using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
+using Servy.Testing;
 using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 
 namespace Servy.Service.UnitTests
@@ -303,8 +303,7 @@ namespace Servy.Service.UnitTests
             startingGun.SetResult(true);
 
             // Wait for the recovery to be triggered by the background threads. 
-            // Increased to 15 seconds to prevent timeouts on slow GitHub CI runners.
-            var completedTask = await Task.WhenAny(recoveryTriggered.Task, Task.Delay(TimeSpan.FromSeconds(15), TestContext.Current.CancellationToken));
+            var completedTask = await Task.WhenAny(recoveryTriggered.Task, Task.Delay(TestTimeouts.CiGenerous, TestContext.Current.CancellationToken));
 
             if (completedTask != recoveryTriggered.Task)
             {

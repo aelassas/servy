@@ -1,6 +1,7 @@
 ﻿using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
 using Servy.Service.ProcessManagement;
+using Servy.Testing;
 using System.Diagnostics;
 using System.Reflection;
 
@@ -89,7 +90,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_Synchronous_WaitsForExit_And_Heartbeats()
         {
             int heartbeats = 0;
-            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'OK'\"", fireAndForget: false, timeoutMs: 30_000);
+            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'OK'\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
             options.WaitChunkMs = 10;
             options.OnScmHeartbeat = new Action<int>((time) => Interlocked.Increment(ref heartbeats));
 
@@ -103,8 +104,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Start_SynchronousTimeout_ThrowsTimeoutException_AndLogsCorrectly()
         {
-            // Raised execution target to 15 seconds, while keeping threshold low to ensure a deterministic timeout trip
-            var optionsError = CreateOptions("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 15\"", fireAndForget: false, timeoutMs: 1500);
+            // Raised execution target, while keeping threshold low to ensure a deterministic timeout trip
+            var optionsError = CreateOptions("powershell.exe", $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.ProcessLauncherSynchronousTimeoutSeconds}\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherSynchronousTimeoutSeconds * 1000);
             optionsError.WaitChunkMs = 100;
             optionsError.LogErrorAsWarning = false;
 
@@ -113,7 +114,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             Assert.Contains("exceeded the maximum allowed timeout", ex1.Message);
             Assert.Contains(_logger.Errors, m => m.Contains("timed out after"));
 
-            var optionsWarn = CreateOptions("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 15\"", fireAndForget: false, timeoutMs: 1500);
+            var optionsWarn = CreateOptions("powershell.exe", $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.ProcessLauncherSynchronousTimeoutSeconds}\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherSynchronousTimeoutSeconds * 1000);
             optionsWarn.WaitChunkMs = 100;
             optionsWarn.LogErrorAsWarning = true;
 
@@ -124,7 +125,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void WaitForExitWithHeartbeat_InvalidWaitChunk_ThrowsArgumentException()
         {
-            var options = CreateOptions("powershell.exe", "-NoProfile", fireAndForget: false, timeoutMs: 30_000);
+            var options = CreateOptions("powershell.exe", "-NoProfile", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
             options.WaitChunkMs = 0; // Violate rule requirement: WaitChunkMs <= 0
 
             var method = typeof(ProcessLauncher).GetMethod("WaitForExitWithHeartbeat", BindingFlags.Static | BindingFlags.NonPublic);
@@ -144,7 +145,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Start_NullArgumentsAndNullWorkingDirectory_ResolvesToDefaultsSafely()
         {
-            var options = CreateOptions("powershell.exe", null!, fireAndForget: false, timeoutMs: 30_000);
+            var options = CreateOptions("powershell.exe", null!, fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
             options.WorkingDirectory = null!; // Triggers Path.GetDirectoryName fallback branch
 
             // Configure short execution task to exit cleanly
@@ -160,7 +161,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Start_EnvironmentVariablesMapping_PadsNullValuesToEmptyString()
         {
-            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: 30_000);
+            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
 
             var envVarInstance = new Servy.Core.EnvironmentVariables.EnvironmentVariable
             {
@@ -185,7 +186,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void Start_ProcessStartReturnsFalse_ThrowsInvalidOperationException_AndCleansUp()
         {
-            var options = CreateOptions("powershell.exe", "-NoProfile", fireAndForget: false, timeoutMs: 30_000);
+            var options = CreateOptions("powershell.exe", "-NoProfile", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
             var mockFactory = new MockStartFalseProcessFactory();
 
             var ex = Assert.Throws<InvalidOperationException>(() => ProcessLauncher.Start(options, mockFactory, _logger));
@@ -202,7 +203,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             string structuralFailurePath = @"\\?\C:\illegal|char.log";
 
             // Extended total timeout to 30000ms to allow powershell.exe ample runtime margin to process startup hooks on cold hosts
-            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'TRIGGER'\"", fireAndForget: false, timeoutMs: 30_000);
+            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'TRIGGER'\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
             options.EnableConsoleUI = false;
             options.RedirectToWriters = true;
             options.StdoutPath = structuralFailurePath;
@@ -213,7 +214,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.WaitForExit();
 
                 // Give the asynchronous background event queue a brief moment to process the stream failure
-                Thread.Sleep(250);
+                Thread.Sleep(TestTimeouts.ProcessLauncherEventQueueTimeoutMs);
 
                 // Assert 
                 Assert.True(wrapper.HasExited);
@@ -293,7 +294,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Start_RedirectOutput_SamePath_WritesToSingleFileMultiplexed()
         {
             string logPath = CreateTempFilePath();
-            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'STDOUT_MSG'; [Console]::Error.WriteLine('STDERR_MSG')\"", false, 30_000);
+            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'STDOUT_MSG'; [Console]::Error.WriteLine('STDERR_MSG')\"", false, TestTimeouts.ProcessLauncherTimeoutMs);
             options.EnableConsoleUI = false;
             options.RedirectToWriters = true;
             options.StdoutPath = logPath;
