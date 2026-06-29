@@ -164,7 +164,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(null)]
         [InlineData("")]
         [InlineData("  ")]
-        public void ParseEnum_String_NullOrEmpty_ReturnsDefault(string input)
+        public void ParseEnum_String_NullOrWhitespace_ReturnsDefault(string input)
         {
             // Act
             var result = ConfigParser.ParseEnum(input, TestStatus.Paused);

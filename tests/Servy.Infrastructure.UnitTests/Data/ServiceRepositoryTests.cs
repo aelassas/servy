@@ -593,7 +593,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task GetByIdAsync_EmptyPassword()
+        public async Task GetByIdAsync_NullPassword()
         {
             var dto = new ServiceDto { Id = 1, Password = null };
             _mockDapper
@@ -604,6 +604,21 @@ namespace Servy.Infrastructure.UnitTests.Data
             var result = await repo.GetByIdAsync(1, true, CancellationToken.None);
 
             Assert.Null(result.Password);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_EmptyPassword()
+        {
+            var dto = new ServiceDto { Id = 1, Password = string.Empty };
+            _mockDapper
+                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(dto);
+
+            var repo = CreateRepository();
+            var result = await repo.GetByIdAsync(1, true, CancellationToken.None);
+
+            Assert.NotNull(result.Password);
+            Assert.Empty(result.Password);
         }
 
         [Fact]

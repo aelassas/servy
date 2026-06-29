@@ -255,7 +255,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         [Fact]
-        public async Task WaitForExitOrTimeoutAsync_Cancellation_ThrowsTaskCanceledException()
+        public async Task WaitAndCheckStillRunningAsync_Cancellation_ThrowsOperationCanceledException()
         {
             // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
