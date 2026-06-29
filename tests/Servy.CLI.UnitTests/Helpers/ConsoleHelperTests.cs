@@ -2,6 +2,7 @@
 
 namespace Servy.CLI.UnitTests.Helpers
 {
+    [Collection("SequentialConsoleTests")]
     public class ConsoleHelperTests
     {
         /// <summary>

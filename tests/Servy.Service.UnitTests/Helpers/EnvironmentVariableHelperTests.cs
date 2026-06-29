@@ -71,7 +71,7 @@ namespace Servy.Service.UnitTests.Helpers
             var vars = new List<EnvironmentVariable>
             {
                 new EnvironmentVariable { Name = "", Value = "Empty" },
-                new EnvironmentVariable { Name = "   ", Value = "Whitespace" },
+                new EnvironmentVariable { Name = "    ", Value = "Whitespace" },
                 new EnvironmentVariable { Name = null!, Value = "Null" }
             };
 
@@ -80,7 +80,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             // Assert
             Assert.False(expanded.ContainsKey(""));
-            Assert.False(expanded.ContainsKey("   "));
+            Assert.False(expanded.ContainsKey("    "));
         }
 
         #endregion
@@ -518,16 +518,15 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange: Tests Issue #2273 (Outer guard validation)
             int maxLen = AppConfig.MaxEnvVarExpandedLength;
-            string token = "\uFFFD_SERVY_ESC_PERCENT_\uFFFD"; // 21 chars
+            string token = EnvironmentVariableHelper.PercentEscapeToken;
 
-            // Allocate a payload that will expand perfectly to fill the tail space.
-            // We want: Pad (variable) + Token (21) + Extra (1) = maxLen + 1
-            // Let's make a base variable containing a large string block.
-            string largeChunk = new string('A', maxLen - 100); // 32668 chars
+            // Allocate a payload that tracks the dynamic limit using an arithmetic safety offset.
+            string largeChunk = new string('A', maxLen - 200);
 
-            // The remainder needed to hit exactly (maxLen + 1) when combined with the token and an extra char:
-            // 32768 + 1 - 32668 - 21 - 1 = 79 chars.
-            string fineTuningPad = new string('A', 79);
+            // Derive the remainder mathematically to hit exactly (maxLen + 1) during execution.
+            // Target equation configuration: chunk length + fineTuningPad length + token length + 1 ("X") = maxLen + 1
+            int padLength = (maxLen + 1) - largeChunk.Length - token.Length - 1;
+            string fineTuningPad = new string('A', padLength);
 
             var vars = new List<EnvironmentVariable>
             {
@@ -555,7 +554,7 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange: Tests Issue #2267 & #2273 (Token fragmentation outer protection)
             int maxLen = AppConfig.MaxEnvVarExpandedLength;
-            string token = "\uFFFD_SERVY_ESC_PERCENT_\uFFFD"; // 21 chars
+            string token = EnvironmentVariableHelper.PercentEscapeToken;
 
             // Align the token so that the truncation line (maxLen) cuts directly through its center
             int prefixLength = maxLen - (token.Length / 2);
@@ -585,7 +584,7 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange: Tests Issue #2267 (Inline guard isolation)
             int maxLen = AppConfig.MaxEnvVarExpandedLength;
-            string token = "\uFFFD_SERVY_ESC_PERCENT_\uFFFD"; // 21 chars
+            string token = EnvironmentVariableHelper.PercentEscapeToken;
 
             // Position the split boundary within the internal dictionary lookup runner
             int prefixLength = maxLen - (token.Length / 2);

@@ -90,13 +90,20 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Empty(error);
         }
 
-        [Fact]
-        public void Validate_VariableWithEscapedEqualsInKey_ReturnsTrue()
-        {
-            // Arrange
-            var input = @"KEY\=PART=VALUE";
+        #region Parameterized Escaped Delimiter Evaluation Tests
 
-            // Act
+        [Theory]
+        [InlineData(@"KEY\=PART=VALUE")]  // Escaped Equals In Key
+        [InlineData(@"KEY\;PART=VALUE")]  // Escaped Semicolon In Key
+        [InlineData(@"KEY\\PART=VALUE")]  // Escaped Backslash In Key
+        [InlineData(@"KEY=VALUE\=PART")]  // Escaped Equals In Value
+        [InlineData(@"KEY=VALUE\;PART")]  // Escaped Semicolon In Value
+        [InlineData(@"KEY=VALUE\\PART")]  // Escaped Backslash In Value
+        [InlineData(@"KEY1=VAL\=UE")]     // Scenario: The first '=' unescaped is counted, others escaped by backslash
+        [InlineData(@"KEY\\=VAL")]        // Scenario: Mix of escaped backslashes and delimiters: "KEY\\" (escaped backslash) + "=" (unescaped separator) + "VAL"
+        public void Validate_EscapedDelimiterInKeyOrValue_ReturnsTrue(string input)
+        {
+            // Arrange & Act
             var result = EnvironmentVariablesValidator.Validate(input, out List<string> error);
 
             // Assert
@@ -104,75 +111,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Empty(error);
         }
 
-        [Fact]
-        public void Validate_VariableWithEscapedSemicolonInKey_ReturnsTrue()
-        {
-            // Arrange
-            var input = @"KEY\;PART=VALUE";
-
-            // Act
-            var result = EnvironmentVariablesValidator.Validate(input, out List<string> error);
-
-            // Assert
-            Assert.True(result);
-            Assert.Empty(error);
-        }
-
-        [Fact]
-        public void Validate_VariableWithEscapedBackslashInKey_ReturnsTrue()
-        {
-            // Arrange
-            var input = @"KEY\\PART=VALUE";
-
-            // Act
-            var result = EnvironmentVariablesValidator.Validate(input, out List<string> error);
-
-            // Assert
-            Assert.True(result);
-            Assert.Empty(error);
-        }
-
-        [Fact]
-        public void Validate_VariableWithEscapedEqualsInValue_ReturnsTrue()
-        {
-            // Arrange
-            var input = @"KEY=VALUE\=PART";
-
-            // Act
-            var result = EnvironmentVariablesValidator.Validate(input, out List<string> error);
-
-            // Assert
-            Assert.True(result);
-            Assert.Empty(error);
-        }
-
-        [Fact]
-        public void Validate_VariableWithEscapedSemicolonInValue_ReturnsTrue()
-        {
-            // Arrange
-            var input = @"KEY=VALUE\;PART";
-
-            // Act
-            var result = EnvironmentVariablesValidator.Validate(input, out List<string> error);
-
-            // Assert
-            Assert.True(result);
-            Assert.Empty(error);
-        }
-
-        [Fact]
-        public void Validate_VariableWithEscapedBackslashInValue_ReturnsTrue()
-        {
-            // Arrange
-            var input = @"KEY=VALUE\\PART";
-
-            // Act
-            var result = EnvironmentVariablesValidator.Validate(input, out List<string> error);
-
-            // Assert
-            Assert.True(result);
-            Assert.Empty(error);
-        }
+        #endregion
 
         [Fact]
         public void Validate_VariableMissingEquals_ReturnsFalse()
@@ -207,21 +146,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         {
             // Arrange
             string input = "KEY1=VAL1;;KEY2=VAL2;";
-
-            // Act
-            var result = EnvironmentVariablesValidator.Validate(input, out List<string> error);
-
-            // Assert
-            Assert.True(result);
-            Assert.Empty(error);
-        }
-
-        [Fact]
-        public void Validate_VariableWithMultipleEqualsButOnlyOneUnescaped_ReturnsTrue()
-        {
-            // Arrange
-            // The first '=' unescaped is counted, others escaped by backslash
-            var input = @"KEY1=VAL\=UE";
 
             // Act
             var result = EnvironmentVariablesValidator.Validate(input, out List<string> error);
@@ -326,22 +250,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             // Arrange
             // Scenario: Base64 padding uses '=' which shouldn't require escaping in the value field.
             var input = "VAR=SGVsbG8gd29ybGQ=";
-
-            // Act
-            var result = EnvironmentVariablesValidator.Validate(input, out List<string> error);
-
-            // Assert
-            Assert.True(result);
-            Assert.Empty(error);
-        }
-
-        [Fact]
-        public void Validate_ComplexEscapingSequence_ReturnsTrue()
-        {
-            // Arrange
-            // Scenario: Mix of escaped backslashes and delimiters.
-            // "KEY\\" (escaped backslash) + "=" (unescaped separator) + "VAL"
-            var input = @"KEY\\=VAL";
 
             // Act
             var result = EnvironmentVariablesValidator.Validate(input, out List<string> error);

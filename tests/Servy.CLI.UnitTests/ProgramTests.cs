@@ -1,14 +1,6 @@
 ﻿namespace Servy.CLI.UnitTests
 {
-    // 1. Establish a unique, non-parallelized execution collection domain for CLI tests
-    [CollectionDefinition("Servy.CLI.ConsoleTests", DisableParallelization = true)]
-    public class CliConsoleCollection : ICollectionFixture<object>
-    {
-        // Enforces strict sequential isolation across the execution suite
-    }
-
-    // 2. Explicitly bind the test class to the sequential execution collection
-    [Collection("Servy.CLI.ConsoleTests")]
+    [Collection("SequentialConsoleTests")]
     public class ProgramTests : IDisposable
     {
         private readonly string _tempConfigPath;
