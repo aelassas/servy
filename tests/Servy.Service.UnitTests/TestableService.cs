@@ -4,7 +4,6 @@ using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
@@ -64,10 +63,9 @@ namespace Servy.Service.UnitTests
             IProcessFactory processFactory,
             IPathValidator pathValidator,
             IServiceRepository serviceRepository,
-            IProcessHelper processHelper,
             IProcessKiller processKiller
             )
-            : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository, processHelper, processKiller)
+            : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository, processKiller)
         {
         }
 

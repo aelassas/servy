@@ -64,10 +64,10 @@ namespace Servy.UI.Design
         public Task<ServiceDto?> GetByNameAsync(string? name, bool decrypt = true, CancellationToken cancellationToken = default)
             => Task.FromResult<ServiceDto?>(null);
 
-        public Task<int?> GetServicePidAsync(string? serviceName, CancellationToken cancellationToken = default)
+        public Task<int?> GetServicePidAsync(string? name, CancellationToken cancellationToken = default)
             => Task.FromResult<int?>(null);
 
-        public Task<ServiceConsoleStateDto?> GetServiceConsoleStateAsync(string? serviceName, CancellationToken cancellationToken = default)
+        public Task<ServiceConsoleStateDto?> GetServiceConsoleStateAsync(string? name, CancellationToken cancellationToken = default)
             => Task.FromResult<ServiceConsoleStateDto?>(null);
 
         public Task<IEnumerable<ServiceDto>> GetAllAsync(bool decrypt = true, CancellationToken cancellationToken = default)
