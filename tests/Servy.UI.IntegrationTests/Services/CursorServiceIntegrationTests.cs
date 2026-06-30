@@ -17,12 +17,6 @@ namespace Servy.UI.IntegrationTests.Services
             _service = new CursorService();
         }
 
-        #region STA Thread Helper
-
-
-
-        #endregion
-
         #region Branch: Headless / Null Dispatcher
 
         [Fact]

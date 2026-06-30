@@ -101,7 +101,6 @@ namespace Servy.Core.IntegrationTests.Native
 
         #endregion
 
-
         private static void ExecuteNetUserCommand(string args)
         {
             var startInfo = new System.Diagnostics.ProcessStartInfo
