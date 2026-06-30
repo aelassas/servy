@@ -378,12 +378,6 @@ namespace Servy.Core.UnitTests.IO
             }
         }
 
-        private void InvokeRotate(RotatingStreamWriter instance)
-        {
-            var method = typeof(RotatingStreamWriter).GetMethod("Rotate", BindingFlags.NonPublic | BindingFlags.Instance);
-            method!.Invoke(instance, null);
-        }
-
         [Fact]
         public void Dispose_IsIdempotent_AndDoesNotCrashOnSubsequentCalls()
         {

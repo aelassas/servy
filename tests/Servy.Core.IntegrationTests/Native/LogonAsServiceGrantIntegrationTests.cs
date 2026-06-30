@@ -99,38 +99,6 @@ namespace Servy.Core.IntegrationTests.Native
 
         #endregion
 
-        /// <summary>
-        /// Proactively probes the system's LSA policy subsystem to see if the runner process 
-        /// has security tokens capable of opening policy access mappings.
-        /// </summary>
-        private static bool CheckLsaPolicyAccess()
-        {
-            // Emulates an LSA open loop using minimum query flags to detect if the kernel drops an access error
-            var oa = new NativeMethods.LSA_OBJECT_ATTRIBUTES
-            {
-                Length = Marshal.SizeOf<NativeMethods.LSA_OBJECT_ATTRIBUTES>()
-            };
-
-            IntPtr policyHandle = IntPtr.Zero;
-            try
-            {
-                // Request lookup names permissions to check if policy manipulation can structurally be performed
-                int status = NativeMethods.LsaOpenPolicy(IntPtr.Zero, ref oa, NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES, out policyHandle);
-                return status == 0;
-            }
-            catch
-            {
-                return false;
-            }
-            finally
-            {
-                if (policyHandle != IntPtr.Zero)
-                {
-                    NativeMethods.LsaClose(policyHandle);
-                }
-            }
-        }
-
         private static void ExecuteNetUserCommand(string args)
         {
             var startInfo = new System.Diagnostics.ProcessStartInfo
