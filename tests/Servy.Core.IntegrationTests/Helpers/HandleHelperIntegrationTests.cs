@@ -1,11 +1,5 @@
-﻿using Microsoft.Win32;
-using Servy.Core.Helpers;
-using System;
-using System.Collections.Generic;
+﻿using Servy.Core.Helpers;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Threading;
 
 namespace Servy.Core.IntegrationTests.Helpers
 {
