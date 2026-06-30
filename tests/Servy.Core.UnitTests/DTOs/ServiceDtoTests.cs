@@ -133,8 +133,6 @@ namespace Servy.Core.UnitTests.DTOs
                 p.SetValue(dto, true);
             else if (targetType == typeof(double))
                 p.SetValue(dto, 99.9);
-            else if (targetType.IsEnum)
-                p.SetValue(dto, Enum.GetValues(targetType).GetValue(0));
         }
     }
 }

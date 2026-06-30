@@ -358,7 +358,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Arrange
             var service = new ServiceDto { Name = "SyncService", ExecutablePath = "C:\\s.exe", Pid = 444 };
             int id = _repository.GetDapperExecutor().ExecuteScalar<int>(
-                $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority, Pid) VALUES ('SyncService', 'C:\\s.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}', 444); SELECT last_insert_rowid();", service);
+                $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority, Pid) VALUES ('SyncService', 'C:\\s.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}', 444); SELECT last_insert_rowid();");
             service.Id = id;
 
             // Act
@@ -434,7 +434,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Arrange
             var service = new ServiceDto { Name = "SynchronousQueryService", ExecutablePath = "C:\\sync.exe" };
             _repository.GetDapperExecutor().Execute(
-                $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority) VALUES ('SynchronousQueryService', 'C:\\sync.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');", service);
+                $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority) VALUES ('SynchronousQueryService', 'C:\\sync.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');");
 
             // Act
             var resolved = _repository.GetByName("SynchronousQueryService", decrypt: false);

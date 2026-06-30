@@ -145,7 +145,6 @@
     <Compile Include="Helpers\HelperTests.cs" />
     <Compile Include="Mappers\ServiceMapperTests.cs" />
     <Compile Include="Models\LogEntryModelTests.cs" />
-    <Compile Include="Services\FakeService.cs" />
     <Compile Include="Utils\HistoryResultTests.cs" />
     <Compile Include="Utils\LogTailerTests.cs" />
     <Compile Include="Validation\ServiceConfigurationValidatorTests.cs" />
