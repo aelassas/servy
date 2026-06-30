@@ -54,7 +54,7 @@ namespace Servy.Core.UnitTests.Services
 
         [Theory]
         [InlineData("TestService", "C:\\Apps\\App.exe", "C:\\Apps\\App.exe")]
-        public async Task InstallService_EmptyOptions(string serviceName, string wrapperExePath, string realExePath)
+        public async Task InstallService_OptionalFieldsOmitted_Succeeds(string serviceName, string wrapperExePath, string realExePath)
         {
             var scmHandle = CreateScmHandle(123);
             var serviceHandle = CreateServiceHandle(456);
