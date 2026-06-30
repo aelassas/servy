@@ -17,8 +17,6 @@ namespace Servy.Service.UnitTests
 {
     public class TestableService : Service
     {
-        private Action<string, string, string, List<EnvironmentVariable>, CancellationToken>? _startProcessOverride;
-
         /// <summary>
         /// Caches reflection bindings at class-load time. 
         /// Throws loudly and immediately if the underlying Service class is refactored 
@@ -115,11 +113,6 @@ namespace Servy.Service.UnitTests
         public void InvokeOnProcessExited(object? sender, EventArgs e) =>
             ServiceReflection.OnProcessExitedMethod.Invoke(this, new object?[] { sender, e });
 
-        public void OverrideStartProcess(Action<string, string, string, List<EnvironmentVariable>, CancellationToken> startProcess)
-        {
-            _startProcessOverride = startProcess;
-        }
-
         // Expose child process for asserts
         public IProcessWrapper GetChildProcess() =>
             (IProcessWrapper)ServiceReflection.ChildProcessField.GetValue(this)!;
@@ -127,14 +120,7 @@ namespace Servy.Service.UnitTests
         // Expose StartProcess protected method and allow override logic
         public void InvokeStartProcess(string exePath, string args, string workingDir, List<EnvironmentVariable> environmentVariables, CancellationToken cancellationToken)
         {
-            if (_startProcessOverride != null)
-            {
-                _startProcessOverride(exePath, args, workingDir, environmentVariables, cancellationToken);
-            }
-            else
-            {
-                ServiceReflection.StartProcessMethod.Invoke(this, new object?[] { exePath, args, workingDir, environmentVariables, cancellationToken });
-            }
+            ServiceReflection.StartProcessMethod.Invoke(this, new object?[] { exePath, args, workingDir, environmentVariables, cancellationToken });
         }
 
         // Expose SafeKillProcess protected method

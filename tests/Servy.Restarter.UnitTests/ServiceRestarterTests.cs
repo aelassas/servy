@@ -289,12 +289,4 @@ namespace Servy.Restarter.UnitTests
 
         #endregion
     }
-
-    /// <summary>
-    /// Defensive compiler bridge interface utility mapping
-    /// </summary>
-    internal static class SafeMatcher
-    {
-        public static bool IsAny<T>() => true;
-    }
 }

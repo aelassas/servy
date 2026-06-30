@@ -430,7 +430,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var result = methodInfo!.Invoke(vm, new object[] { service }) as ConsoleService;
 
                 // Assert
-                var enumerator = vm.VisibleLines.GetEnumerator();
                 Assert.NotNull(result);
                 Assert.Equal("EngineService", result.Name);
                 Assert.Null(result.Pid);
