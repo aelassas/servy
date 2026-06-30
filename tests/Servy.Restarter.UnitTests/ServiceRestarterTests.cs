@@ -97,7 +97,7 @@ namespace Servy.Restarter.UnitTests
         #region Phase 2: Stop Step Boundaries
 
         [Fact]
-        public void RestartService_NoTimeRemainingToStop_ThrowsTimeoutException()
+        public void RestartService_StopIssuedButNoTimeToAwaitStopped_ThrowsTimeoutException()
         {
             // Arrange
             _mockController.SetupSequence(c => c.Status)
@@ -110,6 +110,7 @@ namespace Servy.Restarter.UnitTests
                 _restarter.RestartService("MyService", TimeSpan.Zero));
 
             Assert.Contains("No time remaining to stop service", ex.Message);
+            _mockController.Verify(c => c.Stop(), Times.Once); // Stop is issued before the time check
         }
 
         [Fact]
@@ -137,7 +138,7 @@ namespace Servy.Restarter.UnitTests
         #region Phase 3: Start Step Boundaries
 
         [Fact]
-        public void RestartService_NoTimeRemainingToStart_ThrowsTimeoutException()
+        public void RestartService_TimeoutExpiresAfterStartIssued_ThrowsTimeoutException()
         {
             // Arrange
             _mockController.SetupSequence(c => c.Status)
