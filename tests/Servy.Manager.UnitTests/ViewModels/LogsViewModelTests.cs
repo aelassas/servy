@@ -335,7 +335,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void GetLogLevels_StaticCall_ExcludesCriticalAndVerbose()
+        public void LogLevels_Get_ExcludesCriticalAndVerbose()
         {
             // Act
             var levels = LogsViewModel.LogLevels;
@@ -469,7 +469,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task SearchCommand_ConcurrentlyInvoked_CancelsAndDisposesPreviousRunningCts()
+        public async Task Search_PrivateMethodInvokedTwice_CancelsPreviousCts()
         {
             await Helper.RunOnSTA(async () =>
             {

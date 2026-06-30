@@ -1173,9 +1173,9 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task ImportJSON_Throws_ReturnsFalse()
         {
             var repo = CreateRepository();
-            var xml = "{ invalid json }";
+            var json = "{ invalid json }";
             _mockJsonServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Throws<Exception>();
-            var result = await repo.ImportJsonAsync(xml, CancellationToken.None);
+            var result = await repo.ImportJsonAsync(json, CancellationToken.None);
             Assert.False(result);
         }
 

@@ -278,7 +278,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task OnTickAsync_StateSnapshotNull_ClearsPathsAndPid()
+        public async Task OnTickAsync_SnapshotPidNull_ClearsPathsAndPid()
         {
             await Helper.RunOnSTA(async () =>
             {

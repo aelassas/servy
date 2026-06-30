@@ -29,7 +29,7 @@ namespace Servy.Manager.UnitTests.Converters
         }
 
         [Fact]
-        public void Convert_InvalidOrNullInput_ReturnsFetchingLabel()
+        public void Convert_NullReturnsFetching_InvalidEchoesInput()
         {
             // Act & Assert
             Assert.Equal(Strings.Label_Fetching, _converter.Convert(null, typeof(string), null, CultureInfo.InvariantCulture));

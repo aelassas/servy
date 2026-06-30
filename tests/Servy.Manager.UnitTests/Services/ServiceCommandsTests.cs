@@ -877,7 +877,7 @@ namespace Servy.Manager.UnitTests.Services
         #region ExportServiceConfigAsync Tests (XML & JSON Formats)
 
         [Fact]
-        public async Task ExportServiceToXmlAsync_ValidPathAndDto_ExecutesSerializerAndDisplaysSuccess()
+        public async Task ExportServiceToXmlAsync_ValidPathAndDto_DisplaysSuccess()
         {
             // Arrange
             var sut = CreateServiceCommands();

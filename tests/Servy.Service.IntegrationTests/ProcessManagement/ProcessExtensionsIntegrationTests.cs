@@ -127,7 +127,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Assert
                 Assert.NotNull(targetProcess);
-                Assert.Equal(root.Id, GetParentPidViaNative(targetProcess));
+                Assert.Equal(root.Id, GetParentPidViaWmi(targetProcess));
             }
             finally
             {
@@ -320,7 +320,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             return lastResults;
         }
 
-        private int GetParentPidViaNative(Process process)
+        private int GetParentPidViaWmi(Process process)
         {
             using (var mo = new System.Management.ManagementObject($"win32_process.handle='{process.Id}'"))
             {

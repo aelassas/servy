@@ -281,7 +281,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         [Fact]
-        public void SetIfMissing_KeyAlreadyExists_DoesNotOverwriteExplicitEnvironmentValue()
+        public void ApplyLanguageFixes_ExplicitEnvValueAlreadySet_DoesNotOverwrite()
         {
             var psi = new ProcessStartInfo { FileName = "python.exe" };
             psi.Environment["PYTHONUTF8"] = "CUSTOM_USER_VALUE"; // Explicit definition
