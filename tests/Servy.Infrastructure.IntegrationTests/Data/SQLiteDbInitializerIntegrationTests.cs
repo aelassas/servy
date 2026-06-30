@@ -275,7 +275,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         #region V6
 
         [Fact]
-        public void ApplyVersion6_UnicodeCasingDuplicates_DeduplicatesAndAppliesNoCaseIndex()
+        public void ApplyVersion6_AsciiCasingDuplicates_DeduplicatesAndAppliesNoCaseIndex()
         {
             using (var conn = CreateConnection())
             {

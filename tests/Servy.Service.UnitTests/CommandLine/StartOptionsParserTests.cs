@@ -248,7 +248,7 @@ namespace Servy.Service.UnitTests.CommandLine
         #region Exception Resiliency Filter Validation Blocks
 
         [Fact]
-        public void SafeParseEnvVars_MalformedFormatStrings_CatchesExceptionAndReturnsEmptyList()
+        public void Parse_MalformedEnvironmentVariables_ReturnsEmptyListInsteadOfThrowing()
         {
             // Arrange
             string serviceName = "CorruptedEnvService";
@@ -275,7 +275,7 @@ namespace Servy.Service.UnitTests.CommandLine
         [Theory]
         [InlineData(typeof(ArgumentException))]
         [InlineData(typeof(InvalidOperationException))]
-        public void SafeResolvePath_HelperThrowsResolutionError_CatchesAndReturnsRawConfigTokens(Type exceptionType)
+        public void Parse_PathResolutionThrows_FallsBackToRawConfiguredPath(Type exceptionType)
         {
             // Arrange
             string serviceName = "FaultyPathService";

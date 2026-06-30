@@ -148,7 +148,7 @@ namespace Servy.Service.UnitTests
         [InlineData(RecoveryAction.RestartService)]
         [InlineData(RecoveryAction.RestartComputer)]
         [InlineData(RecoveryAction.None)]
-        public void CheckHealth_RecoveryActions_ExecuteExpectedLogic_NoLogs(RecoveryAction action)
+        public void CheckHealth_RecoveryActions_ExecuteExpectedLogic(RecoveryAction action)
         {
             // Arrange
             var service = CreateService(

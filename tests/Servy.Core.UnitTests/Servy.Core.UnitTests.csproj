@@ -161,7 +161,7 @@
     <Compile Include="Services\XmlServiceSerializerTests.cs" />
     <Compile Include="Services\XmlServiceValidatorTests.cs" />
     <Compile Include="Validation\ImportGuardTests.cs" />
-    <Compile Include="Validation\PathSecurityGuardTest.cs" />
+    <Compile Include="Validation\PathSecurityGuardTests.cs" />
     <Compile Include="Validation\ServiceValidationRulesTests.cs" />
   </ItemGroup>
   <ItemGroup>
