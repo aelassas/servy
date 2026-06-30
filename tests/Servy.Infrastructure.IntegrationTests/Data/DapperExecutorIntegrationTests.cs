@@ -141,7 +141,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
             {
                 SyncTransactionWasCalled = true;
-                return new Mock<DbTransaction>().Object as DbTransaction ?? throw new InvalidOperationException();
+                return new Mock<DbTransaction>().Object;
             }
 
             public override void ChangeDatabase(string databaseName)
