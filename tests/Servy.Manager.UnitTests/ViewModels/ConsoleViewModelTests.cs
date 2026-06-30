@@ -549,9 +549,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     };
 
                     // Raise the event inside the log tailer instance to simulate inbound disk streaming updates
-                    var eventInfo = typeof(LogTailer).GetEvent("OnNewLines", BindingFlags.Public | BindingFlags.Instance);
                     var handlerDelegate = typeof(ConsoleViewModel).GetField("_stdoutTailerHandler", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm) as Delegate;
-                    eventInfo!.AddMethod!.Invoke(tailerInstance, new object[] { handlerDelegate! });
 
                     // Act - Direct programmatic dispatch invoke step
                     handlerDelegate!.DynamicInvoke(new object[] { newLinesBatch });

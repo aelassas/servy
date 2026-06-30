@@ -18,7 +18,6 @@ namespace Servy.Service.UnitTests
     public class TestableService : Service
     {
         private Action<string, string, string, List<EnvironmentVariable>, CancellationToken>? _startProcessOverride;
-        private Action? _terminateChildProcessesOverride;
 
         /// <summary>
         /// Caches reflection bindings at class-load time. 
@@ -119,11 +118,6 @@ namespace Servy.Service.UnitTests
         public void OverrideStartProcess(Action<string, string, string, List<EnvironmentVariable>, CancellationToken> startProcess)
         {
             _startProcessOverride = startProcess;
-        }
-
-        public void OverrideTerminateChildProcesses(Action terminateChildProcesses)
-        {
-            _terminateChildProcessesOverride = terminateChildProcesses;
         }
 
         // Expose child process for asserts

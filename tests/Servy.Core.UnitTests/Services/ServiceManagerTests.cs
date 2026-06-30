@@ -1903,9 +1903,6 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void GetServiceStatus_ShouldThrowArgumentException()
         {
-            // Arrange
-            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
-
             // Assert
             Assert.Throws<ArgumentException>(() => _serviceManager.GetServiceStatus("", TestContext.Current.CancellationToken));
         }
