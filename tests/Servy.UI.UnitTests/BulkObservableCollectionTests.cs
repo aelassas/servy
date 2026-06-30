@@ -124,7 +124,6 @@ namespace Servy.UI.UnitTests
             // Arrange
             // Passing an array forces the internal IList to be an array-wrapper, not List<T>
             var initialData = new int[] { 1, 2, 3, 4, 5 };
-            var collection = new BulkObservableCollection<int>(initialData.ToList());
 
             // To force the 'Items is not List<T>' branch, we must ensure the protected 
             // Items property is not a List. However, ObservableCollection<T> wraps 
