@@ -14,7 +14,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 using ITimer = Servy.Service.Timers.ITimer;
 
@@ -22,7 +21,6 @@ namespace Servy.Service.UnitTests
 {
     public class ServiceTests
     {
-        private readonly ITestOutputHelper _output;
         private readonly Mock<IServiceHelper> _mockServiceHelper;
         private readonly Mock<IServyLogger> _mockLogger;
         private readonly Mock<IStreamWriterFactory> _mockStreamWriterFactory;
@@ -38,9 +36,8 @@ namespace Servy.Service.UnitTests
         private readonly Mock<IServiceRepository> _mockServiceRepository;
         private readonly Mock<IProcessKiller> _mockProcessKiller;
 
-        public ServiceTests(ITestOutputHelper output)
+        public ServiceTests()
         {
-            _output = output;
             _mockServiceHelper = new Mock<IServiceHelper>();
             _mockLogger = new Mock<IServyLogger>();
             _mockStreamWriterFactory = new Mock<IStreamWriterFactory>();

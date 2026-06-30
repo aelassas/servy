@@ -212,7 +212,6 @@ namespace Servy.Core.UnitTests.Services
             // Passing a derived type that the ServiceDto-typed XmlSerializer doesn't know about
             // makes XmlSerializer.Serialize throw, exercising the catch -> returns null.
             var invalidDto = new InvalidServiceDtoMock();
-            var serializer = new XmlSerializer(typeof(ServiceDto));
 
             // Act
             // Passing an object that cannot be typed safely as ServiceDto into the cast block
