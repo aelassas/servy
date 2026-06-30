@@ -711,16 +711,6 @@ namespace Servy.Core.UnitTests.Helpers
 
         #endregion
 
-        #region Native Win32 Junction Helpers
-
-        // These minimal P/Invoke mechanisms ensure the unit tests run reliably in 
-        // headless test runners without executing high-overhead "cmd.exe /c mklink" shells.
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern bool CreateDirectory(string lpPathName, IntPtr lpSecurityAttributes);
-
-        #endregion
-
         #region HasAncestorReparsePoint tests
 
         [Fact]

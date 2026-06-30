@@ -74,12 +74,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             /* no-op */
         }
-
-        // A small nested stub class to guarantee GetType().Name returns exactly "BadPaddingException"
-        private sealed class BadPaddingException : Exception
-        {
-            public BadPaddingException() : base("Padding check failed.") { }
-        }
     }
 
     [Collection("SequentialDatabaseTests")]
@@ -269,11 +263,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             var results = (await _repository.SearchAsync("development_%", decrypt: true, CancellationToken.None)).ToList();
 
             // Assert
-            using (var summaryScope = new System.Transactions.TransactionScope(System.Transactions.TransactionScopeOption.Suppress))
-            {
-                Assert.Single(results);
-                Assert.Equal("App_Development_%_Test", results[0].Name);
-            }
+            Assert.Single(results);
+            Assert.Equal("App_Development_%_Test", results[0].Name);
         }
 
         [Fact]
