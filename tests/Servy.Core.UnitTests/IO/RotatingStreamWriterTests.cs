@@ -440,7 +440,7 @@ namespace Servy.Core.UnitTests.IO
 
             // Assert
             Assert.True(File.Exists(filePath));
-            var rotatedFiles = Directory.GetFiles(_testDir, "zero.txt.*").Where(f => !f.EndsWith("zero.txt"));
+            var rotatedFiles = Directory.GetFiles(_testDir, "zero.*.txt").Where(f => !f.EndsWith("zero.txt"));
             Assert.Empty(rotatedFiles);
         }
 
@@ -458,7 +458,7 @@ namespace Servy.Core.UnitTests.IO
 
             // Assert
             Assert.True(File.Exists(filePath));
-            var rotatedFiles = Directory.GetFiles(_testDir, "small.txt.*").Where(f => !f.EndsWith("small.txt"));
+            var rotatedFiles = Directory.GetFiles(_testDir, "small.*.txt").Where(f => !f.EndsWith("small.txt"));
             Assert.Empty(rotatedFiles);
         }
 

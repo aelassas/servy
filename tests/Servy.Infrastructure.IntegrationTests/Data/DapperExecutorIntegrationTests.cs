@@ -414,6 +414,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 _mockDbContext.Setup(db => db.CreateConnection()).Returns(busyMockConn.Object);
                 _executor.ExecuteScalar<int>("SELECT COUNT(*) FROM TestServices;");
             });
+            Assert.Equal(AppConfig.DbSyncMaxRetries, executedAttempts);
         }
 
         [Fact]

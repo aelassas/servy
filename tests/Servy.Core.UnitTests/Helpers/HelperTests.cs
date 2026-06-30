@@ -1,5 +1,4 @@
 ﻿using Servy.Core.Helpers;
-using Servy.Core.Logging;
 using Servy.Core.Resources;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -89,19 +88,19 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData(@"C:\Windows", true)]             // Standard drive-rooted absolute path
-        [InlineData(@"D:\Data\config.xml", true)]     // Alternate drive-rooted
+        [InlineData(@"C:\Windows", true)]              // Standard drive-rooted absolute path
+        [InlineData(@"D:\Data\config.xml", true)]      // Alternate drive-rooted
         [InlineData(@"\\Server\Share\Path", true)]    // UNC absolute path
-        [InlineData(@"C:/Windows", true)]             // Forward-slash separator (normalized by .NET)
-        [InlineData(@"\Windows\System32", false)]     // Rooted but relative to current drive
-        [InlineData(@"\Path", false)]                 // Rooted but relative to current drive
-        [InlineData(@"Relative\Path", false)]         // Fully relative
-        [InlineData(@"..\Parent", false)]             // Parent relative
-        [InlineData(@"\Servy\logs\app.log", false)]   // Was BUG: returned true
-        [InlineData(@"/var/log/foo.log", false)]      // Was BUG: returned true
-        [InlineData(@"C:", false)]                    // Rooted but relative to current directory on drive
-        [InlineData("", false)]                       // Empty
-        [InlineData(null, false)]                     // Null
+        [InlineData(@"C:/Windows", true)]              // Forward-slash separator (normalized by .NET)
+        [InlineData(@"\Windows\System32", false)]      // Rooted but relative to current drive
+        [InlineData(@"\Path", false)]                  // Rooted but relative to current drive
+        [InlineData(@"Relative\Path", false)]          // Fully relative
+        [InlineData(@"..\Parent", false)]              // Parent relative
+        [InlineData(@"\Servy\logs\app.log", false)]    // Was BUG: returned true
+        [InlineData(@"/var/log/foo.log", false)]       // Was BUG: returned true
+        [InlineData(@"C:", false)]                     // Rooted but relative to current directory on drive
+        [InlineData("", false)]                        // Empty
+        [InlineData(null, false)]                      // Null
         public void IsAbsolute_ShouldCorrectlyIdentifyPathTypes(string? input, bool expected)
         {
             // Act
@@ -214,14 +213,14 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData(null, "")]                           // Null input
-        [InlineData("", "")]                             // Empty string
-        [InlineData("abc", "abc")]                       // Simple text, nothing to escape
-        [InlineData(@"C:\Path", @"C:\Path")]             // Backslashes not before quotes - unchanged
+        [InlineData(null, "")]                               // Null input
+        [InlineData("", "")]                                 // Empty string
+        [InlineData("abc", "abc")]                           // Simple text, nothing to escape
+        [InlineData(@"C:\Path", @"C:\Path")]              // Backslashes not before quotes - unchanged
         [InlineData(@"C:\Path\""File", @"C:\Path\\""File")] // Backslash immediately before quote - doubled
         [InlineData(@"NoQuotesHere\", @"NoQuotesHere\")] // Trailing backslash - unchanged
-        [InlineData(@"\""", @"\\""")]                    // Single backslash + quote - doubled before quote
-        [InlineData(@"\\\""", @"\\\\\\""")]              // Multiple backslashes before quote
+        [InlineData(@"\""", @"\\""")]                     // Single backslash + quote - doubled before quote
+        [InlineData(@"\\\""", @"\\\\\\""")]               // Multiple backslashes before quote
         [InlineData(@"Mix\ed\\\""Case", @"Mix\ed\\\\\\""Case")] // Mixed case: normal + before quote
         [InlineData("abc\0def", @"abc\0def")]           // Contains null char -> replaced with literal "\0"
         public void EscapeBackslashes_ShouldEscapeCorrectly(string? input, string expected)
@@ -616,7 +615,6 @@ namespace Servy.Core.UnitTests.Helpers
             // Arrange
             string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             string targetPath = Path.Combine(tempDir, "target.txt");
-            string tempPath = targetPath + ".tmp"; // Logic uses .tmp suffix
 
             try
             {
@@ -633,7 +631,11 @@ namespace Servy.Core.UnitTests.Helpers
                 // Assert
                 Assert.True(File.Exists(targetPath));
                 Assert.Equal("atomic-sync-test-48", File.ReadAllText(targetPath));
-                Assert.False(File.Exists(tempPath), "Temporary file should be cleaned up by the finally block");
+
+                // VACUOUS CHECK REFACTOR: Evaluate all matching staging remnants in the container directory 
+                // to verify that the core dynamic GUID-suffixed file format handles cleanup routines successfully.
+                var leftovers = Directory.GetFiles(tempDir, "*.tmp");
+                Assert.Empty(leftovers);
             }
             finally
             {
@@ -647,7 +649,6 @@ namespace Servy.Core.UnitTests.Helpers
             // Arrange
             string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             string targetPath = Path.Combine(tempDir, "target.txt");
-            string tempPath = targetPath + ".tmp";
 
             try
             {
@@ -666,7 +667,11 @@ namespace Servy.Core.UnitTests.Helpers
 
                 // CleanupTempFile is called in finally to ensure .tmp is removed
                 Assert.False(File.Exists(targetPath), "Target should not exist if move was never reached.");
-                Assert.False(File.Exists(tempPath), "Temp file should be cleaned up even on failure");
+
+                // Ensure no dynamically generated GUID staging targets 
+                // are leaked inside the scratch tracking folder when an unhandled execution exception triggers.
+                var leftovers = Directory.GetFiles(tempDir, "*.tmp");
+                Assert.Empty(leftovers);
             }
             finally
             {
@@ -688,7 +693,6 @@ namespace Servy.Core.UnitTests.Helpers
                 // Set read-only to test PrepareDestinationForMove logic
                 File.SetAttributes(targetPath, FileAttributes.ReadOnly);
 
-                // Act
                 // Act
                 Helper.WriteFileAtomic(targetPath, (Stream stream) =>
                 {
