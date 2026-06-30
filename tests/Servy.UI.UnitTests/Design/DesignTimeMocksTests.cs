@@ -126,10 +126,8 @@ namespace Servy.UI.UnitTests.Design
         }
 
         [Fact]
-        public void DesignTimeCursorService_UsingBlock_WorksCorrectly()
+        public void DesignTimeCursorService_SetWaitCursor_DoesNotThrow()
         {
-            // Verifies the "mechanical necessity" of the NoOpDisposable 
-            // within a standard ViewModel pattern.
             var service = new DesignTimeCursorService();
 
             var exception = Record.Exception(service.SetWaitCursor);

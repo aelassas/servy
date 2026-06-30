@@ -471,16 +471,12 @@ namespace Servy.UnitTests.Services
         }
 
         [Fact]
-        public async Task ExportConfig_SerializationExceptionThrown_CatchCatchesAndShowsUnexpectedError()
+        public async Task ExportConfig_ModelExtractionThrows_ShowsUnexpectedError()
         {
             // Arrange
             var sut = CreateSut();
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.xml");
             _dialogServiceMock.Setup(d => d.SaveXml(It.IsAny<string>())).Returns(path);
-
-            var dto = new ServiceDto { Name = "CrashExport" };
-            _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
-            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "password", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             // Emulating an internal static/serializer fault path execution
             _modelToServiceDtoMock.Setup(m => m()).Throws(new IOException("Disk Full / Access Denied"));
@@ -809,16 +805,12 @@ namespace Servy.UnitTests.Services
         }
 
         [Fact]
-        public async Task ExportJsonConfig_SerializationExceptionThrown_CatchCatchesAndShowsUnexpectedError()
+        public async Task ExportJsonConfig_ModelExtractionThrows_ShowsUnexpectedError()
         {
             // Arrange
             var sut = CreateSut();
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
             _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(path);
-
-            var dto = new ServiceDto { Name = "CrashJsonExport" };
-            _modelToServiceDtoMock.Setup(m => m()).Returns(dto);
-            _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "secretPassword", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             // Force evaluation down the catch lane by breaking dependencies on data extraction execution
             _modelToServiceDtoMock.Setup(m => m()).Throws(new UnauthorizedAccessException("I/O Lock Encountered"));

@@ -580,9 +580,9 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
-        public void ExpandWithDictionary_DirectPublicOverloadCall_AppliesInlineTokenSanitization()
+        public void ExpandEnvironmentVariables_StringOverload_SplitTokenAtLengthCap_IsSanitizedInline()
         {
-            // Arrange: Tests Issue #2267 (Inline guard isolation)
+            // Arrange
             int maxLen = AppConfig.MaxEnvVarExpandedLength;
             string token = EnvironmentVariableHelper.PercentEscapeToken;
 

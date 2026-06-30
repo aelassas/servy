@@ -463,7 +463,7 @@ namespace Servy.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task LoadServiceConfiguration_RepositoryNull_ExitsEarlyWithoutMutation()
+        public async Task LoadServiceConfiguration_ServiceNotFound_ExitsEarlyWithoutMutation()
         {
             // Arrange
             _viewModel.ServiceName = "KeepThisName";
