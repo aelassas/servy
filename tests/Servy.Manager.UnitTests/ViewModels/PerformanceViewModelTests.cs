@@ -133,12 +133,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     };
 
                     // Act
-                    // Ensure the global tracking point reference is still locked to our local provider right before invocation
-                    if (App.Services == null)
-                    {
-                        App.Services = localProvider;
-                    }
-
                     vm.SelectedService = mockService;
 
                     // Assert

@@ -99,9 +99,6 @@ namespace Servy.Manager.UnitTests.Converters
             try
             {
                 // Arrange
-                // Force App.Services to be completely null before building our isolated local test pass.
-                App.Services = null;
-
                 var emptyServiceCollection = new ServiceCollection();
 
                 // Add base layout requirements to shield pass execution branches safely,
