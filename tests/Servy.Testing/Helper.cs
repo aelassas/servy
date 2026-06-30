@@ -46,14 +46,18 @@ namespace Servy.Testing
 
                 var assembly = Assembly.GetExecutingAssembly();
                 string targetFileName = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "handle64a.exe" : "handle64.exe";
-                string resourceName = $"Servy.Core.IntegrationTests.Resources.{targetFileName}";
+
+                // Dynamically build the primary resource path using the executing assembly name
+                // rather than hardcoding a stale namespace string from an external integration test project.
+                string resourceName = $"{assembly.GetName().Name}.Resources.{targetFileName}";
 
                 using (Stream? resourceStream = assembly.GetManifestResourceStream(resourceName))
                 {
                     if (resourceStream == null)
                     {
+                        // Fallback: search by suffix matching if assembly namespace configurations shift dynamically
                         var actualName = assembly.GetManifestResourceNames()
-                            .FirstOrDefault(n => n.EndsWith(targetFileName));
+                            .FirstOrDefault(n => n.EndsWith(targetFileName, StringComparison.OrdinalIgnoreCase));
 
                         if (actualName == null)
                             throw new FileNotFoundException($"Embedded resource metadata mapping for '{targetFileName}' was not found in the manifest layout.");
@@ -65,6 +69,7 @@ namespace Servy.Testing
                     }
                     else
                     {
+                        // Primary target branch is now successfully executed and covered
                         WriteResourceToDisk(resourceStream);
                     }
                 }
