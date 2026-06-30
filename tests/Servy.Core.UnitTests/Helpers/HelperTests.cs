@@ -574,7 +574,6 @@ namespace Servy.Core.UnitTests.Helpers
             // Arrange
             string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             string targetPath = Path.Combine(tempDir, "target.txt");
-            string tempPath = targetPath + ".tmp";
 
             try
             {
@@ -588,12 +587,16 @@ namespace Servy.Core.UnitTests.Helpers
                             writer.Write("partial-data");
                             throw new InvalidOperationException("Simulated failure");
                         }
-                    });
+                    }, CancellationToken.None);
                 });
 
                 // CleanupTempFile is called in finally to ensure .tmp is removed
                 Assert.False(File.Exists(targetPath), "Target should not exist if move was never reached.");
-                Assert.False(File.Exists(tempPath), "Temp file should be cleaned up even on failure");
+
+                // Ensure no dynamically generated GUID staging targets 
+                // are leaked inside the scratch tracking folder when an unhandled execution exception triggers.
+                var leftovers = Directory.GetFiles(tempDir, "*.tmp");
+                Assert.Empty(leftovers);
             }
             finally
             {
