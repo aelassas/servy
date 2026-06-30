@@ -405,8 +405,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 var expectedCols = (IEnumerable<string>)getExpectedCols!.Invoke(null, null)!;
 
                 var insertCols = new List<string> { "Name" };
-                var insertVals1 = new List<object> { "ÖffnenService" };
-                var insertVals2 = new List<object> { "öffnenservice" };
                 var paramMap1 = new DynamicParameters();
                 var paramMap2 = new DynamicParameters();
 

@@ -104,7 +104,6 @@ namespace Servy.UI.UnitTests.Design
         public async Task DesignTimeMessageBoxService_ReturnsTrueAndCompletes()
         {
             var service = new DesignTimeMessageBoxService();
-            var ct = TestContext.Current.CancellationToken;
 
             Assert.True(await service.ShowConfirmAsync("Message", "Caption"));
 
@@ -139,7 +138,6 @@ namespace Servy.UI.UnitTests.Design
         public async Task DesignTimeHelpService_Methods_Complete()
         {
             var service = new DesignTimeHelpService();
-            var ct = TestContext.Current.CancellationToken;
 
             await service.OpenDocumentationAsync("caption");
             await service.CheckUpdatesAsync("caption");
