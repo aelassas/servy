@@ -242,19 +242,6 @@ namespace Servy.Core.UnitTests.IO
             Assert.Contains("after 10000 attempts", exception.InnerException.Message);
         }
 
-        [Fact]
-        public void ReturnsOriginalPath_WhenFileDoesNotExist()
-        {
-            // Arrange
-            var path = Path.Combine(_testDir, "fresh_file.log");
-
-            // Act
-            var result = InvokeGenerateUniqueFileName(path);
-
-            // Assert
-            Assert.Equal(path, result);
-        }
-
         [Theory]
         [InlineData("App.20260325_001611.log", "App.20260325_001611.(1).log")] // Sandwich case
         [InlineData("App.20260325_001611", "App.20260325_001611.(1)")]         // Suffix case

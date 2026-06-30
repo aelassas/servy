@@ -299,14 +299,14 @@ namespace Servy.Core.UnitTests.Helpers
 
 
         [Fact]
-        public void ReturnsUnknown_WhenAttributeMissing()
+        public void GetBuiltWithFramework_AttributeMissing_ReturnsUnknown()
         {
             var result = Run(null);
             Assert.Equal("Unknown", result);
         }
 
         [Fact]
-        public void ReturnsUnknown_WhenTfmIsNull()
+        public void GetBuiltWithFramework_TfmIsNull_ReturnsUnknown()
         {
             var result = Run((string?)null);
             Assert.Equal("Unknown", result);
@@ -315,28 +315,28 @@ namespace Servy.Core.UnitTests.Helpers
         [Theory]
         [InlineData("")]
         [InlineData("   ")]
-        public void ReturnsUnknown_WhenTfmEmptyOrWhitespace(string tfm)
+        public void GetBuiltWithFramework_TfmEmptyOrWhitespace_ReturnsUnknown(string tfm)
         {
             var result = Run(tfm);
             Assert.Equal("Unknown", result);
         }
 
         [Fact]
-        public void RemovesPlatformSuffix_AndFormatsCorrectly()
+        public void GetBuiltWithFramework_PlatformSuffix_IsRemoved()
         {
             var result = Run("net8.0-windows");
             Assert.Equal(".NET 8.0", result);
         }
 
         [Fact]
-        public void FormatsPlainNetTfm()
+        public void GetBuiltWithFramework_PlainNetTfm_IsFormatted()
         {
             var result = Run("net8.0");
             Assert.Equal(".NET 8.0", result);
         }
 
         [Fact]
-        public void ReturnsRawValue_WhenNotNetTfm()
+        public void GetBuiltWithFramework_NotNetTfm_ReturnsRawValue()
         {
             var result = Run("random");
             Assert.Equal("random", result);
