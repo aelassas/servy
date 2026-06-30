@@ -444,22 +444,26 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             var mockLog = new Mock<IServyLogger>();
-            var mockProcess = new Process();
 
-            _mockProcessHelper
-                .Setup(p => p.Start(It.Is<ProcessStartInfo>(psi =>
-                    psi.FileName.Contains("shutdown.exe") &&
-                    psi.Arguments == "/r /t 0 /f" &&
-                    psi.CreateNoWindow == true &&
-                    psi.UseShellExecute == false)))
-                .Returns(mockProcess);
+            // RUNTIME BOUNDARY: This is a concrete Process component instance rather than a Moq proxy.
+            // We encapsulate it in a using declaration to guarantee localized test runner disposal.
+            using (var dummyProcess = new Process())
+            {
+                _mockProcessHelper
+                    .Setup(p => p.Start(It.Is<ProcessStartInfo>(psi =>
+                        psi.FileName.Contains("shutdown.exe") &&
+                        psi.Arguments == "/r /t 0 /f" &&
+                        psi.CreateNoWindow == true &&
+                        psi.UseShellExecute == false)))
+                    .Returns(dummyProcess);
 
-            // Act
-            _helper.RestartComputer(mockLog.Object);
+                // Act
+                _helper.RestartComputer(mockLog.Object);
 
-            // Assert
-            _mockProcessHelper.Verify(p => p.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
-            mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+                // Assert
+                _mockProcessHelper.Verify(p => p.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
+                mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+            }
         }
 
         [Fact]

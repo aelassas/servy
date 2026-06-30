@@ -1,13 +1,12 @@
-﻿using Servy.Core.Resources;
-using Servy.Core.Validation;
+﻿using Servy.Core.Validation;
 
 namespace Servy.Core.UnitTests.Validation
 {
-    public class PathSecurityGuardTest : IDisposable
+    public class PathSecurityGuardTests : IDisposable
     {
         private readonly string _tempDirectory;
 
-        public PathSecurityGuardTest()
+        public PathSecurityGuardTests()
         {
             // Set up an isolated temporary directory for file-based security engine tests
             _tempDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
@@ -148,11 +147,13 @@ namespace Servy.Core.UnitTests.Validation
 
         #region Operational Mode Differences
 
-        [Fact]
-        public void ValidatePath_ImportMode_FileDoesNotExist_ReturnsFail()
+        [Theory]
+        [InlineData("missing_import.json")]
+        [InlineData("missing_import.xml")]
+        public void ValidatePath_ImportMode_FileDoesNotExist_ReturnsFail(string fileName)
         {
             // Arrange
-            string filePath = Path.Combine(_tempDirectory, "missing_import.json");
+            string filePath = Path.Combine(_tempDirectory, fileName);
 
             // Act
             var result = PathSecurityGuard.ValidatePath(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, out var stream);
@@ -162,11 +163,13 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Null(stream);
         }
 
-        [Fact]
-        public void ValidatePath_ExportMode_FileDoesNotExist_CreatesHandleAndSucceeds()
+        [Theory]
+        [InlineData("new_export.json")]
+        [InlineData("new_export.xml")]
+        public void ValidatePath_ExportMode_FileDoesNotExist_CreatesHandleAndSucceeds(string fileName)
         {
             // Arrange
-            string filePath = Path.Combine(_tempDirectory, "new_export.json");
+            string filePath = Path.Combine(_tempDirectory, fileName);
 
             // Act
             var result = PathSecurityGuard.ValidatePath(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, out var stream);
@@ -176,7 +179,7 @@ namespace Servy.Core.UnitTests.Validation
             {
                 Assert.True(result.IsValid);
                 Assert.NotNull(stream);
-                Assert.True(stream!.CanWrite);
+                Assert.True(stream.CanWrite);
             }
             finally
             {
@@ -184,12 +187,14 @@ namespace Servy.Core.UnitTests.Validation
             }
         }
 
-        [Fact]
-        public void ValidatePath_ValidLocalJsonFile_PassesAllGuardsAndExposesStream()
+        [Theory]
+        [InlineData("valid_engine_config.json", "{}")]
+        [InlineData("valid_engine_config.xml", "<root/>")]
+        public void ValidatePath_ValidLocalAllowedFile_PassesAllGuardsAndExposesStream(string fileName, string fileContent)
         {
             // Arrange
-            string filePath = Path.Combine(_tempDirectory, "valid_engine_config.json");
-            File.WriteAllText(filePath, "{}");
+            string filePath = Path.Combine(_tempDirectory, fileName);
+            File.WriteAllText(filePath, fileContent);
 
             // Act
             var result = PathSecurityGuard.ValidatePath(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, out var stream);
@@ -202,7 +207,7 @@ namespace Servy.Core.UnitTests.Validation
                 Assert.Equal(filePath, result.ValidPath!.ResolvedPath);
                 using (var reader = new StreamReader(stream!))
                 {
-                    Assert.Equal("{}", reader.ReadToEnd());
+                    Assert.Equal(fileContent, reader.ReadToEnd());
                 }
             }
             finally

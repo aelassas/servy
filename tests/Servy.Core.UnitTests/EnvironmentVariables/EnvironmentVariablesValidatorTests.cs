@@ -279,7 +279,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         [Fact]
-        public void EnvironmentVariablesValidator_UnescapedNewlineWithinSegment_FailsValidation()
+        public void Validate_UnescapedNewlineWithinSegment_FailsValidation()
         {
             // Arrange
             // Malformed configuration state mimicking an unescaped raw break mid-value

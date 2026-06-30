@@ -86,7 +86,7 @@ namespace Servy.Core.UnitTests.Logging
         }
 
         [Fact]
-        public void Initialize_WhenFileIsLocked_FailsSilentlyAndWritesToFallback()
+        public void Initialize_WhenFileNameIsInvalid_FailsSilentlyAndWritesToFallback()
         {
             // Arrange
             // Passing an invalid character like a null terminator character sequence 

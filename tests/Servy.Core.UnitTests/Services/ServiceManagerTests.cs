@@ -2107,7 +2107,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void GetServiceStartupType_ShouldReturnNull_WhenExceptionOccursAndLogIt()
+        public void GetServiceStartupType_ShouldReturnUnknown_WhenExceptionOccurs()
         {
             // Arrange
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>()))

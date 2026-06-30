@@ -214,7 +214,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         #region Async Wait Tests
 
         [Fact]
-        public async Task WaitForExitOrTimeoutAsync_StaysAlive_ReturnsTrue()
+        public async Task WaitAndCheckStillRunningAsync_StaysAlive_ReturnsTrue()
         {
             // Arrange
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 10\""))
@@ -231,7 +231,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         [Fact]
-        public async Task WaitForExitOrTimeoutAsync_ExitsEarly_ReturnsFalse()
+        public async Task WaitAndCheckStillRunningAsync_ExitsEarly_ReturnsFalse()
         {
             // Arrange
             using (var wrapper = CreateWrapper("cmd.exe", "/c exit 0"))
