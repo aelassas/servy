@@ -26,7 +26,7 @@ namespace Servy.UI.IntegrationTests.Services
         #region Branch: Headless / Null Dispatcher
 
         [Fact]
-        public void SetWaitCursor_WhenApplicationIsNull_DoesNotThrow()
+        public void SetWaitCursorAndResetCursor_WhenApplicationIsNull_DoNotThrow()
         {
             // Branch: if (Application.Current?.Dispatcher == null) return;
             // This is the default state in standard xUnit runners because Application.Current is null.

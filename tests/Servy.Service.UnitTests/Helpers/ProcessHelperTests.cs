@@ -52,7 +52,7 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
-        public void LogUnexpandedPlaceholders_HandlesEmptyInputGracefully()
+        public void ExpandAndAudit_HandlesEmptyInputGracefully()
         {
             // Act - should not throw or log
             ProcessHelper.ExpandAndAudit(new List<EnvironmentVariable>(), "", _mockLogger.Object);
@@ -62,7 +62,7 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
-        public void LogUnexpandedPlaceholders_HandlesRegexTimeout_LogsError()
+        public void ExpandAndAudit_HandlesRegexTimeout_LogsError()
         {
             // Arrange
             var mockRegex = new Mock<IRegexWrapper>();

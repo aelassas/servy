@@ -12,12 +12,20 @@ namespace Servy.CLI.UnitTests.Options
 {
     public class SensitiveOptionsTests
     {
-        private static readonly Type[] OptionTypes = { typeof(InstallServiceOptions) };
+        // Discover all option verbs dynamically via reflection 
+        // to prevent new properties from escaping the sensitive field leak guard.
+        private static readonly Type[] OptionTypes = typeof(InstallServiceOptions).Assembly
+            .GetTypes()
+            .Where(t => t.GetCustomAttribute<VerbAttribute>() != null
+                     || t.GetProperties().Any(p => p.GetCustomAttribute<OptionAttribute>() != null))
+            .ToArray();
 
         [Fact]
         public void SensitiveProperties_MustHaveSensitiveAttribute()
         {
             // Arrange
+            bool foundAnySensitiveFields = false;
+
             foreach (var type in OptionTypes)
             {
                 // Find properties whose CLI Option LongName matches the sensitive patterns
@@ -33,10 +41,15 @@ namespace Servy.CLI.UnitTests.Options
                                optName.EndsWith("env") ||
                                optName.EndsWith("envvars") ||
                                optName.StartsWith("password");
-                    });
+                    })
+                    .ToList();
 
-                // Act & Assert (Requirement 2)
-                Assert.NotEmpty(targetProperties);
+                if (targetProperties.Any())
+                {
+                    foundAnySensitiveFields = true;
+                }
+
+                // Act & Assert
                 foreach (var prop in targetProperties)
                 {
                     var hasSensitiveAttribute = prop.GetCustomAttribute<SensitiveAttribute>() != null;
@@ -44,6 +57,9 @@ namespace Servy.CLI.UnitTests.Options
                         $"Property '{prop.Name}' in '{type.Name}' matches sensitive naming conventions but is missing the [Sensitive] attribute.");
                 }
             }
+
+            // Sanity check to confirm our naming convention pattern scanner is actively intercepting fields
+            Assert.True(foundAnySensitiveFields, "The sensitive options regex heuristic failed to intercept any matching property definitions across the target assembly.");
         }
 
         [Fact]
@@ -63,16 +79,18 @@ namespace Servy.CLI.UnitTests.Options
             Assert.True(match.Success, "Could not locate $sensitiveFields array in Servy.psm1.");
 
             var fieldsBlock = match.Groups[1].Value;
+            bool evaluatedAnyProperties = false;
 
-            // Act & Assert (Requirement 3)
+            // Act & Assert
             foreach (var type in OptionTypes)
             {
                 var sensitiveProperties = type.GetProperties()
-                    .Where(p => p.GetCustomAttribute<SensitiveAttribute>() != null);
+                    .Where(p => p.GetCustomAttribute<SensitiveAttribute>() != null)
+                    .ToList();
 
-                Assert.NotEmpty(sensitiveProperties);
                 foreach (var prop in sensitiveProperties)
                 {
+                    evaluatedAnyProperties = true;
                     var optionAttr = prop.GetCustomAttribute<OptionAttribute>();
                     Assert.NotNull(optionAttr);
 
@@ -87,6 +105,8 @@ namespace Servy.CLI.UnitTests.Options
                         $"CRITICAL: Sensitive CLI option '--{optionName}' (Property: {prop.Name}) is missing from the $sensitiveFields array in Servy.psm1. This will cause sensitive data to leak into logs.");
                 }
             }
+
+            Assert.True(evaluatedAnyProperties, "No properties marked with [Sensitive] were found or evaluated during the parsing loop.");
         }
     }
 }
