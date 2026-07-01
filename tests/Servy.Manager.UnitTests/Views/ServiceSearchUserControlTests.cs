@@ -2,6 +2,7 @@
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
+using Servy.Manager.Views;
 using Servy.Testing;
 using Servy.UI.Services;
 using System;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Xunit;
 
-namespace Servy.Manager.Views.Tests
+namespace Servy.Manager.UnitTests.Views
 {
     /// <summary>
     /// A simple concrete implementation of the abstract ServiceSearchUserControl 
@@ -45,15 +46,7 @@ namespace Servy.Manager.Views.Tests
                 SearchCommand = new UI.Commands.AsyncCommand(async (param) =>
                 {
                     ExecuteAsyncWasCalled = true;
-                    try
-                    {
-                        await CommandTcs.Task;
-                    }
-                    catch
-                    {
-                        // Propagate exceptions straight back to match fire-and-forget catch branches
-                        throw;
-                    }
+                    await CommandTcs.Task;
                 }, name: "TestSearchCommand");
             }
 

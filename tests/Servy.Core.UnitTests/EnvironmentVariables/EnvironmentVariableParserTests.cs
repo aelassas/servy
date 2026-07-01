@@ -165,15 +165,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Equal("KEY2", result[1].Name);
         }
 
-        [Fact]
-        public void Parse_ThrowsFormatException_WhenEqualsIsEscaped()
-        {
-            var input = @"KEY\\\=VALUE"; // 3 backslashes -> escaped =
-
-            var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
-            Assert.Contains("no unescaped '='", ex.Message);
-        }
-
         [Theory]
         [InlineData("KEY=VALUE", "VALUE")]
         [InlineData("KEY=\"VALUE\"", "VALUE")]

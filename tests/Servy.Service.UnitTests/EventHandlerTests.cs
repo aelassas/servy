@@ -114,7 +114,7 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
-        public void OnErrorDataReceived_WritesToRotatingWriters_LogsError_IgnoresNullOrEmpty()
+        public void OnErrorDataReceived_WritesToRotatingWriters_IgnoresNullOrEmpty()
         {
             var service = CreateService(
                 out var logger,
@@ -151,9 +151,6 @@ namespace Servy.Service.UnitTests
 
             // Assert write called once for non-empty error data
             mockWriter.Verify(w => w.WriteLine("error line"), Times.Once);
-
-            // Assert logger logged error once for non-empty data
-            //logger.Verify(l => l.Error(It.Is<string>(s => s.Contains("error line")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
