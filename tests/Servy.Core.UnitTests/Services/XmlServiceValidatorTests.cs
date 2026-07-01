@@ -4,8 +4,8 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Resources;
 using Servy.Core.Services;
+using Servy.Core.UnitTests.Helpers;
 using Servy.Core.Validation;
-using System.Xml.Serialization;
 
 namespace Servy.Core.UnitTests.Services
 {
@@ -18,16 +18,6 @@ namespace Servy.Core.UnitTests.Services
         {
             _processHelperMock = new Mock<IProcessHelper>();
             _validator = new XmlServiceValidator(new ServiceValidationRules(_processHelperMock.Object));
-        }
-
-        private string Serialize(ServiceDto dto)
-        {
-            var serializer = new XmlSerializer(typeof(ServiceDto));
-            using (var sw = new StringWriter())
-            {
-                serializer.Serialize(sw, dto);
-                return sw.ToString();
-            }
         }
 
         [Fact]
@@ -108,7 +98,7 @@ namespace Servy.Core.UnitTests.Services
                 Name = new string('A', AppConfig.MaxServiceNameLength + 1),
                 ExecutablePath = "C:\\path\\to\\exe"
             };
-            var xml = Serialize(dto);
+            var xml = ServiceDtoXml.Serialize(dto);
 
             // Act
             var result = _validator.TryValidate(xml, out var error);
@@ -129,7 +119,7 @@ namespace Servy.Core.UnitTests.Services
                 ExecutablePath = "C:\\path\\to\\exe",
                 StartTimeout = invalidTimeout
             };
-            var xml = Serialize(dto);
+            var xml = ServiceDtoXml.Serialize(dto);
 
             _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
 
@@ -150,7 +140,7 @@ namespace Servy.Core.UnitTests.Services
                 Name = "MyService",
                 ExecutablePath = "INVALID_PATH_CHAR_<>|"
             };
-            var xml = Serialize(dto);
+            var xml = ServiceDtoXml.Serialize(dto);
 
             _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(false);
 
@@ -172,7 +162,7 @@ namespace Servy.Core.UnitTests.Services
                 ExecutablePath = "C:\\Windows\\System32\\notepad.exe",
                 StopTimeout = 30000
             };
-            var xml = Serialize(dto);
+            var xml = ServiceDtoXml.Serialize(dto);
 
             _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
 

@@ -1,7 +1,7 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Services;
-using System.Xml.Serialization;
+using Servy.Core.UnitTests.Helpers;
 
 namespace Servy.Core.UnitTests.Services
 {
@@ -104,13 +104,7 @@ namespace Servy.Core.UnitTests.Services
             };
 
             // Convert to XML string using the standard Serializer
-            var xmlSerializer = new XmlSerializer(typeof(ServiceDto));
-            string xml;
-            using (var sw = new StringWriter())
-            {
-                xmlSerializer.Serialize(sw, expected);
-                xml = sw.ToString();
-            }
+            var xml = ServiceDtoXml.Serialize(expected);
 
             // Act
             var actual = _serializer.Deserialize(xml);
