@@ -1289,9 +1289,6 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
             var corruptDto = new ServiceDto { Id = 1, Password = "corrupt-payload" };
 
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
-                       .ReturnsAsync(corruptDto);
-
             // Force DecryptDto internal line block loop invocation to crash on field evaluation mapping
             _mockSecureData.Setup(s => s.Decrypt(It.IsAny<string>()))
                            .Throws(new FormatException("Invalid base64 string layout"));

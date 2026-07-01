@@ -335,9 +335,6 @@ namespace Servy.Service.UnitTests
                 UseLocalTimeForRotation = true,
             };
 
-            // Simulate Helper.IsValidPath always true for testing
-            HelperOverride.IsValidPathOverride = path => true;
-
             var mockStdOutWriter = new Mock<IStreamWriter>();
             var mockStdErrWriter = new Mock<IStreamWriter>();
 
@@ -358,9 +355,6 @@ namespace Servy.Service.UnitTests
 
             // Check no errors logged
             mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
-
-            // Cleanup helper override
-            HelperOverride.IsValidPathOverride = null;
         }
 
         [Fact]
@@ -392,9 +386,6 @@ namespace Servy.Service.UnitTests
                 RotationSizeInBytes = 12345
             };
 
-            // Simulate Helper.IsValidPath always false for testing invalid paths
-            HelperOverride.IsValidPathOverride = path => false;
-
             // Act
             service.InvokeHandleLogWriters(options);
 
@@ -402,9 +393,6 @@ namespace Servy.Service.UnitTests
             mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
 
             mockLogger.Verify(l => l.Error(It.Is<string>(msg => msg.Contains("Invalid log file path")), null), Times.Exactly(2));
-
-            // Cleanup helper override
-            HelperOverride.IsValidPathOverride = null;
         }
 
         [Fact]
