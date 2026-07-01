@@ -86,7 +86,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [InlineData("abc", '=', -1)]
         public void IndexOfUnescapedChar_BranchCoverage_ReturnsExpectedIndex(string input, char ch, int expected)
         {
-            // Act
+            // Arrange & Act
             int result = EscapedTokenizer.IndexOfUnescapedChar(input, ch);
 
             // Assert
@@ -105,16 +105,13 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [InlineData("", "")]
         public void Unescape_EmptyInput_ReturnsEmptyString(string input, string expected)
         {
-            // Act
+            // Arrange & Act
             var result = EscapedTokenizer.Unescape(input);
 
             // Assert
             Assert.Equal(expected, result);
         }
 
-        /// <summary>
-        /// Verifies the fix for #1114, ensuring escaped newlines and carriage returns are properly unescaped.
-        /// </summary>
         /// <summary>
         /// Verifies the fix for #1114, ensuring literal newlines and carriage returns 
         /// preceded by an escape character have the escape backslash stripped.
@@ -129,7 +126,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [InlineData("line1\\\rline2", "line1\rline2")] // Literal backslash + actual CR
         public void Unescape_KnownEscapes_StripsBackslash(string input, string expected)
         {
-            // Act
+            // Arrange & Act
             var result = EscapedTokenizer.Unescape(input);
 
             // Assert
@@ -144,7 +141,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [InlineData("escape\\x", "escape\\x")]
         public void Unescape_UnknownEscapes_PreservesBackslash(string input, string expected)
         {
-            // Act
+            // Arrange & Act
             var result = EscapedTokenizer.Unescape(input);
 
             // Assert
@@ -152,19 +149,19 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         /// <summary>
-        /// Verifies that a trailing backslash is preserved literally.
+        /// Ensures that trailing escape symbols at the absolute bounds of an input boundary string 
+        /// fail closed and preserve the structural symbol literally instead of truncating or throwing out-of-bounds exceptions.
         /// </summary>
-        [Fact]
-        public void Unescape_TrailingBackslash_PreservesBackslash()
+        [Theory]
+        [InlineData("trailing\\", "trailing\\")]
+        [InlineData("MalformedValue\\", "MalformedValue\\")]
+        public void Unescape_TrailingBackslashAtStringBounds_PreservesBackslash(string input, string expected)
         {
-            // Arrange
-            string input = "trailing\\";
-
-            // Act
+            // Arrange & Act
             var result = EscapedTokenizer.Unescape(input);
 
             // Assert
-            Assert.Equal("trailing\\", result);
+            Assert.Equal(expected, result);
         }
 
         /// <summary>
@@ -200,28 +197,11 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [InlineData("ValueWith\\\r\\\nDoubleContinuation", "ValueWith\r\nDoubleContinuation")]
         public void Unescape_LiteralControlLineBreakContinuations_PreservesControlBytes(string input, string expected)
         {
-            // Act
+            // Arrange & Act
             string result = EscapedTokenizer.Unescape(input);
 
             // Assert
             Assert.Equal(expected, result);
-        }
-
-        /// <summary>
-        /// Ensures that trailing escape symbols at the absolute bounds of an input boundary string 
-        /// fail closed and preserve the structural symbol literally instead of truncating or throwing.
-        /// </summary>
-        [Fact]
-        public void Unescape_TrailingEscapeAtStringBounds_PreservesBackslash()
-        {
-            // Arrange
-            string input = "MalformedValue\\";
-
-            // Act
-            string result = EscapedTokenizer.Unescape(input);
-
-            // Assert
-            Assert.Equal("MalformedValue\\", result);
         }
 
         /// <summary>

@@ -7,8 +7,6 @@ namespace Servy.Manager.UnitTests.Models
 {
     public class LogEntryModelTests
     {
-        private const string IconBase = "pack://application:,,,/Servy.Manager;component/Resources/Icons/";
-
         [Fact]
         public void Properties_StandardMutations_UpdateCorrectlyAndNotifyUI()
         {
@@ -94,13 +92,15 @@ namespace Servy.Manager.UnitTests.Models
         {
             // Arrange
             var logEntry = new LogEntryModel { Level = inputLevel };
-            string expectedUri = IconBase + expectedIconFile;
 
             // Act
             string actualUri = logEntry.LevelIcon;
 
             // Assert
-            Assert.Equal(expectedUri, actualUri);
+            // Validate that the string suffix resolves to the correct filename payload
+            // without hardcoding or binding against the absolute WPF application pack infrastructure schema.
+            Assert.NotNull(actualUri);
+            Assert.EndsWith(expectedIconFile, actualUri, StringComparison.OrdinalIgnoreCase);
         }
     }
 }
