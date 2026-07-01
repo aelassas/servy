@@ -817,7 +817,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var serviceName = "MissingService";
 
             _mockDapper
-                .Setup(e => e.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(
+                .Setup(e => e.QuerySingleOrDefaultAsync<ServiceConsoleStateDto>(
                     It.IsAny<string>(),
                     It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ServiceConsoleStateDto)null);
@@ -1003,8 +1003,8 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task ExportXML_ReturnsEmptyString()
         {
-            _mockDapper
-                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
+                It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ServiceDto)null);
 
             var repo = CreateRepository();
@@ -1087,9 +1087,9 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task ExportJSON_ReturnsEmptyString()
         {
-            _mockDapper
-                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
-                .ReturnsAsync((ServiceDto)null);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(
+               It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+               .ReturnsAsync((ServiceDto)null);
 
             var repo = CreateRepository();
 
