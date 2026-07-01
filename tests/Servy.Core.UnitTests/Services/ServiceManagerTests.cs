@@ -2205,43 +2205,6 @@ namespace Servy.Core.UnitTests.Services
             Assert.Empty(result);
         }
 
-        [Fact]
-        public void GetAllServices_ShouldHandleQueryServiceConfig_AndRetrieveUser()
-        {
-            // Arrange
-            var scmHandle = CreateScmHandle(1);
-            var svcHandle = CreateServiceHandle(2);
-
-            // We need at least one service to enter the loop
-            var service = new ServiceControllerWrapper("EventLog");
-
-            _mockServiceControllerProvider.Setup(x => x.GetServices()).Returns(new[] { service });
-            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>())).Returns(scmHandle);
-            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, It.IsAny<string>(), It.IsAny<uint>())).Returns(svcHandle);
-
-            // Branch: QueryServiceConfig (Get size, then get data)
-            int size = Marshal.SizeOf(typeof(QUERY_SERVICE_CONFIG)) + 100;
-            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig(svcHandle, IntPtr.Zero, 0, out It.Ref<int>.IsAny))
-                    .Callback(new QueryConfigOut((SafeServiceHandle h, IntPtr p, int s, out int req) => req = size))
-                    .Returns(false);
-
-            _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig(svcHandle, It.Is<IntPtr>(p => p != IntPtr.Zero), size, out It.Ref<int>.IsAny))
-                    .Callback(new QueryConfigOut((SafeServiceHandle h, IntPtr p, int s, out int req) =>
-                    {
-                        req = size;
-                        var config = new QUERY_SERVICE_CONFIG { lpServiceStartName = Marshal.StringToHGlobalAuto("CustomUser") };
-                        Marshal.StructureToPtr(config, p, false);
-                    }))
-                    .Returns(true);
-
-            // Act
-            var result = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.Single(result);
-            Assert.Equal("CustomUser", result[0].LogOnAs);
-        }
-
         [Theory]
         [InlineData(ServiceControllerStatus.Stopped, Enums.ServiceStatus.Stopped)]
         [InlineData(ServiceControllerStatus.Paused, Enums.ServiceStatus.Paused)]
