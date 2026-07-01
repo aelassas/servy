@@ -169,33 +169,6 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void Properties_SettersTriggerPropertyChanged()
-        {
-            // Arrange
-            Helper.RunOnSTA(() =>
-            {
-                var vm = CreateViewModel();
-                var changedProps = new List<string>();
-                vm.PropertyChanged += (s, e) => changedProps.Add(e.PropertyName);
-
-                // Act
-                vm.IsBusy = true;
-                vm.IsBusy = true;
-                vm.FooterText = "Test";
-                vm.SearchButtonText = "Searching...";
-                vm.SearchText = "Testing";
-                vm.IsConfiguratorEnabled = false;
-
-                // Assert
-                Assert.Contains(nameof(vm.IsBusy), changedProps);
-                Assert.Contains(nameof(vm.FooterText), changedProps);
-                Assert.Contains(nameof(vm.SearchButtonText), changedProps);
-                Assert.Contains(nameof(vm.SearchText), changedProps);
-                Assert.Contains(nameof(vm.IsConfiguratorEnabled), changedProps);
-            }, createApp: true);
-        }
-
-        [Fact]
         public void ServiceCommands_Setter_UpdatesChildViewModels()
         {
             // Arrange
@@ -786,50 +759,6 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void Properties_SearchText_MutatesAndUpdatesValue()
-        {
-            // Arrange
-            Helper.RunOnSTA(() =>
-            {
-                var vm = CreateViewModel();
-                bool searchTextChangedFired = false;
-                vm.PropertyChanged += (s, e) =>
-                {
-                    if (e.PropertyName == nameof(vm.SearchText)) searchTextChangedFired = true;
-                };
-
-                // Act
-                vm.SearchText = "WexflowCoreEngine";
-
-                // Assert
-                Assert.Equal("WexflowCoreEngine", vm.SearchText);
-                Assert.True(searchTextChangedFired);
-            }, createApp: true);
-        }
-
-        [Fact]
-        public void Properties_SearchButtonText_MutatesAndUpdatesValue()
-        {
-            // Arrange
-            Helper.RunOnSTA(() =>
-            {
-                var vm = CreateViewModel();
-                bool buttonTextChangedFired = false;
-                vm.PropertyChanged += (s, e) =>
-                {
-                    if (e.PropertyName == nameof(vm.SearchButtonText)) buttonTextChangedFired = true;
-                };
-
-                // Act
-                vm.SearchButtonText = Strings.Button_Searching;
-
-                // Assert
-                Assert.Equal(Strings.Button_Searching, vm.SearchButtonText);
-                Assert.True(buttonTextChangedFired);
-            }, createApp: true);
-        }
-
-        [Fact]
         public void StandardUIProperties_MutateValues_RaisesNotificationsAndBypassesOnEquality()
         {
             // Arrange
@@ -839,7 +768,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var changedProps = new List<string>();
                 vm.PropertyChanged += (s, e) => { if (e.PropertyName != null) changedProps.Add(e.PropertyName); };
 
-                // Act & Assert
+                // Act & Assert — IsBusy
                 vm.IsBusy = true;
                 Assert.True(vm.IsBusy);
                 Assert.Contains(nameof(vm.IsBusy), changedProps);
@@ -848,6 +777,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.IsBusy = true;
                 Assert.Empty(changedProps);
 
+                // Act & Assert — FooterText
+                changedProps.Clear();
                 vm.FooterText = "Total Services: 5";
                 Assert.Equal("Total Services: 5", vm.FooterText);
                 Assert.Contains(nameof(vm.FooterText), changedProps);
@@ -856,6 +787,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.FooterText = "Total Services: 5";
                 Assert.Empty(changedProps);
 
+                // Act & Assert — SearchButtonText
+                changedProps.Clear();
                 vm.SearchButtonText = "Locating...";
                 Assert.Equal("Locating...", vm.SearchButtonText);
                 Assert.Contains(nameof(vm.SearchButtonText), changedProps);
@@ -864,12 +797,25 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.SearchButtonText = "Locating...";
                 Assert.Empty(changedProps);
 
+                // Act & Assert — SearchText
+                changedProps.Clear();
                 vm.SearchText = "WexflowCore";
                 Assert.Equal("WexflowCore", vm.SearchText);
                 Assert.Contains(nameof(vm.SearchText), changedProps);
 
                 changedProps.Clear();
                 vm.SearchText = "WexflowCore";
+                Assert.Empty(changedProps);
+
+                // Act & Assert — IsConfiguratorEnabled
+                // Integrated property check variance from redundant test block
+                changedProps.Clear();
+                vm.IsConfiguratorEnabled = false;
+                Assert.False(vm.IsConfiguratorEnabled);
+                Assert.Contains(nameof(vm.IsConfiguratorEnabled), changedProps);
+
+                changedProps.Clear();
+                vm.IsConfiguratorEnabled = false;
                 Assert.Empty(changedProps);
 
             }, createApp: true);
