@@ -155,15 +155,17 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             options.WaitChunkMs = 0; // Violate rule requirement: WaitChunkMs <= 0
 
             var method = typeof(ProcessLauncher).GetMethod("WaitForExitWithHeartbeat", BindingFlags.Static | BindingFlags.NonPublic);
-            var mockWrapper = new MockFailingProcessWrapper();
+            using (var mockWrapper = new MockFailingProcessWrapper())
+            {
+                // Act
+                var targetInvocationException = Assert.Throws<TargetInvocationException>(() =>
+                    method.Invoke(null, new object[] { mockWrapper, options, _logger }));
 
-            // Act
-            var targetInvocationException = Assert.Throws<TargetInvocationException>(() =>
-                method.Invoke(null, new object[] { mockWrapper, options, _logger }));
-
-            // Assert
-            Assert.IsType<ArgumentException>(targetInvocationException.InnerException);
-            Assert.Contains("Synchronous launch requires WaitChunkMs > 0", targetInvocationException.InnerException.Message);
+                // Assert
+                Assert.NotNull(targetInvocationException.InnerException);
+                Assert.IsType<ArgumentException>(targetInvocationException.InnerException);
+                Assert.Contains("Synchronous launch requires WaitChunkMs > 0", targetInvocationException.InnerException.Message);
+            }
         }
 
         #endregion
@@ -410,7 +412,11 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             public abstract bool Start();
             public abstract bool HasExited { get; }
             public virtual void Kill(bool entireProcessTree) { }
-            public virtual void Dispose() { }
+
+            public virtual void Dispose()
+            {
+                UnderlyingProcess?.Dispose();
+            }
 
             public Process UnderlyingProcess { get; } = new Process();
             public virtual int Id => 9999;
@@ -448,7 +454,12 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             public override bool HasExited => true;
             public override string Format() => "MockFalse";
             public override bool WaitForExit(int ms) => true;
-            public override void Dispose() => WasDisposed = true;
+
+            public override void Dispose()
+            {
+                base.Dispose();
+                WasDisposed = true;
+            }
         }
 
         private class MockFailingProcessWrapper : BaseMockProcessWrapper
