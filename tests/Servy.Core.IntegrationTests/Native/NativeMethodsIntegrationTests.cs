@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.Core.Native;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -6,7 +7,7 @@ using System.Runtime.InteropServices;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Servy.Core.Native
+namespace Servy.Core.IntegrationTests.Native
 {
     public class NativeMethodsIntegrationTests : IDisposable
     {

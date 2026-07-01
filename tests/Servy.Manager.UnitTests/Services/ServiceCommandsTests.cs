@@ -37,7 +37,6 @@ namespace Servy.Manager.UnitTests.Services
         private readonly Mock<IUiDispatcher> _uiDispatcherMock;
 
         private bool _refreshCalled;
-        private TaskCompletionSource<bool> _refreshTcs;
         private string _removedServiceName;
 
         public ServiceCommandsTests()
@@ -57,7 +56,6 @@ namespace Servy.Manager.UnitTests.Services
             _processHelper = new Mock<IProcessHelper>();
             _uiDispatcherMock = new Mock<IUiDispatcher>();
 
-            _refreshTcs = new TaskCompletionSource<bool>();
             _removedServiceName = null;
 
             // Default safe returns for ServiceManager to prevent internal NullRefs
@@ -72,7 +70,6 @@ namespace Servy.Manager.UnitTests.Services
         {
             _refreshCalled = false;
             _removedServiceName = null;
-            _refreshTcs = new TaskCompletionSource<bool>();
 
             return new ServiceCommands(
                 _serviceManagerMock.Object, // Use the Mock!
@@ -83,7 +80,6 @@ namespace Servy.Manager.UnitTests.Services
                 () =>
                 {
                     _refreshCalled = true;
-                    _refreshTcs.TrySetResult(true);
                     return Task.CompletedTask;
                 },
                 _serviceConfigurationValidatorMock.Object,
@@ -119,8 +115,7 @@ namespace Servy.Manager.UnitTests.Services
             _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(1)
-                .Callback(() => _refreshTcs.TrySetResult(true));
+                .ReturnsAsync(1);
 
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny))
                 .Returns(true);
@@ -132,10 +127,6 @@ namespace Servy.Manager.UnitTests.Services
             await sut.ImportJsonConfigAsync(CancellationToken.None);
 
             // Assert
-            var delay = Task.Delay(2000, CancellationToken.None);
-            var completedTask = await Task.WhenAny(_refreshTcs.Task, delay);
-
-            Assert.True(completedTask == _refreshTcs.Task, "Refresh task timed out! The refresh logic was not executed.");
             _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
             _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Once);
             _jsonServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Once);
@@ -192,8 +183,7 @@ namespace Servy.Manager.UnitTests.Services
             _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(1)
-                .Callback(() => _refreshTcs.TrySetResult(true));
+                .ReturnsAsync(1);
 
             _xmlServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>()))
                 .Returns(dto);
@@ -201,10 +191,6 @@ namespace Servy.Manager.UnitTests.Services
             // Act
             await sut.ImportXmlConfigAsync(CancellationToken.None);
 
-            var delay = Task.Delay(2000, CancellationToken.None);
-            var completedTask = await Task.WhenAny(_refreshTcs.Task, delay);
-
-            Assert.True(completedTask == _refreshTcs.Task, "Refresh task timed out! XML import did not trigger refresh.");
             _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
             _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Once);
             _xmlServiceSerializerMock.Verify(s => s.Deserialize(It.IsAny<string>()), Times.Once);
@@ -770,7 +756,7 @@ namespace Servy.Manager.UnitTests.Services
             var sut = CreateServiceCommands();
             var service = new Service { Name = "GhostRepoRecord" };
             _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, UiAppConfig.Caption)).ReturnsAsync(true);
-            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, true, It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto)null);
+            _serviceRepositoryMock.Setup(r => r.GetByNameAsync(service.Name, false, It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto)null);
 
             // Act
             var result = await sut.RemoveServiceAsync(service, CancellationToken.None);

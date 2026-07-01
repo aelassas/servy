@@ -149,7 +149,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         #region Path & Argument Normalization Variations
 
         [Fact]
-        public void Start_NullArgumentsAndNullWorkingDirectory_ResolvesToDefaultsSafely()
+        public void Start_NullWorkingDirectory_ResolvesToDefaultSafely()
         {
             var options = CreateOptions("powershell.exe", null, fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
             options.WorkingDirectory = null; // Triggers Path.GetDirectoryName fallback branch

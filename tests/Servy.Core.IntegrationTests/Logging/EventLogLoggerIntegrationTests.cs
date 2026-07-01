@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Config;
+using Servy.Core.Logging;
 using Servy.Testing;
 using System;
 using System.Collections.Generic;
@@ -6,7 +7,7 @@ using System.Diagnostics;
 using System.Threading;
 using Xunit;
 
-namespace Servy.Core.Logging.IntegrationTests
+namespace Servy.Core.IntegrationTests.Logging
 {
     [Collection("EventLogLoggerIntegrationTests")]
     public class EventLogLoggerIntegrationTests : IDisposable

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
-namespace Servy.Core.UnitTests.Services
+namespace Servy.Core.IntegrationTests.Services
 {
     // Reuse the sequential collection to ensure OS-level SCM/LSA interactions don't conflict
     [Collection("WindowsServiceApiIntegrationTests")]

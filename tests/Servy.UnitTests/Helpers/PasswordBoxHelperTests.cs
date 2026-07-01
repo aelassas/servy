@@ -1,10 +1,11 @@
-﻿using System.Windows;
+﻿using Servy.Helpers;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using Xunit;
 using Helper = Servy.Testing.Helper;
 
-namespace Servy.Helpers.UnitTests
+namespace Servy.UnitTests.Helpers
 {
     public class PasswordBoxHelperTests
     {

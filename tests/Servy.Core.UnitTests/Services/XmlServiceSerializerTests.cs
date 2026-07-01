@@ -1,7 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Services;
-using System;
 using System.IO;
 using System.Xml.Serialization;
 using Xunit;
@@ -20,7 +19,7 @@ namespace Servy.Core.UnitTests.Services
         [InlineData("   ")]
         public void Deserialize_NullOrWhitespace_ReturnsNull(string input)
         {
-            // Act
+            // Arrange & Act
             var result = _serializer.Deserialize(input);
 
             // Assert
@@ -173,7 +172,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void Serialize_NullDto_ReturnsNull()
         {
-            // Act
+            // Arrange & Act
             var result = _serializer.Serialize(null);
 
             // Assert
@@ -209,12 +208,11 @@ namespace Servy.Core.UnitTests.Services
         public void Serialize_InvalidDtoStateOrSerializationFailure_CatchesExceptionAndReturnsNull()
         {
             // Arrange
-            // Passing a derived type that the ServiceDto-typed XmlSerializer doesn't know about
-            // makes XmlSerializer.Serialize throw, exercising the catch -> returns null.
+            // Passing an undeclared derived type through an XmlSerializer instantiated for the base type
+            // natively forces an InvalidOperationException, exercising the internal try-catch fallback block.
             var invalidDto = new InvalidServiceDtoMock();
 
             // Act
-            // Passing an object that cannot be typed safely as ServiceDto into the cast block
             var result = _serializer.Serialize(invalidDto);
 
             // Assert
@@ -225,11 +223,11 @@ namespace Servy.Core.UnitTests.Services
     }
 
     /// <summary>
-    /// Derived layout to simulate an un-serializable DTO variant for edge-case coverage.
+    /// Derived class designed to simulate an unexpected serialization type.
+    /// Serializing this runtime subtype through a standard base XmlSerializer(typeof(ServiceDto)) 
+    /// throws an InvalidOperationException because it lacks explicit XmlInclude configuration declarations.
     /// </summary>
     public class InvalidServiceDtoMock : ServiceDto
     {
-        // Shadowing with an un-serializable type block to force XmlSerializer exceptions
-        public new int Name { get; set; }
     }
 }
