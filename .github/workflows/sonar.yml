@@ -48,8 +48,8 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 #v4.3.0
         with:
           path: ~\sonar\cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
+          key: ${{ runner.os }}-sonar-v1
+          restore-keys: ${{ runner.os }}-sonar-
 
       # 5. Cache Scanner
       - name: Cache SonarCloud scanner

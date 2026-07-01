@@ -46,7 +46,7 @@ namespace Servy.UI.IntegrationTests.Services
             // Use the persistent STA context instead of the synchronous RunInSTA
             await Helper.RunOnSTA(async () =>
             {
-                EnsureApplicationContext();
+                Helper.EnsureApplication();
                 Mouse.OverrideCursor = Cursors.Hand;
 
                 // The service should detect we are on a background thread 
@@ -70,21 +70,6 @@ namespace Servy.UI.IntegrationTests.Services
                 // we can check the cursor state immediately.
                 Assert.Null(Mouse.OverrideCursor);
             });
-        }
-
-        #endregion
-
-        #region Helper Methods
-
-        /// <summary>
-        /// Safely initializes Application.Current if it doesn't exist for the test context.
-        /// </summary>
-        private static void EnsureApplicationContext()
-        {
-            if (Application.Current == null)
-            {
-                new Application();
-            }
         }
 
         #endregion

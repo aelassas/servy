@@ -24,6 +24,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void Initialize_FreshDatabase_AppliesAllMigrationsAndReconciles()
         {
+            // Arrange
             using (var conn = CreateConnection())
             {
                 // Act
@@ -47,10 +48,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void Initialize_OnMigrationFailure_RollsBackTransactionAndRethrows()
         {
+            // Arrange: Poison the database to force a SQL exception during ApplyVersion1
+            // By creating 'Services' as a VIEW, the subsequent 'CREATE UNIQUE INDEX' on it will throw a SQLiteException.
             using (var conn = CreateConnection())
             {
-                // Arrange: Poison the database to force a SQL exception during ApplyVersion1
-                // By creating 'Services' as a VIEW, the subsequent 'CREATE UNIQUE INDEX' on it will throw a SQLiteException.
                 conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY CHECK (Id = 1), Version INTEGER NOT NULL);");
                 conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 0);");
                 conn.Execute("CREATE VIEW Services AS SELECT 1 AS Id;");
@@ -71,47 +72,26 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void Initialize_LegacyUnversionedDatabase_PerformsDeduplicationAndUpgrades()
         {
+            // Arrange: Simulate an old V0 database using the reflection scaffold helper
             using (var conn = CreateConnection())
             {
-                // Access internal definitions to properly build the legacy table avoiding SQLite NOT NULL strict constraints
-                var getSqlType = typeof(SQLiteDbInitializer).GetMethod("GetSqlType", BindingFlags.Static | BindingFlags.NonPublic);
-                var getExpectedCols = typeof(SQLiteDbInitializer).GetMethod("GetExpectedColumns", BindingFlags.Static | BindingFlags.NonPublic);
-                var expectedCols = (IEnumerable<string>)getExpectedCols!.Invoke(null, null)!;
-
-                var colDefs = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT", "EnableRotation INTEGER" };
-                var insertCols = new List<string> { "Name", "EnableRotation" };
-                var insertVals1 = new List<string> { "'TestService'", "1" };
-                var insertVals2 = new List<string> { "'testservice'", "0" };
-                var insertVals3 = new List<string> { "'TESTSERVICE'", "0" };
-
-                // Pre-bake strict NOT NULL columns into the V0 schema to prevent SQLite ALTER TABLE crashes
-                foreach (var col in expectedCols)
+                var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT", "EnableRotation INTEGER" };
+                var seedData = new Dictionary<string, string>
                 {
-                    if (col.Equals("Name", StringComparison.OrdinalIgnoreCase) ||
-                        col.Equals("EnableRotation", StringComparison.OrdinalIgnoreCase) ||
-                        col.Equals("EnableSizeRotation", StringComparison.OrdinalIgnoreCase)) continue;
+                    { "Name", "'TestService'" },
+                    { "EnableRotation", "1" }
+                };
 
-                    string sqlType = (string)getSqlType!.Invoke(null, new object[] { col })!;
-                    if (sqlType.IndexOf("NOT NULL", StringComparison.OrdinalIgnoreCase) >= 0 &&
-                        sqlType.IndexOf("DEFAULT", StringComparison.OrdinalIgnoreCase) < 0)
-                    {
-                        colDefs.Add($"{col} {sqlType}");
-                        insertCols.Add(col);
-                        string val = sqlType.IndexOf("TEXT", StringComparison.OrdinalIgnoreCase) >= 0 ? "''" : "0";
-                        insertVals1.Add(val);
-                        insertVals2.Add(val);
-                        insertVals3.Add(val);
-                    }
-                }
+                // Build the structural schema with strict column alignments populated
+                var insertCols = CreateLegacyServicesTable(conn, baseColumns, seedData, "Name", "EnableRotation", "EnableSizeRotation");
 
-                // Arrange: Simulate an old V0 database
-                conn.Execute($"CREATE TABLE Services ({string.Join(", ", colDefs)});");
-
-                // Insert three case-duplicates sequentially (Id 1..3); dedup must keep MIN(Id)=1,
+                // Insert two case-duplicates sequentially (Id 2..3); dedup must keep MIN(Id)=1,
                 // so a last-write-wins/MAX(Id) implementation would fail the assertion below.
-                conn.Execute($"{InsertTemplate(insertCols)} ({string.Join(", ", insertVals1)});");
-                conn.Execute($"{InsertTemplate(insertCols)} ({string.Join(", ", insertVals2)});");
-                conn.Execute($"{InsertTemplate(insertCols)} ({string.Join(", ", insertVals3)});");
+                var duplicateSeed1 = new Dictionary<string, string>(seedData) { ["Name"] = "'testservice'", ["EnableRotation"] = "0" };
+                var duplicateSeed2 = new Dictionary<string, string>(seedData) { ["Name"] = "'TESTSERVICE'", ["EnableRotation"] = "0" };
+
+                InsertLegacyRow(conn, insertCols, duplicateSeed1);
+                InsertLegacyRow(conn, insertCols, duplicateSeed2);
 
                 // Create the legacy non-unique index to trigger the index replacement branch
                 conn.Execute("CREATE INDEX idx_services_name_lower ON Services(LOWER(Name));");
@@ -141,9 +121,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             }
         }
 
-        private static string InsertTemplate(List<string> insertCols) =>
-            $"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ";
-
         #endregion
 
         #region V4 Rebuild & Helper Skip Branches
@@ -151,43 +128,21 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void Initialize_Version3Database_WithOrphanColumn_PreservesOrphanDataInBackupTable()
         {
+            // Arrange: Set DB exactly to V3 state
             using (var conn = CreateConnection())
             {
-                // Arrange: Set DB exactly to V3 state
                 conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY, Version INTEGER);");
                 conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 3);");
 
-                // Access internal definition engines to construct a schema matching v3 validation blocks
-                var getSqlType = typeof(SQLiteDbInitializer).GetMethod("GetSqlType", BindingFlags.Static | BindingFlags.NonPublic);
-                var getExpectedCols = typeof(SQLiteDbInitializer).GetMethod("GetExpectedColumns", BindingFlags.Static | BindingFlags.NonPublic);
-                var expectedCols = (IEnumerable<string>)getExpectedCols!.Invoke(null, null)!;
-
-                // Base columns required to trace the setup and trigger the orphan branch
-                var colDefs = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT NOT NULL", "OldOrphanData TEXT" };
-                var insertCols = new List<string> { "Name", "OldOrphanData" };
-                var insertVals = new List<string> { "'LegacyAgent'", "'CriticalConfigToken_XYZ'" };
-
-                // Dynamically append expected columns that enforce strict NOT NULL constraints to prevent insertion failures
-                foreach (var col in expectedCols)
+                var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT NOT NULL", "OldOrphanData TEXT" };
+                var seedData = new Dictionary<string, string>
                 {
-                    if (col.Equals("Name", StringComparison.OrdinalIgnoreCase)) continue;
+                    { "Name", "'LegacyAgent'" },
+                    { "OldOrphanData", "'CriticalConfigToken_XYZ'" }
+                };
 
-                    string sqlType = (string)getSqlType!.Invoke(null, new object[] { col })!;
-                    if (sqlType.IndexOf("NOT NULL", StringComparison.OrdinalIgnoreCase) >= 0 &&
-                        sqlType.IndexOf("DEFAULT", StringComparison.OrdinalIgnoreCase) < 0)
-                    {
-                        colDefs.Add($"{col} {sqlType}");
-                        insertCols.Add(col);
-
-                        // Seed safe dummy fallback values matching the structural type requirement
-                        string seedValue = sqlType.IndexOf("TEXT", StringComparison.OrdinalIgnoreCase) >= 0 ? "'Dummy'" : "0";
-                        insertVals.Add(seedValue);
-                    }
-                }
-
-                // Create the mock table with structurally accurate schema constraints
-                conn.Execute($"CREATE TABLE Services ({string.Join(", ", colDefs)});");
-                conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals)});");
+                // Dynamically append expected strict NOT NULL columns via scaffold helper
+                CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
 
                 // Act
                 // Triggers ApplyVersion4 table-rebuild execution path
@@ -215,9 +170,9 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void MigrationHelpers_AlreadyApplied_SkipsGracefully()
         {
+            // Arrange: Set DB to V1 state
             using (var conn = CreateConnection())
             {
-                // Arrange: Set DB to V1 state
                 conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY, Version INTEGER);");
                 conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 1);");
 
@@ -244,9 +199,9 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void ApplyVersion2_ExistingOldAndNewColumn_SkipsRename()
         {
+            // Arrange: Simulate a weird state where BOTH the old and new columns exist.
             using (var conn = CreateConnection())
             {
-                // Arrange: Simulate a weird state where BOTH the old and new columns exist.
                 conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY, Version INTEGER);");
                 conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 1);");
                 conn.Execute("CREATE TABLE Services (Id INTEGER PRIMARY KEY, EnableRotation INTEGER, EnableSizeRotation INTEGER);");
@@ -255,6 +210,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 using (var tx = conn.BeginTransaction())
                 {
                     var applyVersion2 = typeof(SQLiteDbInitializer).GetMethod("ApplyVersion2", BindingFlags.Static | BindingFlags.NonPublic);
+                    Assert.NotNull(applyVersion2);
+
                     applyVersion2!.Invoke(null, new object[] { conn, tx });
                     tx.Commit();
 
@@ -273,42 +230,24 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void ApplyVersion6_AsciiCasingDuplicates_DeduplicatesAndAppliesNoCaseIndex()
         {
+            // Arrange: Initialize a clean baseline up to Version 5 state
             using (var conn = CreateConnection())
             {
-                // Arrange: Initialize a clean baseline up to Version 5 state
                 conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY, Version INTEGER);");
                 conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 5);");
 
-                // Construct a valid pre-v6 table layout manually to safely insert custom casing variations
-                var getSqlType = typeof(SQLiteDbInitializer).GetMethod("GetSqlType", BindingFlags.Static | BindingFlags.NonPublic);
-                var getExpectedCols = typeof(SQLiteDbInitializer).GetMethod("GetExpectedColumns", BindingFlags.Static | BindingFlags.NonPublic);
-                var expectedCols = (IEnumerable<string>)getExpectedCols!.Invoke(null, null)!;
+                var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT" };
+                var seedData = new Dictionary<string, string> { { "Name", "'Alpha-Service'" } };
 
-                var colDefs = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT" };
-                var insertCols = new List<string> { "Name" };
-                var insertVals1 = new List<string> { "'Alpha-Service'" };
-                var insertVals2 = new List<string> { "'alpha-service'" };
-
-                foreach (var col in expectedCols)
-                {
-                    if (col.Equals("Name", StringComparison.OrdinalIgnoreCase)) continue;
-
-                    string sqlType = (string)getSqlType!.Invoke(null, new object[] { col })!;
-                    colDefs.Add($"{col} {sqlType}");
-                    insertCols.Add(col);
-                    string val = sqlType.IndexOf("TEXT", StringComparison.OrdinalIgnoreCase) >= 0 ? "''" : "0";
-                    insertVals1.Add(val);
-                    insertVals2.Add(val);
-                }
-
-                conn.Execute($"CREATE TABLE Services ({string.Join(", ", colDefs)});");
+                // Construct a valid pre-v6 table layout using the centralized factory
+                var insertCols = CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
 
                 // Setup the old functional index as NON-UNIQUE so it permits the insert of casing variations on legacy systems.
                 conn.Execute("CREATE INDEX idx_services_name_lower ON Services(LOWER(Name));");
 
                 // Seed duplicate rows out of chronological order to check oldest historical match selection (MIN(Id) resolution)
-                conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals1)});");
-                conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals2)});");
+                var duplicateSeed = new Dictionary<string, string>(seedData) { ["Name"] = "'alpha-service'" };
+                InsertLegacyRow(conn, insertCols, duplicateSeed);
 
                 // Act: Trigger initialization to catch version 5 -> 6 transition pipeline branch
                 SQLiteDbInitializer.Initialize(conn);
@@ -346,39 +285,21 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void ApplyVersion6_UnicodeCasingDuplicates_DeduplicatesAndAppliesUnicodeNoCaseIndex()
         {
+            // Arrange: Initialize baseline up to Version 5 state
             using (var conn = CreateConnection())
             {
-                // Arrange: Initialize baseline up to Version 5 state
                 conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY, Version INTEGER);");
                 conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 5);");
 
-                var getSqlType = typeof(SQLiteDbInitializer).GetMethod("GetSqlType", BindingFlags.Static | BindingFlags.NonPublic);
-                var getExpectedCols = typeof(SQLiteDbInitializer).GetMethod("GetExpectedColumns", BindingFlags.Static | BindingFlags.NonPublic);
-                var expectedCols = (IEnumerable<string>)getExpectedCols!.Invoke(null, null)!;
+                var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT" };
+                var seedData = new Dictionary<string, string> { { "Name", "'Ä-Service'" } };
 
-                var colDefs = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT" };
-                var insertCols = new List<string> { "Name" };
-                var insertVals1 = new List<string> { "'Ä-Service'" };
-                var insertVals2 = new List<string> { "'ä-service'" };
-
-                foreach (var col in expectedCols)
-                {
-                    if (col.Equals("Name", StringComparison.OrdinalIgnoreCase)) continue;
-
-                    string sqlType = (string)getSqlType!.Invoke(null, new object[] { col })!;
-                    colDefs.Add($"{col} {sqlType}");
-                    insertCols.Add(col);
-                    string val = sqlType.IndexOf("TEXT", StringComparison.OrdinalIgnoreCase) >= 0 ? "''" : "0";
-                    insertVals1.Add(val);
-                    insertVals2.Add(val);
-                }
-
-                conn.Execute($"CREATE TABLE Services ({string.Join(", ", colDefs)});");
+                var insertCols = CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
                 conn.Execute("CREATE INDEX idx_services_name_lower ON Services(LOWER(Name));");
 
                 // Seed duplicate rows utilizing wide non-ASCII variants out of case parity
-                conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals1)});");
-                conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals2)});");
+                var duplicateSeed = new Dictionary<string, string>(seedData) { ["Name"] = "'ä-service'" };
+                InsertLegacyRow(conn, insertCols, duplicateSeed);
 
                 // Act
                 SQLiteDbInitializer.Initialize(conn);
@@ -394,14 +315,18 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void UnicodeNoCaseCollation_InsertsAndQueriesNonAsciiCasing_EnforcesUniqueness()
         {
+            // Arrange: Execute complete initialization runner to build schema and spin custom collations up
             using (var conn = CreateConnection())
             {
-                // Arrange: Execute complete initialization runner to build schema and spin custom collations up
                 SQLiteDbInitializer.Initialize(conn);
 
                 // Access internal definition engines to dynamically extract required strict columns
                 var getSqlType = typeof(SQLiteDbInitializer).GetMethod("GetSqlType", BindingFlags.Static | BindingFlags.NonPublic);
                 var getExpectedCols = typeof(SQLiteDbInitializer).GetMethod("GetExpectedColumns", BindingFlags.Static | BindingFlags.NonPublic);
+
+                Assert.NotNull(getSqlType);
+                Assert.NotNull(getExpectedCols);
+
                 var expectedCols = (IEnumerable<string>)getExpectedCols!.Invoke(null, null)!;
 
                 var insertCols = new List<string> { "Name" };
@@ -454,6 +379,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void ReconcileSchema_WithMissingOrphanAndMismatchedColumns_HealsAndLogs()
         {
+            // Arrange
             using (var conn = CreateConnection())
             {
                 // Step 1: Perform a full baseline initialization to get the perfect expected schema.
@@ -508,7 +434,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
         #endregion
 
-        #region Reflection Error Trapping
+        #region Reflection Error Trapping & Scaffold Helpers
 
         [Fact]
         public void GetSqlType_MissingColumn_ThrowsInvalidOperationException()
@@ -526,6 +452,58 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // The inner exception must be InvalidOperationException from the fail-fast check
             Assert.IsType<InvalidOperationException>(ex.InnerException);
             Assert.Contains("lacks an [SqlColumn] attribute", ex.InnerException.Message);
+        }
+
+        /// <summary>
+        /// REFACTORING FIX: Shared abstraction builder to securely initialize legacy table instances 
+        /// while automatically aligning strict, un-seeded NOT NULL constraints dynamically.
+        /// </summary>
+        private static List<string> CreateLegacyServicesTable(
+            DbConnection conn,
+            List<string> colDefs,
+            Dictionary<string, string> seedData,
+            params string[] skipColumns)
+        {
+            var getSqlType = typeof(SQLiteDbInitializer).GetMethod("GetSqlType", BindingFlags.Static | BindingFlags.NonPublic);
+            var getExpectedCols = typeof(SQLiteDbInitializer).GetMethod("GetExpectedColumns", BindingFlags.Static | BindingFlags.NonPublic);
+
+            Assert.NotNull(getSqlType);
+            Assert.NotNull(getExpectedCols);
+
+            var expectedCols = (IEnumerable<string>)getExpectedCols!.Invoke(null, null)!;
+            var insertCols = seedData.Keys.ToList();
+            var insertVals = seedData.Values.ToList();
+
+            foreach (var col in expectedCols)
+            {
+                if (skipColumns.Contains(col, StringComparer.OrdinalIgnoreCase))
+                    continue;
+
+                string sqlType = (string)getSqlType!.Invoke(null, new object[] { col })!;
+                if (sqlType.IndexOf("NOT NULL", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                    sqlType.IndexOf("DEFAULT", StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    colDefs.Add($"{col} {sqlType}");
+                    insertCols.Add(col);
+                    string defaultSeedLiteral = sqlType.IndexOf("TEXT", StringComparison.OrdinalIgnoreCase) >= 0 ? "''" : "0";
+                    insertVals.Add(defaultSeedLiteral);
+                }
+            }
+
+            // Generate physical table layout and inject first historical baseline row context
+            conn.Execute($"CREATE TABLE Services ({string.Join(", ", colDefs)});");
+            conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals)});");
+
+            return insertCols;
+        }
+
+        /// <summary>
+        /// Formats and pushes secondary duplicate entries safely leveraging mapped columns tracking templates.
+        /// </summary>
+        private static void InsertLegacyRow(DbConnection conn, List<string> insertCols, Dictionary<string, string> dynamicSeed)
+        {
+            var valuesRow = insertCols.Select(col => dynamicSeed.ContainsKey(col) ? dynamicSeed[col] : "0").ToList();
+            conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", valuesRow)});");
         }
 
         #endregion

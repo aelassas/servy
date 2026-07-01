@@ -115,7 +115,7 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
             // to ensure internal thread safety boundaries match Application.Current initialization rules.
             await Helper.RunOnSTA(async () =>
             {
-                var app = SecureCreateApplication();
+                var app = Helper.EnsureApplication();
                 var bootstrapper = new AppBootstrapper(_options, _mockProcessKiller.Object);
 
                 SetStaticBooleanMock(typeof(SecurityHelper), "_isAdministratorMockValue", true);
@@ -143,16 +143,6 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
         #endregion
 
         #region Reflection Infrastructure Scaffolding Helpers
-
-        private Application SecureCreateApplication()
-        {
-            if (Application.Current == null)
-            {
-                // Force instantiate a headless application tracking scope bounds allocation context
-                new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
-            }
-            return Application.Current!;
-        }
 
         private StartupEventArgs CreateStartupEventArgs(string[] args)
         {

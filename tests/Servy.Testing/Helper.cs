@@ -136,27 +136,30 @@ namespace Servy.Testing
         /// STA-thread-bound UI components, converters, or resource dictionaries during testing.
         /// </summary>
         /// <remarks>
-        /// This method employs a double-checked locking pattern on <see cref="_applicationLock"/> 
-        /// to ensure thread-safe, singleton initialization of the WPF application context, preventing 
+        /// This method employs a double-checked locking pattern on an internal initialization lock
+        /// to ensure thread-safe, singleton initialization of the WPF application context, preventing
         /// <see cref="InvalidOperationException"/> when UI-dependent code executes in isolated test environments.
         /// </remarks>
-        private static void EnsureApplication()
+        public static Application EnsureApplication()
         {
             lock (_applicationLock)
             {
-                if (_applicationCreated)
-                    return;
-
-                if (Application.Current == null)
+                if (!_applicationCreated)
                 {
-                    new Application
+                    if (Application.Current == null)
                     {
-                        ShutdownMode = ShutdownMode.OnExplicitShutdown
-                    };
+                        // Explicitly force OnExplicitShutdown process-wide lifecycle behavior 
+                        // to prevent transient test window closures from tearing down the shared test host.
+                        new Application
+                        {
+                            ShutdownMode = ShutdownMode.OnExplicitShutdown
+                        };
+                    }
+                    _applicationCreated = true;
                 }
-
-                _applicationCreated = true;
             }
+
+            return Application.Current!;
         }
 
         /// <summary>
