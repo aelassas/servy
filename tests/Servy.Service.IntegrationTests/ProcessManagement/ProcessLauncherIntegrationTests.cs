@@ -16,7 +16,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
     #region xUnit Non-Parallel Collection Setup
 
     [CollectionDefinition("ProcessLauncherIntegrationTests", DisableParallelization = true)]
-    public class ProcessLauncherIntegrationTestsCollection : ICollectionFixture<object>
+    public class ProcessLauncherIntegrationTestsCollection
     {
         // Enforces strict sequential isolation across the integration suite runs
     }

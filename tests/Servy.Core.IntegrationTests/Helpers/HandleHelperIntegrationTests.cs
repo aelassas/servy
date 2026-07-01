@@ -10,7 +10,7 @@ using Xunit;
 namespace Servy.Core.IntegrationTests.Helpers
 {
     [CollectionDefinition("HandleHelperIntegrationTests", DisableParallelization = true)]
-    public class HandleHelperIntegrationTestsCollection : ICollectionFixture<object>
+    public class HandleHelperIntegrationTestsCollection
     {
         // Enforces strict sequential isolation across the execution suite
     }

@@ -169,8 +169,6 @@ namespace Servy.Service.UnitTests
                 out var serviceRepository);
 
             var mockProcess = new Mock<IProcessWrapper>();
-            mockProcess.Setup(p => p.Id).Returns(42);
-            mockProcess.Setup(p => p.HasExited).Returns(true);
             mockProcess.Setup(p => p.ExitCode).Returns(0);
 
             service.SetChildProcess(mockProcess.Object);
@@ -225,30 +223,6 @@ namespace Servy.Service.UnitTests
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
             // Assert
-            logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Failed to get exit code")), It.IsAny<Exception>()), Times.Once);
-        }
-
-        [Fact]
-        public void OnProcessExited_LogsErrorOnExitCodeException()
-        {
-            var service = CreateService(
-                out var logger,
-                out var helper,
-                out var swFactory,
-                out var timerFactory,
-                out var processFactory,
-                out var pathValidator,
-                out var serviceRepository);
-
-            var mockProcess = new Mock<IProcessWrapper>();
-            mockProcess.Setup(p => p.Id).Returns(42);
-            mockProcess.Setup(p => p.HasExited).Returns(true);
-            mockProcess.Setup(p => p.ExitCode).Throws(new Exception("Access denied"));
-
-            service.SetChildProcess(mockProcess.Object);
-
-            service.InvokeOnProcessExited(null, EventArgs.Empty);
-
             logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Failed to get exit code")), It.IsAny<Exception>()), Times.Once);
         }
     }
