@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Servy.Core.IntegrationTests.Helpers
 {
     [CollectionDefinition("ProcessHelperIntegrationTests", DisableParallelization = true)]
-    public class ProcessHelperIntegrationTestsCollection : ICollectionFixture<object>
+    public class ProcessHelperIntegrationTestsCollection
     {
         // Enforces strict sequential isolation across the execution suite
     }

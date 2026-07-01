@@ -11,7 +11,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
     /// These tests execute real OS processes and evaluate native Toolhelp32 enumerations.
     /// </summary>
     [CollectionDefinition("ProcessExtensionsIntegrationTests", DisableParallelization = true)]
-    public class ProcessExtensionsIntegrationTestsCollection : ICollectionFixture<object>
+    public class ProcessExtensionsIntegrationTestsCollection
     {
         // Enforces strict sequential isolation across the execution suite
     }

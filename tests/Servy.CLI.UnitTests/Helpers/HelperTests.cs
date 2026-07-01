@@ -21,7 +21,8 @@ namespace Servy.CLI.UnitTests.Helpers
         private static readonly SemaphoreSlim _asyncConsoleLock = new SemaphoreSlim(1, 1);
 
         // Consolidated, robust console capture mechanism with synchronized lock bounds
-        private void RunTestWithConsoleCapture(Action testAction)
+        // Returns a tuple containing captured stdout/stderr text for assertion.
+        private (string StdOut, string StdErr) RunTestWithConsoleCapture(Action testAction)
         {
             lock (_consoleLock)
             {
@@ -44,6 +45,8 @@ namespace Servy.CLI.UnitTests.Helpers
                         // are disposed to prevent ObjectDisposedExceptions from trailing execution writes.
                         Console.SetOut(oldOut);
                         Console.SetError(oldErr);
+
+                        return (swOut.ToString(), swErr.ToString());
                     }
                 }
                 finally
@@ -58,7 +61,8 @@ namespace Servy.CLI.UnitTests.Helpers
 
         // Refactored async capture mechanism that ensures the StringWriter streams 
         // stay alive naturally across all asynchronous thread hops without deadlocks.
-        private async Task RunTestWithConsoleCaptureAsync(Func<Task> testAction)
+        // Returns a tuple containing captured stdout/stderr text for assertion.
+        private async Task<(string StdOut, string StdErr)> RunTestWithConsoleCaptureAsync(Func<Task> testAction)
         {
             // Acquire the async semaphore first to block concurrent asynchronous execution entries
             await _asyncConsoleLock.WaitAsync();
@@ -94,6 +98,8 @@ namespace Servy.CLI.UnitTests.Helpers
                         Console.SetOut(oldOut);
                         Console.SetError(oldErr);
                     }
+
+                    return (swOut.ToString(), swErr.ToString());
                 }
             }
             finally
@@ -146,13 +152,16 @@ namespace Servy.CLI.UnitTests.Helpers
             int exitCode = -1;
 
             // Act
-            RunTestWithConsoleCapture(() =>
+            var consoleOutput = RunTestWithConsoleCapture(() =>
             {
                 exitCode = Helper.PrintAndReturn(result);
             });
 
             // Assert
+            // Validate message content is natively dispatched to standard output stream.
             Assert.Equal(0, exitCode);
+            Assert.Contains("Success!", consoleOutput.StdOut);
+            Assert.Empty(consoleOutput.StdErr);
         }
 
         [Fact]
@@ -163,13 +172,16 @@ namespace Servy.CLI.UnitTests.Helpers
             int exitCode = -1;
 
             // Act
-            RunTestWithConsoleCapture(() =>
+            var consoleOutput = RunTestWithConsoleCapture(() =>
             {
                 exitCode = Helper.PrintAndReturn(result);
             });
 
             // Assert
+            // Validate message content is natively dispatched to standard error stream.
             Assert.Equal(1, exitCode);
+            Assert.Contains("Error!", consoleOutput.StdErr);
+            Assert.Empty(consoleOutput.StdOut);
         }
 
         [Fact]
@@ -177,16 +189,19 @@ namespace Servy.CLI.UnitTests.Helpers
         {
             // Arrange
             int exitCode = -1;
-            var task = Task.FromResult(CommandResult.Ok("Async"));
+            var task = Task.FromResult(CommandResult.Ok("Async Success"));
 
             // Act: Use the fully asynchronous redirection wrapper to capture state cleanly
-            await RunTestWithConsoleCaptureAsync(async () =>
+            var consoleOutput = await RunTestWithConsoleCaptureAsync(async () =>
             {
                 exitCode = await Helper.PrintAndReturnAsync(task);
             });
 
             // Assert
+            // Assert the content payload in the async wrapper context.
             Assert.Equal(0, exitCode);
+            Assert.Contains("Async Success", consoleOutput.StdOut);
+            Assert.Empty(consoleOutput.StdErr);
         }
 
         [Theory]

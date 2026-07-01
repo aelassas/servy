@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 namespace Servy.Core.UnitTests.Logging
 {
     [CollectionDefinition("LoggerSequential", DisableParallelization = true)]
-    public class LoggerCollection : ICollectionFixture<object>
+    public class LoggerCollection
     {
         // Enforces strict sequential isolation across the execution suite
     }

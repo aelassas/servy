@@ -38,15 +38,23 @@
         /// Encapsulates the console output redirection lifecycle to eliminate duplicate boilerplate blocks
         /// across CLI execution integration test paths while protecting async background contexts.
         /// </summary>
-        private async Task<int> RunWithConsoleCaptureAsync(Func<Task<int>> actBlock)
+        private async Task<(int ExitCode, string Output)> RunWithConsoleCaptureAsync(Func<Task<int>> actBlock)
         {
             var originalOut = Console.Out;
-            using (var stringWriter = TextWriter.Synchronized(new StringWriter()))
+
+            // Arrange: Keep a direct reference to the raw underlying StringWriter
+            using (var baseWriter = new StringWriter())
+            using (var synchronizedWriter = TextWriter.Synchronized(baseWriter))
             {
                 try
                 {
-                    Console.SetOut(stringWriter);
-                    return await actBlock();
+                    // Act
+                    Console.SetOut(synchronizedWriter);
+                    int exitCode = await actBlock();
+
+                    // Assert: Extract the text from the base StringWriter to bypass the SyncTextWriter proxy name
+                    string capturedOutput = baseWriter.ToString();
+                    return (exitCode, capturedOutput);
                 }
                 finally
                 {
@@ -82,13 +90,16 @@
             string[] emptyArgs = Array.Empty<string>();
 
             // Act
-            int exitCode = await RunWithConsoleCaptureAsync(async () =>
+            var result = await RunWithConsoleCaptureAsync(async () =>
             {
                 return await Program.Main(emptyArgs);
             });
 
             // Assert
-            Assert.Equal((int)CliExitCode.Success, exitCode);
+            // Match against the actual verbs listed in the auto-generated help index screen
+            Assert.Equal((int)CliExitCode.Success, result.ExitCode);
+            Assert.Contains("install", result.Output);
+            Assert.Contains("uninstall", result.Output);
         }
 
         [Fact]
@@ -98,13 +109,16 @@
             string[] args = { "--help" };
 
             // Act
-            int exitCode = await RunWithConsoleCaptureAsync(async () =>
+            var result = await RunWithConsoleCaptureAsync(async () =>
             {
                 return await Program.Main(args);
             });
 
             // Assert
-            Assert.Equal((int)CliExitCode.Success, exitCode);
+            // Match against the actual verbs listed in the auto-generated help index screen
+            Assert.Equal((int)CliExitCode.Success, result.ExitCode);
+            Assert.Contains("install", result.Output);
+            Assert.Contains("uninstall", result.Output);
         }
 
         [Fact]
@@ -114,13 +128,13 @@
             string[] args = { "install", "--unsupported-option" };
 
             // Act
-            int exitCode = await RunWithConsoleCaptureAsync(async () =>
+            var result = await RunWithConsoleCaptureAsync(async () =>
             {
                 return await Program.Main(args);
             });
 
             // Assert
-            Assert.Equal((int)CliExitCode.Error, exitCode);
+            Assert.Equal((int)CliExitCode.Error, result.ExitCode);
         }
 
         [Fact]
@@ -130,13 +144,13 @@
             string[] args = { "status", "--quiet" };
 
             // Act
-            int exitCode = await RunWithConsoleCaptureAsync(async () =>
+            var result = await RunWithConsoleCaptureAsync(async () =>
             {
                 return await Program.Main(args);
             });
 
             // Assert
-            Assert.True(exitCode == (int)CliExitCode.Success || exitCode == (int)CliExitCode.Error);
+            Assert.True(result.ExitCode == (int)CliExitCode.Success || result.ExitCode == (int)CliExitCode.Error);
         }
 
         #endregion
@@ -150,13 +164,13 @@
             string[] args = { "install", "--corrupt-flag-combination" };
 
             // Act
-            int exitCode = await RunWithConsoleCaptureAsync(async () =>
+            var result = await RunWithConsoleCaptureAsync(async () =>
             {
                 return await Program.Main(args);
             });
 
             // Assert
-            Assert.Equal((int)CliExitCode.Error, exitCode);
+            Assert.Equal((int)CliExitCode.Error, result.ExitCode);
         }
 
         #endregion

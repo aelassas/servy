@@ -5,7 +5,7 @@ using System.Diagnostics;
 namespace Servy.Service.IntegrationTests.ProcessManagement
 {
     [CollectionDefinition("ProcessWrapperIntegrationTests", DisableParallelization = true)]
-    public class ProcessWrapperIntegrationTestsCollection : ICollectionFixture<object>
+    public class ProcessWrapperIntegrationTestsCollection
     {
         // Enforces sequential, isolated integration suite runs to protect the native Win32 console state lock mutations.
     }

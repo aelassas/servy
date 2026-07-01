@@ -65,8 +65,7 @@ fs.appendFileSync(filePath, '\n', "utf8")
 
 // // allow the child process to keep running after parent exits
 // child.unref()
-
-// const child = spawn('C:\\Users\\aelassas\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', ['-u', 'E:\\dev\\servy\\src\\tests\\ctrlc.py'])
+// const child = spawn(process.env.PYTHON_EXE, ['-u', 'C:\\path\\to\\tests\\ctrlc.py'])
 // child.unref()
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
