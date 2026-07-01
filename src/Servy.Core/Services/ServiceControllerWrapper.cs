@@ -3,6 +3,7 @@ using Servy.Core.Resources;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.ServiceProcess;
 using System.Threading;
@@ -37,6 +38,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc/>
+        [ExcludeFromCodeCoverage]
         public ServiceControllerStatus Status
         {
             get
@@ -47,6 +49,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc/>
+        [ExcludeFromCodeCoverage]
         public ServiceStartMode StartType
         {
             get
@@ -57,6 +60,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc/>
+        [ExcludeFromCodeCoverage]
         public void Start()
         {
             ThrowIfDisposed();
@@ -64,6 +68,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc/>
+        [ExcludeFromCodeCoverage]
         public void Stop()
         {
             ThrowIfDisposed();
@@ -71,6 +76,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc/>
+        [ExcludeFromCodeCoverage]
         public void Refresh()
         {
             ThrowIfDisposed();
@@ -78,6 +84,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc/>
+        [ExcludeFromCodeCoverage]
         public void WaitForStatus(ServiceControllerStatus desiredStatus, TimeSpan timeout)
         {
             ThrowIfDisposed();
@@ -258,7 +265,6 @@ namespace Servy.Core.Services
         /// <summary>
         /// Protected dispose pattern implementation.
         /// </summary>
-        /// <param name="disposing">True if called from <see cref="Dispose()"/>, false if called from a finalizer.</param>
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed)
@@ -266,7 +272,6 @@ namespace Servy.Core.Services
 
             if (disposing)
             {
-                // Dispose managed resources
                 _controller.Dispose();
             }
 
