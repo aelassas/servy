@@ -402,8 +402,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Act & Assert
             Assert.Throws<SQLiteException>(() =>
             {
-                _executor.ExecuteScalar<int>("SELECT COUNT(*) FROM TestServices;", param: null, transaction: null);
-
                 // Forcing retry execution by mocking connection state to return standard SQLITE_BUSY error codes
                 var busyMockConn = new Mock<DbConnection>();
                 busyMockConn.Setup(c => c.Open()).Callback(() =>

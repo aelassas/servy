@@ -467,9 +467,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 {
                     var viewModel = CreateViewModel();
 
-                    var methodInfo = typeof(DesignTimeUiDispatcher).Assembly.GetType("Servy.Manager.ViewModels.DependenciesViewModel")?
-                        .GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance)
-                        ?? typeof(DependenciesViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+                    var methodInfo = typeof(DependenciesViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
 
                     var fieldInfo = typeof(DependenciesViewModel).GetField("_hadSelectedService", BindingFlags.NonPublic | BindingFlags.Instance);
                     fieldInfo?.SetValue(viewModel, true);
