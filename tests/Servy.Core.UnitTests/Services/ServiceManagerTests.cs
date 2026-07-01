@@ -2707,10 +2707,6 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var deps = new ServiceDependencyNode("ServiceName", "ServiceDisplayName");
 
-            _mockController
-                .Setup(c => c.GetDependencies(It.IsAny<CancellationToken>()))
-                .Returns(deps);
-
             _mockWindowsServiceApi.Setup(p => p.GetServices())
                  .Returns(Array.Empty<WindowsServiceInfo>());
 
