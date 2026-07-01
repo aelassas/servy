@@ -53,6 +53,27 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Theory]
+        [InlineData("", "C:\\Apps\\ServyWrapper.exe", "C:\\Apps\\RealApp.exe")] // Missing ServiceName
+        [InlineData("TestService", "", "C:\\Apps\\RealApp.exe")]                // Missing WrapperExePath
+        [InlineData("TestService", "C:\\Apps\\ServyWrapper.exe", "")]           // Missing RealExePath
+        public async Task InstallService_Throws_ArgumentException(string serviceName, string wrapperExePath, string realExePath)
+        {
+            // Arrange
+            var options = new InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                WrapperExePath = wrapperExePath,
+                RealExePath = realExePath
+            };
+
+            // Act & Assert
+            // No native SCManager, mock handles, or 13-argument CreateService mock arrangements 
+            // are configured here because validation constraints fail and exit before hitting any OS boundaries.
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken));
+        }
+
+        [Theory]
         [InlineData("TestService", "C:\\Apps\\App.exe", "C:\\Apps\\App.exe")]
         public async Task InstallService_OptionalFieldsOmitted_Succeeds(string serviceName, string wrapperExePath, string realExePath)
         {
