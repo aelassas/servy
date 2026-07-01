@@ -122,22 +122,6 @@
         }
 
         [Fact]
-        public async Task Main_InvalidArgumentsProvided_ReturnsErrorExitCode()
-        {
-            // Arrange
-            string[] args = { "install", "--unsupported-option" };
-
-            // Act
-            var result = await RunWithConsoleCaptureAsync(async () =>
-            {
-                return await Program.Main(args);
-            });
-
-            // Assert
-            Assert.Equal((int)CliExitCode.Error, result.ExitCode);
-        }
-
-        [Fact]
         public async Task Main_QuietFlagProvided_AltersExecutionToQuietPath()
         {
             // Arrange

@@ -479,24 +479,6 @@ namespace Servy.Core.UnitTests.Security
 
         #endregion
 
-        #region Helper Tests (Reflection)
-
-        [Theory]
-        [InlineData("", false)]
-        [InlineData("   ", false)]
-        [InlineData("Invalid!", false)]
-        [InlineData("SGVsbG8=", true)]
-        public void IsStrictBase64_Internal_MatchesExpected(string input, bool expected)
-        {
-            var method = typeof(SecureData).GetMethod("IsStrictBase64",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-
-            var result = (bool)method!.Invoke(null, new object[] { input })!;
-            Assert.Equal(expected, result);
-        }
-
-        #endregion
-
         #region Helpers
 
         [Theory]
@@ -536,21 +518,6 @@ namespace Servy.Core.UnitTests.Security
             var result = (bool)method!.Invoke(null, new object[] { input! })!;
 
             // Assert
-            Assert.Equal(expected, result);
-        }
-
-        [Theory]
-        [InlineData("ab=c", false)]  // Misplaced padding (middle)
-        [InlineData("=abc", false)]  // Misplaced padding (start)
-        [InlineData("abc=", true)]   // Valid padding (end)
-        [InlineData("ab==", true)]   // Valid double padding (end)
-        [InlineData("SGVsbG8=", true)] // Standard valid Base64
-        public void IsStrictBase64_BranchCoverage(string input, bool expected)
-        {
-            var method = typeof(SecureData).GetMethod("IsStrictBase64",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-
-            var result = (bool)method!.Invoke(null, new object[] { input })!;
             Assert.Equal(expected, result);
         }
 

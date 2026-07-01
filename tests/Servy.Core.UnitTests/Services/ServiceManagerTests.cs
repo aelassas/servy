@@ -1979,9 +1979,9 @@ namespace Servy.Core.UnitTests.Services
         [InlineData(ServiceStartMode.Manual, false, ServiceStartType.Manual)]
         [InlineData(ServiceStartMode.Disabled, false, ServiceStartType.Disabled)]
         public void GetServiceStartupType_ShouldReturnCorrectType_ForAllModes(
-     ServiceStartMode nativeMode,
-     bool isDelayed,
-     ServiceStartType expected)
+            ServiceStartMode nativeMode,
+            bool isDelayed,
+            ServiceStartType expected)
         {
             // Arrange
             const string serviceName = "TestService";
@@ -2031,53 +2031,6 @@ namespace Servy.Core.UnitTests.Services
                 Assert.True(svcHandle.IsClosed, "Service handle was not disposed.");
                 Assert.True(scmHandle.IsClosed, "SCM handle was not disposed.");
             }
-        }
-
-        [Fact]
-        public void GetServiceStartupType_ShouldReturnAutomatic_WhenDelayedIsFalse()
-        {
-            // Arrange
-            const string serviceName = "StandardAutoService";
-            var scmHandle = CreateScmHandle(1);
-            var svcHandle = CreateServiceHandle(2);
-
-            // 1. Setup the mock controller to return Automatic
-            _mockController.Setup(c => c.StartType).Returns(ServiceStartMode.Automatic);
-
-            // 2. Setup the Native API to succeed but return fDelayedAutostart = false
-            _mockWindowsServiceApi
-                .Setup(api => api.OpenSCManager(null, null, It.IsAny<uint>()))
-                .Returns(() => scmHandle);
-
-            _mockWindowsServiceApi
-                .Setup(api => api.OpenService(It.IsAny<SafeScmHandle>(), serviceName, It.IsAny<uint>()))
-                .Returns(() => svcHandle);
-
-            _mockWindowsServiceApi
-                .Setup(api => api.QueryServiceConfig2(
-                    It.IsAny<SafeServiceHandle>(),
-                    SERVICE_CONFIG_DELAYED_AUTO_START_INFO, // SERVICE_CONFIG_DELAYED_AUTO_START_INFO
-                    ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny,
-                    It.IsAny<int>(),
-                    out It.Ref<int>.IsAny))
-                    .Returns(new QueryConfig2DelayedStartDelegate((SafeServiceHandle h, uint lvl, ref SERVICE_DELAYED_AUTO_START_INFO info, int sz, ref int req) =>
-                    {
-                        // Branch Coverage: Force the 'if (ok && info.fDelayedAutostart)' check to evaluate to false
-                        info.fDelayedAutostart = false;
-                        return true; // ok = true
-                    }));
-
-            // Act
-            var result = _serviceManager.GetServiceStartupType(serviceName, TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.Equal(ServiceStartType.Automatic, result);
-
-            // Verify cleanup
-            // We check the handle state directly because SafeHandle.Dispose() 
-            // triggers the native release logic, which bypasses the IWindowsServiceApi mock.
-            Assert.True(svcHandle.IsClosed, "Service handle was not disposed.");
-            Assert.True(scmHandle.IsClosed, "SCM handle was not disposed.");
         }
 
         [Fact]
