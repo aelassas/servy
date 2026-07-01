@@ -640,10 +640,6 @@ namespace Servy.Service.UnitTests
             _mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
             _mockProcess.Setup(p => p.Start()).Returns(true);
 
-            // Default ProcessFactory mock for the main process
-            _mockProcessFactory.Setup(f => f.Create(It.Is<ProcessStartInfo>(psi => psi.FileName == options.ExecutablePath), It.IsAny<IServyLogger>()))
-                .Returns(_mockProcess.Object);
-
             return mockScopedLogger;
         }
 

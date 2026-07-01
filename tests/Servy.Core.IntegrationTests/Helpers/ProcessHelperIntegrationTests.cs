@@ -23,7 +23,6 @@ namespace Servy.Core.IntegrationTests.Helpers
     {
         private readonly ProcessHelper _sut;
         private readonly string _tempDirectory;
-        private readonly string _tempFile;
         private readonly List<Process> _spawnedProcesses;
 
         public ProcessHelperIntegrationTests()
@@ -34,12 +33,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Setup real file system artifacts for path integration tests
             _tempDirectory = Path.Combine(Path.GetTempPath(), $"Servy_Test_{Guid.NewGuid()}");
             Directory.CreateDirectory(_tempDirectory);
-
-            _tempFile = Path.Combine(_tempDirectory, "test_target.txt");
-            File.WriteAllText(_tempFile, "Integration test artifact");
-
-            // Setup an environment variable specifically for testing expansion
-            Environment.SetEnvironmentVariable("SERVY_TEST_VAR", _tempDirectory);
         }
 
         #region Process Metrics Integration Tests
