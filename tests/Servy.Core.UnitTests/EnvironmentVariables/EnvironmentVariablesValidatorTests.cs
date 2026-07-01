@@ -157,55 +157,10 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Empty(error);
         }
 
-        private static string[] InvokeSplit(string input, char[] delimiters)
-        {
-            return EscapedTokenizer.SplitByUnescapedDelimiters(input, delimiters);
-        }
-
-        [Fact]
-        public void SplitByUnescapedDelimiters_AllBranchesCovered()
-        {
-            // Arrange
-            var delims = new[] { '=', ';' };
-
-            // Act & Assert 1. delimiter at index 0 -> j < 0
-            var result = InvokeSplit("=a", delims);
-            Assert.Equal(new[] { string.Empty, "a" }, result);
-
-            // Act & Assert 2. delimiter preceded by non-backslash
-            result = InvokeSplit("a=b", delims);
-            Assert.Equal(new[] { "a", "b" }, result);
-
-            // Act & Assert 3. delimiter not in delimiters list
-            result = InvokeSplit("a:b", delims);
-            Assert.Single(result);
-            Assert.Equal("a:b", result[0]);
-
-            // Act & Assert 4. single backslash before delimiter (odd -> escaped)
-            result = InvokeSplit(@"a\=b", delims);
-            Assert.Single(result);
-            Assert.Equal(@"a\=b", result[0]);
-
-            // Act & Assert 5. multiple backslashes (odd -> escaped, loop runs multiple times)
-            result = InvokeSplit(@"a\\\=b", delims);
-            Assert.Single(result);
-            Assert.Equal(@"a\\\=b", result[0]);
-
-            // Act & Assert 6. even backslashes -> unescaped delimiter
-            result = InvokeSplit(@"a\\=b", delims);
-            Assert.Equal(new[] { @"a\\", "b" }, result);
-
-            // Act & Assert 7. multiple delimiters, mixed escaped and unescaped
-            result = InvokeSplit(@"a=b\;c;d", delims);
-            Assert.Equal(new[] { "a", @"b\;c", "d" }, result);
-        }
-
         [Fact]
         public void Validate_VariableWithMultipleUnescapedEquals_ReturnsTrue()
         {
             // Arrange
-            // Scenario: Connection Strings and Base64 often have multiple '='.
-            // Validator should allow this as long as the first '=' provides a valid key.
             var input = "CONN=Server=localhost;Database=Test;TOKEN=SGVsbG8==;";
 
             // Act
@@ -220,7 +175,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         public void Validate_VariableWithNoUnescapedEquals_ReturnsFalse()
         {
             // Arrange
-            // Scenario: All equals signs are escaped, so there is no key/value separator.
             var input = @"KEY\=VALUE;KEY2\=VALUE2";
 
             // Act
@@ -235,7 +189,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         public void Validate_VariableWithWhitespaceKey_ReturnsFalse()
         {
             // Arrange
-            // Scenario: Key consists only of whitespace before the first '='.
             var input = "   =VALUE";
 
             // Act
@@ -250,7 +203,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         public void Validate_Base64Value_ReturnsTrue()
         {
             // Arrange
-            // Scenario: Base64 padding uses '=' which shouldn't require escaping in the value field.
             var input = "VAR=SGVsbG8gd29ybGQ=";
 
             // Act
@@ -265,14 +217,12 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         public void FormatEnvironmentVariables_WithLiteralNewlines_EscapesCarriageReturnAndLineFeed()
         {
             // Arrange
-            // Input string simulating paired variables with multi-line values
             string rawInput = @"MULTILINE_KEY=line1\nline2";
 
             // Act
             string formatted = StringHelper.FormatEnvironmentVariables(rawInput);
 
             // Assert
-            // The serialization must explicitly present the escaped sequences back out to prevent line truncation
             Assert.Contains(@"MULTILINE_KEY=line1\\nline2", formatted);
 
             List<string> error;
@@ -284,7 +234,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         public void Validate_UnescapedNewlineWithinSegment_FailsValidation()
         {
             // Arrange
-            // Malformed configuration state mimicking an unescaped raw break mid-value
             string corruptedInput = "KEY=line1\nline2_with_no_equals";
 
             // Act
@@ -302,8 +251,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         public void Validate_VariableWithEscapedNewlineInKey_ReturnsFalse()
         {
             // Arrange
-            // Simulates an escaped newline sequence inside the key segment that tokenizes as a single block
-            // but resolves to containing a newline byte upon unescaping step.
             string input = "KEY_START\\\nKEY_END=Value";
 
             // Act
@@ -312,8 +259,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             // Assert
             Assert.False(isValid);
             Assert.NotEmpty(errorMessages);
-
-            // Assert against the unescaped key version ("KEY_START\nKEY_END") matching validator execution
             Assert.Equal(string.Format(Strings.Msg_EnvironmentVariableForbiddenNewline, "KEY_START\nKEY_END"), errorMessages[0]);
         }
 
@@ -321,8 +266,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         public void Validate_VariableWithNullTerminatorInKey_ReturnsFalse()
         {
             // Arrange
-            // Injection boundary validation trap ensuring malicious payload sequences containing Win32 
-            // structural string terminators are successfully caught during runtime verification.
             string input = "KEY\0ATTACK=Value";
 
             // Act

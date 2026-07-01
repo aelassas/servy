@@ -100,7 +100,7 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
             // Execute inside the managed thread context message loop to stay decoupled from external race states
             await Helper.RunOnSTA(async () =>
             {
-                var app = SecureCreateApplication();
+                var app = Helper.EnsureApplication();
                 var bootstrapper = new AppBootstrapper(_options, _mockProcessKiller.Object);
 
                 SetStaticBooleanMock(typeof(SecurityHelper), "_isAdministratorMockValue", true);
@@ -127,15 +127,6 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
         #endregion
 
         #region Reflection Infrastructure Scaffolding Helpers
-
-        private Application SecureCreateApplication()
-        {
-            if (Application.Current == null)
-            {
-                new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
-            }
-            return Application.Current;
-        }
 
         private StartupEventArgs CreateStartupEventArgs(string[] args)
         {
