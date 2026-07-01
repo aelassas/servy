@@ -1,7 +1,8 @@
-﻿using System.Diagnostics;
+﻿using Servy.Core.Native;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace Servy.Core.Native
+namespace Servy.Core.IntegrationTests.Native
 {
     public class NativeMethodsIntegrationTests : IDisposable
     {

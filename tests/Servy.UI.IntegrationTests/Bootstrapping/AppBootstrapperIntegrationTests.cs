@@ -4,11 +4,12 @@ using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Infrastructure.Helpers;
+using Servy.UI.Bootstrapping;
 using System.Reflection;
 using System.Windows;
 using Helper = Servy.Testing.Helper;
 
-namespace Servy.UI.Bootstrapping.Tests
+namespace Servy.UI.IntegrationTests.Bootstrapping
 {
     [Collection("Servy.UI.Bootstrapping.Tests")]
     public class AppBootstrapperIntegrationTests : IDisposable

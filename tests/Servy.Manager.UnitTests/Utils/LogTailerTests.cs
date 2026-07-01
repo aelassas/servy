@@ -96,7 +96,6 @@ namespace Servy.Manager.UnitTests.Utils
         {
             // Arrange
             var tailer = new LogTailer();
-            // 5 distinct lines with 4 newlines in between
             var linesToWrite = new[] { "L1", "L2", "L3", "L4", "L5" };
             File.WriteAllLines(_tempFilePath, linesToWrite);
 
@@ -121,7 +120,6 @@ namespace Servy.Manager.UnitTests.Utils
 
             // Assert
             Assert.Equal(2, result?.Lines.Count);
-            // Verify chronologically ordered
             Assert.True(result?.Lines[0].Timestamp < result?.Lines[1].Timestamp);
             Assert.True(result?.Lines[0].IsSyntheticTime);
             Assert.True(result?.Lines[1].IsSyntheticTime);
@@ -133,15 +131,20 @@ namespace Servy.Manager.UnitTests.Utils
             // Arrange
             var tailer = new LogTailer();
             var cts = new CancellationTokenSource();
+            bool loopStartedFired = false;
+
+            // Hook internal signals to ensure background allocations are never reached
+            _ = tailer.LoopStartedSignal.Task.ContinueWith(_ => loopStartedFired = true);
 
             // Act
             var taskNull = tailer.RunFromPosition(null, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
             var taskEmpty = tailer.RunFromPosition(string.Empty, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
-
-            // Assert
             await taskNull;
             await taskEmpty;
-            // Early return branches pass cleanly if they do not block or throw exceptions
+
+            // Assert
+            // Explicitly prove that execution returned instantly without spinning up background state loops
+            Assert.False(loopStartedFired, "The log tailer incorrectly allocated loop resources for a null or empty file path context.");
         }
 
         #endregion
@@ -153,18 +156,30 @@ namespace Servy.Manager.UnitTests.Utils
         {
             // Arrange
             var tailer = new LogTailer();
-            // Create a path inside a directory structure that does not exist to force DirectoryNotFoundException
             string invalidDirectoryPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "app.log");
+
+            bool linesEmitted = false;
+            int loopPassesCount = 0;
+
+            tailer.OnNewLines += (lines) => linesEmitted = true;
+            tailer.OnLoopCompleted += () => Interlocked.Increment(ref loopPassesCount);
+
             using (var cts = new CancellationTokenSource())
             {
                 // Act
                 var tailTask = tailer.RunFromPosition(invalidDirectoryPath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
-                // Let it cycle once into the outer loop try-catch infrastructure block
+                // Allow the background worker to iterate into its outer try/catch block architecture
                 await Task.Delay(150, TestContext.Current.CancellationToken);
                 cts.Cancel();
 
                 try { await tailTask; } catch (OperationCanceledException) { }
+
+                // Assert
+                // Explicitly verify that no lines were dispatched and the loop 
+                // was held in check behind the exception tracking block rather than completing normal passes.
+                Assert.False(linesEmitted, "Lines should not be emitted when pointing to a completely missing directory structure.");
+                Assert.Equal(0, loopPassesCount);
             }
         }
 
@@ -175,11 +190,18 @@ namespace Servy.Manager.UnitTests.Utils
             var tailer = new LogTailer();
             File.WriteAllText(_tempFilePath, "Initial content\n");
 
+            bool linesEmitted = false;
+            int successfulLoopIterations = 0;
+
+            tailer.OnNewLines += (lines) => linesEmitted = true;
+            tailer.OnLoopCompleted += () => Interlocked.Increment(ref successfulLoopIterations);
+
             using (var cts = new CancellationTokenSource())
             {
                 // Lock the file exclusively to force an IOException when LogTailer tries to open a new FileStream
                 using (var exclusiveLock = new FileStream(_tempFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
                 {
+                    // Act
                     var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
                     // Allow the loop to cycle and strike the locked IOException handle branch
@@ -188,6 +210,12 @@ namespace Servy.Manager.UnitTests.Utils
 
                     try { await tailTask; } catch (OperationCanceledException) { }
                 }
+
+                // Assert
+                // Verify that the IOException handler intercepted the file-lock condition natively,
+                // suppressing stream pipeline updates and bypassing normal loop completion completions.
+                Assert.False(linesEmitted, "LogTailer incorrectly surfaced lines from an exclusively locked file descriptor stream.");
+                Assert.Equal(0, successfulLoopIterations);
             }
         }
 
@@ -218,9 +246,7 @@ namespace Servy.Manager.UnitTests.Utils
             try
             {
                 if (File.Exists(lockTestPath))
-                {
                     File.Delete(lockTestPath);
-                }
             }
             catch
             {
@@ -245,7 +271,6 @@ namespace Servy.Manager.UnitTests.Utils
                 lock (capturedBatches) capturedBatches.Add(new List<LogLine>(lines));
             };
 
-            // Setup a completion tracking signal task for strict loop synchronization
             var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
 
@@ -259,7 +284,7 @@ namespace Servy.Manager.UnitTests.Utils
                 await tailer.LoopStartedSignal.Task;
                 await loopCompletedTcs.Task;
 
-                // Append enough lines to cross AppConfig.LogTailerBatchFlushThreshold (e.g. 50 or 100 lines)
+                // Append enough lines to cross AppConfig.LogTailerBatchFlushThreshold
                 using (var fs = new FileStream(_tempFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
                 using (var sw = new StreamWriter(fs) { AutoFlush = true })
                 {
@@ -339,12 +364,7 @@ namespace Servy.Manager.UnitTests.Utils
                 }, TimeSpan.FromSeconds(10));
 
                 cts.Cancel();
-
-                try
-                {
-                    await tailTask;
-                }
-                catch (OperationCanceledException) { }
+                try { await tailTask; } catch (OperationCanceledException) { }
 
                 // Assert
                 lock (capturedLines)
@@ -385,6 +405,7 @@ namespace Servy.Manager.UnitTests.Utils
 
                 try { await tailTask; } catch (OperationCanceledException) { }
 
+                // Assert
                 lock (capturedLines)
                 {
                     Assert.NotEmpty(capturedLines);
@@ -417,25 +438,30 @@ namespace Servy.Manager.UnitTests.Utils
             var tailer = new LogTailer();
             File.WriteAllText(_tempFilePath, "Baseline text data string\n");
 
+            int loopPassesPostDisposeCount = 0;
+
             using (var cts = new CancellationTokenSource())
             {
                 var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
-                // Allow the reader thread context to attach to file structures before hitting dispose
-                await Task.Delay(100, TestContext.Current.CancellationToken);
+                // Await initial execution attach before triggering disposal path
+                await tailer.LoopStartedSignal.Task;
 
                 // Act
+                // Hook the event handler right before disposal to catch any rogue subsequent spins
+                tailer.OnLoopCompleted += () => Interlocked.Increment(ref loopPassesPostDisposeCount);
                 tailer.Dispose();
 
+                try { await tailTask; } catch (OperationCanceledException) { }
+
+                // Let the thread pools settle for a brief window frame to guarantee no secondary ticks leak out
+                await Task.Delay(50, TestContext.Current.CancellationToken);
+
                 // Assert
-                try
-                {
-                    await tailTask;
-                }
-                catch (OperationCanceledException)
-                {
-                    // Catch internal cancellation context safely
-                }
+                // Verify that the background loop is completely halted. 
+                // It must not complete any additional execution passes once the cancellation token is processed.
+                Assert.True(loopPassesPostDisposeCount <= 1,
+                    $"LogTailer incorrectly allowed recursive loop cycles ({loopPassesPostDisposeCount}) to execute after disposal.");
             }
         }
 

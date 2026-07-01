@@ -1,6 +1,6 @@
 ﻿using Servy.Core.Services;
 
-namespace Servy.Core.UnitTests.Services
+namespace Servy.Core.IntegrationTests.Services
 {
     // Reuse the sequential collection to ensure OS-level SCM/LSA interactions don't conflict
     [Collection("WindowsServiceApiIntegrationTests")]
