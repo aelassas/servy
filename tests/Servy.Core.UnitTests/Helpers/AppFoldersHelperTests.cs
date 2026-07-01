@@ -65,11 +65,6 @@ namespace Servy.Core.UnitTests.Helpers
             string key = Path.Combine(keyFolder, "key.aes");
             string iv = Path.Combine(ivFolder, "iv.aes");
 
-            // Ensure folders do not exist, but keep _tempDir intact
-            if (Directory.Exists(dbFolder)) Directory.Delete(dbFolder, true);
-            if (Directory.Exists(keyFolder)) Directory.Delete(keyFolder, true);
-            if (Directory.Exists(ivFolder)) Directory.Delete(ivFolder, true);
-
             // Call the helper
             AppFoldersHelper.EnsureFolders(conn, key, iv);
 

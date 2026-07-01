@@ -23,7 +23,7 @@ using Helper = Servy.Testing.Helper;
 namespace Servy.Manager.UnitTests.ViewModels
 {
     [Collection("Ambient AppServices Dependent Tests")]
-    public class ConsoleViewModelTests : IDisposable
+    public class ConsoleViewModelTests
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
@@ -61,11 +61,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _appConfigMock.Object,
                 _cursorServiceMock.Object,
                 _uiDispatcherMock.Object);
-        }
-
-        public void Dispose()
-        {
-            // Centralized cleanup not needed for mocks, but interface implemented for scaling
         }
 
         #region Constructor & Guard Tests
@@ -527,8 +522,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Arrange
                     var vm = CreateViewModel();
 
-                    // Cap layout dimensions intentionally low to strike the TrimToSize validation branch immediately
-                    _appConfigMock.Setup(c => c.ConsoleMaxLines).Returns(2);
                     var fieldMaxLines = typeof(ConsoleViewModel).GetField("_maxLines", BindingFlags.NonPublic | BindingFlags.Instance);
                     fieldMaxLines?.SetValue(vm, 2);
 

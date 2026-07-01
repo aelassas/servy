@@ -58,54 +58,24 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Theory]
-        [InlineData("", "", "")]
-        [InlineData("TestService", "", "")]
-        [InlineData("TestService", "C:\\Apps\\App.exe", "")]
+        [InlineData("", "C:\\Apps\\ServyWrapper.exe", "C:\\Apps\\RealApp.exe")] // Missing ServiceName
+        [InlineData("TestService", "", "C:\\Apps\\RealApp.exe")]                // Missing WrapperExePath
+        [InlineData("TestService", "C:\\Apps\\ServyWrapper.exe", "")]           // Missing RealExePath
         public async Task InstallService_Throws_ArgumentException(string serviceName, string wrapperExePath, string realExePath)
         {
-            var scmHandle = CreateScmHandle(123);
-            var serviceHandle = CreateServiceHandle(456);
-            var description = "Test Description";
-
-            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
-                .Returns(scmHandle);
-
-            _mockWindowsServiceApi.Setup(x => x.CreateService(
-                scmHandle,
-                serviceName,
-                serviceName,
-                It.IsAny<uint>(),
-                It.IsAny<uint>(),
-                It.IsAny<uint>(),
-                It.IsAny<uint>(),
-                It.IsAny<string>(),
-                null,
-                IntPtr.Zero,
-                ServiceDependenciesParser.NoDependencies,
-                null,
-                null))
-                .Returns(serviceHandle);
-
-            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
-                serviceHandle,
-                It.IsAny<uint>(),
-                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
-                .Returns(true);
-
+            // Arrange
             var options = new InstallServiceOptions
             {
                 ServiceName = serviceName,
-                Description = description,
                 WrapperExePath = wrapperExePath,
-                RealExePath = realExePath,
-                WorkingDirectory = "workingDir",
-                RealArgs = "args",
-                StartType = ServiceStartType.Automatic,
-                ProcessPriority = ProcessPriority.Normal,
-                PreLaunchTimeout = 30
+                RealExePath = realExePath
             };
 
-            await Assert.ThrowsAsync<ArgumentException>(() => _serviceManager.InstallServiceAsync(options));
+            // Act & Assert
+            // No native SCManager, mock handles, or 13-argument CreateService mock arrangements 
+            // are configured here because validation constraints fail and exit before hitting any OS boundaries.
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None));
         }
 
         [Theory]
@@ -2710,9 +2680,9 @@ namespace Servy.Core.UnitTests.Services
         }
 
         private delegate bool QueryConfigDelegate(
-            SafeServiceHandle h, 
-            IntPtr buf, 
-            int size, 
+            SafeServiceHandle h,
+            IntPtr buf,
+            int size,
             out int bytesNeeded);
 
         private delegate bool QueryConfig2DelayedStartDelegate(

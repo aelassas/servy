@@ -160,24 +160,6 @@ namespace Servy.Service.UnitTests
                 out var pathValidator,
                 out var serviceRepository);
 
-            // Setup mocks for helper methods (just verify calls, no real implementations or logs)
-            helper.Setup(h =>
-                h.RestartProcess(
-                    It.IsAny<IProcessWrapper>(),
-                    It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<string>(),
-                    It.IsAny<List<EnvironmentVariable>>(),
-                    It.IsAny<IServyLogger>(),
-                    It.IsAny<int>(),
-                    It.IsAny<CancellationToken>()))
-                .Verifiable();
-
-            helper.Setup(h => h.RestartService(It.IsAny<string>(), It.IsAny<IServyLogger>())).Verifiable();
-
-            helper.Setup(h => h.RestartComputer(It.IsAny<IServyLogger>())).Verifiable();
-
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(true);
             mockProcess.Setup(p => p.ExitCode).Returns(-1);
