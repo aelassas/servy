@@ -1,27 +1,10 @@
 ﻿using Servy.Core.Validation;
+using Servy.Testing;
 
 namespace Servy.Core.UnitTests.Validation
 {
-    public class PathSecurityGuardTests : IDisposable
+    public class PathSecurityGuardTests : TempDirectoryTestBase
     {
-        private readonly string _tempDirectory;
-
-        public PathSecurityGuardTests()
-        {
-            // Set up an isolated temporary directory for file-based security engine tests
-            _tempDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_tempDirectory);
-        }
-
-        public void Dispose()
-        {
-            // Clean up all temporary files after engine tests complete
-            if (Directory.Exists(_tempDirectory))
-            {
-                Directory.Delete(_tempDirectory, true);
-            }
-        }
-
         #region Common Security Rules
 
         [Fact]
@@ -103,7 +86,7 @@ namespace Servy.Core.UnitTests.Validation
         public void ValidatePath_InvalidExtension_ReturnsFail(string fileName, FileMode mode, FileAccess access, FileShare share)
         {
             // Arrange
-            string filePath = Path.Combine(_tempDirectory, fileName);
+            string filePath = Path.Combine(TempDirectory, fileName);
 
             // Act
             var result = PathSecurityGuard.ValidatePath(filePath, mode, access, share, out var stream);
@@ -119,8 +102,8 @@ namespace Servy.Core.UnitTests.Validation
         public void ValidatePath_Symlink_ReturnsFail()
         {
             // Arrange
-            string targetPath = Path.Combine(_tempDirectory, "real_target.json");
-            string symlinkPath = Path.Combine(_tempDirectory, "symlink_target.json");
+            string targetPath = Path.Combine(TempDirectory, "real_target.json");
+            string symlinkPath = Path.Combine(TempDirectory, "symlink_target.json");
 
             File.WriteAllText(targetPath, "{}");
 
@@ -153,7 +136,7 @@ namespace Servy.Core.UnitTests.Validation
         public void ValidatePath_ImportMode_FileDoesNotExist_ReturnsFail(string fileName)
         {
             // Arrange
-            string filePath = Path.Combine(_tempDirectory, fileName);
+            string filePath = Path.Combine(TempDirectory, fileName);
 
             // Act
             var result = PathSecurityGuard.ValidatePath(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, out var stream);
@@ -169,7 +152,7 @@ namespace Servy.Core.UnitTests.Validation
         public void ValidatePath_ExportMode_FileDoesNotExist_CreatesHandleAndSucceeds(string fileName)
         {
             // Arrange
-            string filePath = Path.Combine(_tempDirectory, fileName);
+            string filePath = Path.Combine(TempDirectory, fileName);
 
             // Act
             var result = PathSecurityGuard.ValidatePath(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, out var stream);
@@ -193,7 +176,7 @@ namespace Servy.Core.UnitTests.Validation
         public void ValidatePath_ValidLocalAllowedFile_PassesAllGuardsAndExposesStream(string fileName, string fileContent)
         {
             // Arrange
-            string filePath = Path.Combine(_tempDirectory, fileName);
+            string filePath = Path.Combine(TempDirectory, fileName);
             File.WriteAllText(filePath, fileContent);
 
             // Act

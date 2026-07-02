@@ -1,30 +1,15 @@
 ﻿using Servy.Core.Validation;
+using Servy.Testing;
 
 namespace Servy.Core.UnitTests.Validation
 {
-    public class ImportGuardTests : IDisposable
+    public class ImportGuardTests : TempDirectoryTestBase
     {
-        private readonly string _tempDirectory;
-
-        public ImportGuardTests()
-        {
-            _tempDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_tempDirectory);
-        }
-
-        public void Dispose()
-        {
-            if (Directory.Exists(_tempDirectory))
-            {
-                Directory.Delete(_tempDirectory, true);
-            }
-        }
-
         [Fact]
         public void ValidatePathSecurityAndSize_ValidFile_DelegatesSuccessfullyAndLoadsContent()
         {
             // Arrange
-            string filePath = Path.Combine(_tempDirectory, "import_delegate.json");
+            string filePath = Path.Combine(TempDirectory, "import_delegate.json");
             string expectedContent = "{\"servy\": true}";
             File.WriteAllText(filePath, expectedContent);
 
@@ -42,7 +27,7 @@ namespace Servy.Core.UnitTests.Validation
         public void ValidatePathSecurityAndSize_InvalidFile_DelegatesSuccessfullyAndReturnsFailure()
         {
             // Arrange
-            string filePath = Path.Combine(_tempDirectory, "invalid_delegate.txt");
+            string filePath = Path.Combine(TempDirectory, "invalid_delegate.txt");
             File.WriteAllText(filePath, "invalid extension context");
 
             // Act
