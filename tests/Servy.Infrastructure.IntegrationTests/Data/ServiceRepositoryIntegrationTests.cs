@@ -357,7 +357,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange
             var service = new ServiceDto { Name = "SyncService", ExecutablePath = "C:\\s.exe", Pid = 444 };
-            int id = _repository.GetDapperExecutor().ExecuteScalar<int>(
+            int id = _executor.ExecuteScalar<int>(
                 $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority, Pid) VALUES ('SyncService', 'C:\\s.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}', 444); SELECT last_insert_rowid();");
             service.Id = id;
 
@@ -433,7 +433,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange
             var service = new ServiceDto { Name = "SynchronousQueryService", ExecutablePath = "C:\\sync.exe" };
-            _repository.GetDapperExecutor().Execute(
+            _executor.Execute(
                 $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority) VALUES ('SynchronousQueryService', 'C:\\sync.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');");
 
             // Act
@@ -468,7 +468,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Arrange: Seed an un-trimmed legacy service directly into the database
             const string paddedName = "HoopsComm ";
             var sql = $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority) VALUES (@Name, 'C:\\legacy.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');";
-            _repository.GetDapperExecutor().Execute(sql, new { Name = paddedName });
+            _executor.Execute(sql, new { Name = paddedName });
 
             // Act: Pass the untrimmed name explicitly to satisfy the 'name != name.Trim()' guard clause
             var resolvedRecord = _repository.GetByName(paddedName, decrypt: false);
@@ -520,18 +520,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Triggers automatic removal and cleanup of the shared SQLite state memory allocation layout
             _dbContext.Dispose();
-        }
-    }
-
-    // Secondary extension to provide quick access to internal test structures if needed
-    internal static class ServiceRepositoryExtensions
-    {
-        public static IDapperExecutor GetDapperExecutor(this ServiceRepository repository)
-        {
-            // Instantiates bypass hook access to test context executions safely
-            return (IDapperExecutor)typeof(ServiceRepository)
-                .GetField("_dapper", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                .GetValue(repository);
         }
     }
 }
