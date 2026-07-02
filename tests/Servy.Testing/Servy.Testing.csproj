@@ -112,6 +112,7 @@
   <ItemGroup>
     <Compile Include="Helper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TempDirectoryTestBase.cs" />
     <Compile Include="TestTimeouts.cs" />
   </ItemGroup>
   <ItemGroup>
