@@ -1,16 +1,12 @@
 ﻿using Moq;
-using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
-using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
-using Servy.Service.Timers;
-using Servy.Service.Validation;
+using Servy.Service.UnitTests.Utilities;
 using System.Diagnostics;
 using System.Reflection;
-using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 
 namespace Servy.Service.UnitTests
 {
@@ -21,38 +17,6 @@ namespace Servy.Service.UnitTests
         public EventHandlerTests()
         {
             _mockProcessKiller = new Mock<IProcessKiller>();
-        }
-
-        private TestableService CreateService(
-            out Mock<IServyLogger> mockLogger,
-            out Mock<IServiceHelper> mockHelper,
-            out Mock<IStreamWriterFactory> mockStreamWriterFactory,
-            out Mock<ITimerFactory> mockTimerFactory,
-            out Mock<IProcessFactory> mockProcessFactory,
-            out Mock<IPathValidator> mockPathValidator,
-            out Mock<IServiceRepository> mockServiceRepository
-            )
-        {
-            mockLogger = new Mock<IServyLogger>();
-            mockHelper = new Mock<IServiceHelper>();
-            mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
-            mockTimerFactory = new Mock<ITimerFactory>();
-            mockProcessFactory = new Mock<IProcessFactory>();
-            mockPathValidator = new Mock<IPathValidator>();
-            mockServiceRepository = new Mock<IServiceRepository>();
-
-            mockPathValidator.Setup(p => p.IsValidPath(It.IsAny<string>())).Returns(true);
-
-            return new TestableService(
-                mockHelper.Object,
-                mockLogger.Object,
-                mockStreamWriterFactory.Object,
-                mockTimerFactory.Object,
-                mockProcessFactory.Object,
-                mockPathValidator.Object,
-                mockServiceRepository.Object,
-                _mockProcessKiller.Object
-                );
         }
 
         static DataReceivedEventArgs CreateDataReceivedEventArgs(string? data)
@@ -68,25 +32,17 @@ namespace Servy.Service.UnitTests
         [Fact]
         public void OnOutputDataReceived_WritesToRotatingWriters_IgnoresNullOrEmpty()
         {
-            var service = CreateService(
-                out var logger,
-                out var helper,
-                out var swFactory,
-                out var timerFactory,
-                out var processFactory,
-                out var pathValidator, 
-                out var serviceRepository);
+            // Arrange
+            var ctx = new ServiceTestContext();
+            var service = ctx.Build(_mockProcessKiller.Object);
 
             var mockWriter = new Mock<IStreamWriter>();
-            // Setup rotating writer factory to return this mock writer
-            swFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>())).Returns(mockWriter.Object);
+            ctx.StreamWriterFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>())).Returns(mockWriter.Object);
 
-            // Prepare a sample non-empty data event
             var nonEmptyArgs = CreateDataReceivedEventArgs("output line");
             var emptyArgs = CreateDataReceivedEventArgs(null);
             var emptyStringArgs = CreateDataReceivedEventArgs(string.Empty);
 
-            // Arrange
             var startOptions = new StartOptions
             {
                 StdoutPath = "valid-path.log",
@@ -100,37 +56,29 @@ namespace Servy.Service.UnitTests
             var stdoutWriterValue = stdoutWriterField!.GetValue(service);
             Assert.NotNull(stdoutWriterValue);
 
-            // Act with non-empty data
+            // Act
             service.InvokeOnOutputDataReceived(null, nonEmptyArgs);
-
-            // Act with null and empty data (should be ignored)
             service.InvokeOnOutputDataReceived(null, emptyArgs);
             service.InvokeOnOutputDataReceived(null, emptyStringArgs);
 
-            // Assert write called once for non-empty data only
+            // Assert
             mockWriter.Verify(w => w.WriteLine("output line"), Times.Once);
         }
 
         [Fact]
         public void OnErrorDataReceived_WritesToRotatingWriters_IgnoresNullOrEmpty()
         {
-            var service = CreateService(
-                out var logger,
-                out var helper,
-                out var swFactory,
-                out var timerFactory,
-                out var processFactory,
-                out var pathValidator,
-                out var serviceRepository);
+            // Arrange
+            var ctx = new ServiceTestContext();
+            var service = ctx.Build(_mockProcessKiller.Object);
 
             var mockWriter = new Mock<IStreamWriter>();
-            swFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>())).Returns(mockWriter.Object);
+            ctx.StreamWriterFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>())).Returns(mockWriter.Object);
 
             var nonEmptyArgs = CreateDataReceivedEventArgs("error line");
             var emptyArgs = CreateDataReceivedEventArgs(null);
             var emptyStringArgs = CreateDataReceivedEventArgs(string.Empty);
 
-            // Arrange
             var startOptions = new StartOptions
             {
                 StdoutPath = "valid-path.log",
@@ -140,51 +88,39 @@ namespace Servy.Service.UnitTests
 
             service.InvokeHandleLogWriters(startOptions);
 
-            // Act with non-empty error data
+            // Act
             service.InvokeOnErrorDataReceived(null, nonEmptyArgs);
-
-            // Act with null and empty data (should be ignored)
             service.InvokeOnErrorDataReceived(null, emptyArgs);
             service.InvokeOnErrorDataReceived(null, emptyStringArgs);
 
-            // Assert write called once for non-empty error data
+            // Assert
             mockWriter.Verify(w => w.WriteLine("error line"), Times.Once);
         }
 
         [Fact]
         public void OnProcessExited_LogsExitInfo()
         {
-            var service = CreateService(
-                out var logger,
-                out var helper,
-                out var swFactory,
-                out var timerFactory,
-                out var processFactory,
-                out var pathValidator,
-                out var serviceRepository);
+            // Arrange
+            var ctx = new ServiceTestContext();
+            var service = ctx.Build(_mockProcessKiller.Object);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Returns(0);
-
             service.SetChildProcess(mockProcess.Object);
 
+            // Act
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
-            logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Child process exited successfully (Code 0).")), It.IsAny<Exception>()), Times.Once);
+            // Assert
+            ctx.Logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Child process exited successfully (Code 0).")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
         public void OnProcessExited_ExitCodeNonZero_LogsError()
         {
             // Arrange
-            var service = CreateService(
-             out var logger,
-             out var helper,
-             out var swFactory,
-             out var timerFactory,
-             out var processFactory,
-             out var pathValidator,
-                out var serviceRepository);
+            var ctx = new ServiceTestContext();
+            var service = ctx.Build(_mockProcessKiller.Object);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Returns(42);
@@ -194,21 +130,15 @@ namespace Servy.Service.UnitTests
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
             // Assert
-            logger.Verify(l => l.Error("Process exited with code 42 and recovery is disabled.", It.IsAny<Exception>()), Times.Once);
+            ctx.Logger.Verify(l => l.Error("Process exited with code 42 and recovery is disabled.", It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
         public void OnProcessExited_ExitCodeThrowsException_LogsWarning()
         {
             // Arrange
-            var service = CreateService(
-             out var logger,
-             out var helper,
-             out var swFactory,
-             out var timerFactory,
-             out var processFactory,
-             out var pathValidator,
-                out var serviceRepository);
+            var ctx = new ServiceTestContext();
+            var service = ctx.Build(_mockProcessKiller.Object);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Throws(new InvalidOperationException("boom"));
@@ -218,7 +148,7 @@ namespace Servy.Service.UnitTests
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
             // Assert
-            logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Failed to get exit code")), It.IsAny<Exception>()), Times.Once);
+            ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Failed to get exit code")), It.IsAny<Exception>()), Times.Once);
         }
     }
 }
