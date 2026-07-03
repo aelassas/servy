@@ -58,7 +58,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             {
                 conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY CHECK (Id = 1), Version INTEGER NOT NULL);");
                 conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 0);");
-                conn.Execute("CREATE VIEW Services AS SELECT 1 AS Id;");
+                conn.Execute($"CREATE VIEW {SqlConstants.ServicesTableName} AS SELECT 1 AS Id;");
 
                 // Act & Assert
                 Assert.Throws<SQLiteException>(() => SQLiteDbInitializer.Initialize(conn));
@@ -98,7 +98,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 InsertLegacyRow(conn, insertCols, duplicateSeed2);
 
                 // Create the legacy non-unique index to trigger the index replacement branch
-                conn.Execute("CREATE INDEX idx_services_name_lower ON Services(LOWER(Name));");
+                conn.Execute($"CREATE INDEX idx_services_name_lower ON {SqlConstants.ServicesTableName}(LOWER(Name));");
 
                 // Act
                 // Trigger migration, executing MIN(Id) evaluation to clean up duplicates deterministically
@@ -109,7 +109,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.True(version >= 5);
 
                 // Verify Deduplication (the absolute smallest historical record ID=1 must win)
-                var services = conn.Query("SELECT Id FROM Services;").ToList();
+                var services = conn.Query($"SELECT Id FROM {SqlConstants.ServicesTableName};").ToList();
                 Assert.Single(services);
                 Assert.Equal(1L, (long)services[0].Id);
 
@@ -165,7 +165,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Contains("Services_orphans_v4", tables);
 
                 // 3. Confirm exact values and binding Id keys survived the drop sequence completely
-                var orphanData = conn.QuerySingle("SELECT Id, OldOrphanData FROM Services_orphans_v4;");
+                var orphanData = conn.QuerySingle($"SELECT Id, OldOrphanData FROM {SqlConstants.ServicesTableName}_orphans_v4;");
                 Assert.Equal(1L, (long)orphanData.Id);
                 Assert.Equal("CriticalConfigToken_XYZ", (string)orphanData.OldOrphanData);
             }
@@ -183,8 +183,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Create table with 'EnableSizeRotation' already existing (triggers Rename skip existing branch)
                 // Lacks 'EnableRotation' (triggers Rename source missing branch)
                 // Has 'RecoveryOnCleanExit' already (triggers AddColumn skip branch)
-                conn.Execute(@"
-                    CREATE TABLE Services (
+                conn.Execute($@"
+                    CREATE TABLE {SqlConstants.ServicesTableName} (
                         Id INTEGER PRIMARY KEY, 
                         EnableSizeRotation INTEGER,
                         RecoveryOnCleanExit INTEGER
@@ -208,7 +208,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             {
                 conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY, Version INTEGER);");
                 conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 1);");
-                conn.Execute("CREATE TABLE Services (Id INTEGER PRIMARY KEY, EnableRotation INTEGER, EnableSizeRotation INTEGER);");
+                conn.Execute($"CREATE TABLE {SqlConstants.ServicesTableName} (Id INTEGER PRIMARY KEY, EnableRotation INTEGER, EnableSizeRotation INTEGER);");
 
                 // Act: Invoke ApplyVersion2 directly to bypass V4's destructive rebuild logic
                 using (var tx = conn.BeginTransaction())
@@ -244,7 +244,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 var insertCols = CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
 
                 // Setup the old functional index as NON-UNIQUE so it permits the insert of casing variations on legacy systems.
-                conn.Execute("CREATE INDEX idx_services_name_lower ON Services(LOWER(Name));");
+                conn.Execute($"CREATE INDEX idx_services_name_lower ON {SqlConstants.ServicesTableName}(LOWER(Name));");
 
                 // Seed duplicate rows out of chronological order to check oldest historical match selection (MIN(Id) resolution)
                 var duplicateSeed = new Dictionary<string, string>(seedData) { ["Name"] = "'alpha-service'" };
@@ -258,7 +258,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Equal(6, version);
 
                 // Verify table deduplication pass: only the oldest instance (Id = 1) survives the constraint cleanup
-                var remainingServices = conn.Query("SELECT Id, Name FROM Services;").ToList();
+                var remainingServices = conn.Query($"SELECT Id, Name FROM {SqlConstants.ServicesTableName};").ToList();
                 Assert.Single(remainingServices);
                 Assert.Equal(1L, (long)remainingServices[0].Id);
                 Assert.Equal("Alpha-Service", (string)remainingServices[0].Name);
@@ -296,7 +296,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 var seedData = new Dictionary<string, string> { { "Name", "'Ä-Service'" } };
 
                 var insertCols = CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
-                conn.Execute("CREATE INDEX idx_services_name_lower ON Services(LOWER(Name));");
+                conn.Execute($"CREATE INDEX idx_services_name_lower ON {SqlConstants.ServicesTableName}(LOWER(Name));");
 
                 // Seed duplicate rows utilizing wide non-ASCII variants out of case parity
                 var duplicateSeed = new Dictionary<string, string>(seedData) { ["Name"] = "'ä-service'" };
@@ -306,7 +306,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 SQLiteDbInitializer.Initialize(conn);
 
                 // Assert: Verify UNICODE_NOCASE successfully group-collapsed and purged the duplicate non-ASCII character entries
-                var remainingServices = conn.Query("SELECT Id, Name FROM Services;").ToList();
+                var remainingServices = conn.Query($"SELECT Id, Name FROM {SqlConstants.ServicesTableName};").ToList();
                 Assert.Single(remainingServices);
                 Assert.Equal(1L, (long)remainingServices[0].Id);
                 Assert.Equal("Ä-Service", (string)remainingServices[0].Name);
@@ -350,7 +350,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                     }
                 }
 
-                string sqlTemplate = $"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertCols.Select(c => "@" + c))});";
+                string sqlTemplate = $"INSERT INTO {SqlConstants.ServicesTableName} ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertCols.Select(c => "@" + c))});";
 
                 // Act & Assert 1: Unique Constraint validation under custom UNICODE_NOCASE rule
                 conn.Execute(sqlTemplate, paramMap1);
@@ -360,7 +360,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
                 // Act & Assert 2: Case-Insensitive query validation on deep wide char comparisons
                 var foundId = conn.QueryFirstOrDefault<long?>(
-                    "SELECT Id FROM Services WHERE Name = 'ÖFFNENSERVICE' COLLATE UNICODE_NOCASE;");
+                    $"SELECT Id FROM {SqlConstants.ServicesTableName} WHERE Name = 'ÖFFNENSERVICE' COLLATE UNICODE_NOCASE;");
 
                 Assert.NotNull(foundId);
                 Assert.True(foundId > 0);
@@ -382,7 +382,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 var expectedColumns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();
 
                 // Step 2: Sabotage the schema
-                conn.Execute("DROP TABLE Services;");
+                conn.Execute($"DROP TABLE {SqlConstants.ServicesTableName};");
 
                 // We rebuild it, intentionally omitting the second column (usually 'Name' or 'ServiceName')
                 // We change the type of 'EnableSizeRotation' to TEXT to force a Type Mismatch.
@@ -403,12 +403,12 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                     }
                 }
 
-                conn.Execute($"CREATE TABLE Services ({string.Join(", ", corruptedTableDef)});");
+                conn.Execute($"CREATE TABLE {SqlConstants.ServicesTableName} ({string.Join(", ", corruptedTableDef)});");
 
                 // Updated stashed schema version context to 6 to safely bypass the modern sequential 
                 // index migrations block layout. This redirects execution straight into ReconcileSchema 
                 // to self-heal the sabotaged test structure completely.
-                conn.Execute("UPDATE SchemaInfo SET Version = 6 WHERE Id = 1;");
+                conn.Execute($"UPDATE SchemaInfo SET Version = 6 WHERE Id = 1;");
 
                 // Step 3: Act - Run Initialize again
                 SQLiteDbInitializer.Initialize(conn);
@@ -474,8 +474,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             }
 
             // Generate physical table layout and inject first historical baseline row context
-            conn.Execute($"CREATE TABLE Services ({string.Join(", ", colDefs)});");
-            conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals)});");
+            conn.Execute($"CREATE TABLE {SqlConstants.ServicesTableName} ({string.Join(", ", colDefs)});");
+            conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals)});");
 
             // Assert
             return insertCols;
@@ -487,7 +487,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         private static void InsertLegacyRow(DbConnection conn, List<string> insertCols, Dictionary<string, string> dynamicSeed)
         {
             var valuesRow = insertCols.Select(col => dynamicSeed.ContainsKey(col) ? dynamicSeed[col] : "0").ToList();
-            conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", valuesRow)});");
+            conn.Execute($"INSERT INTO {SqlConstants.ServicesTableName} ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", valuesRow)});");
         }
 
         #endregion
