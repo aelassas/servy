@@ -8,10 +8,12 @@ using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
+using Servy.Testing;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
@@ -440,7 +442,7 @@ namespace Servy.Service.UnitTests
         [InlineData("", "_")]
         public void MakeFilenameSafe_NullOrEmptyInput_ReturnsSafeFallback(string input, string expectedBase)
         {
-            // Act
+            // Arrange & Act
             string result = Service.MakeFilenameSafe(input);
 
             // Assert
@@ -510,7 +512,7 @@ namespace Servy.Service.UnitTests
         [InlineData("LPT1.dat", "_LPT1.dat_")]
         public void MakeFilenameSafe_SingleExtensionReservedDeviceName_PrependsUnderscore(string input, string expectedPrefix)
         {
-            // Act
+            // Arrange & Act
             string result = Service.MakeFilenameSafe(input);
 
             // Assert
@@ -524,7 +526,7 @@ namespace Servy.Service.UnitTests
         [InlineData("AUX.spec.json.zip", "_AUX.spec.json.zip_")]
         public void MakeFilenameSafe_MultiExtensionReservedDeviceName_SuccessfullyCatchesAndPrependsUnderscore(string input, string expectedPrefix)
         {
-            // Act
+            // Arrange & Act
             string result = Service.MakeFilenameSafe(input);
 
             // Assert
@@ -538,7 +540,7 @@ namespace Servy.Service.UnitTests
         [InlineData("A.CON.log", "A.CON.log_")]
         public void MakeFilenameSafe_NamesContainingReservedWordsAsSubstrings(string safeName, string expectedPrefix)
         {
-            // Act
+            // Arrange & Act
             string result = Service.MakeFilenameSafe(safeName);
 
             // Assert
@@ -557,7 +559,7 @@ namespace Servy.Service.UnitTests
         [InlineData("_CON.log.gz", "__CON.log.gz_")]
         public void MakeFilenameSafe_CollidingNamespaceInputs_ResolvesToUniqueFilenames(string input, string expectedPrefix)
         {
-            // Act
+            // Arrange & Act
             string result = Service.MakeFilenameSafe(input);
 
             // Assert
@@ -571,7 +573,7 @@ namespace Servy.Service.UnitTests
         [InlineData("正常_service_name.log.  ", "正常_service_name.log_")]
         public void MakeFilenameSafe_WithTrailingSpacesOrPeriods_NormalizesAndEscapesCorrectly(string input, string expectedPrefix)
         {
-            // Act
+            // Arrange & Act
             string result = Service.MakeFilenameSafe(input);
 
             // Assert
@@ -612,7 +614,7 @@ namespace Servy.Service.UnitTests
         [InlineData(" \t. ")]
         public void MakeFilenameSafe_Issue2069_PathTraversalAndEmptyTrimsAreNeutralized(string input)
         {
-            // Act
+            // Arrange & Act
             string result = Service.MakeFilenameSafe(input);
 
             // Assert: Directory traversal markers or blank nodes reduce to safe baseline anchors plus hash codes
@@ -758,11 +760,10 @@ namespace Servy.Service.UnitTests
             SetupStandardServiceStart(options);
             _service.StartForTest();
 
-            var onOutputMethod = typeof(Service).GetMethod("OnOutputDataReceived", BindingFlags.NonPublic | BindingFlags.Instance);
             var eventArgs = CreateDataReceivedEventArgs("Test Output Line");
 
             // Act
-            onOutputMethod.Invoke(_service, new object[] { this, eventArgs });
+            TestReflection.InvokeNonPublic(_service, "OnOutputDataReceived", this, eventArgs);
 
             // Assert
             _mockStdoutWriter.Verify(w => w.WriteLine("Test Output Line"), Times.Once);
@@ -783,11 +784,10 @@ namespace Servy.Service.UnitTests
             SetupStandardServiceStart(options);
             _service.StartForTest();
 
-            var onErrorMethod = typeof(Service).GetMethod("OnErrorDataReceived", BindingFlags.NonPublic | BindingFlags.Instance);
             var eventArgs = CreateDataReceivedEventArgs("Test Error Line");
 
             // Act
-            onErrorMethod.Invoke(_service, new object[] { this, eventArgs });
+            TestReflection.InvokeNonPublic(_service, "OnErrorDataReceived", this, eventArgs);
 
             // Assert
             _mockStderrWriter.Verify(w => w.WriteLine("Test Error Line"), Times.Once);
@@ -801,11 +801,10 @@ namespace Servy.Service.UnitTests
             SetupStandardServiceStart(options);
             _service.StartForTest();
 
-            var onOutputMethod = typeof(Service).GetMethod("OnOutputDataReceived", BindingFlags.NonPublic | BindingFlags.Instance);
             var eventArgs = CreateDataReceivedEventArgs(null);
 
             // Act
-            onOutputMethod.Invoke(_service, new object[] { this, eventArgs });
+            TestReflection.InvokeNonPublic(_service, "OnOutputDataReceived", this, eventArgs);
 
             // Assert
             _mockStdoutWriter.Verify(w => w.WriteLine(It.IsAny<string>()), Times.Never);
@@ -830,10 +829,9 @@ namespace Servy.Service.UnitTests
             _mockProcess.Setup(p => p.ExitCode).Returns(0);
 
             // Act
-            var onProcessExitedMethod = typeof(Service).GetMethod("OnProcessExited", BindingFlags.NonPublic | BindingFlags.Instance);
-            onProcessExitedMethod.Invoke(_service, new object[] { _mockProcess.Object, EventArgs.Empty });
+            TestReflection.InvokeNonPublic(_service, "OnProcessExited", _mockProcess.Object, EventArgs.Empty);
 
-            await Task.Delay(50); // Allow async void to complete inner logic
+            await Task.Delay(50, CancellationToken.None); // Allow async void to complete inner logic
 
             // Assert
             Assert.True(stopped);
@@ -856,29 +854,24 @@ namespace Servy.Service.UnitTests
             var scopedLogger = SetupStandardServiceStart(options);
             _service.StartForTest();
 
-            // CRITICAL 1: Populate the internal volatile state switches so recovery evaluations pass
-            var maxFailedField = typeof(Service).GetField("_maxFailedChecks", BindingFlags.NonPublic | BindingFlags.Instance);
-            maxFailedField.SetValue(_service, 1);
-
-            var recoveryActionEnabledField = typeof(Service).GetField("_recoveryActionEnabled", BindingFlags.NonPublic | BindingFlags.Instance);
-            recoveryActionEnabledField.SetValue(_service, true);
+            // CRITICAL: Populate the internal volatile state switches so recovery evaluations pass
+            TestReflection.SetField(_service, "_maxFailedChecks", 1);
+            TestReflection.SetField(_service, "_recoveryActionEnabled", true);
 
             _mockProcess.Setup(p => p.HasExited).Returns(true);
             _mockProcess.Setup(p => p.ExitCode).Returns(1);
 
             // Act
-            var onProcessExitedMethod = typeof(Service).GetMethod("OnProcessExited", BindingFlags.NonPublic | BindingFlags.Instance);
-
             // This executes up to the first internal await frame
-            onProcessExitedMethod.Invoke(_service, new object[] { _mockProcess.Object, EventArgs.Empty });
+            TestReflection.InvokeNonPublic(_service, "OnProcessExited", _mockProcess.Object, EventArgs.Empty);
 
-            // CRITICAL 2: Force the test context thread pool to yield execution control.
+            // CRITICAL: Force the test context thread pool to yield execution control.
             // This allows the async void state machine to complete its work behind the scenes.
             int retries = 0;
             bool foundLog = false;
             while (retries < 10 && !foundLog)
             {
-                await Task.Delay(20);
+                await Task.Delay(20, CancellationToken.None);
                 try
                 {
                     // Verify if the background loop successfully hit our warning marker block
@@ -911,18 +904,16 @@ namespace Servy.Service.UnitTests
             _service.StartForTest();
 
             // Force a transient failure into the field
-            var failedChecksField = typeof(Service).GetField("_failedChecks", BindingFlags.NonPublic | BindingFlags.Instance);
-            failedChecksField.SetValue(_service, 1);
+            TestReflection.SetField(_service, "_failedChecks", 1);
 
             _mockProcess.Setup(p => p.HasExited).Returns(false); // Process is alive
 
             // Act
-            var checkHealthMethod = typeof(Service).GetMethod("CheckHealth", BindingFlags.NonPublic | BindingFlags.Instance);
-            checkHealthMethod.Invoke(_service, new object[] { this, null });
+            TestReflection.InvokeNonPublic(_service, "CheckHealth", this, null);
 
             // Assert
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("healthy again. Resetting transient failure")), It.IsAny<Exception>()), Times.Once);
-            Assert.Equal(0, failedChecksField.GetValue(_service));
+            Assert.Equal(0, TestReflection.GetField<int>(_service, "_failedChecks"));
         }
 
         #endregion
@@ -955,12 +946,11 @@ namespace Servy.Service.UnitTests
             var scopedLogger = SetupStandardServiceStart(options);
             _service.StartForTest();
 
-            var safeKillMethod = typeof(Service).GetMethod("SafeKillProcess", BindingFlags.NonPublic | BindingFlags.Instance);
             _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true); // Graceful stop succeeds
             _mockProcess.Setup(p => p.HasExited).Returns(false);
 
             // Act
-            safeKillMethod.Invoke(_service, new object[] { _mockProcess.Object, 1000 });
+            TestReflection.InvokeNonPublic(_service, "SafeKillProcess", _mockProcess.Object, 1000);
 
             // Assert
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("stopped gracefully")), It.IsAny<Exception>()), Times.Once);
@@ -974,12 +964,11 @@ namespace Servy.Service.UnitTests
             var scopedLogger = SetupStandardServiceStart(options);
             _service.StartForTest();
 
-            var safeKillMethod = typeof(Service).GetMethod("SafeKillProcess", BindingFlags.NonPublic | BindingFlags.Instance);
             _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(false); // Graceful stop fails
             _mockProcess.Setup(p => p.HasExited).Returns(false);
 
             // Act
-            safeKillMethod.Invoke(_service, new object[] { _mockProcess.Object, 1000 });
+            TestReflection.InvokeNonPublic(_service, "SafeKillProcess", _mockProcess.Object, 1000);
 
             // Assert
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("was forcefully terminated")), It.IsAny<Exception>()), Times.Once);

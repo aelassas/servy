@@ -2,10 +2,10 @@
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
+using Servy.Testing;
 using Servy.UI.Constants;
 using Servy.UI.Services;
 using System;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -65,14 +65,12 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             public void ExposeOnTick()
             {
-                var method = typeof(MonitoringViewModelBase).GetMethod("OnTick", BindingFlags.NonPublic | BindingFlags.Instance);
-                method.Invoke(this, new object[] { this, EventArgs.Empty });
+                TestReflection.InvokeNonPublic(this, "OnTick", this, EventArgs.Empty);
             }
 
             public void ExposeSetPidText(ServiceItemBase service)
             {
-                var method = typeof(MonitoringViewModelBase).GetMethod("SetPidText", BindingFlags.NonPublic | BindingFlags.Instance);
-                method.Invoke(this, new object[] { service });
+                TestReflection.InvokeNonPublic(this, "SetPidText", new object[] { service });
             }
 
             protected override void OnMonitoringStopped()
@@ -94,8 +92,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             public void ExposeDispose(bool disposing)
             {
-                var method = typeof(MonitoringViewModelBase).GetMethod("Dispose", BindingFlags.NonPublic | BindingFlags.Instance);
-                method.Invoke(this, new object[] { disposing });
+                TestReflection.InvokeNonPublic(this, "Dispose", disposing);
             }
 
             protected override ServiceItemBase CreateServiceItem(Service service)
@@ -296,10 +293,11 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Act & Assert Loop Chain Simulation
             for (int i = 1; i <= 21; i++)
             {
+                // Act
                 vm.ExposeOnTick();
 
-                var field = typeof(MonitoringViewModelBase).GetField("_tickErrorCount", BindingFlags.NonPublic | BindingFlags.Instance);
-                long observedErrors = (long)field.GetValue(vm);
+                // Assert
+                long observedErrors = TestReflection.GetField<long>(vm, "_tickErrorCount");
 
                 Assert.Equal(i, observedErrors);
                 Assert.Equal(0, vm.ExposeIsTickRunningFlag);

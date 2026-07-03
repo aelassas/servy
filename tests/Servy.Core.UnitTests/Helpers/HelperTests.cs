@@ -1,12 +1,11 @@
-﻿using Servy.Core.Helpers;
-using Servy.Core.Resources;
+﻿using Servy.Core.Resources;
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Helper = Servy.Core.Helpers.Helper;
 
 namespace Servy.Core.UnitTests.Helpers
 {
@@ -41,16 +40,16 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(null, false)]
         [InlineData("", false)]
         [InlineData("   ", false)]
-        [InlineData("..\\somepath", false)]            // Explicit directory traversal at start
-        [InlineData("C:\\valid\\path.txt", true)]      // Valid absolute path (Windows style)
-        [InlineData("C:/valid/path.txt", true)]        // Valid absolute path (forward slash)
-        [InlineData("relative\\path", false)]          // Relative path (not rooted)
-        [InlineData("C:\\invalid|path", false)]        // Invalid character '|'
-        [InlineData("C:\\valid\\..\\path", false)]     // Contains traversal segment ".."
-        [InlineData("C:\\", true)]                     // Root path
-        [InlineData("C:\\my..folder\\path", true)]     // Legitimate ".." inside a folder name
-        [InlineData("C:\\folder\\file..txt", true)]    // Legitimate ".." inside a file name
-        [InlineData("C:\\valid\\path\\..", false)]     // Traversal segment at the very end
+        [InlineData("..\\somepath", false)]           // Explicit directory traversal at start
+        [InlineData("C:\\valid\\path.txt", true)]     // Valid absolute path (Windows style)
+        [InlineData("C:/valid/path.txt", true)]       // Valid absolute path (forward slash)
+        [InlineData("relative\\path", false)]         // Relative path (not rooted)
+        [InlineData("C:\\invalid|path", false)]       // Invalid character '|'
+        [InlineData("C:\\valid\\..\\path", false)]    // Contains traversal segment ".."
+        [InlineData("C:\\", true)]                    // Root path
+        [InlineData("C:\\my..folder\\path", true)]    // Legitimate ".." inside a folder name
+        [InlineData("C:\\folder\\file..txt", true)]   // Legitimate ".." inside a file name
+        [InlineData("C:\\valid\\path\\..", false)]    // Traversal segment at the very end
 
         // COVERS: Filename-invalid characters in the file name segment
         [InlineData("C:\\logs\\app<bad>.log", false)]  // Less-than '<' in filename
@@ -91,19 +90,19 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData(@"C:\Windows", true)]             // Standard drive-rooted absolute path
-        [InlineData(@"D:\Data\config.xml", true)]     // Alternate drive-rooted
+        [InlineData(@"C:\Windows", true)]              // Standard drive-rooted absolute path
+        [InlineData(@"D:\Data\config.xml", true)]      // Alternate drive-rooted
         [InlineData(@"\\Server\Share\Path", true)]    // UNC absolute path
-        [InlineData(@"C:/Windows", true)]             // Forward-slash separator (normalized by .NET)
-        [InlineData(@"\Windows\System32", false)]     // Rooted but relative to current drive
-        [InlineData(@"\Path", false)]                 // Rooted but relative to current drive
-        [InlineData(@"Relative\Path", false)]         // Fully relative
-        [InlineData(@"..\Parent", false)]             // Parent relative
-        [InlineData(@"\Servy\logs\app.log", false)]   // Was BUG: returned true
-        [InlineData(@"/var/log/foo.log", false)]      // Was BUG: returned true
-        [InlineData(@"C:", false)]                    // Rooted but relative to current directory on drive
-        [InlineData("", false)]                       // Empty
-        [InlineData(null, false)]                     // Null
+        [InlineData(@"C:/Windows", true)]              // Forward-slash separator (normalized by .NET)
+        [InlineData(@"\Windows\System32", false)]      // Rooted but relative to current drive
+        [InlineData(@"\Path", false)]                  // Rooted but relative to current drive
+        [InlineData(@"Relative\Path", false)]          // Fully relative
+        [InlineData(@"..\Parent", false)]              // Parent relative
+        [InlineData(@"\Servy\logs\app.log", false)]    // Was BUG: returned true
+        [InlineData(@"/var/log/foo.log", false)]       // Was BUG: returned true
+        [InlineData(@"C:", false)]                     // Rooted but relative to current directory on drive
+        [InlineData("", false)]                        // Empty
+        [InlineData(null, false)]                      // Null
         public void IsAbsolute_ShouldCorrectlyIdentifyPathTypes(string input, bool expected)
         {
             // Act
@@ -216,16 +215,16 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData(null, "")]                           // Null input
-        [InlineData("", "")]                             // Empty string
-        [InlineData("abc", "abc")]                       // Simple text, nothing to escape
-        [InlineData(@"C:\Path", @"C:\Path")]             // Backslashes not before quotes - unchanged
+        [InlineData(null, "")]                               // Null input
+        [InlineData("", "")]                                 // Empty string
+        [InlineData("abc", "abc")]                           // Simple text, nothing to escape
+        [InlineData(@"C:\Path", @"C:\Path")]              // Backslashes not before quotes - unchanged
         [InlineData(@"C:\Path\""File", @"C:\Path\\""File")] // Backslash immediately before quote - doubled
         [InlineData(@"NoQuotesHere\", @"NoQuotesHere\")] // Trailing backslash - unchanged
-        [InlineData(@"\""", @"\\""")]                    // Single backslash + quote - doubled before quote
-        [InlineData(@"\\\""", @"\\\\\\""")]              // Multiple backslashes before quote
+        [InlineData(@"\""", @"\\""")]                     // Single backslash + quote - doubled before quote
+        [InlineData(@"\\\""", @"\\\\\\""")]               // Multiple backslashes before quote
         [InlineData(@"Mix\ed\\\""Case", @"Mix\ed\\\\\\""Case")] // Mixed case: normal + before quote
-        [InlineData("abc\0def", @"abc\0def")]            // Contains null char -> replaced with literal "\0"
+        [InlineData("abc\0def", @"abc\0def")]           // Contains null char -> replaced with literal "\0"
         public void EscapeBackslashes_ShouldEscapeCorrectly(string input, string expected)
         {
             // Act
@@ -543,7 +542,6 @@ namespace Servy.Core.UnitTests.Helpers
             // Arrange
             string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             string targetPath = Path.Combine(tempDir, "target.txt");
-            string tempPath = targetPath + ".tmp"; // Logic uses .tmp suffix
 
             try
             {
@@ -555,12 +553,16 @@ namespace Servy.Core.UnitTests.Helpers
                         writer.Write("atomic-sync-test-48");
                         // fs.Flush is called internally by WriteFileAtomic after the action
                     }
-                });
+                }, CancellationToken.None);
 
                 // Assert
                 Assert.True(File.Exists(targetPath));
                 Assert.Equal("atomic-sync-test-48", File.ReadAllText(targetPath));
-                Assert.False(File.Exists(tempPath), "Temporary file should be cleaned up by the finally block");
+
+                // VACUOUS CHECK REFACTOR: Evaluate all matching staging remnants in the container directory 
+                // to verify that the core dynamic GUID-suffixed file format handles cleanup routines successfully.
+                var leftovers = Directory.GetFiles(tempDir, "*.tmp");
+                Assert.Empty(leftovers);
             }
             finally
             {
@@ -619,7 +621,6 @@ namespace Servy.Core.UnitTests.Helpers
                 File.SetAttributes(targetPath, FileAttributes.ReadOnly);
 
                 // Act
-                // Act
                 Helper.WriteFileAtomic(targetPath, (Stream stream) =>
                 {
                     // The 4th parameter is 'leaveOpen'. Set it to true.
@@ -629,7 +630,7 @@ namespace Servy.Core.UnitTests.Helpers
                         writer.Write("new-content");
                     }
                     // StreamWriter is disposed here, but 'stream' remains open for Helper.WriteFileAtomic to Flush()
-                });
+                }, CancellationToken.None);
 
                 // Assert: Attributes should be normalized before move
                 Assert.True(File.Exists(targetPath));
@@ -662,13 +663,12 @@ namespace Servy.Core.UnitTests.Helpers
                 await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
                 {
                     byte[] data = Encoding.UTF8.GetBytes("atomic-async-test-48");
-                    await stream.WriteAsync(data, 0, data.Length, cancellationToken);
-                });
+                    await stream.WriteAsync(data, 0, data.Length, CancellationToken.None);
+                }, CancellationToken.None);
 
                 // Assert
                 Assert.True(File.Exists(targetPath));
 
-                // .NET 4.8 workaround for lack of File.ReadAllTextAsync
                 string result;
                 using (StreamReader reader = new StreamReader(targetPath))
                 {
@@ -696,8 +696,8 @@ namespace Servy.Core.UnitTests.Helpers
                 await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
                 {
                     byte[] data = Encoding.UTF8.GetBytes("nesting-test");
-                    await stream.WriteAsync(data, 0, data.Length, cancellationToken);
-                });
+                    await stream.WriteAsync(data, 0, data.Length, CancellationToken.None);
+                }, CancellationToken.None);
 
                 // Assert
                 Assert.True(Directory.Exists(nestedPath));
@@ -738,7 +738,7 @@ namespace Servy.Core.UnitTests.Helpers
             {
                 attempt++;
 
-                // Isolate each attempt's file paths to avoid cross-attempt lock collisions
+                // Isolate paths per attempt to clear trailing Windows handle locks
                 string realDir = Path.Combine(_testRoot, $"RealDirectoryMissingLeaf_att{attempt}");
                 string junctionTarget = Path.Combine(_testRoot, $"JunctionDirMissingLeaf_att{attempt}");
 
@@ -746,6 +746,8 @@ namespace Servy.Core.UnitTests.Helpers
                 {
                     // Arrange
                     Directory.CreateDirectory(realDir);
+
+                    // Use native .NET link creation to guarantee stability and error visibility
                     Testing.Helper.CreateJunction(junctionTarget, realDir);
 
                     // The junction exists, but the target file and its immediate parent folder DO NOT exist
@@ -759,19 +761,20 @@ namespace Servy.Core.UnitTests.Helpers
                     // detects the junction at the existing ancestor level.
                     Assert.True(result);
 
-                    // If we reach this line, the test passed successfully. Break out of the retry loop.
+                    // Exit the loop on success
                     break;
                 }
                 catch (Exception) when (attempt < maxRetries)
                 {
-                    // Fall-through logic: swallow the transient error and allow the loop to try again.
-                    // We can insert a micro-pause to give the Windows Object Manager time to release handles.
+                    // Give the Windows Object Manager a small window to flush lazy handles
                     Thread.Sleep(50);
                 }
                 finally
                 {
-                    // Clean up the handles allocated during this distinct attempt run
+                    // 1. Safe native unlink of the link point first to drop OS locks
                     try { DeleteDirectoryLink(junctionTarget); } catch { /* ignore */ }
+
+                    // 2. Explicitly clean up the real directory source 
                     try
                     {
                         if (Directory.Exists(realDir))
@@ -811,21 +814,9 @@ namespace Servy.Core.UnitTests.Helpers
 
             try
             {
-                var attributes = File.GetAttributes(linkPath);
-
-                // Check if the folder is actually a reparse point. 
-                // If the test setup failed and accidentally created a standard directory,
-                // we must use recursive deletion to clear it safely for the next retry loop.
-                if ((attributes & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint)
-                {
-                    // In modern .NET, passing recursive: false to Delete() on a reparse point
-                    // safely unlinks it without deleting anything inside the targeted directory.
-                    Directory.Delete(linkPath, recursive: false);
-                }
-                else
-                {
-                    Directory.Delete(linkPath, recursive: true);
-                }
+                // In modern .NET, passing recursive: false to Delete() on a reparse point
+                // safely unlinks it without deleting anything inside the targeted directory.
+                Directory.Delete(linkPath, recursive: false);
             }
             catch (Exception ex)
             {
@@ -836,14 +827,14 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void HasAncestorReparsePoint_WhenImmediateParentIsJunctionOrSymlink_ReturnsTrue()
         {
+            // Arrange
             string realDir = Path.Combine(_testRoot, "RealDirectory");
             string junctionTarget = Path.Combine(_testRoot, "JunctionDir");
             Directory.CreateDirectory(realDir);
 
+            // Use a retry mechanism for link creation (unstable NTFS operations)
             int maxRetries = 5;
             bool created = false;
-
-            // Retry loop for the unstable NTFS link creation
             for (int i = 0; i < maxRetries; i++)
             {
                 try
@@ -854,32 +845,41 @@ namespace Servy.Core.UnitTests.Helpers
                 }
                 catch (IOException) when (i < maxRetries - 1)
                 {
-                    Thread.Sleep(500); // Backoff before retrying
+                    Thread.Sleep(500 * (i + 1)); // Linear backoff
                 }
             }
-
             Assert.True(created, "Failed to create junction after multiple attempts.");
 
             try
             {
+                // Act
                 string targetFilePath = Path.Combine(junctionTarget, "config.json");
                 bool result = Helper.HasAncestorReparsePoint(targetFilePath);
+
+                // Assert
                 Assert.True(result);
             }
             finally
             {
-                // Cleanup with retry
+                // Teardown with retries for file system lock release
                 for (int i = 0; i < maxRetries; i++)
                 {
                     try
                     {
-                        DeleteDirectoryLink(junctionTarget);
-                        if (Directory.Exists(realDir)) Directory.Delete(realDir, true);
+                        if (Directory.Exists(junctionTarget))
+                        {
+                            // Symbolic links are deleted via Directory.Delete on modern .NET
+                            Directory.Delete(junctionTarget);
+                        }
+                        if (Directory.Exists(realDir))
+                        {
+                            Directory.Delete(realDir, true);
+                        }
                         break;
                     }
-                    catch (IOException) when (i < maxRetries - 1)
+                    catch (Exception ex) when (i < maxRetries - 1 && (ex is IOException || ex is UnauthorizedAccessException))
                     {
-                        Thread.Sleep(500);
+                        Thread.Sleep(500 * (i + 1));
                     }
                 }
             }
@@ -898,22 +898,21 @@ namespace Servy.Core.UnitTests.Helpers
             int maxRetries = 5;
             bool setupSuccess = false;
 
-            // Retry loop for junction creation and nested structure setup
+            // Retry loop for symbolic link creation and nested structure setup
             for (int i = 0; i < maxRetries; i++)
             {
                 try
                 {
                     Testing.Helper.CreateJunction(junctionDir, realDir);
-                    // Create nested structure inside the junctioned area
                     Directory.CreateDirectory(deepNestedPath);
                     setupSuccess = true;
                     break;
                 }
-                catch (IOException) when (i < maxRetries - 1)
+                catch (Exception ex) when ((ex is IOException || ex is UnauthorizedAccessException) && i < maxRetries - 1)
                 {
-                    // Clean up potentially partially created structure before retry
-                    try { if (Directory.Exists(junctionDir)) DeleteDirectoryLink(junctionDir); } catch { }
-                    Thread.Sleep(500);
+                    // Reset state before retry
+                    try { if (Directory.Exists(junctionDir)) Directory.Delete(junctionDir); } catch { }
+                    Thread.Sleep(500 * (i + 1));
                 }
             }
 
@@ -935,19 +934,19 @@ namespace Servy.Core.UnitTests.Helpers
                 {
                     try
                     {
-                        // Must delete nested content first for successful junction deletion
                         if (Directory.Exists(junctionDir))
                         {
-                            // Using Directory.Delete(path, true) on a junction usually deletes the contents
-                            // of the target folder. We use the specialized DeleteDirectoryLink instead.
-                            DeleteDirectoryLink(junctionDir);
+                            Directory.Delete(junctionDir);
                         }
-                        if (Directory.Exists(realDir)) Directory.Delete(realDir, true);
+                        if (Directory.Exists(realDir))
+                        {
+                            Directory.Delete(realDir, true);
+                        }
                         break;
                     }
-                    catch (IOException) when (i < maxRetries - 1)
+                    catch (Exception ex) when (i < maxRetries - 1 && (ex is IOException || ex is UnauthorizedAccessException))
                     {
-                        Thread.Sleep(500);
+                        Thread.Sleep(500 * (i + 1));
                     }
                 }
             }

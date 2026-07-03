@@ -6,6 +6,7 @@ using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
+using Servy.Testing;
 using Servy.UI.Constants;
 using Servy.UI.Services;
 using System;
@@ -204,24 +205,22 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
+                    // Arrange
                     var vm = CreateViewModel();
                     vm.Pid = "999";
                     vm.CpuUsage = "50%";
 
-                    // Force internal state flag via reflection to simulate a transition away from an active tracking state
-                    var fieldInfo = typeof(PerformanceViewModel).GetField("_hadSelectedService", BindingFlags.NonPublic | BindingFlags.Instance);
-                    fieldInfo?.SetValue(vm, true);
-
-                    var methodInfo = typeof(PerformanceViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+                    // Force internal state flag via reflection helper to simulate a transition away from an active tracking state
+                    TestReflection.SetField(vm, "_hadSelectedService", true);
 
                     // Act
-                    var task = (Task)methodInfo.Invoke(vm, null);
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync");
                     task.GetAwaiter().GetResult();
 
                     // Assert
                     Assert.Equal(UiConstants.NotAvailable, vm.Pid);
                     Assert.Equal(UiConstants.NotAvailable, vm.CpuUsage);
-                    Assert.False((bool)fieldInfo.GetValue(vm));
+                    Assert.False(TestReflection.GetField<bool>(vm, "_hadSelectedService"));
                 }
                 finally
                 {
@@ -233,11 +232,10 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void OnTickAsync_ValidService_CollectsMetricsAndHydratesPointCollections()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
-                // Preserve the original environment context firmly inside the thread scope boundary
                 var originalProvider = App.Services;
-
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
                 var localProvider = serviceCollection.BuildServiceProvider();
@@ -264,10 +262,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                                      .Callback<Action>(action => action())
                                      .Returns(Task.CompletedTask);
 
-                    var methodInfo = typeof(PerformanceViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
-
                     // Act
-                    var task = (Task)methodInfo.Invoke(vm, null);
+                    // Use TestReflection to invoke OnTickAsync, which now supports inheritance hierarchy traversal
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync");
 
                     // 2. Keep the message pump processing while waiting for Task.Run to finish
                     while (!task.IsCompleted)

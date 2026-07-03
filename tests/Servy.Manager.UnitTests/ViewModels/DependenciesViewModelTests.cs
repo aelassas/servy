@@ -8,11 +8,10 @@ using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
+using Servy.Testing;
 using Servy.UI.Constants;
-using Servy.UI.Design;
 using Servy.UI.Services;
 using System;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -70,6 +69,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullServiceRepository_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 null, _mockServiceManager.Object, _mockServiceCommands.Object,
                 _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
@@ -78,6 +78,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullServiceManager_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 _mockServiceRepository.Object, null, _mockServiceCommands.Object,
                 _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
@@ -86,6 +87,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullAppConfig_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
                 null, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
@@ -94,6 +96,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullMessageBoxService_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
                 _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
                 _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, null));
@@ -104,6 +107,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -111,7 +115,10 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
+                    // Act
                     var dtViewModel = new DependenciesViewModel();
+
+                    // Assert
                     Assert.NotNull(dtViewModel.DependencyTree);
                     Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
                 }
@@ -132,6 +139,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -150,8 +158,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                         if (e.PropertyName == nameof(viewModel.IsServiceSelected)) serviceSelectedFired = true;
                     };
 
+                    // Act
                     viewModel.SelectedService = mockService;
 
+                    // Assert
                     Assert.True(selectionChangedFired);
                     Assert.True(serviceSelectedFired);
                     Assert.True(viewModel.IsServiceSelected);
@@ -173,6 +183,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -187,8 +198,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                     bool anyPropertyChangedFired = false;
                     viewModel.PropertyChanged += (s, e) => anyPropertyChangedFired = true;
 
+                    // Act
                     viewModel.SelectedService = mockService;
 
+                    // Assert
                     Assert.False(anyPropertyChangedFired);
 
                     viewModel.Dispose();
@@ -210,6 +223,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -230,8 +244,10 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     viewModel.DependencyTree.Add(rootNode);
 
+                    // Act
                     viewModel.ExpandAllCommand.Execute(null);
 
+                    // Assert
                     Assert.True(rootNode.IsExpanded);
                     Assert.True(childNode.IsExpanded);
 
@@ -250,6 +266,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -266,8 +283,10 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     viewModel.DependencyTree.Add(rootNode);
 
+                    // Act
                     viewModel.CollapseAllCommand.Execute(null);
 
+                    // Assert
                     Assert.False(rootNode.IsExpanded);
                     Assert.False(childNode.IsExpanded);
 
@@ -286,6 +305,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -297,9 +317,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var mockService = new DependencyService { Name = "TestService", Pid = 5555 };
                     viewModel.SelectedService = mockService;
 
+                    // Act
                     // Directly await the asynchronous execution flow instead of slamming message loops synchronously
                     viewModel.CopyPidCommand.ExecuteAsync(null).GetAwaiter().GetResult();
 
+                    // Assert
                     _mockServiceCommands.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "TestService"), It.IsAny<CancellationToken>()), Times.Once);
 
                     viewModel.Dispose();
@@ -321,6 +343,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -332,9 +355,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                     viewModel.DependencyTree.Add(new ServiceDependencyNode("Stale", "Stale"));
                     viewModel.SelectedService = null;
 
+                    // Act
                     // Directly await the tree reset operation asynchronously inside the test pipeline boundary
                     viewModel.LoadDependencyTreeAsync(null).GetAwaiter().GetResult();
 
+                    // Assert
                     Assert.Empty(viewModel.DependencyTree);
 
                     viewModel.Dispose();
@@ -462,6 +487,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -471,18 +497,17 @@ namespace Servy.Manager.UnitTests.ViewModels
                 {
                     var viewModel = CreateViewModel();
 
-                    var methodInfo = typeof(DependenciesViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
-
-                    var fieldInfo = typeof(DependenciesViewModel).GetField("_hadSelectedService", BindingFlags.NonPublic | BindingFlags.Instance);
-                    fieldInfo?.SetValue(viewModel, true);
+                    TestReflection.SetField(viewModel, "_hadSelectedService", true);
                     viewModel.Pid = "1234";
 
-                    var task = (Task)methodInfo.Invoke(viewModel, null);
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(viewModel, "OnTickAsync");
                     // Explicitly await the reflected task continuation instead of slamming the thread context synchronously
                     task.GetAwaiter().GetResult();
 
+                    // Assert
                     Assert.Equal(UiConstants.NotAvailable, viewModel.Pid);
-                    var flagValue = (bool)fieldInfo.GetValue(viewModel);
+                    var flagValue = TestReflection.GetField<bool>(viewModel, "_hadSelectedService");
                     Assert.False(flagValue);
 
                     viewModel.Dispose();
@@ -500,6 +525,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -514,12 +540,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                     _mockServiceRepository.Setup(r => r.GetServicePidAsync("ActiveService", It.IsAny<CancellationToken>()))
                                           .ReturnsAsync((int?)null);
 
-                    var methodInfo = typeof(DependenciesViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
-
-                    var task = (Task)methodInfo.Invoke(viewModel, null);
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(viewModel, "OnTickAsync");
                     // Explicitly await the structural worker tick thread asynchronously
                     task.GetAwaiter().GetResult();
 
+                    // Assert
                     Assert.Equal(UiConstants.NotAvailable, viewModel.Pid);
                     Assert.Null(mockService.Pid);
 
@@ -538,6 +564,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -552,12 +579,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                     _mockServiceRepository.Setup(r => r.GetServicePidAsync("ActiveService", It.IsAny<CancellationToken>()))
                                           .ReturnsAsync(200);
 
-                    var methodInfo = typeof(DependenciesViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
-
-                    var task = (Task)methodInfo.Invoke(viewModel, null);
+                    // Act
+                    var task = (Task)TestReflection.InvokeNonPublic(viewModel, "OnTickAsync");
                     // Explicitly await the monitoring tick background routine asynchronously
                     task.GetAwaiter().GetResult();
 
+                    // Assert
                     Assert.Equal("200", viewModel.Pid);
                     Assert.Equal(200, mockService.Pid);
 

@@ -4,6 +4,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Services;
+using Servy.Testing;
 using System;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
@@ -36,7 +37,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void Constructor_WhenReaderIsNull_ThrowsArgumentNullException()
         {
-            // Act & Assert
+            // Arrange & Act & Assert
             var ex = Assert.Throws<ArgumentNullException>(() => new EventLogService(null));
             Assert.Equal("reader", ex.ParamName);
         }
@@ -50,9 +51,8 @@ namespace Servy.Core.UnitTests.Services
             // Act
             var service = new EventLogService(mockReader.Object, null);
 
-            // Assert: Use reflection to verify the private field _sourceName
-            var field = typeof(EventLogService).GetField("_sourceName", BindingFlags.NonPublic | BindingFlags.Instance);
-            var actualValue = field?.GetValue(service) as string;
+            // Assert: Use reflection helper to verify the private field _sourceName
+            var actualValue = TestReflection.GetField<string>(service, "_sourceName");
 
             Assert.Equal(AppConfig.EventSource, actualValue);
         }
@@ -68,8 +68,7 @@ namespace Servy.Core.UnitTests.Services
             var service = new EventLogService(mockReader.Object, customSource);
 
             // Assert
-            var field = typeof(EventLogService).GetField("_sourceName", BindingFlags.NonPublic | BindingFlags.Instance);
-            var actualValue = field?.GetValue(service) as string;
+            var actualValue = TestReflection.GetField<string>(service, "_sourceName");
 
             Assert.Equal(customSource, actualValue);
         }
@@ -84,8 +83,7 @@ namespace Servy.Core.UnitTests.Services
             var service = new EventLogService(mockReader.Object);
 
             // Assert
-            var field = typeof(EventLogService).GetField("_reader", BindingFlags.NonPublic | BindingFlags.Instance);
-            var actualValue = field?.GetValue(service);
+            var actualValue = TestReflection.GetField<object>(service, "_reader");
 
             Assert.NotNull(actualValue);
             Assert.Same(mockReader.Object, actualValue);
@@ -123,7 +121,7 @@ namespace Servy.Core.UnitTests.Services
             // Act: All system filters are null. 
             // Note: If the service sets 'SourceName' by default, this will actually build a populated tag.
             // Asserting StartsWith("*") ensures it passes regardless of SourceName defaults.
-            await service.SearchAsync(null, null, null, null);
+            await service.SearchAsync(null, null, null, null, CancellationToken.None);
 
             // Assert
             Assert.NotNull(capturedQuery);
@@ -157,7 +155,7 @@ namespace Servy.Core.UnitTests.Services
             var service = CreateService(mockReader);
 
             // Act: At least one system filter is explicitly provided (Level)
-            await service.SearchAsync(EventLogLevel.Error, null, null, null);
+            await service.SearchAsync(EventLogLevel.Error, null, null, null, CancellationToken.None);
 
             // Assert: Verify the false branch of the ternary operator
             Assert.NotNull(capturedQuery);
@@ -171,6 +169,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task SearchAsync_NoFilters_ReturnsResult()
         {
+            // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(1, 2, DateTime.UtcNow, "[service] error happened");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
@@ -178,8 +177,10 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var result = await service.SearchAsync(null, null, null, null);
+            // Act
+            var result = await service.SearchAsync(null, null, null, null, CancellationToken.None);
 
+            // Assert
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Error, entry.Level);
         }
@@ -187,6 +188,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task SearchAsync_WithLevelFilter_ReturnsCorrectLevel()
         {
+            // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(2, 3, DateTime.UtcNow, "[service] warning");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
@@ -194,8 +196,10 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var result = await service.SearchAsync(EventLogLevel.Warning, null, null, null);
+            // Act
+            var result = await service.SearchAsync(EventLogLevel.Warning, null, null, null, CancellationToken.None);
 
+            // Assert
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Warning, entry.Level);
         }
@@ -203,6 +207,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task SearchAsync_WithStartDateAndEndDate_AppendsBothFilters()
         {
+            // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(3, 4, DateTime.UtcNow, "[service] info");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
@@ -213,8 +218,10 @@ namespace Servy.Core.UnitTests.Services
             var start = DateTime.UtcNow.AddDays(-1);
             var end = DateTime.UtcNow.AddDays(1);
 
-            var result = await service.SearchAsync(null, start, end, null);
+            // Act
+            var result = await service.SearchAsync(null, start, end, null, CancellationToken.None);
 
+            // Assert
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Information, entry.Level);
         }
@@ -222,6 +229,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task SearchAsync_WithOnlyEndDate_AppendsFilterCorrectly()
         {
+            // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(4, 0, DateTime.UtcNow, "[service] unknown level");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
@@ -231,8 +239,10 @@ namespace Servy.Core.UnitTests.Services
 
             var end = DateTime.UtcNow;
 
-            var result = await service.SearchAsync(null, null, end, null);
+            // Act
+            var result = await service.SearchAsync(null, null, end, null, CancellationToken.None);
 
+            // Assert
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Information, entry.Level);
         }
@@ -240,6 +250,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task SearchAsync_WithKeyword_AddsKeywordFilter()
         {
+            // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "[service] servy failed");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
@@ -247,8 +258,10 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var result = await service.SearchAsync(null, null, null, "servy");
+            // Act
+            var result = await service.SearchAsync(null, null, null, "servy", CancellationToken.None);
 
+            // Assert
             var entry = Assert.Single(result);
             Assert.Contains("servy", entry.Message);
         }
@@ -256,6 +269,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task SearchAsync_MultipleEntries()
         {
+            // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt1 = CreateFakeEvent(5, 2, DateTime.UtcNow, "[service] servy failed");
             var fakeEvt2 = CreateFakeEvent(6, 2, DateTime.UtcNow.AddHours(-1), "[service] servy failed");
@@ -264,14 +278,17 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var result = await service.SearchAsync(null, null, null, string.Empty);
+            // Act
+            var result = await service.SearchAsync(null, null, null, string.Empty, CancellationToken.None);
 
+            // Assert
             Assert.Equal(2, result.Count());
         }
 
         [Fact]
         public async Task SearchAsync_WithKeyword_EmptyResult()
         {
+            // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "servy failed");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
@@ -279,14 +296,17 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var result = await service.SearchAsync(null, null, null, "servy");
+            // Act
+            var result = await service.SearchAsync(null, null, null, "servy", CancellationToken.None);
 
+            // Assert
             Assert.Empty(result);
         }
 
         [Fact]
         public async Task SearchAsync_WithKeyword_NoMatch()
         {
+            // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "[service] servy failed");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
@@ -294,14 +314,17 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var result = await service.SearchAsync(null, null, null, "unknown");
+            // Act
+            var result = await service.SearchAsync(null, null, null, "unknown", CancellationToken.None);
 
+            // Assert
             Assert.Empty(result);
         }
 
         [Fact]
         public async Task SearchAsync_WhenTimeCreatedIsNull_UsesDateTimeMinValue()
         {
+            // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(6, 4, null, "[service] no time");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
@@ -309,8 +332,10 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var result = await service.SearchAsync(null, null, null, null);
+            // Act
+            var result = await service.SearchAsync(null, null, null, null, CancellationToken.None);
 
+            // Assert
             var entry = Assert.Single(result);
             Assert.Equal(DateTime.MinValue, entry.Time);
         }
@@ -318,28 +343,34 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task SearchAsync_ShouldReturnEmptyCollectionWhenFormatDescriptionIsNull()
         {
+            // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var evt = CreateFakeEvent(1, 1, DateTime.Now, null);
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>())).Returns(new[] { evt });
 
             var service = CreateService(mockReader);
 
-            var results = await service.SearchAsync(null, null, null, null);
+            // Act
+            var results = await service.SearchAsync(null, null, null, null, CancellationToken.None);
 
+            // Assert
             Assert.Empty(results);
         }
 
         [Fact]
         public async Task SearchAsync_ShouldUseDefaultLevelWhenLevelIsNull()
         {
+            // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var evt = CreateFakeEvent(1, 0, DateTime.Now, "[service] Message");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>())).Returns(new[] { evt });
 
             var service = CreateService(mockReader);
 
-            var results = await service.SearchAsync(null, null, null, null);
+            // Act
+            var results = await service.SearchAsync(null, null, null, null, CancellationToken.None);
 
+            // Assert
             Assert.Single(results);
             Assert.Equal(EventLogLevel.Information, results.First().Level);
         }
@@ -347,6 +378,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task SearchAsync_ShouldThrowWhenCancelled()
         {
+            // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var evt = CreateFakeEvent(1, 1, DateTime.Now, "[service] Message");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>())).Returns(new[] { evt });
@@ -355,6 +387,7 @@ namespace Servy.Core.UnitTests.Services
             var cts = new CancellationTokenSource();
             cts.Cancel();
 
+            // Act & Assert
             await Assert.ThrowsAsync<TaskCanceledException>(() =>
                 service.SearchAsync(null, null, null, null, cts.Token));
         }
@@ -374,7 +407,7 @@ namespace Servy.Core.UnitTests.Services
             var service = new EventLogService(mockReader.Object, string.Empty);
 
             // Act
-            await service.SearchAsync(null, null, null, null);
+            await service.SearchAsync(null, null, null, null, CancellationToken.None);
 
             // Assert: Hits the 'true' branch of the ternary
             Assert.Equal("*", capturedQuery);

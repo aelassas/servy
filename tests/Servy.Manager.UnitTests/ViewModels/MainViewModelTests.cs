@@ -10,13 +10,13 @@ using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
+using Servy.Testing;
 using Servy.UI;
 using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -265,7 +265,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 var vm = CreateViewModel();
-                typeof(MainViewModel).GetField("_dispatcher", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vm, null);
+                TestReflection.SetField(vm, "_dispatcher", null);
 
                 // Act
                 await vm.SearchCommand.ExecuteAsync(null);
@@ -289,14 +289,13 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // Act & Assert
                 vm.CreateAndStartTimer();
-                var timerField = typeof(MainViewModel).GetField("_refreshTimer", BindingFlags.NonPublic | BindingFlags.Instance);
-                var timer = (DispatcherTimer)timerField.GetValue(vm);
+                var timer = TestReflection.GetField<DispatcherTimer>(vm, "_refreshTimer");
 
                 Assert.NotNull(timer);
                 Assert.True(timer.IsEnabled);
 
                 vm.StopRefreshTimer();
-                timer = (DispatcherTimer)timerField.GetValue(vm);
+                timer = TestReflection.GetField<DispatcherTimer>(vm, "_refreshTimer");
 
                 Assert.Null(timer);
             }, createApp: true);
@@ -309,11 +308,10 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
-                var onTickMethod = typeof(MainViewModel).GetMethod("OnTick", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 // Act & Assert
-                onTickMethod.Invoke(vm, new object[] { null, EventArgs.Empty });
-                onTickMethod.Invoke(vm, new object[] { null, EventArgs.Empty });
+                TestReflection.InvokeNonPublic(vm, "OnTick", null, EventArgs.Empty);
+                TestReflection.InvokeNonPublic(vm, "OnTick", null, EventArgs.Empty);
 
                 Assert.True(true);
             }, createApp: true);
@@ -355,17 +353,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 StartupType = (int)ServiceStartType.Manual
             };
 
-            var calculateUpdateMethod = typeof(MainViewModel).GetMethod("GetServiceUpdateInfo",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-
             // Act
-            var result = calculateUpdateMethod.Invoke(vm, new object[]
-            {
-                targetService,
-                osMockPayload,
-                databaseDto,
-                CancellationToken.None
-            });
+            var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", targetService, osMockPayload, databaseDto, CancellationToken.None);
 
             var resultType = result.GetType();
             var uiUpdateInfo = resultType.GetField("Item1").GetValue(result);
@@ -400,15 +389,16 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 var vm = CreateViewModel();
-                var refreshMethod = typeof(MainViewModel).GetMethod("RefreshAllServicesAsync", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 // Act & Assert
-                typeof(MainViewModel).GetField("_serviceManager", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vm, null);
-                await (Task)refreshMethod.Invoke(vm, new object[] { CancellationToken.None });
+                TestReflection.SetField(vm, "_serviceManager", null);
+                var task1 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None);
+                await task1;
 
-                typeof(MainViewModel).GetField("_serviceManager", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vm, _serviceManagerMock.Object);
-                typeof(MainViewModel).GetField("_serviceRepository", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vm, null);
-                await (Task)refreshMethod.Invoke(vm, new object[] { CancellationToken.None });
+                TestReflection.SetField(vm, "_serviceManager", _serviceManagerMock.Object);
+                TestReflection.SetField(vm, "_serviceRepository", null);
+                var task2 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None);
+                await task2;
 
                 Assert.True(true);
             }, createApp: true);
@@ -421,13 +411,11 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
-                var getInfoMethod = typeof(MainViewModel).GetMethod("GetServiceUpdateInfo", BindingFlags.NonPublic | BindingFlags.Instance);
-
                 var service = new Service { Name = "CrashService", Pid = 1234 };
                 _processHelperMock.Setup(p => p.GetProcessTreeMetrics(1234)).Throws(new Exception("Process performance counter corrupt"));
 
                 // Act
-                var result = getInfoMethod.Invoke(vm, new object[] { service, new Dictionary<string, ServiceInfo>(), new ServiceDto(), CancellationToken.None });
+                var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, new Dictionary<string, ServiceInfo>(), new ServiceDto(), CancellationToken.None);
 
                 // Assert
                 Assert.NotNull(result);
@@ -458,8 +446,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             var threadDispatcher = Dispatcher.CurrentDispatcher;
             var vm = CreateViewModel(threadDispatcher);
 
-            var serviceField = typeof(MainViewModel).GetField("_services", BindingFlags.NonPublic | BindingFlags.Instance);
-            var collection = (BulkObservableCollection<ServiceRowViewModel>)serviceField.GetValue(vm);
+            var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
 
             var svc1 = new Service { Name = "S1", IsInstalled = true };
             var svc2 = new Service { Name = "S2", IsInstalled = true };
@@ -510,10 +497,10 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Act
+                // Arrange & Act
                 await SetupAndRunBulkOperation(vm =>
                 {
-                    typeof(MainViewModel).GetField("_messageBoxService", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vm, null);
+                    TestReflection.SetField(vm, "_messageBoxService", null);
                 }, async vm => await vm.StartSelectedCommand.ExecuteAsync(null));
 
                 // Assert
@@ -526,7 +513,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                // Act
+                // Arrange & Act
                 await SetupAndRunBulkOperation(vm =>
                 {
                     _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(false);
@@ -643,7 +630,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Arrange
                 var currentDispatcher = Dispatcher.CurrentDispatcher;
                 var vm = CreateViewModel(currentDispatcher);
-                var collection = (BulkObservableCollection<ServiceRowViewModel>)typeof(MainViewModel).GetField("_services", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(vm);
+                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
 
                 collection.Add(new ServiceRowViewModel(new Service { Name = "ToRemove" }, _serviceCommandsMock.Object, _cursorServiceMock.Object));
                 collection.Add(new ServiceRowViewModel(new Service { Name = "ToKeep" }, _serviceCommandsMock.Object, _cursorServiceMock.Object));
@@ -729,16 +716,15 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 var vm = CreateViewModel();
 
-                var servicesField = typeof(MainViewModel).GetField("_services", BindingFlags.NonPublic | BindingFlags.Instance);
-                var collection = (BulkObservableCollection<ServiceRowViewModel>)servicesField.GetValue(vm);
+                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
 
                 var childRow1 = new ServiceRowViewModel(new Service { Name = "S1" }, _serviceCommandsMock.Object, _cursorServiceMock.Object) { IsChecked = true };
                 var childRow2 = new ServiceRowViewModel(new Service { Name = "S2" }, _serviceCommandsMock.Object, _cursorServiceMock.Object) { IsChecked = false };
 
-                typeof(MainViewModel).GetField("_isUpdatingSelectAll", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vm, true);
+                TestReflection.SetField(vm, "_isUpdatingSelectAll", true);
                 collection.Add(childRow1);
                 collection.Add(childRow2);
-                typeof(MainViewModel).GetField("_isUpdatingSelectAll", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vm, false);
+                TestReflection.SetField(vm, "_isUpdatingSelectAll", false);
 
                 bool selectAllChangedFired = false;
                 vm.PropertyChanged += (s, e) =>
@@ -746,7 +732,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     if (e.PropertyName == nameof(vm.SelectAll)) selectAllChangedFired = true;
                 };
 
-                typeof(MainViewModel).GetField("_selectAll", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vm, true);
+                TestReflection.SetField(vm, "_selectAll", true);
 
                 // Act
                 vm.SelectAll = null;
@@ -768,7 +754,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var changedProps = new List<string>();
                 vm.PropertyChanged += (s, e) => { if (e.PropertyName != null) changedProps.Add(e.PropertyName); };
 
-                // Act & Assert — IsBusy
+                // Act & Assert - IsBusy
                 vm.IsBusy = true;
                 Assert.True(vm.IsBusy);
                 Assert.Contains(nameof(vm.IsBusy), changedProps);
@@ -777,7 +763,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.IsBusy = true;
                 Assert.Empty(changedProps);
 
-                // Act & Assert — FooterText
+                // Act & Assert - FooterText
                 changedProps.Clear();
                 vm.FooterText = "Total Services: 5";
                 Assert.Equal("Total Services: 5", vm.FooterText);
@@ -787,7 +773,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.FooterText = "Total Services: 5";
                 Assert.Empty(changedProps);
 
-                // Act & Assert — SearchButtonText
+                // Act & Assert - SearchButtonText
                 changedProps.Clear();
                 vm.SearchButtonText = "Locating...";
                 Assert.Equal("Locating...", vm.SearchButtonText);
@@ -797,7 +783,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.SearchButtonText = "Locating...";
                 Assert.Empty(changedProps);
 
-                // Act & Assert — SearchText
+                // Act & Assert - SearchText
                 changedProps.Clear();
                 vm.SearchText = "WexflowCore";
                 Assert.Equal("WexflowCore", vm.SearchText);
@@ -807,8 +793,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.SearchText = "WexflowCore";
                 Assert.Empty(changedProps);
 
-                // Act & Assert — IsConfiguratorEnabled
-                // Integrated property check variance from redundant test block
+                // Act & Assert - IsConfiguratorEnabled
                 changedProps.Clear();
                 vm.IsConfiguratorEnabled = false;
                 Assert.False(vm.IsConfiguratorEnabled);
@@ -828,8 +813,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
-                var servicesField = typeof(MainViewModel).GetField("_services", BindingFlags.NonPublic | BindingFlags.Instance);
-                var collection = (BulkObservableCollection<ServiceRowViewModel>)servicesField.GetValue(vm);
+                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
 
                 var childRow1 = new ServiceRowViewModel(new Service { Name = "S1" }, _serviceCommandsMock.Object, _cursorServiceMock.Object);
                 var childRow2 = new ServiceRowViewModel(new Service { Name = "S2" }, _serviceCommandsMock.Object, _cursorServiceMock.Object);
@@ -856,7 +840,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.SelectAll = true;
                 Assert.False(selectAllNotified);
 
-                typeof(MainViewModel).GetField("_isUpdatingSelectAll", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(vm, true);
+                TestReflection.SetField(vm, "_isUpdatingSelectAll", true);
                 childRow1.IsChecked = false;
                 vm.SelectAll = false;
 
@@ -936,7 +920,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 {
                     // Arrange
                     var vm = CreateViewModel();
-                    var getInfoMethod = typeof(MainViewModel).GetMethod("GetServiceUpdateInfo", BindingFlags.NonPublic | BindingFlags.Instance);
 
                     var service = new Service { Name = "MetricsSvc", Pid = 4321, Status = ServiceStatus.Running };
                     var allServices = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase)
@@ -948,7 +931,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     _processHelperMock.Setup(p => p.GetProcessTreeMetrics(4321)).Returns(new ProcessMetrics(12.5, 2048576));
 
                     // Act
-                    var result = getInfoMethod.Invoke(vm, new object[] { service, allServices, serviceDto, CancellationToken.None });
+                    var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, serviceDto, CancellationToken.None);
 
                     // Assert
                     Assert.NotNull(result);
@@ -974,7 +957,6 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
-                var getInfoMethod = typeof(MainViewModel).GetMethod("GetServiceUpdateInfo", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 var service = new Service { Name = "FallbackSvc", Status = ServiceStatus.Running };
 
@@ -986,7 +968,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var serviceDto = new ServiceDto { Name = "FallbackSvc", StartupType = (int)ServiceStartType.Disabled };
 
                 // Act
-                var result = getInfoMethod.Invoke(vm, new object[] { service, allServices, serviceDto, CancellationToken.None });
+                var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, serviceDto, CancellationToken.None);
 
                 // Assert
                 Assert.NotNull(result);
@@ -1002,13 +984,12 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
-                var getInfoMethod = typeof(MainViewModel).GetMethod("GetServiceUpdateInfo", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 var service = new Service { Name = "OrphanedSvc", Pid = 999 };
                 var allServices = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase);
 
                 // Act
-                var result = getInfoMethod.Invoke(vm, new object[] { service, allServices, null, CancellationToken.None });
+                var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, null, CancellationToken.None);
 
                 // Assert
                 Assert.NotNull(result);
@@ -1025,7 +1006,6 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
-                var applyMethod = typeof(MainViewModel).GetMethod("ApplyServiceUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 var targetService = new Service
                 {
@@ -1054,7 +1034,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 };
 
                 // Act
-                applyMethod.Invoke(vm, new object[] { info });
+                TestReflection.InvokeNonPublic(vm, "ApplyServiceUpdate", info);
 
                 // Assert
                 Assert.Equal(20, targetService.Pid);
@@ -1083,10 +1063,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                         hasSelectedServicesNotified = true;
                 };
 
-                var handlerMethod = typeof(MainViewModel).GetMethod("Service_PropertyChanged", BindingFlags.NonPublic | BindingFlags.Instance);
-
                 // Act
-                handlerMethod.Invoke(vm, new object[] { null, new PropertyChangedEventArgs(nameof(ServiceRowViewModel.IsChecked)) });
+                TestReflection.InvokeNonPublic(vm, "Service_PropertyChanged", null, new PropertyChangedEventArgs(nameof(ServiceRowViewModel.IsChecked)));
 
                 // Assert
                 Assert.True(hasSelectedServicesNotified);
@@ -1101,14 +1079,11 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 var vm = CreateViewModel();
 
-                var servicesCollection = (BulkObservableCollection<ServiceRowViewModel>)typeof(MainViewModel)
-                    .GetField("_services", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(vm);
+                var servicesCollection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
                 servicesCollection.Clear();
 
-                var updateStateMethod = typeof(MainViewModel).GetMethod("UpdateSelectAllState", BindingFlags.NonPublic | BindingFlags.Instance);
-
                 // Act
-                updateStateMethod.Invoke(vm, null);
+                TestReflection.InvokeNonPublic(vm, "UpdateSelectAllState");
 
                 // Assert
                 Assert.False(vm.SelectAll);
@@ -1161,7 +1136,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 var vm = CreateViewModel();
 
-                var collection = (BulkObservableCollection<ServiceRowViewModel>)typeof(MainViewModel).GetField("_services", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(vm);
+                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
                 collection.Add(new ServiceRowViewModel(new Service(), _serviceCommandsMock.Object, _cursorServiceMock.Object));
 
                 // Act

@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
+using Servy.Testing;
 using System;
 using System.IO;
 using System.Linq;
@@ -30,6 +31,7 @@ namespace Servy.Core.UnitTests.Logging
 
         public LoggerTests()
         {
+            // Arrange
             // Reset the static state to ensure pure test isolation
             Logger.Shutdown();
             ResetFallbackCounters();
@@ -44,6 +46,7 @@ namespace Servy.Core.UnitTests.Logging
 
         public void Dispose()
         {
+            // Arrange & Act
             Logger.Shutdown();
             CleanupFiles();
         }
@@ -57,9 +60,8 @@ namespace Servy.Core.UnitTests.Logging
 
         private void ResetFallbackCounters()
         {
-            var flags = BindingFlags.NonPublic | BindingFlags.Static;
-            typeof(Logger).GetField("_initFallbackWriteCount", flags)?.SetValue(null, 0);
-            typeof(Logger).GetField("_logFallbackWriteCount", flags)?.SetValue(null, 0);
+            TestReflection.SetFieldStatic(typeof(Logger), "_initFallbackWriteCount", 0);
+            TestReflection.SetFieldStatic(typeof(Logger), "_logFallbackWriteCount", 0);
         }
 
         #region Initialization & Core Logic Tests
@@ -67,7 +69,7 @@ namespace Servy.Core.UnitTests.Logging
         [Fact]
         public void Initialize_WithValidFileName_CreatesLogFile()
         {
-            // Act
+            // Arrange & Act
             Logger.Initialize(_testFileName);
             Logger.Info("Initialization test");
             Logger.Shutdown();
@@ -81,7 +83,7 @@ namespace Servy.Core.UnitTests.Logging
         [Fact]
         public void Initialize_WithNullFileName_GracefullySkipsInitialization()
         {
-            // Act
+            // Arrange & Act
             Logger.Initialize((string)null);
             Logger.Info("Should drop silently");
 
@@ -522,15 +524,14 @@ namespace Servy.Core.UnitTests.Logging
 
             // The best way to assert it didn't recreate the writer is ensuring the fallback
             // counters weren't reset (which InternalInitialize does).
-            var flags = BindingFlags.NonPublic | BindingFlags.Static;
-            typeof(Logger).GetField("_initFallbackWriteCount", flags)?.SetValue(null, 99);
+            TestReflection.SetFieldStatic(typeof(Logger), "_initFallbackWriteCount", 99);
 
             // Act
             Logger.SetLogRotationSize(10);     // Unchanged
             Logger.SetMaxBackupLogFiles(10);   // Unchanged
 
             // Assert
-            int count = (int)typeof(Logger).GetField("_initFallbackWriteCount", flags).GetValue(null);
+            int count = TestReflection.GetFieldStatic<int>(typeof(Logger), "_initFallbackWriteCount");
             Assert.Equal(99, count); // Proves InternalInitialize was bypassed
         }
 

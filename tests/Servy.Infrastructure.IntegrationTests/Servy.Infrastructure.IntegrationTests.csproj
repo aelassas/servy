@@ -142,6 +142,10 @@
       <Project>{2ed3b3e9-1132-4aa4-a487-85848abccc1a}</Project>
       <Name>Servy.Infrastructure</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Servy.Testing\Servy.Testing.csproj">
+      <Project>{4bc9a435-c352-4953-82b8-b419b13e8f56}</Project>
+      <Name>Servy.Testing</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

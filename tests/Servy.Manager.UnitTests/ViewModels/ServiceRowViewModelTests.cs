@@ -3,12 +3,12 @@ using Servy.Core.Enums;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
+using Servy.Testing;
 using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -40,6 +40,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullService_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
                 new ServiceRowViewModel(null, _serviceCommandsMock.Object, _cursorServiceMock.Object));
         }
@@ -47,6 +48,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullServiceCommands_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
                 new ServiceRowViewModel(new Service { Name = "S" }, null, _cursorServiceMock.Object));
         }
@@ -54,6 +56,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullCursorService_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
                 new ServiceRowViewModel(new Service { Name = "S" }, _serviceCommandsMock.Object, null));
         }
@@ -92,12 +95,10 @@ namespace Servy.Manager.UnitTests.ViewModels
             );
 
             // Act
-            var result = vm.GetType()
-                           .GetMethod("CanExecuteServiceCommand", BindingFlags.NonPublic | BindingFlags.Instance)
-                           ?.Invoke(vm, new object[] { null });
+            var result = (bool)TestReflection.InvokeNonPublic(vm, "CanExecuteServiceCommand", new object[] { null });
 
             // Assert
-            Assert.False((bool)result);
+            Assert.False(result);
         }
 
         [Fact]
@@ -110,7 +111,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .ReturnsAsync(true)
                 .Verifiable();
 
-            // CEREMONY REMOVAL FIX: State snapshots dropped since fields isolate natively within individual test frames.
             vm.Service.IsInstalled = true;
             vm.Service.Status = ServiceStatus.Stopped;
 
@@ -133,7 +133,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .ReturnsAsync(true)
                 .Verifiable();
 
-            // CEREMONY REMOVAL FIX: Preconditions applied directly inline without fragile snapshot wrappers.
             vm.Service.IsInstalled = true;
             vm.Service.Status = ServiceStatus.Running;
 
@@ -154,7 +153,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .ReturnsAsync(true)
                 .Verifiable();
 
-            // CEREMONY REMOVAL FIX: Inline preconditions assigned cleanly.
             vm.Service.IsInstalled = true;
             vm.Service.Status = ServiceStatus.Running;
 
@@ -209,7 +207,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .ReturnsAsync(true)
                 .Verifiable();
 
-            // CEREMONY REMOVAL FIX: Redundant try/finally blocks eliminated to improve maintainability.
             vm.Service.IsInstalled = true;
 
             // Act
@@ -260,9 +257,9 @@ namespace Servy.Manager.UnitTests.ViewModels
             var vm = CreateViewModel();
 
             _serviceCommandsMock
-                  .Setup(s => s.ExportServiceToJsonAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<CancellationToken>()))
-                  .Returns(Task.CompletedTask)
-                  .Verifiable();
+                 .Setup(s => s.ExportServiceToJsonAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<CancellationToken>()))
+                 .Returns(Task.CompletedTask)
+                 .Verifiable();
 
             // Act
             vm.ExportJsonCommand.Execute(null);
@@ -332,14 +329,13 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.IsSelected = true;
             vm.IsSelected = true; // Duplicate pass to ensure optimization coverage
             vm.IsChecked = true;
-            vm.IsChecked = true;   // Duplicate pass to ensure optimization coverage
+            vm.IsChecked = true;  // Duplicate pass to ensure optimization coverage
 
             // Act - Trigger changes through the underlying Model to verify automatic forwarding
             service.Status = ServiceStatus.Stopped;
             service.Pid = 0;
 
             // Assert Notification Triggers & Optimization Coverage
-            // Verify that properties are modified, but duplicates are suppressed cleanly by equality guards
             Assert.Equal(1, propertiesChanged.Count(p => p == nameof(vm.IsSelected)));
             Assert.Equal(1, propertiesChanged.Count(p => p == nameof(vm.IsChecked)));
 
@@ -358,15 +354,12 @@ namespace Servy.Manager.UnitTests.ViewModels
             bool localPropertyNotificationFired = false;
             vm.PropertyChanged += (s, e) => localPropertyNotificationFired = true;
 
-            // Fetch private event redirect handler method
-            var method = typeof(ServiceRowViewModel).GetMethod("Service_PropertyChanged", BindingFlags.NonPublic | BindingFlags.Instance);
-
             // Act & Assert Branch 1: Null PropertyChangedEventArgs argument context
-            method.Invoke(vm, new object[] { service, null });
+            TestReflection.InvokeNonPublic(vm, "Service_PropertyChanged", service, null);
             Assert.False(localPropertyNotificationFired);
 
             // Act & Assert Branch 2: Empty PropertyName string value
-            method.Invoke(vm, new object[] { service, new PropertyChangedEventArgs(string.Empty) });
+            TestReflection.InvokeNonPublic(vm, "Service_PropertyChanged", service, new PropertyChangedEventArgs(string.Empty));
             Assert.False(localPropertyNotificationFired);
         }
 
@@ -377,13 +370,11 @@ namespace Servy.Manager.UnitTests.ViewModels
             var service = new Service { Name = "S" };
             var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
 
-            var method = typeof(ServiceRowViewModel).GetMethod("Service_PropertyChanged", BindingFlags.NonPublic | BindingFlags.Instance);
-
             // Act
             // Triggering a non-state tracking field update (like Description) shouldn't invoke structural command refreshes
-            method.Invoke(vm, new object[] { service, new PropertyChangedEventArgs(nameof(Service.Description)) });
+            TestReflection.InvokeNonPublic(vm, "Service_PropertyChanged", service, new PropertyChangedEventArgs(nameof(Service.Description)));
 
-            // Test successfully passes if no cast or execution error leaks from command wrapper pipes
+            // Test successfully passes if no execution error leaks from command wrapper pipes
         }
 
         #endregion
@@ -397,18 +388,14 @@ namespace Servy.Manager.UnitTests.ViewModels
             var service = new Service { Name = "FaultyService" };
             var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
 
-            // Force an inner operation tool to break immediately
             _serviceCommandsMock
                 .Setup(s => s.ConfigureServiceAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("SCM access denied simulation error."));
 
             // Act
-            var executeSafeAsyncMethod = typeof(ServiceRowViewModel).GetMethod("ExecuteSafeAsync",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-
             Func<Task> faultyAction = () => _serviceCommandsMock.Object.ConfigureServiceAsync(service, CancellationToken.None);
 
-            var taskResult = (Task)executeSafeAsyncMethod.Invoke(vm, new object[] { faultyAction });
+            var taskResult = (Task)TestReflection.InvokeNonPublic(vm, "ExecuteSafeAsync", faultyAction);
             await taskResult;
 
             // Assert
@@ -432,7 +419,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Fire model event changes post-disposal frame
             service.Status = ServiceStatus.Running;
 
-            // Assert - No events should catch since the link was severed
+            // Assert
             Assert.Equal(0, receivedNotifications);
         }
 
@@ -446,11 +433,9 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Act
             vm.Dispose();
 
-            // Re-invoke tracking logic to challenge the internal boolean field guard branch
-            var sequentialDisposeException = Record.Exception(() => vm.Dispose());
-
-            // Assert
-            Assert.Null(sequentialDisposeException);
+            // Assert - Should not throw
+            var exception = Record.Exception(() => vm.Dispose());
+            Assert.Null(exception);
         }
 
         #endregion

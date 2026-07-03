@@ -1,4 +1,5 @@
 ﻿using Servy.Helpers;
+using Servy.Testing;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -86,11 +87,8 @@ namespace Servy.UnitTests.Helpers
                 var passwordBox = new PasswordBox();
                 passwordBox.Password = "OriginalControlPassword";
 
-                // Set the internal IsUpdating attached property to true via reflection to simulate an active internal update loop
-                var isUpdatingPropertyField = typeof(PasswordBoxHelper).GetField("IsUpdatingProperty",
-                    System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-
-                var isUpdatingProperty = (DependencyProperty)isUpdatingPropertyField.GetValue(null);
+                // Set the internal IsUpdating attached property to true via reflection helper to simulate an active internal update loop
+                var isUpdatingProperty = TestReflection.GetFieldStatic<DependencyProperty>(typeof(PasswordBoxHelper), "IsUpdatingProperty");
                 passwordBox.SetValue(isUpdatingProperty, true);
 
                 // Act

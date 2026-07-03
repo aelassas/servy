@@ -1,11 +1,11 @@
 ﻿using Dapper;
 using Servy.Infrastructure.Data;
+using Servy.Testing;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Linq;
-using System.Reflection;
 using Xunit;
 
 namespace Servy.Infrastructure.IntegrationTests.Data
@@ -213,10 +213,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Act: Invoke ApplyVersion2 directly to bypass V4's destructive rebuild logic
                 using (var tx = conn.BeginTransaction())
                 {
-                    var applyVersion2 = typeof(SQLiteDbInitializer).GetMethod("ApplyVersion2", BindingFlags.Static | BindingFlags.NonPublic);
-                    Assert.NotNull(applyVersion2);
-
-                    applyVersion2.Invoke(null, new object[] { conn, tx });
+                    TestReflection.InvokeNonPublicStatic(typeof(SQLiteDbInitializer), "ApplyVersion2", conn, tx);
                     tx.Commit();
 
                     // Assert
@@ -324,14 +321,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             {
                 SQLiteDbInitializer.Initialize(conn);
 
-                // Access internal definition engines to dynamically extract required strict columns
-                var getSqlType = typeof(SQLiteDbInitializer).GetMethod("GetSqlType", BindingFlags.Static | BindingFlags.NonPublic);
-                var getExpectedCols = typeof(SQLiteDbInitializer).GetMethod("GetExpectedColumns", BindingFlags.Static | BindingFlags.NonPublic);
-
-                Assert.NotNull(getSqlType);
-                Assert.NotNull(getExpectedCols);
-
-                var expectedCols = (IEnumerable<string>)getExpectedCols.Invoke(null, null);
+                // Access internal definition engines seamlessly via centralized test reflection helper
+                var expectedCols = (IEnumerable<string>)TestReflection.InvokeNonPublicStatic(typeof(SQLiteDbInitializer), "GetExpectedColumns");
 
                 var insertCols = new List<string> { "Name" };
                 var paramMap1 = new DynamicParameters();
@@ -345,7 +336,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 {
                     if (col.Equals("Name", StringComparison.OrdinalIgnoreCase)) continue;
 
-                    string sqlType = (string)getSqlType.Invoke(null, new object[] { col });
+                    string sqlType = (string)TestReflection.InvokeNonPublicStatic(typeof(SQLiteDbInitializer), "GetSqlType", col);
 
                     // If the column enforces NOT NULL and does not have a DEFAULT constraint, we must supply a value
                     if (sqlType.IndexOf("NOT NULL", StringComparison.OrdinalIgnoreCase) >= 0 &&
@@ -443,19 +434,12 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void GetSqlType_MissingColumn_ThrowsInvalidOperationException()
         {
-            // Arrange
-            var methodInfo = typeof(SQLiteDbInitializer).GetMethod("GetSqlType",
-                BindingFlags.Static | BindingFlags.NonPublic);
+            // Arrange & Act & Assert
+            // TestReflection natively handles unwrapping TargetInvocationException contexts cleanly on static hooks
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+                TestReflection.InvokeNonPublicStatic(typeof(SQLiteDbInitializer), "GetSqlType", "NonExistentMagicalColumn_12345"));
 
-            Assert.NotNull(methodInfo);
-
-            // Act & Assert
-            var ex = Assert.Throws<TargetInvocationException>(() =>
-                methodInfo.Invoke(null, new object[] { "NonExistentMagicalColumn_12345" }));
-
-            // The inner exception must be InvalidOperationException from the fail-fast check
-            Assert.IsType<InvalidOperationException>(ex.InnerException);
-            Assert.Contains("lacks an [SqlColumn] attribute", ex.InnerException.Message);
+            Assert.Contains("lacks an [SqlColumn] attribute", ex.Message);
         }
 
         /// <summary>
@@ -468,13 +452,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Dictionary<string, string> seedData,
             params string[] skipColumns)
         {
-            var getSqlType = typeof(SQLiteDbInitializer).GetMethod("GetSqlType", BindingFlags.Static | BindingFlags.NonPublic);
-            var getExpectedCols = typeof(SQLiteDbInitializer).GetMethod("GetExpectedColumns", BindingFlags.Static | BindingFlags.NonPublic);
-
-            Assert.NotNull(getSqlType);
-            Assert.NotNull(getExpectedCols);
-
-            var expectedCols = (IEnumerable<string>)getExpectedCols.Invoke(null, null);
+            // Arrange & Act
+            var expectedCols = (IEnumerable<string>)TestReflection.InvokeNonPublicStatic(typeof(SQLiteDbInitializer), "GetExpectedColumns");
             var insertCols = seedData.Keys.ToList();
             var insertVals = seedData.Values.ToList();
 
@@ -483,7 +462,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 if (skipColumns.Contains(col, StringComparer.OrdinalIgnoreCase))
                     continue;
 
-                string sqlType = (string)getSqlType.Invoke(null, new object[] { col });
+                string sqlType = (string)TestReflection.InvokeNonPublicStatic(typeof(SQLiteDbInitializer), "GetSqlType", col);
                 if (sqlType.IndexOf("NOT NULL", StringComparison.OrdinalIgnoreCase) >= 0 &&
                     sqlType.IndexOf("DEFAULT", StringComparison.OrdinalIgnoreCase) < 0)
                 {
@@ -498,6 +477,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             conn.Execute($"CREATE TABLE Services ({string.Join(", ", colDefs)});");
             conn.Execute($"INSERT INTO Services ({string.Join(", ", insertCols)}) VALUES ({string.Join(", ", insertVals)});");
 
+            // Assert
             return insertCols;
         }
 

@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Moq.Protected;
+using Servy.Testing;
 using Servy.UI.Services;
 using System;
 using System.Net;
@@ -135,22 +136,22 @@ namespace Servy.UI.IntegrationTests.Services
         private void InjectMockHandlerIntoStaticClient(HttpMessageHandler mockHandler)
         {
             // 1. Extract the active static HttpClient instance from HelpService
-            var httpClientField = typeof(HelpService).GetField("_httpClient", BindingFlags.Static | BindingFlags.NonPublic);
-            var clientInstance = httpClientField?.GetValue(null) as HttpClient;
+            var clientInstance = TestReflection.GetFieldStatic<HttpClient>(typeof(HelpService), "_httpClient");
 
             if (clientInstance == null) return;
 
-            // 2. HttpClient inherits '_handler' from HttpMessageInvoker in modern .NET runtimes
-            var handlerField = typeof(HttpMessageInvoker).GetField("_handler", BindingFlags.Instance | BindingFlags.NonPublic);
-
-            // Fallback for older .NET Framework layouts if encountered
-            if (handlerField == null)
+            // 2. HttpClient inherits '_handler' from HttpMessageInvoker in modern .NET runtimes.
+            // TestReflection natively walks up the inheritance tree via .BaseType until found.
+            try
             {
-                handlerField = typeof(HttpClient).GetField("_handler", BindingFlags.Instance | BindingFlags.NonPublic);
+                TestReflection.SetField(clientInstance, "_handler", mockHandler);
             }
-
-            // 3. Force-write the mock handler into the instance field context cleanly
-            handlerField?.SetValue(clientInstance, mockHandler);
+            catch (ArgumentException)
+            {
+                // Fallback for distinct .NET runtime memory layouts if field definition drifts
+                var handlerField = typeof(HttpClient).GetField("_handler", BindingFlags.Instance | BindingFlags.NonPublic);
+                handlerField?.SetValue(clientInstance, mockHandler);
+            }
         }
 
         #endregion
@@ -161,13 +162,12 @@ namespace Servy.UI.IntegrationTests.Services
         public void NormalizeVersion_PartialVersionsWithNegativeFields_PadsMissingPartsToZero()
         {
             // Arrange
-            var method = typeof(HelpService).GetMethod("NormalizeVersion", BindingFlags.Static | BindingFlags.NonPublic);
-
             // System.Version elements constructed with 2 parts assign -1 automatically to Build and Revision fields
             var incompleteVersion = new Version(4, 2);
 
             // Act
-            var result = (Version)method.Invoke(null, new object[] { incompleteVersion });
+            // Non-public static invocation is routed cleanly via the centralized test reflection helper
+            var result = (Version)TestReflection.InvokeNonPublicStatic(typeof(HelpService), "NormalizeVersion", incompleteVersion);
 
             // Assert
             Assert.Equal(4, result.Major);
