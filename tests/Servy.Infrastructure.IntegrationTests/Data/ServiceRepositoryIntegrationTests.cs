@@ -270,7 +270,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
             // Manually corrupt data payload in database directly via executor bypass
             await _executor.ExecuteAsync(
-                "UPDATE Services SET Parameters = 'POISON_PAYLOAD' WHERE Id = @Id",
+                $"UPDATE {SqlConstants.ServicesTableName} SET Parameters = 'POISON_PAYLOAD' WHERE Id = @Id",
                 new { Id = id },
                 cancellationToken: TestContext.Current.CancellationToken);
 
@@ -318,7 +318,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange: Directly inject an untrimmed legacy name directly via SQL bypass to simulate version <= 8.3 rows
             const string paddedName = "HoopsComm ";
-            var sql = $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority) VALUES (@Name, 'C:\\bin.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');";
+            var sql = $"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority) VALUES (@Name, 'C:\\bin.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');";
             await _executor.ExecuteAsync(sql, new { Name = paddedName }, cancellationToken: TestContext.Current.CancellationToken);
 
             // Act: caller looks up using the raw untrimmed legacy name to exercise the untrimmed fallback path
@@ -334,7 +334,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange: Direct SQL seed injects zombie row with hidden trailing whitespace
             const string paddedName = "ZombieService ";
-            var sql = $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority) VALUES (@Name, 'C:\\z.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');";
+            var sql = $"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority) VALUES (@Name, 'C:\\z.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');";
             await _executor.ExecuteAsync(sql, new { Name = paddedName }, cancellationToken: TestContext.Current.CancellationToken);
 
             // Act: Purge routing requested using trimmed input signature string
@@ -352,7 +352,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Arrange
             var service = new ServiceDto { Name = "SyncService", ExecutablePath = "C:\\s.exe", Pid = 444 };
             int id = _executor.ExecuteScalar<int>(
-                $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority, Pid) VALUES ('SyncService', 'C:\\s.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}', 444); SELECT last_insert_rowid();");
+                $"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority, Pid) VALUES ('SyncService', 'C:\\s.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}', 444); SELECT last_insert_rowid();");
             service.Id = id;
 
             // Act
@@ -428,7 +428,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Arrange
             var service = new ServiceDto { Name = "SynchronousQueryService", ExecutablePath = "C:\\sync.exe" };
             _executor.Execute(
-                $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority) VALUES ('SynchronousQueryService', 'C:\\sync.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');");
+                $"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority) VALUES ('SynchronousQueryService', 'C:\\sync.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');");
 
             // Act
             var resolved = _repository.GetByName("SynchronousQueryService", decrypt: false);
@@ -461,7 +461,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange: Seed an un-trimmed legacy service directly into the database
             const string paddedName = "HoopsComm ";
-            var sql = $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority) VALUES (@Name, 'C:\\legacy.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');";
+            var sql = $"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority) VALUES (@Name, 'C:\\legacy.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}');";
             _executor.Execute(sql, new { Name = paddedName });
 
             // Act: Pass the untrimmed name explicitly to satisfy the 'name != name.Trim()' guard clause
@@ -477,7 +477,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange: Seed a zombie service row carrying a trailing newline/whitespace character
             const string paddedName = "LegacyEngineService\n";
-            var sql = $"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority, Pid) VALUES (@Name, 'C:\\engine.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}', 7777);";
+            var sql = $"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority, Pid) VALUES (@Name, 'C:\\engine.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}', 7777);";
             await _executor.ExecuteAsync(sql, new { Name = paddedName }, cancellationToken: TestContext.Current.CancellationToken);
 
             // Act: Query using the raw untrimmed name to test ResolveByNameAsync fallback branch
@@ -493,7 +493,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange: Seed an un-trimmed service row containing leading whitespace.
             const string paddedName = " GhostService";
-            var sql = $@"INSERT INTO Services (Name, ExecutablePath, StartupType, Priority, Pid, ActiveStdoutPath, ActiveStderrPath) 
+            var sql = $@"INSERT INTO {SqlConstants.ServicesTableName} (Name, ExecutablePath, StartupType, Priority, Pid, ActiveStdoutPath, ActiveStderrPath) 
                          VALUES (@Name, 'C:\ghost.exe', '{AppConfig.DefaultStartupType}', '{AppConfig.DefaultProcessPriority}', 8888, 'C:\out.log', 'C:\err.log');";
             await _executor.ExecuteAsync(sql, new { Name = paddedName }, cancellationToken: TestContext.Current.CancellationToken);
 
