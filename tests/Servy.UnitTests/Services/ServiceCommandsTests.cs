@@ -6,6 +6,7 @@ using Servy.Core.Enums;
 using Servy.Core.Services;
 using Servy.Models;
 using Servy.Services;
+using Servy.Testing;
 using Servy.UI.Services;
 using Servy.Validation;
 
@@ -841,7 +842,7 @@ namespace Servy.UnitTests.Services
                 It.IsAny<ServiceDto>(),
                 It.IsAny<string?>(),
                 It.IsAny<string?>(),
-                It.IsAny<bool>(), 
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
@@ -858,11 +859,7 @@ namespace Servy.UnitTests.Services
             };
 
             // Act
-            // Invoke the private ExportConfigAsync directly via reflection to exercise the exportAction delegate
-            var privateMethod = typeof(ServiceCommands).GetMethod("ExportConfigAsync",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-            var task = (Task)privateMethod!.Invoke(sut, new object?[]
+            var task = (Task)TestReflection.InvokeNonPublic(sut, "ExportConfigAsync", new object?[]
             {
                 "password",
                 new Func<string?>(() => path),

@@ -1,9 +1,8 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.IO;
+using Servy.Testing;
 using System.Globalization;
-using System.Reflection;
-using System.Runtime.ExceptionServices;
 
 namespace Servy.Core.UnitTests.IO
 {
@@ -44,10 +43,10 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void Constructor_InvalidPath_ThrowsArgumentException()
         {
-            // Arrange, Act & Assert
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentException>(() => CreateWriter(null!, true, 100));
             Assert.Throws<ArgumentException>(() => CreateWriter("", true, 100));
-            Assert.Throws<ArgumentException>(() => CreateWriter("   ", true, 100));
+            Assert.Throws<ArgumentException>(() => CreateWriter("    ", true, 100));
         }
 
         [Fact]
@@ -96,7 +95,7 @@ namespace Servy.Core.UnitTests.IO
             // Arrange
             var filePath = Path.Combine(_testDir, "lazy_write.txt");
 
-            // Act
+            // Act & Assert
             using (var writer = CreateWriter(filePath, true, 10))
             {
                 // File shouldn't exist right after instantiation
@@ -104,7 +103,6 @@ namespace Servy.Core.UnitTests.IO
 
                 writer.Write("123");
 
-                // Assert
                 // File should exist after the first interaction
                 Assert.True(File.Exists(filePath), "File should exist after write");
             }
@@ -116,14 +114,13 @@ namespace Servy.Core.UnitTests.IO
             // Arrange
             var filePath = Path.Combine(_testDir, "lazy_writeline.txt");
 
-            // Act
+            // Act & Assert
             using (var writer = CreateWriter(filePath, true, 10))
             {
                 Assert.False(File.Exists(filePath), "File should not exist yet");
 
                 writer.WriteLine("123");
 
-                // Assert
                 Assert.True(File.Exists(filePath), "File should exist after write");
             }
         }
@@ -228,18 +225,13 @@ namespace Servy.Core.UnitTests.IO
                 File.WriteAllText(collisionPath, string.Empty);
             }
 
-            // Get the private static method via reflection
-            var methodInfo = typeof(RotatingStreamWriter).GetMethod(
-                "GenerateUniqueFileName",
-                BindingFlags.Static | BindingFlags.NonPublic)!;
-
             // Act & Assert
-            var exception = Assert.Throws<TargetInvocationException>(() =>
-                methodInfo.Invoke(null, new object[] { basePath }));
+            // Custom utility unwraps TargetInvocationException automatically via ExceptionDispatchInfo,
+            // so we asset directly on IOException.
+            var exception = Assert.Throws<IOException>(() =>
+                TestReflection.InvokeNonPublicStatic(typeof(RotatingStreamWriter), "GenerateUniqueFileName", new object[] { basePath }));
 
-            // TargetInvocationException wraps the actual IOException
-            Assert.IsType<IOException>(exception.InnerException);
-            Assert.Contains("after 10000 attempts", exception.InnerException.Message);
+            Assert.Contains("after 10000 attempts", exception.Message);
         }
 
         [Theory]
@@ -365,17 +357,8 @@ namespace Servy.Core.UnitTests.IO
 
         private string InvokeGenerateUniqueFileName(string path)
         {
-            try
-            {
-                var method = typeof(RotatingStreamWriter).GetMethod("GenerateUniqueFileName", BindingFlags.NonPublic | BindingFlags.Static);
-                return (string)method!.Invoke(null, new object[] { path })!;
-            }
-            catch (TargetInvocationException ex) when (ex.InnerException != null)
-            {
-                // Preserve the stack trace of the original exception
-                ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
-                throw; // Unreachable
-            }
+            // Arrange & Act
+            return (string)TestReflection.InvokeNonPublicStatic(typeof(RotatingStreamWriter), "GenerateUniqueFileName", new object[] { path })!;
         }
 
         [Fact]
@@ -402,9 +385,6 @@ namespace Servy.Core.UnitTests.IO
         public void GenerateUniqueFileName_ReturnsNonExistingFileName()
         {
             // Arrange
-            var methodInfo = typeof(RotatingStreamWriter).GetMethod("GenerateUniqueFileName", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.NotNull(methodInfo);
-
             using (var writer = CreateWriter(_logFilePath, true, 1000))
             {
                 var basePath = Path.Combine(_testDir, "file.log");
@@ -413,7 +393,7 @@ namespace Servy.Core.UnitTests.IO
                 File.WriteAllText(Path.Combine(_testDir, "file.(2).log"), "test");
 
                 // Act
-                var uniqueName = (string)methodInfo.Invoke(writer, new object[] { basePath })!;
+                var uniqueName = (string)TestReflection.InvokeNonPublicStatic(typeof(RotatingStreamWriter), "GenerateUniqueFileName", new object[] { basePath })!;
 
                 // Assert
                 Assert.Equal(Path.Combine(_testDir, "file.(3).log"), uniqueName);
@@ -501,12 +481,9 @@ namespace Servy.Core.UnitTests.IO
             var writer = CreateWriter(baseLog, true, 1000);
             writer.Write(""); // force file creation
 
-            var enforceMethod = typeof(RotatingStreamWriter).GetMethod("EnforceMaxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
-            var maxRotField = typeof(RotatingStreamWriter).GetField("_maxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
-
             // ---- BRANCH 1: _maxRotations <= 0 ----
-            maxRotField!.SetValue(writer, 0);
-            enforceMethod!.Invoke(writer, null);
+            TestReflection.SetField(writer, "_maxRotations", 0);
+            TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
 
             // ---- BRANCH 2: Filter Logic (StartsWith and EndsWith) ----
             string f1 = Path.Combine(_testDir, "service.20260325_000001.log");
@@ -518,8 +495,8 @@ namespace Servy.Core.UnitTests.IO
             File.WriteAllText(noise2, "noise");
 
             // ---- BRANCH 3: rotatedFiles.Count <= _maxRotations ----
-            maxRotField.SetValue(writer, 5);
-            enforceMethod.Invoke(writer, null);
+            TestReflection.SetField(writer, "_maxRotations", 5);
+            TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
 
             Assert.True(File.Exists(f1));
             Assert.True(File.Exists(noise1));
@@ -531,8 +508,8 @@ namespace Servy.Core.UnitTests.IO
             File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10));
             File.SetLastWriteTimeUtc(f2, DateTime.UtcNow);
 
-            maxRotField.SetValue(writer, 1);
-            enforceMethod.Invoke(writer, null);
+            TestReflection.SetField(writer, "_maxRotations", 1);
+            TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
 
             Assert.True(File.Exists(f2));     // Kept (newest)
             Assert.False(File.Exists(f1));    // Deleted
@@ -546,7 +523,7 @@ namespace Servy.Core.UnitTests.IO
             // Act & Assert
             using (var locked = new FileStream(f1, FileMode.Open, FileAccess.Read, FileShare.None))
             {
-                var ex = Record.Exception(() => enforceMethod.Invoke(writer, null));
+                var ex = Record.Exception(() => TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations"));
                 Assert.Null(ex); // Resilient against locks
             }
 
@@ -563,21 +540,18 @@ namespace Servy.Core.UnitTests.IO
             var writer = CreateWriter(baseLog, true, 1000);
             writer.Write(""); // Trigger lazy init
 
-            var enforceMethod = typeof(RotatingStreamWriter).GetMethod("EnforceMaxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
-            var maxRotField = typeof(RotatingStreamWriter).GetField("_maxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
-
             string f1 = Path.Combine(_testDir, "plainfile.20260325_000001");
             File.WriteAllText(f1, "rotated");
             File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10));
 
-            maxRotField!.SetValue(writer, 1);
+            TestReflection.SetField(writer, "_maxRotations", 1);
 
             string f2 = Path.Combine(_testDir, "plainfile.20260325_000002");
             File.WriteAllText(f2, "rotated2");
             File.SetLastWriteTimeUtc(f2, DateTime.UtcNow);
 
             // Act
-            enforceMethod!.Invoke(writer, null);
+            TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations");
 
             // Assert
             Assert.True(File.Exists(f2));
@@ -610,8 +584,7 @@ namespace Servy.Core.UnitTests.IO
             // Act
             var ex = Record.Exception(() =>
             {
-                var method = typeof(RotatingStreamWriter).GetMethod("EnforceMaxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
-                method!.Invoke(writer, Array.Empty<object>());
+                TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations", Array.Empty<object>());
             });
 
             // Assert
@@ -629,8 +602,7 @@ namespace Servy.Core.UnitTests.IO
             // Act
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Daily, 0, false, () => fixedTime))
             {
-                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField!.SetValue(writer, fixedTime.AddDays(-1));
+                TestReflection.SetField(writer, "_lastRotationDate", fixedTime.AddDays(-1));
 
                 writer.WriteLine("rotate on daily boundary");
                 writer.Flush();
@@ -654,8 +626,7 @@ namespace Servy.Core.UnitTests.IO
                 var lastYear = DateTime.UtcNow.Year - 1;
                 var dec31 = new DateTime(lastYear, 12, 31);
 
-                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField!.SetValue(writer, dec31);
+                TestReflection.SetField(writer, "_lastRotationDate", dec31);
 
                 writer.WriteLine("rotate on year change");
                 writer.Flush();
@@ -676,8 +647,7 @@ namespace Servy.Core.UnitTests.IO
             // Act
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0))
             {
-                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField!.SetValue(writer, recently);
+                TestReflection.SetField(writer, "_lastRotationDate", recently);
 
                 writer.WriteLine("should not rotate");
                 writer.Flush();
@@ -698,8 +668,7 @@ namespace Servy.Core.UnitTests.IO
             // Act
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Monthly, 0, false, () => fixedTime))
             {
-                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField!.SetValue(writer, fixedTime.AddMonths(-1));
+                TestReflection.SetField(writer, "_lastRotationDate", fixedTime.AddMonths(-1));
 
                 writer.WriteLine("rotate on monthly boundary");
                 writer.Flush();
@@ -721,8 +690,7 @@ namespace Servy.Core.UnitTests.IO
             // Act
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Monthly, 0, false, () => fixedTime))
             {
-                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField!.SetValue(writer, fixedTime.AddYears(-1));
+                TestReflection.SetField(writer, "_lastRotationDate", fixedTime.AddYears(-1));
 
                 writer.WriteLine("rotate on monthly boundary");
                 writer.Flush();
@@ -744,8 +712,7 @@ namespace Servy.Core.UnitTests.IO
             // Act
             using (var writer = CreateWriter(filePath, true, 5, true, DateRotationType.Daily, 0, false, () => fixedTime))
             {
-                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField!.SetValue(writer, fixedTime.AddDays(-1));
+                TestReflection.SetField(writer, "_lastRotationDate", fixedTime.AddDays(-1));
 
                 writer.Write("123456");
                 writer.Flush();
@@ -773,8 +740,7 @@ namespace Servy.Core.UnitTests.IO
             // Act
             using (var writer = CreateWriter(filePath, true, 1024, true, DateRotationType.Daily, 0, false, () => fixedTime))
             {
-                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField!.SetValue(writer, fixedTime.AddDays(-1));
+                TestReflection.SetField(writer, "_lastRotationDate", fixedTime.AddDays(-1));
 
                 writer.WriteLine("date rotation hit");
                 writer.Flush();
@@ -792,17 +758,13 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = new RotatingStreamWriter("dummy.log", false, 1000, true, DateRotationType.Daily, 1, false))
             {
                 // 1. Force an invalid enum value into the private field
-                var field = typeof(RotatingStreamWriter).GetField("_dateRotationType", BindingFlags.NonPublic | BindingFlags.Instance);
-                field!.SetValue(writer, (DateRotationType)999);
+                TestReflection.SetField(writer, "_dateRotationType", (DateRotationType)999);
 
-                // 2. Get the method info
-                var method = typeof(RotatingStreamWriter).GetMethod("ShouldRotateByDate", BindingFlags.NonPublic | BindingFlags.Instance);
-
-                // 3. Act: Provide the required DateTime parameter (even for the default/invalid case)
+                // 2. Act: Provide the required DateTime parameter (even for the default/invalid case)
                 var args = new object[] { DateTime.UtcNow };
-                var result = (bool)method!.Invoke(writer, args)!;
+                var result = (bool)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", args)!;
 
-                // Assert: An unrecognized rotation type should safely return false
+                // 3. Assert: An unrecognized rotation type should safely return false
                 Assert.False(result);
             }
         }
@@ -887,14 +849,14 @@ namespace Servy.Core.UnitTests.IO
             // Act & Assert: Test Local Branch
             using (var localWriter = CreateWriter(_logFilePath, useLocalTimeForRotation: true))
             {
-                var lastRot = (DateTime)GetPrivateField(localWriter, "_lastRotationDate");
+                var lastRot = TestReflection.GetField<DateTime>(localWriter, "_lastRotationDate");
                 Assert.Equal(localWriteTime, lastRot);
             }
 
             // Act & Assert: Test UTC Branch
             using (var utcWriter = CreateWriter(_logFilePath, useLocalTimeForRotation: false))
             {
-                var lastRot = (DateTime)GetPrivateField(utcWriter, "_lastRotationDate");
+                var lastRot = TestReflection.GetField<DateTime>(utcWriter, "_lastRotationDate");
                 Assert.Equal(utcWriteTime, lastRot);
             }
         }
@@ -911,11 +873,11 @@ namespace Servy.Core.UnitTests.IO
 
             using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, useLocalTimeForRotation: true))
             {
-                SetPrivateField(writer, "_lastRotationDate", lastRotationUtc);
+                TestReflection.SetField(writer, "_lastRotationDate", lastRotationUtc);
 
                 // Act
                 var args = new object[] { nowUtc };
-                var shouldRotate = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate", args);
+                var shouldRotate = (bool?)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", args);
 
                 // Assert
                 // Even though it is a new day (April 11 vs April 10), 
@@ -938,11 +900,11 @@ namespace Servy.Core.UnitTests.IO
 
             using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, useLocalTimeForRotation: true))
             {
-                SetPrivateField(writer, "_lastRotationDate", lastRotationUtc);
+                TestReflection.SetField(writer, "_lastRotationDate", lastRotationUtc);
 
                 // Act
                 var args = new object[] { nowUtc };
-                var shouldRotate = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate", args);
+                var shouldRotate = (bool?)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", args);
 
                 // Assert
                 Assert.True(shouldRotate, "Rotation should trigger when crossing into a new calendar day.");
@@ -952,7 +914,7 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void DailyRotation_UTC_IgnoresSafetyBuffer()
         {
-            // Arrange: Strictly UTC. 
+            // Arrange: Use local time configuration instead of UTC for log rotation, modifying the default setup.
             // Last rotation was yesterday at 11:59:59 PM
             var lastRotationUtc = new DateTime(2026, 4, 10, 23, 59, 59, DateTimeKind.Utc);
 
@@ -961,11 +923,11 @@ namespace Servy.Core.UnitTests.IO
 
             using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, useLocalTimeForRotation: false))
             {
-                SetPrivateField(writer, "_lastRotationDate", lastRotationUtc);
+                TestReflection.SetField(writer, "_lastRotationDate", lastRotationUtc);
 
                 // Act: Pass the simulated 'now'
                 var args = new object[] { nowUtc };
-                var shouldRotate = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate", args);
+                var shouldRotate = (bool?)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", args);
 
                 // Assert: In UTC mode, we ignore the 23h buffer and rotate on day change
                 Assert.True(shouldRotate, "UTC mode should rotate immediately when the calendar day flips.");
@@ -981,7 +943,7 @@ namespace Servy.Core.UnitTests.IO
             {
                 localWriter.Write("init"); // Exceeds 1 byte, triggering native rotation and updating the date
 
-                var lastRot = (DateTime)GetPrivateField(localWriter, "_lastRotationDate");
+                var lastRot = TestReflection.GetField<DateTime>(localWriter, "_lastRotationDate");
                 Assert.Equal(DateTimeKind.Local, lastRot.Kind);
             }
 
@@ -990,7 +952,7 @@ namespace Servy.Core.UnitTests.IO
             {
                 utcWriter.Write("init"); // Exceeds 1 byte, triggering native rotation and updating the date
 
-                var lastRot = (DateTime)GetPrivateField(utcWriter, "_lastRotationDate");
+                var lastRot = TestReflection.GetField<DateTime>(utcWriter, "_lastRotationDate");
                 Assert.Equal(DateTimeKind.Utc, lastRot.Kind);
             }
         }
@@ -1004,11 +966,11 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, dateRotationType: DateRotationType.Daily))
             {
                 // Set last rotation to the same day
-                SetPrivateField(writer, "_lastRotationDate", nowUtc.AddHours(-2));
+                TestReflection.SetField(writer, "_lastRotationDate", nowUtc.AddHours(-2));
 
                 // Act: Pass nowUtc as the argument to the private method
                 var args = new object[] { nowUtc };
-                var result = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate", args);
+                var result = (bool?)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", args);
 
                 // Assert: 10:00 AM is same day as 08:00 AM, should not rotate
                 Assert.False(result, "Should not rotate if the calendar day has not changed.");
@@ -1029,7 +991,7 @@ namespace Servy.Core.UnitTests.IO
                 writer.Write("trigger"); // This hits CheckRotation -> rotateBySize is true
 
                 // Assert
-                var lastRot = (DateTime)GetPrivateField(writer, "_lastRotationDate");
+                var lastRot = TestReflection.GetField<DateTime>(writer, "_lastRotationDate");
                 Assert.Equal(useLocal ? DateTimeKind.Local : DateTimeKind.Utc, lastRot.Kind);
             }
         }
@@ -1049,13 +1011,13 @@ namespace Servy.Core.UnitTests.IO
 
                 // Force ShouldRotateByDate to return true by aging the last rotation
                 DateTime fakePast = useLocal ? DateTime.UtcNow.AddDays(-2) : DateTime.UtcNow.AddDays(-2);
-                SetPrivateField(writer, "_lastRotationDate", fakePast);
+                TestReflection.SetField(writer, "_lastRotationDate", fakePast);
 
                 // Trigger write -> CheckRotation -> rotateByDate is true
                 writer.Write("trigger rotation");
 
                 // Assert
-                var lastRot = (DateTime)GetPrivateField(writer, "_lastRotationDate");
+                var lastRot = TestReflection.GetField<DateTime>(writer, "_lastRotationDate");
                 Assert.Equal(useLocal ? DateTimeKind.Local : DateTimeKind.Utc, lastRot.Kind);
             }
         }
@@ -1073,11 +1035,11 @@ namespace Servy.Core.UnitTests.IO
                 writer.Flush();
 
                 // 1. Trip breaker manually
-                SetPrivateField(writer, "_rotationDisabled", true);
+                TestReflection.SetField(writer, "_rotationDisabled", true);
 
                 // Set the cooldown to the future so the self-healing logic 
                 // doesn't immediately reset the breaker to false.
-                SetPrivateField(writer, "_disabledCooldownUntil", DateTime.Now.AddMinutes(10));
+                TestReflection.SetField(writer, "_disabledCooldownUntil", DateTime.Now.AddMinutes(10));
 
                 // 2. Act: This would normally rotate, but is now blocked by the breaker
                 writer.Write(new string('X', 1100));
@@ -1143,8 +1105,8 @@ namespace Servy.Core.UnitTests.IO
 
                 SpinWait.SpinUntil(() =>
                 {
-                    isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled")!;
-                    cooldown = (DateTime)GetPrivateField(writer, "_rotationCooldownUntil")!;
+                    isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled")!;
+                    cooldown = TestReflection.GetField<DateTime>(writer, "_rotationCooldownUntil")!;
                     return cooldown == DateTime.MinValue;
                 }, TimeSpan.FromSeconds(1));
 
@@ -1182,8 +1144,8 @@ namespace Servy.Core.UnitTests.IO
 
                 SpinWait.SpinUntil(() =>
                 {
-                    isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled")!;
-                    cooldown = (DateTime)GetPrivateField(writer, "_rotationCooldownUntil")!;
+                    isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled")!;
+                    cooldown = TestReflection.GetField<DateTime>(writer, "_rotationCooldownUntil")!;
                     return cooldown > DateTime.MinValue;
                 }, TimeSpan.FromSeconds(1));
 
@@ -1245,7 +1207,7 @@ namespace Servy.Core.UnitTests.IO
                 writer.Flush();
 
                 // 4. Assert: Verify the circuit breaker tripped due to the Exception.
-                bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled")!;
+                bool isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled")!;
                 Assert.True(isDisabled, "Circuit breaker should trip on permanent failure (Unique filename exhaustion).");
             }
         }
@@ -1265,15 +1227,15 @@ namespace Servy.Core.UnitTests.IO
                 writer.Flush();
 
                 // 1. Manually trip the breaker and set the cooldown to the PAST
-                SetPrivateField(writer, "_rotationDisabled", true);
-                SetPrivateField(writer, "_disabledCooldownUntil", DateTime.UtcNow.AddMinutes(-1));
+                TestReflection.SetField(writer, "_rotationDisabled", true);
+                TestReflection.SetField(writer, "_disabledCooldownUntil", DateTime.UtcNow.AddMinutes(-1));
 
                 // 2. Act: This write should trigger the healing logic, reset the breaker, and rotate
                 writer.Write("this_forces_rotation");
                 writer.Flush();
 
                 // 3. Assert
-                bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled")!;
+                bool isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled")!;
                 Assert.False(isDisabled, "Breaker should reset automatically after the cooldown expires.");
 
                 var rotated = Directory.GetFiles(_testDir, "healing.*.log").Where(f => !f.EndsWith("healing.log"));
@@ -1291,8 +1253,8 @@ namespace Servy.Core.UnitTests.IO
             {
                 // 1. Trip the breaker FIRST with a FUTURE cooldown.
                 // This ensures the upcoming writes bypass the rotation logic entirely.
-                SetPrivateField(writer, "_rotationDisabled", true);
-                SetPrivateField(writer, "_disabledCooldownUntil", DateTime.UtcNow.AddMinutes(10));
+                TestReflection.SetField(writer, "_rotationDisabled", true);
+                TestReflection.SetField(writer, "_disabledCooldownUntil", DateTime.UtcNow.AddMinutes(10));
 
                 // 2. Write 30 bytes (3x the limit). 
                 // Because the breaker is tripped, the writer will append the data but skip rotation.
@@ -1328,11 +1290,11 @@ namespace Servy.Core.UnitTests.IO
 
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0))
             {
-                SetPrivateField(writer, "_lastRotationDate", lastRotationDate);
+                TestReflection.SetField(writer, "_lastRotationDate", lastRotationDate);
 
                 // Act
                 var args = new object[] { nowUtc };
-                var shouldRotate = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate", args);
+                var shouldRotate = (bool?)TestReflection.InvokeNonPublic(writer, "ShouldRotateByDate", args);
 
                 // Assert: The 7-day fallback should catch this and allow rotation
                 Assert.True(shouldRotate, "Should rotate because > 7 days have passed, despite both dates reporting as ISO Week 1 of Calendar Year 2025.");
@@ -1349,8 +1311,6 @@ namespace Servy.Core.UnitTests.IO
                 writer.Write("init");
                 writer.Flush();
 
-                var method = typeof(RotatingStreamWriter).GetMethod("PerformPhysicalRotation", BindingFlags.NonPublic | BindingFlags.Instance);
-
                 // Create a dummy file in the current working directory to guarantee File.Exists() evaluates to true
                 // inside GenerateUniqueFileName, which then attempts Path.GetDirectoryName("just_a_name.log") == string.Empty.
                 var badRotatedPath = "just_a_name.log";
@@ -1361,7 +1321,7 @@ namespace Servy.Core.UnitTests.IO
                 {
                     // This will throw an ArgumentException ("Cannot determine directory from path...")
                     // which is caught by the broad `catch (Exception)` block in PerformPhysicalRotation.
-                    method!.Invoke(writer, new object[] { filePath, badRotatedPath });
+                    TestReflection.InvokeNonPublic(writer, "PerformPhysicalRotation", new object[] { filePath, badRotatedPath });
                 }
                 finally
                 {
@@ -1369,8 +1329,8 @@ namespace Servy.Core.UnitTests.IO
                 }
 
                 // Assert
-                bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled")!;
-                DateTime cooldown = (DateTime)GetPrivateField(writer, "_disabledCooldownUntil")!;
+                bool isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled")!;
+                DateTime cooldown = TestReflection.GetField<DateTime>(writer, "_disabledCooldownUntil")!;
 
                 Assert.True(isDisabled, "A non-IOException should successfully trip the circuit breaker.");
                 Assert.True(cooldown > DateTime.UtcNow, "Circuit breaker cooldown should be set to the future.");
@@ -1378,32 +1338,6 @@ namespace Servy.Core.UnitTests.IO
         }
 
         #endregion
-
-        private object GetPrivateField(object obj, string fieldName)
-        {
-            var field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
-            return field!.GetValue(obj)!;
-        }
-
-        private void SetPrivateField(object obj, string fieldName, object value)
-        {
-            var field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
-            field!.SetValue(obj, value);
-        }
-
-        private object InvokePrivateMethod(object obj, string methodName, params object[] args)
-        {
-            var method = obj.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
-            try
-            {
-                return method!.Invoke(obj, args)!;
-            }
-            catch (TargetInvocationException ex)
-            {
-                ExceptionDispatchInfo.Capture(ex.InnerException!).Throw();
-                return null!;
-            }
-        }
 
         public void Dispose()
         {

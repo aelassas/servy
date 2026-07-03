@@ -8,6 +8,7 @@ using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.ViewModels;
+using Servy.Testing;
 using Servy.UI.Services;
 using Helper = Servy.Testing.Helper;
 
@@ -489,22 +490,17 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     var vm = CreateViewModel();
 
-                    // Reflect on the declaring base class type where the active private field resides
-                    var fieldInfo = typeof(SearchableViewModelBase).GetField("_searchCts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-                    // Fetch the private 'Search' method directly using reflection to bypass AsyncCommand's 'IsRunning' re-entrancy guard
-                    var searchMethod = typeof(LogsViewModel).GetMethod("Search", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    Assert.NotNull(searchMethod);
-
                     // Act - 1. Fire the first background lookup
-                    var firstSearchTask = (Task)searchMethod.Invoke(vm, new object[] { null! })!;
+                    // Fetch the private 'Search' method directly using reflection helper to bypass AsyncCommand's 'IsRunning' re-entrancy guard
+                    var firstSearchTask = (Task)TestReflection.InvokeNonPublic(vm, "Search", new object[] { null! })!;
 
                     // 2. Poll until the first token reference is registered inside the model
                     CancellationTokenSource? firstCtsInstance = null;
                     int retries = 0;
                     while (firstCtsInstance == null && retries < 50)
                     {
-                        firstCtsInstance = fieldInfo?.GetValue(vm) as CancellationTokenSource;
+                        // Reflect on the declaring base class type where the active private field resides
+                        firstCtsInstance = TestReflection.GetField<CancellationTokenSource>(vm, "_searchCts");
                         if (firstCtsInstance == null)
                         {
                             Task.Delay(10).GetAwaiter().GetResult();
@@ -515,7 +511,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.NotNull(firstCtsInstance); // Guard rail assertion
 
                     // 3. Invoke the private method directly a second time to force the atomic Interlocked swap loop
-                    var secondSearchTask = (Task)searchMethod.Invoke(vm, new object[] { null! })!;
+                    var secondSearchTask = (Task)TestReflection.InvokeNonPublic(vm, "Search", new object[] { null! })!;
 
                     // Assert - Verify that the original token was forced into a cancelled state immediately
                     Assert.True(firstCtsInstance.IsCancellationRequested, "The previous CancellationTokenSource was not cancelled by the subsequent search.");

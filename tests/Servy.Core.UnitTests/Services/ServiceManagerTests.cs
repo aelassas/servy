@@ -7,6 +7,7 @@ using Servy.Core.Enums;
 using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
+using Servy.Testing;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
@@ -2711,12 +2712,12 @@ namespace Servy.Core.UnitTests.Services
         private static SafeScmHandle CreateScmHandle(int value = 1)
         {
             var handle = (SafeScmHandle)Activator.CreateInstance(typeof(SafeScmHandle), true)!;
-            var setHandleMethod = typeof(SafeHandle).GetMethod("SetHandle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             // If the test explicitly passes 0, keep it as IntPtr.Zero so handle.IsInvalid evaluates to true.
             // Otherwise, allocate valid unmanaged space to prevent native Access Violations (0xC0000005) on Dispose.
             IntPtr ptrToInject = (value == 0) ? IntPtr.Zero : Marshal.AllocHGlobal(64);
-            setHandleMethod?.Invoke(handle, new object[] { ptrToInject });
+            // TestReflection automatically ascends the inheritance chain to locate and invoke 'SetHandle' on SafeHandle
+            TestReflection.InvokeNonPublic(handle, "SetHandle", ptrToInject);
 
             return handle;
         }
@@ -2724,11 +2725,12 @@ namespace Servy.Core.UnitTests.Services
         private static SafeServiceHandle CreateServiceHandle(int value = 1)
         {
             var handle = (SafeServiceHandle)Activator.CreateInstance(typeof(SafeServiceHandle), true)!;
-            var setHandleMethod = typeof(SafeHandle).GetMethod("SetHandle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             // Same rule for service handles: 0 translates directly to an invalid IntPtr.Zero handle wrapper.
             IntPtr ptrToInject = (value == 0) ? IntPtr.Zero : Marshal.AllocHGlobal(64);
-            setHandleMethod?.Invoke(handle, new object[] { ptrToInject });
+
+            // TestReflection automatically ascends the inheritance chain to locate and invoke 'SetHandle' on SafeHandle
+            TestReflection.InvokeNonPublic(handle, "SetHandle", ptrToInject);
 
             return handle;
         }

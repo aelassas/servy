@@ -5,6 +5,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
+using Servy.Testing;
 using System.Data;
 using System.Security.Cryptography;
 
@@ -1227,12 +1228,15 @@ namespace Servy.Infrastructure.UnitTests.Data
             var incoming = new ServiceDto { Name = "Test", Pid = 0, Password = "new_password" };
             var existing = new ServiceDto { Name = "Test", Pid = 555, Password = "old_password", ActiveStdoutPath = "active.log" };
 
-            // Accessing internal private static method via Reflection to cover all combinations explicitly
-            var methodInfo = typeof(ServiceRepository).GetMethod("ApplyRuntimeState",
-                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-
             // Act
-            methodInfo!.Invoke(null, new object[] { incoming, existing, preserveState, preserveCredentials });
+            // Accessing internal private static method via centralized test reflection engine
+            TestReflection.InvokeNonPublicStatic(
+                typeof(ServiceRepository),
+                "ApplyRuntimeState",
+                incoming,
+                existing,
+                preserveState,
+                preserveCredentials);
 
             // Assert
             if (preserveState)
@@ -1289,15 +1293,10 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             // Act & Assert
             // GetByIdAsync calls SafeDecrypt (which catches InvalidOperationException), so we invoke the
-            // private DecryptDto directly via reflection to observe the raw wrapped exception it throws.
-            var methodInfo = typeof(ServiceRepository).GetMethod("DecryptDto",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            // private DecryptDto directly via reflection helper to observe the raw wrapped exception it throws.
+            var baseEx = Assert.Throws<InvalidOperationException>(() =>
+                TestReflection.InvokeNonPublic(repo, "DecryptDto", corruptDto));
 
-            var invocationEx = Assert.Throws<System.Reflection.TargetInvocationException>(() =>
-                methodInfo!.Invoke(repo, new object[] { corruptDto }));
-
-            var baseEx = invocationEx.InnerException;
-            Assert.IsType<InvalidOperationException>(baseEx);
             Assert.Contains("Decryption failed for field", baseEx.Message);
         }
 
@@ -1341,21 +1340,19 @@ namespace Servy.Infrastructure.UnitTests.Data
             var targetExNoInner = new InvalidOperationException("Generic operational fault context");
             var targetExWithInner = new InvalidOperationException("Root diagnostic path", new UnauthorizedAccessException());
 
-            var methodInfo = typeof(ServiceRepository).GetMethod("HandleCorruptServiceDecryption",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-
+            // Act & Assert
             // 1. Branch path verification: Guard tracking on null DTO elements
-            methodInfo!.Invoke(repo, new object?[] { null, targetExWithInner });
+            TestReflection.InvokeNonPublic(repo, "HandleCorruptServiceDecryption", null, targetExWithInner);
 
             // 2. Branch path verification: Inner Exception evaluates to Null fallback logic mapping
-            methodInfo!.Invoke(repo, new object[] { dto, targetExNoInner });
+            TestReflection.InvokeNonPublic(repo, "HandleCorruptServiceDecryption", dto, targetExNoInner);
 
             // Expect the honest fallback exception type name instead of a fabricated placeholder string
             Assert.Contains("[DECRYPTION FAILED: InvalidOperationException]", dto.Description);
 
             // 3. Branch path verification: Inner Exception matches concrete reference mapping layout rules
             var freshDto = new ServiceDto { Name = "Row2", Description = "Meta", Password = "ABC" };
-            methodInfo!.Invoke(repo, new object[] { freshDto, targetExWithInner });
+            TestReflection.InvokeNonPublic(repo, "HandleCorruptServiceDecryption", freshDto, targetExWithInner);
 
             Assert.Contains("[DECRYPTION FAILED: UnauthorizedAccessException]", freshDto.Description);
             Assert.Null(freshDto.Password);

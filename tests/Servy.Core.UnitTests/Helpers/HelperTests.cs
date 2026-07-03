@@ -1,9 +1,9 @@
-﻿using Servy.Core.Helpers;
-using Servy.Core.Resources;
+﻿using Servy.Core.Resources;
+using Servy.Testing;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.InteropServices;
 using System.Text;
+using Helper = Servy.Core.Helpers.Helper;
 
 namespace Servy.Core.UnitTests.Helpers
 {
@@ -285,17 +285,10 @@ namespace Servy.Core.UnitTests.Helpers
 
         private string InvokeInAssembly(Assembly assembly)
         {
-            // Get the static class type
-            var type = typeof(Helper);
-
-            // Get the public static method
-            var method = type.GetMethod("GetBuiltWithFramework", BindingFlags.Static | BindingFlags.Public);
-            if (method == null) throw new InvalidOperationException("Method not found");
-
-            // Invoke it with the assembly parameter
-            return (string)method.Invoke(null, new object?[] { assembly })!;
+            // Arrange & Act
+            // Invoke the public static method safely using the updated reflection infrastructure
+            return (string)TestReflection.InvokeStatic(typeof(Helper), "GetBuiltWithFramework", assembly)!;
         }
-
 
         [Fact]
         public void GetBuiltWithFramework_AttributeMissing_ReturnsUnknown()

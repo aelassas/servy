@@ -3,7 +3,6 @@ using Servy.Core.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Testing;
 using System.Diagnostics;
-using System.Reflection;
 
 namespace Servy.Service.IntegrationTests.ProcessManagement
 {
@@ -148,17 +147,16 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             var options = CreateOptions("powershell.exe", "-NoProfile", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
             options.WaitChunkMs = 0; // Violate rule requirement: WaitChunkMs <= 0
 
-            var method = typeof(ProcessLauncher).GetMethod("WaitForExitWithHeartbeat", BindingFlags.Static | BindingFlags.NonPublic);
             using (var mockWrapper = new MockFailingProcessWrapper())
             {
                 // Act
-                var targetInvocationException = Assert.Throws<TargetInvocationException>(() =>
-                    method!.Invoke(null, new object[] { mockWrapper, options, _logger }));
+                var argumentException = Assert.Throws<ArgumentException>(() =>
+                          TestReflection.InvokeNonPublicStatic(typeof(ProcessLauncher), "WaitForExitWithHeartbeat", mockWrapper, options, _logger));
 
                 // Assert
-                Assert.NotNull(targetInvocationException.InnerException);
-                Assert.IsType<ArgumentException>(targetInvocationException.InnerException);
-                Assert.Contains("Synchronous launch requires WaitChunkMs > 0", targetInvocationException.InnerException.Message);
+                Assert.NotNull(argumentException);
+                Assert.IsType<ArgumentException>(argumentException);
+                Assert.Contains("Synchronous launch requires WaitChunkMs > 0", argumentException.Message);
             }
         }
 

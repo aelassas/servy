@@ -4,7 +4,7 @@ using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
-using System.Reflection;
+using Servy.Testing;
 using System.Security;
 
 namespace Servy.CLI.UnitTests.Commands
@@ -37,7 +37,7 @@ namespace Servy.CLI.UnitTests.Commands
         [Fact]
         public void Constructor_ShouldThrowArgumentNullException_WhenRepositoryIsNull()
         {
-            // Assert & Act
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ExportServiceCommand(null!));
         }
 
@@ -48,8 +48,13 @@ namespace Servy.CLI.UnitTests.Commands
         [Fact]
         public async Task Execute_ShouldFail_WhenServiceNameIsNullOrEmpty()
         {
+            // Arrange
             var opts = new ExportServiceOptions { ServiceName = "", ConfigFileType = "xml", Path = "file.xml" };
+
+            // Act
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
             Assert.False(result.Success);
             Assert.Equal(Strings.Msg_ServiceNameRequired, result.Message);
         }
@@ -57,8 +62,13 @@ namespace Servy.CLI.UnitTests.Commands
         [Fact]
         public async Task Execute_ShouldFail_WhenConfigFileTypeIsInvalid()
         {
+            // Arrange
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "invalid", Path = "file.xml" };
+
+            // Act
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
             Assert.False(result.Success);
             Assert.Equal(Strings.Msg_InvalidConfigFileType, result.Message);
         }
@@ -66,8 +76,13 @@ namespace Servy.CLI.UnitTests.Commands
         [Fact]
         public async Task Execute_ShouldFail_WhenPathIsNullOrEmpty()
         {
+            // Arrange
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = "" };
+
+            // Act
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
             Assert.False(result.Success);
             Assert.Equal(Strings.Msg_PathRequired, result.Message);
         }
@@ -75,9 +90,14 @@ namespace Servy.CLI.UnitTests.Commands
         [Fact]
         public async Task Execute_ShouldFail_WhenServiceNotFound()
         {
+            // Arrange
             _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto?)null);
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = Path.Combine(_tempDir, "out.xml") };
+
+            // Act
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
+
+            // Assert
             Assert.False(result.Success);
             Assert.Equal(Strings.Msg_ServiceNotFound, result.Message);
         }
@@ -85,13 +105,17 @@ namespace Servy.CLI.UnitTests.Commands
         [Fact]
         public async Task Execute_ShouldExportXml_WhenConfigTypeIsXml()
         {
+            // Arrange
             var filePath = Path.Combine(_tempDir, "out.xml");
             _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = "TestService" });
             _serviceRepoMock.Setup(r => r.ExportXmlAsync("svc", It.IsAny<CancellationToken>())).ReturnsAsync("<xml>data</xml>");
 
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = filePath };
+
+            // Act
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
+            // Assert
             Assert.True(result.Success);
             Assert.Equal(string.Format(Strings.Msg_ExportSuccess, "XML", opts.Path), result.Message);
             Assert.True(File.Exists(filePath));
@@ -101,13 +125,17 @@ namespace Servy.CLI.UnitTests.Commands
         [Fact]
         public async Task Execute_ShouldExportJson_WhenConfigTypeIsJson()
         {
+            // Arrange
             var filePath = Path.Combine(_tempDir, "out.json");
             _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = "TestService" });
             _serviceRepoMock.Setup(r => r.ExportJsonAsync("svc", It.IsAny<CancellationToken>())).ReturnsAsync("{\"name\":\"svc\"}");
 
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "json", Path = filePath };
+
+            // Act
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
+            // Assert
             Assert.True(result.Success);
             Assert.Equal(string.Format(Strings.Msg_ExportSuccess, "JSON", opts.Path), result.Message);
             Assert.True(File.Exists(filePath));
@@ -117,11 +145,14 @@ namespace Servy.CLI.UnitTests.Commands
         [Fact]
         public async Task Execute_ShouldHandleException()
         {
+            // Arrange
             _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("boom"));
-
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = Path.Combine(_tempDir, "out.xml") };
+
+            // Act
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
+            // Assert
             Assert.False(result.Success);
             Assert.Contains(string.Format(Strings.Msg_ExportServiceAction, "svc"), result.Message);
         }
@@ -133,11 +164,14 @@ namespace Servy.CLI.UnitTests.Commands
         [Fact]
         public void SaveFile_ShouldCreateDirectoryIfNotExists()
         {
+            // Arrange
             var filePath = Path.Combine(_tempDir, "subdir", "file.xml");
             var content = "hello";
 
+            // Act
             InvokeSaveFile(filePath, content);
 
+            // Assert
             Assert.True(File.Exists(filePath));
             Assert.Equal(content, File.ReadAllText(filePath));
         }
@@ -145,26 +179,29 @@ namespace Servy.CLI.UnitTests.Commands
         [Fact]
         public void SaveFile_ShouldThrowArgumentException_WhenValidationFailsWithStandardError()
         {
+            // Arrange
             // Providing an invalid extension ("txt") routes to PathSecurityGuard's extension filter,
             // producing an error payload that does not contain "Access Denied" or "Security Alert".
             var filePath = Path.Combine(_tempDir, "denied_extension.txt");
 
-            var ex = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, "data"));
-            Assert.IsType<ArgumentException>(ex.InnerException);
-            Assert.Equal(string.Format(Core.Resources.Strings.Msg_SecurityInvalidFileType, ".txt"), ex.InnerException.Message);
+            // Act & Assert
+            // TestReflection unwraps TargetInvocationException cleanly to target the inner exception directly
+            var ex = Assert.Throws<ArgumentException>(() => InvokeSaveFile(filePath, "data"));
+            Assert.Equal(string.Format(Core.Resources.Strings.Msg_SecurityInvalidFileType, ".txt"), ex.Message);
         }
 
         [Fact]
         public void SaveFile_ShouldThrowSecurityException_WhenValidationResultTriggersSecurityAlert()
         {
+            // Arrange
             // Forcing a path sequence targeting a structural Windows system environment folder
             // triggers an internal "Access Denied" rule inside PathSecurityGuard, hitting the SecurityException branch.
             string protectedDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
             var filePath = Path.Combine(protectedDir, "malicious_export.json");
 
-            var ex = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, "data"));
-            Assert.IsType<SecurityException>(ex.InnerException);
-            Assert.Contains("Access Denied", ex.InnerException.Message);
+            // Act & Assert
+            var ex = Assert.Throws<SecurityException>(() => InvokeSaveFile(filePath, "data"));
+            Assert.Contains("Access Denied", ex.Message);
         }
 
         #endregion
@@ -174,6 +211,7 @@ namespace Servy.CLI.UnitTests.Commands
         [Fact]
         public void SaveFile_ShouldThrowSecurityException_WhenFileStreamWriteFailsFromExternalLock()
         {
+            // Arrange
             var filePath = Path.Combine(_tempDir, "locked_out.json");
             File.WriteAllText(filePath, "original contents");
 
@@ -183,11 +221,11 @@ namespace Servy.CLI.UnitTests.Commands
             // will throw a SecurityException while trying to allocate the stream.
             using (var lockStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
-                var ex = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, "new config payload"));
+                // Act & Assert
+                var ex = Assert.Throws<SecurityException>(() => InvokeSaveFile(filePath, "new config payload"));
 
                 // Unwraps target reflection errors to expose the inner thrown exception rule
-                Assert.IsType<SecurityException>(ex.InnerException);
-                Assert.Contains(string.Format(Core.Resources.Strings.Msg_SecurityHandleValidationFailed, string.Empty), ex.InnerException.Message);
+                Assert.Contains(string.Format(Core.Resources.Strings.Msg_SecurityHandleValidationFailed, string.Empty), ex.Message);
             }
         }
 
@@ -221,11 +259,10 @@ namespace Servy.CLI.UnitTests.Commands
             var content = "[Stale Config Payload Data]";
 
             // Act & Assert
-            // 1. Catch the reflection wrapper exception
-            var reflectEx = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, content));
+            // 1. Catch the unwrapped exception directly from TestReflection
+            var actualEx = Assert.Throws<ArgumentException>(() => InvokeSaveFile(filePath, content));
 
-            // 2. Assert against the actual unwrapped inner exception
-            var actualEx = Assert.IsType<ArgumentException>(reflectEx.InnerException);
+            // 2. Assert against the actual exception content profile
             Assert.Contains(".txt", actualEx.Message);
 
             // Transactional Rollback Integrity Assertions
@@ -243,8 +280,7 @@ namespace Servy.CLI.UnitTests.Commands
             var content = "{ }";
 
             // Act
-            var reflectEx = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, content));
-            var actualEx = reflectEx.InnerException;
+            var actualEx = Record.Exception(() => InvokeSaveFile(filePath, content));
             Assert.NotNull(actualEx);
 
             // Assert
@@ -277,8 +313,7 @@ namespace Servy.CLI.UnitTests.Commands
             var filePath = Path.Combine(generatedSubDir, "malformed_file.log");
 
             // Act & Assert
-            var reflectEx = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, "content"));
-            Assert.IsType<ArgumentException>(reflectEx.InnerException);
+            var actualEx = Assert.Throws<ArgumentException>(() => InvokeSaveFile(filePath, "content"));
 
             // Assert
             Assert.False(Directory.Exists(generatedSubDir), "The dynamic folder leaf created during this call should be cleanly rolled back.");
@@ -298,8 +333,7 @@ namespace Servy.CLI.UnitTests.Commands
             var filePath = Path.Combine(deepSubDir, "validation_failure_target.log");
 
             // Act & Assert
-            var reflectEx = Assert.Throws<TargetInvocationException>(() => InvokeSaveFile(filePath, "{ }"));
-            Assert.IsType<ArgumentException>(reflectEx.InnerException);
+            var actualEx = Assert.Throws<ArgumentException>(() => InvokeSaveFile(filePath, "{ }"));
 
             // Assert: Verify that the fallback mechanism inside the finally block caught the failure,
             // executed the loop tracking arrays, and cleanly wiped the orphaned directories!
@@ -316,17 +350,8 @@ namespace Servy.CLI.UnitTests.Commands
         /// </summary>
         private void InvokeSaveFile(string path, string content)
         {
-            var method = typeof(ExportServiceCommand).GetMethod(
-                "SaveFile",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-
-            if (method == null)
-            {
-                throw new InvalidOperationException("Could not locate private method SaveFile inside ExportServiceCommand target reference metadata.");
-            }
-
-            // Let TargetInvocationException bubble up naturally to satisfy the test runner harness match rules.
-            method.Invoke(_command, new object[] { path, content });
+            // Let TestReflection seamlessly invoke the non-public implementation framework
+            TestReflection.InvokeNonPublic(_command, "SaveFile", path, content);
         }
 
         #endregion

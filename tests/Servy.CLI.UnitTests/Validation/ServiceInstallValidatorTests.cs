@@ -4,6 +4,7 @@ using Servy.CLI.Resources;
 using Servy.CLI.Validation;
 using Servy.Core.DTOs;
 using Servy.Core.Validation;
+using Servy.Testing;
 
 namespace Servy.CLI.UnitTests.Validation
 {
@@ -183,16 +184,15 @@ namespace Servy.CLI.UnitTests.Validation
         public void GetOptionName_NonExistentPropertyName_ReturnsProvidedStringFallback()
         {
             // Arrange
-            // Since GetOptionName is private, we invoke it securely via reflection to test 
+            // Since GetOptionName is private, we invoke it securely via reflection helper to test 
             // the early loop boundary: `if (prop == null) return propertyName;`
-            var method = typeof(ServiceInstallValidator).GetMethod("GetOptionName",
-                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            const string propertyName = "GhostPropertyThatDoesNotExist";
 
             // Act
-            var output = method!.Invoke(null, new object[] { "GhostPropertyThatDoesNotExist" }) as string;
+            var output = TestReflection.InvokeNonPublicStatic(typeof(ServiceInstallValidator), "GetOptionName", propertyName) as string;
 
             // Assert
-            Assert.Equal("GhostPropertyThatDoesNotExist", output);
+            Assert.Equal(propertyName, output);
         }
 
         #endregion

@@ -3,6 +3,7 @@ using Moq;
 using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Infrastructure.Data;
+using Servy.Testing;
 using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
@@ -594,11 +595,11 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         public void FormatSqlForLog_Variants_EvaluatesCorrectly(string? inputSql, string expectedLoggedSql)
         {
             // Arrange
-            var methodInfo = typeof(DapperExecutor).GetMethod("FormatSqlForLog",
-                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            // Non-public static invocation is routed cleanly to avoid TargetInvocationException boilerplate.
+            const int truncationLength = 55;
 
             // Act
-            var formatted = (string)methodInfo!.Invoke(null, new object[] { inputSql!, 55 })!;
+            var formatted = TestReflection.InvokeNonPublicStatic(typeof(DapperExecutor), "FormatSqlForLog", inputSql!, truncationLength) as string;
 
             // Assert
             Assert.Equal(expectedLoggedSql, formatted);
@@ -608,14 +609,23 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         public void CalculateBackoff_HighAttemptCount_PreventsIntegerOverflows()
         {
             // Arrange
-            var methodInfo = typeof(DapperExecutor).GetMethod("CalculateBackoff",
-                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            // High attempt count parameters configured to target the overflow ceiling
+            const int attemptCount = 40;
+            const int initialDelayMs = 100;
+            const int jitterMs = 0;
+            const int maxDelayMs = 30000;
 
             // Act: Simulates attempt 40
-            var calculatedDelay = (int)methodInfo!.Invoke(null, new object[] { 40, 100, 0, 30000 })!;
+            var calculatedDelay = (int)TestReflection.InvokeNonPublicStatic(
+                typeof(DapperExecutor),
+                "CalculateBackoff",
+                attemptCount,
+                initialDelayMs,
+                jitterMs,
+                maxDelayMs)!;
 
             // Assert
-            Assert.Equal(30000, calculatedDelay);
+            Assert.Equal(maxDelayMs, calculatedDelay);
         }
 
         #endregion

@@ -8,9 +8,9 @@ using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.Utils;
 using Servy.Manager.ViewModels;
+using Servy.Testing;
 using Servy.UI.Constants;
 using Servy.UI.Services;
-using System.Reflection;
 using System.Windows.Threading;
 using Helper = Servy.Testing.Helper;
 
@@ -62,6 +62,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullServiceRepository_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ConsoleViewModel(
                 null!, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _uiDispatcherMock.Object));
         }
@@ -69,6 +70,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullAppConfig_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ConsoleViewModel(
                 _serviceRepoMock.Object, _serviceCommandsMock.Object, null!, _cursorServiceMock.Object, _uiDispatcherMock.Object));
         }
@@ -76,6 +78,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void DesignTimeConstructor_InitializesSuccessfully()
         {
+            // Arrange
             Helper.RunOnSTA(() =>
             {
                 var originalProvider = App.Services;
@@ -85,7 +88,10 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
+                    // Act
                     var dtViewModel = new ConsoleViewModel();
+
+                    // Assert
                     Assert.NotNull(dtViewModel.RawLines);
                     Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
                 }
@@ -105,6 +111,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -134,6 +141,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -163,6 +171,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -174,6 +183,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var mockService = new ConsoleService { Name = "TestService", Pid = 5555 };
                     vm.SelectedService = mockService;
 
+                    // Act
                     vm.CopyPidCommand.ExecuteAsync(null).GetAwaiter().GetResult();
 
                     // Assert
@@ -191,6 +201,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -236,6 +247,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -244,20 +256,18 @@ namespace Servy.Manager.UnitTests.ViewModels
                 try
                 {
                     var vm = CreateViewModel();
-                    var methodInfo = typeof(ConsoleViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
 
                     // Force state variable to simulate an orphaned selection
-                    var fieldInfo = typeof(ConsoleViewModel).GetField("_hadSelectedService", BindingFlags.NonPublic | BindingFlags.Instance);
-                    fieldInfo?.SetValue(vm, true);
+                    TestReflection.SetField(vm, "_hadSelectedService", true);
                     vm.Pid = "1234";
 
                     // Act
-                    var task = (Task)methodInfo!.Invoke(vm, null)!;
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync")!;
                     task.GetAwaiter().GetResult();
 
                     // Assert
                     Assert.Equal(UiConstants.NotAvailable, vm.Pid);
-                    Assert.False((bool)fieldInfo!.GetValue(vm)!);
+                    Assert.False(TestReflection.GetField<bool>(vm, "_hadSelectedService"));
                 }
                 finally
                 {
@@ -271,6 +281,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -286,10 +297,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                     _serviceRepoMock.Setup(r => r.GetServiceConsoleStateAsync("DeadService", It.IsAny<CancellationToken>()))
                                     .ReturnsAsync(new ServiceConsoleStateDto { Pid = null });
 
-                    var methodInfo = typeof(ConsoleViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
-
                     // Act
-                    var task = (Task)methodInfo!.Invoke(vm, null)!;
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync")!;
                     task.GetAwaiter().GetResult();
 
                     // Assert
@@ -309,6 +318,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -324,10 +334,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                     _serviceRepoMock.Setup(r => r.GetServiceConsoleStateAsync("ActiveService", It.IsAny<CancellationToken>()))
                                     .ReturnsAsync(new ServiceConsoleStateDto { Pid = 100, ActiveStdoutPath = "new.txt" });
 
-                    var methodInfo = typeof(ConsoleViewModel).GetMethod("OnTickAsync", BindingFlags.NonPublic | BindingFlags.Instance);
-
                     // Act
-                    var task = (Task)methodInfo!.Invoke(vm, null)!;
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync")!;
                     task.GetAwaiter().GetResult();
 
                     // Assert
@@ -349,6 +357,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -382,6 +391,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var sameTime = new DateTime(2026, 1, 30, 10, 0, 0);
 
                 var line2 = new LogLine("Line 2", LogType.StdErr, sameTime);
@@ -389,6 +399,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 var combinedHistory = new List<LogLine> { line2, line1 };
 
+                // Act
                 var sortedHistory = combinedHistory
                     .Select((line, index) => new { line, index })
                     .OrderBy(x => x.line.Timestamp)
@@ -396,6 +407,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     .Select(x => x.line)
                     .ToList();
 
+                // Assert
                 Assert.Equal("Line 2", sortedHistory[0].Text);
                 Assert.Equal("Line 1", sortedHistory[1].Text);
             });
@@ -408,6 +420,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void CreateServiceItem_ValidServiceInput_MapsToConsoleServiceWithNullFields()
         {
+            // Arrange
             var originalProvider = App.Services;
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -415,14 +428,11 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             try
             {
-                // Arrange
                 var vm = CreateViewModel();
                 var service = new Service { Name = "EngineService" };
 
-                var methodInfo = typeof(ConsoleViewModel).GetMethod("CreateServiceItem", BindingFlags.NonPublic | BindingFlags.Instance);
-
                 // Act
-                var result = methodInfo!.Invoke(vm, new object[] { service }) as ConsoleService;
+                var result = TestReflection.InvokeNonPublic(vm, "CreateServiceItem", service) as ConsoleService;
 
                 // Assert
                 Assert.NotNull(result);
@@ -442,6 +452,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -449,12 +460,10 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    // Arrange
                     var vm = CreateViewModel();
                     var firstCts = new CancellationTokenSource();
 
-                    var fieldInfo = typeof(ConsoleViewModel).GetField("_logFilterCts", BindingFlags.NonPublic | BindingFlags.Instance);
-                    fieldInfo?.SetValue(vm, firstCts);
+                    TestReflection.SetField(vm, "_logFilterCts", firstCts);
 
                     // Act - Mutating ConsoleSearchText causes ApplyFilterWithDebounceAsync to process an Interlocked.Exchange over firstCts
                     vm.ConsoleSearchText = "NewSearchQueryTextString";
@@ -474,6 +483,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -481,14 +491,11 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    // Arrange
                     var vm = CreateViewModel();
                     vm.RawLines.Add(new LogLine("Preserve Me", LogType.StdOut));
 
-                    var methodInfo = typeof(ConsoleViewModel).GetMethod("SwitchServiceAsync", BindingFlags.NonPublic | BindingFlags.Instance);
-
                     // Act - Invoke service transition with empty/null pathing arguments to trigger structural history emptiness
-                    var task = (Task)methodInfo!.Invoke(vm, new object[] { string.Empty, string.Empty })!;
+                    var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", string.Empty, string.Empty)!;
                     task.GetAwaiter().GetResult();
 
                     // Assert - Verify that the internal branch evaluation safely skipped AddRange loops since paths were empty
@@ -506,6 +513,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -513,24 +521,18 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    // Arrange
                     var vm = CreateViewModel();
 
-                    var fieldMaxLines = typeof(ConsoleViewModel).GetField("_maxLines", BindingFlags.NonPublic | BindingFlags.Instance);
-                    fieldMaxLines?.SetValue(vm, 2);
-
-                    var methodInfo = typeof(ConsoleViewModel).GetMethod("StartLiveTail", BindingFlags.NonPublic | BindingFlags.Instance);
+                    TestReflection.SetField(vm, "_maxLines", 2);
 
                     // Read current Session ID to pass down as a synchronized parameter match
-                    var fieldSessionId = typeof(ConsoleViewModel).GetField("_currentSessionId", BindingFlags.NonPublic | BindingFlags.Instance);
-                    int activeSessionId = (int)fieldSessionId!.GetValue(vm)!;
+                    int activeSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
 
                     // Act - Spin up an active live tail listener instance context mapping to stdout
-                    methodInfo!.Invoke(vm, new object[] { "out.log", LogType.StdOut, 0L, DateTime.UtcNow, activeSessionId, CancellationToken.None });
+                    TestReflection.InvokeNonPublic(vm, "StartLiveTail", "out.log", LogType.StdOut, 0L, DateTime.UtcNow, activeSessionId, CancellationToken.None);
 
                     // Pull the dynamic internal event handler delegate out via reflection
-                    var fieldActiveTailer = typeof(ConsoleViewModel).GetField("_activeStdoutTailer", BindingFlags.NonPublic | BindingFlags.Instance);
-                    var tailerInstance = fieldActiveTailer!.GetValue(vm) as LogTailer;
+                    var tailerInstance = TestReflection.GetField<LogTailer>(vm, "_activeStdoutTailer");
 
                     // Construct a test payload batch block of 3 log lines to pass directly through the tailer's event handler pipeline
                     var newLinesBatch = new List<LogLine>
@@ -541,7 +543,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     };
 
                     // Raise the event inside the log tailer instance to simulate inbound disk streaming updates
-                    var handlerDelegate = typeof(ConsoleViewModel).GetField("_stdoutTailerHandler", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm) as Delegate;
+                    var handlerDelegate = TestReflection.GetField<Delegate>(vm, "_stdoutTailerHandler");
 
                     // Act - Direct programmatic dispatch invoke step
                     handlerDelegate!.DynamicInvoke(new object[] { newLinesBatch });
@@ -563,6 +565,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -570,17 +573,14 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    // Arrange
                     var vm = CreateViewModel();
                     vm.SetSelectionActive(true); // User is selecting text in the UI terminal window frame
 
-                    var methodInfo = typeof(ConsoleViewModel).GetMethod("StartLiveTail", BindingFlags.NonPublic | BindingFlags.Instance);
-                    int currentSessionId = (int)typeof(ConsoleViewModel).GetField("_currentSessionId", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm)!;
+                    int currentSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
 
-                    methodInfo!.Invoke(vm, new object[] { "out.log", LogType.StdOut, 0L, DateTime.UtcNow, currentSessionId, CancellationToken.None });
+                    TestReflection.InvokeNonPublic(vm, "StartLiveTail", "out.log", LogType.StdOut, 0L, DateTime.UtcNow, currentSessionId, CancellationToken.None);
 
-                    var handlerDelegate = typeof(ConsoleViewModel).GetField("_stdoutTailerHandler", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm) as Delegate;
-
+                    var handlerDelegate = TestReflection.GetField<Delegate>(vm, "_stdoutTailerHandler");
                     var newLinesBatch = new List<LogLine> { new LogLine("Ignored live incoming console data string line", LogType.StdOut) };
 
                     // Act
@@ -601,6 +601,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -608,16 +609,14 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    // Arrange
                     var vm = CreateViewModel();
-                    var methodInfo = typeof(ConsoleViewModel).GetMethod("StartLiveTail", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                    int currentSessionId = (int)typeof(ConsoleViewModel).GetField("_currentSessionId", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm)!;
+                    int currentSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
                     int staleSessionId = currentSessionId - 1; // Simulated obsolete thread queue callback sequence tracking state
 
-                    methodInfo!.Invoke(vm, new object[] { "out.log", LogType.StdOut, 0L, DateTime.UtcNow, staleSessionId, CancellationToken.None });
+                    TestReflection.InvokeNonPublic(vm, "StartLiveTail", "out.log", LogType.StdOut, 0L, DateTime.UtcNow, staleSessionId, CancellationToken.None);
 
-                    var handlerDelegate = typeof(ConsoleViewModel).GetField("_stdoutTailerHandler", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(vm) as Delegate;
+                    var handlerDelegate = TestReflection.GetField<Delegate>(vm, "_stdoutTailerHandler");
                     var newLinesBatch = new List<LogLine> { new LogLine("Obsolete service log line output", LogType.StdOut) };
 
                     // Act
@@ -638,6 +637,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -645,7 +645,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    // Arrange
                     var vm = CreateViewModel();
                     var service = new ConsoleService { Name = "ActiveService", StdoutPath = "out.log", StderrPath = "err.log" };
                     vm.SelectedService = service;
@@ -669,6 +668,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var originalProvider = App.Services;
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton(_mockProcessKiller.Object);
@@ -676,7 +676,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 try
                 {
-                    // Arrange
                     var vm = CreateViewModel();
 
                     // Act

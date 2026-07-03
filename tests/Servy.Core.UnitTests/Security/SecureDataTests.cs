@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Servy.Core.Config;
 using Servy.Core.Security;
+using Servy.Testing;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -29,6 +30,7 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void Constructor_NullProvider_Throws()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => new SecureData(null!));
         }
 
@@ -36,7 +38,10 @@ namespace Servy.Core.UnitTests.Security
         [InlineData(null)]
         public void Encrypt_Null_Throws(string? input)
         {
+            // Arrange
             var sp = new SecureData(_mockProvider.Object);
+
+            // Act & Assert
             Assert.Throws<ArgumentNullException>(() => sp.Encrypt(input!));
         }
 
@@ -44,7 +49,10 @@ namespace Servy.Core.UnitTests.Security
         [InlineData("")]
         public void Encrypt_Empty_Throws(string? input)
         {
+            // Arrange
             var sp = new SecureData(_mockProvider.Object);
+
+            // Act & Assert
             Assert.Throws<ArgumentException>(() => sp.Encrypt(input!));
         }
 
@@ -55,13 +63,16 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void EncryptV2_HandlesComplexCharacters_Successfully()
         {
+            // Arrange
             var sp = new SecureData(_mockProvider.Object);
             // Testing multi-byte character boundary safety (Emoji uses 4 bytes)
             var original = "Security is key! 🛡️🔐";
 
+            // Act
             var encrypted = sp.Encrypt(original);
             var decrypted = sp.Decrypt(encrypted);
 
+            // Assert
             Assert.Equal(original, decrypted);
             Assert.Contains("SERVY_ENC:v2:", encrypted);
         }
@@ -69,6 +80,7 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void DecryptedV1_WithExplicitPrefix_Works()
         {
+            // Arrange
             if (!AppConfig.AllowLegacyV1Decryption)
             {
                 // Skip this test if legacy decryption is disabled
@@ -98,13 +110,17 @@ namespace Servy.Core.UnitTests.Security
                 v1Encrypted = "SERVY_ENC:v1:" + Convert.ToBase64String(encryptedBytes);
             }
 
+            // Act
             var decrypted = sp.Decrypt(v1Encrypted);
+
+            // Assert
             Assert.Equal(secret, decrypted);
         }
 
         [Fact]
         public void DecryptedV1_WithoutPrefix_Works()
         {
+            // Arrange
             if (!AppConfig.AllowLegacyV1Decryption)
             {
                 // Skip this test if legacy decryption is disabled
@@ -135,7 +151,10 @@ namespace Servy.Core.UnitTests.Security
                 v1Encrypted = "SERVY_ENC:" + Convert.ToBase64String(encryptedBytes);
             }
 
+            // Act
             var decrypted = sp.Decrypt(v1Encrypted);
+
+            // Assert
             Assert.Equal(secret, decrypted);
         }
 
@@ -143,6 +162,7 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void DecryptedV1_WithoutAllPrefixes_Works()
         {
+            // Arrange
             if (!AppConfig.AllowLegacyV1Decryption)
             {
                 // Skip this test if legacy decryption is disabled
@@ -172,7 +192,10 @@ namespace Servy.Core.UnitTests.Security
                 v1Encrypted = Convert.ToBase64String(encryptedBytes);
             }
 
+            // Act
             var decrypted = sp.Decrypt(v1Encrypted);
+
+            // Assert
             Assert.Equal(secret, decrypted);
         }
 
@@ -318,39 +341,32 @@ namespace Servy.Core.UnitTests.Security
         [Fact]
         public void DecryptV2_Internal_InvalidBase64_Throws()
         {
+            // Arrange
             var sp = new SecureData(_mockProvider.Object);
             var invalidBase64 = "!!!NotBase64!!!";
 
-            var method = typeof(SecureData).GetMethod("DecryptV2",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-            // Reflection wraps the real exception in a TargetInvocationException
-            var ex = Assert.Throws<System.Reflection.TargetInvocationException>(() =>
-                method!.Invoke(sp, new object[] { invalidBase64 }));
-
-            Assert.IsType<SecureDataIntegrityException>(ex.InnerException);
+            // Act & Assert
+            // TestReflection natively unwraps TargetInvocationException to restore the original exception frame context
+            Assert.Throws<SecureDataIntegrityException>(() =>
+                TestReflection.InvokeNonPublic(sp, "DecryptV2", new object[] { invalidBase64 }));
         }
 
         [Fact]
         public void DecryptV2_PayloadTooShort_Throws()
         {
+            // Arrange
             var sp = new SecureData(_mockProvider.Object);
 
             // A v2 payload must be at least 48 bytes (16-byte IV + 32-byte HMAC); ciphertext is additional.
             // We provide only 10 bytes here.
             var shortPayloadBase64 = Convert.ToBase64String(new byte[10]);
 
-            // 1. Get the private method via Reflection
-            var method = typeof(SecureData).GetMethod("DecryptV2",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // Act & Assert
+            // TestReflection unwraps TargetInvocationException cleanly to target the inner exception directly
+            var ex = Assert.Throws<SecureDataIntegrityException>(() =>
+                TestReflection.InvokeNonPublic(sp, "DecryptV2", new object[] { shortPayloadBase64 }));
 
-            // 2. Invoke and catch the wrapper exception
-            var ex = Assert.Throws<System.Reflection.TargetInvocationException>(() =>
-                method!.Invoke(sp, new object[] { shortPayloadBase64 }));
-
-            // 3. Assert the inner exception is what we expect
-            Assert.IsType<SecureDataIntegrityException>(ex.InnerException);
-            Assert.Contains("V2 payload length is insufficient.", ex.InnerException.Message);
+            Assert.Contains("V2 payload length is insufficient.", ex.Message);
         }
 
         #endregion
@@ -421,10 +437,10 @@ namespace Servy.Core.UnitTests.Security
             // To verify zeroing, we use Reflection to grab the internal byte arrays.
             // This is necessary because the fields are private and we need to check 
             // the content of the memory after Dispose.
-            var v1Key = GetPrivateField<byte[]>(secureData, "_v1MasterKey");
-            var v1Iv = GetPrivateField<byte[]>(secureData, "_v1StaticIv");
-            var v2Enc = GetPrivateField<byte[]>(secureData, "_v2EncryptionKey");
-            var v2Hmac = GetPrivateField<byte[]>(secureData, "_v2HmacKey");
+            var v1Key = TestReflection.GetField<byte[]>(secureData, "_v1MasterKey");
+            var v1Iv = TestReflection.GetField<byte[]>(secureData, "_v1StaticIv");
+            var v2Enc = TestReflection.GetField<byte[]>(secureData, "_v2EncryptionKey");
+            var v2Hmac = TestReflection.GetField<byte[]>(secureData, "_v2HmacKey");
 
             // Pre-condition check: Ensure keys are not zero before Dispose
             if (AppConfig.AllowLegacyV1Decryption)
@@ -451,30 +467,8 @@ namespace Servy.Core.UnitTests.Security
             Assert.Null(record);
 
             // Verify state remains disposed
-            int disposedField = GetPrivateField<int>(secureData, "_disposed");
+            int disposedField = TestReflection.GetField<int>(secureData, "_disposed");
             Assert.Equal(1, disposedField);
-        }
-
-        private T GetPrivateField<T>(object obj, string fieldName)
-        {
-            var type = obj.GetType();
-            System.Reflection.FieldInfo? fieldInfo = null;
-
-            // Walk up the inheritance hierarchy until the private field is found
-            while (type != null && fieldInfo == null)
-            {
-                fieldInfo = type.GetField(fieldName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                type = type.BaseType;
-            }
-
-            // Explicit null check guarantees safety to the compiler before calling GetValue
-            if (fieldInfo == null)
-            {
-                throw new ArgumentException($"Field '{fieldName}' could not be found on type {obj.GetType().Name} or its base classes.");
-            }
-
-            // fieldInfo is safely determined to be non-null here
-            return (T)fieldInfo.GetValue(obj)!;
         }
 
         #endregion
@@ -510,12 +504,9 @@ namespace Servy.Core.UnitTests.Security
         [InlineData("YQ==", true)]       // Short valid string
         public void IsStrictBase64_ShouldCoverAllBranches(string? input, bool expected)
         {
-            // Arrange
-            var method = typeof(SecureData).GetMethod("IsStrictBase64",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-
-            // Act
-            var result = (bool)method!.Invoke(null, new object[] { input! })!;
+            // Arrange & Act
+            // GetOptionName is a private static method; invoke it seamlessly via updated helper
+            var result = (bool)TestReflection.InvokeNonPublicStatic(typeof(SecureData), "IsStrictBase64", input!)!;
 
             // Assert
             Assert.Equal(expected, result);

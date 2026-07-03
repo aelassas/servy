@@ -418,11 +418,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.Start();
                 wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
 
-                // Act - Force internal Win32 interop execution flow via TryStopGracefullyOrKill private method mapping
-                var privateMethod = typeof(ProcessWrapper).GetMethod("TryStopGracefullyOrKill", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
                 // Act on an already exited process handle to trigger the initial null/exited evaluation checks
-                var result = privateMethod!.Invoke(wrapper, new object[] { wrapper.UnderlyingProcess, 1000, 500 });
+                var result = TestReflection.InvokeNonPublic(wrapper, "TryStopGracefullyOrKill", wrapper.UnderlyingProcess, 1000, 500);
 
                 // Assert - Accept null (exited), false (force-killed), or true (graceful exit handled mid-teardown)
                 if (result != null)
@@ -439,10 +436,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 5\""))
             {
                 wrapper.Start();
-                var privateMethod = typeof(ProcessWrapper).GetMethod("SendCtrlC", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
                 // Act - Invoke SendCtrlC directly on a wrapper targeting a windowless background task runner profile
-                var result = privateMethod!.Invoke(wrapper, new object[] { wrapper.UnderlyingProcess });
+                var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
 
                 // Assert: True/False depends cleanly on native environment access, but path must complete without unhandled crashes.
                 Assert.NotNull(result);

@@ -2,7 +2,6 @@
 using Servy.Testing;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Reflection;
 
 namespace Servy.Service.IntegrationTests.ProcessManagement
 {
@@ -193,10 +192,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         {
             // Arrange - Use an absolute out-of-bounds PID that can never belong to an active windows process allocation
             int nonExistentPid = 999999;
-            var method = typeof(ProcessExtensions).GetMethod("TryResolveValidChild", BindingFlags.Static | BindingFlags.NonPublic);
 
-            // Act - Invoke the verification flow; ArgumentException gets caught when Process.GetProcessById falls out
-            var result = method!.Invoke(null, new object[] { nonExistentPid, DateTime.Now, DateTime.UtcNow });
+            // Act
+            var result = TestReflection.InvokeNonPublicStatic(typeof(ProcessExtensions), "TryResolveValidChild", nonExistentPid, DateTime.Now, DateTime.UtcNow);
 
             // Assert
             Assert.Null(result);
@@ -208,15 +206,13 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Arrange - Use a guaranteed active process (current process)
             using (var current = Process.GetCurrentProcess())
             {
-                var method = typeof(ProcessExtensions).GetMethod("TryResolveValidChild", BindingFlags.Static | BindingFlags.NonPublic);
-
                 // Intentionally alter constraints layout: Pass an execution threshold time set completely in the future
                 // to force 'startedAfterParent' or 'startedBeforeSnapshot' conditional validations to return false.
                 var skewedParentTime = DateTime.Now.AddDays(10);
                 var snapshotTime = DateTime.UtcNow.AddDays(-10);
 
                 // Act
-                var result = method!.Invoke(null, new object[] { current.Id, skewedParentTime, snapshotTime });
+                var result = TestReflection.InvokeNonPublicStatic(typeof(ProcessExtensions), "TryResolveValidChild", current.Id, skewedParentTime, snapshotTime);
 
                 // Assert
                 Assert.Null(result);
@@ -226,12 +222,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         [Fact]
         public void TryResolveValidChild_UnexpectedGenericException_LogsTraceAndReturnsNull()
         {
-            // Arrange - Passing a negative PID into a raw system process mapping pipeline 
-            // forces an implicit runtime validation layer ArgumentException or Win32Exception layout.
-            var method = typeof(ProcessExtensions).GetMethod("TryResolveValidChild", BindingFlags.Static | BindingFlags.NonPublic);
-
-            // Act
-            var result = method!.Invoke(null, new object[] { -99, DateTime.Now, DateTime.UtcNow });
+            // Arrange & Act
+            var result = TestReflection.InvokeNonPublicStatic(typeof(ProcessExtensions), "TryResolveValidChild", -99, DateTime.Now, DateTime.UtcNow);
 
             // Assert
             Assert.Null(result);

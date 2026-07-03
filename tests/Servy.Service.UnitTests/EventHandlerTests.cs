@@ -5,6 +5,7 @@ using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.UnitTests.Utilities;
+using Servy.Testing;
 using System.Diagnostics;
 using System.Reflection;
 
@@ -52,8 +53,7 @@ namespace Servy.Service.UnitTests
 
             service.InvokeHandleLogWriters(startOptions);
 
-            var stdoutWriterField = typeof(Service).GetField("_stdoutWriter", BindingFlags.NonPublic | BindingFlags.Instance);
-            var stdoutWriterValue = stdoutWriterField!.GetValue(service);
+            var stdoutWriterValue = TestReflection.GetField<object>(service, "_stdoutWriter");
             Assert.NotNull(stdoutWriterValue);
 
             // Act
