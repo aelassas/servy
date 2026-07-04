@@ -830,7 +830,7 @@ namespace Servy.Core.UnitTests.Helpers
                     // Exit the loop on success
                     break;
                 }
-                catch (Exception) when (attempt < maxRetries)
+                catch (Exception ex) when ((ex is IOException || ex is UnauthorizedAccessException) && attempt < maxRetries)
                 {
                     // Give the Windows Object Manager a small window to flush lazy handles
                     Thread.Sleep(50);
