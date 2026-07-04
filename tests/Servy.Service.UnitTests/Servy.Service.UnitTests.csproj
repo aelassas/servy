@@ -121,6 +121,7 @@
     <Compile Include="CommandLine\StartOptionsParserTests.cs" />
     <Compile Include="EventHandlerTests.cs" />
     <Compile Include="HealthCheckTests.cs" />
+    <Compile Include="Helpers\DataReceivedEventArgsFactory.cs" />
     <Compile Include="Helpers\EnvironmentVariableHelperTests.cs" />
     <Compile Include="Helpers\ProcessHelperTests.cs" />
     <Compile Include="ProcessManagementTests.cs" />

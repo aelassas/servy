@@ -101,18 +101,7 @@ namespace Servy.Core.UnitTests.Services
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
                 .Callback<EventLogQuery, int>((queryObj, limit) =>
                 {
-                    // BULLETPROOF REFLECTION: Scan all internal string fields to bypass .NET 10 naming changes
-                    var stringFields = typeof(EventLogQuery).GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public)
-                                                            .Where(f => f.FieldType == typeof(string));
-                    foreach (var field in stringFields)
-                    {
-                        var val = field.GetValue(queryObj) as string;
-                        if (val != null && val.StartsWith("*"))
-                        {
-                            capturedQuery = val;
-                            break;
-                        }
-                    }
+                    capturedQuery = GetInternalQuery(queryObj);
                 })
                 .Returns(Array.Empty<ServyEventLogEntry>());
 
@@ -138,17 +127,7 @@ namespace Servy.Core.UnitTests.Services
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
                 .Callback<EventLogQuery, int>((queryObj, limit) =>
                 {
-                    var stringFields = typeof(EventLogQuery).GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public)
-                                                            .Where(f => f.FieldType == typeof(string));
-                    foreach (var field in stringFields)
-                    {
-                        var val = field.GetValue(queryObj) as string;
-                        if (val != null && val.StartsWith("*"))
-                        {
-                            capturedQuery = val;
-                            break;
-                        }
-                    }
+                    capturedQuery = GetInternalQuery(queryObj);
                 })
                 .Returns(Array.Empty<ServyEventLogEntry>());
 

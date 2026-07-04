@@ -5,102 +5,44 @@ using Servy.CLI.Resources;
 using Servy.Core.Common;
 using Servy.Core.Data;
 using Servy.Core.Services;
-using System;
 using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Servy.CLI.UnitTests.Commands
 {
-    public class UninstallServiceCommandTests
+    public class UninstallServiceCommandTests : ServiceCommandTestsBase<UninstallServiceCommand, UninstallServiceOptions>
     {
-        private readonly Mock<IServiceManager> _mockServiceManager;
-        private readonly Mock<IServiceRepository> _mockRepository;
-        private readonly UninstallServiceCommand _command;
+        private Mock<IServiceRepository> _mockRepository;
 
-        public UninstallServiceCommandTests()
+        protected override UninstallServiceCommand CreateCommandInstance()
         {
-            _mockServiceManager = new Mock<IServiceManager>();
             _mockRepository = new Mock<IServiceRepository>();
-            _command = new UninstallServiceCommand(_mockServiceManager.Object, _mockRepository.Object);
+            return new UninstallServiceCommand(MockServiceManager.Object, _mockRepository.Object);
         }
 
-        [Fact]
-        public async Task Execute_ValidOptions_ReturnsSuccess()
+        protected override UninstallServiceOptions CreateValidOptions(string serviceName) => new UninstallServiceOptions { ServiceName = serviceName };
+
+        protected override UninstallServiceOptions CreateEmptyOptions() => new UninstallServiceOptions { ServiceName = "" };
+
+        protected override string ExpectedSuccessMessage(string serviceName) => $"Service '{serviceName}' uninstalled successfully.";
+
+        protected override string ExpectedGenericActionMessage(string serviceName) => string.Format(Strings.Msg_UninstallServiceAction, serviceName);
+
+        protected override void SetupServiceManagerSuccess(Mock<IServiceManager> mockManager, string serviceName)
         {
-            // Arrange
-            var options = new UninstallServiceOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
-            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
-
-            // Act
-            var result = await _command.ExecuteAsync(options);
-
-            // Assert
-            Assert.True(result.Success);
-            Assert.Equal("Service 'TestService' uninstalled successfully.", result.Message);
+            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            mockManager.Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
         }
 
-        [Fact]
-        public async Task Execute_EmptyServiceName_ReturnsFailure()
+        protected override void SetupServiceManagerFailure(Mock<IServiceManager> mockManager, string serviceName, string errorMsg)
         {
-            // Arrange
-            var options = new UninstallServiceOptions { ServiceName = "" };
-
-            // Act
-            var result = await _command.ExecuteAsync(options);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal("Service name is required.", result.Message);
+            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            mockManager.Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure(errorMsg));
         }
 
-        [Fact]
-        public async Task Execute_ServiceManagerFails_ReturnsFailure()
+        protected override void SetupServiceManagerException<TException>(Mock<IServiceManager> mockManager, string serviceName)
         {
-            // Arrange
-            var options = new UninstallServiceOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
-            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to uninstall service."));
-
-            // Act
-            var result = await _command.ExecuteAsync(options);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal("Failed to uninstall service.", result.Message);
-        }
-
-        [Fact]
-        public async Task Execute_UnauthorizedAccessException_ReturnsFailure()
-        {
-            // Arrange
-            var options = new UninstallServiceOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
-            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>())).Throws<UnauthorizedAccessException>();
-
-            // Act
-            var result = await _command.ExecuteAsync(options);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Contains("Access Denied", result.Message);
-        }
-
-        [Fact]
-        public async Task Execute_GenericException_ReturnsFailure()
-        {
-            // Arrange
-            var options = new UninstallServiceOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
-            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>())).Throws<Exception>();
-
-            // Act
-            var result = await _command.ExecuteAsync(options);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Contains(string.Format(Strings.Msg_UninstallServiceAction, "TestService"), result.Message);
+            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            mockManager.Setup(sm => sm.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>())).Throws<TException>();
         }
     }
 }

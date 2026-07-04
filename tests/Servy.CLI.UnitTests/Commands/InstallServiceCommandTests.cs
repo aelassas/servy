@@ -14,17 +14,23 @@ using Xunit;
 
 namespace Servy.CLI.UnitTests.Commands
 {
-    public class InstallServiceCommandTests
+    public class InstallServiceCommandTests : IDisposable
     {
         private readonly Mock<IServiceManager> _mockServiceManager;
         private readonly Mock<IServiceInstallValidator> _mockValidator;
         private readonly InstallServiceCommand _command;
+        private readonly string _wrapperExePath;
 
         public InstallServiceCommandTests()
         {
             _mockServiceManager = new Mock<IServiceManager>();
             _mockValidator = new Mock<IServiceInstallValidator>();
             _command = new InstallServiceCommand(_mockServiceManager.Object, _mockValidator.Object);
+
+            // Create a dummy Servy.Service.CLI.Net48.exe for the tests
+            _wrapperExePath = AppConfig.GetServyCLIServicePath();
+            Directory.CreateDirectory(Path.GetDirectoryName(_wrapperExePath));
+            File.WriteAllText(_wrapperExePath, "dummy content");
         }
 
         [Fact]
@@ -42,25 +48,12 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
 
-            // Create a dummy Servy.Service.CLI.Net48.exe for the test
-            var wrapperExePath = AppConfig.GetServyCLIServicePath();
-            Directory.CreateDirectory(Path.GetDirectoryName(wrapperExePath));
-            File.WriteAllText(wrapperExePath, "dummy content");
+            // Act
+            var result = await _command.ExecuteAsync(options, CancellationToken.None);
 
-            try
-            {
-                // Act
-                var result = await _command.ExecuteAsync(options);
-
-                // Assert
-                Assert.True(result.Success);
-                Assert.Equal(string.Format(Strings.Msg_InstallSuccess, options.ServiceName), result.Message);
-            }
-            finally
-            {
-                // Clean up the dummy file
-                if (File.Exists(wrapperExePath)) File.Delete(wrapperExePath);
-            }
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal(string.Format(Strings.Msg_InstallSuccess, options.ServiceName), result.Message);
         }
 
         [Fact]
@@ -71,7 +64,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Fail("Validation error."));
 
             // Act
-            var result = await _command.ExecuteAsync(options);
+            var result = await _command.ExecuteAsync(options, CancellationToken.None);
 
             // Assert
             Assert.False(result.Success);
@@ -93,23 +86,12 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Failure("Failed to install service."));
 
-            var wrapperExePath = AppConfig.GetServyCLIServicePath();
-            Directory.CreateDirectory(Path.GetDirectoryName(wrapperExePath));
-            File.WriteAllText(wrapperExePath, "dummy content");
+            // Act
+            var result = await _command.ExecuteAsync(options, CancellationToken.None);
 
-            try
-            {
-                // Act
-                var result = await _command.ExecuteAsync(options);
-
-                // Assert
-                Assert.False(result.Success);
-                Assert.Equal("Failed to install service.", result.Message);
-            }
-            finally
-            {
-                if (File.Exists(wrapperExePath)) File.Delete(wrapperExePath);
-            }
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal("Failed to install service.", result.Message);
         }
 
         [Fact]
@@ -127,23 +109,12 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .Throws<UnauthorizedAccessException>();
 
-            var wrapperExePath = AppConfig.GetServyCLIServicePath();
-            Directory.CreateDirectory(Path.GetDirectoryName(wrapperExePath));
-            File.WriteAllText(wrapperExePath, "dummy content");
+            // Act
+            var result = await _command.ExecuteAsync(options, CancellationToken.None);
 
-            try
-            {
-                // Act
-                var result = await _command.ExecuteAsync(options);
-
-                // Assert
-                Assert.False(result.Success);
-                Assert.Contains("Access Denied", result.Message);
-            }
-            finally
-            {
-                if (File.Exists(wrapperExePath)) File.Delete(wrapperExePath);
-            }
+            // Assert
+            Assert.False(result.Success);
+            Assert.Contains("Access Denied", result.Message);
         }
 
         [Fact]
@@ -161,24 +132,21 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .Throws<Exception>();
 
-            var wrapperExePath = AppConfig.GetServyCLIServicePath();
-            Directory.CreateDirectory(Path.GetDirectoryName(wrapperExePath));
-            File.WriteAllText(wrapperExePath, "dummy content");
+            // Act
+            var result = await _command.ExecuteAsync(options, CancellationToken.None);
 
-            try
-            {
-                // Act
-                var result = await _command.ExecuteAsync(options);
-
-                // Assert
-                Assert.False(result.Success);
-                Assert.Contains(string.Format(Strings.Msg_InstallServiceAction, options.ServiceName), result.Message);
-            }
-            finally
-            {
-                if (File.Exists(wrapperExePath)) File.Delete(wrapperExePath);
-            }
+            // Assert
+            Assert.False(result.Success);
+            Assert.Contains(string.Format(Strings.Msg_InstallServiceAction, options.ServiceName), result.Message);
         }
 
+        public void Dispose()
+        {
+            // Clean up the dummy file
+            if (File.Exists(_wrapperExePath))
+            {
+                File.Delete(_wrapperExePath);
+            }
+        }
     }
 }

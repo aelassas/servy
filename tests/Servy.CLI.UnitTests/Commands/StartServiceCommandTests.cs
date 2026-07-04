@@ -1,106 +1,44 @@
 ﻿using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
+using Servy.CLI.Resources;
 using Servy.Core.Common;
 using Servy.Core.Services;
-using System;
 using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Servy.CLI.UnitTests.Commands
 {
-    public class StartServiceCommandTests
+    public class StartServiceCommandTests : ServiceCommandTestsBase<StartServiceCommand, StartServiceOptions>
     {
-        private readonly Mock<IServiceManager> _mockServiceManager;
-        private readonly StartServiceCommand _command;
+        protected override StartServiceCommand CreateCommandInstance() => new StartServiceCommand(MockServiceManager.Object);
 
-        public StartServiceCommandTests()
+        protected override StartServiceOptions CreateValidOptions(string serviceName) => new StartServiceOptions { ServiceName = serviceName };
+
+        protected override StartServiceOptions CreateEmptyOptions() => new StartServiceOptions { ServiceName = "" };
+
+        protected override string ExpectedSuccessMessage(string serviceName) => $"Service '{serviceName}' started successfully.";
+
+        protected override string ExpectedGenericActionMessage(string serviceName) => string.Format(Strings.Msg_StartServiceAction, serviceName);
+
+        protected override void SetupServiceManagerSuccess(Mock<IServiceManager> mockManager, string serviceName)
         {
-            _mockServiceManager = new Mock<IServiceManager>();
-            _command = new StartServiceCommand(_mockServiceManager.Object);
+            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            mockManager.Setup(sm => sm.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
+            mockManager.Setup(sm => sm.StartServiceAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
         }
 
-        [Fact]
-        public async Task Execute_ValidOptions_ReturnsSuccess()
+        protected override void SetupServiceManagerFailure(Mock<IServiceManager> mockManager, string serviceName, string errorMsg)
         {
-            // Arrange
-            var options = new StartServiceOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
-            _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
-            _mockServiceManager.Setup(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
-
-            // Act
-            var result = await _command.ExecuteAsync(options);
-
-            // Assert
-            Assert.True(result.Success);
-            Assert.Equal("Service 'TestService' started successfully.", result.Message);
+            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            mockManager.Setup(sm => sm.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
+            mockManager.Setup(sm => sm.StartServiceAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure(errorMsg));
         }
 
-        [Fact]
-        public async Task Execute_EmptyServiceName_ReturnsFailure()
+        protected override void SetupServiceManagerException<TException>(Mock<IServiceManager> mockManager, string serviceName)
         {
-            // Arrange
-            var options = new StartServiceOptions { ServiceName = "" };
-
-            // Act
-            var result = await _command.ExecuteAsync(options);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal("Service name is required.", result.Message);
-        }
-
-        [Fact]
-        public async Task Execute_ServiceManagerFails_ReturnsFailure()
-        {
-            // Arrange
-            var options = new StartServiceOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
-            _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
-            _mockServiceManager.Setup(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to start service."));
-
-            // Act
-            var result = await _command.ExecuteAsync(options);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal("Failed to start service.", result.Message);
-        }
-
-        [Fact]
-        public async Task Execute_UnauthorizedAccessException_ReturnsFailure()
-        {
-            // Arrange
-            var options = new StartServiceOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
-            _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
-            _mockServiceManager.Setup(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).Throws<UnauthorizedAccessException>();
-
-            // Act
-            var result = await _command.ExecuteAsync(options);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Contains("Access Denied", result.Message);
-        }
-
-        [Fact]
-        public async Task Execute_GenericException_ReturnsFailure()
-        {
-            // Arrange
-            var options = new StartServiceOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
-            _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
-            _mockServiceManager.Setup(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).Throws<Exception>();
-
-            // Act
-            var result = await _command.ExecuteAsync(options);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Contains("Failed to start service 'TestService'", result.Message);
+            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            mockManager.Setup(sm => sm.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
+            mockManager.Setup(sm => sm.StartServiceAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>())).Throws<TException>();
         }
     }
 }
