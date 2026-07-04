@@ -302,10 +302,31 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 SQLiteDbInitializer.Initialize(conn);
 
                 // Assert: Verify UNICODE_NOCASE successfully group-collapsed and purged the duplicate non-ASCII character entries
+                var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
+                Assert.Equal(6, version);
+
                 var remainingServices = conn.Query($"SELECT Id, Name FROM {SqlConstants.ServicesTableName};").ToList();
                 Assert.Single(remainingServices);
                 Assert.Equal(1L, (long)remainingServices[0].Id);
                 Assert.Equal("Ä-Service", (string)remainingServices[0].Name);
+
+                // Verify the structural unique index details map directly to the modern COLLATE UNICODE_NOCASE configuration rules
+                var indexList = conn.Query($"PRAGMA index_list('{SqlConstants.ServicesTableName}');")
+                                    .Select(x => (IDictionary<string, object>)x)
+                                    .ToList();
+
+                var targetingIndex = indexList.FirstOrDefault(idx => string.Equals(idx["name"]?.ToString(), "idx_services_name_unique", StringComparison.OrdinalIgnoreCase));
+
+                Assert.NotNull(targetingIndex);
+                Assert.Equal(1L, Convert.ToInt64(targetingIndex["unique"]));
+
+                // Confirm index expression metadata properties use the raw column reference
+                var indexInfo = conn.Query("PRAGMA index_info('idx_services_name_unique');")
+                                    .Select(x => (IDictionary<string, object>)x)
+                                    .ToList();
+
+                Assert.Single(indexInfo);
+                Assert.Equal("Name", indexInfo[0]["name"]?.ToString());
             }
         }
 
