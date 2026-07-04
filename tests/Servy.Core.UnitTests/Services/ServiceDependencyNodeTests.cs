@@ -21,24 +21,36 @@ namespace Servy.Core.UnitTests.Services
             Assert.Empty(node.Dependencies);
         }
 
-        [Theory]
-        [InlineData("New Display Name", nameof(ServiceDependencyNode.DisplayName))]
-        [InlineData(true, nameof(ServiceDependencyNode.IsRunning))]
-        public void SetProperty_ShouldRaisePropertyChanged_WhenValueChanges(object newValue, string propertyName)
+        [Fact]
+        public void DisplayName_Set_RaisesPropertyChanged_WhenValueChanges()
         {
             // Arrange
             var node = new ServiceDependencyNode("svc", "Display", false);
             string? raisedPropertyName = null;
             node.PropertyChanged += (s, e) => raisedPropertyName = e.PropertyName;
+            const string expectedPropName = nameof(ServiceDependencyNode.DisplayName);
 
             // Act
-            if (propertyName == nameof(ServiceDependencyNode.DisplayName))
-                node.DisplayName = (string)newValue;
-            else
-                node.IsRunning = (bool)newValue;
+            node.DisplayName = "New Display Name";
 
             // Assert
-            Assert.Equal(propertyName, raisedPropertyName);
+            Assert.Equal(expectedPropName, raisedPropertyName);
+        }
+
+        [Fact]
+        public void IsRunning_Set_RaisesPropertyChanged_WhenValueChanges()
+        {
+            // Arrange
+            var node = new ServiceDependencyNode("svc", "Display", false);
+            string? raisedPropertyName = null;
+            node.PropertyChanged += (s, e) => raisedPropertyName = e.PropertyName;
+            const string expectedPropName = nameof(ServiceDependencyNode.IsRunning);
+
+            // Act
+            node.IsRunning = true;
+
+            // Assert
+            Assert.Equal(expectedPropName, raisedPropertyName);
         }
 
         [Fact]
