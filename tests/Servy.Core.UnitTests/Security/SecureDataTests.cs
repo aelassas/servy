@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Servy.Core.Config;
 using Servy.Core.Security;
+using Servy.Core.UnitTests.Helpers;
 using Servy.Testing;
 using System.Security.Cryptography;
 using System.Text;
@@ -86,29 +87,10 @@ namespace Servy.Core.UnitTests.Security
                 // Skip this test if legacy decryption is disabled
                 return;
             }
+
             var sp = new SecureData(_mockProvider.Object);
             var secret = "LegacySecret";
-
-            string v1Encrypted;
-            using (var aes = Aes.Create())
-            {
-                aes.Key = _key;
-                aes.IV = _iv;
-
-                byte[] encryptedBytes;
-                using (var ms = new MemoryStream())
-                {
-                    using (var cs = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write))
-                    {
-                        byte[] input = Encoding.UTF8.GetBytes(secret);
-                        cs.Write(input, 0, input.Length);
-                        // Final block is processed here when cs is disposed
-                    }
-                    encryptedBytes = ms.ToArray();
-                }
-
-                v1Encrypted = "SERVY_ENC:v1:" + Convert.ToBase64String(encryptedBytes);
-            }
+            var v1Encrypted = SecureDataHelper.CreateLegacyV1EncryptedString(_key, _iv, secret);
 
             // Act
             var decrypted = sp.Decrypt(v1Encrypted);
@@ -129,27 +111,7 @@ namespace Servy.Core.UnitTests.Security
 
             var sp = new SecureData(_mockProvider.Object);
             var secret = "LegacySecret";
-
-            string v1Encrypted;
-            using (var aes = Aes.Create())
-            {
-                aes.Key = _key;
-                aes.IV = _iv;
-
-                byte[] encryptedBytes;
-                using (var ms = new MemoryStream())
-                {
-                    using (var cs = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write))
-                    {
-                        byte[] input = Encoding.UTF8.GetBytes(secret);
-                        cs.Write(input, 0, input.Length);
-                        // Final block is processed here when cs is disposed
-                    }
-                    encryptedBytes = ms.ToArray();
-                }
-
-                v1Encrypted = "SERVY_ENC:" + Convert.ToBase64String(encryptedBytes);
-            }
+            var v1Encrypted = SecureDataHelper.CreateLegacyV1EncryptedString(_key, _iv, secret, "SERVY_ENC:");
 
             // Act
             var decrypted = sp.Decrypt(v1Encrypted);

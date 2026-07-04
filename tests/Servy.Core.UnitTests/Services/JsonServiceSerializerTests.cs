@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Servy.Core.Config;
-using Servy.Core.DTOs;
 using Servy.Core.Services;
+using Servy.Core.UnitTests.Helpers;
 
 namespace Servy.Core.UnitTests.Services
 {
@@ -54,61 +54,7 @@ namespace Servy.Core.UnitTests.Services
         public void Deserialize_AllFields_MapsCorrectly()
         {
             // Arrange: Create a DTO with specific non-default values for every field
-            var expected = new ServiceDto
-            {
-                Name = "FullService",
-                DisplayName = "Full Service Display",
-                Description = "Description",
-                ExecutablePath = @"C:\App\exe.exe",
-                StartupDirectory = @"C:\App",
-                Parameters = "--arg",
-                StartupType = 2,
-                Priority = 128,
-                StdoutPath = "out.log",
-                StderrPath = "err.log",
-                EnableSizeRotation = true,
-                RotationSize = 50,
-                EnableDateRotation = true,
-                DateRotationType = 1,
-                MaxRotations = 10,
-                UseLocalTimeForRotation = true,
-                EnableHealthMonitoring = true,
-                HeartbeatInterval = 60,
-                MaxFailedChecks = 5,
-                RecoveryAction = 1,
-                MaxRestartAttempts = 10,
-                FailureProgramPath = "fail.exe",
-                FailureProgramStartupDirectory = "fail_dir",
-                FailureProgramParameters = "fail_args",
-                EnvironmentVariables = "VAR=1",
-                ServiceDependencies = "s1;s2",
-                RunAsLocalSystem = false,
-                UserAccount = "User",
-                Password = "Password",
-                PreLaunchExecutablePath = "pre.exe",
-                PreLaunchStartupDirectory = "pre_dir",
-                PreLaunchParameters = "pre_args",
-                PreLaunchEnvironmentVariables = "PVAR=1",
-                PreLaunchStdoutPath = "pre_out.log",
-                PreLaunchStderrPath = "pre_err.log",
-                PreLaunchTimeoutSeconds = 45,
-                PreLaunchRetryAttempts = 2,
-                PreLaunchIgnoreFailure = true,
-                PostLaunchExecutablePath = "post.exe",
-                PostLaunchStartupDirectory = "post_dir",
-                PostLaunchParameters = "post_args",
-                EnableDebugLogs = true,
-                StartTimeout = 20,
-                StopTimeout = 25,
-                PreStopExecutablePath = "pre_stop.exe",
-                PreStopStartupDirectory = "pre_stop_dir",
-                PreStopParameters = "pre_stop_args",
-                PreStopTimeoutSeconds = 15,
-                PreStopLogAsError = true,
-                PostStopExecutablePath = "post_stop.exe",
-                PostStopStartupDirectory = "post_stop_dir",
-                PostStopParameters = "post_stop_args"
-            };
+            var expected = ServiceDtoFactory.CreateFull();
 
             string json = JsonConvert.SerializeObject(expected);
 
@@ -143,6 +89,5 @@ namespace Servy.Core.UnitTests.Services
             // Act & Assert
             Assert.Null(_serializer.Deserialize(invalidJson));
         }
-
     }
 }

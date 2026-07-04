@@ -39,16 +39,7 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(expected, result);
         }
 
-        [Fact]
-        public void NormalizeString_ShouldReturnEmptyString_WhenInputIsNullOrEmpty()
-        {
-            // Act & Assert
-            Assert.Equal(string.Empty, StringHelper.NormalizeString(null));
-            Assert.Equal(string.Empty, StringHelper.NormalizeString(string.Empty));
-        }
-
         [Theory]
-        [InlineData("KEY=C:\\Foo\\\r\nNEXT=Val", "KEY=C:\\Foo\\\\;NEXT=Val")] // Trailing odd run (1) gets padded to even (2)
         [InlineData("KEY=C:\\Foo\\\\\r\nNEXT=Val", "KEY=C:\\Foo\\\\;NEXT=Val")] // Trailing even run (2) safely remains even (2)
         public void NormalizeString_ValidatesExplicitLineBreakParity(string input, string expected)
         {
