@@ -224,6 +224,26 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Contains(ExpectedGenericActionMessage(serviceName), result.Message);
         }
 
+        /// <summary>
+        /// Validates that requesting execution on a service that is not currently installed inside the SCM returns a dedicated target error response.
+        /// </summary>
+        /// <returns>An asynchronous task tracking the verification flow execution state.</returns>
+        [Fact]
+        public virtual async Task Execute_ServiceNotInstalled_ReturnsServiceNotFoundError()
+        {
+            // Arrange
+            const string serviceName = "MissingService";
+            var options = CreateValidOptions(serviceName);
+            MockServiceManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
+
+            // Act
+            var result = await ExecuteCommandAsync(Command, options);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(Strings.Msg_ServiceNotFound, result.Message);
+        }
+
         #endregion
     }
 }

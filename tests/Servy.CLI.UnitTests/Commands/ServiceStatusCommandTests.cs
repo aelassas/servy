@@ -65,5 +65,25 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.False(result.Success);
             Assert.Contains(ExpectedGenericActionMessage(serviceName), result.Message);
         }
+
+        [Fact]
+        public override async Task Execute_ServiceNotInstalled_ReturnsServiceNotFoundError()
+        {
+            // Arrange
+            const string serviceName = "MissingService";
+            var options = CreateValidOptions(serviceName);
+
+            // SCM throws ArgumentException when looking up a non-existent service name status
+            MockServiceManager
+                .Setup(sm => sm.GetServiceStatus(serviceName, It.IsAny<CancellationToken>()))
+                .Throws<ArgumentException>();
+
+            // Act
+            var result = await ExecuteCommandAsync(Command, options);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Contains(ExpectedGenericActionMessage(serviceName), result.Message);
+        }
     }
 }
