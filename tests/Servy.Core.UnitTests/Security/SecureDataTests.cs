@@ -1,7 +1,6 @@
 ﻿using Moq;
 using Servy.Core.Config;
 using Servy.Core.Security;
-using Servy.Core.UnitTests.Helpers;
 using Servy.Testing;
 using System;
 using System.IO;
@@ -81,8 +80,11 @@ namespace Servy.Core.UnitTests.Security
             Assert.Contains("SERVY_ENC:v2:", encrypted);
         }
 
-        [Fact]
-        public void DecryptedV1_WithExplicitPrefix_Works()
+        [Theory]
+        [InlineData("SERVY_ENC:v1:")]
+        [InlineData("SERVY_ENC:")]
+        [InlineData("")]
+        public void DecryptedV1_WithVariousPrefixes_Works(string prefix)
         {
             // Arrange
             if (!AppConfig.AllowLegacyV1Decryption)
@@ -93,49 +95,8 @@ namespace Servy.Core.UnitTests.Security
 
             var sp = new SecureData(_mockProvider.Object);
             var secret = "LegacySecret";
-            var v1Encrypted = SecureDataHelper.CreateLegacyV1EncryptedString(_key, _iv, secret);
 
-            // Act
-            var decrypted = sp.Decrypt(v1Encrypted);
-
-            // Assert
-            Assert.Equal(secret, decrypted);
-        }
-
-        [Fact]
-        public void DecryptedV1_WithoutPrefix_Works()
-        {
-            // Arrange
-            if (!AppConfig.AllowLegacyV1Decryption)
-            {
-                // Skip this test if legacy decryption is disabled
-                return;
-            }
-
-            var sp = new SecureData(_mockProvider.Object);
-            var secret = "LegacySecret";
-            var v1Encrypted = SecureDataHelper.CreateLegacyV1EncryptedString(_key, _iv, secret, "SERVY_ENC:");
-
-            // Act
-            var decrypted = sp.Decrypt(v1Encrypted);
-
-            // Assert
-            Assert.Equal(secret, decrypted);
-        }
-
-        [Fact]
-        public void DecryptedV1_WithoutAllPrefixes_Works()
-        {
-            // Arrange
-            if (!AppConfig.AllowLegacyV1Decryption)
-            {
-                // Skip this test if legacy decryption is disabled
-                return;
-            }
-            var sp = new SecureData(_mockProvider.Object);
-            var secret = "LegacySecret";
-
-            string v1Encrypted;
+            string rawV1Base64;
             using (var aes = Aes.Create())
             {
                 aes.Key = _key;
@@ -148,16 +109,17 @@ namespace Servy.Core.UnitTests.Security
                     {
                         byte[] input = Encoding.UTF8.GetBytes(secret);
                         cs.Write(input, 0, input.Length);
-                        // Final block is processed here when cs is disposed
                     }
                     encryptedBytes = ms.ToArray();
                 }
 
-                v1Encrypted = Convert.ToBase64String(encryptedBytes);
+                rawV1Base64 = Convert.ToBase64String(encryptedBytes);
             }
 
+            var fullCipherWithPrefix = prefix + rawV1Base64;
+
             // Act
-            var decrypted = sp.Decrypt(v1Encrypted);
+            var decrypted = sp.Decrypt(fullCipherWithPrefix);
 
             // Assert
             Assert.Equal(secret, decrypted);
