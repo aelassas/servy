@@ -84,11 +84,7 @@ namespace Servy.Core.UnitTests.Security
         public void DecryptedV1_WithVariousPrefixes_Works(string prefix)
         {
             // Arrange
-            if (!AppConfig.AllowLegacyV1Decryption)
-            {
-                // Skip this test if legacy decryption is disabled
-                return;
-            }
+            Assert.SkipUnless(AppConfig.AllowLegacyV1Decryption, "Legacy V1 decryption disabled");
 
             var sp = new SecureData(_mockProvider.Object);
             var secret = "LegacySecret";
