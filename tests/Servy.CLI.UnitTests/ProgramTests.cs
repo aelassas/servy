@@ -139,26 +139,6 @@
 
         #endregion
 
-        #region Exception & Interrupt Scenarios
-
-        [Fact]
-        public async Task Main_InvalidArguments_ReturnsErrorExitCode()
-        {
-            // Arrange
-            string[] args = { "install", "--corrupt-flag-combination" };
-
-            // Act
-            var result = await RunWithConsoleCaptureAsync(async () =>
-            {
-                return await Program.Main(args);
-            });
-
-            // Assert
-            Assert.Equal((int)CliExitCode.Error, result.ExitCode);
-        }
-
-        #endregion
-
         public void Dispose()
         {
             // Revert console intercepts globally

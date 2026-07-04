@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using Servy.Core.Config;
 using Servy.Core.Native;
 using System.Diagnostics;
 using System.IO;
@@ -308,6 +309,20 @@ namespace Servy.Testing
                     NativeMethods.LsaClose(policyHandle);
                 }
             }
+        }
+
+        /// <summary>
+        /// Gets the absolute filesystem path to the Servy.psm1 PowerShell module file within the repository.
+        /// </summary>
+        /// <returns>The absolute path to the Servy.psm1 file.</returns>
+        public static string GetServyPsm1Path()
+        {
+            string startDir = AppDomain.CurrentDomain.BaseDirectory;
+            string repoRoot = AppConfig.FindRepoRoot(startDir);
+            Assert.False(string.IsNullOrEmpty(repoRoot), "Could not find repository root.");
+            var psm1Path = Path.Combine(repoRoot, "src", "Servy.CLI", "Servy.psm1");
+            Assert.True(File.Exists(psm1Path), $"Could not find Servy.psm1 at {psm1Path}");
+            return psm1Path;
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using Servy.CLI.Options;
 using Servy.Core.Config;
+using Servy.Testing;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -62,11 +63,7 @@ namespace Servy.CLI.UnitTests.Options
         public void SensitiveOptions_MustBeListedInServyPsm1()
         {
             // Arrange
-            var repoRoot = AppConfig.FindRepoRoot(AppDomain.CurrentDomain.BaseDirectory);
-            var psm1Path = Path.Combine(repoRoot, "src", "Servy.CLI", "Servy.psm1");
-
-            Assert.True(File.Exists(psm1Path), $"Could not find Servy.psm1 at {psm1Path}");
-
+            var psm1Path = Helper.GetServyPsm1Path();
             var psm1Content = File.ReadAllText(psm1Path);
 
             // Extract the elements inside the $sensitiveFields = @(...) block using Regex

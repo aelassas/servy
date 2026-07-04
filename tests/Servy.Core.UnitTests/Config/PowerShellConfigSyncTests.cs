@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Config;
+using Servy.Testing;
 using System.Text.RegularExpressions;
 
 namespace Servy.Core.UnitTests.Config
@@ -22,14 +23,7 @@ namespace Servy.Core.UnitTests.Config
         public void ServyPsm1_SensitiveEnvVars_MatchAppConfigConstants(string scriptVarName, string expectedEnvVarName)
         {
             // Arrange
-            string startDir = AppDomain.CurrentDomain.BaseDirectory;
-            string repoRoot = AppConfig.FindRepoRoot(startDir);
-
-            Assert.False(string.IsNullOrEmpty(repoRoot), "Could not find repository root.");
-
-            // Construct the path to the PowerShell module
-            string psm1Path = Path.Combine(repoRoot, "src", "Servy.CLI", "Servy.psm1");
-            Assert.True(File.Exists(psm1Path), $"PowerShell module not found at expected path: {psm1Path}");
+            var psm1Path = Helper.GetServyPsm1Path();
 
             // Act
             string scriptContent = File.ReadAllText(psm1Path);
