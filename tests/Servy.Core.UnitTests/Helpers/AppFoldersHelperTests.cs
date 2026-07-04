@@ -8,6 +8,7 @@ namespace Servy.Core.UnitTests.Helpers
     public class AppFoldersHelperTests : IDisposable
     {
         private readonly string _tempDir;
+        private const string TempToken = "{tmp}";
 
         public AppFoldersHelperTests()
         {
@@ -36,9 +37,9 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void EnsureFolders_ConnectionStringMissingDataSource_ThrowsInvalidOperationException()
         {
-            string conn = "Server=myserver;Database=mydb;";
-            string key = Path.Combine(_tempDir, "key.aes");
-            string iv = Path.Combine(_tempDir, "iv.aes");
+            var conn = "Server=myserver;Database=mydb;";
+            var key = Path.Combine(_tempDir, "key.aes");
+            var iv = Path.Combine(_tempDir, "iv.aes");
 
             var ex = Assert.Throws<InvalidOperationException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv));
             Assert.Contains("Data Source", ex.Message);
@@ -47,9 +48,9 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void EnsureFolders_InvalidDbFilePath_ThrowsInvalidOperationExceptionOrArgumentException()
         {
-            string conn = "Data Source=:db:"; // invalid path will fail Path.GetDirectoryName
-            string key = Path.Combine(_tempDir, "key.aes");
-            string iv = Path.Combine(_tempDir, "iv.aes");
+            var conn = "Data Source=:db:"; // invalid path will fail Path.GetDirectoryName
+            var key = Path.Combine(_tempDir, "key.aes");
+            var iv = Path.Combine(_tempDir, "iv.aes");
 
             Assert.ThrowsAny<Exception>(() => AppFoldersHelper.EnsureFolders(conn, key, iv));
         }
@@ -57,13 +58,13 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void EnsureFolders_ValidPaths_CreatesAllFolders()
         {
-            string dbFolder = Path.Combine(_tempDir, "db");
-            string keyFolder = Path.Combine(_tempDir, "keys");
-            string ivFolder = Path.Combine(_tempDir, "iv");
+            var dbFolder = Path.Combine(_tempDir, "db");
+            var keyFolder = Path.Combine(_tempDir, "keys");
+            var ivFolder = Path.Combine(_tempDir, "iv");
 
-            string conn = $"Data Source={Path.Combine(dbFolder, "Servy.db")};";
-            string key = Path.Combine(keyFolder, "key.aes");
-            string iv = Path.Combine(ivFolder, "iv.aes");
+            var conn = $"Data Source={Path.Combine(dbFolder, "Servy.db")};";
+            var key = Path.Combine(keyFolder, "key.aes");
+            var iv = Path.Combine(ivFolder, "iv.aes");
 
             // Call the helper
             AppFoldersHelper.EnsureFolders(conn, key, iv);
@@ -73,46 +74,23 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.True(Directory.Exists(ivFolder));
         }
 
-        [Fact]
-        public void EnsureFolders_DbFilePath_NoDirectory_ThrowsInvalidOperationException()
+        [Theory]
+        [InlineData("Data Source=Servy.db;", "{tmp}\\key.aes", "{tmp}\\iv.aes", "Cannot determine database folder path.")]
+        [InlineData("Data Source={tmp}\\db\\Servy.db;", "key.aes", "{tmp}\\iv\\iv.aes", "Cannot determine AES key folder path.")]
+        [InlineData("Data Source={tmp}\\db\\Servy.db;", "{tmp}\\key\\key.aes", "iv.aes", "Cannot determine AES IV folder path.")]
+        public void EnsureFolders_PathWithoutDirectory_ThrowsInvalidOperationException(string conn, string key, string iv, string expectedMessage)
         {
-            // dbFilePath is just a file name, no directory
-            string conn = "Data Source=Servy.db;";
-            string key = Path.Combine(_tempDir, "key.aes");
-            string iv = Path.Combine(_tempDir, "iv.aes");
+            // Arrange
+            string resolvedConn = conn.Replace(TempToken, _tempDir);
+            string resolvedKey = key.Replace(TempToken, _tempDir);
+            string resolvedIv = iv.Replace(TempToken, _tempDir);
 
+            // Act
             var ex = Assert.Throws<InvalidOperationException>(() =>
-                AppFoldersHelper.EnsureFolders(conn, key, iv));
+                AppFoldersHelper.EnsureFolders(resolvedConn, resolvedKey, resolvedIv));
 
-            Assert.Equal("Cannot determine database folder path.", ex.Message);
+            // Assert
+            Assert.Equal(expectedMessage, ex.Message);
         }
-
-        [Fact]
-        public void EnsureFolders_AESKeyPath_NoDirectory_ThrowsInvalidOperationException()
-        {
-            string conn = $"Data Source={Path.Combine(_tempDir, "db", "Servy.db")};";
-            string key = "key.aes"; // no folder -> Path.GetDirectoryName returns "" (empty)
-            string iv = Path.Combine(_tempDir, "iv", "iv.aes");
-
-            var ex = Assert.Throws<InvalidOperationException>(() =>
-                AppFoldersHelper.EnsureFolders(conn, key, iv));
-
-            Assert.Equal("Cannot determine AES key folder path.", ex.Message);
-        }
-
-        [Fact]
-        public void EnsureFolders_AESIVPath_NoDirectory_ThrowsInvalidOperationException()
-        {
-            string conn = $"Data Source={Path.Combine(_tempDir, "db", "Servy.db")};";
-            string key = Path.Combine(_tempDir, "key", "key.aes");
-            string iv = "iv.aes"; // no folder -> Path.GetDirectoryName returns "" (empty)
-
-            var ex = Assert.Throws<InvalidOperationException>(() =>
-                AppFoldersHelper.EnsureFolders(conn, key, iv));
-
-            Assert.Equal("Cannot determine AES IV folder path.", ex.Message);
-        }
-
-
     }
 }

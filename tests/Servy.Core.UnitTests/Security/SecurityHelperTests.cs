@@ -163,48 +163,27 @@ namespace Servy.Core.UnitTests.Security
             Assert.True(acl.AreAccessRulesProtected);
         }
 
-        [Fact]
-        public void ApplySecurityRules_WhenUserIsSystem_DoesNotAddDuplicateRule()
+        [Theory]
+        [InlineData(WellKnownSidType.LocalSystemSid)]
+        [InlineData(WellKnownSidType.BuiltinAdministratorsSid)]
+        [InlineData(null)]
+        public void ApplySecurityRules_HighPrivilegeOrNullUser_SkipsDuplicateOrEmptyAclEntry(WellKnownSidType? wellKnownSidType)
         {
             // Arrange
             var security = new DirectorySecurity();
-            var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+            SecurityIdentifier sidToTest = wellKnownSidType.HasValue
+                ? new SecurityIdentifier(wellKnownSidType.Value, null)
+                : null;
 
-            // Act: Simulate running as SYSTEM
-            InvokeApplySecurityRules(security, systemSid);
-
-            // Assert
-            var rules = security.GetAccessRules(true, false, typeof(SecurityIdentifier));
-            // Should only have 2 rules (Admin and System). The "CurrentUser" rule was skipped.
-            Assert.Equal(2, rules.Count);
-        }
-
-        [Fact]
-        public void ApplySecurityRules_WhenUserIsAdmin_DoesNotAddDuplicateRule()
-        {
-            // Arrange
-            var security = new DirectorySecurity();
-            var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
-
-            // Act: Simulate running as the Administrators group itself
-            InvokeApplySecurityRules(security, adminSid);
+            // Act
+            InvokeApplySecurityRules(security, sidToTest);
 
             // Assert
             var rules = security.GetAccessRules(true, false, typeof(SecurityIdentifier));
-            Assert.Equal(2, rules.Count);
-        }
 
-        [Fact]
-        public void ApplySecurityRules_WhenUserIsNull_DoesNotThrow()
-        {
-            // Arrange
-            var security = new DirectorySecurity();
-
-            // Act: Simulate null SID (edge case)
-            InvokeApplySecurityRules(security, null);
-
-            // Assert
-            var rules = security.GetAccessRules(true, false, typeof(SecurityIdentifier));
+            // Core logic verification: Check that the total ACL count evaluates cleanly to 
+            // exactly 2 rules (Local System and Administrators), verifying that duplicate 
+            // assignments or null objects are cleanly skipped.
             Assert.Equal(2, rules.Count);
         }
 
