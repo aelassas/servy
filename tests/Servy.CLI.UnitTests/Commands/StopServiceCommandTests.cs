@@ -38,5 +38,21 @@ namespace Servy.CLI.UnitTests.Commands
             mockManager.Setup(sm => sm.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
             mockManager.Setup(sm => sm.StopServiceAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>())).Throws<TException>();
         }
+
+        [Fact]
+        public override async Task Execute_ServiceNotInstalled_ReturnsServiceNotFoundError()
+        {
+            // Arrange
+            const string serviceName = "MissingService";
+            var options = CreateValidOptions(serviceName);
+            MockServiceManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
+
+            // Act
+            var result = await ExecuteCommandAsync(Command, options);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(Strings.Msg_ServiceNotFound, result.Message);
+        }
     }
 }

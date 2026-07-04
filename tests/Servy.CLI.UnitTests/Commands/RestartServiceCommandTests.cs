@@ -39,5 +39,22 @@ namespace Servy.CLI.UnitTests.Commands
             mockManager.Setup(sm => sm.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
             mockManager.Setup(sm => sm.RestartServiceAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>())).Throws<TException>();
         }
+
+        [Fact]
+        public async Task Execute_ServiceIsDisabled_ReturnsServiceDisabledError()
+        {
+            // Arrange
+            const string serviceName = "DisabledService";
+            var options = CreateValidOptions(serviceName);
+            MockServiceManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            MockServiceManager.Setup(sm => sm.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Disabled);
+
+            // Act
+            var result = await ExecuteCommandAsync(Command, options);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(Strings.Msg_ServiceDisabledError, result.Message);
+        }
     }
 }
