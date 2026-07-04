@@ -72,6 +72,11 @@ namespace Servy.Service.UnitTests
             base.OnStart(new string[] { TestModeFlag });
         }
 
+        public void TestOnStart(string[] args)
+        {
+            base.OnStart(args);
+        }
+
         public void InvokeSetProcessPriority(ProcessPriorityClass priority) => SetProcessPriority(priority);
 
         public void SetChildProcess(IProcessWrapper process) =>

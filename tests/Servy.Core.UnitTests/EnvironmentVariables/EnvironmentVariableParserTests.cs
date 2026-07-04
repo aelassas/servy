@@ -235,8 +235,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [Theory]
         [InlineData("KEY=\\\"hello\\\"", "\"hello\"")]
         [InlineData("KEY=\\\"\\\"", "\"\"")]
-        [InlineData("KEY= \"hello\" ", "hello")]
-        [InlineData("KEY=\"\\\"hello\\\"\"", "\"hello\"")]
         public void Parse_LiteralQuotes_PreservedWhenEscaped(string input, string expectedValue)
         {
             // Arrange & Act

@@ -76,15 +76,12 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_ShouldInitializeDefaults()
         {
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
+                // Act
                 var vm = CreateViewModel();
 
+                // Assert
                 Assert.NotNull(vm.LogsView);
                 Assert.NotNull(vm.SearchCommand);
                 Assert.NotNull(vm.RowClickCommand);
@@ -93,10 +90,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.NotNull(vm.FromDate);
                 Assert.NotNull(vm.ToDate);
                 Assert.Equal(EventLogLevel.All, vm.SelectedLevel);
-            }
-            finally
-            {
-                App.Services = originalProvider;
             }
         }
 
@@ -107,36 +100,25 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void PropertyChanged_IsRaised()
         {
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
+                // Arrange
                 var vm = CreateViewModel();
                 string? propertyName = null;
                 vm.PropertyChanged += (s, e) => propertyName = e.PropertyName;
 
+                // Act
                 vm.IsBusy = true;
 
+                // Assert
                 Assert.Equal(nameof(LogsViewModel.IsBusy), propertyName);
-            }
-            finally
-            {
-                App.Services = originalProvider;
             }
         }
 
         [Fact]
         public void Properties_DuplicateAssignments_DoNotRaisePropertyChanged()
         {
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
                 // Arrange
                 var vm = CreateViewModel();
@@ -166,67 +148,46 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.Equal(0, notificationCount);
             }
-            finally
-            {
-                App.Services = originalProvider;
-            }
         }
 
         [Fact]
         public void FromDate_ShouldUpdate_ToDateMinDate()
         {
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
+                // Arrange
                 var vm = CreateViewModel();
                 var newDate = DateTime.Today.AddDays(-5);
 
+                // Act
                 vm.FromDate = newDate;
 
+                // Assert
                 Assert.Equal(newDate, vm.ToDateMinDate);
-            }
-            finally
-            {
-                App.Services = originalProvider;
             }
         }
 
         [Fact]
         public void ToDate_ShouldUpdate_FromDateMaxDate()
         {
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
+                // Arrange
                 var vm = CreateViewModel();
                 var newDate = DateTime.Today;
 
+                // Act
                 vm.ToDate = newDate;
 
+                // Assert
                 Assert.Equal(newDate, vm.FromDateMaxDate);
-            }
-            finally
-            {
-                App.Services = originalProvider;
             }
         }
 
         [Fact]
         public void Keyword_PropertyMutates_RaisesNotificationCorrectly()
         {
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
                 // Arrange
                 var vm = CreateViewModel();
@@ -240,21 +201,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.Equal("ServyAgent", vm.Keyword);
                 Assert.Equal(nameof(LogsViewModel.Keyword), changedProp);
             }
-            finally
-            {
-                App.Services = originalProvider;
-            }
         }
 
         [Fact]
         public void SelectedLevel_PropertyMutates_RaisesNotificationCorrectly()
         {
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
                 // Arrange
                 var vm = CreateViewModel();
@@ -268,21 +220,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.Equal(EventLogLevel.Error, vm.SelectedLevel);
                 Assert.Equal(nameof(LogsViewModel.SelectedLevel), changedProp);
             }
-            finally
-            {
-                App.Services = originalProvider;
-            }
         }
 
         [Fact]
         public void FooterText_PropertyMutates_RaisesNotificationCorrectly()
         {
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
                 // Arrange
                 var vm = CreateViewModel();
@@ -296,21 +239,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.Equal("Rows processed cleanly", vm.FooterText);
                 Assert.Equal(nameof(LogsViewModel.FooterText), changedProp);
             }
-            finally
-            {
-                App.Services = originalProvider;
-            }
         }
 
         [Fact]
         public void SelectedLog_SetToNull_ClearsSelectedLogMessage()
         {
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
                 // Arrange
                 var vm = CreateViewModel();
@@ -322,10 +256,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.Null(vm.SelectedLog);
                 Assert.Equal(string.Empty, vm.SelectedLogMessage);
-            }
-            finally
-            {
-                App.Services = originalProvider;
             }
         }
 
@@ -351,36 +281,25 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void RowClickCommand_ShouldSetSelectedLog()
         {
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
+                // Arrange
                 var vm = CreateViewModel();
                 var log = new LogEntryModel { Message = "test" };
 
+                // Act
                 vm.RowClickCommand.Execute(log);
 
+                // Assert
                 Assert.Equal("test", vm.SelectedLog?.Message);
                 Assert.Equal("test", vm.SelectedLogMessage);
-            }
-            finally
-            {
-                App.Services = originalProvider;
             }
         }
 
         [Fact]
         public void RowClickCommand_InvalidParameterObject_BypassesStateMutation()
         {
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
                 // Arrange
                 var vm = CreateViewModel();
@@ -391,10 +310,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // Assert
                 Assert.Null(vm.SelectedLog);
-            }
-            finally
-            {
-                App.Services = originalProvider;
             }
         }
 
@@ -407,12 +322,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     // Arrange
                     var entries = new List<ServyEventLogEntry>
@@ -456,10 +366,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                         _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
                     }
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             }, createApp: true);
         }
 
@@ -468,12 +374,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     // Arrange
                     var firstSearchTcs = new TaskCompletionSource<IEnumerable<ServyEventLogEntry>>();
@@ -491,7 +392,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var vm = CreateViewModel();
 
                     // Act - 1. Fire the first background lookup
-                    // Fetch the private 'Search' method directly using reflection helper to bypass AsyncCommand's 'IsRunning' re-entrancy guard
                     var firstSearchTask = (Task)TestReflection.InvokeNonPublic(vm, "Search", new object[] { null! })!;
 
                     // 2. Poll until the first token reference is registered inside the model
@@ -499,7 +399,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     int retries = 0;
                     while (firstCtsInstance == null && retries < 50)
                     {
-                        // Reflect on the declaring base class type where the active private field resides
                         firstCtsInstance = TestReflection.GetField<CancellationTokenSource>(vm, "_searchCts");
                         if (firstCtsInstance == null)
                         {
@@ -522,10 +421,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     Task.WhenAll(firstSearchTask, secondSearchTask).GetAwaiter().GetResult();
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             }, createApp: true);
         }
 
@@ -534,12 +429,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     // Arrange
                     _eventLogServiceMock
@@ -556,10 +446,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.False(vm.IsBusy);
                     Assert.Equal(Strings.Button_Search, vm.SearchButtonText);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             }, createApp: true);
         }
 
@@ -568,12 +454,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             await Helper.RunOnSTA(async () =>
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     // Arrange
                     _eventLogServiceMock
@@ -589,10 +470,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.Null(exception); // The OperationCanceledException catch block handled it safely
                     _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             }, createApp: true);
         }
 
@@ -603,36 +480,24 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Cleanup_ShouldCancelAndDisposeToken()
         {
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
+                // Arrange
                 var vm = CreateViewModel();
 
+                // Act
                 vm.CancelSearch();
 
                 // After cleanup, a second call should not throw
                 var exception = Record.Exception(() => vm.CancelSearch());
                 Assert.Null(exception);
             }
-            finally
-            {
-                App.Services = originalProvider;
-            }
         }
 
         [Fact]
         public void Dispose_InvokedMultipleTimes_ExitsEarlyThroughDisposedValueAtomicGuard()
         {
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
                 // Arrange
                 var vm = CreateViewModel();
@@ -645,10 +510,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // Assert
                 Assert.Null(doubleDisposeException);
-            }
-            finally
-            {
-                App.Services = originalProvider;
             }
         }
 

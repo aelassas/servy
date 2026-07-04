@@ -13,23 +13,44 @@ namespace Servy.Infrastructure.IntegrationTests.Data
     [Collection("SequentialDatabaseTests")]
     public class DapperExecutorIntegrationTests : IDisposable
     {
-        // Concrete test spy subclassing DbConnection to bypass Moq's non-virtual limitation
-        private class DisposeTrackingDbConnection : DbConnection
+        #region Shared Test Doubles Base Infrastructure
+
+        /// <summary>
+        /// Base test double abstraction providing an inert scaffolding implementation of <see cref="DbConnection"/>
+        /// to centralize boilerplate configuration, clean out scaffold-rot leaks, and track resource disposal safely.
+        /// </summary>
+        private abstract class TestDbConnectionBase : DbConnection
         {
+            /// <summary>
+            /// Gets a value indicating whether this connection container instance has been disposed.
+            /// </summary>
             public bool WasDisposed { get; private set; }
 
+            /// <inheritdoc />
             public override string ConnectionString { get; set; } = "Data Source=:memory:;";
+
+            /// <inheritdoc />
             public override string Database => "TestDb";
+
+            /// <inheritdoc />
             public override string DataSource => "Memory";
+
+            /// <inheritdoc />
             public override string ServerVersion => "1.0";
+
+            /// <inheritdoc />
             public override ConnectionState State => ConnectionState.Closed;
 
-            public override void Open() => throw new InvalidOperationException("Simulated Open Failure");
+            /// <inheritdoc />
             public override void Close() { }
 
-            protected override DbCommand CreateDbCommand() => throw new NotImplementedException();
-            protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw new NotImplementedException();
+            /// <inheritdoc />
+            public override void ChangeDatabase(string databaseName)
+            {
+                /* no-op */
+            }
 
+            /// <inheritdoc />
             protected override void Dispose(bool disposing)
             {
                 if (disposing)
@@ -38,27 +59,35 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 }
                 base.Dispose(disposing);
             }
-
-            public override void ChangeDatabase(string databaseName)
-            {
-                /* no-op */
-            }
         }
 
-        // Concrete test double tracking async faults, open attempt loops, and state disposals safely
-        private class FaultyAsyncDbConnection : DbConnection
+        /// <summary>
+        /// Concrete test spy subclassing our connection base to isolate and track synchronous open exceptions.
+        /// </summary>
+        private class DisposeTrackingDbConnection : TestDbConnectionBase
+        {
+            /// <inheritdoc />
+            public override void Open() => throw new InvalidOperationException("Simulated Open Failure");
+
+            /// <inheritdoc />
+            protected override DbCommand CreateDbCommand() => throw new NotImplementedException();
+
+            /// <inheritdoc />
+            protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Concrete test double tracking asynchronous faults, open attempt loops, and state disposals safely.
+        /// </summary>
+        private class FaultyAsyncDbConnection : TestDbConnectionBase
         {
             private readonly SQLiteErrorCode _errorCode;
             private readonly string _message;
 
+            /// <summary>
+            /// Gets the total number of connection open operations attempted against this instance.
+            /// </summary>
             public int OpenAttempts { get; private set; }
-            public bool WasDisposed { get; private set; }
-
-            public override string ConnectionString { get; set; } = "Data Source=:memory:;";
-            public override string Database => "TestDb";
-            public override string DataSource => "Memory";
-            public override string ServerVersion => "1.0";
-            public override ConnectionState State => ConnectionState.Closed;
 
             public FaultyAsyncDbConnection(SQLiteErrorCode errorCode, string message)
             {
@@ -66,8 +95,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 _message = message;
             }
 
+            /// <inheritdoc />
             public override void Open() => ThrowSQLiteException();
 
+            /// <inheritdoc />
             public override Task OpenAsync(CancellationToken cancellationToken)
             {
                 OpenAttempts++;
@@ -75,9 +106,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 return Task.CompletedTask;
             }
 
-            public override void Close() { }
-
+            /// <inheritdoc />
             protected override DbCommand CreateDbCommand() => throw new NotImplementedException();
+
+            /// <inheritdoc />
             protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw new NotImplementedException();
 
             private void ThrowSQLiteException()
@@ -85,45 +117,35 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Instantiates a true native SQLiteException mapping our targeted error codes accurately
                 throw new SQLiteException(_errorCode, _message);
             }
-
-            protected override void Dispose(bool disposing)
-            {
-                if (disposing)
-                {
-                    WasDisposed = true;
-                }
-                base.Dispose(disposing);
-            }
-
-            public override void ChangeDatabase(string databaseName)
-            {
-                /* no-op */
-            }
         }
 
-        private class FlexibleDbConnectionStub : DbConnection
+        /// <summary>
+        /// Concrete test stub configured to toggle execution flow routing behaviors for transaction pipeline evaluations.
+        /// </summary>
+        private class FlexibleDbConnectionStub : TestDbConnectionBase
         {
             private readonly bool _forceSyncTransactionPath;
 
+            /// <summary>
+            /// Gets a value indicating whether the fallback synchronous transaction initialization tracker path was traversed.
+            /// </summary>
             public bool SyncTransactionWasCalled { get; private set; }
-
-            public override string ConnectionString { get; set; } = "Data Source=:memory:;";
-            public override string Database => "TestDb";
-            public override string DataSource => "Memory";
-            public override string ServerVersion => "1.0";
-            public override ConnectionState State => ConnectionState.Closed;
 
             public FlexibleDbConnectionStub(bool forceSyncTransactionPath = false)
             {
                 _forceSyncTransactionPath = forceSyncTransactionPath;
             }
 
+            /// <inheritdoc />
             public override void Open() { }
-            public override Task OpenAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-            public override void Close() { }
 
+            /// <inheritdoc />
+            public override Task OpenAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+            /// <inheritdoc />
             protected override DbCommand CreateDbCommand() => new Mock<DbCommand>().Object;
 
+            /// <inheritdoc />
             protected override ValueTask<DbTransaction> BeginDbTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken)
             {
                 if (_forceSyncTransactionPath)
@@ -138,18 +160,17 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 return new ValueTask<DbTransaction>(mockTx);
             }
 
-            // Fallback synchronous intersection handler called naturally by the base ADO.NET routing layer
+            /// <summary>
+            /// Fallback synchronous intersection handler called naturally by the base ADO.NET routing layer.
+            /// </summary>
             protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
             {
                 SyncTransactionWasCalled = true;
                 return new Mock<DbTransaction>().Object;
             }
-
-            public override void ChangeDatabase(string databaseName)
-            {
-                /* no-op */
-            }
         }
+
+        #endregion
 
         private readonly Mock<IAppDbContext> _mockDbContext;
         private readonly DapperExecutor _executor;
@@ -193,12 +214,14 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void Constructor_NullDbContext_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => new DapperExecutor(null!));
         }
 
         [Fact]
         public void SynchronousMethods_NullSql_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => _executor.ExecuteScalar<int>(null!));
             Assert.Throws<ArgumentNullException>(() => _executor.Execute(null!));
             Assert.Throws<ArgumentNullException>(() => _executor.Query<dynamic>(null!));
@@ -346,7 +369,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         {
             // Arrange
             var brokenConnectionSpy = new DisposeTrackingDbConnection();
-
             _mockDbContext.Setup(db => db.CreateConnection()).Returns(brokenConnectionSpy);
 
             // Act & Assert
@@ -453,6 +475,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task ExecuteWithRetryAsync_DatabaseBusyExhausted_ThrowsSQLiteException()
         {
+            // Arrange
             var busyConnectionSpy = new FaultyAsyncDbConnection(SQLiteErrorCode.Busy, "Database engine is concurrently busy.");
             _mockDbContext.Setup(db => db.CreateConnection()).Returns(busyConnectionSpy);
 
@@ -473,6 +496,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             using (var tx = _executor.BeginTransaction())
             {
                 var result = _executor.ExecuteScalar<long>("SELECT COUNT(*) FROM TestServices;", transaction: tx);
+
+                // Assert
                 Assert.Equal(2, result);
             }
         }
@@ -484,6 +509,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             using (var tx = _executor.BeginTransaction())
             {
                 var result = _executor.Query<TestServiceDto>("SELECT * FROM TestServices;", transaction: tx);
+
+                // Assert
                 Assert.Equal(2, result.Count());
             }
         }
@@ -499,6 +526,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                     new { Name = "ServyEngine" },
                     transaction: tx);
 
+                // Assert
                 Assert.NotNull(result);
                 Assert.Equal("ServyEngine", result.ServiceName);
             }
@@ -511,6 +539,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             using (var tx = await _executor.BeginTransactionAsync(TestContext.Current.CancellationToken))
             {
                 var result = await _executor.ExecuteScalarAsync<long>("SELECT COUNT(*) FROM TestServices;", transaction: tx, cancellationToken: TestContext.Current.CancellationToken);
+
+                // Assert
                 Assert.Equal(2, result);
             }
         }
@@ -522,6 +552,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             using (var tx = await _executor.BeginTransactionAsync(TestContext.Current.CancellationToken))
             {
                 var result = await _executor.QueryAsync<TestServiceDto>("SELECT * FROM TestServices;", transaction: tx, cancellationToken: TestContext.Current.CancellationToken);
+
+                // Assert
                 Assert.Equal(2, result.Count());
             }
         }
@@ -538,6 +570,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                     transaction: tx,
                     cancellationToken: TestContext.Current.CancellationToken);
 
+                // Assert
                 Assert.NotNull(result);
                 Assert.Equal("ServyEngine", result.ServiceName);
             }
@@ -585,7 +618,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
         #endregion
 
-        #region Engine Internal Edge Cases (Reflection Helpers)
+        #region Route Core Components (Reflection Helpers)
 
         [Theory]
         [InlineData("SELECT * FROM MyTable\r\nWHERE Id = 1", "SELECT * FROM MyTable  WHERE Id = 1")]
@@ -595,7 +628,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         public void FormatSqlForLog_Variants_EvaluatesCorrectly(string? inputSql, string expectedLoggedSql)
         {
             // Arrange
-            // Non-public static invocation is routed cleanly to avoid TargetInvocationException boilerplate.
             const int truncationLength = 55;
 
             // Act
@@ -609,7 +641,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         public void CalculateBackoff_HighAttemptCount_PreventsIntegerOverflows()
         {
             // Arrange
-            // High attempt count parameters configured to target the overflow ceiling
             const int attemptCount = 40;
             const int initialDelayMs = 100;
             const int jitterMs = 0;
@@ -648,5 +679,4 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             public int Status { get; set; }
         }
     }
-
 }
