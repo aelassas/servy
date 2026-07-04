@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.Manager.Helpers;
+using System;
 using System.Threading;
 using Xunit;
 
@@ -11,7 +12,7 @@ namespace Servy.Manager.UnitTests.Helpers
         {
             // Arrange & Act & Assert
             // Should pass without throwing a NullReferenceException
-            Manager.Helpers.Helper.CancelAndDisposeSafely(null);
+            Helper.CancelAndDisposeSafely(null);
         }
 
         [Fact]
@@ -21,7 +22,7 @@ namespace Servy.Manager.UnitTests.Helpers
             var cts = new CancellationTokenSource();
 
             // Act
-            Manager.Helpers.Helper.CancelAndDisposeSafely(cts);
+            Helper.CancelAndDisposeSafely(cts);
 
             // Assert
             Assert.True(cts.IsCancellationRequested);
@@ -39,7 +40,7 @@ namespace Servy.Manager.UnitTests.Helpers
 
             // Act & Assert
             // The method should catch the ObjectDisposedException internally and return cleanly
-            var exception = Record.Exception(() => Manager.Helpers.Helper.CancelAndDisposeSafely(cts));
+            var exception = Record.Exception(() => Helper.CancelAndDisposeSafely(cts));
             Assert.Null(exception);
         }
 
@@ -56,7 +57,7 @@ namespace Servy.Manager.UnitTests.Helpers
 
             // Act
             // The method should catch the AggregateException, log the warning, and force execution through the finally block
-            var exception = Record.Exception(() => Manager.Helpers.Helper.CancelAndDisposeSafely(cts));
+            var exception = Record.Exception(() => Helper.CancelAndDisposeSafely(cts));
 
             // Assert
             Assert.Null(exception); // Proves the exception was caught cleanly
