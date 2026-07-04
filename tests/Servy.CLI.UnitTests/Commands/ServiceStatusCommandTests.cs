@@ -20,7 +20,7 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override ServiceStatusOptions CreateEmptyOptions() => new ServiceStatusOptions { ServiceName = "" };
 
-        protected override string ExpectedSuccessMessage(string serviceName) => string.Format(Strings.Msg_ServiceStatusResult, serviceName, "Running");
+        protected override string ExpectedSuccessMessage(string serviceName) => string.Format(Strings.Msg_ServiceStatusResult, serviceName, ServiceControllerStatus.Running);
 
         protected override string ExpectedGenericActionMessage(string serviceName) => string.Format(Strings.Msg_ServiceStatusAction, serviceName);
 
