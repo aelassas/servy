@@ -12,6 +12,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using System.Windows;
+using Servy.Core.Config;
+using Xunit;
 
 namespace Servy.Testing
 {
@@ -415,6 +417,20 @@ namespace Servy.Testing
             {
                 throw new IOException($"Symlink validation failed at {symlinkFilePath}. The file was created but lacks the ReparsePoint attribute.");
             }
+        }
+
+        /// <summary>
+        /// Gets the absolute filesystem path to the Servy.psm1 PowerShell module file within the repository.
+        /// </summary>
+        /// <returns>The absolute path to the Servy.psm1 file.</returns>
+        public static string GetServyPsm1Path()
+        {
+            string startDir = AppDomain.CurrentDomain.BaseDirectory;
+            string repoRoot = AppConfig.FindRepoRoot(startDir);
+            Assert.False(string.IsNullOrEmpty(repoRoot), "Could not find repository root.");
+            var psm1Path = Path.Combine(repoRoot, "src", "Servy.CLI", "Servy.psm1");
+            Assert.True(File.Exists(psm1Path), $"Could not find Servy.psm1 at {psm1Path}");
+            return psm1Path;
         }
     }
 }

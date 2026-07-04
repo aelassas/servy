@@ -144,5 +144,5 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\Servy.Restarter.Net48.pdb" />
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
