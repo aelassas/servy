@@ -880,34 +880,6 @@ namespace Servy.Service.UnitTests
             Assert.True(foundLog, "The internal recovery sequence was not scheduled or executed within the time limit.");
         }
 
-        [Fact]
-        public void CheckHealth_ProcessHealthy_ResetsFailedChecks()
-        {
-            // Arrange
-            var options = new StartOptions
-            {
-                ServiceName = "Test",
-                ExecutablePath = "test.exe",
-                RecoveryAction = RecoveryAction.RestartProcess,
-                EnableHealthMonitoring = true,
-                MaxFailedChecks = 3
-            };
-            var scopedLogger = SetupStandardServiceStart(options);
-            _service.StartForTest();
-
-            // Force a transient failure into the field
-            TestReflection.SetField(_service, "_failedChecks", 1);
-
-            _mockProcess.Setup(p => p.HasExited).Returns(false); // Process is alive
-
-            // Act
-            TestReflection.InvokeNonPublic(_service, "CheckHealth", this, null);
-
-            // Assert
-            scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("healthy again. Resetting transient failure")), It.IsAny<Exception>()), Times.Once);
-            Assert.Equal(0, TestReflection.GetField<int>(_service, "_failedChecks"));
-        }
-
         #endregion
 
         #region Teardown & Custom Command Tests

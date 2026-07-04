@@ -132,6 +132,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AmbientAppServicesScope.cs" />
     <Compile Include="AmbientTestCollection.cs" />
     <Compile Include="Config\DesignTimeAppConfigTests.cs" />
     <Compile Include="Converters\CpuUsageConverterTests.cs" />

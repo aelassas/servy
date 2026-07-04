@@ -135,7 +135,6 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestableServiceExtensions.cs" />
     <Compile Include="TestableServiceTests.cs" />
     <Compile Include="Timers\TimerAdapterTests.cs" />
     <Compile Include="Timers\TimerFactoryTests.cs" />

@@ -87,12 +87,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Arrange
             Helper.RunOnSTA(() =>
             {
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     // Act
                     var dtViewModel = new ConsoleViewModel();
@@ -100,10 +95,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Assert
                     Assert.NotNull(dtViewModel.RawLines);
                     Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
-                }
-                finally
-                {
-                    App.Services = originalProvider;
                 }
             }, createApp: true);
         }
@@ -118,12 +109,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
                     var service = new ConsoleService { Name = "AppService", StdoutPath = "C:\\out.log" };
@@ -135,10 +121,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.Equal("AppService", vm.SelectedService.Name);
                     Assert.Empty(vm.RawLines);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             });
         }
 
@@ -148,12 +130,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
                     vm.SetSelectionActive(true);
@@ -165,10 +142,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Assert
                     Assert.False(vm.IsPaused);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             });
         }
 
@@ -178,12 +151,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
                     var mockService = new ConsoleService { Name = "TestService", Pid = 5555 };
@@ -195,10 +163,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Assert
                     _serviceCommandsMock.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "TestService"), It.IsAny<CancellationToken>()), Times.Once);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             });
         }
 
@@ -208,12 +172,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
 
@@ -237,10 +196,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.Single(filtered);
                     Assert.Contains("Crash", filtered[0].Text);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             });
         }
 
@@ -254,12 +209,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
 
@@ -275,10 +225,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.Equal(UiConstants.NotAvailable, vm.Pid);
                     Assert.False(TestReflection.GetField<bool>(vm, "_hadSelectedService"));
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             });
         }
 
@@ -288,12 +234,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
                     var service = new ConsoleService { Name = "DeadService", Pid = 1234, StdoutPath = "log.txt" };
@@ -312,10 +253,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.Null(service.StdoutPath);
                     Assert.Equal(UiConstants.NotAvailable, vm.Pid);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             });
         }
 
@@ -325,12 +262,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
                     var service = new ConsoleService { Name = "ActiveService", Pid = 100, StdoutPath = "old.txt" };
@@ -347,10 +279,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Assert
                     Assert.Equal("new.txt", service.StdoutPath);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             });
         }
 
@@ -364,12 +292,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
                     bool scrollTriggered = false;
@@ -380,10 +303,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Assert
                     Assert.False(scrollTriggered);
-                }
-                finally
-                {
-                    App.Services = originalProvider;
                 }
             });
         }
@@ -427,12 +346,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void CreateServiceItem_ValidServiceInput_MapsToConsoleServiceWithNullFields()
         {
             // Arrange
-            var originalProvider = App.Services;
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(_mockProcessKiller.Object);
-            App.Services = serviceCollection.BuildServiceProvider();
-
-            try
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
                 var vm = CreateViewModel();
                 var service = new Service { Name = "EngineService" };
@@ -447,10 +361,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.Null(result.StdoutPath);
                 Assert.Null(result.StderrPath);
             }
-            finally
-            {
-                App.Services = originalProvider;
-            }
         }
 
         [Fact]
@@ -459,12 +369,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
                     var firstCts = new CancellationTokenSource();
@@ -477,10 +382,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Assert
                     Assert.True(firstCts.IsCancellationRequested);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             });
         }
 
@@ -490,12 +391,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
                     vm.RawLines.Add(new LogLine("Preserve Me", LogType.StdOut));
@@ -507,10 +403,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Assert - Verify that the internal branch evaluation safely skipped AddRange loops since paths were empty
                     Assert.Empty(vm.RawLines);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             });
         }
 
@@ -520,12 +412,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
 
@@ -559,10 +446,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Assert.Equal("Row 2", vm.RawLines[0].Text);
                     Assert.Equal("Row 3", vm.RawLines[1].Text);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             });
         }
 
@@ -572,12 +455,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
                     vm.SetSelectionActive(true); // User is selecting text in the UI terminal window frame
@@ -595,10 +473,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Assert - Log array size should remain 0 because mutation bypassed collection injection via text pause guard gate
                     Assert.Empty(vm.RawLines);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             });
         }
 
@@ -608,12 +482,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
 
@@ -631,10 +500,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Assert
                     Assert.Empty(vm.RawLines);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             });
         }
 
@@ -644,12 +509,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
                     var service = new ConsoleService { Name = "ActiveService", StdoutPath = "out.log", StderrPath = "err.log" };
@@ -662,10 +522,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Assert
                     Assert.False(vm.IsPaused);
                 }
-                finally
-                {
-                    App.Services = originalProvider;
-                }
             });
         }
 
@@ -675,12 +531,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var originalProvider = App.Services;
-                var serviceCollection = new ServiceCollection();
-                serviceCollection.AddSingleton(_mockProcessKiller.Object);
-                App.Services = serviceCollection.BuildServiceProvider();
-
-                try
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     var vm = CreateViewModel();
 
@@ -690,10 +541,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Assert - Re-invoking sequential Dispose cycles must exit early without crash exceptions or registry faults
                     var multipleDisposeError = Record.Exception(() => vm.Dispose());
                     Assert.Null(multipleDisposeError);
-                }
-                finally
-                {
-                    App.Services = originalProvider;
                 }
             });
         }
