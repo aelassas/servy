@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Services;
+using Servy.Core.UnitTests.Helpers;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Services
@@ -47,61 +48,7 @@ namespace Servy.Core.UnitTests.Services
         public void Deserialize_AllFields_MapsCorrectly()
         {
             // Arrange: Create a DTO with specific values for every single field
-            var expected = new ServiceDto
-            {
-                Name = "FullXmlService",
-                DisplayName = "Full Display",
-                Description = "Xml Description",
-                ExecutablePath = @"C:\App\bin\service.exe",
-                StartupDirectory = @"C:\App\bin",
-                Parameters = "/start --verbose",
-                StartupType = 2,
-                Priority = 32,
-                StdoutPath = "C:\\logs\\out.log",
-                StderrPath = "C:\\logs\\err.log",
-                EnableSizeRotation = true,
-                RotationSize = 25,
-                EnableDateRotation = true,
-                DateRotationType = 2,
-                MaxRotations = 5,
-                UseLocalTimeForRotation = true,
-                EnableHealthMonitoring = true,
-                HeartbeatInterval = 45,
-                MaxFailedChecks = 10,
-                RecoveryAction = 1,
-                MaxRestartAttempts = 5,
-                FailureProgramPath = "reboot.exe",
-                FailureProgramStartupDirectory = "C:\\",
-                FailureProgramParameters = "-f",
-                EnvironmentVariables = "PORT=8080;NODE_ENV=prod",
-                ServiceDependencies = "LanmanWorkstation;W32Time",
-                RunAsLocalSystem = false,
-                UserAccount = "DOMAIN\\ServiceAccount",
-                Password = "EncryptedPasswordString",
-                PreLaunchExecutablePath = "setup.exe",
-                PreLaunchStartupDirectory = "C:\\Temp",
-                PreLaunchParameters = "--quiet",
-                PreLaunchEnvironmentVariables = "SETUP=1",
-                PreLaunchStdoutPath = "setup_out.log",
-                PreLaunchStderrPath = "setup_err.log",
-                PreLaunchTimeoutSeconds = 120,
-                PreLaunchRetryAttempts = 3,
-                PreLaunchIgnoreFailure = true,
-                PostLaunchExecutablePath = "notify.exe",
-                PostLaunchStartupDirectory = "C:\\",
-                PostLaunchParameters = "--started",
-                EnableDebugLogs = true,
-                StartTimeout = 45,
-                StopTimeout = 60,
-                PreStopExecutablePath = "cleanup.exe",
-                PreStopStartupDirectory = "C:\\App",
-                PreStopParameters = "--force",
-                PreStopTimeoutSeconds = 30,
-                PreStopLogAsError = true,
-                PostStopExecutablePath = "final.exe",
-                PostStopStartupDirectory = "C:\\",
-                PostStopParameters = "--done"
-            };
+            var expected = ServiceDtoFactory.CreateFull("Xml");
 
             // Convert to XML string using the standard Serializer
             var xml = ServiceDtoXml.Serialize(expected);

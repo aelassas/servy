@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Servy.Core.Config;
 using Servy.Core.Security;
+using Servy.Core.UnitTests.Helpers;
 using System;
 using System.Diagnostics;
 using System.Security.Cryptography;
@@ -89,7 +90,7 @@ namespace Servy.Core.UnitTests.Security
             var sw = new Stopwatch();
 
             // Manually create a V1 payload since the new SUT only encrypts in V2
-            string v1Payload = CreateLegacyV1EncryptedString(largePlainText);
+            string v1Payload = SecureDataHelper.CreateLegacyV1EncryptedString(_testKey, _testIvV1, largePlainText);
 
             _output.WriteLine($"--- V1 COMPATIBILITY STRESS TEST ({sizeInMb} MB) ---");
 
@@ -119,28 +120,6 @@ namespace Servy.Core.UnitTests.Security
             }
 
             return sb.ToString().Substring(0, targetLength);
-        }
-
-        /// <summary>
-        /// Simulates the old V1 encryption logic to test the SUT's DecryptV1 method.
-        /// </summary>
-        private string CreateLegacyV1EncryptedString(string plainText)
-        {
-            using (var aes = Aes.Create())
-            {
-                aes.Key = _testKey;
-                aes.IV = _testIvV1;
-                aes.Mode = CipherMode.CBC;
-                aes.Padding = PaddingMode.PKCS7;
-
-                using (var encryptor = aes.CreateEncryptor())
-                {
-                    byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
-                    byte[] cipherBytes = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
-                    // Legacy V1 format: "SERVY_ENC:v1:{Base64}"
-                    return "SERVY_ENC:v1:" + Convert.ToBase64String(cipherBytes);
-                }
-            }
         }
 
         #endregion

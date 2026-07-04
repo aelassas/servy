@@ -1,5 +1,6 @@
 ﻿using Servy.Core.DTOs;
 using Servy.Core.Services;
+using Servy.Core.UnitTests.Helpers;
 using System.IO;
 using Xunit;
 
@@ -7,62 +8,29 @@ namespace Servy.Core.UnitTests.Services
 {
     public class ServiceExporterTests
     {
-        private ServiceDto CreateSampleService()
-        {
-            return new ServiceDto
-            {
-                Id = 1,
-                Name = "MyService",
-                Description = "Test service",
-                ExecutablePath = "C:\\service.exe",
-                StartupDirectory = "C:\\",
-                Parameters = "-arg1 -arg2",
-                StartupType = 2,
-                Priority = 1,
-                StdoutPath = "stdout.log",
-                StderrPath = "stderr.log",
-                EnableSizeRotation = true,
-                RotationSize = 1024,
-                EnableHealthMonitoring = true,
-                HeartbeatInterval = 10,
-                MaxFailedChecks = 3,
-                RecoveryAction = 1,
-                MaxRestartAttempts = 5,
-                EnvironmentVariables = "VAR1=VAL1;VAR2=VAL2",
-                ServiceDependencies = "dep1;dep2",
-                RunAsLocalSystem = true,
-                UserAccount = "user",
-                Password = "pass",
-                PreLaunchExecutablePath = "pre.exe",
-                PreLaunchStartupDirectory = "C:\\pre",
-                PreLaunchParameters = "-preArg",
-                PreLaunchEnvironmentVariables = "PREVAR=VAL",
-                PreLaunchStdoutPath = "preout.log",
-                PreLaunchStderrPath = "preerr.log",
-                PreLaunchTimeoutSeconds = 30,
-                PreLaunchRetryAttempts = 2,
-                PreLaunchIgnoreFailure = true
-            };
-        }
-
         [Fact]
         public void ExportXml_ShouldReturnValidXmlString()
         {
-            var service = CreateSampleService();
+            // Arrange
+            var service = ServiceDtoFactory.CreateSampleExport();
+
+            // Act
             var xml = ServiceExporter.ExportXml(service);
 
+            // Assert
             Assert.False(string.IsNullOrWhiteSpace(xml));
             Assert.StartsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>", xml);
             Assert.Contains("<Name>MyService</Name>", xml);
-           
         }
 
         [Fact]
         public void ExportXml_File_ShouldWriteFile()
         {
-            var service = CreateSampleService();
+            // Arrange
+            var service = ServiceDtoFactory.CreateSampleExport();
             var tempFile = Path.GetTempFileName();
 
+            // Act & Assert
             try
             {
                 ServiceExporter.ExportXml(service, tempFile);
@@ -81,9 +49,13 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void ExportJson_ShouldReturnValidJsonString()
         {
-            var service = CreateSampleService();
+            // Arrange
+            var service = ServiceDtoFactory.CreateSampleExport();
+
+            // Act
             var json = ServiceExporter.ExportJson(service);
 
+            // Assert
             Assert.False(string.IsNullOrWhiteSpace(json));
             Assert.Contains("\"Name\": \"MyService\"", json);
             Assert.Contains("\"ExecutablePath\": \"C:\\\\service.exe\"", json);
@@ -92,9 +64,11 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void ExportJson_File_ShouldWriteFile()
         {
-            var service = CreateSampleService();
+            // Arrange
+            var service = ServiceDtoFactory.CreateSampleExport();
             var tempFile = Path.GetTempFileName();
 
+            // Act & Assert
             try
             {
                 ServiceExporter.ExportJson(service, tempFile);
@@ -113,6 +87,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void ExportJson_ShouldIgnoreNullValues()
         {
+            // Arrange
             var service = new ServiceDto
             {
                 Name = "TestService",
@@ -120,8 +95,10 @@ namespace Servy.Core.UnitTests.Services
                 // other properties left null
             };
 
+            // Act
             var json = ServiceExporter.ExportJson(service);
 
+            // Assert
             Assert.Contains("\"Name\": \"TestService\"", json);
             Assert.Contains("\"ExecutablePath\": \"C:\\\\service.exe\"", json);
             Assert.DoesNotContain("Description", json); // null properties should be ignored
