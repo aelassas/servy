@@ -4,6 +4,7 @@ using Servy.Core.Helpers;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
+using Servy.Service.UnitTests.Helpers;
 using Servy.Service.UnitTests.Utilities;
 using Servy.Testing;
 using System.Diagnostics;
@@ -20,16 +21,6 @@ namespace Servy.Service.UnitTests
             _mockProcessKiller = new Mock<IProcessKiller>();
         }
 
-        static DataReceivedEventArgs CreateDataReceivedEventArgs(string? data)
-        {
-            var ctor = typeof(DataReceivedEventArgs).GetConstructor(
-                BindingFlags.Instance | BindingFlags.NonPublic,
-                null,
-                new Type[] { typeof(string) },
-                null);
-            return (DataReceivedEventArgs)ctor!.Invoke(new string[] { data! });
-        }
-
         [Fact]
         public void OnOutputDataReceived_WritesToRotatingWriters_IgnoresNullOrEmpty()
         {
@@ -40,9 +31,9 @@ namespace Servy.Service.UnitTests
             var mockWriter = new Mock<IStreamWriter>();
             ctx.StreamWriterFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>())).Returns(mockWriter.Object);
 
-            var nonEmptyArgs = CreateDataReceivedEventArgs("output line");
-            var emptyArgs = CreateDataReceivedEventArgs(null);
-            var emptyStringArgs = CreateDataReceivedEventArgs(string.Empty);
+            var nonEmptyArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("output line");
+            var emptyArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(null);
+            var emptyStringArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(string.Empty);
 
             var startOptions = new StartOptions
             {
@@ -75,9 +66,9 @@ namespace Servy.Service.UnitTests
             var mockWriter = new Mock<IStreamWriter>();
             ctx.StreamWriterFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>())).Returns(mockWriter.Object);
 
-            var nonEmptyArgs = CreateDataReceivedEventArgs("error line");
-            var emptyArgs = CreateDataReceivedEventArgs(null);
-            var emptyStringArgs = CreateDataReceivedEventArgs(string.Empty);
+            var nonEmptyArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("error line");
+            var emptyArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(null);
+            var emptyStringArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(string.Empty);
 
             var startOptions = new StartOptions
             {

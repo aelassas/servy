@@ -7,97 +7,37 @@ using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests.Commands
 {
-    public class RestartServiceCommandTests
+    public class RestartServiceCommandTests : ServiceCommandTestsBase<RestartServiceCommand, RestartServiceOptions>
     {
-        private readonly Mock<IServiceManager> _mockServiceManager;
-        private readonly RestartServiceCommand _command;
+        protected override RestartServiceCommand CreateCommandInstance() => new RestartServiceCommand(MockServiceManager.Object);
 
-        public RestartServiceCommandTests()
+        protected override RestartServiceOptions CreateValidOptions(string serviceName) => new RestartServiceOptions { ServiceName = serviceName };
+
+        protected override RestartServiceOptions CreateEmptyOptions() => new RestartServiceOptions { ServiceName = "" };
+
+        protected override string ExpectedSuccessMessage(string serviceName) => $"Service '{serviceName}' restarted successfully.";
+
+        protected override string ExpectedGenericActionMessage(string serviceName) => string.Format(Strings.Msg_RestartServiceAction, serviceName);
+
+        protected override void SetupServiceManagerSuccess(Mock<IServiceManager> mockManager, string serviceName)
         {
-            _mockServiceManager = new Mock<IServiceManager>();
-            _command = new RestartServiceCommand(_mockServiceManager.Object);
+            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            mockManager.Setup(sm => sm.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
+            mockManager.Setup(sm => sm.RestartServiceAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
         }
 
-        [Fact]
-        public async Task Execute_ValidOptions_ReturnsSuccess()
+        protected override void SetupServiceManagerFailure(Mock<IServiceManager> mockManager, string serviceName, string errorMsg)
         {
-            // Arrange
-            var options = new RestartServiceOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
-            _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
-            _mockServiceManager.Setup(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
-
-            // Act
-            var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.True(result.Success);
-            Assert.Equal("Service 'TestService' restarted successfully.", result.Message);
+            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            mockManager.Setup(sm => sm.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
+            mockManager.Setup(sm => sm.RestartServiceAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure(errorMsg));
         }
 
-        [Fact]
-        public async Task Execute_EmptyServiceName_ReturnsFailure()
+        protected override void SetupServiceManagerException<TException>(Mock<IServiceManager> mockManager, string serviceName)
         {
-            // Arrange
-            var options = new RestartServiceOptions { ServiceName = "" };
-
-            // Act
-            var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal("Service name is required.", result.Message);
-        }
-
-        [Fact]
-        public async Task Execute_ServiceManagerFails_ReturnsFailure()
-        {
-            // Arrange
-            var options = new RestartServiceOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
-            _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
-            _mockServiceManager.Setup(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to restart service."));
-
-            // Act
-            var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal("Failed to restart service.", result.Message);
-        }
-
-        [Fact]
-        public async Task Execute_UnauthorizedAccessException_ReturnsFailure()
-        {
-            // Arrange
-            var options = new RestartServiceOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
-            _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
-            _mockServiceManager.Setup(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).Throws<UnauthorizedAccessException>();
-
-            // Act
-            var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Contains("Access Denied", result.Message);
-        }
-
-        [Fact]
-        public async Task Execute_GenericException_ReturnsFailure()
-        {
-            // Arrange
-            var options = new RestartServiceOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
-            _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
-            _mockServiceManager.Setup(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).Throws<Exception>();
-
-            // Act
-            var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Contains(string.Format(Strings.Msg_RestartServiceAction, "TestService"), result.Message);
+            mockManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            mockManager.Setup(sm => sm.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
+            mockManager.Setup(sm => sm.RestartServiceAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>())).Throws<TException>();
         }
     }
 }

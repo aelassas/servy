@@ -7,6 +7,7 @@ using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
+using Servy.Service.UnitTests.Helpers;
 using Servy.Service.Validation;
 using Servy.Testing;
 using System.Diagnostics;
@@ -640,15 +641,6 @@ namespace Servy.Service.UnitTests
             return mockScopedLogger;
         }
 
-        /// <summary>
-        /// Uses reflection to instantiate the internal DataReceivedEventArgs class for testing streams.
-        /// </summary>
-        private DataReceivedEventArgs CreateDataReceivedEventArgs(string data)
-        {
-            var constructor = typeof(DataReceivedEventArgs).GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault();
-            return (DataReceivedEventArgs)constructor?.Invoke(new object[] { data })!;
-        }
-
         #endregion
 
         #region Pre-Launch Orchestration Tests
@@ -755,7 +747,7 @@ namespace Servy.Service.UnitTests
             SetupStandardServiceStart(options);
             _service.StartForTest();
 
-            var eventArgs = CreateDataReceivedEventArgs("Test Output Line");
+            var eventArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("Test Output Line");
 
             // Act
             TestReflection.InvokeNonPublic(_service, "OnOutputDataReceived", this, eventArgs);
@@ -779,7 +771,7 @@ namespace Servy.Service.UnitTests
             SetupStandardServiceStart(options);
             _service.StartForTest();
 
-            var eventArgs = CreateDataReceivedEventArgs("Test Error Line");
+            var eventArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs("Test Error Line");
 
             // Act
             TestReflection.InvokeNonPublic(_service, "OnErrorDataReceived", this, eventArgs);
@@ -796,7 +788,7 @@ namespace Servy.Service.UnitTests
             SetupStandardServiceStart(options);
             _service.StartForTest();
 
-            var eventArgs = CreateDataReceivedEventArgs(null!);
+            var eventArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(null!);
 
             // Act
             TestReflection.InvokeNonPublic(_service, "OnOutputDataReceived", this, eventArgs);
