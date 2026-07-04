@@ -11,7 +11,6 @@ using Servy.Service.UnitTests.Helpers;
 using Servy.Service.Validation;
 using Servy.Testing;
 using System.Diagnostics;
-using System.Reflection;
 using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 using ITimer = Servy.Service.Timers.ITimer;
 
@@ -239,91 +238,41 @@ namespace Servy.Service.UnitTests
         public void SetProcessPriority_ValidPriority_SetsPriorityAndLogsInfo()
         {
             // Arrange
-            var mockProcess = new Mock<IProcessWrapper>();
-            var mockLogger = new Mock<IServyLogger>();
-            var mockHelper = new Mock<IServiceHelper>();
-            var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
-            var mockTimerFactory = new Mock<ITimerFactory>();
-            var mockProcessFactory = new Mock<IProcessFactory>();
-            var mockPathValidator = new Mock<IPathValidator>();
+            var service = CreateTestableService();
+            service.SetChildProcess(_mockProcess.Object);
 
-            var service = new TestableService(
-                mockHelper.Object,
-                mockLogger.Object,
-                mockStreamWriterFactory.Object,
-                mockTimerFactory.Object,
-                mockProcessFactory.Object,
-                mockPathValidator.Object,
-                _mockServiceRepository.Object,
-                _mockProcessKiller.Object
-            );
-            service.SetChildProcess(mockProcess.Object);
-
-            mockProcess.SetupProperty(p => p.PriorityClass);
+            _mockProcess.SetupProperty(p => p.PriorityClass);
 
             // Act
             service.InvokeSetProcessPriority(ProcessPriorityClass.High);
 
             // Assert
-            mockProcess.VerifySet(p => p.PriorityClass = ProcessPriorityClass.High, Times.Once);
-            mockLogger.Verify(l => l.Info(It.Is<string>(msg => msg.Contains("Set process priority to High")), It.IsAny<Exception>()), Times.Once);
+            _mockProcess.VerifySet(p => p.PriorityClass = ProcessPriorityClass.High, Times.Once);
+            _mockLogger.Verify(l => l.Info(It.Is<string>(msg => msg.Contains("Set process priority to High")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
         public void SetProcessPriority_ExceptionThrown_LogsWarning()
         {
             // Arrange
-            var mockProcess = new Mock<IProcessWrapper>();
-            var mockLogger = new Mock<IServyLogger>();
-            var mockHelper = new Mock<IServiceHelper>();
-            var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
-            var mockTimerFactory = new Mock<ITimerFactory>();
-            var mockProcessFactory = new Mock<IProcessFactory>();
-            var mockPathValidator = new Mock<IPathValidator>();
+            var service = CreateTestableService();
+            service.SetChildProcess(_mockProcess.Object);
 
-            var service = new TestableService(
-                mockHelper.Object,
-                mockLogger.Object,
-                mockStreamWriterFactory.Object,
-                mockTimerFactory.Object,
-                mockProcessFactory.Object,
-                mockPathValidator.Object,
-                _mockServiceRepository.Object,
-                _mockProcessKiller.Object
-            );
-            service.SetChildProcess(mockProcess.Object);
-
-            mockProcess.SetupSet(p => p.PriorityClass = It.IsAny<ProcessPriorityClass>())
+            _mockProcess.SetupSet(p => p.PriorityClass = It.IsAny<ProcessPriorityClass>())
                        .Throws(new Exception("Priority error"));
 
             // Act
             service.InvokeSetProcessPriority(ProcessPriorityClass.High);
 
             // Assert
-            mockLogger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("Failed to set priority") && msg.Contains("Priority error")), It.IsAny<Exception>()), Times.Once);
+            _mockLogger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("Failed to set priority") && msg.Contains("Priority error")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
         public void HandleLogWriters_ValidPaths_CreatesStreamWriters()
         {
             // Arrange
-            var mockLogger = new Mock<IServyLogger>();
-            var mockHelper = new Mock<IServiceHelper>();
-            var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
-            var mockTimerFactory = new Mock<ITimerFactory>();
-            var mockProcessFactory = new Mock<IProcessFactory>();
-            var mockPathValidator = new Mock<IPathValidator>();
-
-            var service = new TestableService(
-                mockHelper.Object,
-                mockLogger.Object,
-                mockStreamWriterFactory.Object,
-                mockTimerFactory.Object,
-                mockProcessFactory.Object,
-                mockPathValidator.Object,
-                _mockServiceRepository.Object,
-                _mockProcessKiller.Object
-            );
+            var service = CreateTestableService();
 
             var options = new StartOptions
             {
@@ -336,46 +285,30 @@ namespace Servy.Service.UnitTests
             var mockStdOutWriter = new Mock<IStreamWriter>();
             var mockStdErrWriter = new Mock<IStreamWriter>();
 
-            mockStreamWriterFactory.Setup(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
+            _mockStreamWriterFactory.Setup(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
                 .Returns(mockStdOutWriter.Object);
 
-            mockStreamWriterFactory.Setup(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
+            _mockStreamWriterFactory.Setup(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
                 .Returns(mockStdErrWriter.Object);
 
-            mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
+            _mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
 
             // Act
             service.InvokeHandleLogWriters(options);
 
             // Assert
-            mockStreamWriterFactory.Verify(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
-            mockStreamWriterFactory.Verify(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
+            _mockStreamWriterFactory.Verify(f => f.Create(options.StdoutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
+            _mockStreamWriterFactory.Verify(f => f.Create(options.StderrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
 
             // Check no errors logged
-            mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+            _mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
         [Fact]
         public void HandleLogWriters_InvalidPaths_LogsErrors()
         {
             // Arrange
-            var mockLogger = new Mock<IServyLogger>();
-            var mockHelper = new Mock<IServiceHelper>();
-            var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
-            var mockTimerFactory = new Mock<ITimerFactory>();
-            var mockProcessFactory = new Mock<IProcessFactory>();
-            var mockPathValidator = new Mock<IPathValidator>();
-
-            var service = new TestableService(
-                mockHelper.Object,
-                mockLogger.Object,
-                mockStreamWriterFactory.Object,
-                mockTimerFactory.Object,
-                mockProcessFactory.Object,
-                mockPathValidator.Object,
-                _mockServiceRepository.Object,
-                _mockProcessKiller.Object
-            );
+            var service = CreateTestableService();
 
             var options = new StartOptions
             {
@@ -388,32 +321,16 @@ namespace Servy.Service.UnitTests
             service.InvokeHandleLogWriters(options);
 
             // Assert
-            mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
+            _mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
 
-            mockLogger.Verify(l => l.Error(It.Is<string>(msg => msg.Contains("Invalid log file path")), null), Times.Exactly(2));
+            _mockLogger.Verify(l => l.Error(It.Is<string>(msg => msg.Contains("Invalid log file path")), null), Times.Exactly(2));
         }
 
         [Fact]
         public void HandleLogWriters_EmptyPaths_DoesNotCreateWritersOrLog()
         {
             // Arrange
-            var mockLogger = new Mock<IServyLogger>();
-            var mockHelper = new Mock<IServiceHelper>();
-            var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
-            var mockTimerFactory = new Mock<ITimerFactory>();
-            var mockProcessFactory = new Mock<IProcessFactory>();
-            var mockPathValidator = new Mock<IPathValidator>();
-
-            var service = new TestableService(
-                mockHelper.Object,
-                mockLogger.Object,
-                mockStreamWriterFactory.Object,
-                mockTimerFactory.Object,
-                mockProcessFactory.Object,
-                mockPathValidator.Object,
-                _mockServiceRepository.Object,
-                _mockProcessKiller.Object
-            );
+            var service = CreateTestableService();
 
             var options = new StartOptions
             {
@@ -427,8 +344,8 @@ namespace Servy.Service.UnitTests
             service.InvokeHandleLogWriters(options);
 
             // Assert
-            mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
-            mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+            _mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
+            _mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
         #region Null, Empty, and Standard Sanitization Tests
@@ -621,6 +538,24 @@ namespace Servy.Service.UnitTests
         #endregion
 
         #region Private Test Helpers
+
+        /// <summary>
+        /// Direct central factory targeting the creation of TestableService instances.
+        /// Consolidates individual field setups consistently, ensuring signature immunity across call sites.
+        /// </summary>
+        private TestableService CreateTestableService()
+        {
+            return new TestableService(
+                _mockServiceHelper.Object,
+                _mockLogger.Object,
+                _mockStreamWriterFactory.Object,
+                _mockTimerFactory.Object,
+                _mockProcessFactory.Object,
+                _mockPathValidator.Object,
+                _mockServiceRepository.Object,
+                _mockProcessKiller.Object
+            );
+        }
 
         /// <summary>
         /// DRY helper to initialize the base StartOptions and mocks required to get the 
