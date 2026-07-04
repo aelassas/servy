@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Servy.CLI.Models;
+using Servy.CLI.Resources;
 using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests.Commands
@@ -155,7 +156,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.Success);
-            Assert.Equal("Service name is required.", result.Message);
+            Assert.Equal(Strings.Msg_ServiceNameRequired, result.Message);
         }
 
         /// <summary>

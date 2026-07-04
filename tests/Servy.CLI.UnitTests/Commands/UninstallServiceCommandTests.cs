@@ -22,7 +22,7 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override UninstallServiceOptions CreateEmptyOptions() => new UninstallServiceOptions { ServiceName = "" };
 
-        protected override string ExpectedSuccessMessage(string serviceName) => $"Service '{serviceName}' uninstalled successfully.";
+        protected override string ExpectedSuccessMessage(string serviceName) => string.Format(Strings.Msg_UninstallSuccess, serviceName);
 
         protected override string ExpectedGenericActionMessage(string serviceName) => string.Format(Strings.Msg_UninstallServiceAction, serviceName);
 

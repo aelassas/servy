@@ -15,7 +15,7 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override StopServiceOptions CreateEmptyOptions() => new StopServiceOptions { ServiceName = "" };
 
-        protected override string ExpectedSuccessMessage(string serviceName) => $"Service '{serviceName}' stopped successfully.";
+        protected override string ExpectedSuccessMessage(string serviceName) => string.Format(Strings.Msg_StopSuccess, serviceName);
 
         protected override string ExpectedGenericActionMessage(string serviceName) => string.Format(Strings.Msg_StopServiceAction, serviceName);
 

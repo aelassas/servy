@@ -15,7 +15,7 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override StartServiceOptions CreateEmptyOptions() => new StartServiceOptions { ServiceName = "" };
 
-        protected override string ExpectedSuccessMessage(string serviceName) => $"Service '{serviceName}' started successfully.";
+        protected override string ExpectedSuccessMessage(string serviceName) => string.Format(Strings.Msg_StartSuccess, serviceName);
 
         protected override string ExpectedGenericActionMessage(string serviceName) => string.Format(Strings.Msg_StartServiceAction, serviceName);
 

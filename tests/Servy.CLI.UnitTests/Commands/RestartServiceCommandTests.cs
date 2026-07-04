@@ -15,7 +15,7 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override RestartServiceOptions CreateEmptyOptions() => new RestartServiceOptions { ServiceName = "" };
 
-        protected override string ExpectedSuccessMessage(string serviceName) => $"Service '{serviceName}' restarted successfully.";
+        protected override string ExpectedSuccessMessage(string serviceName) => string.Format(Strings.Msg_RestartSuccess, serviceName);
 
         protected override string ExpectedGenericActionMessage(string serviceName) => string.Format(Strings.Msg_RestartServiceAction, serviceName);
 
