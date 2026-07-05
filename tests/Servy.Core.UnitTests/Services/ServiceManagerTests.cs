@@ -2633,8 +2633,6 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.NotNull(result);
             Assert.Equal(deps, result);
-            Assert.Equal(deps.ServiceName, result.ServiceName);
-            Assert.Equal(deps.DisplayName, result.DisplayName);
 
             _mockController.Verify(c => c.GetDependencies(It.IsAny<CancellationToken>()), Times.Once);
         }
