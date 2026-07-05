@@ -524,19 +524,26 @@ namespace Servy.Manager.UnitTests.Services
             // Arrange
             var sut = CreateServiceCommands();
             var service = new Service { Name = "TestService" };
-            var debugDir = Path.GetFullPath(Core.Config.AppConfig.ServyServiceManagerDebugFolder);
+
+            // Use reflection to gracefully handle the conditional existence of the debug folder property.
+            var debugFolderProp = typeof(Core.Config.AppConfig).GetProperty("ServyServiceManagerDebugFolder");
+            string? debugDir = debugFolderProp?.GetValue(null) as string;
+
             bool directoryCreatedByTest = false;
 
-            // Wrap the validation directory creation step inside a robust teardown context block.
-            try
+            if (!string.IsNullOrEmpty(debugDir))
             {
-                if (!Directory.Exists(debugDir))
+                try
                 {
-                    Directory.CreateDirectory(debugDir);
-                    directoryCreatedByTest = true;
+                    debugDir = Path.GetFullPath(debugDir);
+                    if (!Directory.Exists(debugDir))
+                    {
+                        Directory.CreateDirectory(debugDir);
+                        directoryCreatedByTest = true;
+                    }
                 }
+                catch { /* Ignore creation errors if running in restricted environments */ }
             }
-            catch { /* Ignore creation errors if running in restricted environments */ }
 
             // 1. Bypass Service Exists check
             _serviceManagerMock.Setup(m => m.IsServiceInstalled(service.Name, It.IsAny<CancellationToken>())).Returns(false);
@@ -557,7 +564,7 @@ namespace Servy.Manager.UnitTests.Services
             finally
             {
                 // Teardown - Clean up created diagnostic folder artifacts explicitly to maintain sandbox safety boundaries
-                if (directoryCreatedByTest && Directory.Exists(debugDir))
+                if (directoryCreatedByTest && !string.IsNullOrEmpty(debugDir) && Directory.Exists(debugDir))
                 {
                     try
                     {
