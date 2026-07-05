@@ -51,7 +51,7 @@ namespace Servy.Manager.UnitTests.Validation
             var validResult = new ValidationResult { };
 
             _validationRulesMock
-                .Setup(r => r.Validate(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+                .Setup(r => r.Validate(dto, null, null, false))
                 .Returns(validResult);
 
             // Act
@@ -76,7 +76,7 @@ namespace Servy.Manager.UnitTests.Validation
             invalidResult.Errors.Add("Second error that should be ignored");
 
             _validationRulesMock
-                .Setup(r => r.Validate(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+                .Setup(r => r.Validate(dto, null, null, false))
                 .Returns(invalidResult);
 
             // Act

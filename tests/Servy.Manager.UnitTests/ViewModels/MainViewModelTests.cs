@@ -654,7 +654,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task IndependentCommands_DelegateToUnderlyingServices()
+        public async Task ConfigureCommand_ShouldDelegateToConfigureServiceAsync()
         {
             await Helper.RunOnSTA(async () =>
             {
@@ -663,37 +663,146 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var vm = CreateViewModel(currentDispatcher);
                 var dummyService = new Service();
 
-                // Setup the underlying loose mock profiles to return instantly completed promises
-                _helpServiceMock.Setup(h => h.OpenDocumentationAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
-                _helpServiceMock.Setup(h => h.CheckUpdatesAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
-                _helpServiceMock.Setup(h => h.OpenAboutDialogAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
-
-                _serviceCommandsMock.Setup(c => c.SearchServicesAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()))
-                                    .ReturnsAsync(new List<Service>());
-
                 // Act
                 RunOnPump(currentDispatcher, async () =>
                 {
                     await vm.ConfigureCommand.ExecuteAsync(dummyService);
-                    await vm.ImportXmlCommand.ExecuteAsync(null);
-                    await vm.ImportJsonCommand.ExecuteAsync(null);
-                    await vm.OpenDocumentationCommand.ExecuteAsync(null);
-                    await vm.CheckUpdatesCommand.ExecuteAsync(null);
-                    await vm.OpenAboutDialogCommand.ExecuteAsync(null);
+                });
 
+                // Assert
+                _serviceCommandsMock.Verify(c => c.ConfigureServiceAsync(dummyService, It.IsAny<CancellationToken>()), Times.Once);
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task ImportXmlCommand_ShouldDelegateToImportXmlConfigAsync()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+
+                // Act
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.ImportXmlCommand.ExecuteAsync(null);
+                });
+
+                // Assert
+                _serviceCommandsMock.Verify(c => c.ImportXmlConfigAsync(It.IsAny<CancellationToken>()), Times.Once);
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task ImportJsonCommand_ShouldDelegateToImportJsonConfigAsync()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+
+                // Act
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.ImportJsonCommand.ExecuteAsync(null);
+                });
+
+                // Assert
+                _serviceCommandsMock.Verify(c => c.ImportJsonConfigAsync(It.IsAny<CancellationToken>()), Times.Once);
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task OpenDocumentationCommand_ShouldDelegateToOpenDocumentationAsync()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+                _helpServiceMock.Setup(h => h.OpenDocumentationAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+
+                // Act
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.OpenDocumentationCommand.ExecuteAsync(null);
+                });
+
+                // Assert
+                _helpServiceMock.Verify(h => h.OpenDocumentationAsync(It.IsAny<string>()), Times.Once);
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task CheckUpdatesCommand_ShouldDelegateToCheckUpdatesAsync()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+                _helpServiceMock.Setup(h => h.CheckUpdatesAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+
+                // Act
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.CheckUpdatesCommand.ExecuteAsync(null);
+                });
+
+                // Assert
+                _helpServiceMock.Verify(h => h.CheckUpdatesAsync(It.IsAny<string>()), Times.Once);
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task OpenAboutDialogCommand_ShouldDelegateToOpenAboutDialogAsync()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+                _helpServiceMock.Setup(h => h.OpenAboutDialogAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+
+                // Act
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.OpenAboutDialogCommand.ExecuteAsync(null);
+                });
+
+                // Assert
+                _helpServiceMock.Verify(h => h.OpenAboutDialogAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+                await Task.CompletedTask;
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task Refresh_ShouldTriggerSearchServicesAsync()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+                _serviceCommandsMock.Setup(c => c.SearchServicesAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()))
+                                     .ReturnsAsync(new List<Service>());
+
+                // Act
+                RunOnPump(currentDispatcher, async () =>
+                {
                     // This internally triggers SearchServicesAsync and handles the background workers safely
                     await vm.Refresh();
                 });
 
-                // Assertions - Verification metrics execute securely after the frame loop unrolls
-                _serviceCommandsMock.Verify(c => c.ConfigureServiceAsync(dummyService, It.IsAny<CancellationToken>()), Times.Once);
-                _serviceCommandsMock.Verify(c => c.ImportXmlConfigAsync(It.IsAny<CancellationToken>()), Times.Once);
-                _serviceCommandsMock.Verify(c => c.ImportJsonConfigAsync(It.IsAny<CancellationToken>()), Times.Once);
-                _helpServiceMock.Verify(h => h.OpenDocumentationAsync(It.IsAny<string>()), Times.Once);
-                _helpServiceMock.Verify(h => h.CheckUpdatesAsync(It.IsAny<string>()), Times.Once);
-                _helpServiceMock.Verify(h => h.OpenAboutDialogAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+                // Assert
                 _serviceCommandsMock.Verify(c => c.SearchServicesAsync(It.IsAny<string>(), true, It.IsAny<CancellationToken>()), Times.Once);
-
                 await Task.CompletedTask;
             }, createApp: true);
         }

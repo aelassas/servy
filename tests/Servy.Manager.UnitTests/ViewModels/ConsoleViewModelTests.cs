@@ -337,22 +337,25 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void CreateServiceItem_ValidServiceInput_MapsToConsoleServiceWithNullFields()
         {
-            // Arrange
-            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            Helper.RunOnSTA(() =>
             {
-                var vm = CreateViewModel();
-                var service = new Service { Name = "EngineService" };
+                // Arrange
+                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                {
+                    var vm = CreateViewModel();
+                    var service = new Service { Name = "EngineService" };
 
-                // Act
-                var result = TestReflection.InvokeNonPublic(vm, "CreateServiceItem", service) as ConsoleService;
+                    // Act
+                    var result = TestReflection.InvokeNonPublic(vm, "CreateServiceItem", service) as ConsoleService;
 
-                // Assert
-                Assert.NotNull(result);
-                Assert.Equal("EngineService", result.Name);
-                Assert.Null(result.Pid);
-                Assert.Null(result.StdoutPath);
-                Assert.Null(result.StderrPath);
-            }
+                    // Assert
+                    Assert.NotNull(result);
+                    Assert.Equal("EngineService", result.Name);
+                    Assert.Null(result.Pid);
+                    Assert.Null(result.StdoutPath);
+                    Assert.Null(result.StderrPath);
+                }
+            });
         }
 
         [Fact]
