@@ -74,10 +74,12 @@ namespace Servy.Core.UnitTests.Services
                 _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken));
         }
 
-        [Theory]
-        [InlineData("TestService", "C:\\Apps\\App.exe", "C:\\Apps\\App.exe")]
-        public async Task InstallService_OptionalFieldsOmitted_Succeeds(string serviceName, string wrapperExePath, string realExePath)
+        [Fact]
+        public async Task InstallService_OptionalFieldsOmitted_Succeeds()
         {
+            string serviceName = "TestService";
+            string wrapperExePath = @"C:\Apps\Wrapper.exe";
+            string realExePath = @"C:\Apps\App.exe";
             var scmHandle = CreateScmHandle(123);
             var serviceHandle = CreateServiceHandle(456);
 
@@ -140,11 +142,13 @@ namespace Servy.Core.UnitTests.Services
             _mockServiceRepository.Verify(x => x.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
 
-        [Theory]
-        [InlineData("TestService", "C:\\Apps\\App.exe", "C:\\Apps\\App.exe")]
-        public async Task InstallService_Returns_Failure_On_Unexpected_Exception(string serviceName, string wrapperExePath, string realExePath)
+        [Fact]
+        public async Task InstallService_Returns_Failure_On_Unexpected_Exception()
         {
             // --- Arrange ---
+            string serviceName = "TestService";
+            string wrapperExePath = @"C:\Apps\Wrapper.exe";
+            string realExePath = @"C:\Apps\App.exe";
             var scmHandle = CreateScmHandle(123);
             var serviceHandle = CreateServiceHandle(456);
 
