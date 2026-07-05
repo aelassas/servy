@@ -158,8 +158,8 @@ namespace Servy.Core.IntegrationTests.Security
             byte[] legacyEncrypted = ProtectedData.Protect(rawLegacyData, null, DataProtectionScope.LocalMachine);
             File.WriteAllBytes(keyPath, legacyEncrypted);
 
-            DateTime originalFileTime = File.GetLastWriteTimeUtc(keyPath);
-            Thread.Sleep(50); // Ensure file time difference
+            // Capture the exact file state prior to the migration execution step
+            byte[] bytesBeforeMigration = File.ReadAllBytes(keyPath);
 
             // Act
             using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
@@ -169,9 +169,8 @@ namespace Servy.Core.IntegrationTests.Security
                 // Assert
                 Assert.Equal(rawLegacyData, retrievedKey); // Must successfully decrypt
 
-                // Verify automatic migration occurred (file was re-written)
-                DateTime newFileTime = File.GetLastWriteTimeUtc(keyPath);
-                Assert.True(newFileTime > originalFileTime, "File should have been re-written during automatic migration.");
+                byte[] bytesAfterMigration = File.ReadAllBytes(keyPath);
+                Assert.NotEqual(bytesBeforeMigration, bytesAfterMigration); // Re-written during migration, no timing dependency
             }
         }
 
