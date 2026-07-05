@@ -183,13 +183,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                     vm.ConsoleSearchText = "Crash";
 
                     // Wait for the debounce + dispatcher queue
-                    int retries = 0;
-                    while (vm.VisibleLines.Cast<LogLine>().Count() != 1 && retries < 10)
-                    {
-                        Task.Delay(20).GetAwaiter().GetResult();
-                        Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
-                        retries++;
-                    }
+                    await Helper.WaitUntilAsync(
+                        () => vm.VisibleLines.Cast<LogLine>().Count() == 1,
+                        TimeSpan.FromSeconds(2),
+                        TimeSpan.FromMilliseconds(20),
+                        CancellationToken.None);
 
                     // Assert
                     var filtered = vm.VisibleLines.Cast<LogLine>().ToList();

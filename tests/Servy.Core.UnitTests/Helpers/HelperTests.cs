@@ -12,6 +12,7 @@ namespace Servy.Core.UnitTests.Helpers
     public class HelperTests : IDisposable
     {
         private readonly string _testRoot;
+        private const int MaxFileSystemRetries = 5;
 
         public HelperTests()
         {
@@ -40,7 +41,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(null, false)]
         [InlineData("", false)]
         [InlineData("   ", false)]
-        [InlineData("..\\somepath", false)]           // Explicit directory traversal at start
+        [InlineData("..\\somepath", false)]            // Explicit directory traversal at start
         [InlineData("C:\\valid\\path.txt", true)]     // Valid absolute path (Windows style)
         [InlineData("C:/valid/path.txt", true)]       // Valid absolute path (forward slash)
         [InlineData("relative\\path", false)]         // Relative path (not rooted)
@@ -551,7 +552,6 @@ namespace Servy.Core.UnitTests.Helpers
                     using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
                     {
                         writer.Write("atomic-sync-test-48");
-                        // fs.Flush is called internally by WriteFileAtomic after the action
                     }
                 }, CancellationToken.None);
 
@@ -623,13 +623,10 @@ namespace Servy.Core.UnitTests.Helpers
                 // Act
                 Helper.WriteFileAtomic(targetPath, (Stream stream) =>
                 {
-                    // The 4th parameter is 'leaveOpen'. Set it to true.
-                    // We must also specify a buffer size (default is 1024).
                     using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, 1024, true))
                     {
                         writer.Write("new-content");
                     }
-                    // StreamWriter is disposed here, but 'stream' remains open for Helper.WriteFileAtomic to Flush()
                 }, CancellationToken.None);
 
                 // Assert: Attributes should be normalized before move
@@ -731,59 +728,28 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void HasAncestorReparsePoint_WhenPathDoesNotExistButAncestorIsJunction_ReturnsTrue()
         {
-            const int maxRetries = 5;
-            int attempt = 0;
+            // Arrange
+            string realDir = Path.Combine(_testRoot, "RealDirectoryMissingLeaf");
+            string junctionTarget = Path.Combine(_testRoot, "JunctionDirMissingLeaf");
 
-            while (true)
+            CreateDirectoryLinkWithRetry(junctionTarget, realDir);
+
+            try
             {
-                attempt++;
+                // The junction exists, but the target file and its immediate parent folder DO NOT exist
+                string targetFilePath = Path.Combine(junctionTarget, "NotYet", "config.json");
 
-                // Isolate paths per attempt to clear trailing Windows handle locks
-                string realDir = Path.Combine(_testRoot, $"RealDirectoryMissingLeaf_att{attempt}");
-                string junctionTarget = Path.Combine(_testRoot, $"JunctionDirMissingLeaf_att{attempt}");
+                // Act
+                bool result = Helper.HasAncestorReparsePoint(targetFilePath);
 
-                try
-                {
-                    // Arrange
-                    Directory.CreateDirectory(realDir);
-
-                    // Use native .NET link creation to guarantee stability and error visibility
-                    Testing.Helper.CreateJunction(junctionTarget, realDir);
-
-                    // The junction exists, but the target file and its immediate parent folder DO NOT exist
-                    string targetFilePath = Path.Combine(junctionTarget, "NotYet", "config.json");
-
-                    // Act
-                    bool result = Helper.HasAncestorReparsePoint(targetFilePath);
-
-                    // Assert
-                    // Branch Covered: Walks past the non-existent 'NotYet' folder and successfully 
-                    // detects the junction at the existing ancestor level.
-                    Assert.True(result);
-
-                    // Exit the loop on success
-                    break;
-                }
-                catch (Exception ex) when ((ex is IOException || ex is UnauthorizedAccessException) && attempt < maxRetries)
-                {
-                    // Give the Windows Object Manager a small window to flush lazy handles
-                    Thread.Sleep(50);
-                }
-                finally
-                {
-                    // 1. Safe native unlink of the link point first to drop OS locks
-                    try { DeleteDirectoryLink(junctionTarget); } catch { /* ignore */ }
-
-                    // 2. Explicitly clean up the real directory source 
-                    try
-                    {
-                        if (Directory.Exists(realDir))
-                        {
-                            Directory.Delete(realDir, true);
-                        }
-                    }
-                    catch { /* fail silent in finally to protect test runner teardown */ }
-                }
+                // Assert
+                // Branch Covered: Walks past the non-existent 'NotYet' folder and successfully 
+                // detects the junction at the existing ancestor level.
+                Assert.True(result);
+            }
+            finally
+            {
+                TeardownDirectoryLinkWithRetry(junctionTarget, realDir);
             }
         }
 
@@ -804,6 +770,110 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.False(result);
         }
 
+        [Fact]
+        public void HasAncestorReparsePoint_WhenImmediateParentIsJunctionOrSymlink_ReturnsTrue()
+        {
+            // Arrange
+            string realDir = Path.Combine(_testRoot, "RealDirectory");
+            string junctionTarget = Path.Combine(_testRoot, "JunctionDir");
+
+            CreateDirectoryLinkWithRetry(junctionTarget, realDir);
+
+            try
+            {
+                // Act
+                string targetFilePath = Path.Combine(junctionTarget, "config.json");
+                bool result = Helper.HasAncestorReparsePoint(targetFilePath);
+
+                // Assert
+                Assert.True(result);
+            }
+            finally
+            {
+                TeardownDirectoryLinkWithRetry(junctionTarget, realDir);
+            }
+        }
+
+        [Fact]
+        public void HasAncestorReparsePoint_WhenDeepAncestorIsJunction_ReturnsTrue()
+        {
+            // Arrange
+            string realDir = Path.Combine(_testRoot, "ActualData");
+            string junctionDir = Path.Combine(_testRoot, "HiddenJunction");
+            string deepNestedPath = Path.Combine(junctionDir, "App_Data", "Logs");
+
+            CreateDirectoryLinkWithRetry(junctionDir, realDir, () => Directory.CreateDirectory(deepNestedPath));
+
+            try
+            {
+                // Act
+                string targetFilePath = Path.Combine(deepNestedPath, "output.log");
+                bool result = Helper.HasAncestorReparsePoint(targetFilePath);
+
+                // Assert
+                Assert.True(result);
+            }
+            finally
+            {
+                TeardownDirectoryLinkWithRetry(junctionDir, realDir);
+            }
+        }
+
+        #endregion
+
+        #region Reparse Points Management Helpers
+
+        /// <summary>
+        /// Centralized factory method to create symbolic links with backoff retry routines.
+        /// </summary>
+        private static void CreateDirectoryLinkWithRetry(string linkPath, string targetPath, Action additionalSetup = null)
+        {
+            Directory.CreateDirectory(targetPath);
+
+            bool success = false;
+            for (int i = 0; i < MaxFileSystemRetries; i++)
+            {
+                try
+                {
+                    Testing.Helper.CreateJunction(linkPath, targetPath);
+                    additionalSetup?.Invoke();
+                    success = true;
+                    break;
+                }
+                catch (Exception ex) when ((ex is IOException || ex is UnauthorizedAccessException) && i < MaxFileSystemRetries - 1)
+                {
+                    try { if (Directory.Exists(linkPath)) Directory.Delete(linkPath); } catch { }
+                    Thread.Sleep(200 * (i + 1));
+                }
+            }
+            Assert.True(success, $"Failed to safely establish directory link context from '{linkPath}' to '{targetPath}' after multiple retry attempts.");
+        }
+
+        /// <summary>
+        /// Centralized teardown engine ensuring that both link anchors and real backup items 
+        /// are cleared via safe DeleteDirectoryLink calls rather than divergent inline Directory.Delete overrides.
+        /// </summary>
+        private static void TeardownDirectoryLinkWithRetry(string linkPath, string targetPath)
+        {
+            for (int i = 0; i < MaxFileSystemRetries; i++)
+            {
+                try
+                {
+                    DeleteDirectoryLink(linkPath);
+
+                    if (Directory.Exists(targetPath))
+                    {
+                        Directory.Delete(targetPath, true);
+                    }
+                    break;
+                }
+                catch (Exception ex) when (i < MaxFileSystemRetries - 1 && (ex is IOException || ex is UnauthorizedAccessException))
+                {
+                    Thread.Sleep(200 * (i + 1));
+                }
+            }
+        }
+
         /// <summary>
         /// Safely removes a directory symbolic link or junction point without disturbing the target directory's contents.
         /// </summary>
@@ -821,134 +891,6 @@ namespace Servy.Core.UnitTests.Helpers
             catch (Exception ex)
             {
                 Console.WriteLine($"Failed to cleanly unlink directory reparse point at '{linkPath}': {ex.Message}");
-            }
-        }
-
-        [Fact]
-        public void HasAncestorReparsePoint_WhenImmediateParentIsJunctionOrSymlink_ReturnsTrue()
-        {
-            // Arrange
-            string realDir = Path.Combine(_testRoot, "RealDirectory");
-            string junctionTarget = Path.Combine(_testRoot, "JunctionDir");
-            Directory.CreateDirectory(realDir);
-
-            // Use a retry mechanism for link creation (unstable NTFS operations)
-            int maxRetries = 5;
-            bool created = false;
-            for (int i = 0; i < maxRetries; i++)
-            {
-                try
-                {
-                    Testing.Helper.CreateJunction(junctionTarget, realDir);
-                    created = true;
-                    break;
-                }
-                catch (IOException) when (i < maxRetries - 1)
-                {
-                    Thread.Sleep(500 * (i + 1)); // Linear backoff
-                }
-            }
-            Assert.True(created, "Failed to create junction after multiple attempts.");
-
-            try
-            {
-                // Act
-                string targetFilePath = Path.Combine(junctionTarget, "config.json");
-                bool result = Helper.HasAncestorReparsePoint(targetFilePath);
-
-                // Assert
-                Assert.True(result);
-            }
-            finally
-            {
-                // Teardown with retries for file system lock release
-                for (int i = 0; i < maxRetries; i++)
-                {
-                    try
-                    {
-                        if (Directory.Exists(junctionTarget))
-                        {
-                            // Symbolic links are deleted via Directory.Delete on modern .NET
-                            Directory.Delete(junctionTarget);
-                        }
-                        if (Directory.Exists(realDir))
-                        {
-                            Directory.Delete(realDir, true);
-                        }
-                        break;
-                    }
-                    catch (Exception ex) when (i < maxRetries - 1 && (ex is IOException || ex is UnauthorizedAccessException))
-                    {
-                        Thread.Sleep(500 * (i + 1));
-                    }
-                }
-            }
-        }
-
-        [Fact]
-        public void HasAncestorReparsePoint_WhenDeepAncestorIsJunction_ReturnsTrue()
-        {
-            // Arrange
-            string realDir = Path.Combine(_testRoot, "ActualData");
-            string junctionDir = Path.Combine(_testRoot, "HiddenJunction");
-            string deepNestedPath = Path.Combine(junctionDir, "App_Data", "Logs");
-
-            Directory.CreateDirectory(realDir);
-
-            int maxRetries = 5;
-            bool setupSuccess = false;
-
-            // Retry loop for symbolic link creation and nested structure setup
-            for (int i = 0; i < maxRetries; i++)
-            {
-                try
-                {
-                    Testing.Helper.CreateJunction(junctionDir, realDir);
-                    Directory.CreateDirectory(deepNestedPath);
-                    setupSuccess = true;
-                    break;
-                }
-                catch (Exception ex) when ((ex is IOException || ex is UnauthorizedAccessException) && i < maxRetries - 1)
-                {
-                    // Reset state before retry
-                    try { if (Directory.Exists(junctionDir)) Directory.Delete(junctionDir); } catch { }
-                    Thread.Sleep(500 * (i + 1));
-                }
-            }
-
-            Assert.True(setupSuccess, "Failed to create junction and nested directory structure after retries.");
-
-            try
-            {
-                // Act
-                string targetFilePath = Path.Combine(deepNestedPath, "output.log");
-                bool result = Helper.HasAncestorReparsePoint(targetFilePath);
-
-                // Assert
-                Assert.True(result);
-            }
-            finally
-            {
-                // Teardown with retry logic
-                for (int i = 0; i < maxRetries; i++)
-                {
-                    try
-                    {
-                        if (Directory.Exists(junctionDir))
-                        {
-                            Directory.Delete(junctionDir);
-                        }
-                        if (Directory.Exists(realDir))
-                        {
-                            Directory.Delete(realDir, true);
-                        }
-                        break;
-                    }
-                    catch (Exception ex) when (i < maxRetries - 1 && (ex is IOException || ex is UnauthorizedAccessException))
-                    {
-                        Thread.Sleep(500 * (i + 1));
-                    }
-                }
             }
         }
 

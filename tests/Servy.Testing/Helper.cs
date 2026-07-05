@@ -432,5 +432,36 @@ namespace Servy.Testing
             Assert.True(File.Exists(psm1Path), $"Could not find Servy.psm1 at {psm1Path}");
             return psm1Path;
         }
+
+        /// <summary>
+        /// Asynchronously polls a predicate until it returns true or a specified timeout deadline is surpassed.
+        /// </summary>
+        /// <param name="predicate">The conditional expression to evaluate.</param>
+        /// <param name="timeout">The maximum duration allowed for the condition to become true before throwing.</param>
+        /// <param name="pollInterval">The frequency at which to evaluate the condition expression. Defaults to 20ms if null.</param>
+        /// <param name="cancellationToken">An optional token to monitor for cancellation requests.</param>
+        public static async Task WaitUntilAsync(
+            Func<bool> predicate,
+            TimeSpan timeout,
+            TimeSpan? pollInterval = null,
+            CancellationToken cancellationToken = default)
+        {
+            var interval = pollInterval ?? TimeSpan.FromMilliseconds(20);
+            var deadline = DateTime.UtcNow + timeout;
+
+            while (DateTime.UtcNow < deadline)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (predicate())
+                {
+                    return;
+                }
+
+                await Task.Delay(interval, cancellationToken);
+            }
+
+            throw new TimeoutException($"Test execution boundary reached a timeout condition while waiting for state fulfillment after {timeout.TotalSeconds}s.");
+        }
     }
 }

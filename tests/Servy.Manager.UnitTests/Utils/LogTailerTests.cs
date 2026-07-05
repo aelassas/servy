@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Utils;
+using Servy.Testing;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -31,20 +32,6 @@ namespace Servy.Manager.UnitTests.Utils
             {
                 // Ignore exceptions during cleanup, especially if the file is still in use by a running test.
             }
-        }
-
-        /// <summary>
-        /// Polls a predicate until it returns true or the timeout is reached.
-        /// </summary>
-        private static async Task WaitUntilAsync(Func<bool> predicate, TimeSpan timeout)
-        {
-            var deadline = DateTime.UtcNow + timeout;
-            while (DateTime.UtcNow < deadline)
-            {
-                if (predicate()) return;
-                await Task.Delay(50);
-            }
-            throw new TimeoutException($"Test timed out waiting for condition to be met after {timeout.TotalSeconds}s.");
         }
 
         #region Path Validation & History Guard Branch Tests
@@ -301,10 +288,10 @@ namespace Servy.Manager.UnitTests.Utils
                 }
 
                 // Wait for background batch splitting mechanics to propagate updates
-                await WaitUntilAsync(() =>
+                await Helper.WaitUntilAsync(() =>
                 {
                     lock (capturedBatches) return capturedBatches.Count >= 2 || (capturedBatches.Count == 1 && capturedBatches[0].Count >= AppConfig.LogTailerBatchFlushThreshold);
-                }, TimeSpan.FromSeconds(5));
+                }, TimeSpan.FromSeconds(5), cancellationToken: CancellationToken.None);
 
                 cts.Cancel();
                 try { await tailTask; } catch (OperationCanceledException) { }
@@ -361,13 +348,14 @@ namespace Servy.Manager.UnitTests.Utils
                 }
 
                 // DETERMINISTIC WAIT 2: Poll for the content reaching capturedLines
-                await WaitUntilAsync(() =>
+                await Helper.WaitUntilAsync(() =>
                 {
                     lock (capturedLines)
                     {
                         return capturedLines.Exists(l => l.Text.Contains("ROTATED_CONTENT"));
                     }
-                }, TimeSpan.FromSeconds(10));
+                }, TimeSpan.FromSeconds(10), cancellationToken: CancellationToken.None);
+
 
                 cts.Cancel();
                 try { await tailTask; } catch (OperationCanceledException) { }
@@ -406,7 +394,9 @@ namespace Servy.Manager.UnitTests.Utils
                 await tailer.LoopStartedSignal.Task;
                 await loopCompletedTcs.Task;
 
-                await WaitUntilAsync(() => { lock (capturedLines) return capturedLines.Count > 0; }, TimeSpan.FromSeconds(5));
+                await Helper.WaitUntilAsync(() => { lock (capturedLines) return capturedLines.Count > 0; },
+                    TimeSpan.FromSeconds(5),
+                    cancellationToken: CancellationToken.None);
                 cts.Cancel();
 
                 try { await tailTask; } catch (OperationCanceledException) { }

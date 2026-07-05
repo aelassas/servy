@@ -402,10 +402,8 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public async Task LoadDependencyTreeAsync_ManagerThrowsException_LogsAndDisplaysErrorMessageBox()
         {
-            // Await the underlying asynchronous STA execution task natively
             await Helper.RunOnSTA(async () =>
             {
-                // REMOVED lock: xUnit's Collection Fixture handles serialization safely.
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     DependenciesViewModel viewModel = null;
@@ -423,12 +421,11 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                         // Await until the fire-and-forget task kicked off by the property setter 
                         // completes its internal catch/finally blocks before continuing.
-                        int retries = 0;
-                        while (viewModel.IsBusy && retries < 25)
-                        {
-                            await Task.Delay(20);
-                            retries++;
-                        }
+                        await Helper.WaitUntilAsync(
+                            () => !viewModel.IsBusy,
+                            TimeSpan.FromSeconds(2),
+                            TimeSpan.FromMilliseconds(20),
+                            CancellationToken.None);
 
                         // Act: Manual second call to verify explicit refresh command execution paths
                         // Fully await the execution task asynchronously to keep the UI dispatcher pump fluid
