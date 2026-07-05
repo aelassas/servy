@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Utils;
+using Servy.Testing;
 
 namespace Servy.Manager.UnitTests.Utils
 {
@@ -25,20 +26,6 @@ namespace Servy.Manager.UnitTests.Utils
             {
                 // Ignore exceptions during cleanup, especially if the file is still in use by a running test.
             }
-        }
-
-        /// <summary>
-        /// Polls a predicate until it returns true or the timeout is reached.
-        /// </summary>
-        private static async Task WaitUntilAsync(Func<bool> predicate, TimeSpan timeout)
-        {
-            var deadline = DateTime.UtcNow + timeout;
-            while (DateTime.UtcNow < deadline)
-            {
-                if (predicate()) return;
-                await Task.Delay(50);
-            }
-            throw new TimeoutException($"Test timed out waiting for condition to be met after {timeout.TotalSeconds}s.");
         }
 
         #region Path Validation & History Guard Branch Tests
@@ -133,7 +120,6 @@ namespace Servy.Manager.UnitTests.Utils
             var cts = new CancellationTokenSource();
             bool loopStartedFired = false;
 
-            // Hook internal signals to ensure background allocations are never reached
             _ = tailer.LoopStartedSignal.Task.ContinueWith(_ => loopStartedFired = true);
 
             // Act
@@ -143,7 +129,6 @@ namespace Servy.Manager.UnitTests.Utils
             await taskEmpty;
 
             // Assert
-            // Explicitly prove that execution returned instantly without spinning up background state loops
             Assert.False(loopStartedFired, "The log tailer incorrectly allocated loop resources for a null or empty file path context.");
         }
 
@@ -169,15 +154,12 @@ namespace Servy.Manager.UnitTests.Utils
                 // Act
                 var tailTask = tailer.RunFromPosition(invalidDirectoryPath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
-                // Allow the background worker to iterate into its outer try/catch block architecture
                 await Task.Delay(150, TestContext.Current.CancellationToken);
                 cts.Cancel();
 
                 try { await tailTask; } catch (OperationCanceledException) { }
 
                 // Assert
-                // Explicitly verify that no lines were dispatched and the loop 
-                // was held in check behind the exception tracking block rather than completing normal passes.
                 Assert.False(linesEmitted, "Lines should not be emitted when pointing to a completely missing directory structure.");
                 Assert.Equal(0, loopPassesCount);
             }
@@ -198,13 +180,11 @@ namespace Servy.Manager.UnitTests.Utils
 
             using (var cts = new CancellationTokenSource())
             {
-                // Lock the file exclusively to force an IOException when LogTailer tries to open a new FileStream
                 using (var exclusiveLock = new FileStream(_tempFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
                 {
                     // Act
                     var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
-                    // Allow the loop to cycle and strike the locked IOException handle branch
                     await Task.Delay(150, TestContext.Current.CancellationToken);
                     cts.Cancel();
 
@@ -212,8 +192,6 @@ namespace Servy.Manager.UnitTests.Utils
                 }
 
                 // Assert
-                // Verify that the IOException handler intercepted the file-lock condition natively,
-                // suppressing stream pipeline updates and bypassing normal loop completion completions.
                 Assert.False(linesEmitted, "LogTailer incorrectly surfaced lines from an exclusively locked file descriptor stream.");
                 Assert.Equal(0, successfulLoopIterations);
             }
@@ -226,13 +204,9 @@ namespace Servy.Manager.UnitTests.Utils
             var tailer = new LogTailer();
             string lockTestPath = Path.Combine(Path.GetTempPath(), $"lock_race_{Guid.NewGuid()}.log");
 
-            // Generate a valid physical container on disk so it bypasses the early check '!File.Exists(path)'
             File.WriteAllText(lockTestPath, "Historical line context payload stream\n");
 
             // Act
-            // Lock the file exclusively using FileShare.None. This permits the structural File.Exists check
-            // inside LoadHistory to succeed, but guarantees the internal FileStream allocation loop step throws 
-            // an accessibility violation exception, cleanly returning an empty list without thread synchronization flakiness.
             using (var exclusiveLock = new FileStream(lockTestPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
                 var result = await tailer.GetHistoryAsync(lockTestPath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
@@ -242,7 +216,6 @@ namespace Servy.Manager.UnitTests.Utils
                 Assert.Empty(result.Lines);
             }
 
-            // Cleanup post-lock container structures safely
             try
             {
                 if (File.Exists(lockTestPath))
@@ -295,10 +268,10 @@ namespace Servy.Manager.UnitTests.Utils
                 }
 
                 // Wait for background batch splitting mechanics to propagate updates
-                await WaitUntilAsync(() =>
+                await Helper.WaitUntilAsync(() =>
                 {
                     lock (capturedBatches) return capturedBatches.Count >= 2 || (capturedBatches.Count == 1 && capturedBatches[0].Count >= AppConfig.LogTailerBatchFlushThreshold);
-                }, TimeSpan.FromSeconds(5));
+                }, TimeSpan.FromSeconds(5), cancellationToken: TestContext.Current.CancellationToken);
 
                 cts.Cancel();
                 try { await tailTask; } catch (OperationCanceledException) { }
@@ -355,13 +328,13 @@ namespace Servy.Manager.UnitTests.Utils
                 }
 
                 // DETERMINISTIC WAIT 2: Poll for the content reaching capturedLines
-                await WaitUntilAsync(() =>
+                await Helper.WaitUntilAsync(() =>
                 {
                     lock (capturedLines)
                     {
                         return capturedLines.Exists(l => l.Text.Contains("ROTATED_CONTENT"));
                     }
-                }, TimeSpan.FromSeconds(10));
+                }, TimeSpan.FromSeconds(10), cancellationToken: TestContext.Current.CancellationToken);
 
                 cts.Cancel();
                 try { await tailTask; } catch (OperationCanceledException) { }
@@ -400,7 +373,9 @@ namespace Servy.Manager.UnitTests.Utils
                 await tailer.LoopStartedSignal.Task;
                 await loopCompletedTcs.Task;
 
-                await WaitUntilAsync(() => { lock (capturedLines) return capturedLines.Count > 0; }, TimeSpan.FromSeconds(5));
+                await Helper.WaitUntilAsync(() => { lock (capturedLines) return capturedLines.Count > 0; }, 
+                    TimeSpan.FromSeconds(5),
+                    cancellationToken: TestContext.Current.CancellationToken);
                 cts.Cancel();
 
                 try { await tailTask; } catch (OperationCanceledException) { }

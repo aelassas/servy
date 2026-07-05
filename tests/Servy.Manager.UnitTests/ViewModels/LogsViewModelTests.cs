@@ -342,7 +342,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Act
                     var searchTask = vm.SearchCommand.ExecuteAsync(null);
 
-                    // Force the execution loop context to await task processing step safely
                     var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
                     var completedTask = Task.WhenAny(scrollEventSource.Task, timeoutTask).GetAwaiter().GetResult();
 
@@ -362,7 +361,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                         Assert.Contains("Search", vm.SearchButtonText);
                         Assert.False(vm.IsBusy);
 
-                        // Verify the cursor service was utilized
                         _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
                     }
                 }
@@ -395,18 +393,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var firstSearchTask = (Task)TestReflection.InvokeNonPublic(vm, "Search", new object[] { null! })!;
 
                     // 2. Poll until the first token reference is registered inside the model
-                    CancellationTokenSource? firstCtsInstance = null;
-                    int retries = 0;
-                    while (firstCtsInstance == null && retries < 50)
-                    {
-                        firstCtsInstance = TestReflection.GetField<CancellationTokenSource>(vm, "_searchCts");
-                        if (firstCtsInstance == null)
-                        {
-                            Task.Delay(10).GetAwaiter().GetResult();
-                            retries++;
-                        }
-                    }
+                    await Helper.WaitUntilAsync(
+                        () => TestReflection.GetField<CancellationTokenSource>(vm, "_searchCts") != null,
+                        TimeSpan.FromSeconds(2),
+                        TimeSpan.FromMilliseconds(10),
+                        TestContext.Current.CancellationToken);
 
+                    CancellationTokenSource firstCtsInstance = TestReflection.GetField<CancellationTokenSource>(vm, "_searchCts")!;
                     Assert.NotNull(firstCtsInstance); // Guard rail assertion
 
                     // 3. Invoke the private method directly a second time to force the atomic Interlocked swap loop

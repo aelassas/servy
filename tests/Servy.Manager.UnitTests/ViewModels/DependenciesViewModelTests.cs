@@ -219,12 +219,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     {
                         viewModel = CreateViewModel();
 
-                        // Create a circular Dependencies edge (root -> child -> root) to exercise the ExpandAll recursion/cycle guard;
-                        // the isCycle constructor flag is unrelated and left false.
                         var childNode = new ServiceDependencyNode("ChildService", "Friendly Child", isRunning: false, isCyclic: false);
                         var rootNode = new ServiceDependencyNode("RootService", "Friendly Root", isRunning: false, isCyclic: false);
 
-                        // Add components directly to the get-only Collection instance instead of assigning properties
                         rootNode.Dependencies.Add(childNode);
                         childNode.Dependencies.Add(rootNode); // Create circular dependency edge reference
 
@@ -259,7 +256,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     {
                         viewModel = CreateViewModel();
 
-                        // Use initialization constructors, then populate expansion state parameters sequentially
                         var childNode = new ServiceDependencyNode("Child", "Root Service") { IsExpanded = true };
                         var rootNode = new ServiceDependencyNode("Root", "Root Service") { IsExpanded = true };
                         rootNode.Dependencies.Add(childNode);
@@ -298,7 +294,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel.SelectedService = mockService;
 
                         // Act
-                        // Directly await the asynchronous execution flow instead of slamming message loops synchronously
                         viewModel.CopyPidCommand.ExecuteAsync(null).GetAwaiter().GetResult();
 
                         // Assert
@@ -333,7 +328,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel.SelectedService = null;
 
                         // Act
-                        // Directly await the tree reset operation asynchronously inside the test pipeline boundary
                         viewModel.LoadDependencyTreeAsync(null).GetAwaiter().GetResult();
 
                         // Assert
@@ -351,10 +345,8 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public async Task LoadDependencyTreeAsync_ManagerReturnsValidRoot_PopulatesAndExpandsTree()
         {
-            // Await the underlying asynchronous STA execution task natively
             await Helper.RunOnSTA(async () =>
             {
-                // REMOVED lock: xUnit's Collection Fixture handles serialization safely.
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     DependenciesViewModel? viewModel = null;
@@ -369,17 +361,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                                            .Returns(expectedRoot);
 
                         // Act
-                        // Triggers the first asynchronous fire-and-forget load routine
                         viewModel.SelectedService = mockService;
 
-                        // Use a true non-blocking await loop to allow the STA dispatcher message pump 
-                        // to process incoming UI collection modification updates concurrently.
-                        int retries = 0;
-                        while (viewModel.DependencyTree.Count == 0 && retries < 25)
-                        {
-                            await Task.Delay(20, TestContext.Current.CancellationToken); // Safe asynchronous yield
-                            retries++;
-                        }
+                        // allow the STA dispatcher message pump  to process incoming UI collection modification updates concurrently.
+                        await Helper.WaitUntilAsync(
+                            () => viewModel.DependencyTree.Count > 0,
+                            TimeSpan.FromSeconds(2),
+                            TimeSpan.FromMilliseconds(20),
+                            TestContext.Current.CancellationToken);
 
                         // Assert
                         Assert.Single(viewModel.DependencyTree);
@@ -398,10 +387,8 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public async Task LoadDependencyTreeAsync_ManagerThrowsException_LogsAndDisplaysErrorMessageBox()
         {
-            // Await the underlying asynchronous STA execution task natively
             await Helper.RunOnSTA(async () =>
             {
-                // REMOVED lock: xUnit's Collection Fixture handles serialization safely.
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     DependenciesViewModel? viewModel = null;
@@ -419,12 +406,11 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                         // Await until the fire-and-forget task kicked off by the property setter 
                         // completes its internal catch/finally blocks before continuing.
-                        int retries = 0;
-                        while (viewModel.IsBusy && retries < 25)
-                        {
-                            await Task.Delay(20);
-                            retries++;
-                        }
+                        await Helper.WaitUntilAsync(
+                            () => !viewModel.IsBusy,
+                            TimeSpan.FromSeconds(2),
+                            TimeSpan.FromMilliseconds(20),
+                            TestContext.Current.CancellationToken);
 
                         // Act: Manual second call to verify explicit refresh command execution paths
                         // Fully await the execution task asynchronously to keep the UI dispatcher pump fluid
@@ -468,7 +454,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                         // Act
                         var task = (Task)TestReflection.InvokeNonPublic(viewModel, "OnTickAsync")!;
-                        // Explicitly await the reflected task continuation instead of slamming the thread context synchronously
                         task.GetAwaiter().GetResult();
 
                         // Assert
@@ -505,7 +490,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                         // Act
                         var task = (Task)TestReflection.InvokeNonPublic(viewModel, "OnTickAsync")!;
-                        // Explicitly await the structural worker tick thread asynchronously
                         task.GetAwaiter().GetResult();
 
                         // Assert
@@ -541,7 +525,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                         // Act
                         var task = (Task)TestReflection.InvokeNonPublic(viewModel, "OnTickAsync")!;
-                        // Explicitly await the monitoring tick background routine asynchronously
                         task.GetAwaiter().GetResult();
 
                         // Assert
