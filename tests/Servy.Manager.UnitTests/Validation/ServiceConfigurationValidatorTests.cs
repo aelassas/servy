@@ -5,6 +5,7 @@ using Servy.Manager.Config;
 using Servy.Manager.Validation;
 using Servy.UI.Services;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -54,11 +55,11 @@ namespace Servy.Manager.UnitTests.Validation
             var validResult = new ValidationResult { };
 
             _validationRulesMock
-                .Setup(r => r.Validate(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+                .Setup(r => r.Validate(dto, null, null, false))
                 .Returns(validResult);
 
             // Act
-            var result = await _validator.ValidateAsync(dto);
+            var result = await _validator.ValidateAsync(dto, cancellationToken: CancellationToken.None);
 
             // Assert
             Assert.True(result);
@@ -79,11 +80,11 @@ namespace Servy.Manager.UnitTests.Validation
             invalidResult.Errors.Add("Second error that should be ignored");
 
             _validationRulesMock
-                .Setup(r => r.Validate(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
+                .Setup(r => r.Validate(dto, null, null, false))
                 .Returns(invalidResult);
 
             // Act
-            var result = await _validator.ValidateAsync(dto);
+            var result = await _validator.ValidateAsync(dto, cancellationToken: CancellationToken.None);
 
             // Assert
             Assert.False(result);
