@@ -147,7 +147,8 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task AddAsync_FullSecurityAudit_EncryptsAllNineSensitiveFields()
         {
             await ExecuteFullSecurityAuditTestAsync(
-                async (repo, dto) => {
+                async (repo, dto) =>
+                {
                     var id = await repo.AddAsync(dto, TestContext.Current.CancellationToken);
                     Assert.Equal(99, id);
                     Assert.Equal(99, dto.Id);
@@ -1192,8 +1193,8 @@ namespace Servy.Infrastructure.UnitTests.Data
                            .Throws(new CryptographicException("Hardware key missing"));
 
             // Act & Assert
-            var wrapperEx = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-                await repo.AddAsync(dto, TestContext.Current.CancellationToken));
+            var wrapperEx = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                 repo.AddAsync(dto, TestContext.Current.CancellationToken));
 
             Assert.Contains("Encryption failed for field", wrapperEx.Message);
             Assert.NotNull(wrapperEx.InnerException);

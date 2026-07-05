@@ -91,7 +91,7 @@ namespace Servy.Core.UnitTests.Validation
             // Testing non-existent wrapper path
             string nonExistentWrapper = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
-            _processHelperMock.Setup(h => h.ValidatePath(It.IsAny<string>(), It.IsAny<bool>())).Returns(false);
+            _processHelperMock.Setup(h => h.ValidatePath(It.IsAny<string?>(), It.IsAny<bool>())).Returns(false);
 
             // Act
             var result = _sut.Validate(dto, nonExistentWrapper);

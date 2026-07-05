@@ -28,6 +28,22 @@ namespace Servy.Manager.UnitTests.Utils
             }
         }
 
+        /// <summary>
+        /// Awaits the background worker startup signal using a deterministic safety deadline to prevent indefinite test hangs.
+        /// </summary>
+        /// <param name="tailer">The log tailer instance under evaluation.</param>
+        /// <param name="cancellationToken">The context cancellation token source mapping.</param>
+        private static async Task WaitForLoopStartAsync(LogTailer tailer, CancellationToken cancellationToken)
+        {
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+            var completedTask = await Task.WhenAny(tailer.LoopStartedSignal.Task, timeoutTask);
+
+            if (completedTask == timeoutTask)
+            {
+                throw new TimeoutException("The LogTailer background loop failed to start within 5 seconds.");
+            }
+        }
+
         #region Path Validation & History Guard Branch Tests
 
         [Fact]
@@ -90,9 +106,10 @@ namespace Servy.Manager.UnitTests.Utils
             var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 3, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.Equal(3, result?.Lines.Count);
-            Assert.Equal("L3", result?.Lines[0].Text);
-            Assert.Equal("L5", result?.Lines[2].Text);
+            Assert.NotNull(result);
+            Assert.Equal(3, result.Lines.Count);
+            Assert.Equal("L3", result.Lines[0].Text);
+            Assert.Equal("L5", result.Lines[2].Text);
         }
 
         [Fact]
@@ -254,7 +271,7 @@ namespace Servy.Manager.UnitTests.Utils
 
                 // Wait for the background reader loop to fully complete its initial cycle 
                 // and position its internal StreamReader handle directly at the EOF boundary.
-                await tailer.LoopStartedSignal.Task;
+                await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
                 await loopCompletedTcs.Task;
 
                 // Append enough lines to cross AppConfig.LogTailerBatchFlushThreshold
@@ -309,13 +326,7 @@ namespace Servy.Manager.UnitTests.Utils
                 var tailTask = tailer.RunFromPosition(initialPath, LogType.StdOut, fileInfo.Length, fileInfo.CreationTimeUtc, cts.Token);
 
                 // DETERMINISTIC WAIT 1: Ensure the loop has fully completed its first pass setup
-                var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-                var completedTask = await Task.WhenAny(tailer.LoopStartedSignal.Task, timeoutTask);
-
-                if (completedTask == timeoutTask)
-                {
-                    throw new TimeoutException("The LogTailer background loop failed to start within 5 seconds.");
-                }
+                await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
 
                 // Ensure the loop completes its initial pass tracking before simulating the file swap
                 await loopCompletedTcs.Task;
@@ -370,10 +381,10 @@ namespace Servy.Manager.UnitTests.Utils
                 var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 999999, DateTime.UtcNow.AddDays(-1), cts.Token);
 
                 // Enforce execution stabilization before running content validations
-                await tailer.LoopStartedSignal.Task;
+                await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
                 await loopCompletedTcs.Task;
 
-                await Helper.WaitUntilAsync(() => { lock (capturedLines) return capturedLines.Count > 0; }, 
+                await Helper.WaitUntilAsync(() => { lock (capturedLines) return capturedLines.Count > 0; },
                     TimeSpan.FromSeconds(5),
                     cancellationToken: TestContext.Current.CancellationToken);
                 cts.Cancel();
@@ -420,7 +431,7 @@ namespace Servy.Manager.UnitTests.Utils
                 var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
                 // Await initial execution attach before triggering disposal path
-                await tailer.LoopStartedSignal.Task;
+                await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
 
                 // Act
                 // Hook the event handler right before disposal to catch any rogue subsequent spins
