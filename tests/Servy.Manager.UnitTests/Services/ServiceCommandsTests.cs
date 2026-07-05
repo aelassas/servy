@@ -857,7 +857,7 @@ namespace Servy.Manager.UnitTests.Services
                 .ReturnsAsync(false);
 
             // Act
-            await sut.CopyPidAsync(service);
+            await sut.CopyPidAsync(service, cancellationToken: CancellationToken.None); 
 
             // Assert
             // Verifies that the internal retry loop honored Core.Config.AppConfig.ClipboardComMaxRetries (typically 3 or 5)
