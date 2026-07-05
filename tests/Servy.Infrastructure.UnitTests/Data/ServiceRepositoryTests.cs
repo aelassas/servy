@@ -1199,8 +1199,8 @@ namespace Servy.Infrastructure.UnitTests.Data
                            .Throws(new CryptographicException("Hardware key missing"));
 
             // Act & Assert
-            var wrapperEx = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-                await repo.AddAsync(dto, CancellationToken.None));
+            var wrapperEx = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                 repo.AddAsync(dto, CancellationToken.None));
 
             Assert.Contains("Encryption failed for field", wrapperEx.Message);
             Assert.NotNull(wrapperEx.InnerException);

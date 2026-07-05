@@ -119,17 +119,30 @@ namespace Servy.UnitTests.Services
 
             // Delete wrapper intentionally to force branch path execution
             var wrapperPath = Core.Config.AppConfig.GetServyUIServicePath();
-            if (File.Exists(wrapperPath)) File.Delete(wrapperPath);
+            var backup = wrapperPath + ".bak";
+            if (File.Exists(wrapperPath)) File.Move(wrapperPath, backup);
 
-            // Act
-            var result = await sut.InstallService(config, CancellationToken.None);
+            try
+            {
+                // Act
+                var result = await sut.InstallService(config, CancellationToken.None);
 
-            // Assert
-            Assert.False(result);
-            _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_InvalidWrapperExePath, UiAppConfig.Caption), Times.Once);
-
-            // Re-initialize for subsequent runs
-            SetupDummyWrapperExe();
+                // Assert
+                Assert.False(result);
+                _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_InvalidWrapperExePath, UiAppConfig.Caption), Times.Once);
+            }
+            finally
+            {
+                if (File.Exists(backup))
+                {
+                    if (File.Exists(wrapperPath)) File.Delete(wrapperPath);
+                    File.Move(backup, wrapperPath);
+                }
+                else
+                {
+                    SetupDummyWrapperExe();
+                }
+            }
         }
 
         [Fact]
@@ -847,7 +860,7 @@ namespace Servy.UnitTests.Services
                 It.IsAny<ServiceDto>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.IsAny<bool>(), 
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
