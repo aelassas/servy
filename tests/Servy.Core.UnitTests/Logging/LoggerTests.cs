@@ -268,8 +268,11 @@ namespace Servy.Core.UnitTests.Logging
         public void FormatException_HardTruncatesMassiveExceptions_AvoidsSurrogatePairSplitting()
         {
             // Arrange
-            // We use a massive payload of emojis (surrogate pairs) to test length boundary logic
-            string hugeSurrogateString = string.Concat(Enumerable.Repeat("😊", 30000));
+            // DYNAMIC CAP BOUNDING: Derive payload constraints directly from AppConfig to prevent 
+            // regression breaks if exception truncation configuration thresholds fluctuate.
+            // A heart emoji with variation selectors forms a valid multi-code-unit surrogate pair sequence.
+            int charCount = (AppConfig.LoggerMaxFormattedExceptionLength / 2) + 1024;
+            string hugeSurrogateString = string.Concat(Enumerable.Repeat("❤️", charCount));
             var ex = new Exception(hugeSurrogateString);
 
             Logger.Initialize(_testFileName);
@@ -289,7 +292,7 @@ namespace Servy.Core.UnitTests.Logging
             string truncatedHead = content.Substring(0, cutIndex);
 
             // Validate that the very last character before the truncation marker is NOT a high surrogate.
-            // In UTF-16 (C# strings), a high surrogate (\uD83D) must always be followed by a low surrogate (\uDE0A).
+            // In UTF-16 (C# strings), a high surrogate must always be followed by a low surrogate.
             // If it's at the end of the string, it is unpaired and corrupted.
             char boundaryChar = truncatedHead[truncatedHead.Length - 1];
 

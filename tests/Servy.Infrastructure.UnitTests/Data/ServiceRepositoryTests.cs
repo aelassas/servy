@@ -1020,7 +1020,6 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             // Assert
             Assert.Equal(expectedJson, json);
-            Assert.Contains("\"Name\": \"A\"", json);
         }
 
         [Fact]

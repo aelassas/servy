@@ -37,7 +37,7 @@ namespace Servy.CLI.UnitTests.Options
                         return optName.EndsWith("params") ||
                                optName.EndsWith("env") ||
                                optName.EndsWith("envvars") ||
-                               optName.StartsWith("password");
+                               optName.Contains("password");
                     })
                     .ToList();
 
