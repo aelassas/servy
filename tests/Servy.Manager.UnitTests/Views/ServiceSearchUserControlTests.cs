@@ -158,6 +158,16 @@ namespace Servy.Manager.UnitTests.Views
                 var viewModel = CreateIsolatedViewModel();
                 control.DataContext = viewModel;
 
+                Exception escapingDispatcherException = null;
+                var currentDispatcher = System.Windows.Threading.Dispatcher.CurrentDispatcher;
+
+                // Track unhandled dispatcher failures to prove cancellation doesn't surface as a crash
+                currentDispatcher.UnhandledException += (s, e) =>
+                {
+                    escapingDispatcherException = e.Exception;
+                    e.Handled = true; // Prevent app exit during test execution runner passes
+                };
+
                 // Act
                 control.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
                 viewModel.CommandTcs.SetException(new OperationCanceledException());
@@ -165,13 +175,19 @@ namespace Servy.Manager.UnitTests.Views
                 // Centralized poll tracking handles asynchronous execution window
                 await PollUntilTrueAsync(() => viewModel.ExecuteAsyncWasCalled);
 
+                // Let the asynchronous dispatcher frames drain completely to flush any trailing crashes
+                await currentDispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+
                 // Assert
                 Assert.True(viewModel.ExecuteAsyncWasCalled);
+
+                // Assert that the cancellation exception did not escape the catch boundary block
+                Assert.Null(escapingDispatcherException);
             }, createApp: true);
         }
 
         [Fact]
-        public async Task UserControl_Loaded_WhenGenericExceptionIsThrown_LogsErrorContextAndDoesNotCrashProcess()
+        public async Task UserControl_Loaded_WhenGenericExceptionIsThrown_DoesNotCrashProcess()
         {
             await Helper.RunOnSTA(async () =>
             {

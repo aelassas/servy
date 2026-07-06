@@ -90,6 +90,8 @@ namespace Servy.Core.UnitTests.Validation
             dto.ExecutablePath = "invalid|path";
             dto.StartupDirectory = "invalid:dir";
             dto.StdoutPath = "invalid>out";
+            dto.StderrPath = "invalid>err";
+
 
             // Testing non-existent wrapper path
             string nonExistentWrapper = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
@@ -104,6 +106,7 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Contains(Strings.Msg_InvalidWrapperExePath, result.Errors);
             Assert.Contains(Strings.Msg_InvalidStartupDirectory, result.Errors);
             Assert.Contains(Strings.Msg_InvalidStdoutPath, result.Errors);
+            Assert.Contains(Strings.Msg_InvalidStderrPath, result.Errors);
         }
 
         [Fact]
@@ -184,14 +187,18 @@ namespace Servy.Core.UnitTests.Validation
             dto.PreLaunchExecutablePath = "invalid|path";
             dto.PreLaunchTimeoutSeconds = AppConfig.MaxPreLaunchTimeoutSeconds + 1;
             dto.PreLaunchRetryAttempts = -1;
+            dto.PreLaunchStdoutPath = "invalid>out";
+            dto.PreLaunchStderrPath = "invalid>err";
 
             // Act
             var result = _sut.Validate(dto);
 
             // Assert
             Assert.Contains(Strings.Msg_InvalidPreLaunchPath, result.Errors);
-            Assert.Contains(result.Errors, e => e.Contains("Pre-Launch timeout"));
-            Assert.Contains(result.Errors, e => e.Contains("Pre-Launch retry attempts"));
+            Assert.Contains(result.Errors, e => e.Contains(string.Format(Strings.Msg_InvalidPreLaunchTimeout, AppConfig.MinPreLaunchTimeoutSeconds, AppConfig.MaxPreLaunchTimeoutSeconds)));
+            Assert.Contains(result.Errors, e => e.Contains(string.Format(Strings.Msg_InvalidPreLaunchRetryAttempts, AppConfig.MinPreLaunchRetryAttempts, AppConfig.MaxPreLaunchRetryAttempts)));
+            Assert.Contains(Strings.Msg_InvalidPreLaunchStdoutPath, result.Errors);
+            Assert.Contains(Strings.Msg_InvalidPreLaunchStderrPath, result.Errors);
         }
 
         [Fact]

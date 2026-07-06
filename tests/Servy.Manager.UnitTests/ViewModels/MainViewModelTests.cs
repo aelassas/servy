@@ -251,8 +251,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.False(vm.SelectAll);
                 Assert.False(vm.HasSelectedServices);
 
-                // Branch 4: Double-set skip
+                // Branch 4: Double-set skip - redundant set must be a no-op
+                var raised = false;
+                vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(vm.SelectAll)) raised = true; };
                 vm.SelectAll = false;
+                Assert.False(raised);
 
                 await Task.CompletedTask;
             }, createApp: true);

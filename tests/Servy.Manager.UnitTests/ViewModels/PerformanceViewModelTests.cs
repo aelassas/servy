@@ -10,7 +10,6 @@ using Servy.Testing;
 using Servy.UI.Constants;
 using Servy.UI.Services;
 using System;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -209,6 +208,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var vm = CreateViewModel();
                     vm.Pid = "999";
                     vm.CpuUsage = "50%";
+                    vm.RamUsage = "300 MB";
+                    vm.CpuPointCollection.Add(new Point(1, 1));
+                    vm.RamPointCollection.Add(new Point(2, 2));
 
                     // Force internal state flag via reflection helper to simulate a transition away from an active tracking state
                     TestReflection.SetField(vm, "_hadSelectedService", true);
@@ -220,6 +222,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Assert
                     Assert.Equal(UiConstants.NotAvailable, vm.Pid);
                     Assert.Equal(UiConstants.NotAvailable, vm.CpuUsage);
+                    Assert.Equal(UiConstants.NotAvailable, vm.RamUsage);
+                    Assert.Empty(vm.CpuPointCollection);
+                    Assert.Empty(vm.RamPointCollection);
                     Assert.False(TestReflection.GetField<bool>(vm, "_hadSelectedService"));
                 }
                 finally

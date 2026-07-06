@@ -626,13 +626,19 @@ namespace Servy.Core.UnitTests.IO
             // Arrange
             var filePath = Path.Combine(_testDir, "weekly_year.log");
 
-            // Act
-            using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0))
-            {
-                var lastYear = DateTime.UtcNow.Year - 1;
-                var dec31 = new DateTime(lastYear, 12, 31);
+            // Frozen time provider to ensure deterministic execution across both calendar and
+            // ISO week boundaries regardless of execution date.
+            var frozenNow = new DateTime(2026, 1, 8); // Well past the first ISO week boundary of the new year
+            Func<DateTime> timeProvider = () => frozenNow;
 
-                TestReflection.SetField(writer, "_lastRotationDate", dec31);
+            // Act
+            // Constructing the writer passing our deterministic time provider seam helper
+            using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0, timeProvider: timeProvider))
+            {
+                // Force an old date that crosses both the calendar year boundary and the 7-day interval check
+                var dec30 = new DateTime(2025, 12, 30);
+
+                TestReflection.SetField(writer, "_lastRotationDate", dec30);
 
                 writer.WriteLine("rotate on year change");
                 writer.Flush();
