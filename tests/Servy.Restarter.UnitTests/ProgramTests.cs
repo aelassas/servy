@@ -109,8 +109,8 @@
         public void Main_CorruptedAppDirectoryContext_FailsInitializationAndTriggersCatchBlocks()
         {
             // Arrange
-            // Instead of deleting the config file completely—which triggers a fallback 
-            // to the host's physical production Servy.db—provide a malformed layout containing an unparseable 
+            // Instead of deleting the config file completely-which triggers a fallback 
+            // to the host's physical production Servy.db-provide a malformed layout containing an unparseable 
             // connection string. This safely simulates database driver crashes while remaining completely isolated.
             string brokenConnectionConfigJson = "{\r\n" +
                 "  \"ConnectionStrings\": {\r\n" +

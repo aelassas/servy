@@ -9,6 +9,8 @@ namespace Servy.Manager.UnitTests.Utils
     /// </summary>
     public class HistoryResultTests
     {
+        private static readonly DateTime ExpectedCreationTime = new DateTime(2026, 3, 30, 10, 0, 0);
+
         [Fact]
         public void Constructor_ValidArguments_PopulatesPropertiesCorrectly()
         {
@@ -19,17 +21,16 @@ namespace Servy.Manager.UnitTests.Utils
                 new LogLine ("Line 2", LogType.StdOut, DateTime.Now ),
             };
             long expectedPosition = 1024;
-            var expectedCreationTime = new DateTime(2026, 3, 30, 10, 0, 0);
 
             // Act
-            var result = new HistoryResult(sampleLines, expectedPosition, expectedCreationTime);
+            var result = new HistoryResult(sampleLines, expectedPosition, ExpectedCreationTime);
 
             // Assert
             Assert.NotNull(result.Lines);
             Assert.Equal(2, result.Lines.Count);
             Assert.Equal("Line 1", result.Lines[0].Text);
             Assert.Equal(expectedPosition, result.Position);
-            Assert.Equal(expectedCreationTime, result.CreationTime);
+            Assert.Equal(ExpectedCreationTime, result.CreationTime);
         }
 
         [Fact]
@@ -38,17 +39,16 @@ namespace Servy.Manager.UnitTests.Utils
             // Arrange
             List<LogLine>? nullLines = null;
             long expectedPosition = 512;
-            var expectedCreationTime = DateTime.UtcNow;
 
             // Act
-            var result = new HistoryResult(nullLines, expectedPosition, expectedCreationTime);
+            var result = new HistoryResult(nullLines, expectedPosition, ExpectedCreationTime);
 
             // Assert
             // Verifies the null-coalescing branch (lines ?? new List<LogLine>()) evaluated successfully
             Assert.NotNull(result.Lines);
             Assert.Empty(result.Lines);
             Assert.Equal(expectedPosition, result.Position);
-            Assert.Equal(expectedCreationTime, result.CreationTime);
+            Assert.Equal(ExpectedCreationTime, result.CreationTime);
         }
     }
 }
