@@ -241,7 +241,7 @@ namespace Servy.Manager.UnitTests.Services
             _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
             string? outErr = null;
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
-            _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns((ServiceDto?)null);
+            _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string?>())).Returns((ServiceDto?)null);
 
             // Act
             await sut.ImportJsonConfigAsync(TestContext.Current.CancellationToken);
@@ -266,7 +266,7 @@ namespace Servy.Manager.UnitTests.Services
             _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
             string? outErr = null;
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
-            _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(new ServiceDto { Name = "InvalidDomain" });
+            _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string?>())).Returns(new ServiceDto { Name = "InvalidDomain" });
             _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             // Act
@@ -291,7 +291,7 @@ namespace Servy.Manager.UnitTests.Services
             _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
             string? outErr = null;
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(true);
-            _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(new ServiceDto { Name = "FailedUpsert" });
+            _jsonServiceSerializerMock.Setup(s => s.Deserialize(It.IsAny<string?>())).Returns(new ServiceDto { Name = "FailedUpsert" });
             _serviceConfigurationValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
