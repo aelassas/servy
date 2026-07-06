@@ -444,16 +444,36 @@ namespace Servy.Manager.UnitTests.Utils
                 tailer.OnLoopCompleted += () => Interlocked.Increment(ref loopPassesPostDisposeCount);
                 tailer.Dispose();
 
-                try { await tailTask; } catch (OperationCanceledException) { }
+                // Assert 1: Verify prompt task completion (HandlesLinkedCancellation) via a deterministic timeout check
+                var completionDeadlineTask = Task.Delay(TimeSpan.FromSeconds(5), CancellationToken.None);
+                var completedTask = await Task.WhenAny(tailTask, completionDeadlineTask);
+
+                Assert.True(completedTask == tailTask, "The background tailer task failed to gracefully terminate within the 5-second cancellation timeout.");
+
+                // Unroll any aggregate or operation cancelled exceptions to confirm safe termination
+                try
+                {
+                    await tailTask;
+                }
+                catch (OperationCanceledException)
+                {
+                    // Internal cancellation path context validated successfully
+                }
 
                 // Let the thread pools settle for a brief window frame to guarantee no secondary ticks leak out
                 await Task.Delay(50, CancellationToken.None);
 
-                // Assert
-                // Verify that the background loop is completely halted. 
-                // It must not complete any additional execution passes once the cancellation token is processed.
+                // Assert 2: Verify that the background loop is completely halted and not spinning recursively
                 Assert.True(loopPassesPostDisposeCount <= 1,
                     $"LogTailer incorrectly allowed recursive loop cycles ({loopPassesPostDisposeCount}) to execute after disposal.");
+
+                // Assert 3: Verify descriptor handle cleanup (ClosesClean) by confirming exclusive file layout access
+                var fileHandleException = Record.Exception(() =>
+                {
+                    using (var exclusiveStreamCheck = new FileStream(_tempFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
+                });
+
+                Assert.Null(fileHandleException);
             }
         }
 
