@@ -45,7 +45,7 @@
 
         [Theory]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void Main_EmptyOrWhitespaceServiceName_SetsExitCodeTo1AndExitsEarly(string invalidName)
         {
             // Arrange
@@ -82,8 +82,13 @@
         public void Main_FallbackConfigurationParsing_HandlesInvalidTimeoutGracefully()
         {
             // Arrange
-            // Rewrite configuration to force int.TryParse to fail or evaluate <= 0
-            string corruptedConfigJson = "{\"RestartTimeoutSeconds\": \"NotAnInteger\"}";
+            // Retain ConnectionStrings block to preserve :memory: context sandbox and prevent production DB fall-through
+            string corruptedConfigJson = "{\r\n" +
+                "  \"ConnectionStrings\": {\r\n" +
+                "    \"DefaultConnection\": \"Data Source=:memory:;Version=3;\"\r\n" +
+                "  },\r\n" +
+                "  \"RestartTimeoutSeconds\": \"NotAnInteger\"\r\n" +
+                "}";
             File.WriteAllText(_tempConfigPath, corruptedConfigJson);
 
             string[] args = new string[] { "GhostUnmanagedService" };
@@ -104,12 +109,15 @@
         public void Main_CorruptedAppDirectoryContext_FailsInitializationAndTriggersCatchBlocks()
         {
             // Arrange
-            // We force an immediate file mapping error inside the try block by deleting the file entirely
-            // and generating an unresolvable parameter target signature to guarantee triggering the Exception block.
-            if (File.Exists(_tempConfigPath))
-            {
-                File.Delete(_tempConfigPath);
-            }
+            // Instead of deleting the config file completely—which triggers a fallback 
+            // to the host's physical production Servy.db—provide a malformed layout containing an unparseable 
+            // connection string. This safely simulates database driver crashes while remaining completely isolated.
+            string brokenConnectionConfigJson = "{\r\n" +
+                "  \"ConnectionStrings\": {\r\n" +
+                "    \"DefaultConnection\": \"Data Source=||InvalidPath||:?\"\r\n" +
+                "  }\r\n" +
+                "}";
+            File.WriteAllText(_tempConfigPath, brokenConnectionConfigJson);
 
             // Provide a corrupted path syntax that forces an immediate crash in underlying drivers
             // before loggers can even initialize, hitting the root Exception block.

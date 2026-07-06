@@ -400,6 +400,9 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(AppConfig.DefaultStopTimeout, service.StopTimeout);
             Assert.Equal(AppConfig.DefaultPreStopTimeoutSeconds, service.PreStopTimeoutSeconds);
             Assert.False(service.PreStopLogAsError);
+            Assert.Equal(AppConfig.DefaultEnableConsoleUI, service.EnableConsoleUI);
+            Assert.Equal(AppConfig.DefaultRecoveryOnCleanExit, service.RecoveryOnCleanExit);
+            Assert.Equal(string.Empty, service.DisplayName);
         }
 
     }

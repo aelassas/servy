@@ -116,7 +116,8 @@ namespace Servy.Core.UnitTests.Security
                 sb.Append(source);
             }
 
-            return sb.ToString().Substring(0, targetLength);
+            sb.Length = targetLength;   // truncate the overshoot in place
+            return sb.ToString();       // single allocation
         }
 
         #endregion
