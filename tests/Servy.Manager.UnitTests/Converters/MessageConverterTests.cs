@@ -20,6 +20,16 @@ namespace Servy.Manager.UnitTests.Converters
             Assert.Equal(string.Empty, result);
         }
 
+        [Fact]
+        public void Convert_NonStringValue_ReturnsFirstLineOfToString()
+        {
+            // Act
+            var result = _converter.Convert(123, typeof(string), null, CultureInfo.InvariantCulture);
+
+            // Assert
+            Assert.Equal("123", result);
+        }
+
         [Theory]
         [InlineData("Single line", "Single line")]
         [InlineData("First line\nSecond line", "First line")]

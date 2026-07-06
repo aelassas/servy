@@ -36,6 +36,13 @@ namespace Servy.Manager.UnitTests.Converters
             Assert.Equal("Invalid", _converter.Convert("Invalid", typeof(string), null, CultureInfo.InvariantCulture));
         }
 
+        [Fact]
+        public void ConvertBack_NullInput_ReturnsDoNothing()
+        {
+            // Act & Assert
+            Assert.Equal(Binding.DoNothing, _converter.ConvertBack(null, typeof(string), null, CultureInfo.InvariantCulture));
+        }
+
         [Theory]
         [InlineData(nameof(Strings.StartupType_Automatic), ServiceStartType.Automatic)]
         [InlineData(nameof(Strings.StartupType_AutomaticDelayedStart), ServiceStartType.AutomaticDelayedStart)]
