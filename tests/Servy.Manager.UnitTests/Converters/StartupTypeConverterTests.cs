@@ -1,10 +1,8 @@
-﻿using System;
-using System.Globalization;
-using System.Windows.Data;
-using Servy.Core.Enums;
+﻿using Servy.Core.Enums;
 using Servy.Manager.Converters;
 using Servy.Manager.Resources;
-using Xunit;
+using System.Globalization;
+using System.Windows.Data;
 
 namespace Servy.Manager.UnitTests.Converters
 {
@@ -34,6 +32,13 @@ namespace Servy.Manager.UnitTests.Converters
             // Act & Assert
             Assert.Equal(Strings.Label_Fetching, _converter.Convert(null!, typeof(string), null!, CultureInfo.InvariantCulture));
             Assert.Equal("Invalid", _converter.Convert("Invalid", typeof(string), null!, CultureInfo.InvariantCulture));
+        }
+
+        [Fact]
+        public void ConvertBack_NullInput_ReturnsDoNothing()
+        {
+            // Act & Assert
+            Assert.Equal(Binding.DoNothing, _converter.ConvertBack(null!, typeof(string), null!, CultureInfo.InvariantCulture));
         }
 
         [Theory]

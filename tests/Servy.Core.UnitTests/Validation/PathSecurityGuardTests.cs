@@ -1,4 +1,5 @@
-﻿using Servy.Core.Validation;
+﻿using Servy.Core.Resources;
+using Servy.Core.Validation;
 using Servy.Testing;
 
 namespace Servy.Core.UnitTests.Validation
@@ -19,6 +20,7 @@ namespace Servy.Core.UnitTests.Validation
             // Assert
             Assert.False(result.IsValid);
             Assert.NotNull(result.ErrorMessage);
+            Assert.Contains(Strings.Msg_InvalidPath, result.ErrorMessage);
             Assert.Null(stream);
         }
 

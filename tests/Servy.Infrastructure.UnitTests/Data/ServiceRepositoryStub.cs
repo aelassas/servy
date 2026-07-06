@@ -43,8 +43,8 @@ namespace Servy.Infrastructure.UnitTests.Data
                 Id = id,
                 Name = name,
                 // Simulate sensitive fields that would normally be encrypted
-                ActiveStderrPath = FormatValue(@"C:\logs\stub_active_stderr.log"),
-                ActiveStdoutPath = FormatValue(@"C:\logs\stub_active_stdout.log")
+                Parameters = FormatValue("--port 8000 --host 0.0.0.0"),
+                Password = FormatValue("pwd"),
             };
         }
 

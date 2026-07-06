@@ -47,6 +47,16 @@ namespace Servy.Manager.UnitTests.Converters
             Assert.Equal(string.Empty, result);
         }
 
+        [Fact]
+        public void ConvertBack_NullInput_ReturnsDoNothing()
+        {
+            // Act
+            var result = _converter.ConvertBack(null!, typeof(string), null!, CultureInfo.InvariantCulture);
+
+            // Assert
+            Assert.Equal(Binding.DoNothing, result);
+        }
+
         [Theory]
         [InlineData(nameof(Strings.Status_Running), ServiceStatus.Running)]
         [InlineData(nameof(Strings.Status_Stopped), ServiceStatus.Stopped)]
