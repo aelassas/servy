@@ -216,7 +216,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
             // Assert
             Assert.Equal(2, tokens.Count);
-            Assert.Contains("KEY1\\=value1\\;contains\\\r\\\ncontinued", tokens[0]);
+            Assert.Equal("KEY1\\=value1\\;contains\\\r\\\ncontinued", tokens[0]);
             Assert.Equal("KEY2\\=value2", tokens[1]);
         }
 
