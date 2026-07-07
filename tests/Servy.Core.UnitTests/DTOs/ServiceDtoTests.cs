@@ -1,6 +1,7 @@
 ﻿using Servy.Core.DTOs;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Xunit;
 
@@ -50,10 +51,15 @@ namespace Servy.Core.UnitTests.DTOs
                 "PreviousStopTimeout", "ActiveStdoutPath", "ActiveStderrPath"
             };
 
-            var methods = typeof(ServiceDto).GetMethods(BindingFlags.Public | BindingFlags.Instance);
+            var shouldSerializeMethods = typeof(ServiceDto)
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Where(m => m.Name.StartsWith("ShouldSerialize"))
+                .ToList();
 
             // Act & Assert
-            foreach (var method in methods)
+            Assert.NotEmpty(shouldSerializeMethods); // fail fast if the policy methods disappear
+
+            foreach (var method in shouldSerializeMethods)
             {
                 if (!method.Name.StartsWith("ShouldSerialize")) continue;
 
