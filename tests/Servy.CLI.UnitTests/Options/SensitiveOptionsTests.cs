@@ -71,7 +71,7 @@ namespace Servy.CLI.UnitTests.Options
             var psm1Content = File.ReadAllText(psm1Path);
 
             // Extract the elements inside the $sensitiveFields = @(...) block using Regex
-            var sensitiveFieldsBlockRegex = new Regex(@"\$sensitiveFields\s*=\s*@\(([\s\S]*?)\)", RegexOptions.Singleline);
+            var sensitiveFieldsBlockRegex = new Regex(@"\$sensitiveFields\s*=\s*@\(([\s\S]*?)\)");
             var match = sensitiveFieldsBlockRegex.Match(psm1Content);
             Assert.True(match.Success, "Could not locate $sensitiveFields array in Servy.psm1.");
 
