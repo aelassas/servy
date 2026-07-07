@@ -1,10 +1,5 @@
 ﻿using Servy.Core.Helpers;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Threading;
 
 namespace Servy.Core.IntegrationTests.Helpers
 {
@@ -75,6 +70,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             bool result = _processKiller.KillProcessTreeAndParents(invalidName!, killParents: true);
 
             // Assert
+            // Ensure bad/missing process name arrays safely report operational failure status indicators
             Assert.False(result);
         }
 
@@ -92,6 +88,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             bool result = _processKiller.KillProcessTreeAndParents(protectedName, killParents: true);
 
             // Assert
+            // Baseline system structures must bypass structural process walk calls gracefully
             Assert.False(result);
         }
 
@@ -232,13 +229,14 @@ namespace Servy.Core.IntegrationTests.Helpers
                 // Act
                 bool result = _processKiller.KillProcessTreeAndParents(child!.Id, killParents: false);
 
-                // Hardened Validation: Use robust polling to absorb OS state transit windows completely
+                // IDIOM HARMONIZATION: Standardize exit checking pipeline onto the shared robust internal polling helper.
+                // This cleanly drops custom blocking WaitForExit branches and inconsistent manual tracking logic.
                 bool childExited = WaitForProcessExit(child, 5000);
-                parent!.Refresh();
+                bool parentExited = WaitForProcessExit(parent, 1000); // Quick verify check pass on the parent thread tracker
 
                 // Assert
                 Assert.True(childExited, "The target child process should have been terminated.");
-                Assert.False(parent.HasExited, "The parent process should remain alive because killParents was false.");
+                Assert.False(parentExited, "The parent process should remain alive because killParents was false.");
 
                 // If child exit took down the parent via unintended cascade, assert evaluation catches it here.
                 if (!result)
