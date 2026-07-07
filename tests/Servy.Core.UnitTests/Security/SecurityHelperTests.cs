@@ -218,7 +218,10 @@ namespace Servy.Core.UnitTests.Security
                     // This should now succeed because the CurrentUser is added to the ACL
                     Directory.Delete(_testBaseDir, true);
                 }
-                catch (UnauthorizedAccessException) { }
+                catch
+                {
+                    // Best-effort cleanup
+                }
             }
         }
     }
