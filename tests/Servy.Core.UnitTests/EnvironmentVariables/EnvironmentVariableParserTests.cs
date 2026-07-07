@@ -55,6 +55,77 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         [Fact]
+        public void Parse_MultipleVariablesSeparatedByNewline_ParsesCorrectly()
+        {
+            // Arrange
+            // KEY3 contains structural double quotes that must be cleanly stripped following the newline parsing pass
+            var input = "KEY1=VALUE1\nKEY2=VALUE2\nKEY3=\"VALUE3\"";
+
+            // Act
+            var result = EnvironmentVariableParser.Parse(input);
+
+            // Assert
+            Assert.Equal(3, result.Count);
+
+            Assert.Equal("KEY1", result[0].Name);
+            Assert.Equal("VALUE1", result[0].Value);
+
+            Assert.Equal("KEY2", result[1].Name);
+            Assert.Equal("VALUE2", result[1].Value);
+
+            // VALIDATION FIX: Ensure quote-stripping rules behavior acts symmetrically on the newline path
+            Assert.Equal("KEY3", result[2].Name);
+            Assert.Equal("VALUE3", result[2].Value);
+        }
+
+        [Fact]
+        public void Parse_MultipleVariablesSeparatedByWindowsNewline_ParsesCorrectly()
+        {
+            // Arrange
+            var input = "KEY1=VALUE1\r\nKEY2=VALUE2\r\nKEY3=\"VALUE3\"";
+
+            // Act
+            var result = EnvironmentVariableParser.Parse(input);
+
+            // Assert
+            Assert.Equal(3, result.Count);
+
+            Assert.Equal("KEY1", result[0].Name);
+            Assert.Equal("VALUE1", result[0].Value);
+
+            Assert.Equal("KEY2", result[1].Name);
+            Assert.Equal("VALUE2", result[1].Value);
+
+            Assert.Equal("KEY3", result[2].Name);
+            Assert.Equal("VALUE3", result[2].Value);
+        }
+
+        [Fact]
+        public void Parse_MixedDelimiters_ParsesCorrectly()
+        {
+            // Arrange
+            var input = "KEY1=VALUE1;KEY2=VALUE2\nKEY3=VALUE3\r\nKEY4=\"VALUE4\"";
+
+            // Act
+            var result = EnvironmentVariableParser.Parse(input);
+
+            // Assert
+            Assert.Equal(4, result.Count);
+
+            Assert.Equal("KEY1", result[0].Name);
+            Assert.Equal("VALUE1", result[0].Value);
+
+            Assert.Equal("KEY2", result[1].Name);
+            Assert.Equal("VALUE2", result[1].Value);
+
+            Assert.Equal("KEY3", result[2].Name);
+            Assert.Equal("VALUE3", result[2].Value);
+
+            Assert.Equal("KEY4", result[3].Name);
+            Assert.Equal("VALUE4", result[3].Value);
+        }
+
+        [Fact]
         public void Parse_SupportsEscapedSemicolonInValue()
         {
             // Arrange

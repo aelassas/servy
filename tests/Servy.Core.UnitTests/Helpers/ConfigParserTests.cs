@@ -112,6 +112,8 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("Maybe", false, false)]
         [InlineData("2", true, true)]
         [InlineData("none", false, false)]
+        [InlineData("2", false, false)]
+        [InlineData("none", true, true)]
         public void ParseBool_InvalidInput_ReturnsDefault(string input, bool @default, bool expected)
         {
             // Act
