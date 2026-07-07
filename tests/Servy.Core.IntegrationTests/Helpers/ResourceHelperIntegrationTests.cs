@@ -65,7 +65,15 @@ namespace Servy.Core.IntegrationTests.Helpers
         public async Task CopyEmbeddedResource_WhenProcessTerminationFails_ReturnsFalse()
         {
             // Arrange
-            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(false); // Simulate locked file
+            // Simulate a locked file status within the process termination subsystem engine boundary
+            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(It.IsAny<string>())).Returns(false);
+
+            // Configure the assembly manifest setup mock parameters to provide a valid, populated 
+            // MemoryStream. This satisfies the upfront validation guard condition and allows execution 
+            // to genuinely reach the TerminateBlockingProcesses execution branch code.
+            var dummyResourceBytes = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
+                         .Returns(() => new MemoryStream(dummyResourceBytes));
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResource(
@@ -73,6 +81,10 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.False(result);
+
+            // VERIFICATION GUARD: Lock in proof that the underlying mock process killer was explicitly evaluated 
+            // before the helper marked the copy pass execution as a failure state.
+            _mockProcessKiller.Verify(p => p.KillProcessesUsingFile(It.IsAny<string>()), Times.Once);
         }
 
         [Fact]

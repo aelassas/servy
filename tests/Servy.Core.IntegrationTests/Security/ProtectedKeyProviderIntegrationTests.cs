@@ -170,39 +170,49 @@ namespace Servy.Core.IntegrationTests.Security
             }
         }
 
-        [Fact]
-        public void GetKey_CorruptedFile_ThrowsInvalidOperationException()
+        [Theory]
+        [InlineData("key", "Failed to unprotect encryption key")]
+        [InlineData("iv", "Failed to unprotect encryption key")]
+        public void GetMaterial_CorruptedFile_ThrowsInvalidOperationException(string targetType, string expectedMessageToken)
         {
             // Arrange
             var keyPath = GetTempFilePath("corrupt.key");
             var ivPath = GetTempFilePath("corrupt.iv");
+            var targetPath = targetType == "key" ? keyPath : ivPath;
 
             // Write garbage bytes that DPAPI cannot unprotect
-            File.WriteAllBytes(keyPath, new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 });
+            File.WriteAllBytes(targetPath, new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 });
 
             using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             {
                 // Act & Assert
-                var ex = Assert.Throws<InvalidOperationException>(() => provider.GetKey());
-                Assert.Contains("Failed to unprotect encryption key", ex.Message);
+                var ex = Assert.Throws<InvalidOperationException>(() =>
+                    targetType == "key" ? provider.GetKey() : provider.GetIV());
+
+                Assert.Contains(expectedMessageToken, ex.Message);
             }
         }
 
-        [Fact]
-        public void GetKey_FileLocked_RetriesAndEventuallyThrows()
+        [Theory]
+        [InlineData("key")]
+        [InlineData("iv")]
+        public void GetMaterial_FileLocked_RetriesAndEventuallyThrows(string targetType)
         {
             // Arrange
             var keyPath = GetTempFilePath("locked.key");
             var ivPath = GetTempFilePath("locked.iv");
-            File.WriteAllBytes(keyPath, new byte[] { 0x01 }); // Create dummy file
+            var targetPath = targetType == "key" ? keyPath : ivPath;
+
+            File.WriteAllBytes(targetPath, new byte[] { 0x01 }); // Create dummy file
 
             using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
-            // Lock the file exclusively on this thread
-            using (var lockStream = new FileStream(keyPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            // Lock the target file exclusively on this thread execution boundary
+            using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
                 // Act & Assert
                 // Will attempt to read 3 times with exponential backoff and fail
-                Assert.Throws<IOException>(() => provider.GetKey());
+                Assert.Throws<IOException>(() =>
+                    targetType == "key" ? provider.GetKey() : provider.GetIV());
             }
         }
 

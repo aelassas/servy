@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Native;
 using Servy.Testing;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 
 namespace Servy.Core.IntegrationTests.Native
 {
@@ -10,6 +11,15 @@ namespace Servy.Core.IntegrationTests.Native
         private readonly string _testAccountName;
         private readonly bool _isAdministrator;
         private readonly bool _canModifyLsaPolicy;
+
+        // P/Invoke definition necessary to tear down matching LSA security descriptors before user purging
+        [DllImport("advapi32.dll", PreserveSig = true)]
+        private static extern int LsaRemoveAccountRights(
+            IntPtr PolicyHandle,
+            IntPtr AccountSid,
+            [MarshalAs(UnmanagedType.Bool)] bool AllRights,
+            NativeMethods.LSA_UNICODE_STRING[] UserRights,
+            uint Count);
 
         public LogonAsServiceGrantIntegrationTests()
         {
@@ -120,10 +130,70 @@ namespace Servy.Core.IntegrationTests.Native
             }
         }
 
+        /// <summary>
+        /// Explicitly revokes rights from the target LSA account scope before account deletion to avoid host leakage.
+        /// </summary>
+        private void RevokeLsaPrivilegeBeforeDeletion(string accountName, string privilege)
+        {
+            IntPtr policyHandle = IntPtr.Zero;
+            IntPtr sidBuffer = IntPtr.Zero;
+
+            try
+            {
+                // Resolve user domain string back to an active NT Security Identifier structure
+                var ntAccount = new NTAccount(accountName);
+                var sid = (SecurityIdentifier)ntAccount.Translate(typeof(SecurityIdentifier));
+
+                byte[] sidBytes = new byte[sid.BinaryLength];
+                sid.GetBinaryForm(sidBytes, 0);
+
+                sidBuffer = Marshal.AllocHGlobal(sidBytes.Length);
+                Marshal.Copy(sidBytes, 0, sidBuffer, sidBytes.Length);
+
+                var objectAttributes = new NativeMethods.LSA_OBJECT_ATTRIBUTES();
+
+                int lsaOpenStatus = NativeMethods.LsaOpenPolicy(
+                    IntPtr.Zero,
+                    ref objectAttributes,
+                    NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES | NativeMethods.POLICY_ACCESS.POLICY_ASSIGN_PRIVILEGE,
+                    out policyHandle);
+
+                if (lsaOpenStatus == 0)
+                {
+                    var privilegeString = new NativeMethods.LSA_UNICODE_STRING();
+                    IntPtr nativeStringAlloc = Marshal.StringToHGlobalUni(privilege);
+
+                    privilegeString.Buffer = nativeStringAlloc;
+                    privilegeString.Length = (ushort)(privilege.Length * 2);
+                    privilegeString.MaximumLength = (ushort)((privilege.Length + 1) * 2);
+
+                    var rightsArray = new NativeMethods.LSA_UNICODE_STRING[] { privilegeString };
+
+                    // Revoke assigned system access parameters safely before SAM subsystem disconnect calls
+                    LsaRemoveAccountRights(policyHandle, sidBuffer, false, rightsArray, 1);
+
+                    Marshal.FreeHGlobal(nativeStringAlloc);
+                }
+            }
+            catch
+            {
+                // Suppress revocation exceptions within test cleanup blocks to ensure baseline execution proceeds
+            }
+            finally
+            {
+                if (policyHandle != IntPtr.Zero) NativeMethods.LsaClose(policyHandle);
+                if (sidBuffer != IntPtr.Zero) Marshal.FreeHGlobal(sidBuffer);
+            }
+        }
+
         public void Dispose()
         {
             if (_canModifyLsaPolicy)
             {
+                // ROBUSTNESS: Revoke user permissions inside LSA storage prior to calling net user /delete.
+                // This ensures Windows can resolve the name context to a real SID during cleanup blocks.
+                RevokeLsaPrivilegeBeforeDeletion(_testAccountName, "SeServiceLogonRight");
+
                 ExecuteNetUserCommand($"/delete {_testAccountName}");
             }
         }

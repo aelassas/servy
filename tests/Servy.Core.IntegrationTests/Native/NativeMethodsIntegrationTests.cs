@@ -219,15 +219,63 @@ namespace Servy.Core.IntegrationTests.Native
 
             var idC = new NativeMethods.FILE_IDENTITY
             {
-                FileIndex = 54321,
+                FileIndex = 54321, // Differs by index path
                 VolumeSerialNumber = 98765,
                 PrefixDigest = "ABCDE",
                 IsValidHandleInfo = true
             };
 
+            // Assert behavior when VolumeSerialNumber differs independently
+            var idVolumeMismatch = new NativeMethods.FILE_IDENTITY
+            {
+                FileIndex = 12345,
+                VolumeSerialNumber = 11111, // Differs by serial path
+                PrefixDigest = "ABCDE",
+                IsValidHandleInfo = true
+            };
+
             // Act & Assert
-            Assert.False(idA.IsDifferentFrom(idB));
-            Assert.True(idA.IsDifferentFrom(idC));
+            Assert.False(idA.IsDifferentFrom(idB), "Identical primary handles must evaluate as the same file object.");
+            Assert.True(idA.IsDifferentFrom(idC), "Varying FileIndex should indicate a rotation event.");
+            Assert.True(idA.IsDifferentFrom(idVolumeMismatch), "Varying VolumeSerialNumber should indicate a volume/rotation move event.");
+        }
+
+        [Fact]
+        public void FileIdentity_HandleValidityMismatch_ReturnsTrue()
+        {
+            // Arrange
+            // Branch (1) Probe: Validation status asymmetry must trigger immediate difference flag
+            var idValid = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = true, PrefixDigest = "SAME" };
+            var idInvalid = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = "SAME" };
+
+            // Act & Assert
+            Assert.True(idValid.IsDifferentFrom(idInvalid), "Handle info status inequality must evaluate as structurally different file tracks.");
+        }
+
+        [Fact]
+        public void FileIdentity_SecondaryProbeFAT32Fallback_ValidatesDigestEquality()
+        {
+            // Arrange
+            // Branch (3) Probe: Both handle checks fail (e.g. FAT32 volume layers). Compare contents using PrefixDigest
+            var baseId = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_A" };
+            var matchingId = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_A" };
+            var differingId = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = "MD5_HASH_B" };
+
+            // Act & Assert
+            Assert.False(baseId.IsDifferentFrom(matchingId), "Identical content hashes on invalid handle states must evaluate as unchanged.");
+            Assert.True(baseId.IsDifferentFrom(differingId), "Differing content hashes on invalid handle states must trigger a rotation switch signal.");
+        }
+
+        [Fact]
+        public void FileIdentity_UndeterminableStateFallback_DefaultsToTrue()
+        {
+            // Arrange
+            // Branch (3) Fallback: No robust identifiers available on either side. Should report 'true' as a safe default.
+            var blindIdA = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = null! };
+            var blindIdB = new NativeMethods.FILE_IDENTITY { IsValidHandleInfo = false, PrefixDigest = null! };
+
+            // Act & Assert
+            Assert.True(blindIdA.IsDifferentFrom(blindIdB), "Undeterminable file identities must fall back to 'true' to safely force metadata loop updates.");
         }
 
         [Fact]
