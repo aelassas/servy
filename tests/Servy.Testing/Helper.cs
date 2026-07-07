@@ -319,7 +319,6 @@ namespace Servy.Testing
         {
             string startDir = AppDomain.CurrentDomain.BaseDirectory;
             string repoRoot = AppConfig.FindRepoRoot(startDir);
-            Assert.False(string.IsNullOrEmpty(repoRoot), "Could not find repository root.");
             var psm1Path = Path.Combine(repoRoot, "src", "Servy.CLI", "Servy.psm1");
             Assert.True(File.Exists(psm1Path), $"Could not find Servy.psm1 at {psm1Path}");
             return psm1Path;

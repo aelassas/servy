@@ -97,7 +97,8 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Theory]
-        [InlineData(0)] // Below threshold
+        [InlineData(0)]                               // below min
+        [InlineData(AppConfig.MaxStopTimeout + 1)]    // above max
         public void TryValidate_InvalidStopTimeout_ReturnsFalse(int invalidTimeout)
         {
             // Arrange
