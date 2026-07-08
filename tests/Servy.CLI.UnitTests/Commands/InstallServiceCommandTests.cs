@@ -20,6 +20,7 @@ namespace Servy.CLI.UnitTests.Commands
         private readonly Mock<IServiceInstallValidator> _mockValidator;
         private readonly InstallServiceCommand _command;
         private readonly string _wrapperExePath;
+        private readonly string _backupPath;
 
         public InstallServiceCommandTests()
         {
@@ -27,9 +28,18 @@ namespace Servy.CLI.UnitTests.Commands
             _mockValidator = new Mock<IServiceInstallValidator>();
             _command = new InstallServiceCommand(_mockServiceManager.Object, _mockValidator.Object);
 
-            // Create a dummy Servy.Service.CLI.Net48.exe for the tests
+            // Create a dummy Servy.Service.CLI.exe for the tests
             _wrapperExePath = AppConfig.GetServyCLIServicePath();
             Directory.CreateDirectory(Path.GetDirectoryName(_wrapperExePath));
+
+            // RELEASE BUILD SAFETY GUARD: If a live installation binary already occupies the target directory,
+            // squirrel it away safely inside a temporary backup file profile to prevent clobbering.
+            if (File.Exists(_wrapperExePath))
+            {
+                _backupPath = Path.Combine(Path.GetTempPath(), $"Servy_Backup_CLI_{Guid.NewGuid():N}.bak");
+                File.Copy(_wrapperExePath, _backupPath, overwrite: true);
+            }
+
             File.WriteAllText(_wrapperExePath, "dummy content");
         }
 
@@ -145,7 +155,29 @@ namespace Servy.CLI.UnitTests.Commands
             // Clean up the dummy file
             if (File.Exists(_wrapperExePath))
             {
-                File.Delete(_wrapperExePath);
+                try
+                {
+                    File.Delete(_wrapperExePath);
+                }
+                catch
+                {
+                    // Prevent disposal failures from masking core runtime assertions
+                }
+            }
+
+            // RELEASE BUILD SAFETY GUARD: Restore original, verified production binary 
+            // if a backup transaction was initialized during the arrangement phase.
+            if (!string.IsNullOrEmpty(_backupPath) && File.Exists(_backupPath))
+            {
+                try
+                {
+                    File.Copy(_backupPath, _wrapperExePath, overwrite: true);
+                    File.Delete(_backupPath);
+                }
+                catch
+                {
+                    // Best-effort recovery catch
+                }
             }
         }
     }
