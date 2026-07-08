@@ -161,15 +161,32 @@ namespace Servy.Core.IntegrationTests.Helpers
             _openedStreams.Add(fs2);
 
             // Act
-            var results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
+            var currentPid = Process.GetCurrentProcess().Id;
+            List<HandleHelper.ProcessHandleInfo> results = null!;
+            List<HandleHelper.ProcessHandleInfo> selfHandles = null!;
+            bool multiHandlesDetected = false;
+
+            // Wrap the query inside a retry loop identical to its sibling test.
+            // This absorbs underlying Windows kernel table sync latency before evaluating assertions.
+            const int maxRetries = 5;
+            for (int i = 0; i < maxRetries; i++)
+            {
+                results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
+                selfHandles = results.Where(r => r.ProcessId == currentPid).ToList();
+
+                // handle.exe returns one line per handle found.
+                if (selfHandles.Count >= 2)
+                {
+                    multiHandlesDetected = true;
+                    break;
+                }
+
+                Thread.Sleep(50); // Small backoff window
+            }
 
             // Assert
-            // handle.exe returns one line per handle found.
             // Filter out potential concurrent background system handles (like security indexers) targeting our file
-            var currentPid = Process.GetCurrentProcess().Id;
-            var selfHandles = results.Where(r => r.ProcessId == currentPid).ToList();
-
-            Assert.True(selfHandles.Count >= 2, $"Should have detected at least two handles owned by this running test process. Total found: {results.Count}");
+            Assert.True(multiHandlesDetected, $"Should have detected at least two handles owned by this running test process (PID {currentPid}). Total found self handles: {selfHandles?.Count ?? 0}, overall system handles found: {results?.Count ?? 0}");
         }
 
         [Fact]

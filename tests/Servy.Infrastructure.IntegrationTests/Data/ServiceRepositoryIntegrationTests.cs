@@ -40,7 +40,6 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
         public void Dispose()
         {
-            _masterConnection.Close();
             _masterConnection.Dispose();
         }
     }
