@@ -45,7 +45,6 @@ namespace Servy.Core.IntegrationTests.Helpers
         {
             foreach (var stream in _openedStreams)
             {
-                stream.Close();
                 stream.Dispose();
             }
 

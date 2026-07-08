@@ -70,6 +70,11 @@
         [Fact]
         public void IsRealConsole_InNonInteractiveTestEnvironment_ReturnsFalse()
         {
+            Assert.SkipWhen(Environment.UserInteractive
+                && !Console.IsOutputRedirected
+                && !Console.IsErrorRedirected,
+                "Requires a non-interactive/redirected host.");
+
             // Act
             bool isReal = Program.IsRealConsole();
 
