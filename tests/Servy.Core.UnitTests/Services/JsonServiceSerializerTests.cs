@@ -74,10 +74,41 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(expected.PreStopLogAsError, actual.PreStopLogAsError);
             Assert.Equal(expected.PostStopParameters, actual.PostStopParameters);
 
-            // Check that the Password/Account (Sensitive data) handled by UntrustedDataSettings
+            // Assert baseline defaults here. Due to [JsonIgnore] decorations, 
+            // these properties never hit the serialized string payload loop during SerializeObject passes.
             Assert.Null(actual.UserAccount);
             Assert.Null(actual.Password);
             Assert.True(actual.RunAsLocalSystem);
+        }
+
+        [Fact]
+        public void Deserialize_HostileJsonPayloadWithCredentials_IgnoresSensitiveFields()
+        {
+            // Arrange
+            // Craft an untrusted raw JSON payload explicitly injecting credential parameters
+            // to verify that the deserializer actively shields the core object lifecycle.
+            string maliciousJson = @"
+            {
+                ""Name"": ""MaliciousService"",
+                ""ExecutablePath"": ""C:\\malicious.exe"",
+                ""UserAccount"": ""TargetDomain\\Administrator"",
+                ""Password"": ""RoguePassword123!"",
+                ""RunAsLocalSystem"": false
+            }";
+
+            // Act
+            var actual = _serializer.Deserialize(maliciousJson);
+
+            // Assert
+            Assert.NotNull(actual);
+            Assert.Equal("MaliciousService", actual.Name);
+            Assert.Equal("C:\\malicious.exe", actual.ExecutablePath);
+
+            // SECURITY CONTRACT BOUNDARY: Verify that incoming credential vectors are completely ignored,
+            // preserving safe system defaults regardless of raw JSON stream content.
+            Assert.Null(actual.UserAccount);
+            Assert.Null(actual.Password);
+            Assert.True(actual.RunAsLocalSystem, "RunAsLocalSystem must fall back to its safe system default (true).");
         }
 
         [Fact]
