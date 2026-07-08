@@ -396,7 +396,7 @@ namespace Servy.CLI.UnitTests.Commands
 
         #region Test Initialization Mocking Helpers
 
-        private void MockXmlValidator(bool isValid, string errorMsg = null!)
+        private void MockXmlValidator(bool isValid, string? errorMsg = null)
         {
             string? dummy = errorMsg;
             _xmlValidatorMock
@@ -404,7 +404,7 @@ namespace Servy.CLI.UnitTests.Commands
                 .Returns(isValid);
         }
 
-        private void MockJsonValidator(bool isValid, string errorMsg = null!)
+        private void MockJsonValidator(bool isValid, string? errorMsg = null)
         {
             string? dummy = errorMsg;
             _jsonValidatorMock

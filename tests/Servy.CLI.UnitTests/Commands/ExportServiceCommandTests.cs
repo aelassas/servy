@@ -290,8 +290,7 @@ namespace Servy.CLI.UnitTests.Commands
             // If it's a modern argument rejection, execute the localized syntax verification check
             if (actualEx is ArgumentException)
             {
-                bool matchedExpectedSecurityRules = actualEx.Message.Contains("COM1") ||
-                                                    actualEx.Message.Contains("UNC");
+                bool matchedExpectedSecurityRules = actualEx.Message.Contains("COM1");
 
                 Assert.True(matchedExpectedSecurityRules,
                     $"The security guard rejected the path, but with an unexpected message profile: '{actualEx.Message}'");
