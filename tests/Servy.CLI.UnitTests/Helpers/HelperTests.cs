@@ -29,38 +29,35 @@ namespace Servy.CLI.UnitTests.Helpers
         // Returns a tuple containing captured stdout/stderr text for assertion.
         private (string StdOut, string StdErr) RunTestWithConsoleCapture(Action testAction)
         {
-            lock (_consoleLock)
+            // Synchronously drain the async gate to block multi-threaded interleaved tests
+            _asyncConsoleLock.Wait();
+            var oldOut = Console.Out;
+            var oldErr = Console.Error;
+
+            try
             {
-                // Synchronously drain the async gate to block multi-threaded interleaved tests
-                _asyncConsoleLock.Wait();
-                var oldOut = Console.Out;
-                var oldErr = Console.Error;
-
-                try
+                using (var swOut = new StringWriter())
+                using (var swErr = new StringWriter())
                 {
-                    using (var swOut = new StringWriter())
-                    using (var swErr = new StringWriter())
-                    {
-                        Console.SetOut(swOut);
-                        Console.SetError(swErr);
+                    Console.SetOut(swOut);
+                    Console.SetError(swErr);
 
-                        testAction();
+                    testAction();
 
-                        // Explicitly restore static console output paths BEFORE the StringWriter streams
-                        // are disposed to prevent ObjectDisposedExceptions from trailing execution writes.
-                        Console.SetOut(oldOut);
-                        Console.SetError(oldErr);
-
-                        return (swOut.ToString(), swErr.ToString());
-                    }
-                }
-                finally
-                {
-                    // CRITICAL: Ensure static console state restoration is guaranteed fallback safety
+                    // Explicitly restore static console output paths BEFORE the StringWriter streams
+                    // are disposed to prevent ObjectDisposedExceptions from trailing execution writes.
                     Console.SetOut(oldOut);
                     Console.SetError(oldErr);
-                    _asyncConsoleLock.Release();
+
+                    return (swOut.ToString(), swErr.ToString());
                 }
+            }
+            finally
+            {
+                // CRITICAL: Ensure static console state restoration is guaranteed fallback safety
+                Console.SetOut(oldOut);
+                Console.SetError(oldErr);
+                _asyncConsoleLock.Release();
             }
         }
 

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using Xunit;
@@ -457,9 +458,10 @@ namespace Servy.Core.IntegrationTests.Helpers
             while (parentProcess != null && !parentProcess.HasExited)
             {
                 string line = parentProcess.StandardOutput.ReadLine();
-                if (line != null && line.StartsWith("CHILD_PID:"))
+                const string marker = "CHILD_PID:";
+                if (line != null && line.StartsWith(marker, StringComparison.Ordinal))
                 {
-                    childPid = int.Parse(line.Substring(10));
+                    childPid = int.Parse(line.Substring(marker.Length), CultureInfo.InvariantCulture);
                     break;
                 }
             }
