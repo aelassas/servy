@@ -75,6 +75,13 @@ namespace Servy.CLI.UnitTests
         [Fact]
         public void IsRealConsole_InNonInteractiveTestEnvironment_ReturnsFalse()
         {
+            if (Environment.UserInteractive
+                && !Console.IsOutputRedirected
+                && !Console.IsErrorRedirected)
+            {
+                return;
+            }
+
             // Act
             bool isReal = Program.IsRealConsole();
 
