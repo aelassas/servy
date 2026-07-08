@@ -84,7 +84,7 @@ namespace Servy.Core.Security
                     }
                 }
 
-                // INHERITANCE FIX: If breakInheritance is false, create a standard directory first.
+                // INHERITANCE: If breakInheritance is false, create a standard directory first.
                 // This allows Windows to naturally bind and compute the parent's cascading inheritance maps 
                 // correctly before we perform our subsequent in-place DACL optimization pass.
                 try
