@@ -848,12 +848,21 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task Search_NullKeyword()
+        public async Task Search_NullKeyword_ShortCircuitsToGetAll()
         {
             // Arrange
             var list = new List<ServiceDto> { CreateEncryptedServiceDto() };
+
+            // Enforce that a null/whitespace keyword routes explicitly 
+            // to the GetAllAsync SQL string pattern instead of matching any arbitrary query definition.
+            string expectedGetAllSql = $"SELECT * FROM {SqlConstants.ServicesTableName} ORDER BY Name COLLATE UNICODE_NOCASE ASC;";
+
             _mockDapper
-                .Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                .Setup(d => d.QueryAsync<ServiceDto>(
+                    It.Is<string>(sql => sql == expectedGetAllSql),
+                    It.IsAny<object>(),
+                    It.IsAny<IDbTransaction>(),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(list);
 
             SetupDecryptPassthrough();
@@ -865,6 +874,14 @@ namespace Servy.Infrastructure.UnitTests.Data
             // Assert
             Assert.Single(result);
             AssertDecryptedDtoProperties(result[0]);
+
+            // Verify that our constrained Dapper call was hit exactly once
+            _mockDapper.Verify(d => d.QueryAsync<ServiceDto>(
+                It.Is<string>(sql => sql == expectedGetAllSql),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         #endregion

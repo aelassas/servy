@@ -54,6 +54,8 @@ namespace Servy.Core.UnitTests.Native
         [InlineData("LocalSystem")]
         [InlineData("NT AUTHORITY\\NetworkService")]
         [InlineData(".\\LocalService")]
+        [InlineData("NT SERVICE\\MyCustomService")]
+        [InlineData("IIS APPPOOL\\DefaultAppPool")]
         public void ValidateCredentials_BuiltInAccount_WithPassword_ThrowsArgumentException(string builtInAccount)
         {
             var ex = Assert.Throws<ArgumentException>(() => NativeMethodsHelpers.ValidateCredentials(builtInAccount, "SomePassword"));

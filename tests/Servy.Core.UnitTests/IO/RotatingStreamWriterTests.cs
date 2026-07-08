@@ -206,6 +206,7 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Fact]
+        [Trait("Category", "Stress")]
         public void GenerateUniqueFileName_ShouldThrowIOException_WhenMaxRetryLimitExceeded()
         {
             // Arrange
@@ -1167,6 +1168,7 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Fact]
+        [Trait("Category", "Stress")]
         public void Rotate_PermanentFailure_TripsBreaker()
         {
             // Arrange
