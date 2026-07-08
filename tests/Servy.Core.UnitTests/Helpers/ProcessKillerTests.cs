@@ -105,6 +105,13 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.True(result);
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void KillProcessesUsingFile_InvalidInput_ReturnsExpected(string? path)
+            => Assert.True(_processKiller.KillProcessesUsingFile(path!));
+
         [Fact]
         public void KillProcessesUsingFile_MissingFile_ReturnsTrue()
         {

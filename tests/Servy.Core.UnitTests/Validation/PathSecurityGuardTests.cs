@@ -37,6 +37,10 @@ namespace Servy.Core.UnitTests.Validation
             Assert.False(result.IsValid);
             Assert.NotNull(result.ErrorMessage);
             Assert.Null(stream);
+            Assert.True(
+                result.ErrorMessage.IndexOf("UNC paths", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                result.ErrorMessage.IndexOf("UNC destination", StringComparison.OrdinalIgnoreCase) >= 0,
+                $"Expected UNC guard rejection. Actual: {result.ErrorMessage}");
         }
 
         [Theory]

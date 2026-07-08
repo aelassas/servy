@@ -57,7 +57,6 @@ namespace Servy.Core.UnitTests.Services
                 var content = File.ReadAllText(tempFile);
 
                 Assert.False(string.IsNullOrWhiteSpace(content));
-
                 Assert.StartsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>", content);
 
                 // Assert structural validation subsets
@@ -155,5 +154,71 @@ namespace Servy.Core.UnitTests.Services
             Assert.Contains("\"ExecutablePath\": \"C:\\\\service.exe\"", json);
             Assert.DoesNotContain("Description", json); // null properties should be ignored
         }
+
+        #region Null-DTO Contract Fallback Tests
+
+        [Fact]
+        public void ExportXml_NullService_ReturnsNull()
+        {
+            // Act
+            var result = ServiceExporter.ExportXml((ServiceDto?)null);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void ExportJson_NullService_ReturnsNull()
+        {
+            // Act
+            var result = ServiceExporter.ExportJson((ServiceDto?)null);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void ExportXml_File_NullService_DoesNotWriteFile()
+        {
+            // Arrange
+            var path = Path.Combine(Path.GetTempPath(), "ExportXml_Null_" + Path.GetRandomFileName());
+
+            try
+            {
+                // Act
+                ServiceExporter.ExportXml(null, path);
+
+                // Assert
+                // Verify the structural no-op contract: execution exits cleanly without touching disk storage.
+                Assert.False(File.Exists(path), "ExportXml must not create a file placeholder when supplied a null DTO payload.");
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public void ExportJson_File_NullService_DoesNotWriteFile()
+        {
+            // Arrange
+            var path = Path.Combine(Path.GetTempPath(), "ExportJson_Null_" + Path.GetRandomFileName());
+
+            try
+            {
+                // Act
+                ServiceExporter.ExportJson(null, path);
+
+                // Assert
+                // Verify the structural no-op contract: execution exits cleanly without touching disk storage.
+                Assert.False(File.Exists(path), "ExportJson must not create a file placeholder when supplied a null DTO payload.");
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        #endregion
     }
 }
