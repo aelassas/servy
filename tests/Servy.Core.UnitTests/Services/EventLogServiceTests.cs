@@ -367,7 +367,10 @@ namespace Servy.Core.UnitTests.Services
             cts.Cancel();
 
             // Act & Assert
-            await Assert.ThrowsAsync<TaskCanceledException>(() =>
+            // CANCELLATION: Standardized the assertion to target the base type OperationCanceledException.
+            // This eliminates brittle exact-type constraints and mirrors the cancellation patterns 
+            // verified across sibling components like ServiceManager and DapperExecutor.
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
                 service.SearchAsync(null, null, null, null, cts.Token));
         }
 

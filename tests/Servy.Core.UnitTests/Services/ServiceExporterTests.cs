@@ -59,7 +59,7 @@ namespace Servy.Core.UnitTests.Services
                 var content = File.ReadAllText(tempFile);
 
                 Assert.False(string.IsNullOrWhiteSpace(content));
-                Assert.StartsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>", content.Trim());
+                Assert.StartsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>", content);
 
                 // Assert structural validation subsets
                 Assert.Contains("<Name>MyService</Name>", content);
