@@ -846,7 +846,7 @@ namespace Servy.Manager.UnitTests.Services
         }
 
         [Fact]
-        public async Task CopyPidAsync_ClipboardLockedWithCOMException_RetriesAndEventuallyShowsError()
+        public async Task CopyPidAsync_DispatcherReturnsFalseEveryAttempt_RetriesThenShowsError()
         {
             // Arrange
             var sut = CreateServiceCommands();

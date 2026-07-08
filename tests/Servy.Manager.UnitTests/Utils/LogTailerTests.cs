@@ -113,6 +113,7 @@ namespace Servy.Manager.UnitTests.Utils
 
             // Assert
             Assert.NotNull(result);
+            Assert.Equal(new FileInfo(_tempFilePath).Length, result.Position);
             Assert.Equal(3, result.Lines.Count);
             Assert.Equal("L3", result.Lines[0].Text);
             Assert.Equal("L5", result.Lines[2].Text);
@@ -129,7 +130,9 @@ namespace Servy.Manager.UnitTests.Utils
             var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10, cancellationToken: CancellationToken.None);
 
             // Assert
-            Assert.Equal(2, result?.Lines.Count);
+            Assert.NotNull(result);
+            Assert.Equal(new FileInfo(_tempFilePath).Length, result.Position);
+            Assert.Equal(2, result.Lines.Count);
             Assert.True(result?.Lines[0].Timestamp < result?.Lines[1].Timestamp);
             Assert.True(result?.Lines[0].IsSyntheticTime);
             Assert.True(result?.Lines[1].IsSyntheticTime);
