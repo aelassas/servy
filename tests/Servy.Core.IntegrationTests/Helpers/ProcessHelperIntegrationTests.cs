@@ -40,23 +40,26 @@ namespace Servy.Core.IntegrationTests.Helpers
         [Fact]
         public void GetProcessMetrics_ForCurrentProcess_ReturnsValidRamAndInitializesCpu()
         {
-            // Arrange
-            int currentPid = Process.GetCurrentProcess().Id;
+            using (var self = Process.GetCurrentProcess())
+            {
+                // Arrange
+                int currentPid = self.Id;
 
-            // Act 1: First call initializes the total processor time baseline. CPU should be 0.
-            var firstCall = _sut.GetProcessMetrics(currentPid);
+                // Act 1: First call initializes the total processor time baseline. CPU should be 0.
+                var firstCall = _sut.GetProcessMetrics(currentPid);
 
-            // Assert 1
-            Assert.Equal(0, firstCall.CpuUsage);
-            Assert.True(firstCall.RamUsage > 0, "RAM usage should be greater than 0 for a running process.");
+                // Assert 1
+                Assert.Equal(0, firstCall.CpuUsage);
+                Assert.True(firstCall.RamUsage > 0, "RAM usage should be greater than 0 for a running process.");
 
-            // Act 2: Simulate time passing and CPU work
-            SpinWait.SpinUntil(() => false, TimeSpan.FromMilliseconds(100));
-            var secondCall = _sut.GetProcessMetrics(currentPid);
+                // Act 2: Simulate time passing and CPU work
+                SpinWait.SpinUntil(() => false, TimeSpan.FromMilliseconds(100));
+                var secondCall = _sut.GetProcessMetrics(currentPid);
 
-            // Assert 2
-            Assert.True(secondCall.CpuUsage >= 0, "CPU delta should be calculated successfully.");
-            Assert.True(secondCall.RamUsage > 0);
+                // Assert 2
+                Assert.True(secondCall.CpuUsage >= 0, "CPU delta should be calculated successfully.");
+                Assert.True(secondCall.RamUsage > 0);
+            }
         }
 
         [Fact]

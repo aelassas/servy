@@ -99,42 +99,45 @@ namespace Servy.Core.IntegrationTests.Helpers
         [Fact]
         public void GetProcessesUsingFile_ShouldDetectCurrentProcess_WhenCurrentProcessHoldsHandle()
         {
-            // Arrange
-            string testFile = CreateTempFile();
-            int currentPid = Process.GetCurrentProcess().Id;
-            string currentName = Process.GetCurrentProcess().ProcessName;
-
-            // Lock the file
-            using (var fs = new FileStream(testFile, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
+            using (var self = Process.GetCurrentProcess())
             {
-                _openedStreams.Add(fs); // Keep track for disposal
+                // Arrange
+                string testFile = CreateTempFile();
+                int currentPid = self.Id;
+                string currentName = self.ProcessName;
 
-                // Act
-                List<HandleHelper.ProcessHandleInfo> results = null;
-                bool handleDetected = false;
-
-                // Retry up to 5 times with a small delay to handle OS propagation latency
-                const int maxRetries = 5;
-                for (int i = 0; i < maxRetries; i++)
+                // Lock the file
+                using (var fs = new FileStream(testFile, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
                 {
-                    results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
-                    if (results.Any(p => p.ProcessId == currentPid))
+                    _openedStreams.Add(fs); // Keep track for disposal
+
+                    // Act
+                    List<HandleHelper.ProcessHandleInfo> results = null;
+                    bool handleDetected = false;
+
+                    // Retry up to 5 times with a small delay to handle OS propagation latency
+                    const int maxRetries = 5;
+                    for (int i = 0; i < maxRetries; i++)
                     {
-                        handleDetected = true;
-                        break;
+                        results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
+                        if (results.Any(p => p.ProcessId == currentPid))
+                        {
+                            handleDetected = true;
+                            break;
+                        }
+                        Thread.Sleep(50); // Small backoff window
                     }
-                    Thread.Sleep(50); // Small backoff window
+
+                    // Assert
+                    Assert.True(handleDetected, $"Current process (PID {currentPid}) failed to be detected holding a handle to {testFile} after retries.");
+                    Assert.NotEmpty(results);
+
+                    var selfMatch = results.FirstOrDefault(p => p.ProcessId == currentPid);
+                    Assert.NotNull(selfMatch);
+
+                    // handle.exe output might include .exe or not, HandleHelper trims whitespace.
+                    Assert.Contains(currentName, selfMatch.ProcessName, StringComparison.OrdinalIgnoreCase);
                 }
-
-                // Assert
-                Assert.True(handleDetected, $"Current process (PID {currentPid}) failed to be detected holding a handle to {testFile} after retries.");
-                Assert.NotEmpty(results);
-
-                var selfMatch = results.FirstOrDefault(p => p.ProcessId == currentPid);
-                Assert.NotNull(selfMatch);
-
-                // handle.exe output might include .exe or not, HandleHelper trims whitespace.
-                Assert.Contains(currentName, selfMatch.ProcessName, StringComparison.OrdinalIgnoreCase);
             }
         }
 
@@ -156,42 +159,45 @@ namespace Servy.Core.IntegrationTests.Helpers
         [Fact]
         public void GetProcessesUsingFile_ShouldWorkWithMultipleHandles()
         {
-            // Arrange
-            string testFile = CreateTempFile();
-
-            // Open multiple streams (this simulates multiple handles from the same or different threads)
-            var fs1 = new FileStream(testFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            var fs2 = new FileStream(testFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            _openedStreams.Add(fs1);
-            _openedStreams.Add(fs2);
-
-            // Act
-            var currentPid = Process.GetCurrentProcess().Id;
-            List<HandleHelper.ProcessHandleInfo> results = null;
-            List<HandleHelper.ProcessHandleInfo> selfHandles = null;
-            bool multiHandlesDetected = false;
-
-            // Wrap the query inside a retry loop identical to its sibling test.
-            // This absorbs underlying Windows kernel table sync latency before evaluating assertions.
-            const int maxRetries = 5;
-            for (int i = 0; i < maxRetries; i++)
+            using (var self = Process.GetCurrentProcess())
             {
-                results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
-                selfHandles = results.Where(r => r.ProcessId == currentPid).ToList();
+                // Arrange
+                string testFile = CreateTempFile();
 
-                // handle.exe returns one line per handle found.
-                if (selfHandles.Count >= 2)
+                // Open multiple streams (this simulates multiple handles from the same or different threads)
+                var fs1 = new FileStream(testFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                var fs2 = new FileStream(testFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                _openedStreams.Add(fs1);
+                _openedStreams.Add(fs2);
+
+                // Act
+                var currentPid = self.Id;
+                List<HandleHelper.ProcessHandleInfo> results = null;
+                List<HandleHelper.ProcessHandleInfo> selfHandles = null;
+                bool multiHandlesDetected = false;
+
+                // Wrap the query inside a retry loop identical to its sibling test.
+                // This absorbs underlying Windows kernel table sync latency before evaluating assertions.
+                const int maxRetries = 5;
+                for (int i = 0; i < maxRetries; i++)
                 {
-                    multiHandlesDetected = true;
-                    break;
+                    results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
+                    selfHandles = results.Where(r => r.ProcessId == currentPid).ToList();
+
+                    // handle.exe returns one line per handle found.
+                    if (selfHandles.Count >= 2)
+                    {
+                        multiHandlesDetected = true;
+                        break;
+                    }
+
+                    Thread.Sleep(50); // Small backoff window
                 }
 
-                Thread.Sleep(50); // Small backoff window
+                // Assert
+                // Filter out potential concurrent background system handles (like security indexers) targeting our file
+                Assert.True(multiHandlesDetected, $"Should have detected at least two handles owned by this running test process (PID {currentPid}). Total found self handles: {selfHandles?.Count ?? 0}, overall system handles found: {results?.Count ?? 0}");
             }
-
-            // Assert
-            // Filter out potential concurrent background system handles (like security indexers) targeting our file
-            Assert.True(multiHandlesDetected, $"Should have detected at least two handles owned by this running test process (PID {currentPid}). Total found self handles: {selfHandles?.Count ?? 0}, overall system handles found: {results?.Count ?? 0}");
         }
 
         [Fact]
