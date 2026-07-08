@@ -46,9 +46,35 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.NotNull(result);
             Assert.Equal("PartialService", result.Name);
+
             // Verify hydration from ServiceDtoHelper.ApplyDefaults
             Assert.Equal(AppConfig.DefaultStartTimeout, result.StartTimeout);
+            Assert.Equal(AppConfig.DefaultStopTimeout, result.StopTimeout);
             Assert.Equal(AppConfig.DefaultRunAsLocalSystem, result.RunAsLocalSystem);
+        }
+
+        [Fact]
+        public void Deserialize_EmptyObject_ReturnsHydratedDto()
+        {
+            // Arrange
+            // Test empty JSON structural hydration to mirror the XML twin's '<ServiceDto />' fallback test.
+            // This ensures default values are consistently populated even when zero explicitly configured fields exist.
+            string json = "{}";
+
+            // Act
+            var result = _serializer.Deserialize(json);
+
+            // Assert
+            Assert.NotNull(result);
+
+            // Document baseline safe platform properties enforced by ServiceDtoHelper.ApplyDefaults
+            Assert.Equal(AppConfig.DefaultStartTimeout, result.StartTimeout);
+            Assert.Equal(AppConfig.DefaultStopTimeout, result.StopTimeout);
+            Assert.Equal(AppConfig.DefaultRunAsLocalSystem, result.RunAsLocalSystem);
+
+            // Confirm missing identity and description properties fall back cleanly to empty or system null values
+            Assert.True(string.IsNullOrEmpty(result.Name));
+            Assert.Null(result.Description);
         }
 
         [Fact]

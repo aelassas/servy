@@ -36,13 +36,14 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         /// <summary>
-        /// Verifies that delimiters preceded by an odd number of backslashes are not treated as split points.
+        /// Verifies that delimiters preceded by an odd number of backslashes are not treated as split points,
+        /// and guarantees backslash run sequences remain preserved within the extracted token segments.
         /// </summary>
         [Theory]
-        [InlineData("key1=val1\\;stillKey1", 1)] // Escaped semicolon
-        [InlineData("key1=val1\\\\;key2=val2", 2)] // Even backslashes (unescaped semicolon)
-        [InlineData("key1=val1\\\\\\;stillKey1", 1)] // Triple backslashes (escaped semicolon)
-        public void SplitByUnescapedDelimiters_WithEscapes_RespectsOddEvenBackslashes(string input, int expectedCount)
+        [InlineData("key1=val1\\;stillKey1", new[] { "key1=val1\\;stillKey1" })] // Escaped semicolon -> single segment
+        [InlineData("key1=val1\\\\;key2=val2", new[] { "key1=val1\\\\", "key2=val2" })] // Even backslashes -> unescaped split
+        [InlineData("key1=val1\\\\\\;stillKey1", new[] { "key1=val1\\\\\\;stillKey1" })] // Triple backslashes -> escaped single segment
+        public void SplitByUnescapedDelimiters_WithEscapes_RespectsOddEvenBackslashes(string input, string[] expectedSegments)
         {
             // Arrange
             char[] delimiters = { ';' };
@@ -51,7 +52,8 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             var result = EscapedTokenizer.SplitByUnescapedDelimiters(input, delimiters);
 
             // Assert
-            Assert.Equal(expectedCount, result.Length);
+            Assert.Equal(expectedSegments.Length, result.Length);
+            Assert.Equal(expectedSegments, result);
         }
 
         /// <summary>

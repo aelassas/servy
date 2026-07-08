@@ -469,6 +469,8 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Assert
                     Assert.Null(exception); // The OperationCanceledException catch block handled it safely
+                    Assert.False(vm.IsBusy);
+                    Assert.Equal(Strings.Button_Search, vm.SearchButtonText);
                     _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
                 }
             }, createApp: true);
