@@ -129,12 +129,19 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Contains(result.Errors, e => e.Contains("Max rotations"));
         }
 
-        [Fact]
-        public void Validate_HealthMonitoringEnabled_InvalidRanges_ReturnsErrors()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        [InlineData(null)]
+        public void Validate_HealthMonitoringRanges_OutOfBounds_ReturnsErrors_RegardlessOfMonitoringFlag(bool? enableMonitoringState)
         {
             // Arrange
             var dto = ServiceDtoFactory.CreateValidValidationBase();
-            dto.EnableHealthMonitoring = true;
+
+            // UNCONDITIONAL BOUNDS: Explicitly check various flag states to pin down 
+            // the invariant range validation contract of the core validation engine.
+            dto.EnableHealthMonitoring = enableMonitoringState;
+
             dto.HeartbeatInterval = AppConfig.MinHeartbeatInterval - 1;
             dto.MaxFailedChecks = unchecked(AppConfig.MaxMaxFailedChecks + 1);
             dto.MaxRestartAttempts = -5;
