@@ -131,7 +131,7 @@ namespace Servy.Core.UnitTests.Helpers
                 @"VAR2=a\=b",
                 @"VAR3=x\;y",
                 @"VAR4=hello \""world\""",
-                "VAR5=C:\\path\\to\\file",
+                @"VAR5=C:\path\to\file",
                 "VAR6=combo\\=\\;\\\"end\\\"",
                 @"VAR7\=a=b\=c",
             });
