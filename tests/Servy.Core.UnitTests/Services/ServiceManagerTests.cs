@@ -2089,6 +2089,7 @@ namespace Servy.Core.UnitTests.Services
         public void GetServiceStartupType_ShouldReturnUnknown_WhenExceptionOccurs()
         {
             // Arrange
+            _mockController.Setup(c => c.StartType).Returns(ServiceStartMode.Automatic);
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>()))
                     .Throws(new Exception("Native Failure"));
 
