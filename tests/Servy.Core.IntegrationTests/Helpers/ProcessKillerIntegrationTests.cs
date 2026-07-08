@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Helpers;
 using System.Diagnostics;
+using System.Globalization;
 
 namespace Servy.Core.IntegrationTests.Helpers
 {
@@ -452,9 +453,10 @@ namespace Servy.Core.IntegrationTests.Helpers
             while (parentProcess != null && !parentProcess.HasExited)
             {
                 string? line = parentProcess.StandardOutput.ReadLine();
-                if (line != null && line.StartsWith("CHILD_PID:"))
+                const string marker = "CHILD_PID:";
+                if (line != null && line.StartsWith(marker, StringComparison.Ordinal))
                 {
-                    childPid = int.Parse(line.Substring(10));
+                    childPid = int.Parse(line.Substring(marker.Length), CultureInfo.InvariantCulture);
                     break;
                 }
             }

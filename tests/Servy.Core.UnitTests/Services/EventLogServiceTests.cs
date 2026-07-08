@@ -87,7 +87,7 @@ namespace Servy.Core.UnitTests.Services
         #region Explicit Branch Coverage Tests for Query String Generation
 
         [Fact]
-        public async Task SearchAsync_EmptySystemFilterString_BuildsWildcardQuery()
+        public async Task SearchAsync_WithNoExplicitFilters_BuildsDefaultSourceSystemQuery()
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();

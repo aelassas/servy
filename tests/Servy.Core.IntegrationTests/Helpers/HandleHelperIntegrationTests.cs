@@ -170,7 +170,6 @@ namespace Servy.Core.IntegrationTests.Helpers
             var selfHandles = results.Where(r => r.ProcessId == currentPid).ToList();
 
             Assert.True(selfHandles.Count >= 2, $"Should have detected at least two handles owned by this running test process. Total found: {results.Count}");
-            Assert.All(selfHandles, r => Assert.Equal(currentPid, r.ProcessId));
         }
 
         [Fact]
