@@ -187,6 +187,46 @@ namespace Servy.Core.UnitTests.Security
             Assert.Equal(2, rules.Count);
         }
 
+        #region breakInheritance:false Branch Coverage Tests
+
+        [Fact]
+        public void ApplySecurityRules_WhenBreakInheritanceIsFalse_PreservesInheritanceAndHealsAcl()
+        {
+            // Arrange
+            var security = new DirectorySecurity();
+
+            // Protect access rules upfront to create an inverted state for the test rule setup
+            security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+            Assert.True(security.AreAccessRulesProtected);
+
+            // Act
+            // Pass breakInheritance: false explicitly to traverse the target code path
+            InvokeApplySecurityRules(security, null, breakInheritance: false);
+
+            // Assert
+            // Validate that protection is un-set, allowing parent DACL rules to cascade
+            Assert.False(security.AreAccessRulesProtected, "DACL protection rules must be false when inheritance healing is requested.");
+        }
+
+        [Fact]
+        public void CreateSecureDirectory_WithBreakInheritanceFalse_LeavesDirectoryInheritanceEnabled()
+        {
+            // Arrange
+            var path = Path.Combine(_testBaseDir, "HealedInheritanceDir");
+
+            // Act
+            // Trigger public overload configuration with breakInheritance: false parameter assignment
+            SecurityHelper.CreateSecureDirectory(path, breakInheritance: false);
+
+            // Assert
+            var acl = new DirectoryInfo(path).GetAccessControl();
+
+            // Pin down behavior of directory initialization when skipping inheritance blockades
+            Assert.False(acl.AreAccessRulesProtected, "Public creation overload using breakInheritance:false must preserve standard cascading inheritance maps.");
+        }
+
+        #endregion
+
         /// <summary>
         /// Helper to invoke the internal method via reflection.
         /// </summary>

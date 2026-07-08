@@ -5,6 +5,7 @@ using Servy.Core.Data;
 using Servy.Infrastructure.Data;
 using Servy.Testing;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
@@ -534,27 +535,64 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal(expectedLoggedSql, formatted);
         }
 
-        [Fact]
-        public void CalculateBackoff_HighAttemptCount_PreventsIntegerOverflows()
+        [Theory]
+        [InlineData(0, 100)]    // Base case: 100 << 0 = 100
+        [InlineData(1, 200)]    // Growth step 1: 100 << 1 = 200
+        [InlineData(2, 400)]    // Growth step 2: 100 << 2 = 400
+        [InlineData(10, 30000)] // Ordinary upper ceiling cap block: 100 << 10 = 102400 -> Clamped to 30000
+        [InlineData(64, 30000)] // OVERFLOW GUARD: If unguarded, C# masks shift to (64 & 63) = 0.
+                                // 100 << 0 would return 100 (un-capped). The clamp ensures it stays pinned to 30000.
+        public void CalculateBackoff_ValidatesGrowthAndOverflowGuardRailCeilings(int attempt, int expectedBaseDelay)
         {
             // Arrange
-            // High attempt count parameters configured to target the overflow ceiling
-            const int attemptCount = 40;
             const int initialDelayMs = 100;
-            const int jitterMs = 0;
+            const int jitterMs = 0; // Disabled for deterministic baseline calculation checks
             const int maxDelayMs = 30000;
 
-            // Act: Simulates attempt 40
+            // Act
             var calculatedDelay = (int)TestReflection.InvokeNonPublicStatic(
                 typeof(DapperExecutor),
                 "CalculateBackoff",
-                attemptCount,
+                attempt,
                 initialDelayMs,
                 jitterMs,
                 maxDelayMs);
 
             // Assert
-            Assert.Equal(maxDelayMs, calculatedDelay);
+            Assert.Equal(expectedBaseDelay, calculatedDelay);
+        }
+
+        [Fact]
+        public void CalculateBackoff_WithActiveJitter_AppliesRandomVarianceWithinBounds()
+        {
+            // Arrange
+            const int attempt = 2; // 100 << 2 = 400 base delay
+            const int initialDelayMs = 100;
+            const int maxJitterMs = 50;
+            const int maxDelayMs = 30000;
+
+            var uniqueResults = new HashSet<int>();
+
+            // Act: Sample multiple iterations to check distribution bounds and guarantee randomness
+            for (int i = 0; i < 20; i++)
+            {
+                var delay = (int)TestReflection.InvokeNonPublicStatic(
+                    typeof(DapperExecutor),
+                    "CalculateBackoff",
+                    attempt,
+                    initialDelayMs,
+                    maxJitterMs,
+                    maxDelayMs);
+
+                // Assert: Delay should fluctuate between base (400) and base + maxJitter (450)
+                Assert.True(delay >= 400, $"Calculated delay ({delay}) fell below exponential base value.");
+                Assert.True(delay <= 450, $"Calculated delay ({delay}) exceeded maximum jitter threshold bounds.");
+
+                uniqueResults.Add(delay);
+            }
+
+            // Assert: Ensure variance is actually running (not returning a fixed constant)
+            Assert.True(uniqueResults.Count > 1, "Backoff engine returned static values; random jitter execution appears disabled.");
         }
 
         #endregion
