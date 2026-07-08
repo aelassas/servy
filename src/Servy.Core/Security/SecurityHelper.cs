@@ -17,22 +17,38 @@ namespace Servy.Core.Security
         /// <param name="path">The full filesystem path of the directory to secure.</param>
         /// <param name="breakInheritance">
         /// <see langword="true"/> to sever inheritance from the parent directory (establishing a Root Vault). 
-        /// <see langword="false"/> to ensure inheritance is active, allowing custom ACLs to cascade from a secured parent.
+        /// <see langword="false"/> to ensure inheritance remains active, allowing parent ACLs to cascade down before optimization.
         /// </param>
         /// <remarks>
         /// <para>
-        /// This method acts as a security enforcement point. If the directory does not exist, it is created
-        /// atomically with the intended security descriptor to eliminate race conditions.
-        /// It then retrieves the current access control list (ACL) and applies the logic defined in 
-        /// <see cref="ApplySecurityRules"/>.
+        /// This method acts as a security enforcement point with dual initialization strategies based on the inheritance boundary:
+        /// <list type="bullet">
+        /// <item>
+        /// <description>
+        /// <b>Atomic Creation (<c>breakInheritance: true</c>):</b> If the directory is missing, it is created atomically 
+        /// with the severe security descriptor pre-applied. This eliminates race windows where the folder could briefly 
+        /// exist with loose inherited permissions.
+        /// </description>
+        /// </item>
+        /// <item>
+        /// <description>
+        /// <b>Progressive Initialization (<c>breakInheritance: false</c>):</b> If the directory is missing, it is initialized 
+        /// normally first. This allows the Windows kernel to naturally compute and bind the parent directory's cascading inheritance 
+        /// maps prior to executing the in-place DACL optimization pass.
+        /// </description>
+        /// </item>
+        /// </list>
         /// </para>
         /// <para>
-        /// By default, it breaks inheritance to ensure that broad permissions from parent folders (like <c>%ProgramData%</c>) 
-        /// do not compromise the Servy data store.
+        /// For existing directories, or immediately following initialization, the DACL is modified in-place to purge broad 
+        /// unprivileged groups and anti-squatting components via <see cref="ApplySecurityRules"/>.
         /// </para>
         /// </remarks>
         /// <exception cref="ArgumentException">Thrown when <paramref name="path"/> is null or whitespace.</exception>
-        /// <exception cref="UnauthorizedAccessException">Thrown when the process lacks sufficient privileges to modify security descriptors.</exception>
+        /// <exception cref="UnauthorizedAccessException">
+        /// Thrown when the process lacks sufficient privileges to modify security descriptors, except when operating 
+        /// as a non-administrator under an active inheritance scope (<c>breakInheritance: false</c>), where it gracefully falls back.
+        /// </exception>
         /// <exception cref="IOException">Thrown when a general I/O error occurs during directory access.</exception>
         public static void CreateSecureDirectory(string path, bool breakInheritance = true)
         {
@@ -47,47 +63,57 @@ namespace Servy.Core.Security
 
             if (!Directory.Exists(path))
             {
-                // ATOMIC CREATION: Create the directory securely with the descriptor applied on execution.
-                // Using atomic creation eliminates the race window between directory creation 
-                // and security enforcement. The directory never exists with inherited broad permissions.
+                // ATOMIC CREATION BOUNDARY: Only enforce atomic security descriptors upfront 
+                // if we are actively building a Root Vault (breaking inheritance). 
+                if (breakInheritance)
+                {
+                    try
+                    {
+                        var ds = new DirectorySecurity();
+
+                        // Apply the hardened rules to the descriptor before creation.
+                        ApplySecurityRules(ds, currentUserSid, breakInheritance: true);
+
+                        // Create the directory with the hardened security descriptor in a single operation.
+                        FileSystemAclExtensions.CreateDirectory(ds, path);
+                        return;
+                    }
+                    catch (UnauthorizedAccessException ex) when (!IsAdministrator())
+                    {
+                        HandleNonAdminFallback(ex, $"Could not atomically create hardened directory '{path}' as non-admin. Falling back to standard environmental creation rules. Verify parent vault is secured.");
+                    }
+                }
+
+                // INHERITANCE FIX: If breakInheritance is false, create a standard directory first.
+                // This allows Windows to naturally bind and compute the parent's cascading inheritance maps 
+                // correctly before we perform our subsequent in-place DACL optimization pass.
                 try
                 {
-                    var ds = new DirectorySecurity();
-
-                    // Apply the hardened rules to the descriptor before creation.
-                    ApplySecurityRules(ds, currentUserSid, breakInheritance);
-
-                    // Create the directory with the hardened security descriptor in a single operation.
-                    FileSystemAclExtensions.CreateDirectory(ds, path);
+                    Directory.CreateDirectory(path);
                 }
                 catch (UnauthorizedAccessException ex) when (!breakInheritance && !IsAdministrator())
                 {
-                    HandleNonAdminFallback(ex, $"Could not atomically create hardened directory '{path}' as non-admin. Falling back to standard environmental creation rules. Verify parent vault is secured.");
+                    HandleNonAdminFallback(ex, $"Could not create directory '{path}' as non-admin. Falling back to inherited permissions from parent. Verify parent vault is secured.");
+                    return;
                 }
             }
-            else
+
+            // EXISTING OR INHERITANCE-INITIALIZED DIRECTORY: Harden in-place.
+            try
             {
-                // EXISTING DIRECTORY: Reference the existing one and harden in-place.
-                // Note: The hardening pass purges Allow ACEs for broad groups and Deny ACEs 
-                // for required accounts, neutralizing malicious squatting attempts.
-                try
-                {
-                    DirectoryInfo dirInfo = new DirectoryInfo(path);
+                DirectoryInfo dirInfo = new DirectoryInfo(path);
 
-                    // CRITICAL: Explicitly request only the Access rules (DACL).
-                    // Default behavior fetches Owner and Group. A non-admin account cannot 
-                    // persist Owner/Group back to the filesystem, causing an UnauthorizedAccessException.
-                    var security = dirInfo.GetAccessControl(AccessControlSections.Access);
+                // CRITICAL: Explicitly request only the Access rules (DACL).
+                var security = dirInfo.GetAccessControl(AccessControlSections.Access);
 
-                    // Apply the hardened rules.
-                    ApplySecurityRules(security, currentUserSid, breakInheritance);
+                // Apply the hardened rules.
+                ApplySecurityRules(security, currentUserSid, breakInheritance);
 
-                    dirInfo.SetAccessControl(security);
-                }
-                catch (UnauthorizedAccessException ex) when (!breakInheritance && !IsAdministrator())
-                {
-                    HandleNonAdminFallback(ex, $"Could not write hardened ACL on '{path}' as non-admin. Falling back to inherited permissions from parent. Verify parent vault is secured.");
-                }
+                dirInfo.SetAccessControl(security);
+            }
+            catch (UnauthorizedAccessException ex) when (!breakInheritance && !IsAdministrator())
+            {
+                HandleNonAdminFallback(ex, $"Could not write hardened ACL on '{path}' as non-admin. Falling back to inherited permissions from parent. Verify parent vault is secured.");
             }
         }
 

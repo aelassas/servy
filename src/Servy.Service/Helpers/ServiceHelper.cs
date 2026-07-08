@@ -86,21 +86,22 @@ namespace Servy.Service.Helpers
              KeywordBoundaryPattern +
 
              // 2. Separator & Value (Two Branches)
-             @"(?:" +
+             // Entire branch choice block is wrapped in an outer atomic group (?>...) to prevent catastrophic backtracking timeouts.
+             @"(?>(?:" +
                  // BRANCH A: Explicit Separators (:, =, /)
                  // Aggressively consumes spaces for unquoted strings (e.g., "KEY=---BEGIN RSA---") 
                  // as long as the next word isn't another CLI flag.
                  // Entire choice block is wrapped in an atomic group (?>...) to prevent catastrophic backtracking.
                  @"(?<sep>\s*[:=]\s*|/)" +
-                 @"(?>(?<val>""[^""]*""|'[^']*'|(?:[^\s""']+(?:\s+(?![\-/]+[a-zA-Z])[^\s""']+)*)))" +
+                 @"(?<val>""[^""]*""|'[^']*'|[^\s""']+(?>(?:\s+(?![\-/]+[a-zA-Z]))[^\s""']+)*)" +
                  @"|" +
                  // BRANCH B: Space Separator
                  // Consumes unquoted strings, supporting multi-word values (e.g., "my secret pass")
                  // but stops consuming if it detects a subsequent CLI flag.
                  // Entire choice block is wrapped in an atomic group (?>...) to prevent catastrophic backtracking.
                  @"(?<sep>\s+)(?![\-/]+[a-zA-Z])" +
-                 @"(?>(?<val>""[^""]*""|'[^']*'|(?:[^\s""']+(?:\s+(?![\-/]+[a-zA-Z])[^\s""']+)*)))" +
-             @")",
+                 @"(?<val>""[^""]*""|'[^']*'|[^\s""']+(?>(?:\s+(?![\-/]+[a-zA-Z]))[^\s""']+)*)" +
+             @"))",
              RegexOptions.Compiled,
              AppConfig.InputRegexTimeout);
 
