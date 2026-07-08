@@ -116,14 +116,17 @@ namespace Servy.Core.IntegrationTests.Helpers
         [Fact]
         public void KillProcessTreeAndParents_SelfPid_ReturnsFalse()
         {
-            // Arrange
-            int currentPid = Process.GetCurrentProcess().Id;
+            using (var self = Process.GetCurrentProcess())
+            {
+                // Arrange
+                int currentPid = self.Id;
 
-            // Act
-            bool result = _processKiller.KillProcessTreeAndParents(currentPid, killParents: true);
+                // Act
+                bool result = _processKiller.KillProcessTreeAndParents(currentPid, killParents: true);
 
-            // Assert
-            Assert.False(result);
+                // Assert
+                Assert.False(result);
+            }
         }
 
         /// <summary>
