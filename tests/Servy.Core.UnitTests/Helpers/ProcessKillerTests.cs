@@ -11,63 +11,13 @@ namespace Servy.Core.UnitTests.Helpers
     /// Unit tests for the ProcessKiller utility (input validation and not-found logic).
     /// Integration tests that spawn real processes live in ProcessKillerIntegrationTests.
     /// </summary>
-    public class ProcessKillerTests : IDisposable
+    public class ProcessKillerTests
     {
-        private const string SacrificialProcessName = "timeout";
         private readonly IProcessKiller _processKiller;
 
         public ProcessKillerTests()
         {
             _processKiller = new ProcessKiller();
-        }
-
-        public void Dispose()
-        {
-            try
-            {
-                // Broad cleanup for 'timeout.exe' processes
-                foreach (var p in Process.GetProcessesByName(SacrificialProcessName))
-                {
-                    using (p) // Ensures disposal of the process handle
-                    {
-                        try
-                        {
-                            if (!p.HasExited) p.Kill();
-                        }
-                        catch
-                        {
-                            /* Ignore: Process might have exited or access denied */
-                        }
-                    }
-                }
-
-                // Targeted cleanup for 'cmd.exe' processes
-                foreach (var p in Process.GetProcessesByName("cmd"))
-                {
-                    using (p) // Ensures disposal of the process handle
-                    {
-                        // Only kill cmd processes that are windowless and in the current session
-                        // to avoid terminating the developer's active command prompts.
-                        if (string.IsNullOrEmpty(p.MainWindowTitle) && p.SessionId == Process.GetCurrentProcess().SessionId)
-                        {
-                            try
-                            {
-                                if (!p.HasExited) p.Kill();
-                            }
-                            catch
-                            {
-                                /* Ignore: Usually safe in CI environments */
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // In a test environment, failing to clean up shouldn't crash the test runner,
-                // but we log it for observability.
-                Debug.WriteLine($"Process cleanup failed: {ex.Message}");
-            }
         }
 
         #region Unit Tests (Validation & Logic)

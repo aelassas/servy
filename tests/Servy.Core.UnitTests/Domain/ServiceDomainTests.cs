@@ -109,6 +109,7 @@ namespace Servy.Core.UnitTests.Domain
             var result = service.GetServiceStartupType();
 
             Assert.Equal(ServiceStartType.Automatic, result);
+            _serviceManagerMock.Verify(s => s.GetServiceStartupType("TestService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
