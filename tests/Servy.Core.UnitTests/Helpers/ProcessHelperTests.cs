@@ -274,5 +274,38 @@ namespace Servy.Core.UnitTests.Helpers
             }
         }
 
+        [Fact]
+        public void ValidatePath_ExistingDirectory_AsFile_ReturnsFalse()
+        {
+            // Arrange: Establish a folder target to probe as an illegal file type reference
+            var dir = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
+
+            try
+            {
+                // Act & Assert
+                Assert.False(_processHelper.ValidatePath(dir.FullName, isFile: true));
+            }
+            finally
+            {
+                dir.Delete();
+            }
+        }
+
+        [Fact]
+        public void ValidatePath_ExistingFile_AsDirectory_ReturnsFalse()
+        {
+            // Arrange: Establish an active file token to probe as an illegal folder container reference
+            var file = Path.GetTempFileName();
+
+            try
+            {
+                // Act & Assert
+                Assert.False(_processHelper.ValidatePath(file, isFile: false));
+            }
+            finally
+            {
+                File.Delete(file);
+            }
+        }
     }
 }

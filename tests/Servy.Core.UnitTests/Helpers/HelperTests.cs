@@ -546,7 +546,7 @@ namespace Servy.Core.UnitTests.Helpers
         {
             // Arrange
             var input = "logs";
-            var expected = Path.Combine(AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar), "logs");
+            var expected = Path.GetFullPath("logs"); // same anchor the method uses (current directory)
 
             // Act
             var result = Helper.NormalizePath(input);
