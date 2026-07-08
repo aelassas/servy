@@ -73,6 +73,7 @@ namespace Servy.Restarter.UnitTests
 
             // Ensure it successfully proceeded to issue the start command
             _mockController.Verify(c => c.Start(), Times.Once);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
         [Theory]
@@ -90,6 +91,9 @@ namespace Servy.Restarter.UnitTests
                 _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterStuckInPendingStateTimeout));
 
             Assert.Contains($"stuck in {pendingState} state", ex.Message);
+
+            // Ensure controller is cleanly disposed of even if the service is stuck in a pending block lifecycle phase
+            _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
         #endregion
@@ -111,6 +115,9 @@ namespace Servy.Restarter.UnitTests
 
             Assert.Contains("No time remaining to stop service", ex.Message);
             _mockController.Verify(c => c.Stop(), Times.Once); // Stop is issued before the time check
+
+            // Verify context handle cleanup rules execute on immediate stop timeouts
+            _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
         [Fact]
@@ -131,6 +138,7 @@ namespace Servy.Restarter.UnitTests
             // Assert
             _mockController.Verify(c => c.Stop(), Times.Exactly(2)); // Primary check call + Fallback step execution call
             _mockController.Verify(c => c.Start(), Times.Once); // Continues cleanly to start phase
+            _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
         #endregion
@@ -153,6 +161,9 @@ namespace Servy.Restarter.UnitTests
 
             Assert.Contains("Timeout expired while waiting for service", ex.Message);
             _mockController.Verify(c => c.Start(), Times.Once());
+
+            // Ensure start timeouts pass the object disposal verification check
+            _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
         [Fact]
@@ -229,6 +240,7 @@ namespace Servy.Restarter.UnitTests
                 "The internal refresh orchestration layout does not align with the single-iteration early-return pattern profile.");
 
             _mockController.Verify(c => c.WaitForStatus(It.IsAny<ServiceControllerStatus>(), It.IsAny<TimeSpan>()), Times.Never);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
         [Fact]
@@ -268,6 +280,9 @@ namespace Servy.Restarter.UnitTests
             // to hit the sleeping Status lambda sequence.
             _mockController.Verify(c => c.Refresh(), Times.AtLeastOnce(),
                 "The transitional error loop condition was short-circuited; code execution failed to traverse internal mid-loop monitoring steps.");
+
+            // Ensure deep mid-loop timeout evaluation passes don't drop handles
+            _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
         [Fact]
@@ -288,6 +303,9 @@ namespace Servy.Restarter.UnitTests
                 _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterHandleTransitionalErrorTimeout));
 
             Assert.Contains("failed to reach Stopped within the timeout period", ex.Message);
+
+            // Verify teardown routines hit even under cascading exception loop conditions
+            _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
         #endregion

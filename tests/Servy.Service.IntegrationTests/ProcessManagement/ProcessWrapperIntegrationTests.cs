@@ -460,7 +460,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         #region Standard Streams Tests
 
         [Fact]
-        public void RedirectStreams_EventsFireAndCanBeCanceled()
+        public void RedirectStreams_EventsFire()
         {
             // Arrange
             using (var outputFinished = new ManualResetEventSlim(false))
