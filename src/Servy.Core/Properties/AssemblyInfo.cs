@@ -38,3 +38,4 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion("8.6.0.0")]
 
 [assembly: InternalsVisibleTo("Servy.Core.UnitTests")]
+[assembly: InternalsVisibleTo("Servy.Core.IntegrationTests")]

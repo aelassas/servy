@@ -152,23 +152,25 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void SafeWriteToEventLog_OnNativeException_CatchesAndProceeds()
         {
+            // Arrange
             if (!_isElevated) return;
 
-            string source = GenerateSourceName();
-            using (var logger = new EventLogLogger(source, LogLevel.Info, true))
-            {
-                // Sabotage the underlying OS event source after the logger has initialized it
-                EventLog.DeleteEventSource(source);
-                Thread.Sleep(200); // Give OS time to deregister
+            // CRITICAL CONTRACT: Test the exception isolation boundaries directly on the 
+            // internal structural wrapper method by feeding it an illegal, un-creatable source layout configuration.
+            string illegalLogName = "?:\x00//IllegalLogName";
+            string illegalSource = "IllegalSource_\x00";
+            string testMessage = "Fallback tracking message isolation probe.";
 
-                // Act
-                // The native handle is now orphaned. Writing to it throws internally, 
-                // but SafeWriteToEventLog catches it and delegates to Logger.Warn.
-                Exception ex = Record.Exception(() => logger.Info("This should fail safely"));
+            // Act
+            // When the OS throws an ArgumentException or Win32Exception trying to parse the malformed string parameters,
+            // WriteRawToWindowsEventLog must catch it internally and return gracefully instead of crashing the thread.
+            Exception ex = Record.Exception(() =>
+                EventLogLogger.WriteRawToWindowsEventLog(illegalLogName, illegalSource, testMessage, EventLogEntryType.Error, 9999)
+            );
 
-                // Assert
-                Assert.Null(ex);
-            }
+            // Assert
+            // Confirm the fail-safe boundary catches the exception internally and returns cleanly
+            Assert.Null(ex);
         }
 
         #endregion

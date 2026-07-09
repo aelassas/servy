@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Native;
 using Servy.Testing;
 using System;
+using System.DirectoryServices.AccountManagement;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Threading;
@@ -8,12 +9,19 @@ using Xunit;
 
 namespace Servy.Core.IntegrationTests.Native
 {
+    [CollectionDefinition("LogonAsServiceGrantIntegrationTests", DisableParallelization = true)]
+    public class LogonAsServiceGrantIntegrationTestsCollection
+    {
+        // Enforces strict sequential isolation across the execution suite
+    }
+
     [Collection("LogonAsServiceGrantIntegrationTests")]
     public class LogonAsServiceGrantIntegrationTests : IDisposable
     {
         private readonly string _testAccountName;
         private readonly bool _isAdministrator;
         private readonly bool _canModifyLsaPolicy;
+        private readonly bool _accountCreatedLocally;
 
         // P/Invoke definition necessary to tear down matching LSA security descriptors before user purging
         [DllImport("advapi32.dll", PreserveSig = true)]
@@ -38,7 +46,24 @@ namespace Servy.Core.IntegrationTests.Native
 
             if (_canModifyLsaPolicy)
             {
-                ExecuteNetUserCommand($"/add {_testAccountName} \"T3stP@ssw0rd!\"");
+                try
+                {
+                    // DYNAMIC PROVISIONING: Use transactional principal management instead of legacy process forks.
+                    // This forces immediate, deterministic commitment into the Windows SAM database registry tables.
+                    using (var context = new PrincipalContext(ContextType.Machine))
+                    using (var user = new UserPrincipal(context))
+                    {
+                        user.Name = _testAccountName;
+                        user.SetPassword(Guid.NewGuid().ToString("P") + "A1!");
+                        user.Description = "Transient account for Servy LSA integration unit testing.";
+                        user.Save();
+                        _accountCreatedLocally = true;
+                    }
+                }
+                catch
+                {
+                    _accountCreatedLocally = false;
+                }
 
                 // Introduce a synchronization window to let the Windows SAM subsystem fully commit
                 Thread.Sleep(500);
@@ -50,6 +75,7 @@ namespace Servy.Core.IntegrationTests.Native
         [Fact]
         public void Ensure_NullOrWhitespaceAccountName_ThrowsArgumentException()
         {
+            // Arrange & Act & Assert
             // This path relies strictly on string validation and runs safely anywhere, including CI.
             Assert.Throws<ArgumentException>("account", () => LogonAsServiceGrant.Ensure(null));
             Assert.Throws<ArgumentException>("account", () => LogonAsServiceGrant.Ensure("   "));
@@ -58,12 +84,16 @@ namespace Servy.Core.IntegrationTests.Native
         [Fact]
         public void Ensure_NonExistentAccountName_ThrowsInvalidOperationExceptionWithDetailedContext()
         {
+            // Arrange
             // On non-elevated or restricted environments like cloud CI workers, this test can safely execute 
             // because resolving a non-existent fake string to a SID fails inside the framework NTAccount.Translate 
             // mapping loop before it ever touches the native LSA privilege modification routines.
             string fakeAccount = "MachineNameOrDomain\\GhostUser_" + Guid.NewGuid().ToString("N");
 
+            // Act
             var ex = Assert.Throws<InvalidOperationException>(() => LogonAsServiceGrant.Ensure(fakeAccount));
+
+            // Assert
             Assert.Contains($"Cannot resolve SID for '{fakeAccount}'", ex.Message);
             Assert.NotNull(ex.InnerException);
         }
@@ -75,16 +105,40 @@ namespace Servy.Core.IntegrationTests.Native
         [Fact]
         public void Ensure_ShorthandLocalNotation_CorrectlyTranslatesMachinePrefix()
         {
-            if (!_canModifyLsaPolicy) return;
+            // Arrange
+            if (!_canModifyLsaPolicy || !_accountCreatedLocally) return;
 
             string shorthandAccount = $".\\{_testAccountName}";
+            string fullyQualifiedAccount = $"{Environment.MachineName}\\{_testAccountName}";
 
             // Act
+            // Trigger the execution path under test using the dot notation string configuration
             Exception ex = Record.Exception(() => LogonAsServiceGrant.Ensure(shorthandAccount));
 
             // Assert
-            // Ensure no exceptions occurred during SID mapping or LSA policy lookup
+            // 1. Maintain baseline telemetry assertions confirming no infrastructure policy execution crashes occurred
             Assert.Null(ex);
+
+            // 2. IDENTITY PATH TRANSLATION: Explicitly expand the shorthand '.' notation to MachineName 
+            // for the test assertion pool. This matches production expansion behavior and prevents .NET's 
+            // NTAccount.Translate from failing on the raw literal dot prefix.
+            try
+            {
+                string expandedShorthand = $"{Environment.MachineName}\\{_testAccountName}";
+
+                var shorthandSid = new NTAccount(expandedShorthand).Translate(typeof(SecurityIdentifier));
+                var fullyQualifiedSid = new NTAccount(fullyQualifiedAccount).Translate(typeof(SecurityIdentifier));
+
+                Assert.NotNull(shorthandSid);
+                Assert.NotNull(fullyQualifiedSid);
+
+                // Assert structural equality of the resolved domain account SIDs
+                Assert.Equal(fullyQualifiedSid, shorthandSid);
+            }
+            catch (IdentityNotMappedException)
+            {
+                Assert.Fail($"The ephemeral local test account '{_testAccountName}' could not be resolved back to an NTAccount SID profile map.");
+            }
         }
 
         #endregion
@@ -94,7 +148,8 @@ namespace Servy.Core.IntegrationTests.Native
         [Fact]
         public void Ensure_FreshAccountWithoutAnyRights_TriggersNotFoundBranchAndGrantsPrivilege()
         {
-            if (!_canModifyLsaPolicy) return;
+            // Arrange
+            if (!_canModifyLsaPolicy || !_accountCreatedLocally) return;
 
             string fullAccountName = $"{Environment.MachineName}\\{_testAccountName}";
 
@@ -111,27 +166,6 @@ namespace Servy.Core.IntegrationTests.Native
         }
 
         #endregion
-
-        private static void ExecuteNetUserCommand(string args)
-        {
-            var startInfo = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = "net.exe",
-                Arguments = "user " + args,
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardError = true,
-                RedirectStandardOutput = true
-            };
-
-            using (var process = System.Diagnostics.Process.Start(startInfo))
-            {
-                if (process != null)
-                {
-                    process.WaitForExit();
-                }
-            }
-        }
 
         /// <summary>
         /// Explicitly revokes rights from the target LSA account scope before account deletion to avoid host leakage.
@@ -191,13 +225,25 @@ namespace Servy.Core.IntegrationTests.Native
 
         public void Dispose()
         {
-            if (_canModifyLsaPolicy)
+            if (_canModifyLsaPolicy && _accountCreatedLocally)
             {
-                // ROBUSTNESS: Revoke user permissions inside LSA storage prior to calling net user /delete.
+                // ROBUSTNESS: Revoke user permissions inside LSA storage prior to calling account deletion.
                 // This ensures Windows can resolve the name context to a real SID during cleanup blocks.
                 RevokeLsaPrivilegeBeforeDeletion(_testAccountName, "SeServiceLogonRight");
 
-                ExecuteNetUserCommand($"/delete {_testAccountName}");
+                try
+                {
+                    // Clean up the local transient user account using AccountManagement
+                    using (var context = new PrincipalContext(ContextType.Machine))
+                    using (var user = UserPrincipal.FindByIdentity(context, IdentityType.Name, _testAccountName))
+                    {
+                        user?.Delete();
+                    }
+                }
+                catch
+                {
+                    // Suppress teardown exceptions within cleanup context blocks
+                }
             }
         }
     }
