@@ -124,7 +124,6 @@
   <ItemGroup>
     <Compile Include="Common\OperationResultTests.cs" />
     <Compile Include="Config\AppConfigTests.cs" />
-    <Compile Include="Config\PowerShellConfigSyncTests.cs" />
     <Compile Include="DTOs\ServiceConsoleStateDtoTests.cs" />
     <Compile Include="DTOs\ServiceDtoTests.cs" />
     <Compile Include="EnvironmentVariables\EscapedTokenizerTests.cs" />
@@ -141,7 +140,6 @@
     <Compile Include="Helpers\ServiceHelperTests.cs" />
     <Compile Include="Logging\EventLogReaderTests.cs" />
     <Compile Include="Logging\LoggerTests.cs" />
-    <Compile Include="Logging\PowerShellEventIdsTests.cs" />
     <Compile Include="Native\HandleTests.cs" />
     <Compile Include="Native\NativeMethodsHelpersTests.cs" />
     <Compile Include="Security\SecureDataStressTests.cs" />

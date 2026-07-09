@@ -8,15 +8,15 @@ using Servy.Service.UnitTests.Helpers;
 using Servy.Service.UnitTests.Utilities;
 using Servy.Testing;
 using System;
-using System.Diagnostics;
-using System.Reflection;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Servy.Service.UnitTests
 {
-    public class EventHandlerTests
+    public class EventHandlerTests : IDisposable
     {
         private readonly Mock<IProcessKiller> _mockProcessKiller;
+        private readonly List<IDisposable> _disposableServices = new List<IDisposable>();
 
         public EventHandlerTests()
         {
@@ -29,6 +29,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var ctx = new ServiceTestContext();
             var service = ctx.Build(_mockProcessKiller.Object);
+            _disposableServices.Add(service); // LEAK FIX: Track SUT instance for teardown disposal
 
             var mockWriter = new Mock<IStreamWriter>();
             ctx.StreamWriterFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>())).Returns(mockWriter.Object);
@@ -64,6 +65,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var ctx = new ServiceTestContext();
             var service = ctx.Build(_mockProcessKiller.Object);
+            _disposableServices.Add(service);
 
             var mockWriter = new Mock<IStreamWriter>();
             ctx.StreamWriterFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>())).Returns(mockWriter.Object);
@@ -96,6 +98,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var ctx = new ServiceTestContext();
             var service = ctx.Build(_mockProcessKiller.Object);
+            _disposableServices.Add(service);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Returns(0);
@@ -114,6 +117,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var ctx = new ServiceTestContext();
             var service = ctx.Build(_mockProcessKiller.Object);
+            _disposableServices.Add(service);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Returns(42);
@@ -132,6 +136,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var ctx = new ServiceTestContext();
             var service = ctx.Build(_mockProcessKiller.Object);
+            _disposableServices.Add(service);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Throws(new InvalidOperationException("boom"));
@@ -142,6 +147,15 @@ namespace Servy.Service.UnitTests
 
             // Assert
             ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Failed to get exit code")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        public void Dispose()
+        {
+            // Unified Cleanup: Iterate and safely drop transient test services to avoid CTS leaks
+            foreach (var service in _disposableServices)
+            {
+                service?.Dispose();
+            }
         }
     }
 }

@@ -14,9 +14,10 @@ using Xunit;
 
 namespace Servy.Service.UnitTests
 {
-    public class HealthCheckTests
+    public class HealthCheckTests : IDisposable
     {
         private readonly Mock<IProcessKiller> _mockProcessKiller;
+        private readonly List<IDisposable> _disposableServices = new List<IDisposable>();
 
         public HealthCheckTests()
         {
@@ -29,6 +30,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var ctx = new ServiceTestContext();
             var service = ctx.Build(_mockProcessKiller.Object);
+            _disposableServices.Add(service);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(true);
@@ -55,6 +57,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var ctx = new ServiceTestContext();
             var service = ctx.Build(_mockProcessKiller.Object);
+            _disposableServices.Add(service);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(true);
@@ -91,6 +94,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var ctx = new ServiceTestContext();
             var service = ctx.Build(_mockProcessKiller.Object);
+            _disposableServices.Add(service);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(true);
@@ -138,6 +142,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var ctx = new ServiceTestContext();
             var service = ctx.Build(_mockProcessKiller.Object);
+            _disposableServices.Add(service);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(false);
@@ -159,6 +164,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var ctx = new ServiceTestContext();
             var service = ctx.Build(_mockProcessKiller.Object);
+            _disposableServices.Add(service);
 
             bool processHasExited = true;
             var mockProcess = new Mock<IProcessWrapper>();
@@ -168,8 +174,8 @@ namespace Servy.Service.UnitTests
             var recoveryTriggered = new TaskCompletionSource<bool>();
 
             ctx.Helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
-                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                         It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                                 It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                   .Callback(() => {
                       processHasExited = false;
                       recoveryTriggered.TrySetResult(true);
@@ -207,9 +213,18 @@ namespace Servy.Service.UnitTests
             // Assert
             ctx.Logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed")), It.IsAny<Exception>()), Times.Exactly(3));
             ctx.Helper.Verify(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
-                          It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                          It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
-                          Times.Once);
+                                  It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                                  It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                                  Times.Once);
+        }
+
+        public void Dispose()
+        {
+            // Unified Cleanup: Iterate and safely drop transient test services to avoid CTS leaks
+            foreach (var service in _disposableServices)
+            {
+                service?.Dispose();
+            }
         }
     }
 }

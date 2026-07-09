@@ -135,6 +135,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "download-with-retry", "down
 		.github\actions\download-with-retry\action.yml = .github\actions\download-with-retry\action.yml
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.CLI.IntegrationTests", "tests\Servy.CLI.IntegrationTests\Servy.CLI.IntegrationTests.csproj", "{00AB3C3E-D2DE-4E8F-8E3D-49BC3A306F94}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -311,6 +313,14 @@ Global
 		{CAD9027F-24C4-458F-812F-F3928AD57333}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CAD9027F-24C4-458F-812F-F3928AD57333}.Release|x64.ActiveCfg = Release|x64
 		{CAD9027F-24C4-458F-812F-F3928AD57333}.Release|x64.Build.0 = Release|x64
+		{00AB3C3E-D2DE-4E8F-8E3D-49BC3A306F94}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00AB3C3E-D2DE-4E8F-8E3D-49BC3A306F94}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00AB3C3E-D2DE-4E8F-8E3D-49BC3A306F94}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{00AB3C3E-D2DE-4E8F-8E3D-49BC3A306F94}.Debug|x64.Build.0 = Debug|Any CPU
+		{00AB3C3E-D2DE-4E8F-8E3D-49BC3A306F94}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00AB3C3E-D2DE-4E8F-8E3D-49BC3A306F94}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00AB3C3E-D2DE-4E8F-8E3D-49BC3A306F94}.Release|x64.ActiveCfg = Release|Any CPU
+		{00AB3C3E-D2DE-4E8F-8E3D-49BC3A306F94}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -346,6 +356,7 @@ Global
 		{CAD9027F-24C4-458F-812F-F3928AD57333} = {A53A690C-C3AB-4823-9AD7-522B8BD824E2}
 		{865835E3-BF50-4000-8E69-5141A15D954A} = {BAA8B1D5-2F99-4468-9B13-4DE9A6D75194}
 		{4671D779-AC6E-4851-AC99-470FA5596403} = {BAA8B1D5-2F99-4468-9B13-4DE9A6D75194}
+		{00AB3C3E-D2DE-4E8F-8E3D-49BC3A306F94} = {A53A690C-C3AB-4823-9AD7-522B8BD824E2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8901951D-D640-4964-A4ED-D957E840307C}

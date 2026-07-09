@@ -212,45 +212,28 @@ namespace Servy.Service.UnitTests.Helpers
 
         #region ValidateAndLog Tests
 
-        private string TempFile() => Path.GetTempFileName();
-
         [Fact]
         public void ValidateAndLog_AllPathsValid_ReturnsTrue_NoErrorsLogged()
         {
             // Arrange
-            var exe = TempFile();
-            var failure = TempFile();
-            var pre = TempFile();
-            var post = TempFile();
-
             var options = new StartOptions
             {
                 ServiceName = "TestService",
-                ExecutablePath = exe,
-                FailureProgramPath = failure,
-                PreLaunchExecutablePath = pre,
-                PostLaunchExecutablePath = post
+                ExecutablePath = @"C:\app\exe.exe",
+                FailureProgramPath = @"C:\app\failure.exe",
+                PreLaunchExecutablePath = @"C:\app\pre.exe",
+                PostLaunchExecutablePath = @"C:\app\post.exe"
             };
 
             var mockLog = new Mock<IServyLogger>();
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockLog.Object);
 
-            try
-            {
-                // Act
-                var result = _helper.ValidateAndLog(options, mockLog.Object);
+            // Act
+            var result = _helper.ValidateAndLog(options, mockLog.Object);
 
-                // Assert
-                Assert.True(result);
-                mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
-            }
-            finally
-            {
-                if (File.Exists(exe)) File.Delete(exe);
-                if (File.Exists(failure)) File.Delete(failure);
-                if (File.Exists(pre)) File.Delete(pre);
-                if (File.Exists(post)) File.Delete(post);
-            }
+            // Assert
+            Assert.True(result);
+            mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
         [Fact]

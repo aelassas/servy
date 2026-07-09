@@ -621,6 +621,69 @@ namespace Servy.Manager.UnitTests.ViewModels
             }, createApp: true);
         }
 
+        [Fact]
+        public async Task BulkOperations_Throttling_EnforcesMaxParallelismCap()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+
+                _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(true);
+                _messageBoxServiceMock.Setup(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+
+                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                collection.Clear();
+
+                // Generate 5 checked service lines to thrash against our MaxBulkOperationParallelism = 2 threshold cap
+                for (int i = 1; i <= 5; i++)
+                {
+                    var svc = new Service { Name = $"S{i}", IsInstalled = true };
+                    collection.Add(new ServiceRowViewModel(svc, _serviceCommandsMock.Object, _cursorServiceMock.Object) { IsChecked = true });
+                }
+
+                int currentInFlightCount = 0;
+                int maxObservedParallelism = 0;
+                var lockObject = new object();
+
+                // CONCURRENCY TRACKING SEAM: Inject counting wrappers into the asynchronous mock execution path
+                _serviceCommandsMock.Setup(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>()))
+                    .Returns(async (Service s, bool flag, CancellationToken token) =>
+                    {
+                        int activeThreads;
+                        lock (lockObject)
+                        {
+                            activeThreads = Interlocked.Increment(ref currentInFlightCount);
+                            if (activeThreads > maxObservedParallelism)
+                            {
+                                maxObservedParallelism = activeThreads;
+                            }
+                        }
+
+                        // Artificially delay task processing to let internal pipeline operations overlap and queue
+                        await Task.Delay(50, token);
+
+                        Interlocked.Decrement(ref currentInFlightCount);
+                        return true;
+                    });
+
+                // Act
+                RunOnPump(currentDispatcher, async () =>
+                {
+                    await vm.StartSelectedCommand.ExecuteAsync(null);
+                });
+
+                // Assert
+                // 1. Prove all selected worker nodes reached completion bounds
+                _serviceCommandsMock.Verify(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>()), Times.Exactly(5));
+
+                // 2. Validate that parallel worker processing never crossed our configured limit of 2
+                Assert.True(maxObservedParallelism <= 2, $"Throttling regression detected! Max concurrent tasks reached: {maxObservedParallelism}");
+                Assert.True(maxObservedParallelism > 1, "Concurrency gate was completely single-threaded; execution failed to split workload tasks.");
+            }, createApp: true);
+        }
+
         #endregion
 
         #region Helpers & Standalone Commands
