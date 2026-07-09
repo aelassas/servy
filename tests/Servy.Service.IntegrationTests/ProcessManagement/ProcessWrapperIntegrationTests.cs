@@ -418,14 +418,12 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.Start();
                 wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMs);
 
+                // Act 
                 // Act on an already exited process handle to trigger the initial null/exited evaluation checks
                 var result = TestReflection.InvokeNonPublic(wrapper, "TryStopGracefullyOrKill", wrapper.UnderlyingProcess, 1000, 500);
 
-                // Assert - Accept null (exited), false (force-killed), or true (graceful exit handled mid-teardown)
-                if (result != null)
-                {
-                    Assert.IsType<bool>(result);
-                }
+                // Assert
+                Assert.Null(result);
             }
         }
 
