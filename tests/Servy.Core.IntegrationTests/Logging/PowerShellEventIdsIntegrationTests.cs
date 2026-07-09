@@ -2,14 +2,14 @@
 using Servy.Core.Logging;
 using System.Text.RegularExpressions;
 
-namespace Servy.Core.UnitTests.Logging
+namespace Servy.Core.IntegrationTests.Logging
 {
-    public class PowerShellEventIdsTests
+    public class PowerShellEventIdsIntegrationTests
     {
         private readonly string _repoRoot;
         private const string TaskSchdPath = "setup/taskschd";
 
-        public PowerShellEventIdsTests()
+        public PowerShellEventIdsIntegrationTests()
         {
             // Use the utility to locate the repository root from the current execution directory
             _repoRoot = AppConfig.FindRepoRoot(AppDomain.CurrentDomain.BaseDirectory);

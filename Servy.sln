@@ -193,6 +193,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-git-helpers", "setup-
 		.github\actions\setup-git-helpers\action.yml = .github\actions\setup-git-helpers\action.yml
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.CLI.IntegrationTests", "tests\Servy.CLI.IntegrationTests\Servy.CLI.IntegrationTests.csproj", "{840AE4B4-22C9-4943-AE94-16F9A2695537}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -283,6 +285,10 @@ Global
 		{99D2C270-5AF9-482B-B8F4-780A6687554D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99D2C270-5AF9-482B-B8F4-780A6687554D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{99D2C270-5AF9-482B-B8F4-780A6687554D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{840AE4B4-22C9-4943-AE94-16F9A2695537}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{840AE4B4-22C9-4943-AE94-16F9A2695537}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{840AE4B4-22C9-4943-AE94-16F9A2695537}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{840AE4B4-22C9-4943-AE94-16F9A2695537}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -325,6 +331,7 @@ Global
 		{B2C6492F-B0F0-4AF1-A4CF-730FF719DE16} = {FED01F22-71C4-4504-9BC6-217F6DE9F152}
 		{DC8F9FE8-87F3-45D1-B7A7-A87A4D2C82CE} = {FED01F22-71C4-4504-9BC6-217F6DE9F152}
 		{9ECF4CFF-05CD-43DA-9751-191FBE4A3B5C} = {FED01F22-71C4-4504-9BC6-217F6DE9F152}
+		{840AE4B4-22C9-4943-AE94-16F9A2695537} = {50795869-2933-430F-98BD-956C414ABBE4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {93B02B52-77CF-4BAA-AD7E-08960E6D6482}

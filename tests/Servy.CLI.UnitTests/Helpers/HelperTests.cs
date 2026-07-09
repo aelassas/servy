@@ -138,7 +138,6 @@ namespace Servy.CLI.UnitTests.Helpers
             // Assert
             Assert.Contains("version", verbs);
             Assert.Contains("--version", verbs);
-            Assert.NotEmpty(verbs);
         }
 
         [Fact]

@@ -3,13 +3,13 @@ using Servy.Testing;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
-namespace Servy.Core.UnitTests.Config
+namespace Servy.Core.IntegrationTests.Config
 {
     /// <summary>
     /// Tests to ensure that magic strings and configurations are synchronized 
     /// between the C# codebase and the external PowerShell CLI modules.
     /// </summary>
-    public class PowerShellConfigSyncTests
+    public class PowerShellConfigSyncIntegrationTests
     {
         // Statically tracks the compiled mappings to cross-examine against dynamic file parses and reflection scans
         private static readonly Dictionary<string, string> ExpectedMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
