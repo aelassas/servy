@@ -88,13 +88,16 @@ namespace Servy.CLI.UnitTests.Validation
             Assert.DoesNotContain("--rotation-size", result.Message);
         }
 
-        [Fact]
-        public void Validate_EmptyOrWhitespaceNullableInputs_AreMappedAsNullWithoutErrors()
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData(null)]
+        public void Validate_EmptyOrWhitespaceNullableInputs_AreMappedAsNullWithoutErrors(string? unparsedInput)
         {
             // Arrange
             var opts = CreateValidOptions();
-            opts.RotationSize = "   "; // Whitespace string should be skipped gracefully by MapInt
-            opts.ProcessPriority = null; // Null string should be skipped gracefully by MapEnum
+            opts.RotationSize = unparsedInput;
+            opts.ProcessPriority = unparsedInput;
 
             var validationResult = new ValidationResult { };
             _rulesMock.Setup(r => r.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(validationResult);

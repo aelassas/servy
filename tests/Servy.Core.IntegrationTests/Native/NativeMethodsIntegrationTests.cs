@@ -335,29 +335,53 @@ namespace Servy.Core.IntegrationTests.Native
         {
             // Arrange & Act
             using (var scmHandle = NativeMethods.OpenSCManager(null, null, NativeMethods.SC_MANAGER_CONNECT))
-            using (var serviceHandle = NativeMethods.OpenService(scmHandle, "NonExistentService_Phantom_Verification", NativeMethods.SERVICE_QUERY_STATUS))
             {
-                // Assert
-                Assert.True(serviceHandle.IsInvalid);
-                int lastError = Marshal.GetLastWin32Error();
+                SafeServiceHandle? serviceHandle = null;
+                try
+                {
+                    serviceHandle = NativeMethods.OpenService(scmHandle, "NonExistentService_Phantom_Verification", NativeMethods.SERVICE_QUERY_STATUS);
+                    int lastError = Marshal.GetLastWin32Error();   // capture first
 
-                // 1060 == ERROR_SERVICE_DOES_NOT_EXIST
-                Assert.Equal(1060, lastError);
+                    // Assert
+                    Assert.True(serviceHandle.IsInvalid);
+
+                    // 1060 == ERROR_SERVICE_DOES_NOT_EXIST
+                    Assert.Equal(1060, lastError);
+                }
+                finally
+                {
+                    serviceHandle?.Dispose();
+                }
             }
         }
 
         [Fact]
         public void ServiceStructuralProperties_Marshaling_ChecksMemorySizes()
         {
+            // Act
             int sizeDescription = Marshal.SizeOf<NativeMethods.SERVICE_DESCRIPTION>();
             int sizeAutoStart = Marshal.SizeOf<NativeMethods.SERVICE_DELAYED_AUTO_START_INFO>();
             int sizePreshutdown = Marshal.SizeOf<NativeMethods.SERVICE_PRE_SHUTDOWN_INFO>();
             int sizeStatus = Marshal.SizeOf<NativeMethods.SERVICE_STATUS>();
 
-            Assert.True(sizeDescription > 0);
-            Assert.True(sizeAutoStart > 0);
-            Assert.True(sizePreshutdown > 0);
-            Assert.True(sizeStatus > 0);
+            // Assert
+            // WIN32 ABI MARSHALING: Pin exact structure byte lengths required by the OS kernel.
+
+            // SERVICE_DESCRIPTION contains a single lpDescription pointer (4 bytes on x86, 8 bytes on x64)
+            int expectedDescriptionSize = IntPtr.Size;
+            Assert.Equal(expectedDescriptionSize, sizeDescription);
+
+            // SERVICE_DELAYED_AUTO_START_INFO contains a single BOOL (System.Int32) -> 4 bytes
+            const int ExpectedAutoStartSize = 4;
+            Assert.Equal(ExpectedAutoStartSize, sizeAutoStart);
+
+            // SERVICE_PRE_SHUTDOWN_INFO contains a single DWORD dwPreshutdownTimeout (System.UInt32) -> 4 bytes
+            const int ExpectedPreshutdownSize = 4;
+            Assert.Equal(ExpectedPreshutdownSize, sizePreshutdown);
+
+            // SERVICE_STATUS contains 7 DWORD fields (7 * 4 bytes) -> 28 bytes total
+            const int ExpectedStatusSize = 28;
+            Assert.Equal(ExpectedStatusSize, sizeStatus);
         }
 
         #endregion

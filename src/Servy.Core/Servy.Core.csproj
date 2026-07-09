@@ -36,6 +36,7 @@
   
   <ItemGroup>
     <InternalsVisibleTo Include="Servy.Core.UnitTests" />
+    <InternalsVisibleTo Include="Servy.Core.IntegrationTests" />
   </ItemGroup>
   
   <ItemGroup>
