@@ -117,7 +117,6 @@ namespace Servy.Manager.UnitTests.Views
 
                 // Act
                 control.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
-                await Task.Delay(50);
 
                 // Assert
                 Assert.False(viewModel.ExecuteAsyncWasCalled);

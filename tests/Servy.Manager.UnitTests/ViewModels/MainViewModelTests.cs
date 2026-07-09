@@ -307,9 +307,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void OnTick_OverlappingTicks_PreventedByInterlocked()
         {
-            // Arrange
             Helper.RunOnSTA(() =>
             {
+                // Arrange
                 var vm = CreateViewModel();
 
                 // Act & Assert
@@ -323,17 +323,19 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void GetServiceUpdateInfo_OsAndDbDrift_ResolvesGhostPidsAndUpdatesDto()
         {
-            // Arrange
-            var vm = CreateViewModel();
-            var targetService = new Service
+            Helper.RunOnSTA(() =>
             {
-                Name = "DriftService",
-                Pid = 9999,
-                Description = "Old UI Desc",
-                StartupType = ServiceStartType.Manual
-            };
+                // Arrange
+                var vm = CreateViewModel();
+                var targetService = new Service
+                {
+                    Name = "DriftService",
+                    Pid = 9999,
+                    Description = "Old UI Desc",
+                    StartupType = ServiceStartType.Manual
+                };
 
-            var osMockPayload = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase)
+                var osMockPayload = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase)
             {
                 {
                     "DriftService",
@@ -348,41 +350,42 @@ namespace Servy.Manager.UnitTests.ViewModels
                 }
             };
 
-            var databaseDto = new ServiceDto
-            {
-                Name = "DriftService",
-                Pid = 9999,
-                Description = "Old DB Desc",
-                StartupType = (int)ServiceStartType.Manual
-            };
+                var databaseDto = new ServiceDto
+                {
+                    Name = "DriftService",
+                    Pid = 9999,
+                    Description = "Old DB Desc",
+                    StartupType = (int)ServiceStartType.Manual
+                };
 
-            // Act
-            var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", targetService, osMockPayload, databaseDto, CancellationToken.None);
+                // Act
+                var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", targetService, osMockPayload, databaseDto, CancellationToken.None);
 
-            var resultType = result.GetType();
-            var uiUpdateInfo = resultType.GetField("Item1").GetValue(result);
-            var updatedDatabaseDto = (ServiceDto)resultType.GetField("Item2").GetValue(result);
+                var resultType = result.GetType();
+                var uiUpdateInfo = resultType.GetField("Item1").GetValue(result);
+                var updatedDatabaseDto = (ServiceDto)resultType.GetField("Item2").GetValue(result);
 
-            // Assert
-            Assert.NotNull(updatedDatabaseDto);
-            Assert.Equal("DriftService", updatedDatabaseDto.Name);
-            Assert.Equal("New OS Desc", updatedDatabaseDto.Description);
-            Assert.Equal((int)ServiceStartType.Automatic, updatedDatabaseDto.StartupType);
+                // Assert
+                Assert.NotNull(updatedDatabaseDto);
+                Assert.Equal("DriftService", updatedDatabaseDto.Name);
+                Assert.Equal("New OS Desc", updatedDatabaseDto.Description);
+                Assert.Equal((int)ServiceStartType.Automatic, updatedDatabaseDto.StartupType);
 
-            Assert.NotNull(uiUpdateInfo);
-            var uiUpdateType = uiUpdateInfo.GetType();
+                Assert.NotNull(uiUpdateInfo);
+                var uiUpdateType = uiUpdateInfo.GetType();
 
-            bool requiresPidUpdate = (bool)uiUpdateType.GetProperty("RequiresPidUpdate").GetValue(uiUpdateInfo);
-            int? newPid = (int?)uiUpdateType.GetProperty("NewPid").GetValue(uiUpdateInfo);
-            var status = uiUpdateType.GetProperty("Status").GetValue(uiUpdateInfo);
-            var startupType = uiUpdateType.GetProperty("StartupType").GetValue(uiUpdateInfo);
-            var description = uiUpdateType.GetProperty("Description").GetValue(uiUpdateInfo);
+                bool requiresPidUpdate = (bool)uiUpdateType.GetProperty("RequiresPidUpdate").GetValue(uiUpdateInfo);
+                int? newPid = (int?)uiUpdateType.GetProperty("NewPid").GetValue(uiUpdateInfo);
+                var status = uiUpdateType.GetProperty("Status").GetValue(uiUpdateInfo);
+                var startupType = uiUpdateType.GetProperty("StartupType").GetValue(uiUpdateInfo);
+                var description = uiUpdateType.GetProperty("Description").GetValue(uiUpdateInfo);
 
-            Assert.True(requiresPidUpdate);
-            Assert.Null(newPid);
-            Assert.Equal(ServiceStatus.Stopped, status);
-            Assert.Equal(ServiceStartType.Automatic, startupType);
-            Assert.Equal("New OS Desc", description);
+                Assert.True(requiresPidUpdate);
+                Assert.Null(newPid);
+                Assert.Equal(ServiceStatus.Stopped, status);
+                Assert.Equal(ServiceStartType.Automatic, startupType);
+                Assert.Equal("New OS Desc", description);
+            }, createApp: true);
         }
 
         [Fact]
