@@ -344,14 +344,15 @@ namespace Servy.Core.UnitTests.IO
         public void Flush_WhenWriterIsNull_DoesNothing()
         {
             // Arrange
-            var writer = CreateWriter(Path.Combine(_testDir, "test.txt"), true, 10);
+            using (var writer = CreateWriter(Path.Combine(_testDir, "test.txt"), true, 10))
+            {
+                // Act
+                // Calling Flush should not throw
+                var exception = Record.Exception(() => writer.Flush());
 
-            // Act
-            // Calling Flush should not throw
-            var exception = Record.Exception(() => writer.Flush());
-
-            // Assert
-            Assert.Null(exception);
+                // Assert
+                Assert.Null(exception);
+            }
         }
 
         [Fact]
@@ -592,20 +593,22 @@ namespace Servy.Core.UnitTests.IO
             File.SetLastWriteTimeUtc(rotated1, DateTime.UtcNow.AddMinutes(0));
             File.SetLastWriteTimeUtc(rotated2, DateTime.UtcNow.AddMinutes(-1));
 
-            var writer = CreateWriter(logPath, true, 1, false, DateRotationType.Daily, 1);
-            writer.Write(""); // create lazy file 
-
-            File.SetAttributes(rotated2, FileAttributes.ReadOnly);
-
-            // Act
-            var ex = Record.Exception(() =>
+            using (var writer = CreateWriter(logPath, true, 1, false, DateRotationType.Daily, 1))
             {
-                TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations", Array.Empty<object>());
-            });
+                writer.Write(""); // create lazy file 
 
-            // Assert
-            Assert.Null(ex);
-            File.SetAttributes(rotated2, FileAttributes.Normal); // Reset so test runner can clean it up
+                File.SetAttributes(rotated2, FileAttributes.ReadOnly);
+
+                // Act
+                var ex = Record.Exception(() =>
+                {
+                    TestReflection.InvokeNonPublic(writer, "EnforceMaxRotations", Array.Empty<object>());
+                });
+
+                // Assert
+                Assert.Null(ex);
+                File.SetAttributes(rotated2, FileAttributes.Normal); // Reset so test runner can clean it up
+            }
         }
 
         [Fact]

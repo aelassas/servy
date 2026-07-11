@@ -255,7 +255,8 @@ namespace Servy.Core.UnitTests.Logging
                 Assert.Contains("]", content); // Closing brackets
 
                 // 2. Isolate the exact formatted exception segment text block
-                int exceptionMessageIndex = content.IndexOf("Exception test");
+                Assert.Contains("Exception test", content);
+                int exceptionMessageIndex = content.IndexOf("Exception test", StringComparison.Ordinal);
                 string exceptionSegment = content.Substring(exceptionMessageIndex).TrimEnd();
 
                 // 3. Confirm that the isolated exception text contains zero raw line breaks
@@ -422,7 +423,8 @@ namespace Servy.Core.UnitTests.Logging
             Assert.Contains("[Inner -> TimeoutException: Third inner level fault", content);
 
             // Isolate the exception text block to run structural calculations
-            int msgIndex = content.IndexOf("Nested chain execution pass");
+            Assert.Contains("Nested chain execution pass", content);
+            int msgIndex = content.IndexOf("Nested chain execution pass", StringComparison.Ordinal);
             string exceptionSegment = content.Substring(msgIndex).TrimEnd();
 
             // Calculate bracket balance
@@ -474,7 +476,8 @@ namespace Servy.Core.UnitTests.Logging
             Assert.DoesNotContain("Root Exception Context", content);
 
             // 3. Isolate the exact formatted exception text segment to avoid picking up layout brackets
-            int exceptionMessageIndex = content.IndexOf("Deeply nested exception test");
+            Assert.Contains("Deeply nested exception test", content);
+            int exceptionMessageIndex = content.IndexOf("Deeply nested exception test", StringComparison.Ordinal);
             string exceptionSegment = content.Substring(exceptionMessageIndex).TrimEnd();
 
             // 4. Calculate depth by counting structural depth tracking brackets inside the exception block

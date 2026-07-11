@@ -123,22 +123,47 @@ namespace Servy.Core.UnitTests.DTOs
 
         /// <summary>
         /// Assigns a generic non-default value based on the underlying property type (including Nullables).
+        /// Value type outputs are dynamically seeded using the property name's hash code to ensure distinct 
+        /// values are allocated across properties of identical types, enabling robust mapping swap detection.
         /// </summary>
         private void SetDummyValue(ServiceDto dto, PropertyInfo p)
         {
             // Unwrap Nullable<T> to get the actual underlying type (e.g., int? becomes int)
             var targetType = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
 
+            // Generate a stable seed derived directly from the unique property string literal name
+            int seed = Math.Abs(p.Name.GetHashCode());
+
             if (targetType == typeof(string))
+            {
                 p.SetValue(dto, "Test_" + p.Name);
+            }
             else if (targetType == typeof(int))
-                p.SetValue(dto, 123);
+            {
+                p.SetValue(dto, (seed % 100000) + 1);
+            }
             else if (targetType == typeof(long))
-                p.SetValue(dto, 456L);
+            {
+                p.SetValue(dto, (long)seed + 1000L);
+            }
             else if (targetType == typeof(bool))
-                p.SetValue(dto, true);
+            {
+                // Alternates true/false states uniformly across structural positions
+                p.SetValue(dto, (seed & 1) == 0);
+            }
             else if (targetType == typeof(double))
-                p.SetValue(dto, 99.9);
+            {
+                p.SetValue(dto, (seed % 1000) + 0.5);
+            }
+            else if (targetType.IsEnum)
+            {
+                var values = Enum.GetValues(targetType);
+                if (values.Length > 0)
+                {
+                    // Select a distinct index bounded cleanly by the target enum layout size
+                    p.SetValue(dto, values.GetValue(seed % values.Length));
+                }
+            }
         }
     }
 }
