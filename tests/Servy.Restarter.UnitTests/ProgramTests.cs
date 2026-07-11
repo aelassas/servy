@@ -4,10 +4,19 @@ using Xunit;
 
 namespace Servy.Restarter.UnitTests
 {
-    // Forces sequential execution since Environment.ExitCode and ConfigurationManager are global static states
-    [Collection("Servy.Restarter.UnitTests.ProgramTests")]
+    [CollectionDefinition("RestarterProgramTests", DisableParallelization = true)]
+    public class RestarterProgramTestsCollection
+    {
+        // Enforces strict sequential isolation across the execution suite
+    }
+
+    [Collection("RestarterProgramTests")]
     public class ProgramTests : IDisposable
     {
+        // CONSTANT STRINGS HOISTING: Centralize artifact filenames to prevent cleanup drift
+        private const string AesKeyFileName = "test_aes.key";
+        private const string AesIvFileName = "test_aes.iv";
+
         public ProgramTests()
         {
             // Reset global exit code before each test execution block
@@ -71,8 +80,8 @@ namespace Servy.Restarter.UnitTests
             // Clean up temporary local workspace state file markers if generated
             try
             {
-                if (File.Exists("test_restarter.key")) File.Delete("test_restarter.key");
-                if (File.Exists("test_restarter.iv")) File.Delete("test_restarter.iv");
+                if (File.Exists(AesKeyFileName)) File.Delete(AesKeyFileName);
+                if (File.Exists(AesIvFileName)) File.Delete(AesIvFileName);
             }
             catch
             {

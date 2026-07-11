@@ -10,6 +10,7 @@ using Servy.Testing;
 using Servy.UI.Constants;
 using Servy.UI.Services;
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -272,8 +273,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync");
 
                     // 2. Keep the message pump processing while waiting for Task.Run to finish
+                    var sw = Stopwatch.StartNew();
                     while (!task.IsCompleted)
                     {
+                        if (sw.Elapsed > TimeSpan.FromSeconds(10))
+                            throw new TimeoutException("OnTickAsync did not complete within 5s.");
                         Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
                         Thread.Sleep(1);
                     }

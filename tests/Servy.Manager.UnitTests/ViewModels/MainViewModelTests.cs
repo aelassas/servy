@@ -16,6 +16,7 @@ using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -138,7 +139,16 @@ namespace Servy.Manager.UnitTests.ViewModels
                 }
             }, DispatcherPriority.Normal);
 
-            Dispatcher.PushFrame(frame);
+            var sw = Stopwatch.StartNew();
+            var watchdog = new DispatcherTimer(DispatcherPriority.Send)
+            {
+                Interval = TimeSpan.FromSeconds(10)
+            };
+            watchdog.Tick += (s, e) => { frame.Continue = false; };
+            watchdog.Start();
+            try { Dispatcher.PushFrame(frame); }
+            finally { watchdog.Stop(); }
+            Assert.True(sw.Elapsed < TimeSpan.FromSeconds(10), "Pump timed out");
         }
 
         #endregion
