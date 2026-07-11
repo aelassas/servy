@@ -3,6 +3,7 @@ using Servy.Config;
 using Servy.Core.Common;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Services;
 using Servy.Models;
 using Servy.Services;
@@ -10,6 +11,7 @@ using Servy.Testing;
 using Servy.UI.Services;
 using Servy.Validation;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,6 +35,7 @@ namespace Servy.UnitTests.Services
         private readonly Mock<Func<ServiceDto>> _modelToServiceDtoMock;
         private readonly Mock<IXmlServiceSerializer> _xmlServiceSerializerMock;
         private readonly Mock<IJsonServiceSerializer> _jsonServiceSerializerMock;
+        private readonly Mock<IProcessHelper> _processHelperMock;
 
         public ServiceCommandsTests()
         {
@@ -47,6 +50,7 @@ namespace Servy.UnitTests.Services
             _xmlServiceSerializerMock = new Mock<IXmlServiceSerializer>();
             _jsonServiceSerializerMock = new Mock<IJsonServiceSerializer>();
             _modelToServiceDtoMock = new Mock<Func<ServiceDto>>();
+            _processHelperMock = new Mock<IProcessHelper>();
 
             // Setup functional operational defaults for safe falling executions
             _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
@@ -81,7 +85,8 @@ namespace Servy.UnitTests.Services
                 appConfig: _appConfigMock.Object,
                 cursorService: _cursorServiceMock.Object,
                 xmlServiceSerializer: _xmlServiceSerializerMock.Object,
-                jsonServiceSerializer: _jsonServiceSerializerMock.Object
+                jsonServiceSerializer: _jsonServiceSerializerMock.Object,
+                processHelper: _processHelperMock.Object
             );
         }
 
@@ -307,32 +312,39 @@ namespace Servy.UnitTests.Services
         public async Task OpenManager_ProcessStartThrowsException_DisplaysLaunchFailedError()
         {
             // Arrange
-            var sut = CreateSut();
+            // UNIQUE ISOLATION: Generate a unique virtual string filename to pass the File.Exists check
+            string tempTrackingFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Guid.NewGuid():N}.exe");
+            File.WriteAllText(tempTrackingFile, string.Empty);
 
-            // 1. Use a temporary file path that actually EXISTS on disk to pass the File.Exists check
-            var tempExeFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.exe");
-            File.WriteAllText(tempExeFile, "Pretend Executable Payload");
-
-            _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(tempExeFile);
+            _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(tempTrackingFile);
             _appConfigMock.Setup(c => c.ForceSoftwareRendering).Returns(true);
 
-            // 2. Clear out strings or simulate conditions where Process.Start throws an exception.
-            // Since Process.Start with UseShellExecute = true throws a Win32Exception if the file 
-            // is a fake text-based .exe file, the catch block will trigger natively!
+            // MOCK INDEPENDENT EXCEPTION SEAM: Force the process helper to throw an explicit error natively,
+            // bypassing any real operating system ShellExecute tracking side effects.
+            _processHelperMock
+                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                .Throws(new System.ComponentModel.Win32Exception((int)System.Net.HttpStatusCode.Unauthorized, "Access denied simulation"));
+
+            var sut = CreateSut();
+
             try
             {
                 // Act
-                await sut.OpenManager();
+                await sut.OpenManager(cancellationToken: CancellationToken.None);
 
                 // Assert
-                _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_ManagerAppLaunchFailed, UiAppConfig.Caption), Times.Once);
+                // Verify that the UI correctly intercepts the failure and displays the targeted error message text
+                _messageBoxService.Verify(m => m.ShowErrorAsync(
+                    Resources.Strings.Msg_ManagerAppLaunchFailed,
+                    UiAppConfig.Caption),
+                    Times.Once);
             }
             finally
             {
-                // Clean up the temporary file context safely
-                if (File.Exists(tempExeFile))
+                // Clean up the tracking file context safely
+                if (File.Exists(tempTrackingFile))
                 {
-                    File.Delete(tempExeFile);
+                    File.Delete(tempTrackingFile);
                 }
             }
         }

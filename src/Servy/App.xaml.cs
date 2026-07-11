@@ -193,7 +193,8 @@ namespace Servy
                         this,
                         new CursorService(),
                         new XmlServiceSerializer(),
-                        new JsonServiceSerializer()
+                        new JsonServiceSerializer(),
+                        new ProcessHelper()
                     );
 
                     // 4. Initialize Main ViewModel
