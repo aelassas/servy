@@ -7,6 +7,7 @@ namespace Servy.Core.IntegrationTests.Helpers
     /// <summary>
     /// Represents an exhaustive integration test suite for the ProcessKiller class, validating process tree termination, safelist protections, and file-lock release mechanisms.
     /// </summary>
+    [Collection("ProcessIntegrationTests")]
     public class ProcessKillerIntegrationTests : HandleExeIntegrationTestBase, IDisposable
     {
         private readonly ProcessKiller _processKiller;

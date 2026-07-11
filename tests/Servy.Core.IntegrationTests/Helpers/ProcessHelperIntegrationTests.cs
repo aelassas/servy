@@ -3,17 +3,11 @@ using System.Diagnostics;
 
 namespace Servy.Core.IntegrationTests.Helpers
 {
-    [CollectionDefinition("ProcessHelperIntegrationTests", DisableParallelization = true)]
-    public class ProcessHelperIntegrationTestsCollection
-    {
-        // Enforces strict sequential isolation across the execution suite
-    }
-
     /// <summary>
     /// Integration tests for ProcessHelper. 
     /// Verifies ProcessHelper process-metric and process-tree aggregation behavior.
     /// </summary>
-    [Collection("ProcessHelperIntegrationTests")]
+    [Collection("ProcessIntegrationTests")]
     public class ProcessHelperIntegrationTests : IDisposable
     {
         private readonly ProcessHelper _sut;
