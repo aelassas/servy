@@ -84,11 +84,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     // Act
-                    var dtViewModel = new ConsoleViewModel();
-
-                    // Assert
-                    Assert.NotNull(dtViewModel.RawLines);
-                    Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
+                    using (var dtViewModel = new ConsoleViewModel())
+                    {
+                        // Assert
+                        Assert.NotNull(dtViewModel.RawLines);
+                        Assert.Equal(UiConstants.NotAvailable, dtViewModel.Pid);
+                    }
                 }
             }, createApp: true);
         }
@@ -104,8 +105,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
                     var service = new ConsoleService { Name = "AppService", StdoutPath = "C:\\out.log" };
 
                     // Act
@@ -125,8 +126,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
                     vm.SetSelectionActive(true);
                     Assert.True(vm.IsPaused);
 
@@ -146,8 +147,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
                     var mockService = new ConsoleService { Name = "TestService", Pid = 5555 };
                     vm.SelectedService = mockService;
 
@@ -167,9 +168,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
-
                     vm.RawLines.Add(new LogLine("Operation successful", LogType.StdOut));
                     vm.RawLines.Add(new LogLine("System Crash", LogType.StdErr));
 
@@ -202,9 +202,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
-
                     // Force state variable to simulate an orphaned selection
                     TestReflection.SetField(vm, "_hadSelectedService", true);
                     vm.Pid = "1234";
@@ -227,8 +226,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
                     var service = new ConsoleService { Name = "DeadService", Pid = 1234, StdoutPath = "log.txt" };
                     vm.SelectedService = service;
 
@@ -255,8 +254,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
                     var service = new ConsoleService { Name = "ActiveService", Pid = 100, StdoutPath = "old.txt" };
                     vm.SelectedService = service;
 
@@ -279,14 +278,14 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Resource Management & Disposal Tests
 
         [Fact]
-        public async Task Dispose_CleansUpCancellationTokensAndEvents()
+        public void Dispose_CleansUpCancellationTokensAndEvents()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
                     bool scrollTriggered = false;
                     vm.RequestScroll += (force) => scrollTriggered = true;
 
@@ -341,15 +340,15 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
                     var service = new Service { Name = "EngineService" };
 
                     // Act
                     var result = TestReflection.InvokeNonPublic(vm, "CreateServiceItem", service) as ConsoleService;
 
                     // Assert
-                    Assert.NotNull(result);
+                    var unused = result ?? throw new InvalidOperationException("Result mapping cannot be null");
                     Assert.Equal("EngineService", result.Name);
                     Assert.Null(result.Pid);
                     Assert.Null(result.StdoutPath);
@@ -365,8 +364,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
                     var firstCts = new CancellationTokenSource();
 
                     TestReflection.SetField(vm, "_logFilterCts", firstCts);
@@ -387,8 +386,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
                     vm.RawLines.Add(new LogLine("Preserve Me", LogType.StdOut));
 
                     // Act - Invoke service transition with empty/null pathing arguments to trigger structural history emptiness
@@ -408,9 +407,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
-
                     TestReflection.SetField(vm, "_maxLines", 2);
 
                     // Read current Session ID to pass down as a synchronized parameter match
@@ -451,8 +449,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
                     vm.SetSelectionActive(true); // User is selecting text in the UI terminal window frame
 
                     int currentSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
@@ -478,9 +476,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
-
                     int currentSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
                     int staleSessionId = currentSessionId - 1; // Simulated obsolete thread queue callback sequence tracking state
 
@@ -505,8 +502,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
-                    var vm = CreateViewModel();
                     var service = new ConsoleService { Name = "ActiveService", StdoutPath = "out.log", StderrPath = "err.log" };
                     vm.SelectedService = service;
                     vm.SetSelectionActive(true);

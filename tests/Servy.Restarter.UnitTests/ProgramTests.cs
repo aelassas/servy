@@ -1,9 +1,19 @@
 ﻿namespace Servy.Restarter.UnitTests
 {
-    // Forces sequential execution since Environment.ExitCode is a global static state
-    [Collection("Servy.Restarter.UnitTests.ProgramTests")]
+    [CollectionDefinition("RestarterProgramTests", DisableParallelization = true)]
+    public class RestarterProgramTestsCollection
+    {
+        // Enforces strict sequential isolation across the execution suite
+    }
+
+    [Collection("RestarterProgramTests")]
     public class ProgramTests : IDisposable
     {
+        // CONSTANT STRINGS HOISTING: Centralize artifact filenames to prevent cleanup drift
+        private const string ConfigFileName = "appsettings.restarter.json";
+        private const string KeyFileName = "test_restarter_local.key";
+        private const string IvFileName = "test_restarter_local.iv";
+
         private readonly string _tempConfigPath;
 
         public ProgramTests()
@@ -12,15 +22,15 @@
             Environment.ExitCode = 0;
 
             // Generate an appsettings layout in the local output context
-            _tempConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.restarter.json");
+            _tempConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ConfigFileName);
 
             string mockConfigJson = "{\r\n" +
                 "  \"ConnectionStrings\": {\r\n" +
                 "    \"DefaultConnection\": \"Data Source=:memory:;Version=3;\"\r\n" +
                 "  },\r\n" +
                 "  \"Security\": {\r\n" +
-                "    \"AESKeyFilePath\": \"test_restarter_local.key\",\r\n" +
-                "    \"AESIVFilePath\": \"test_restarter_local.iv\"\r\n" +
+                "    \"AESKeyFilePath\": \"" + KeyFileName + "\",\r\n" +
+                "    \"AESIVFilePath\": \"" + IvFileName + "\"\r\n" +
                 "  },\r\n" +
                 "  \"RestartTimeoutSeconds\": \"30\"\r\n" +
                 "}";
@@ -142,8 +152,9 @@
                 {
                     File.Delete(_tempConfigPath);
                 }
-                if (File.Exists("test_restarter_local.key")) File.Delete("test_restarter_local.key");
-                if (File.Exists("test_restarter_local.iv")) File.Delete("test_restarter_local.iv");
+
+                if (File.Exists(KeyFileName)) File.Delete(KeyFileName);
+                if (File.Exists(IvFileName)) File.Delete(IvFileName);
             }
             catch
             {

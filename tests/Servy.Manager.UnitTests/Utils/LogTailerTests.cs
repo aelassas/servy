@@ -50,106 +50,116 @@ namespace Servy.Manager.UnitTests.Utils
         public async Task GetHistoryAsync_NullOrEmptyPath_ReturnsEmptyHistoryImmediately()
         {
             // Arrange
-            var tailer = new LogTailer();
+            using (var tailer = new LogTailer())
+            {
+                // Act
+                var resultNull = await tailer.GetHistoryAsync(null, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
+                var resultEmpty = await tailer.GetHistoryAsync(string.Empty, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
 
-            // Act
-            var resultNull = await tailer.GetHistoryAsync(null, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
-            var resultEmpty = await tailer.GetHistoryAsync(string.Empty, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.NotNull(resultNull);
-            Assert.Empty(resultNull.Lines);
-            Assert.NotNull(resultEmpty);
-            Assert.Empty(resultEmpty.Lines);
+                // Assert
+                Assert.NotNull(resultNull);
+                Assert.Empty(resultNull.Lines);
+                Assert.NotNull(resultEmpty);
+                Assert.Empty(resultEmpty.Lines);
+            }
         }
 
         [Fact]
         public async Task GetHistoryAsync_MissingFile_ReturnsEmptyHistoryImmediately()
         {
             // Arrange
-            var tailer = new LogTailer();
-            string missingPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.log");
+            using (var tailer = new LogTailer())
+            {
+                string missingPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.log");
 
-            // Act
-            var result = await tailer.GetHistoryAsync(missingPath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
+                // Act
+                var result = await tailer.GetHistoryAsync(missingPath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Empty(result.Lines);
+                // Assert
+                Assert.NotNull(result);
+                Assert.Empty(result.Lines);
+            }
         }
 
         [Fact]
         public async Task GetHistoryAsync_EmptyFile_ReturnsEmptyHistoryAndZeroOffset()
         {
             // Arrange
-            var tailer = new LogTailer();
-            File.WriteAllText(_tempFilePath, string.Empty);
+            using (var tailer = new LogTailer())
+            {
+                File.WriteAllText(_tempFilePath, string.Empty);
 
-            // Act
-            var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
+                // Act
+                var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Empty(result.Lines);
-            Assert.Equal(0, result.Position);
+                // Assert
+                Assert.NotNull(result);
+                Assert.Empty(result.Lines);
+                Assert.Equal(0, result.Position);
+            }
         }
 
         [Fact]
         public async Task GetHistoryAsync_ShouldRetrieveExactlyLastNLines()
         {
             // Arrange
-            var tailer = new LogTailer();
-            var linesToWrite = new[] { "L1", "L2", "L3", "L4", "L5" };
-            File.WriteAllLines(_tempFilePath, linesToWrite);
+            using (var tailer = new LogTailer())
+            {
+                var linesToWrite = new[] { "L1", "L2", "L3", "L4", "L5" };
+                File.WriteAllLines(_tempFilePath, linesToWrite);
 
-            // Act
-            var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 3, cancellationToken: TestContext.Current.CancellationToken);
+                // Act
+                var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 3, cancellationToken: TestContext.Current.CancellationToken);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(new FileInfo(_tempFilePath).Length, result.Position);
-            Assert.Equal(3, result.Lines.Count);
-            Assert.Equal("L3", result.Lines[0].Text);
-            Assert.Equal("L5", result.Lines[2].Text);
+                // Assert
+                Assert.NotNull(result);
+                Assert.Equal(new FileInfo(_tempFilePath).Length, result.Position);
+                Assert.Equal(3, result.Lines.Count);
+                Assert.Equal("L3", result.Lines[0].Text);
+                Assert.Equal("L5", result.Lines[2].Text);
+            }
         }
 
         [Fact]
         public async Task GetHistoryAsync_ShouldHandleSyntheticTimestampsCorrectly()
         {
             // Arrange
-            var tailer = new LogTailer();
-            File.WriteAllLines(_tempFilePath, new[] { "Line1", "Line2" });
+            using (var tailer = new LogTailer())
+            {
+                File.WriteAllLines(_tempFilePath, new[] { "Line1", "Line2" });
 
-            // Act
-            var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
+                // Act
+                var result = await tailer.GetHistoryAsync(_tempFilePath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(new FileInfo(_tempFilePath).Length, result.Position);
-            Assert.Equal(2, result.Lines.Count);
-            Assert.True(result?.Lines[0].Timestamp < result?.Lines[1].Timestamp);
-            Assert.True(result?.Lines[0].IsSyntheticTime);
-            Assert.True(result?.Lines[1].IsSyntheticTime);
+                // Assert
+                Assert.NotNull(result);
+                Assert.Equal(new FileInfo(_tempFilePath).Length, result.Position);
+                Assert.Equal(2, result.Lines.Count);
+                Assert.True(result?.Lines[0].Timestamp < result?.Lines[1].Timestamp);
+                Assert.True(result?.Lines[0].IsSyntheticTime);
+                Assert.True(result?.Lines[1].IsSyntheticTime);
+            }
         }
 
         [Fact]
         public async Task RunFromPosition_NullOrEmptyPath_ExitsEarlyWithoutLoopAllocation()
         {
             // Arrange
-            var tailer = new LogTailer();
-            var cts = new CancellationTokenSource();
-            bool loopStartedFired = false;
+            using (var tailer = new LogTailer())
+            using (var cts = new CancellationTokenSource())
+            {
+                bool loopStartedFired = false;
+                _ = tailer.LoopStartedSignal.Task.ContinueWith(_ => loopStartedFired = true);
 
-            _ = tailer.LoopStartedSignal.Task.ContinueWith(_ => loopStartedFired = true);
+                // Act
+                var taskNull = tailer.RunFromPosition(null, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+                var taskEmpty = tailer.RunFromPosition(string.Empty, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
+                await taskNull;
+                await taskEmpty;
 
-            // Act
-            var taskNull = tailer.RunFromPosition(null, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
-            var taskEmpty = tailer.RunFromPosition(string.Empty, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
-            await taskNull;
-            await taskEmpty;
-
-            // Assert
-            Assert.False(loopStartedFired, "The log tailer incorrectly allocated loop resources for a null or empty file path context.");
+                // Assert
+                Assert.False(loopStartedFired, "The log tailer incorrectly allocated loop resources for a null or empty file path context.");
+            }
         }
 
         #endregion
@@ -160,17 +170,17 @@ namespace Servy.Manager.UnitTests.Utils
         public async Task RunFromPosition_MissingDirectoryException_TriggersCatchBlockAndDelays()
         {
             // Arrange
-            var tailer = new LogTailer();
-            string invalidDirectoryPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "app.log");
-
-            bool linesEmitted = false;
-            int loopPassesCount = 0;
-
-            tailer.OnNewLines += (lines) => linesEmitted = true;
-            tailer.OnLoopCompleted += () => Interlocked.Increment(ref loopPassesCount);
-
+            using (var tailer = new LogTailer())
             using (var cts = new CancellationTokenSource())
             {
+                string invalidDirectoryPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "app.log");
+
+                bool linesEmitted = false;
+                int loopPassesCount = 0;
+
+                tailer.OnNewLines += (lines) => linesEmitted = true;
+                tailer.OnLoopCompleted += () => Interlocked.Increment(ref loopPassesCount);
+
                 // Act
                 var tailTask = tailer.RunFromPosition(invalidDirectoryPath, LogType.StdOut, 0, DateTime.UtcNow, cts.Token);
 
@@ -189,17 +199,17 @@ namespace Servy.Manager.UnitTests.Utils
         public async Task RunFromPosition_FileLockedWithIOException_TriggersIoExceptionCatchBlockAndRetries()
         {
             // Arrange
-            var tailer = new LogTailer();
-            File.WriteAllText(_tempFilePath, "Initial content\n");
-
-            bool linesEmitted = false;
-            int successfulLoopIterations = 0;
-
-            tailer.OnNewLines += (lines) => linesEmitted = true;
-            tailer.OnLoopCompleted += () => Interlocked.Increment(ref successfulLoopIterations);
-
+            using (var tailer = new LogTailer())
             using (var cts = new CancellationTokenSource())
             {
+                File.WriteAllText(_tempFilePath, "Initial content\n");
+
+                bool linesEmitted = false;
+                int successfulLoopIterations = 0;
+
+                tailer.OnNewLines += (lines) => linesEmitted = true;
+                tailer.OnLoopCompleted += () => Interlocked.Increment(ref successfulLoopIterations);
+
                 using (var exclusiveLock = new FileStream(_tempFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
                 {
                     // Act
@@ -221,29 +231,30 @@ namespace Servy.Manager.UnitTests.Utils
         public async Task GetHistoryAsync_FileNotFoundRaceConditionCatch_ReturnsEmptyList()
         {
             // Arrange
-            var tailer = new LogTailer();
-            string lockTestPath = Path.Combine(Path.GetTempPath(), $"lock_race_{Guid.NewGuid()}.log");
-
-            File.WriteAllText(lockTestPath, "Historical line context payload stream\n");
-
-            // Act
-            using (var exclusiveLock = new FileStream(lockTestPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            using (var tailer = new LogTailer())
             {
-                var result = await tailer.GetHistoryAsync(lockTestPath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
+                string lockTestPath = Path.Combine(Path.GetTempPath(), $"lock_race_{Guid.NewGuid()}.log");
+                File.WriteAllText(lockTestPath, "Historical line context payload stream\n");
 
-                // Assert
-                Assert.NotNull(result);
-                Assert.Empty(result.Lines);
-            }
+                // Act
+                using (var exclusiveLock = new FileStream(lockTestPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                {
+                    var result = await tailer.GetHistoryAsync(lockTestPath, LogType.StdOut, 10, cancellationToken: TestContext.Current.CancellationToken);
 
-            try
-            {
-                if (File.Exists(lockTestPath))
-                    File.Delete(lockTestPath);
-            }
-            catch
-            {
-                // Swallow cleanup failures to protect runtime step bounds
+                    // Assert
+                    Assert.NotNull(result);
+                    Assert.Empty(result.Lines);
+                }
+
+                try
+                {
+                    if (File.Exists(lockTestPath))
+                        File.Delete(lockTestPath);
+                }
+                catch
+                {
+                    // Swallow cleanup failures to protect runtime step bounds
+                }
             }
         }
 
@@ -255,20 +266,20 @@ namespace Servy.Manager.UnitTests.Utils
         public async Task RunFromPosition_BatchFlushThresholdReached_InvokesOnNewLinesDuringReadLoop()
         {
             // Arrange
-            var tailer = new LogTailer();
-            File.WriteAllText(_tempFilePath, "Pre-existing header lines\n");
-
-            var capturedBatches = new List<List<LogLine>>();
-            tailer.OnNewLines += (lines) =>
-            {
-                lock (capturedBatches) capturedBatches.Add(new List<LogLine>(lines));
-            };
-
-            var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
-
+            using (var tailer = new LogTailer())
             using (var cts = new CancellationTokenSource())
             {
+                File.WriteAllText(_tempFilePath, "Pre-existing header lines\n");
+
+                var capturedBatches = new List<List<LogLine>>();
+                tailer.OnNewLines += (lines) =>
+                {
+                    lock (capturedBatches) capturedBatches.Add(new List<LogLine>(lines));
+                };
+
+                var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
+
                 // Start tailing from the end of pre-existing content
                 var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 26, DateTime.UtcNow, cts.Token);
 
@@ -296,6 +307,7 @@ namespace Servy.Manager.UnitTests.Utils
                 cts.Cancel();
                 try { await tailTask; } catch (OperationCanceledException) { }
 
+                // Assert
                 lock (capturedBatches)
                 {
                     Assert.NotEmpty(capturedBatches);
@@ -307,23 +319,23 @@ namespace Servy.Manager.UnitTests.Utils
         public async Task RunFromPosition_ShouldHandleFileRotation()
         {
             // Arrange
-            var tailer = new LogTailer();
-            string initialPath = _tempFilePath;
-            File.WriteAllText(initialPath, "Old content that should be ignored after rotation\n");
-            var fileInfo = new FileInfo(initialPath);
-
-            var capturedLines = new List<LogLine>();
-            tailer.OnNewLines += (lines) =>
-            {
-                lock (capturedLines) capturedLines.AddRange(lines);
-            };
-
-            // Setup a completion tracking signal task for strict loop synchronization
-            var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
-
+            using (var tailer = new LogTailer())
             using (var cts = new CancellationTokenSource())
             {
+                string initialPath = _tempFilePath;
+                File.WriteAllText(initialPath, "Old content that should be ignored after rotation\n");
+                var fileInfo = new FileInfo(initialPath);
+
+                var capturedLines = new List<LogLine>();
+                tailer.OnNewLines += (lines) =>
+                {
+                    lock (capturedLines) capturedLines.AddRange(lines);
+                };
+
+                // Setup a completion tracking signal task for strict loop synchronization
+                var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
+
                 // Act
                 // Start tailing from the end of the "Old content"
                 var tailTask = tailer.RunFromPosition(initialPath, LogType.StdOut, fileInfo.Length, fileInfo.CreationTimeUtc, cts.Token);
@@ -366,17 +378,18 @@ namespace Servy.Manager.UnitTests.Utils
         public async Task RunFromPosition_InitialAttachRotationTrigger_TimestampMismatch_ResetsOffsetToZero()
         {
             // Arrange
-            var tailer = new LogTailer();
-            File.WriteAllText(_tempFilePath, "Line After Truncated Rotation\n");
-
-            var capturedLines = new List<LogLine>();
-            tailer.OnNewLines += (lines) => { lock (capturedLines) capturedLines.AddRange(lines); };
-
-            var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
-
+            using (var tailer = new LogTailer())
             using (var cts = new CancellationTokenSource())
             {
+                File.WriteAllText(_tempFilePath, "Line After Truncated Rotation\n");
+
+                var capturedLines = new List<LogLine>();
+                tailer.OnNewLines += (lines) => { lock (capturedLines) capturedLines.AddRange(lines); };
+
+                var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
+
+                // Act
                 // ROTATION OPERAND ISOLATION: Set lastPosition within the valid file length boundary (0 <= 30 bytes)
                 // to force operand #2 (info.Length < lastPosition) to evaluate as FALSE. 
                 // Pass a stale timestamp to force operand #1 (info.CreationTimeUtc != lastCreationTime) to evaluate as TRUE.
@@ -407,17 +420,18 @@ namespace Servy.Manager.UnitTests.Utils
         public async Task RunFromPosition_InitialAttachRotationTrigger_Truncation_ResetsOffsetToZero()
         {
             // Arrange
-            var tailer = new LogTailer();
-            File.WriteAllText(_tempFilePath, "Line After Truncated Rotation\n");
-
-            var capturedLines = new List<LogLine>();
-            tailer.OnNewLines += (lines) => { lock (capturedLines) capturedLines.AddRange(lines); };
-
-            var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
-
+            using (var tailer = new LogTailer())
             using (var cts = new CancellationTokenSource())
             {
+                File.WriteAllText(_tempFilePath, "Line After Truncated Rotation\n");
+
+                var capturedLines = new List<LogLine>();
+                tailer.OnNewLines += (lines) => { lock (capturedLines) capturedLines.AddRange(lines); };
+
+                var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
+
+                // Act
                 // ROTATION OPERAND ISOLATION: Query and pass the precise CreationTimeUtc metadata token 
                 // to force operand #1 (info.CreationTimeUtc != lastCreationTime) to evaluate as FALSE.
                 // Pass a highly advanced past lastPosition (999999) that forces the metadata check branch 

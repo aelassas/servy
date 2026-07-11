@@ -77,10 +77,8 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void Constructor_ShouldInitializeDefaults()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
             {
-                // Act
-                var vm = CreateViewModel();
-
                 // Assert
                 Assert.NotNull(vm.LogsView);
                 Assert.NotNull(vm.SearchCommand);
@@ -101,9 +99,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void PropertyChanged_IsRaised()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
             {
                 // Arrange
-                var vm = CreateViewModel();
                 string? propertyName = null;
                 vm.PropertyChanged += (s, e) => propertyName = e.PropertyName;
 
@@ -119,10 +117,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void Properties_DuplicateAssignments_DoNotRaisePropertyChanged()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
             {
                 // Arrange
-                var vm = CreateViewModel();
-
                 // Bind explicit static reference anchors to bypass real-time millisecond/tick differences
                 var staticDate = new DateTime(2026, 6, 8);
                 vm.FromDate = staticDate;
@@ -154,9 +151,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void FromDate_ShouldUpdate_ToDateMinDate()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
             {
                 // Arrange
-                var vm = CreateViewModel();
                 var newDate = DateTime.Today.AddDays(-5);
 
                 // Act
@@ -171,9 +168,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void ToDate_ShouldUpdate_FromDateMaxDate()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
             {
                 // Arrange
-                var vm = CreateViewModel();
                 var newDate = DateTime.Today;
 
                 // Act
@@ -188,9 +185,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void Keyword_PropertyMutates_RaisesNotificationCorrectly()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
             {
                 // Arrange
-                var vm = CreateViewModel();
                 string? changedProp = null;
                 vm.PropertyChanged += (s, e) => changedProp = e.PropertyName;
 
@@ -207,9 +204,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void SelectedLevel_PropertyMutates_RaisesNotificationCorrectly()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
             {
                 // Arrange
-                var vm = CreateViewModel();
                 string? changedProp = null;
                 vm.PropertyChanged += (s, e) => changedProp = e.PropertyName;
 
@@ -226,9 +223,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void FooterText_PropertyMutates_RaisesNotificationCorrectly()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
             {
                 // Arrange
-                var vm = CreateViewModel();
                 string? changedProp = null;
                 vm.PropertyChanged += (s, e) => changedProp = e.PropertyName;
 
@@ -245,9 +242,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void SelectedLog_SetToNull_ClearsSelectedLogMessage()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
             {
                 // Arrange
-                var vm = CreateViewModel();
                 vm.SelectedLog = new LogEntryModel { Message = "Error Context" };
 
                 // Act
@@ -282,9 +279,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void RowClickCommand_ShouldSetSelectedLog()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
             {
                 // Arrange
-                var vm = CreateViewModel();
                 var log = new LogEntryModel { Message = "test" };
 
                 // Act
@@ -300,9 +297,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void RowClickCommand_InvalidParameterObject_BypassesStateMutation()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
             {
                 // Arrange
-                var vm = CreateViewModel();
                 vm.SelectedLog = null;
 
                 // Act - Pass an irrelevant object parameter layout type context
@@ -334,34 +331,35 @@ namespace Servy.Manager.UnitTests.ViewModels
                         .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                         .ReturnsAsync(entries);
 
-                    var vm = CreateViewModel();
-
-                    var scrollEventSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                    vm.ScrollLogsToTopRequested += () => scrollEventSource.TrySetResult(true);
-
-                    // Act
-                    var searchTask = vm.SearchCommand.ExecuteAsync(null);
-
-                    var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
-                    var completedTask = Task.WhenAny(scrollEventSource.Task, timeoutTask).GetAwaiter().GetResult();
-
-                    if (completedTask == timeoutTask)
+                    using (var vm = CreateViewModel())
                     {
-                        throw new TimeoutException("The ScrollLogsToTopRequested event failed to fire within the allocated safety window.");
-                    }
+                        var scrollEventSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                        vm.ScrollLogsToTopRequested += () => scrollEventSource.TrySetResult(true);
 
-                    searchTask.GetAwaiter().GetResult();
+                        // Act
+                        var searchTask = vm.SearchCommand.ExecuteAsync(null);
 
-                    // Assert
-                    using (var enumerator = vm.LogsView.SourceCollection.Cast<LogEntryModel>().GetEnumerator())
-                    {
-                        Assert.True(enumerator.MoveNext());
-                        Assert.False(enumerator.MoveNext());
-                        Assert.True(scrollEventSource.Task.Result);
-                        Assert.Contains("Search", vm.SearchButtonText);
-                        Assert.False(vm.IsBusy);
+                        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
+                        var completedTask = Task.WhenAny(scrollEventSource.Task, timeoutTask).GetAwaiter().GetResult();
 
-                        _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
+                        if (completedTask == timeoutTask)
+                        {
+                            throw new TimeoutException("The ScrollLogsToTopRequested event failed to fire within the allocated safety window.");
+                        }
+
+                        searchTask.GetAwaiter().GetResult();
+
+                        // Assert
+                        using (var enumerator = vm.LogsView.SourceCollection.Cast<LogEntryModel>().GetEnumerator())
+                        {
+                            Assert.True(enumerator.MoveNext());
+                            Assert.False(enumerator.MoveNext());
+                            Assert.True(scrollEventSource.Task.Result);
+                            Assert.Contains("Search", vm.SearchButtonText);
+                            Assert.False(vm.IsBusy);
+
+                            _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
+                        }
                     }
                 }
             }, createApp: true);
@@ -373,6 +371,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+                using (var vm = CreateViewModel())
                 {
                     // Arrange
                     var firstSearchTcs = new TaskCompletionSource<IEnumerable<ServyEventLogEntry>>();
@@ -386,8 +385,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                             searchCallCount++;
                             return searchCallCount == 1 ? firstSearchTcs.Task : secondSearchTcs.Task;
                         });
-
-                    var vm = CreateViewModel();
 
                     // Act - 1. Fire the first background lookup
                     var firstSearchTask = (Task)TestReflection.InvokeNonPublic(vm, "Search", new object[] { null! })!;
@@ -429,15 +426,16 @@ namespace Servy.Manager.UnitTests.ViewModels
                         .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                         .ThrowsAsync(new InvalidOperationException("WMI Repository Event log corruption detected"));
 
-                    var vm = CreateViewModel();
+                    using (var vm = CreateViewModel())
+                    {
+                        // Act
+                        vm.SearchCommand.ExecuteAsync(null).GetAwaiter().GetResult();
 
-                    // Act
-                    vm.SearchCommand.ExecuteAsync(null).GetAwaiter().GetResult();
-
-                    // Assert - Verify final security release blocks completed execution cycle parameters
-                    _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
-                    Assert.False(vm.IsBusy);
-                    Assert.Equal(Strings.Button_Search, vm.SearchButtonText);
+                        // Assert - Verify final security release blocks completed execution cycle parameters
+                        _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+                        Assert.False(vm.IsBusy);
+                        Assert.Equal(Strings.Button_Search, vm.SearchButtonText);
+                    }
                 }
             }, createApp: true);
         }
@@ -454,16 +452,17 @@ namespace Servy.Manager.UnitTests.ViewModels
                         .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                         .ThrowsAsync(new OperationCanceledException());
 
-                    var vm = CreateViewModel();
+                    using (var vm = CreateViewModel())
+                    {
+                        // Act
+                        var exception = Record.ExceptionAsync(() => vm.SearchCommand.ExecuteAsync(null)).GetAwaiter().GetResult();
 
-                    // Act
-                    var exception = Record.ExceptionAsync(() => vm.SearchCommand.ExecuteAsync(null)).GetAwaiter().GetResult();
-
-                    // Assert
-                    Assert.Null(exception); // The OperationCanceledException catch block handled it safely
-                    Assert.False(vm.IsBusy);
-                    Assert.Equal(Strings.Button_Search, vm.SearchButtonText);
-                    _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+                        // Assert
+                        Assert.Null(exception); // The OperationCanceledException catch block handled it safely
+                        Assert.False(vm.IsBusy);
+                        Assert.Equal(Strings.Button_Search, vm.SearchButtonText);
+                        _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+                    }
                 }
             }, createApp: true);
         }
@@ -476,10 +475,8 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void Cleanup_ShouldCancelAndDisposeToken()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            using (var vm = CreateViewModel())
             {
-                // Arrange
-                var vm = CreateViewModel();
-
                 // Act
                 vm.CancelSearch();
 

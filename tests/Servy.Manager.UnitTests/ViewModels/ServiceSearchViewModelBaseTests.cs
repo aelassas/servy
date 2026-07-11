@@ -7,11 +7,12 @@ using Servy.UI.Services;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
-    public class ServiceSearchViewModelBaseTests
+    public class ServiceSearchViewModelBaseTests : IDisposable
     {
         private readonly Mock<ICursorService> _cursorServiceMock;
         private readonly Mock<IUiDispatcher> _uiDispatcherMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
+        private readonly TestServiceSearchViewModel _sut;
 
         public ServiceSearchViewModelBaseTests()
         {
@@ -21,6 +22,15 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             // Ensure the dispatcher doesn't hang the async state machine during tests
             _uiDispatcherMock.Setup(d => d.YieldAsync()).Returns(Task.CompletedTask);
+
+            // Initialize centralized SUT instance to establish a single cleanup vector
+            _sut = new TestServiceSearchViewModel(_cursorServiceMock.Object, _uiDispatcherMock.Object, _serviceCommandsMock.Object);
+        }
+
+        public void Dispose()
+        {
+            // Centralized teardown guarantees everything including internal tokens get disposed cleanly
+            _sut.Dispose();
         }
 
         #region Factory Stub Class
@@ -59,6 +69,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullArguments_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
                 new TestServiceSearchViewModel(null!, _uiDispatcherMock.Object, _serviceCommandsMock.Object));
 
@@ -72,13 +83,12 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_ValidArguments_InitializesPropertiesAndCommands()
         {
-            var sut = new TestServiceSearchViewModel(_cursorServiceMock.Object, _uiDispatcherMock.Object, _serviceCommandsMock.Object);
-
-            Assert.NotNull(sut.Services);
-            Assert.Empty(sut.Services);
-            Assert.Equal(Strings.Button_Search, sut.SearchButtonText);
-            Assert.False(sut.IsBusy);
-            Assert.NotNull(sut.SearchCommand);
+            // Arrange & Act & Assert
+            Assert.NotNull(_sut.Services);
+            Assert.Empty(_sut.Services);
+            Assert.Equal(Strings.Button_Search, _sut.SearchButtonText);
+            Assert.False(_sut.IsBusy);
+            Assert.NotNull(_sut.SearchCommand);
         }
 
         #endregion
@@ -88,17 +98,19 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Properties_SetNewValues_TriggersPropertyNotificationEvents()
         {
-            var sut = new TestServiceSearchViewModel(_cursorServiceMock.Object, _uiDispatcherMock.Object, _serviceCommandsMock.Object);
+            // Arrange
             var changedProperties = new List<string>();
-            sut.PropertyChanged += (s, e) => { if (e.PropertyName != null) changedProperties.Add(e.PropertyName); };
+            _sut.PropertyChanged += (s, e) => { if (e.PropertyName != null) changedProperties.Add(e.PropertyName); };
 
-            sut.SearchText = "Wexflow";
-            sut.SearchButtonText = "Searching Now...";
-            sut.IsBusy = true;
+            // Act
+            _sut.SearchText = "Wexflow";
+            _sut.SearchButtonText = "Searching Now...";
+            _sut.IsBusy = true;
 
-            Assert.Contains(nameof(sut.SearchText), changedProperties);
-            Assert.Contains(nameof(sut.SearchButtonText), changedProperties);
-            Assert.Contains(nameof(sut.IsBusy), changedProperties);
+            // Assert
+            Assert.Contains(nameof(_sut.SearchText), changedProperties);
+            Assert.Contains(nameof(_sut.SearchButtonText), changedProperties);
+            Assert.Contains(nameof(_sut.IsBusy), changedProperties);
         }
 
         #endregion
@@ -109,7 +121,6 @@ namespace Servy.Manager.UnitTests.ViewModels
         public async Task SearchServicesAsync_SuccessfulExecution_PopulatesCollectionsAndResetsCursor()
         {
             // Arrange
-            var sut = new TestServiceSearchViewModel(_cursorServiceMock.Object, _uiDispatcherMock.Object, _serviceCommandsMock.Object);
             var mockRawServices = new List<Service> { new Service { Name = "ServyCore" } };
 
             _serviceCommandsMock
@@ -117,19 +128,19 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .ReturnsAsync(mockRawServices);
 
             var mockItem = new Mock<ServiceItemBase>().Object;
-            sut.CustomCreateServiceItem = (srv) => mockItem;
-            sut.SearchText = "Servy";
+            _sut.CustomCreateServiceItem = (srv) => mockItem;
+            _sut.SearchText = "Servy";
 
             // Act
-            await sut.SearchCommand.ExecuteAsync(null);
+            await _sut.SearchCommand.ExecuteAsync(null);
 
             // Assert
-            Assert.Single(sut.Services);
-            Assert.Same(mockItem, sut.Services.First());
+            Assert.Single(_sut.Services);
+            Assert.Same(mockItem, _sut.Services.First());
 
             // State resets verified in finally lock
-            Assert.False(sut.IsBusy);
-            Assert.Equal(Strings.Button_Search, sut.SearchButtonText);
+            Assert.False(_sut.IsBusy);
+            Assert.Equal(Strings.Button_Search, _sut.SearchButtonText);
 
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
@@ -139,11 +150,13 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public async Task SearchServicesAsync_NullServiceCommands_AbortsGracefully()
         {
-            var sut = new TestServiceSearchViewModel(_cursorServiceMock.Object, _uiDispatcherMock.Object, _serviceCommandsMock.Object);
-            sut.ServiceCommands = null!; // Simulate the dependency being cleared after construction
+            // Arrange
+            _sut.ServiceCommands = null!; // Simulate the dependency being cleared after construction
 
-            await sut.SearchCommand.ExecuteAsync(null);
+            // Act
+            await _sut.SearchCommand.ExecuteAsync(null);
 
+            // Assert
             _serviceCommandsMock.Verify(s => s.SearchServicesAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Never);
         }
@@ -151,32 +164,32 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public async Task SearchServicesAsync_OperationCancelledExceptionThrown_HandlesGracefully()
         {
-            var sut = new TestServiceSearchViewModel(_cursorServiceMock.Object, _uiDispatcherMock.Object, _serviceCommandsMock.Object);
-
+            // Arrange
             _serviceCommandsMock
                 .Setup(s => s.SearchServicesAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException());
 
-            var exception = await Record.ExceptionAsync(() => sut.SearchCommand.ExecuteAsync(null));
+            // Act
+            var exception = await Record.ExceptionAsync(() => _sut.SearchCommand.ExecuteAsync(null));
 
             // Assert that target exception was caught and handled internally without blowing up the execution stack
             Assert.Null(exception);
-            Assert.False(sut.IsBusy);
+            Assert.False(_sut.IsBusy);
         }
 
         [Fact]
         public async Task SearchServicesAsync_GenericExceptionThrown_LogsErrorAndCleansUpState()
         {
-            var sut = new TestServiceSearchViewModel(_cursorServiceMock.Object, _uiDispatcherMock.Object, _serviceCommandsMock.Object);
-
+            // Arrange
             _serviceCommandsMock
                 .Setup(s => s.SearchServicesAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("Database/SCM connection lost"));
 
-            await sut.SearchCommand.ExecuteAsync(null);
+            // Act
+            await _sut.SearchCommand.ExecuteAsync(null);
 
-            // Should reach finally block cleanly despite crash
-            Assert.False(sut.IsBusy);
+            // Assert - Should reach finally block cleanly despite crash
+            Assert.False(_sut.IsBusy);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
@@ -184,28 +197,28 @@ namespace Servy.Manager.UnitTests.ViewModels
         public async Task SearchServicesAsync_SupersededBeforeCompletion_DoesNotOverwriteUiState()
         {
             // Arrange
-            var sut = new TestServiceSearchViewModel(_cursorServiceMock.Object, _uiDispatcherMock.Object, _serviceCommandsMock.Object);
             var tcs = new TaskCompletionSource<List<Service>>();
 
             _serviceCommandsMock
                 .Setup(s => s.SearchServicesAsync(It.IsAny<string>(), false, It.IsAny<CancellationToken>()))
                 .Returns(tcs.Task);
 
-            var executionTask = sut.SearchCommand.ExecuteAsync(null);
-            var executionTokenSource = sut.GetCancellationTokenSource();
+            var executionTask = _sut.SearchCommand.ExecuteAsync(null);
+            var executionTokenSource = _sut.GetCancellationTokenSource();
 
             // Force a newer token source allocation behind the scenes to mimic a racing search execution
             var racingCts = new CancellationTokenSource();
-            sut.SetCancellationTokenSource(racingCts);
+            _sut.SetCancellationTokenSource(racingCts);
 
             // Force execution to proceed past the await boundary loop frame
             executionTokenSource!.Cancel();
             tcs.SetResult(new List<Service> { new Service { Name = "StaleResult" } });
 
+            // Act
             await executionTask;
 
             // Assert - The stale task shouldn't reset UI parameters because it no longer owns the current CTS reference window
-            Assert.True(sut.IsBusy);
+            Assert.True(_sut.IsBusy);
             _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Never);
 
             // Clean up global mock allocations
@@ -220,17 +233,19 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Dispose_CalledMultipleTimes_ExecutesAtomicBlockOnce()
         {
-            var sut = new TestServiceSearchViewModel(_cursorServiceMock.Object, _uiDispatcherMock.Object, _serviceCommandsMock.Object);
+            // Arrange
             using (var cts = new CancellationTokenSource())
             {
-                sut.SetCancellationTokenSource(cts);
+                _sut.SetCancellationTokenSource(cts);
 
-                sut.Dispose();
+                // Act
+                _sut.Dispose();
 
                 // Second execution should return immediately through the Interlocked guard statement path
-                sut.Dispose();
+                _sut.Dispose();
 
-                Assert.Null(sut.GetCancellationTokenSource());
+                // Assert
+                Assert.Null(_sut.GetCancellationTokenSource());
                 Assert.True(cts.IsCancellationRequested);
             }
         }
@@ -238,11 +253,13 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public async Task SearchServicesAsync_TriggeredPostDisposal_AbortsImmediately()
         {
-            var sut = new TestServiceSearchViewModel(_cursorServiceMock.Object, _uiDispatcherMock.Object, _serviceCommandsMock.Object);
-            sut.Dispose();
+            // Arrange
+            _sut.Dispose();
 
-            await sut.SearchCommand.ExecuteAsync(null);
+            // Act
+            await _sut.SearchCommand.ExecuteAsync(null);
 
+            // Assert
             _serviceCommandsMock.Verify(s => s.SearchServicesAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
