@@ -851,7 +851,6 @@ namespace Servy.UnitTests.Services
             // Arrange
             var sut = CreateSut();
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
-            _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(path);
 
             var dto = new ServiceDto { Name = "DelegateTestService" };
             _modelToServiceDtoMock.Setup(m => m()).Returns(dto);

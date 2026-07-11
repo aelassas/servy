@@ -2,6 +2,7 @@
 using Servy.CLI.Enums;
 using Servy.CLI.Helpers;
 using Servy.CLI.Models;
+using Servy.CLI.Resources;
 using System;
 using System.IO;
 using System.Threading;
@@ -206,23 +207,32 @@ namespace Servy.CLI.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData("Xml", ConfigFileType.Xml, true)]
-        [InlineData("JSON", ConfigFileType.Json, true)]
-        [InlineData("invalid", ConfigFileType.Xml, false)]
-        [InlineData("123", ConfigFileType.Xml, false)]
-        [InlineData("", ConfigFileType.Xml, false)]
-        [InlineData("xml,json", ConfigFileType.Xml, false)]
-        public void TryParseFileType_InputValidation_ReturnsExpected(string input, ConfigFileType expectedType, bool expectedResult)
+        [InlineData("Xml", ConfigFileType.Xml)]
+        [InlineData("JSON", ConfigFileType.Json)]
+        public void TryParseFileType_ValidInputs_ReturnsTrueAndMapsCorrectly(string input, ConfigFileType expectedType)
         {
             // Arrange & Act
             bool result = Helper.TryParseFileType(input, out ConfigFileType actualType, out string error);
 
             // Assert
-            Assert.Equal(expectedResult, result);
-            if (expectedResult)
-            {
-                Assert.Equal(expectedType, actualType);
-            }
+            Assert.True(result);
+            Assert.Empty(error);
+            Assert.Equal(expectedType, actualType);
+        }
+
+        [Theory]
+        [InlineData("invalid")]
+        [InlineData("123")]
+        [InlineData("")]
+        [InlineData("xml,json")]
+        public void TryParseFileType_InvalidInputs_ReturnsFalseAndAppendsErrorToken(string input)
+        {
+            // Arrange & Act
+            bool result = Helper.TryParseFileType(input, out ConfigFileType _, out string error);
+
+            // Assert
+            Assert.False(result);
+            Assert.Equal(Strings.Msg_InvalidConfigFileType, error);
         }
     }
 }
