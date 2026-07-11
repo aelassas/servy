@@ -99,9 +99,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task DesignTimeConstructor_InitializesSuccessfully()
+        public void DesignTimeConstructor_InitializesSuccessfully()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -121,7 +121,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                         dtViewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
@@ -130,9 +129,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Property & Selection Mutation Tracking Tests
 
         [Fact]
-        public async Task SelectedService_ChangeSelection_FiresNotifyPropertyChangedEvents()
+        public void SelectedService_ChangeSelection_FiresNotifyPropertyChangedEvents()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -165,14 +164,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
         [Fact]
-        public async Task SelectedService_SetSameReference_DoesNotFireEventsOrReload()
+        public void SelectedService_SetSameReference_DoesNotFireEventsOrReload()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -198,7 +196,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
@@ -207,9 +204,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Command Traversal & Tree Expansion Structure Tests
 
         [Fact]
-        public async Task ExpandAllCommand_Executes_RecursivelyExpandsNodesWithCycleGuard()
+        public void ExpandAllCommand_Executes_RecursivelyExpandsNodesWithCycleGuard()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -239,14 +236,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
         [Fact]
-        public async Task CollapseAllCommand_Executes_RecursivelyCollapsesNodes()
+        public void CollapseAllCommand_Executes_RecursivelyCollapsesNodes()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -274,14 +270,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
         [Fact]
-        public async Task CopyPidCommand_ValidSelectionWithPid_InvokesServiceCommandsMapping()
+        public void CopyPidCommand_ValidSelectionWithPid_InvokesServiceCommandsMapping()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -304,7 +299,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
@@ -313,9 +307,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region LoadDependencyTreeAsync Core Branch Execution Tests
 
         [Fact]
-        public async Task LoadDependencyTreeAsync_SelectedServiceNull_ClearsTreeAndReturnsEarly()
+        public void LoadDependencyTreeAsync_SelectedServiceNull_ClearsTreeAndReturnsEarly()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -338,7 +332,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
@@ -363,7 +356,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         // Act
                         viewModel.SelectedService = mockService;
 
-                        // allow the STA dispatcher message pump  to process incoming UI collection modification updates concurrently.
+                        // allow the STA dispatcher message pump to process incoming UI collection modification updates concurrently.
                         await Helper.WaitUntilAsync(
                             () => viewModel.DependencyTree.Count > 0,
                             TimeSpan.FromSeconds(2),
@@ -437,9 +430,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Background Worker Loop Ticking Framework Evaluation Tests
 
         [Fact]
-        public async Task BaseMonitoring_OnTickAsync_SelectionNull_ResetsDisplaysAndClearsFlag()
+        public void BaseMonitoring_OnTickAsync_SelectionNull_ResetsDisplaysAndClearsFlag()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -466,14 +459,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
         [Fact]
-        public async Task BaseMonitoring_OnTickAsync_PidNotFound_ResetsPidDisplay()
+        public void BaseMonitoring_OnTickAsync_PidNotFound_ResetsPidDisplay()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -501,14 +493,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
         [Fact]
-        public async Task BaseMonitoring_OnTickAsync_PidChanged_UpdatesModelPropertiesAndText()
+        public void BaseMonitoring_OnTickAsync_PidChanged_UpdatesModelPropertiesAndText()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -536,7 +527,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 

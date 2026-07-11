@@ -13,6 +13,11 @@ namespace Servy.Infrastructure.Data
     /// </summary>
     public static class SQLiteDbInitializer
     {
+        /// <summary>
+        /// Single Source of Truth for the absolute latest schema migration version sequence.
+        /// </summary>
+        public const int LatestSchemaVersion = 6;
+
         private static readonly char[] SplitWhitespaceChars = { ' ', '\t' };
 
         // Static Cache for O(1) lookups and zero reflection overhead during database migrations.
@@ -169,6 +174,12 @@ namespace Servy.Infrastructure.Data
 
                         // --- FUTURE MIGRATIONS GO HERE ---
                         // if (currentVersion < 7) { ... }
+
+                        // Double check that the final tracked migration index completely aligns with the central declaration
+                        if (currentVersion != LatestSchemaVersion)
+                        {
+                            Logger.Warn($"Migration chain sync warning: Current database version is {currentVersion}, but LatestSchemaVersion is defined as {LatestSchemaVersion}. Ensure future migration blocks are properly wired.");
+                        }
 
                         // 6. Reconciliation safety net
                         // Ensures that any columns added to SqlConstants but missed in migrations are applied.

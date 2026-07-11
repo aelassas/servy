@@ -120,7 +120,6 @@ namespace Servy.Manager.UnitTests.ViewModels
             using (var vm = CreateViewModel())
             {
                 // Arrange
-                // Bind explicit static reference anchors to bypass real-time millisecond/tick differences
                 var staticDate = new DateTime(2026, 6, 8);
                 vm.FromDate = staticDate;
                 vm.ToDate = staticDate;
@@ -131,7 +130,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 int notificationCount = 0;
                 vm.PropertyChanged += (s, e) => notificationCount++;
 
-                // Act - Set to identical static values to test optimization guards cleanly
+                // Act
                 vm.IsBusy = false;
                 vm.FooterText = "Ready";
                 vm.SearchButtonText = "Search";
@@ -302,7 +301,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Arrange
                 vm.SelectedLog = null;
 
-                // Act - Pass an irrelevant object parameter layout type context
+                // Act
                 vm.RowClickCommand.Execute(new List<string> { "Malformed context entry payload mapping" });
 
                 // Assert
@@ -340,14 +339,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                         var searchTask = vm.SearchCommand.ExecuteAsync(null);
 
                         var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
-                        var completedTask = Task.WhenAny(scrollEventSource.Task, timeoutTask).GetAwaiter().GetResult();
+                        var completedTask = await Task.WhenAny(scrollEventSource.Task, timeoutTask);
 
                         if (completedTask == timeoutTask)
                         {
                             throw new TimeoutException("The ScrollLogsToTopRequested event failed to fire within the allocated safety window.");
                         }
 
-                        searchTask.GetAwaiter().GetResult();
+                        await searchTask;
 
                         // Assert
                         using (var enumerator = vm.LogsView.SourceCollection.Cast<LogEntryModel>().GetEnumerator())
@@ -409,7 +408,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     firstSearchTcs.TrySetResult(Array.Empty<ServyEventLogEntry>());
                     secondSearchTcs.TrySetResult(Array.Empty<ServyEventLogEntry>());
 
-                    Task.WhenAll(firstSearchTask, secondSearchTask).GetAwaiter().GetResult();
+                    await Task.WhenAll(firstSearchTask, secondSearchTask);
                 }
             }, createApp: true);
         }
@@ -429,9 +428,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     using (var vm = CreateViewModel())
                     {
                         // Act
-                        vm.SearchCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+                        await vm.SearchCommand.ExecuteAsync(null);
 
-                        // Assert - Verify final security release blocks completed execution cycle parameters
+                        // Assert
                         _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
                         Assert.False(vm.IsBusy);
                         Assert.Equal(Strings.Button_Search, vm.SearchButtonText);
@@ -455,7 +454,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     using (var vm = CreateViewModel())
                     {
                         // Act
-                        var exception = Record.ExceptionAsync(() => vm.SearchCommand.ExecuteAsync(null)).GetAwaiter().GetResult();
+                        var exception = await Record.ExceptionAsync(() => vm.SearchCommand.ExecuteAsync(null));
 
                         // Assert
                         Assert.Null(exception); // The OperationCanceledException catch block handled it safely

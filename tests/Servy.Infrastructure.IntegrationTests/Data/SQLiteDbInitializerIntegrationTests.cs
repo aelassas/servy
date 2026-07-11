@@ -32,7 +32,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
                 // Assert
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
-                Assert.True(version >= 5, "Database should be migrated to at least version 5.");
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, version);
 
                 var tables = conn.Query<string>("SELECT name FROM sqlite_master WHERE type='table';").ToList();
                 Assert.Contains("Services", tables);
@@ -42,6 +42,24 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Contains("EnableSizeRotation", columns); // Applied by V2
                 Assert.Contains("EnableConsoleUI", columns); // Applied by V3
                 Assert.Contains("RecoveryOnCleanExit", columns); // Applied by V5
+
+                // Verify the structural index details map directly to the modern COLLATE UNICODE_NOCASE layout rules (Applied by V6)
+                var indexList = conn.Query("PRAGMA index_list('Services');")
+                                    .Select(x => (IDictionary<string, object>)x)
+                                    .ToList();
+
+                var targetingIndex = indexList.FirstOrDefault(idx => string.Equals(idx["name"]?.ToString(), "idx_services_name_unique", StringComparison.OrdinalIgnoreCase));
+
+                Assert.NotNull(targetingIndex);
+                Assert.Equal(1L, Convert.ToInt64(targetingIndex["unique"]));
+
+                // Confirm index expression metadata properties use the raw column reference
+                var indexInfo = conn.Query("PRAGMA index_info('idx_services_name_unique');")
+                                    .Select(x => (IDictionary<string, object>)x)
+                                    .ToList();
+
+                Assert.Single(indexInfo);
+                Assert.Equal("Name", indexInfo[0]["name"]?.ToString());
             }
         }
 
@@ -59,6 +77,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Act & Assert
                 Assert.Throws<SQLiteException>(() => SQLiteDbInitializer.Initialize(conn));
 
+                // Assert
                 // Verify the transaction was successfully rolled back
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
                 Assert.Equal(0, version); // Version should NOT have incremented to 1 due to rollback
@@ -102,7 +121,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
                 // Assert
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
-                Assert.True(version >= 5);
+                Assert.True(version >= SQLiteDbInitializer.LatestSchemaVersion, $"Database should be migrated to at least the latest schema version ({SQLiteDbInitializer.LatestSchemaVersion}).");
 
                 // Verify Deduplication (the absolute smallest historical record ID=1 must win)
                 var services = conn.Query($"SELECT Id FROM {SqlConstants.ServicesTableName};").ToList();
@@ -190,9 +209,9 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // Act
                 SQLiteDbInitializer.Initialize(conn);
 
-                // Assert - The skips should allow the initialization to complete cleanly without throwing SQL syntax errors
+                // Assert: The skips should allow the initialization to complete cleanly without throwing SQL syntax errors
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
-                Assert.True(version >= 5);
+                Assert.True(version >= SQLiteDbInitializer.LatestSchemaVersion, $"Database should be migrated to at least the latest schema version ({SQLiteDbInitializer.LatestSchemaVersion}).");
             }
         }
 
@@ -251,7 +270,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
                 // Assert
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
-                Assert.Equal(6, version);
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, version);
 
                 // Verify table deduplication pass: only the oldest instance (Id = 1) survives the constraint cleanup
                 var remainingServices = conn.Query($"SELECT Id, Name FROM {SqlConstants.ServicesTableName};").ToList();
@@ -303,7 +322,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
                 // Assert: Verify UNICODE_NOCASE successfully group-collapsed and purged the duplicate non-ASCII character entries
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
-                Assert.Equal(6, version);
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, version);
 
                 var remainingServices = conn.Query($"SELECT Id, Name FROM {SqlConstants.ServicesTableName};").ToList();
                 Assert.Single(remainingServices);
@@ -422,15 +441,14 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
                 conn.Execute($"CREATE TABLE {SqlConstants.ServicesTableName} ({string.Join(", ", corruptedTableDef)});");
 
-                // Updated stashed schema version context to 6 to safely bypass the modern sequential 
-                // index migrations block layout. This redirects execution straight into ReconcileSchema 
-                // to self-heal the sabotaged test structure completely.
-                conn.Execute($"UPDATE SchemaInfo SET Version = 6 WHERE Id = 1;");
+                // Updated stashed schema version context to the absolute maximum single source of truth value.
+                // This reliably redirects execution straight into ReconcileSchema to self-heal the sabotaged test structure completely.
+                conn.Execute($"UPDATE SchemaInfo SET Version = {SQLiteDbInitializer.LatestSchemaVersion} WHERE Id = 1;");
 
-                // Step 3: Act - Run Initialize again
+                // Act - Run Initialize again
                 SQLiteDbInitializer.Initialize(conn);
 
-                // Step 4: Assert 
+                // Assert 
                 var finalColumns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();
 
                 // The missing column should have been successfully restored
@@ -456,6 +474,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             var ex = Assert.Throws<InvalidOperationException>(() =>
                 TestReflection.InvokeNonPublicStatic(typeof(SQLiteDbInitializer), "GetSqlType", "NonExistentMagicalColumn_12345"));
 
+            // Assert
             Assert.Contains("lacks an [SqlColumn] attribute", ex.Message);
         }
 
