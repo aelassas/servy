@@ -189,6 +189,8 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(3, 4, DateTime.UtcNow, "[service] info");
+
+            // Register an open expectation trap on the interface execution block
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
                       .Returns(new[] { fakeEvt });
 
@@ -203,6 +205,10 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Information, entry.Level);
+
+            // PLATFORM BOUNDARY ASSERTS: Verify that the contract successfully negotiated 
+            // the parameters and triggered the read sequence exactly once without faulting.
+            mockReader.Verify(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()), Times.Once);
         }
 
         [Fact]
@@ -211,6 +217,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(4, 0, DateTime.UtcNow, "[service] unknown level");
+
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
                       .Returns(new[] { fakeEvt });
 
@@ -224,6 +231,10 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Information, entry.Level);
+
+            // PLATFORM BOUNDARY ASSERTS: Verify that the contract successfully negotiated 
+            // the parameters and triggered the read sequence exactly once without faulting.
+            mockReader.Verify(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()), Times.Once);
         }
 
         [Fact]

@@ -147,5 +147,73 @@ namespace Servy.Core.UnitTests.Services
             // Act & Assert
             Assert.Null(_serializer.Deserialize(invalidJson));
         }
+
+        #region Serialize Tests
+
+        [Fact]
+        public void Serialize_NullDto_ReturnsNull()
+        {
+            // Arrange & Act
+            var result = _serializer.Serialize(null);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void Serialize_PopulatedDto_ProducesIndentedJsonExcludingSensitiveFields()
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateFull();
+            dto.UserAccount = "Domain\\Admin";
+            dto.Password = "SuperSecret123!";
+            dto.RunAsLocalSystem = false;
+
+            // Act
+            string json = _serializer.Serialize(dto);
+
+            // Assert
+            Assert.NotNull(json);
+
+            // Verify that the formatting is human-readable indented JSON
+            Assert.Contains("\n", json);
+            Assert.Contains("  \"Name\":", json);
+
+            // SECURITY CONTRACT BOUNDARY: Verify that sensitive credentials are actively 
+            // stripped or omitted from the outbound file payload by UntrustedDataSettings rules.
+            Assert.DoesNotContain("UserAccount", json);
+            Assert.DoesNotContain("Password", json);
+            Assert.DoesNotContain("Domain\\Admin", json);
+            Assert.DoesNotContain("SuperSecret123!", json);
+        }
+
+        [Fact]
+        public void SerializeAndDeserialize_RoundTripSymmetry_MaintainsObjectIntegrity()
+        {
+            // Arrange
+            var original = ServiceDtoFactory.CreateFull();
+            original.Name = "SymmetryRoundTrip";
+            original.ExecutablePath = "C:\\Servy\\App.exe";
+
+            // Act
+            string serializedJson = _serializer.Serialize(original);
+            Assert.NotNull(serializedJson);
+
+            var recovered = _serializer.Deserialize(serializedJson);
+
+            // Assert
+            Assert.NotNull(recovered);
+            Assert.Equal(original.Name, recovered.Name);
+            Assert.Equal(original.ExecutablePath, recovered.ExecutablePath);
+            Assert.Equal(original.StartupType, recovered.StartupType);
+            Assert.Equal(original.RotationSize, recovered.RotationSize);
+
+            // Confirm structural integrity for unmapped fallback security fields
+            Assert.Null(recovered.UserAccount);
+            Assert.Null(recovered.Password);
+            Assert.True(recovered.RunAsLocalSystem);
+        }
+
+        #endregion
     }
 }
