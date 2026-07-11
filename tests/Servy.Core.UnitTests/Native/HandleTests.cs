@@ -10,7 +10,7 @@ namespace Servy.Core.UnitTests.Native
         public void OpenProcess_ShouldReturnValidHandle_WhenOpeningCurrentProcess()
         {
             // Arrange
-            int currentPid = Process.GetCurrentProcess().Id;
+            int currentPid = GetCurrentProcessId();
 
             // PROCESS_QUERY_LIMITED_INFORMATION (0x1000) is standard for querying state
             // and typically does not require administrative privileges for the current process.
@@ -52,7 +52,7 @@ namespace Servy.Core.UnitTests.Native
         public void Handle_Dispose_ShouldBeIdempotent()
         {
             // Arrange
-            int currentPid = Process.GetCurrentProcess().Id;
+            int currentPid = GetCurrentProcessId();
             SafeWinProcessHandle handle = OpenProcess(ProcessAccess.QueryLimitedInformation, false, currentPid);
 
             // Act
@@ -72,7 +72,7 @@ namespace Servy.Core.UnitTests.Native
         public void Handle_ShouldSupportImplicitConversionToIntPtr()
         {
             // Arrange
-            int currentPid = Process.GetCurrentProcess().Id;
+            int currentPid = GetCurrentProcessId();
 
             // Act
             using (SafeWinProcessHandle handle = OpenProcess(ProcessAccess.QueryLimitedInformation, false, currentPid))
@@ -83,6 +83,14 @@ namespace Servy.Core.UnitTests.Native
                 // Note: SafeHandle does not provide an implicit cast to IntPtr by design 
                 // to prevent handle leaks. Use DangerousGetHandle() in tests only.
                 Assert.NotEqual(IntPtr.Zero, convertedPtr);
+            }
+        }
+
+        private int GetCurrentProcessId()
+        {
+            using(var process = Process.GetCurrentProcess())
+            {
+                return process.Id;
             }
         }
     }

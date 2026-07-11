@@ -157,6 +157,21 @@ namespace Servy.Core.UnitTests.Native
             Assert.Equal("Hello World", File.ReadAllText(dest));
         }
 
+        [Fact]
+        public void AtomicSecureMove_DestinationExists_ReplacesAtomically()
+        {
+            string src = Path.Combine(_testDir, "src.txt");
+            string dest = Path.Combine(_testDir, "dest.txt");
+            File.WriteAllText(src, "New Content");
+            File.WriteAllText(dest, "Old Content");   // destination already exists
+
+            NativeMethodsHelpers.AtomicSecureMove(src, dest);
+
+            Assert.False(File.Exists(src));
+            Assert.True(File.Exists(dest));
+            Assert.Equal("New Content", File.ReadAllText(dest));
+        }
+
         #endregion
 
         #region GetFileIdentity Tests

@@ -114,7 +114,7 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(dto.EnableSizeRotation, service.EnableSizeRotation);
             Assert.Equal(dto.RotationSize, service.RotationSize);
             Assert.Equal(dto.EnableDateRotation, service.EnableDateRotation);
-            Assert.Equal(dto.DateRotationType, (int)service.DateRotationType);
+            Assert.Equal((DateRotationType)dto.DateRotationType!, service.DateRotationType);
             Assert.Equal(dto.MaxRotations, service.MaxRotations);
             Assert.Equal(dto.UseLocalTimeForRotation, service.UseLocalTimeForRotation); 
             Assert.Equal(dto.EnableDebugLogs, service.EnableDebugLogs);
