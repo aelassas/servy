@@ -116,7 +116,11 @@ namespace Servy.Core.UnitTests.Security
         {
             // Arrange
             var path = Path.Combine(_testBaseDir, "CurrentUserDir");
-            var currentUserSid = WindowsIdentity.GetCurrent().User;
+            SecurityIdentifier currentUserSid;
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                currentUserSid = identity.User;
+            }
             bool isAdmin = SecurityHelper.IsAdministrator(); // Get the state of the runner
 
             // Act

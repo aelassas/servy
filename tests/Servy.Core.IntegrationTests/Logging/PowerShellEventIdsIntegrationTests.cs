@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Logging;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
 using Xunit;
@@ -60,7 +61,7 @@ namespace Servy.Core.IntegrationTests.Logging
                 throw new InvalidOperationException($"Could not find variable {variableName} in {filePath}");
             }
 
-            return int.Parse(match.Groups[1].Value);
+            return int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
         }
     }
 }
