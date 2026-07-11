@@ -470,16 +470,10 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceAccounts.LocalSystem, null), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceAccounts.LocalSystem, null, It.IsAny<string>()), Times.Once);
 
-            // BUNDLED SCENARIO: Verify that ChangeServiceConfig2 is properly invoked for delayed-start tracking 
-            // only when the matching param context scenario runs.
-            if (startType == ServiceStartType.AutomaticDelayedStart)
-            {
-                _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny), Times.Once);
-            }
-            else
-            {
-                _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny), Times.Never);
-            }
+            // BUNDLED SCENARIO: ChangeServiceConfig2 is invoked exactly Times.Once in both scenarios 
+            // because the existing update configuration loop explicitly sets fDelayedAutostart to false 
+            // for standard Automatic configurations to clear down stale state drift.
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny), Times.Once);
         }
 
         [Fact]
