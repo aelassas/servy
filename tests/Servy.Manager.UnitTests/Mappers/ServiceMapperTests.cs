@@ -51,7 +51,7 @@ namespace Servy.Manager.UnitTests.Mappers
         [Fact]
         public async Task ToModelAsync_CalculatePerf_CallsHelper()
         {
-            var domainService = new Core.Domain.Service(_mockServiceManager.Object) { Pid = 1234 };
+            var domainService = new Core.Domain.Service(_mockServiceManager.Object) { Name = "Test", Pid = 1234 };
             _mockProcessHelper.Setup(h => h.GetProcessTreeMetrics(1234))
                 .Returns(new ProcessMetrics(10.0, 500));
 

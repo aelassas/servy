@@ -14,7 +14,7 @@ namespace Servy.CLI.UnitTests.Commands
 
         protected override ServiceStatusOptions CreateValidOptions(string serviceName) => new ServiceStatusOptions { ServiceName = serviceName };
 
-        protected override ServiceStatusOptions CreateEmptyOptions() => new ServiceStatusOptions { ServiceName = "" };
+        protected override ServiceStatusOptions CreateEmptyOptions(string? serviceName) => new ServiceStatusOptions { ServiceName = serviceName };
 
         protected override string ExpectedSuccessMessage(string serviceName) => string.Format(Strings.Msg_ServiceStatusResult, serviceName, ServiceControllerStatus.Running);
 

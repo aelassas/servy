@@ -14,8 +14,8 @@ namespace Servy.CLI.UnitTests.Helpers
     [Collection("SequentialConsoleTests")]
     public class HelperTests
     {
-        // Thread lock gate safety valve for synchronous blocks and asynchronous capture orchestration
-        private static readonly object _consoleLock = new object();
+        // Single SemaphoreSlim(1, 1) to gate access to the static Console object.
+        private static readonly SemaphoreSlim _consoleSemaphore = new SemaphoreSlim(1, 1);
 
         // Async coordination primitive sharing the same conceptual isolation boundary 
         // to prevent thread pool yields from overlapping with active capturing blocks.
@@ -57,59 +57,45 @@ namespace Servy.CLI.UnitTests.Helpers
             }
         }
 
-        // Refactored async capture mechanism that ensures the StringWriter streams 
-        // stay alive naturally across all asynchronous thread hops without deadlocks.
-        // Returns a tuple containing captured stdout/stderr text for assertion.
+        /// <summary>
+        /// Asynchronous capture mechanism that hijacks the console stream for the duration of the test action,
+        /// allowing for non-blocking execution across thread hops without deadlocks.
+        /// Returns a tuple containing captured stdout/stderr text for assertion.
+        /// </summary>
         private async Task<(string StdOut, string StdErr)> RunTestWithConsoleCaptureAsync(Func<Task> testAction)
         {
-            // Acquire the async semaphore first to block concurrent asynchronous execution entries
-            await _asyncConsoleLock.WaitAsync();
+            // Arrange: Acquire async semaphore to gate access to static Console state
+            await _consoleSemaphore.WaitAsync();
 
-            TextWriter oldOut;
-            TextWriter oldErr;
-
-            // Enforce a strict synchronous lock guard while swapping static properties 
-            // to eliminate interleaving race conditions with synchronous test runs.
-            lock (_consoleLock)
-            {
-                oldOut = Console.Out;
-                oldErr = Console.Error;
-            }
+            // Capture original streams
+            var oldOut = Console.Out;
+            var oldErr = Console.Error;
 
             try
             {
                 using (var swOut = new StringWriter())
                 using (var swErr = new StringWriter())
                 {
-                    lock (_consoleLock)
-                    {
-                        Console.SetOut(swOut);
-                        Console.SetError(swErr);
-                    }
 
-                    // Perfectly await the execution task to cleanly yield control 
-                    // without escaping the lifetime bounds of the StringWriter wrappers.
+                    // Act: Redirect streams
+                    Console.SetOut(swOut);
+                    Console.SetError(swErr);
+
+                    // Await the action, which cleanly yields control to the thread pool 
+                    // while the hijacked console remains correctly redirected.
                     await testAction();
-
-                    lock (_consoleLock)
-                    {
-                        Console.SetOut(oldOut);
-                        Console.SetError(oldErr);
-                    }
 
                     return (swOut.ToString(), swErr.ToString());
                 }
             }
             finally
             {
-                // Unconditionally put back the original stdout/stderr streams within a 
-                // locked context immediately after the test action finishes execution.
-                lock (_consoleLock)
-                {
-                    Console.SetOut(oldOut);
-                    Console.SetError(oldErr);
-                }
-                _asyncConsoleLock.Release();
+                // Assert/Cleanup: Restore original console state
+                Console.SetOut(oldOut);
+                Console.SetError(oldErr);
+
+                // Always release the semaphore, regardless of test pass/fail
+                _consoleSemaphore.Release();
             }
         }
 
