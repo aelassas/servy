@@ -283,7 +283,7 @@ namespace Servy.Core.IntegrationTests.Native
         {
             // Arrange
             string src = Path.GetTempFileName();
-            string dst = Path.GetTempFileName() + ".moved";
+            string dst = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".moved");
             _tempFiles.Add(src);
             _tempFiles.Add(dst);
 
