@@ -69,7 +69,7 @@ namespace Servy.Manager.Services
         /// <param name="xmlServiceSerializer">XML service serializer.</param>
         /// <param name="jsonServiceSerializer">JSON service serializer.</param>
         /// <param name="appConfig">The application configuration interface.</param>
-        /// <param name="processHelper">The process helper used to format process commands.</param>
+        /// <param name="processHelper">The process helper used to format process commands and start processes.</param>
         /// <param name="dispatcher">The UI dispatcher used for STA operations like Clipboard access.</param>
         /// <exception cref="ArgumentNullException">Thrown if any argument is null.</exception>
         public ServiceCommands(
@@ -228,40 +228,36 @@ namespace Servy.Manager.Services
 
                 var forceFlag = _appConfig.ForceSoftwareRendering ? $" {AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
 
-                using (var process = new Process
+                var psi = new ProcessStartInfo
                 {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = _appConfig.DesktopAppPublishPath,
-                        Arguments = $"\"{AppConfig.SkipSplashArgument}\"{forceFlag}", // Pass false to skip splash screen
-                        UseShellExecute = true,
-                    }
-                })
+                    FileName = _appConfig.DesktopAppPublishPath,
+                    Arguments = $"\"{AppConfig.SkipSplashArgument}\"{forceFlag}", // Pass false to skip splash screen
+                    UseShellExecute = true,
+                };
+
+                if (service == null)
                 {
-                    if (service == null)
-                    {
-                        StartProcess(process);
-                        return;
-                    }
-
-                    if (string.IsNullOrWhiteSpace(service.Name))
-                    {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidServiceName, UiAppConfig.Caption);
-                        return;
-                    }
-
-                    var serviceDto = await _serviceRepository.GetByNameAsync(service.Name, decrypt: false, cancellationToken);
-                    if (serviceDto == null)
-                    {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
-                        return;
-                    }
-
-                    // Pass false to skip splash screen
-                    process.StartInfo.Arguments = $"\"false\" {Core.Helpers.Helper.Quote(service.Name)}{forceFlag}";
-
-                    StartProcess(process);
+                    using (StartProcess(psi)) { }
+                    return;
                 }
+
+                if (string.IsNullOrWhiteSpace(service.Name))
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidServiceName, UiAppConfig.Caption);
+                    return;
+                }
+
+                var serviceDto = await _serviceRepository.GetByNameAsync(service.Name, decrypt: false, cancellationToken);
+                if (serviceDto == null)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
+                    return;
+                }
+
+                // Pass false to skip splash screen
+                psi.Arguments = $"\"false\" {Core.Helpers.Helper.Quote(service.Name)}{forceFlag}";
+
+                using (StartProcess(psi)) { }
             }
             catch (Exception ex)
             {
@@ -857,16 +853,22 @@ namespace Servy.Manager.Services
         /// <summary>
         /// Attempts to launch an external process.
         /// </summary>
-        /// <param name="process">The <see cref="Process"/> instance configured with the necessary start information.</param>
+        /// <param name="psi">The <see cref="ProcessStartInfo"/> that contains the information used to start the process, 
+        /// including the file name and command-line arguments.</param>
+        /// <returns>The active process instance; returns null if the creation fails.</returns>
         /// <remarks>
-        /// Failures returning false are logged; launch exceptions propagate to the caller.
+        /// Failures are logged here; launch exceptions propagate directly to the caller.
         /// </remarks>
-        private void StartProcess(Process process)
+        private Process? StartProcess(ProcessStartInfo psi)
         {
-            if (!process.Start())
+            var process = _processHelper.Start(psi);
+
+            if (process == null)
             {
                 Logger.Warn($"Failed to start external process {_appConfig.DesktopAppPublishPath}.");
             }
+
+            return process;
         }
 
         #endregion

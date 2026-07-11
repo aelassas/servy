@@ -3,6 +3,7 @@ using Servy.Core.Common;
 using Servy.Core.Domain;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Core.Validation;
@@ -46,6 +47,7 @@ namespace Servy.Services
         private readonly ICursorService _cursorService;
         private readonly IXmlServiceSerializer _xmlServiceSerializer;
         private readonly IJsonServiceSerializer _jsonServiceSerializer;
+        private readonly IProcessHelper _processHelper;
 
         #endregion
 
@@ -66,6 +68,7 @@ namespace Servy.Services
         /// <param name="cursorService">Cursor service for managing cursor state during operations.</param>
         /// <param name="xmlServiceSerializer">XML service serializer.</param>
         /// <param name="jsonServiceSerializer">JSON service serializer.</param>
+        /// <param name="processHelper">The process helper used to start processes.</param>
         /// <exception cref="ArgumentNullException">Thrown when any required dependency is <c>null</c>.</exception>
         public ServiceCommands(
             Func<ServiceDto?> modelToServiceDto,
@@ -79,7 +82,8 @@ namespace Servy.Services
             IAppConfiguration? appConfig,
             ICursorService cursorService,
             IXmlServiceSerializer xmlServiceSerializer,
-            IJsonServiceSerializer jsonServiceSerializer
+            IJsonServiceSerializer jsonServiceSerializer,
+            IProcessHelper processHelper
             )
         {
             _modelToServiceDto = modelToServiceDto ?? throw new ArgumentNullException(nameof(modelToServiceDto));
@@ -94,6 +98,7 @@ namespace Servy.Services
             _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
             _xmlServiceSerializer = xmlServiceSerializer ?? throw new ArgumentNullException(nameof(xmlServiceSerializer));
             _jsonServiceSerializer = jsonServiceSerializer ?? throw new ArgumentNullException(nameof(jsonServiceSerializer));
+            _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
         }
 
         #endregion
@@ -381,18 +386,16 @@ namespace Servy.Services
 
             try
             {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = _appConfig.ManagerAppPublishPath,
+                    UseShellExecute = true,
+                    Arguments = $"\"{AppConfig.SkipSplashArgument}\"{forceFlag}", // Pass false to skip splash screen
+                };
 
-                using (var process = new Process
+                using (var process = _processHelper.Start(psi))
                 {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = _appConfig.ManagerAppPublishPath,
-                        UseShellExecute = true,
-                        Arguments = $"\"{AppConfig.SkipSplashArgument}\"{forceFlag}", // Pass false to skip splash screen
-                    }
-                })
-                {
-                    if (!process.Start())
+                    if (process == null)
                     {
                         Logger.Warn($"Failed to start external process {_appConfig.ManagerAppPublishPath}.");
                     }

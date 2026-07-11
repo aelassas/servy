@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Newtonsoft.Json;
 using Servy.Core.Common;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -12,6 +13,7 @@ using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.Manager.Validation;
 using Servy.UI.Services;
+using System.Diagnostics;
 
 namespace Servy.Manager.UnitTests.Services
 {
@@ -27,7 +29,7 @@ namespace Servy.Manager.UnitTests.Services
         private readonly Mock<IXmlServiceSerializer> _xmlServiceSerializerMock;
         private readonly Mock<IJsonServiceSerializer> _jsonServiceSerializerMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
-        private readonly Mock<IProcessHelper> _processHelper;
+        private readonly Mock<IProcessHelper> _processHelperMock;
         private readonly Mock<IUiDispatcher> _uiDispatcherMock;
         private readonly List<ServiceCommands> _created = new List<ServiceCommands>();
 
@@ -48,7 +50,7 @@ namespace Servy.Manager.UnitTests.Services
             _xmlServiceSerializerMock = new Mock<IXmlServiceSerializer>();
             _jsonServiceSerializerMock = new Mock<IJsonServiceSerializer>();
             _appConfigMock = new Mock<IAppConfiguration>();
-            _processHelper = new Mock<IProcessHelper>();
+            _processHelperMock = new Mock<IProcessHelper>();
             _uiDispatcherMock = new Mock<IUiDispatcher>();
 
             _removedServiceName = null;
@@ -83,7 +85,7 @@ namespace Servy.Manager.UnitTests.Services
                 _xmlServiceSerializerMock.Object,
                 _jsonServiceSerializerMock.Object,
                 _appConfigMock.Object,
-                _processHelper.Object,
+                _processHelperMock.Object,
                 _uiDispatcherMock.Object
             );
             _created.Add(sut);
@@ -355,18 +357,49 @@ namespace Servy.Manager.UnitTests.Services
         public async Task ConfigureServiceAsync_NullServiceParameter_LaunchesAppDirectlyWithoutArguments()
         {
             // Arrange
+            // Create an empty, non-executable tracking file context to pass the File.Exists guard
+            string tempTrackingFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Guid.NewGuid():N}.exe");
+            File.WriteAllText(tempTrackingFile, string.Empty);
+
+            _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempTrackingFile);
+            _appConfigMock.Setup(c => c.ForceSoftwareRendering).Returns(false);
+
+            ProcessStartInfo? capturedPsi = null;
+
+            // INTERCEPTION SEAM: Capture the launch metadata via callback and return null 
+            // to safely complete the fire-and-forget execution block without triggering ShellExecute.
+            _processHelperMock
+                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                .Callback<ProcessStartInfo>(psi => capturedPsi = psi)
+                .Returns((Process?)null);
+
             var sut = CreateServiceCommands();
-            var tempExe = Path.GetTempFileName() + ".exe";
-            File.WriteAllText(tempExe, "dummy");
-            _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(tempExe);
 
-            // Act
-            await sut.ConfigureServiceAsync(null, TestContext.Current.CancellationToken);
+            try
+            {
+                // Act
+                await sut.ConfigureServiceAsync(null, TestContext.Current.CancellationToken);
 
-            // Assert
-            _serviceRepositoryMock.Verify(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+                // Assert
+                // 1. Verify that database checks were bypassed since the target service context parameter was null
+                _serviceRepositoryMock.Verify(r => r.GetByNameAsync(
+                    It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+                    Times.Never);
 
-            if (File.Exists(tempExe)) File.Delete(tempExe);
+                // 2. HERMETIC VERIFICATION: Positively assert the precise launch state parameters
+                Assert.NotNull(capturedPsi);
+                Assert.Equal(tempTrackingFile, capturedPsi.FileName);
+                Assert.Contains($"\"{AppConfig.SkipSplashArgument}\"", capturedPsi.Arguments);
+                Assert.True(capturedPsi.UseShellExecute);
+            }
+            finally
+            {
+                // Cleanup the tracking file resource layout safely
+                if (File.Exists(tempTrackingFile))
+                {
+                    File.Delete(tempTrackingFile);
+                }
+            }
         }
 
         [Fact]
