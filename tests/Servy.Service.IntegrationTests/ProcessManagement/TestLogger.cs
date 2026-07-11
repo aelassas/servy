@@ -7,13 +7,14 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public List<string> Infos { get; } = new List<string>();
         public List<string> Warnings { get; } = new List<string>();
         public List<string> Errors { get; } = new List<string>();
+        public List<string> Debugs { get; } = new List<string>();
 
         public string? Prefix => string.Empty;
 
         public void Info(string message, Exception? ex = null) => Infos.Add(Format(message, ex));
         public void Warn(string message, Exception? ex = null) => Warnings.Add(Format(message, ex));
         public void Error(string message, Exception? ex = null) => Errors.Add(Format(message, ex));
-        public void Debug(string message, Exception? ex = null) { }
+        public void Debug(string message, Exception? ex = null) => Debugs.Add(message);
 
         public IServyLogger CreateScoped(string? prefix) => this;
         public void SetLogLevel(LogLevel level) { }

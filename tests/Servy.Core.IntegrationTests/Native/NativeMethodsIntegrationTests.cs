@@ -309,10 +309,12 @@ namespace Servy.Core.IntegrationTests.Native
                 NativeMethods.LOGON32_LOGON_SERVICE,
                 NativeMethods.LOGON32_PROVIDER_DEFAULT,
                 out IntPtr token);
+            int lastError = Marshal.GetLastWin32Error();   // must be read first
 
             // Assert
             Assert.False(loggedOn);
             Assert.Equal(IntPtr.Zero, token);
+            Assert.NotEqual(0, lastError);                 // e.g. ERROR_LOGON_FAILURE (1326)
         }
 
         #endregion

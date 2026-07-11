@@ -114,9 +114,10 @@ namespace Servy.Core.UnitTests.Helpers
         public void ResolvePath_ValidExistingAbsolutePath_ResolvesAndNormalizes()
         {
             // Arrange
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string rawPath = Path.Combine(baseDir, "..", Path.GetFileName(baseDir), "app.log");
-            string expected = Path.GetFullPath(rawPath);
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+            string leaf = Path.GetFileName(baseDir);
+            string rawPath = Path.Combine(baseDir, "..", leaf, "app.log");
+            string expected = Path.Combine(baseDir, "app.log");
 
             // Act
             string? result = _processHelper.ResolvePath(rawPath);
