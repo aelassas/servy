@@ -8,20 +8,27 @@ namespace Servy.CLI.UnitTests
     [Collection("SequentialConsoleTests")]
     public class ProgramTests : IDisposable
     {
+        // CONSTANT STRINGS HOISTING: Centralize artifact filenames to prevent cleanup drift
+        private const string AppSettingsFileName = "appsettings.cli.json";
+        private const string AesKeyFileName = "test_aes.key";
+        private const string AesIvFileName = "test_aes.iv";
+        private const string DatabaseFileName = "Test_Servy.db";
+
         private readonly string _tempConfigPath;
         private readonly TextWriter _originalConsoleOut;
         private readonly TextWriter _originalConsoleError;
 
         public ProgramTests()
         {
+            // Arrange
             // Establish isolated files environment for execution runs
-            _tempConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.cli.json");
+            _tempConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppSettingsFileName);
 
             _originalConsoleOut = Console.Out;
             _originalConsoleError = Console.Error;
 
             // Generate a valid mock configuration structure to bypass missing setting errors
-            string fallbackDatabaseFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Test_Servy.db");
+            string fallbackDatabaseFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DatabaseFileName);
             string testConnection = string.Format("Data Source={0};Version=3;", fallbackDatabaseFile);
 
             string mockConfigJson = "{\r\n" +
@@ -29,8 +36,8 @@ namespace Servy.CLI.UnitTests
                 "    \"DefaultConnection\": \"" + testConnection.Replace("\\", "\\\\") + "\"\r\n" +
                 "  },\r\n" +
                 "  \"Security\": {\r\n" +
-                "    \"AESKeyFilePath\": \"test_aes.key\",\r\n" +
-                "    \"AESIVFilePath\": \"test_aes.iv\"\r\n" +
+                "    \"AESKeyFilePath\": \"" + AesKeyFileName + "\",\r\n" +
+                "    \"AESIVFilePath\": \"" + AesIvFileName + "\"\r\n" +
                 "  }\r\n" +
                 "}";
 
@@ -165,10 +172,10 @@ namespace Servy.CLI.UnitTests
                     File.Delete(_tempConfigPath);
                 }
 
-                if (File.Exists("test_aes.key")) File.Delete("test_aes.key");
-                if (File.Exists("test_aes.iv")) File.Delete("test_aes.iv");
+                if (File.Exists(AesKeyFileName)) File.Delete(AesKeyFileName);
+                if (File.Exists(AesIvFileName)) File.Delete(AesIvFileName);
 
-                string testDb = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Test_Servy.db");
+                string testDb = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DatabaseFileName);
                 if (File.Exists(testDb))
                 {
                     File.Delete(testDb);
