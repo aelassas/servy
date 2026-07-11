@@ -377,9 +377,12 @@ namespace Servy.Core.UnitTests.Services
             Assert.True(scmHandle.IsClosed, "SCM handle was not disposed.");
         }
 
-        [Fact]
-        public async Task InstallService_CallsUpdateServiceConfig_WhenServiceExistsError()
+        [Theory]
+        [InlineData(ServiceStartType.Automatic)]
+        [InlineData(ServiceStartType.AutomaticDelayedStart)]
+        public async Task InstallService_CallsUpdateServiceConfig_WhenServiceExistsError(ServiceStartType startType)
         {
+            // Arrange
             var scmHandle = CreateScmHandle(123);
             var serviceName = "TestService";
             var description = "Test Description";
@@ -440,7 +443,7 @@ namespace Servy.Core.UnitTests.Services
                 RealExePath = "real.exe",
                 WorkingDirectory = "workingDir",
                 RealArgs = "args",
-                StartType = ServiceStartType.Automatic,
+                StartType = startType,
                 ProcessPriority = ProcessPriority.Normal,
                 PreLaunchExePath = "pre-launch.exe",
                 PreLaunchWorkingDirectory = "preLaunchDir",
@@ -453,17 +456,25 @@ namespace Servy.Core.UnitTests.Services
                 DisplayName = serviceName
             };
 
+            // Act
             var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
 
+            // Assert
             Assert.True(result.IsSuccess);
 
             _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceAccounts.LocalSystem, null), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceAccounts.LocalSystem, null, It.IsAny<string>()), Times.Once);
 
-            options.StartType = ServiceStartType.AutomaticDelayedStart;
-            result = await _serviceManager.InstallServiceAsync(options, cancellationToken: TestContext.Current.CancellationToken);
-
-            Assert.True(result.IsSuccess);
+            // BUNDLED SCENARIO: Verify that ChangeServiceConfig2 is properly invoked for delayed-start tracking 
+            // only when the matching param context scenario runs.
+            if (startType == ServiceStartType.AutomaticDelayedStart)
+            {
+                _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny), Times.Once);
+            }
+            else
+            {
+                _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_DELAYED_AUTO_START_INFO>.IsAny), Times.Never);
+            }
         }
 
         [Fact]
@@ -1097,22 +1108,24 @@ namespace Servy.Core.UnitTests.Services
 
             // Allow OpenSCManager to pass cleanly so uninstallation completes.
             // Trip the cancellation token inside CreateService to simulate a user cancel mid-installation phase.
-            var cts = new CancellationTokenSource();
-            _mockWindowsServiceApi
-                .Setup(x => x.CreateService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, It.IsAny<string>(), It.IsAny<string>(), null))
-                .Callback(() => cts.Cancel())
-                .Throws(new OperationCanceledException(cts.Token));
+            using (var cts = new CancellationTokenSource())
+            {
+                _mockWindowsServiceApi
+                    .Setup(x => x.CreateService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, It.IsAny<string>(), It.IsAny<string>(), null))
+                    .Callback(() => cts.Cancel())
+                    .Throws(new OperationCanceledException(cts.Token));
 
-            // Act & Assert
-            await Assert.ThrowsAsync<OperationCanceledException>(() =>
-                _serviceManager.InstallServiceAsync(options, cts.Token));
+                // Act & Assert
+                await Assert.ThrowsAsync<OperationCanceledException>(() =>
+                    _serviceManager.InstallServiceAsync(options, cts.Token));
 
-            // Verify recovery logic executed: legacyDroppedFromDb was true, meaning UpsertAsync was called to restore backup
-            _mockServiceRepository.Verify(x => x.UpsertAsync(
-                It.Is<ServiceDto>(d => d.Name == "serviceä" && d.Description == "Recoverable Metadata Payload"),
-                false,
-                false,
-                It.IsAny<CancellationToken>()), Times.Once);
+                // Verify recovery logic executed: legacyDroppedFromDb was true, meaning UpsertAsync was called to restore backup
+                _mockServiceRepository.Verify(x => x.UpsertAsync(
+                    It.Is<ServiceDto>(d => d.Name == "serviceä" && d.Description == "Recoverable Metadata Payload"),
+                    false,
+                    false,
+                    It.IsAny<CancellationToken>()), Times.Once);
+            }
         }
 
         [Fact]

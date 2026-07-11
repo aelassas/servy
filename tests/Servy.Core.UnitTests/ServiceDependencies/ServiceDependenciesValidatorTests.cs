@@ -84,6 +84,9 @@ namespace Servy.Core.UnitTests.ServiceDependencies
             // Assert
             Assert.False(result);
             Assert.Equal(3, errors.Count);
+            Assert.Contains(errors, e => e.Contains("Bad^Service"));
+            Assert.Contains(errors, e => e.Contains("Another#One"));
+            Assert.Contains(errors, e => e.Contains("With@Symbol"));
         }
 
         #endregion
