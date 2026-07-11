@@ -15,7 +15,7 @@ using Servy.UI.Services;
 
 namespace Servy.Manager.UnitTests.Services
 {
-    public class ServiceCommandsTests
+    public class ServiceCommandsTests : IDisposable
     {
         private readonly Mock<IServiceManager> _serviceManagerMock;
         private readonly Mock<IServiceRepository> _serviceRepositoryMock;
@@ -29,6 +29,7 @@ namespace Servy.Manager.UnitTests.Services
         private readonly Mock<IAppConfiguration> _appConfigMock;
         private readonly Mock<IProcessHelper> _processHelper;
         private readonly Mock<IUiDispatcher> _uiDispatcherMock;
+        private readonly List<ServiceCommands> _created = new List<ServiceCommands>();
 
         private bool _refreshCalled;
         private string? _removedServiceName;
@@ -65,7 +66,7 @@ namespace Servy.Manager.UnitTests.Services
             _refreshCalled = false;
             _removedServiceName = null;
 
-            return new ServiceCommands(
+            var sut = new ServiceCommands(
                 _serviceManagerMock.Object, // Use the Mock!
                 _serviceRepositoryMock.Object,
                 _messageBoxServiceMock.Object,
@@ -85,6 +86,13 @@ namespace Servy.Manager.UnitTests.Services
                 _processHelper.Object,
                 _uiDispatcherMock.Object
             );
+            _created.Add(sut);
+            return sut;
+        }
+
+        public void Dispose()
+        {
+            foreach (var sut in _created) sut.Dispose();
         }
 
         #region Import/Export & Config Tests
@@ -967,6 +975,8 @@ namespace Servy.Manager.UnitTests.Services
 
             // Act & Assert
             await sut.ExportServiceToXmlAsync(null, TestContext.Current.CancellationToken);
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
+            await sut.ExportServiceToJsonAsync(null, TestContext.Current.CancellationToken);
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Never);
         }
 

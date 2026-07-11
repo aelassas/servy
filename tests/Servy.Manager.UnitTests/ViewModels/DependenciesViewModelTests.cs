@@ -256,7 +256,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     {
                         viewModel = CreateViewModel();
 
-                        var childNode = new ServiceDependencyNode("Child", "Root Service") { IsExpanded = true };
+                        var childNode = new ServiceDependencyNode("Child", "Child Service") { IsExpanded = true };
                         var rootNode = new ServiceDependencyNode("Root", "Root Service") { IsExpanded = true };
                         rootNode.Dependencies.Add(childNode);
 

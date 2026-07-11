@@ -298,6 +298,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
             // Clear Database entries entirely
             var deleteResult = await _repository.DeleteAsync("RoundTripService", TestContext.Current.CancellationToken);
+            Assert.Equal(1, deleteResult);
+            Assert.Null(await _repository.GetByNameAsync("RoundTripService", decrypt: true, TestContext.Current.CancellationToken));
 
             // Import back
             bool xmlImportResult = await _repository.ImportXmlAsync(xmlData, TestContext.Current.CancellationToken);

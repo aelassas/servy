@@ -363,25 +363,67 @@ namespace Servy.Manager.UnitTests.Utils
         }
 
         [Fact]
-        public async Task RunFromPosition_InitialAttachRotationTrigger_ResetsOffsetToZero()
+        public async Task RunFromPosition_InitialAttachRotationTrigger_TimestampMismatch_ResetsOffsetToZero()
         {
             // Arrange
             var tailer = new LogTailer();
-            // Write payload content
             File.WriteAllText(_tempFilePath, "Line After Truncated Rotation\n");
 
             var capturedLines = new List<LogLine>();
             tailer.OnNewLines += (lines) => { lock (capturedLines) capturedLines.AddRange(lines); };
 
-            // Setup a completion tracking signal task for strict loop synchronization
             var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
 
             using (var cts = new CancellationTokenSource())
             {
-                // Pass a highly advanced past timestamp or a lastPosition that forces the metadata 
-                // check branch (info.Length < lastPosition) to validate initial attach rotation mapping logic
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 999999, DateTime.UtcNow.AddDays(-1), cts.Token);
+                // ROTATION OPERAND ISOLATION: Set lastPosition within the valid file length boundary (0 <= 30 bytes)
+                // to force operand #2 (info.Length < lastPosition) to evaluate as FALSE. 
+                // Pass a stale timestamp to force operand #1 (info.CreationTimeUtc != lastCreationTime) to evaluate as TRUE.
+                var fileInfo = new FileInfo(_tempFilePath);
+                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, (long)fileInfo.Length, DateTime.UtcNow.AddDays(-1), cts.Token);
+
+                // Enforce execution stabilization before running content validations
+                await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
+                await loopCompletedTcs.Task;
+
+                await Helper.WaitUntilAsync(() => { lock (capturedLines) return capturedLines.Count > 0; },
+                    TimeSpan.FromSeconds(5),
+                    cancellationToken: TestContext.Current.CancellationToken);
+                cts.Cancel();
+
+                try { await tailTask; } catch (OperationCanceledException) { }
+
+                // Assert
+                lock (capturedLines)
+                {
+                    Assert.NotEmpty(capturedLines);
+                    Assert.Contains(capturedLines, l => l.Text.Contains("Line After Truncated Rotation"));
+                }
+            }
+        }
+
+        [Fact]
+        public async Task RunFromPosition_InitialAttachRotationTrigger_Truncation_ResetsOffsetToZero()
+        {
+            // Arrange
+            var tailer = new LogTailer();
+            File.WriteAllText(_tempFilePath, "Line After Truncated Rotation\n");
+
+            var capturedLines = new List<LogLine>();
+            tailer.OnNewLines += (lines) => { lock (capturedLines) capturedLines.AddRange(lines); };
+
+            var loopCompletedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
+
+            using (var cts = new CancellationTokenSource())
+            {
+                // ROTATION OPERAND ISOLATION: Query and pass the precise CreationTimeUtc metadata token 
+                // to force operand #1 (info.CreationTimeUtc != lastCreationTime) to evaluate as FALSE.
+                // Pass a highly advanced past lastPosition (999999) that forces the metadata check branch 
+                // (info.Length < lastPosition) to evaluate as TRUE to validate initial attach truncation logic.
+                var fileInfo = new FileInfo(_tempFilePath);
+                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 999999, fileInfo.CreationTimeUtc, cts.Token);
 
                 // Enforce execution stabilization before running content validations
                 await WaitForLoopStartAsync(tailer, TestContext.Current.CancellationToken);
