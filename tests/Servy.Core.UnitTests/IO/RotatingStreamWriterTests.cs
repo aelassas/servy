@@ -319,16 +319,25 @@ namespace Servy.Core.UnitTests.IO
             // Arrange
             var filePath = Path.Combine(_testDir, "test.txt");
 
-            // Act
+            // Act & Assert
             using (var writer = CreateWriter(filePath, true, 10))
             {
                 writer.WriteLine("hello"); // initializes lazy writer
                 writer.Flush();
-            }
 
-            // Assert
-            var content = File.ReadAllText(filePath);
-            Assert.Equal("hello\r\n", content);
+                // LOCK-SAFE FLUSH VERIFICATION: Open the file handle explicitly using FileShare.ReadWrite
+                // to respect the writer's active Win32 lock configuration. This enables reading the content
+                // snapshot while the stream is open, proving Flush() pushed the bytes down to the file.
+                string content;
+                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var sr = new StreamReader(fs))
+                {
+                    content = sr.ReadToEnd();
+                }
+
+                // Swap raw carriage literals with Environment execution settings
+                Assert.Equal("hello" + Environment.NewLine, content);
+            }
         }
 
         [Fact]

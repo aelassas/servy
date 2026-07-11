@@ -479,7 +479,11 @@ namespace Servy.Core.UnitTests.Logging
 
             // 4. Calculate depth by counting structural depth tracking brackets inside the exception block
             int innerBracketCount = exceptionSegment.Split(new[] { "[Inner -> " }, StringSplitOptions.None).Length - 1;
-            int closingBracketCount = exceptionSegment.Split(']').Length - 1;
+            // NAIVE BRACKET COUNT: Instead of counting every ']' raw character via Split,
+            // target only the structural closing brackets that terminate the inner exception blocks at the tail end.
+            var structuralCloseMatches = Regex.Matches(exceptionSegment, @"\]+$");
+            int closingBracketCount = structuralCloseMatches.Count > 0 ? structuralCloseMatches[0].Value.Length : 0;
+
 
             // The formatted string should never unroll more blocks than the max depth allowed
             Assert.True(innerBracketCount < AppConfig.LoggerMaxInnerExceptionDepth,
