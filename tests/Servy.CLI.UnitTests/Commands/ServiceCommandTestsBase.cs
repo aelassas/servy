@@ -56,8 +56,9 @@ namespace Servy.CLI.UnitTests.Commands
         /// <summary>
         /// When overridden in a derived class, initializes an unpopulated options payload designed to test short-circuiting validation blocks.
         /// </summary>
+        /// <param name="serviceName">The malformed service name input to test (null, empty, or whitespace-only).</param>
         /// <returns>An structurally empty configuration instance of type <typeparamref name="TOptions"/>.</returns>
-        protected abstract TOptions CreateEmptyOptions();
+        protected abstract TOptions CreateEmptyOptions(string serviceName);
 
         /// <summary>
         /// When overridden in a derived class, returns the exact success notification message string expected from the pipeline output.
@@ -146,14 +147,18 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         /// <summary>
-        /// Validates that passing empty service identifiers directly terminates processing with a structured failure error response string.
+        /// Validates that passing empty, null, or whitespace-only service identifiers directly terminates processing with a structured failure error response string.
         /// </summary>
+        /// <param name="invalidServiceName">The explicit malformed string context under validation parameter testing.</param>
         /// <returns>An asynchronous task tracking the verification flow execution state.</returns>
-        [Fact]
-        public virtual async Task Execute_EmptyServiceName_ReturnsFailure()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("    ")]
+        public virtual async Task Execute_EmptyServiceName_ReturnsFailure(string invalidServiceName)
         {
             // Arrange
-            var options = CreateEmptyOptions();
+            var options = CreateEmptyOptions(invalidServiceName);
 
             // Act
             var result = await ExecuteCommandAsync(Command, options);
@@ -232,7 +237,7 @@ namespace Servy.CLI.UnitTests.Commands
         public virtual async Task Execute_ServiceNotInstalled_ReturnsServiceNotFoundError()
         {
             // Arrange
-            const string serviceName = "MissingService";
+            var serviceName = "MissingService";
             var options = CreateValidOptions(serviceName);
             MockServiceManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
 

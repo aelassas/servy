@@ -166,6 +166,11 @@ namespace Servy.Core.UnitTests.Helpers
             int attempts = highRetryAttempts + 1;
             int expectedTotalPreLaunch = attempts * preLaunchTimeout;
 
+            // Explicit sanity check layout matrix calculation step verification
+            // Prove that the final loop iteration's uncapped delay value strictly exceeds the ceiling cap limits
+            int finalIterationUncappedDelay = ((attempts - 1) * AppConfig.PreLaunchRetryInitialDelayMs) / 1000;
+            Assert.True(finalIterationUncappedDelay > maxBackoffCapPerIteration, "Test sequence misconfigured: individual backoff iteration did not cross capping ceiling.");
+
             // Manually evaluate the expected capped loop calculation to pin the assertion pattern matrix
             int expectedTotalBackoff = 0;
             for (int i = 1; i < attempts; i++)
@@ -179,16 +184,12 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Act
             int actualTimeout = ServiceHelper.CalculateStartTimeout(
-                _floor,
-                preLaunchTimeout,
-                highRetryAttempts);
+                 _floor,
+                 preLaunchTimeout,
+                 highRetryAttempts);
 
             // Assert
             Assert.Equal(expectedTotalTimeout, actualTimeout);
-
-            // Explicit sanity check proving that the backoff accumulation step is larger than 0 
-            // and has been clamped at several loop points safely
-            Assert.True(expectedTotalBackoff > maxBackoffCapPerIteration, "Test sequence misconfigured: backoff loop did not cross capping ceiling.");
         }
 
         [Fact]

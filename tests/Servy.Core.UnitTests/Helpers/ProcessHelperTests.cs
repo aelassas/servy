@@ -26,7 +26,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(1.34, "1.3%")]   // rounding down
         [InlineData(1.35, "1.4%")]   // rounding up
         [InlineData(1.36, "1.4%")]   // rounding up
-        public void FormatCPUUsage_ReturnsExpected(double input, string expected)
+        public void FormatCpuUsage_ReturnsExpected(double input, string expected)
         {
             var result = _processHelper.FormatCpuUsage(input);
             Assert.Equal(expected, result);
@@ -43,7 +43,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData((2.25 * 1024 * 1024 * 1024), "2.3 GB")] // GB range
         [InlineData(1099511627776, "1.0 TB")]       // exact TB
         [InlineData((3.75 * 1024 * 1024 * 1024 * 1024), "3.8 TB")] // TB range
-        public void FormatRAMUsage_ReturnsExpected(long input, string expected)
+        public void FormatRamUsage_ReturnsExpected(long input, string expected)
         {
             var result = _processHelper.FormatRamUsage(input);
             Assert.Equal(expected, result);
