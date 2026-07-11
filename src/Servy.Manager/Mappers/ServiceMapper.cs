@@ -40,7 +40,7 @@ namespace Servy.Manager.Mappers
             IProcessHelper processHelper,
             CancellationToken cancellationToken = default)
         {
-            if (service == null) return null;
+            if (service == null || string.IsNullOrEmpty(service.Name)) return null;
             cancellationToken.ThrowIfCancellationRequested();
 
             double? cpuUsage = null;

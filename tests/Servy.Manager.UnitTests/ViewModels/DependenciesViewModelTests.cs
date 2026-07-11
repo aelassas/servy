@@ -103,9 +103,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task DesignTimeConstructor_InitializesSuccessfully()
+        public void DesignTimeConstructor_InitializesSuccessfully()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -125,7 +125,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                         dtViewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
@@ -134,9 +133,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Property & Selection Mutation Tracking Tests
 
         [Fact]
-        public async Task SelectedService_ChangeSelection_FiresNotifyPropertyChangedEvents()
+        public void SelectedService_ChangeSelection_FiresNotifyPropertyChangedEvents()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -169,14 +168,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
         [Fact]
-        public async Task SelectedService_SetSameReference_DoesNotFireEventsOrReload()
+        public void SelectedService_SetSameReference_DoesNotFireEventsOrReload()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -202,7 +200,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
@@ -211,9 +208,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Command Traversal & Tree Expansion Structure Tests
 
         [Fact]
-        public async Task ExpandAllCommand_Executes_RecursivelyExpandsNodesWithCycleGuard()
+        public void ExpandAllCommand_Executes_RecursivelyExpandsNodesWithCycleGuard()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -223,12 +220,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     {
                         viewModel = CreateViewModel();
 
-                        // Create a circular Dependencies edge (root -> child -> root) to exercise the ExpandAll recursion/cycle guard;
-                        // the isCycle constructor flag is unrelated and left false.
                         var childNode = new ServiceDependencyNode("ChildService", "Friendly Child", isRunning: false, isCyclic: false);
                         var rootNode = new ServiceDependencyNode("RootService", "Friendly Root", isRunning: false, isCyclic: false);
 
-                        // Add components directly to the get-only Collection instance instead of assigning properties
                         rootNode.Dependencies.Add(childNode);
                         childNode.Dependencies.Add(rootNode); // Create circular dependency edge reference
 
@@ -246,14 +240,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
         [Fact]
-        public async Task CollapseAllCommand_Executes_RecursivelyCollapsesNodes()
+        public void CollapseAllCommand_Executes_RecursivelyCollapsesNodes()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -263,7 +256,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                     {
                         viewModel = CreateViewModel();
 
-                        // Use initialization constructors, then populate expansion state parameters sequentially
                         var childNode = new ServiceDependencyNode("Child", "Child Service") { IsExpanded = true };
                         var rootNode = new ServiceDependencyNode("Root", "Root Service") { IsExpanded = true };
                         rootNode.Dependencies.Add(childNode);
@@ -282,14 +274,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
         [Fact]
-        public async Task CopyPidCommand_ValidSelectionWithPid_InvokesServiceCommandsMapping()
+        public void CopyPidCommand_ValidSelectionWithPid_InvokesServiceCommandsMapping()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -302,7 +293,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel.SelectedService = mockService;
 
                         // Act
-                        // Directly await the asynchronous execution flow instead of slamming message loops synchronously
                         viewModel.CopyPidCommand.ExecuteAsync(null).GetAwaiter().GetResult();
 
                         // Assert
@@ -313,7 +303,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
@@ -322,9 +311,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region LoadDependencyTreeAsync Core Branch Execution Tests
 
         [Fact]
-        public async Task LoadDependencyTreeAsync_SelectedServiceNull_ClearsTreeAndReturnsEarly()
+        public void LoadDependencyTreeAsync_SelectedServiceNull_ClearsTreeAndReturnsEarly()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -337,7 +326,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel.SelectedService = null;
 
                         // Act
-                        // Directly await the tree reset operation asynchronously inside the test pipeline boundary
                         viewModel.LoadDependencyTreeAsync(null).GetAwaiter().GetResult();
 
                         // Assert
@@ -348,17 +336,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
         [Fact]
         public async Task LoadDependencyTreeAsync_ManagerReturnsValidRoot_PopulatesAndExpandsTree()
         {
-            // Await the underlying asynchronous STA execution task natively
             await Helper.RunOnSTA(async () =>
             {
-                // REMOVED lock: xUnit's Collection Fixture handles serialization safely.
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 {
                     DependenciesViewModel viewModel = null;
@@ -373,17 +358,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                                            .Returns(expectedRoot);
 
                         // Act
-                        // Triggers the first asynchronous fire-and-forget load routine
                         viewModel.SelectedService = mockService;
 
-                        // Use a true non-blocking await loop to allow the STA dispatcher message pump 
-                        // to process incoming UI collection modification updates concurrently.
-                        int retries = 0;
-                        while (viewModel.DependencyTree.Count == 0 && retries < 25)
-                        {
-                            await Task.Delay(20, CancellationToken.None); // Safe asynchronous yield
-                            retries++;
-                        }
+                        // allow the STA dispatcher message pump to process incoming UI collection modification updates concurrently.
+                        await Helper.WaitUntilAsync(
+                            () => viewModel.DependencyTree.Count > 0,
+                            TimeSpan.FromSeconds(2),
+                            TimeSpan.FromMilliseconds(20),
+                            CancellationToken.None);
 
                         // Assert
                         Assert.Single(viewModel.DependencyTree);
@@ -452,9 +434,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Background Worker Loop Ticking Framework Evaluation Tests
 
         [Fact]
-        public async Task BaseMonitoring_OnTickAsync_SelectionNull_ResetsDisplaysAndClearsFlag()
+        public void BaseMonitoring_OnTickAsync_SelectionNull_ResetsDisplaysAndClearsFlag()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -469,7 +451,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                         // Act
                         var task = (Task)TestReflection.InvokeNonPublic(viewModel, "OnTickAsync");
-                        // Explicitly await the reflected task continuation instead of slamming the thread context synchronously
                         task.GetAwaiter().GetResult();
 
                         // Assert
@@ -482,14 +463,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
         [Fact]
-        public async Task BaseMonitoring_OnTickAsync_PidNotFound_ResetsPidDisplay()
+        public void BaseMonitoring_OnTickAsync_PidNotFound_ResetsPidDisplay()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -506,7 +486,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                         // Act
                         var task = (Task)TestReflection.InvokeNonPublic(viewModel, "OnTickAsync");
-                        // Explicitly await the structural worker tick thread asynchronously
                         task.GetAwaiter().GetResult();
 
                         // Assert
@@ -518,14 +497,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 
         [Fact]
-        public async Task BaseMonitoring_OnTickAsync_PidChanged_UpdatesModelPropertiesAndText()
+        public void BaseMonitoring_OnTickAsync_PidChanged_UpdatesModelPropertiesAndText()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -542,7 +520,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                         // Act
                         var task = (Task)TestReflection.InvokeNonPublic(viewModel, "OnTickAsync");
-                        // Explicitly await the monitoring tick background routine asynchronously
                         task.GetAwaiter().GetResult();
 
                         // Assert
@@ -554,7 +531,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel?.Dispose();
                     }
                 }
-                await Task.CompletedTask;
             }, createApp: true);
         }
 

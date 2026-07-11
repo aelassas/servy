@@ -1039,6 +1039,83 @@ namespace Servy.Manager.UnitTests.Services
             _serviceRepositoryMock.Verify(r => r.SearchAsync(string.Empty, false, It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        [Fact]
+        public async Task SearchServicesAsync_ContainsMalformedOrOrphanedRecords_FiltersOutNullMappedModels()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+
+            // Populate DTO array: one valid service record and one malformed/orphaned record with an empty name
+            var mockDtos = new List<ServiceDto>
+            {
+                new ServiceDto
+                {
+                    Name = "ValidServyService",
+                    ExecutablePath = "C:\\Servy\\servy.exe"
+                },
+                new ServiceDto
+                {
+                    Name = string.Empty, // Triggers ToModelAsync to evaluate service.Name as empty and return null cleanly
+                    ExecutablePath = "C:\\Servy\\malformed.exe"
+                }
+            };
+
+            _serviceRepositoryMock.Setup(r => r.SearchAsync("Servy", false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(mockDtos);
+
+            _appConfigMock.Setup(c => c.IsDesktopAppAvailable).Returns(true);
+
+            // Act
+            var result = await sut.SearchServicesAsync("Servy", calculatePerf: false, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result);
+            // Verifies the null model produced by the malformed/orphaned DTO was filtered out safely (Regression protection for #797)
+            Assert.Single(result);
+            Assert.Equal("ValidServyService", result[0].Name);
+
+            _serviceRepositoryMock.Verify(r => r.SearchAsync("Servy", false, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task SearchServicesAsync_CalculatePerfTrue_ForwardsParameterToMappingPipeline()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+
+            // Provide a running service record containing an active system Process PID identifier
+            var mockDtos = new List<ServiceDto>
+            {
+                new ServiceDto
+                {
+                    Name = "PerfMonitoredService",
+                    ExecutablePath = "C:\\Servy\\servy.exe",
+                    Pid = 4321
+                }
+            };
+
+            _serviceRepositoryMock.Setup(r => r.SearchAsync("Perf", false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(mockDtos);
+
+            _appConfigMock.Setup(c => c.IsDesktopAppAvailable).Returns(true);
+
+            // Mock the process helper response tree metrics structure to catch the metrics calculation evaluation trigger
+            var expectedMetrics = new ProcessMetrics(12.5, 2048576);
+            _processHelperMock.Setup(p => p.GetProcessTreeMetrics(4321)).Returns(expectedMetrics);
+
+            // Act
+            var result = await sut.SearchServicesAsync("Perf", calculatePerf: true, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result);
+            Assert.Equal(12.5, result[0].CpuUsage);
+
+            // Verifies that the internal process helper was actively invoked during performance evaluations (calculatePerf parameter pinned)
+            _processHelperMock.Verify(p => p.GetProcessTreeMetrics(4321), Times.Once);
+            _serviceRepositoryMock.Verify(r => r.SearchAsync("Perf", false, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         #endregion
 
         #region Dispose Tests
