@@ -287,6 +287,29 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         #region Stop & Kill Tests
 
         [Fact]
+        public void Stop_GracefulShutdown_ReturnsTrue()
+        {
+            // Arrange
+            // Launch a console app that handles the CancelKeyPress (Ctrl+C) signal and exits cleanly
+            const string script = "[Console]::CancelKeyPress += { [Environment]::Exit(0) }; while($true) { Start-Sleep 1 }";
+            using (var wrapper = CreateWrapper("powershell.exe", $"-NoProfile -Command \"{script}\"", createNoWindow: true))
+            {
+                wrapper.Start();
+
+                // Give the PowerShell engine a brief moment to initialize the script space and register the event hook
+                Thread.Sleep(1000);
+
+                // Act
+                // Stop will execute SendCtrlC(), which returns true. The script catches it, exits, and causes Stop to return true.
+                bool? result = wrapper.Stop(TestTimeouts.ProcessWrapperProcessTimeoutMs);
+
+                // Assert
+                Assert.True(result, "Process wrapper failed to capture a clean graceful shutdown from the signal pipeline loop.");
+                Assert.True(wrapper.HasExited);
+            }
+        }
+
+        [Fact]
         public void Stop_AlreadyExited_ReturnsNull()
         {
             // Arrange
@@ -435,7 +458,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             {
                 wrapper.Start();
 
-                // Act - Invoke SendCtrlC directly on a wrapper targeting a windowless background task runner profile
+                // Act - Trigger SendCtrlC directly on a wrapper targeting a windowless background task runner profile
                 var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
 
                 // Assert: True/False depends cleanly on native environment access, but path must complete without unhandled crashes.

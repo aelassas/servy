@@ -11,6 +11,8 @@ namespace Servy.CLI.UnitTests.Commands
     {
         protected override StopServiceCommand CreateCommandInstance() => new StopServiceCommand(MockServiceManager.Object);
 
+        protected override StopServiceCommand CreateCommandInstanceWithManager(IServiceManager? serviceManager) => new StopServiceCommand(serviceManager!);
+
         protected override StopServiceOptions CreateValidOptions(string serviceName) => new StopServiceOptions { ServiceName = serviceName };
 
         protected override StopServiceOptions CreateEmptyOptions(string? serviceName) => new StopServiceOptions { ServiceName = serviceName };

@@ -39,6 +39,28 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
+        public void Constructor_NullServiceManager_ThrowsArgumentNullException()
+        {
+            // Arrange
+            IServiceManager? nullManager = null;
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>("serviceManager", () => new InstallServiceCommand(nullManager!, _mockValidator.Object));
+            Assert.Equal("serviceManager", ex.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_NullValidator_ThrowsArgumentNullException()
+        {
+            // Arrange
+            IServiceInstallValidator? nullValidator = null;
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>("validator", () => new InstallServiceCommand(_mockServiceManager.Object, nullValidator!));
+            Assert.Equal("validator", ex.ParamName);
+        }
+
+        [Fact]
         public async Task Execute_ValidOptions_ReturnsSuccess()
         {
             // Arrange

@@ -11,6 +11,7 @@ namespace Servy.CLI.UnitTests.Commands
     {
         protected override RestartServiceCommand CreateCommandInstance() => new RestartServiceCommand(MockServiceManager.Object);
 
+        protected override RestartServiceCommand CreateCommandInstanceWithManager(IServiceManager? serviceManager) => new RestartServiceCommand(serviceManager!);
         protected override RestartServiceOptions CreateValidOptions(string serviceName) => new RestartServiceOptions { ServiceName = serviceName };
 
         protected override RestartServiceOptions CreateEmptyOptions(string? serviceName) => new RestartServiceOptions { ServiceName = serviceName };

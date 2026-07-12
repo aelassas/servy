@@ -5,15 +5,19 @@ using Servy.Manager.ViewModels;
 using Servy.Testing;
 using Servy.UI.Constants;
 using Servy.UI.Services;
+using System.Collections.Concurrent;
 using System.Windows.Threading;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
-    public class MonitoringViewModelBaseTests
+    public class MonitoringViewModelBaseTests : IDisposable
     {
         private readonly Mock<ICursorService> _cursorServiceMock;
         private readonly Mock<IUiDispatcher> _uiDispatcherMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
+
+        // Track generated SUT view model instances to enforce complete memory containment cleanup
+        private readonly ConcurrentBag<TestMonitoringViewModel> _allocatedViewModels = new ConcurrentBag<TestMonitoringViewModel>();
 
         public MonitoringViewModelBaseTests()
         {
@@ -108,13 +112,16 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         private TestMonitoringViewModel CreateViewModel(int interval = 100, Func<CancellationToken, Task>? onTick = null)
         {
-            return new TestMonitoringViewModel(
+            var vm = new TestMonitoringViewModel(
                 _cursorServiceMock.Object,
                 _uiDispatcherMock.Object,
                 _serviceCommandsMock.Object,
                 interval,
                 onTick ?? (_ => Task.CompletedTask)
             );
+
+            _allocatedViewModels.Add(vm);
+            return vm;
         }
 
         #endregion
@@ -415,6 +422,28 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             // Assert: Verify that no clipboard copy commands were dispatched to system channels
             _serviceCommandsMock.Verify(c => c.CopyPidAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        #endregion
+
+        #region Teardown Lifecycle Execution
+
+        /// <summary>
+        /// Explicit test fixture teardown sequence to purge in-flight background CTS contexts safely.
+        /// </summary>
+        public void Dispose()
+        {
+            foreach (var vm in _allocatedViewModels)
+            {
+                try
+                {
+                    vm.Dispose();
+                }
+                catch
+                {
+                    // Catch-all block to guarantee adjacent cleanup executions complete safely
+                }
+            }
         }
 
         #endregion
