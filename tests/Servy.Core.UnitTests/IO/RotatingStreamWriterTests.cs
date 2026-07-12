@@ -661,13 +661,28 @@ namespace Servy.Core.UnitTests.IO
         {
             // Arrange
             var filePath = Path.Combine(_testDir, "weekly_same.log");
-            var recently = DateTime.UtcNow.AddHours(-1);
+
+            // To prevent flakiness near the Monday 00:00 UTC ISO-week boundary, 
+            // calculate the previous hour relative to the current live clock day.
+            // If today is Monday, subtracting 1 hour might fall into the previous week.
+            // By adding 2 days if it's Monday, we push the test execution window safely into mid-week.
+            var now = DateTime.UtcNow;
+            if (now.DayOfWeek == DayOfWeek.Monday)
+            {
+                // If we are close to the boundary on Monday, we use an engineered safe anchor within the same week
+                now = now.AddDays(2);
+            }
+
+            var recently = now.AddHours(-1);
 
             // Act
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0))
             {
+                // Explicitly align the last rotation date field to our safe mid-week anchor
                 TestReflection.SetField(writer, "_lastRotationDate", recently);
 
+                // Overwrite any internal live-clock tracking if your class maintains an internal baseline
+                // otherwise the write operation evaluates against the current system time window cleanly.
                 writer.WriteLine("should not rotate");
                 writer.Flush();
             }
