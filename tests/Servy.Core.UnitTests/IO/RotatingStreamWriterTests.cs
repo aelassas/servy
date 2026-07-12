@@ -860,23 +860,27 @@ namespace Servy.Core.UnitTests.IO
         public void Constructor_InitializesLastRotationDate_CorrectlyForTimeZones()
         {
             // Arrange
-            // Ensure file exists to test the "File.Exists" branch
+            // Ensure file exists to test the "File.Exists" branch initialization pathways
             File.WriteAllText(_logFilePath, "content");
             var localWriteTime = File.GetLastWriteTime(_logFilePath);
             var utcWriteTime = File.GetLastWriteTimeUtc(_logFilePath);
 
-            // Act & Assert: Test Local Branch
+            // Act & Assert: Test Local Time Branch Initialization Flow
             using (var localWriter = CreateWriter(_logFilePath, useLocalTimeForRotation: true))
             {
                 var lastRot = TestReflection.GetField<DateTime>(localWriter, "_lastRotationDate");
+
                 Assert.Equal(localWriteTime, lastRot);
+                Assert.Equal(DateTimeKind.Local, lastRot.Kind);
             }
 
-            // Act & Assert: Test UTC Branch
+            // Act & Assert: Test UTC Time Branch Initialization Flow
             using (var utcWriter = CreateWriter(_logFilePath, useLocalTimeForRotation: false))
             {
                 var lastRot = TestReflection.GetField<DateTime>(utcWriter, "_lastRotationDate");
+
                 Assert.Equal(utcWriteTime, lastRot);
+                Assert.Equal(DateTimeKind.Utc, lastRot.Kind);
             }
         }
 

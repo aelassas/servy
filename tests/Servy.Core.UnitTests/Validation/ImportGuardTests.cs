@@ -37,6 +37,7 @@ namespace Servy.Core.UnitTests.Validation
             Assert.False(result.IsValid);
             Assert.Null(content);
             Assert.NotNull(result.ErrorMessage);
+            Assert.Contains(".txt", result.ErrorMessage);
         }
     }
 }
