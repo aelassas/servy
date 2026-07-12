@@ -430,11 +430,11 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             string psScript = $@"
                 $psi = New-Object System.Diagnostics.ProcessStartInfo
-                $psi.FileName = '{psPath.Replace(@"\", @"\\")}'
+                $psi.FileName = '{psPath}'
                 $psi.Arguments = '-NoProfile -NonInteractive -EncodedCommand {encodedChildScript}'
                 $psi.UseShellExecute = $false
                 $psi.CreateNoWindow = $true
-                $psi.WorkingDirectory = '{tempPath.Replace(@"\", @"\\")}'
+                $psi.WorkingDirectory = '{tempPath}'
                 $child = [System.Diagnostics.Process]::Start($psi)
                 Write-Output ""CHILD_PID:$($child.Id)""
                 while ($true) {{ Start-Sleep -Seconds 1 }}
