@@ -5,8 +5,8 @@ $ErrorActionPreference = 'Stop'
 
 $packageName   = 'servy'
 $installerType = 'exe'
-$url64         = 'https://github.com/aelassas/servy/releases/download/v8.5/servy-8.5-x64-installer.exe'
-$checksum64    = 'C66ED0661D25853131347783A7F3F94997EDBC62B1F9BFB3F70DAD0DB128CCC8'
+$url64         = 'https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-x64-installer.exe'
+$checksum64    = '49F688F053F6C1408107F968CF806E694CE65F0CDF53CE5542234DC0B950893C'
 $checksumType  = 'sha256'
 $silentArgs    = '/VERYSILENT /NORESTART /SUPPRESSMSGBOXES /SP- /CLOSEAPPLICATIONS /NOCANCEL'
 
