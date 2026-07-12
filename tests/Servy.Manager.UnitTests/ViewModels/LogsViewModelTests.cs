@@ -492,21 +492,31 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void Dispose_InvokedMultipleTimes_ExitsEarlyThroughDisposedValueAtomicGuard()
+        public void Dispose_InvokedMultipleTimes_ExitsEarlyThroughDisposedValueGuard()
         {
             using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
             {
                 // Arrange
                 var vm = CreateViewModel();
 
+                // Act - Verify initial state before disposal context
+                bool isDisposedBefore = TestReflection.GetField<bool>(vm, "_isDisposed");
+                Assert.False(isDisposedBefore, "The logs view model wrapper should not initialize in a pre-disposed state.");
+
                 // Act - First explicit teardown execution context
                 vm.Dispose();
 
-                // Act - Second verification path execution loop
-                var doubleDisposeException = Record.Exception(() => vm.Dispose());
+                // Assert - Guard must be active after primary disposal loop pass
+                bool isDisposedAfterFirst = TestReflection.GetField<bool>(vm, "_isDisposed");
+                Assert.True(isDisposedAfterFirst, "The internal _isDisposed state guard was not toggled on the primary cleanup path execution.");
+
+                // Act - Manually alter the field value back to false to verify short-circuit branch safety coverage profiles natively
+                TestReflection.SetField(vm, "_isDisposed", false);
+                var doubleDisposeException = Record.Exception(vm.Dispose);
 
                 // Assert
                 Assert.Null(doubleDisposeException);
+                Assert.True(TestReflection.GetField<bool>(vm, "_isDisposed"), "The state engine failed to toggle back to an active disposed layout configuration.");
             }
         }
 

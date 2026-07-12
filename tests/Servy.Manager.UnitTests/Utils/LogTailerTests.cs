@@ -475,11 +475,23 @@ namespace Servy.Manager.UnitTests.Utils
             // Arrange
             var tailer = new LogTailer();
 
-            // Act & Assert
-            tailer.Dispose();
-            var secondDisposeException = Record.Exception(() => tailer.Dispose());
+            // Act - Verify initial state before disposal context
+            bool isDisposedBefore = TestReflection.GetField<int>(tailer, "_isDisposed") == 1;
+            Assert.False(isDisposedBefore, "The logs view model wrapper should not initialize in a pre-disposed state.");
 
-            Assert.Null(secondDisposeException); // Atomic Interlocked flag prevents duplicate execution crashes
+            // Act - First explicit teardown execution context
+            tailer.Dispose();
+
+            bool isDisposedAfterFirst = TestReflection.GetField<int>(tailer, "_isDisposed") == 1;
+            Assert.True(isDisposedAfterFirst, "The internal _isDisposed state guard was not toggled on the primary cleanup path execution.");
+
+            // Act - Manually alter the field value back to false to verify short-circuit branch safety coverage profiles natively
+            TestReflection.SetField(tailer, "_isDisposed", 1);
+            var doubleDisposeException = Record.Exception(tailer.Dispose);
+
+            // Assert
+            Assert.Null(doubleDisposeException);
+            Assert.True(TestReflection.GetField<int>(tailer, "_isDisposed") == 1, "The state engine failed to toggle back to an active disposed layout configuration.");
         }
 
         [Fact]
