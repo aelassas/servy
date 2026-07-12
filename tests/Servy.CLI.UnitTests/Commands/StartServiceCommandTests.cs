@@ -14,6 +14,8 @@ namespace Servy.CLI.UnitTests.Commands
     {
         protected override StartServiceCommand CreateCommandInstance() => new StartServiceCommand(MockServiceManager.Object);
 
+        protected override StartServiceCommand CreateCommandInstanceWithManager(IServiceManager serviceManager) => new StartServiceCommand(serviceManager);
+
         protected override StartServiceOptions CreateValidOptions(string serviceName) => new StartServiceOptions { ServiceName = serviceName };
 
         protected override StartServiceOptions CreateEmptyOptions(string serviceName) => new StartServiceOptions { ServiceName = serviceName };

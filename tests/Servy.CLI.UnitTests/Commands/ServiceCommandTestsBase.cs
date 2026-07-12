@@ -47,6 +47,13 @@ namespace Servy.CLI.UnitTests.Commands
         protected abstract TCommand CreateCommandInstance();
 
         /// <summary>
+        /// When overridden in a derived class, instantiates the exact command system element using a custom manager instance to verify constructor guards.
+        /// </summary>
+        /// <param name="serviceManager">The explicit service manager instance (can be null).</param>
+        /// <returns>A newly configured instance of <typeparamref name="TCommand"/>.</returns>
+        protected abstract TCommand CreateCommandInstanceWithManager(IServiceManager serviceManager);
+
+        /// <summary>
         /// When overridden in a derived class, builds a valid parameter dataset populated with a service name indicator.
         /// </summary>
         /// <param name="serviceName">The unique identifying target name context applied to the DTO instance properties.</param>
@@ -106,8 +113,6 @@ namespace Servy.CLI.UnitTests.Commands
         /// <returns>An asynchronous task returning a definitive runtime verification <see cref="CommandResult"/> wrapper state.</returns>
         protected virtual async Task<CommandResult> ExecuteCommandAsync(TCommand command, TOptions options)
         {
-            // Dynamic routing checks for asynchronous or synchronous execution paradigms natively 
-            // without requiring a specific shared IAsyncCommand interface to exist.
             dynamic cmd = command;
 
             try
@@ -117,7 +122,6 @@ namespace Servy.CLI.UnitTests.Commands
             }
             catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
             {
-                // Fallback route if the destination target class maps purely onto a synchronous execution block.
                 return cmd.Execute(options, CancellationToken.None);
             }
         }
@@ -127,9 +131,22 @@ namespace Servy.CLI.UnitTests.Commands
         #region Base Core Test Suite Skeleton
 
         /// <summary>
-        /// Validates that a perfectly matching inputs and valid setup returns a successful result with the proper text payload.
+        /// Validates that the constructor properly throws an ArgumentNullException when the required IServiceManager dependency is missing.
         /// </summary>
-        /// <returns>An asynchronous task tracking the verification flow execution state.</returns>
+        [Fact]
+        public virtual void Constructor_NullServiceManager_ThrowsArgumentNullException()
+        {
+            // Arrange
+            IServiceManager nullManager = null;
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>("serviceManager", () => CreateCommandInstanceWithManager(nullManager));
+            Assert.Equal("serviceManager", ex.ParamName);
+        }
+
+        /// <summary>
+        /// Validates that perfectly matching inputs and valid setup returns a successful result with the proper text payload.
+        /// </summary>
         [Fact]
         public virtual async Task Execute_ValidOptions_ReturnsSuccess()
         {
@@ -149,8 +166,6 @@ namespace Servy.CLI.UnitTests.Commands
         /// <summary>
         /// Validates that passing empty, null, or whitespace-only service identifiers directly terminates processing with a structured failure error response string.
         /// </summary>
-        /// <param name="invalidServiceName">The explicit malformed string context under validation parameter testing.</param>
-        /// <returns>An asynchronous task tracking the verification flow execution state.</returns>
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -171,7 +186,6 @@ namespace Servy.CLI.UnitTests.Commands
         /// <summary>
         /// Validates that operational failures reported explicitly by the service manager layer are translated into a failure response cleanly.
         /// </summary>
-        /// <returns>An asynchronous task tracking the verification flow execution state.</returns>
         [Fact]
         public virtual async Task Execute_ServiceManagerFails_ReturnsFailure()
         {
@@ -192,7 +206,6 @@ namespace Servy.CLI.UnitTests.Commands
         /// <summary>
         /// Validates that intercepting security constraints and lack of privileges formats a predictable, informative administrator elevation notification.
         /// </summary>
-        /// <returns>An asynchronous task tracking the verification flow execution state.</returns>
         [Fact]
         public virtual async Task Execute_UnauthorizedAccessException_ReturnsFailure()
         {
@@ -212,7 +225,6 @@ namespace Servy.CLI.UnitTests.Commands
         /// <summary>
         /// Validates that unexpected runtime environment exceptions are gracefully caught and map cleanly back into safe localized generic diagnostic outputs.
         /// </summary>
-        /// <returns>An asynchronous task tracking the verification flow execution state.</returns>
         [Fact]
         public virtual async Task Execute_GenericException_ReturnsFailure()
         {
@@ -232,7 +244,6 @@ namespace Servy.CLI.UnitTests.Commands
         /// <summary>
         /// Validates that requesting execution on a service that is not currently installed inside the SCM returns a dedicated target error response.
         /// </summary>
-        /// <returns>An asynchronous task tracking the verification flow execution state.</returns>
         [Fact]
         public virtual async Task Execute_ServiceNotInstalled_ReturnsServiceNotFoundError()
         {

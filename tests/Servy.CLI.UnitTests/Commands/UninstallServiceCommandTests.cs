@@ -13,13 +13,14 @@ namespace Servy.CLI.UnitTests.Commands
 {
     public class UninstallServiceCommandTests : ServiceCommandTestsBase<UninstallServiceCommand, UninstallServiceOptions>
     {
-        private Mock<IServiceRepository> _mockRepository;
+        private Mock<IServiceRepository> _mockRepository = new Mock<IServiceRepository>();
 
         protected override UninstallServiceCommand CreateCommandInstance()
         {
-            _mockRepository = new Mock<IServiceRepository>();
             return new UninstallServiceCommand(MockServiceManager.Object, _mockRepository.Object);
         }
+
+        protected override UninstallServiceCommand CreateCommandInstanceWithManager(IServiceManager serviceManager) => new UninstallServiceCommand(serviceManager, _mockRepository.Object);
 
         protected override UninstallServiceOptions CreateValidOptions(string serviceName) => new UninstallServiceOptions { ServiceName = serviceName };
 

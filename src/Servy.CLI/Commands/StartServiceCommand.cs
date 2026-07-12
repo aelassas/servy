@@ -1,7 +1,6 @@
 ﻿using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
-using Servy.Core.Enums;
 using Servy.Core.Services;
 using System;
 using System.Threading;

@@ -48,16 +48,17 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Format_Win32ExceptionThrownOnAccess_CatchesAndReturnsFallbackString()
         {
             // Arrange - Use a mock of a non-sealed component pattern or an uninitialized Process model
-            var process = new Process();
+            using (var process = new Process())
+            {
+                // Act
+                // Forcing an operations execution onto an unallocated Process object native handle
+                // throws an internal Win32Exception or InvalidOperationException depending on runtime state.
+                string formatted = process.Format();
 
-            // Act
-            // Forcing an operations execution onto an unallocated Process object native handle
-            // throws an internal Win32Exception or InvalidOperationException depending on runtime state.
-            string formatted = process.Format();
-
-            // Assert
-            Assert.NotNull(formatted);
-            Assert.True(formatted.Contains("PID") || formatted.Contains("Process"));
+                // Assert
+                Assert.NotNull(formatted);
+                Assert.True(formatted.Contains("PID") || formatted.Contains("Process"));
+            }
         }
 
         #endregion

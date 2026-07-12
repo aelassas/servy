@@ -51,7 +51,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             // Assert
             Assert.NotNull(expanded);
-            Assert.True(expanded.ContainsKey("PATH") || expanded.ContainsKey("Path"));
+            Assert.True(expanded.ContainsKey("PATH"));
         }
 
         [Theory]
