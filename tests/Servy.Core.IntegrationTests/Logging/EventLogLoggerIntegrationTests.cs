@@ -128,6 +128,7 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void SafeWriteToEventLog_OversizedMessage_TruncatesSuccessfully()
         {
+            // Arrange
             if (!_isElevated) return;
 
             string source = GenerateSourceName();
@@ -137,11 +138,28 @@ namespace Servy.Core.IntegrationTests.Logging
                 string massiveString = new string('A', 40000);
 
                 // Act
-                // Should invoke the truncation branch and write "...[truncated]" without throwing Win32Exception
+                // Invoke the log pipeline—should execute the truncation branch without throwing Win32Exception
                 Exception? ex = Record.Exception(() => logger.Info(massiveString));
 
-                // Assert
+                // Assert Execution State
                 Assert.Null(ex);
+
+                // Assert Structural Persistence Truncation Integrity
+                using (var eventLog = new EventLog(AppConfig.EventLogName))
+                {
+                    eventLog.Source = source;
+
+                    // Retrieve the most recent written entry assigned to this specific source handle context
+                    var entriesCount = eventLog.Entries.Count;
+                    Assert.True(entriesCount > 0, "The oversized event log entry failed to write to the OS log repository container.");
+
+                    var lastEntry = eventLog.Entries[entriesCount - 1];
+
+                    // Verify absolute length bounds and suffix marker format compliance
+                    Assert.True(lastEntry.Message.Length <= 31839 + "...[truncated]".Length,
+                        $"Persisted message length ({lastEntry.Message.Length}) exceeds the physical truncation ceiling framework limitation.");
+                    Assert.EndsWith("...[truncated]", lastEntry.Message);
+                }
             }
         }
 

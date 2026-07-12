@@ -8,6 +8,9 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void UpdateCheckTimeouts_AreConsistent()
         {
+            // Arrange (Static property validation context)
+
+            // Act & Assert
             Assert.True(AppConfig.UpdateCheckTimeoutSeconds <= AppConfig.UpdateCheckHttpTimeoutSeconds,
                 "Cooperative cancellation timeout must not exceed the HTTP client timeout.");
         }
@@ -15,44 +18,97 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void Version_ShouldNotBeNullOrEmpty()
         {
-            Assert.False(string.IsNullOrWhiteSpace(AppConfig.Version));
+            // Arrange (Static property validation context)
+
+            // Act
+            var version = AppConfig.Version;
+
+            // Assert
+            Assert.False(string.IsNullOrWhiteSpace(version));
         }
 
         [Fact]
         public void ServyCoreDllName_ShouldBeCorrect()
         {
-            Assert.Equal("Servy.Core", AppConfig.ServyCoreDllName);
+            // Arrange (Static property validation context)
+
+            // Act
+            var dllName = AppConfig.ServyCoreDllName;
+
+            // Assert
+            Assert.Equal("Servy.Core", dllName);
         }
 
         [Fact]
         public void ServyServiceUIExe_ShouldEndWithExe()
         {
-            Assert.EndsWith(".exe", AppConfig.ServyServiceUIExe);
+            // Arrange (Static property validation context)
+
+            // Act
+            var exeName = AppConfig.ServyServiceUIExe;
+
+            // Assert
+            Assert.EndsWith(".exe", exeName);
+        }
+
+        [Fact]
+        public void ServyServiceCLIExe_ShouldEndWithExe()
+        {
+            // Arrange (Static property validation context)
+
+            // Act
+            var exeName = AppConfig.ServyServiceCLIExe;
+
+            // Assert
+            Assert.EndsWith(".exe", exeName);
         }
 
         [Fact]
         public void DefaultConnectionString_ShouldContainDbFolderPath()
         {
-            Assert.Contains(AppConfig.DbFolderPath, AppConfig.DefaultConnectionString);
-            Assert.Contains("Servy.db", AppConfig.DefaultConnectionString);
+            // Arrange (Static property validation context)
+
+            // Act
+            var connectionString = AppConfig.DefaultConnectionString;
+
+            // Assert
+            Assert.Contains(AppConfig.DbFolderPath, connectionString);
+            Assert.Contains("Servy.db", connectionString);
         }
 
         [Fact]
         public void DefaultAESKeyPath_ShouldEndWithAesKeyDat()
         {
-            Assert.EndsWith("aes_key.dat", AppConfig.DefaultAESKeyPath);
+            // Arrange (Static property validation context)
+
+            // Act
+            var keyPath = AppConfig.DefaultAESKeyPath;
+
+            // Assert
+            Assert.EndsWith("aes_key.dat", keyPath);
         }
 
         [Fact]
         public void DefaultAESIVPath_ShouldEndWithAesIvDat()
         {
-            Assert.EndsWith("aes_iv.dat", AppConfig.DefaultAESIVPath);
+            // Arrange (Static property validation context)
+
+            // Act
+            var ivPath = AppConfig.DefaultAESIVPath;
+
+            // Assert
+            Assert.EndsWith("aes_iv.dat", ivPath);
         }
 
         [Fact]
         public void GetHandleExePath_ShouldReturnFullPath()
         {
+            // Arrange (Architecture execution metadata)
+
+            // Act
             var path = AppConfig.GetHandleExePath();
+
+            // Assert
             Assert.False(string.IsNullOrWhiteSpace(path));
             Assert.EndsWith(RuntimeInformation.OSArchitecture == Architecture.Arm64 ? AppConfig.HandleExeARM64 : AppConfig.HandleExeX64, path);
         }
@@ -60,7 +116,12 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void GetServyCLIServicePath_ShouldReturnFullPath()
         {
+            // Arrange (Static execution context)
+
+            // Act
             var path = AppConfig.GetServyCLIServicePath();
+
+            // Assert
             Assert.False(string.IsNullOrWhiteSpace(path));
             Assert.EndsWith(AppConfig.ServyServiceCLIExe, path);
         }
@@ -68,7 +129,12 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void GetServyUIServicePath_ShouldReturnFullPath()
         {
+            // Arrange (Static execution context)
+
+            // Act
             var path = AppConfig.GetServyUIServicePath();
+
+            // Assert
             Assert.False(string.IsNullOrWhiteSpace(path));
             Assert.EndsWith(AppConfig.ServyServiceUIExe, path);
         }
@@ -76,13 +142,25 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void ProgramDataPath_ShouldContainAppFolderName()
         {
-            Assert.Contains(AppConfig.AppFolderName, AppConfig.ProgramDataPath);
+            // Arrange (Static property validation context)
+
+            // Act
+            var path = AppConfig.ProgramDataPath;
+
+            // Assert
+            Assert.Contains(AppConfig.AppFolderName, path);
         }
 
         [Fact]
         public void SecurityFolderPath_ShouldBeSubfolderOfProgramDataPath()
         {
-            Assert.StartsWith(AppConfig.ProgramDataPath, AppConfig.SecurityFolderPath);
+            // Arrange (Static property validation context)
+
+            // Act
+            var path = AppConfig.SecurityFolderPath;
+
+            // Assert
+            Assert.StartsWith(AppConfig.ProgramDataPath, path);
         }
     }
 }

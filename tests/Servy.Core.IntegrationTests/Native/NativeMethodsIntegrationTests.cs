@@ -136,19 +136,31 @@ namespace Servy.Core.IntegrationTests.Native
             // Act
             IntPtr argArrayPointer = NativeMethods.CommandLineToArgvW(cmdLine, out int numArgs);
 
-            // Assert
+            // Assert & Marshalling Pipeline
             Assert.NotEqual(IntPtr.Zero, argArrayPointer);
-            Assert.Equal(4, numArgs);
 
-            var items = new string[numArgs];
-            for (int i = 0; i < numArgs; i++)
+            string[] items;
+            try
             {
-                IntPtr itemPtr = Marshal.ReadIntPtr(argArrayPointer, i * IntPtr.Size);
-                items[i] = Marshal.PtrToStringUni(itemPtr)!;
+                Assert.Equal(4, numArgs);
+
+                items = new string[numArgs];
+                for (int i = 0; i < numArgs; i++)
+                {
+                    IntPtr itemPtr = Marshal.ReadIntPtr(argArrayPointer, i * IntPtr.Size);
+                    items[i] = Marshal.PtrToStringUni(itemPtr)!;
+                }
+            }
+            finally
+            {
+                // Guarantee the allocated Win32 memory block is released back to the OS pool
+                if (argArrayPointer != IntPtr.Zero)
+                {
+                    NativeMethods.LocalFree(argArrayPointer);
+                }
             }
 
-            NativeMethods.LocalFree(argArrayPointer);
-
+            // Assert Parsed Property Content Symmetrically
             Assert.Equal("servy-service.exe", items[0]);
             Assert.Equal("-c", items[1]);
             Assert.Equal("C:\\Program Files\\Config.json", items[2]);
