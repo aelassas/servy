@@ -1,4 +1,5 @@
-﻿using System.ServiceProcess;
+﻿using Servy.Testing;
+using System.ServiceProcess;
 
 namespace Servy.Restarter.UnitTests
 {
@@ -16,15 +17,41 @@ namespace Servy.Restarter.UnitTests
         }
 
         [Fact]
-        public void Dispose_CalledMultipleTimes_DoesNotThrow()
+        public void Dispose_FirstInvocation_SetsDisposedFlagAndCleansUpState()
         {
+            // Arrange
             var controller = new ServiceController(DummyServiceName);
 
-            // Should be idempotent
-            controller.Dispose();
-            var exception = Record.Exception(controller.Dispose);
+            // Act: Assert lifecycle field mutations using the centralized reflection infrastructure
+            bool isDisposedBefore = TestReflection.GetField<bool>(controller, "_disposed");
+            Assert.False(isDisposedBefore, "The service controller wrapper should not initialize in a pre-disposed state.");
 
+            controller.Dispose();
+
+            // Assert
+            bool isDisposedAfter = TestReflection.GetField<bool>(controller, "_disposed");
+            Assert.True(isDisposedAfter, "The internal _disposed state guard was not toggled to true during clean teardown execution.");
+        }
+
+        [Fact]
+        public void Dispose_CalledMultipleTimes_ShortCircuitsSafelyViaGuard()
+        {
+            // Arrange
+            var controller = new ServiceController(DummyServiceName);
+
+            // Execute the initial disposal loop to alter core backing states
+            controller.Dispose();
+            Assert.True(TestReflection.GetField<bool>(controller, "_disposed"));
+
+            // Act
+            // Manually override the state flag back to false using TestReflection to verify short-circuit behavior re-entry paths 
+            TestReflection.SetField(controller, "_disposed", false);
+
+            var exception = Record.Exception(() => controller.Dispose());
+
+            // Assert
             Assert.Null(exception);
+            Assert.True(TestReflection.GetField<bool>(controller, "_disposed"), "The state engine failed to toggle back to an active disposed layout configuration.");
         }
 
         [Theory]

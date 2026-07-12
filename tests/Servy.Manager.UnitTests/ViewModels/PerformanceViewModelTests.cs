@@ -61,11 +61,18 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_NullGuards_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Helper.RunOnSTA(() =>
             {
+                // 1. Direct Guards
                 Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(null!, _mockServiceCommands.Object, _mockAppConfig.Object, _mockCursorService.Object, _mockProcessHelper.Object, _mockUiDispatcher.Object));
                 Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(_mockServiceRepository.Object, _mockServiceCommands.Object, null!, _mockCursorService.Object, _mockProcessHelper.Object, _mockUiDispatcher.Object));
                 Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(_mockServiceRepository.Object, _mockServiceCommands.Object, _mockAppConfig.Object, _mockCursorService.Object, null!, _mockUiDispatcher.Object));
+
+                // 2. Inherited Base Class Guards
+                Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(_mockServiceRepository.Object, null!, _mockAppConfig.Object, _mockCursorService.Object, _mockProcessHelper.Object, _mockUiDispatcher.Object));
+                Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(_mockServiceRepository.Object, _mockServiceCommands.Object, _mockAppConfig.Object, null!, _mockProcessHelper.Object, _mockUiDispatcher.Object));
+                Assert.Throws<ArgumentNullException>(() => new PerformanceViewModel(_mockServiceRepository.Object, _mockServiceCommands.Object, _mockAppConfig.Object, _mockCursorService.Object, _mockProcessHelper.Object, null!));
             }, createApp: true);
         }
 
