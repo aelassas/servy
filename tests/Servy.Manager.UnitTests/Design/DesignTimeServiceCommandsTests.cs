@@ -6,7 +6,7 @@ namespace Servy.Manager.UnitTests.Design
     public class DesignTimeServiceCommandsTests
     {
         [Fact]
-        public async Task DesignTimeServiceCommands_ReturnExpectedValues()
+        public async Task DesignTimeServiceCommands_ReturnsDefaultsAndDoesNotThrow()
         {
             // Arrange
             var commands = new DesignTimeServiceCommands();

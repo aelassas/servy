@@ -1,11 +1,8 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using Moq;
+﻿using Moq;
 using Servy.Core.Helpers;
 using Servy.Core.Services;
 using Servy.Manager.Mappers;
 using Servy.Manager.Models;
-using Xunit;
 using UiAppConfig = Servy.Manager.Config.UiAppConfig;
 
 namespace Servy.Manager.UnitTests.Mappers
@@ -26,13 +23,19 @@ namespace Servy.Manager.UnitTests.Mappers
         [Fact]
         public async Task ToModelAsync_NullService_ReturnsNull()
         {
+            // Arrange (Vacuous setup for static method target validation)
+
+            // Act
             var result = await ServiceMapper.ToModelAsync(null, true, false, _mockProcessHelper.Object, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
             Assert.Null(result);
         }
 
         [Fact]
         public async Task ToModelAsync_ValidService_MapsPropertiesCorrectly()
         {
+            // Arrange
             var domainService = new Core.Domain.Service(_mockServiceManager.Object)
             {
                 Name = "Test",
@@ -40,8 +43,10 @@ namespace Servy.Manager.UnitTests.Mappers
                 RunAsLocalSystem = true
             };
 
+            // Act
             var result = await ServiceMapper.ToModelAsync(domainService, true, false, _mockProcessHelper.Object, cancellationToken: TestContext.Current.CancellationToken);
 
+            // Assert
             Assert.NotNull(result);
             Assert.Equal("Test", result.Name);
             Assert.Equal(1234, result.Pid);
@@ -51,12 +56,15 @@ namespace Servy.Manager.UnitTests.Mappers
         [Fact]
         public async Task ToModelAsync_CalculatePerf_CallsHelper()
         {
+            // Arrange
             var domainService = new Core.Domain.Service(_mockServiceManager.Object) { Name = "Test", Pid = 1234 };
             _mockProcessHelper.Setup(h => h.GetProcessTreeMetrics(1234))
                 .Returns(new ProcessMetrics(10.0, 500));
 
+            // Act
             var result = await ServiceMapper.ToModelAsync(domainService, true, true, _mockProcessHelper.Object, cancellationToken: TestContext.Current.CancellationToken);
 
+            // Assert
             Assert.Equal(10.0, result!.CpuUsage);
             Assert.Equal(500, result.RamUsage);
         }
@@ -68,22 +76,29 @@ namespace Servy.Manager.UnitTests.Mappers
         [Fact]
         public void ToModel_NullItem_ReturnsNull()
         {
-            Assert.Null(ServiceMapper.ToModel(null!));
+            // Arrange (Vacuous setup for static null validation)
+
+            // Act
+            var result = ServiceMapper.ToModel(null!);
+
+            // Assert
+            Assert.Null(result);
         }
 
         [Fact]
         public void ToModel_ConsoleService_MapsPaths()
         {
-            var consoleService = new ConsoleService
-            {
-                Name = "C",
-                StdoutPath = "out.txt",
-                StderrPath = "err.txt"
-            };
+            // Arrange
+            var consoleService = new ConsoleService { Name = "C", Pid = 1234, StdoutPath = "out.txt", StderrPath = "err.txt" };
 
+            // Act
             var result = ServiceMapper.ToModel(consoleService);
 
+            // Assert
             Assert.NotNull(result);
+            Assert.Equal("C", result.Name);
+            Assert.Equal(1234, result.Pid);
+            Assert.True(result.IsPidEnabled);
             Assert.Equal("out.txt", result.StdoutPath);
             Assert.Equal("err.txt", result.StderrPath);
         }
@@ -99,8 +114,12 @@ namespace Servy.Manager.UnitTests.Mappers
         [InlineData("MyCustomUser", "MyCustomUser")]
         public void GetLogOnAsDisplayName_ResolvesCorrectly(string? input, string expected)
         {
-            // Note: Ensure ServiceAccounts constants match these inputs for test accuracy
+            // Arrange: Ensure ServiceAccounts constants match these inputs for test accuracy
+
+            // Act
             var result = ServiceMapper.GetLogOnAsDisplayName(input);
+
+            // Assert
             Assert.Equal(expected, result);
         }
 
