@@ -138,6 +138,47 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
+        public void CopyEmbeddedResourceForceSync_WhenResourceIsUpToDate_ReturnsTrueAndSkipsCopy()
+        {
+            // Arrange
+            string fileName = "sync_up_to_date";
+            string extension = "exe";
+            string targetPath = Path.Combine(_tempDirectory, $"{fileName}.{extension}");
+
+            // Create a dummy file and artificially push its LastWriteTime into the future to bypass the staleness threshold
+            File.WriteAllText(targetPath, "up to date sync content");
+            File.SetLastWriteTimeUtc(targetPath, DateTime.UtcNow.AddHours(1));
+
+            // Act
+            bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
+                _fakeAssembly, "Servy.Resources", fileName, extension);
+
+            // Assert
+            Assert.True(result); // Should return true early without copying
+            _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+        }
+
+        [Fact]
+        public void CopyEmbeddedResourceForceSync_WhenProcessTerminationFails_ReturnsFalse()
+        {
+            // Arrange
+            _mockProcessKiller
+                .Setup(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>()))
+                .Returns(false);
+
+            var dummyResourceBytes = new byte[] { 0x01, 0x02, 0x03 };
+            _fakeAssembly.OnGetManifestResourceStream = _ => new MemoryStream(dummyResourceBytes);
+
+            // Act
+            bool result = _resourceHelper.CopyEmbeddedResourceForceSync(
+                _fakeAssembly, "Servy.Core.Resources", "sync_lockedapp", "exe");
+
+            // Assert
+            Assert.False(result);
+            _mockProcessKiller.Verify(p => p.KillProcessTreeAndParents("sync_lockedapp.exe", It.IsAny<bool>()), Times.Once);
+        }
+
+        [Fact]
         public void CopyEmbeddedResourceForceSync_WhenResourceStreamNotFound_ReturnsFalse()
         {
             // Arrange
@@ -191,7 +232,7 @@ namespace Servy.Core.IntegrationTests.Helpers
                 new ResourceItem { FileNameWithoutExtension = "helper", Extension = "dll" }
             };
 
-            // Setup mocks
+            // Setup Mocks
             _mockProcessKiller.Setup(p => p.KillProcessTreeAndParents(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
             // We do NOT setup KillProcessesUsingFile to return true, because skipDll = true in the batch method should bypass it
 
@@ -299,6 +340,8 @@ namespace Servy.Core.IntegrationTests.Helpers
         [Fact]
         public void GetHostProcessLastWriteTimeUTC_ExecutesSuccessfullyAndReturnsValidDate()
         {
+            // Arrange (Static execution pipeline framework proxy metrics context)
+
             // Act
             DateTime result = _resourceHelper.GetHostProcessLastWriteTimeUTC();
 

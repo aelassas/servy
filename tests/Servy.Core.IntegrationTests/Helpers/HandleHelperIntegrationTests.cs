@@ -23,7 +23,6 @@ namespace Servy.Core.IntegrationTests.Helpers
     public class HandleHelperIntegrationTests : HandleExeIntegrationTestBase, IDisposable
     {
         private readonly List<string> _tempFiles = new List<string>();
-        private readonly List<FileStream> _openedStreams = new List<FileStream>();
 
         /// <summary>
         /// Initializes the test class by inheriting from the shared tool extraction baseline.
@@ -49,11 +48,6 @@ namespace Servy.Core.IntegrationTests.Helpers
         /// </summary>
         public void Dispose()
         {
-            foreach (var stream in _openedStreams)
-            {
-                stream.Dispose();
-            }
-
             foreach (var file in _tempFiles)
             {
                 if (File.Exists(file))
@@ -106,11 +100,9 @@ namespace Servy.Core.IntegrationTests.Helpers
                 int currentPid = self.Id;
                 string currentName = self.ProcessName;
 
-                // Lock the file
+                // Lock the file using scoping blocks
                 using (var fs = new FileStream(testFile, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
                 {
-                    _openedStreams.Add(fs); // Keep track for disposal
-
                     // Act
                     List<HandleHelper.ProcessHandleInfo> results = null;
                     bool handleDetected = false;
@@ -164,39 +156,38 @@ namespace Servy.Core.IntegrationTests.Helpers
                 // Arrange
                 string testFile = CreateTempFile();
 
-                // Open multiple streams (this simulates multiple handles from the same or different threads)
-                var fs1 = new FileStream(testFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                var fs2 = new FileStream(testFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                _openedStreams.Add(fs1);
-                _openedStreams.Add(fs2);
-
-                // Act
-                var currentPid = self.Id;
-                List<HandleHelper.ProcessHandleInfo> results = null;
-                List<HandleHelper.ProcessHandleInfo> selfHandles = null;
-                bool multiHandlesDetected = false;
-
-                // Wrap the query inside a retry loop identical to its sibling test.
-                // This absorbs underlying Windows kernel table sync latency before evaluating assertions.
-                const int maxRetries = 5;
-                for (int i = 0; i < maxRetries; i++)
+                // Open multiple streams inside nested scopes to safely verify handle grouping symmetry
+                using (var fs1 = new FileStream(testFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var fs2 = new FileStream(testFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
-                    selfHandles = results.Where(r => r.ProcessId == currentPid).ToList();
+                    // Act
+                    var currentPid = self.Id;
+                    List<HandleHelper.ProcessHandleInfo> results = null;
+                    List<HandleHelper.ProcessHandleInfo> selfHandles = null;
+                    bool multiHandlesDetected = false;
 
-                    // handle.exe returns one line per handle found.
-                    if (selfHandles.Count >= 2)
+                    // Wrap the query inside a retry loop identical to its sibling test.
+                    // This absorbs underlying Windows kernel table sync latency before evaluating assertions.
+                    const int maxRetries = 5;
+                    for (int i = 0; i < maxRetries; i++)
                     {
-                        multiHandlesDetected = true;
-                        break;
+                        results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
+                        selfHandles = results.Where(r => r.ProcessId == currentPid).ToList();
+
+                        // handle.exe returns one line per handle found.
+                        if (selfHandles.Count >= 2)
+                        {
+                            multiHandlesDetected = true;
+                            break;
+                        }
+
+                        Thread.Sleep(50); // Small backoff window
                     }
 
-                    Thread.Sleep(50); // Small backoff window
+                    // Assert
+                    // Filter out potential concurrent background system handles (like security indexers) targeting our file
+                    Assert.True(multiHandlesDetected, $"Should have detected at least two handles owned by this running test process (PID {currentPid}). Total found self handles: {selfHandles?.Count ?? 0}, overall system handles found: {results?.Count ?? 0}");
                 }
-
-                // Assert
-                // Filter out potential concurrent background system handles (like security indexers) targeting our file
-                Assert.True(multiHandlesDetected, $"Should have detected at least two handles owned by this running test process (PID {currentPid}). Total found self handles: {selfHandles?.Count ?? 0}, overall system handles found: {results?.Count ?? 0}");
             }
         }
 
