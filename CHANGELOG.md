@@ -1,5 +1,28 @@
 # Changelog
 
+## [Servy 8.6](https://github.com/aelassas/servy/releases/tag/v8.6)
+
+**Date:** 2026-07-12 | **Tag:** [`v8.6`](https://github.com/aelassas/servy/tree/v8.6)
+
+* fix(core): separate atomic and progressive creation paths to preserve inheritance when breakInheritance is false (#3896)
+* fix(service): wrap masking regex value patterns in atomic groups to eliminate ReDoS timeouts
+* fix(manager): prevent tab switching from prematurely freezing search commands
+* chore(deps): update dependencies
+
+### Downloads
+* [servy-8.6-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-arm64-installer.exe) - 76.02 MB
+* [servy-8.6-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-arm64-portable.7z) - 77.4 MB
+* [servy-8.6-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-net48-sbom.xml) - 0.03 MB
+* [servy-8.6-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-net48-x64-installer.exe) - 4.32 MB
+* [servy-8.6-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-net48-x64-portable.7z) - 2.06 MB
+* [servy-8.6-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-sbom.xml) - 0.04 MB
+* [servy-8.6-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-x64-installer.exe) - 82.02 MB
+* [servy-8.6-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.6/servy-8.6-x64-portable.7z) - 79.91 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v8.6.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v8.6.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v8.5...v8.6
+
 ## [Servy 8.5](https://github.com/aelassas/servy/releases/tag/v8.5)
 
 **Date:** 2026-06-28 | **Tag:** [`v8.5`](https://github.com/aelassas/servy/tree/v8.5)
