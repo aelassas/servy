@@ -181,6 +181,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Assert that target exception was caught and handled internally without blowing up the execution stack
             Assert.Null(exception);
             Assert.False(_sut.IsBusy);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         [Fact]
