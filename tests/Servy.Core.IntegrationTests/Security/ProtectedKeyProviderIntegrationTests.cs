@@ -88,6 +88,10 @@ namespace Servy.Core.IntegrationTests.Security
                 Assert.NotNull(iv);
                 Assert.Equal(16, iv.Length);
                 Assert.True(File.Exists(ivPath));
+
+                // Verify the IV file is protected, not plaintext
+                byte[] fileBytes = File.ReadAllBytes(ivPath);
+                Assert.NotEqual(iv, fileBytes);
             }
         }
 
@@ -114,6 +118,37 @@ namespace Servy.Core.IntegrationTests.Security
                 var key3 = provider.GetKey();
                 Assert.NotEqual(key1, key3);
                 Assert.Equal(key2, key3);
+            }
+        }
+
+        [Fact]
+        public void GetIV_SubsequentCalls_ReturnIdenticalDataButDifferentReferences()
+        {
+            // Arrange
+            var keyPath = GetTempFilePath("master.key");
+            var ivPath = GetTempFilePath("master.iv");
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                // Act
+                var iv1 = provider.GetIV();
+                var iv2 = provider.GetIV();
+
+                // Assert - Verify the expected AES initialization vector length constraint
+                Assert.Equal(16, iv1.Length);
+
+                // Assert - Values must be identical
+                Assert.Equal(iv1, iv2);
+
+                // Assert - References must be different (defensive clone from internal cache field)
+                Assert.NotSame(iv1, iv2);
+
+                // Act - Mutate the returned array to test isolation resilience boundaries
+                iv1[0] = (byte)(iv1[0] ^ 0xFF);
+                var iv3 = provider.GetIV();
+
+                // Assert - Mutating the localized instance should NOT corrupt the internal backing buffer
+                Assert.NotEqual(iv1, iv3);
+                Assert.Equal(iv2, iv3);
             }
         }
 
@@ -171,6 +206,40 @@ namespace Servy.Core.IntegrationTests.Security
 
                 byte[] bytesAfterMigration = File.ReadAllBytes(keyPath);
                 Assert.NotEqual(bytesBeforeMigration, bytesAfterMigration); // Re-written during migration, no timing dependency
+            }
+        }
+
+        [Fact]
+        public void GetIV_LegacyNoEntropyFile_MigratesToEntropyProtected()
+        {
+            // Arrange
+            var keyPath = GetTempFilePath("legacy_iv_migration.key");
+            var ivPath = GetTempFilePath("legacy_iv_migration.iv");
+
+            // 1. Manually create a v7.8 legacy IV (16 bytes) without machine-unique entropy
+            var rawLegacyIvData = new byte[16];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(rawLegacyIvData);
+            }
+
+            byte[] legacyEncrypted = ProtectedData.Protect(rawLegacyIvData, null, DataProtectionScope.LocalMachine);
+            File.WriteAllBytes(ivPath, legacyEncrypted);
+
+            // Capture the raw file bytes state prior to executing the migration routing loop
+            byte[] bytesBeforeMigration = File.ReadAllBytes(ivPath);
+
+            // Act
+            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+            {
+                var retrievedIv = provider.GetIV();
+
+                // Assert - Must successfully fallback to null-entropy and decrypt the original data
+                Assert.Equal(rawLegacyIvData, retrievedIv);
+
+                // Assert - Verify that automatic migration occurred by asserting the file payload changed on disk
+                byte[] bytesAfterMigration = File.ReadAllBytes(ivPath);
+                Assert.NotEqual(bytesBeforeMigration, bytesAfterMigration);
             }
         }
 
