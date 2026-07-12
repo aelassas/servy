@@ -1989,11 +1989,13 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void GetServiceStartupType_ShouldThrowOperationCanceledException_WhenTokenIsCancelled()
         {
-            var cts = new CancellationTokenSource();
-            cts.Cancel();
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
 
-            Assert.Throws<OperationCanceledException>(() =>
-                _serviceManager.GetServiceStartupType("AnyService", cts.Token));
+                Assert.Throws<OperationCanceledException>(() =>
+                    _serviceManager.GetServiceStartupType("AnyService", cts.Token));
+            }
         }
 
         [Theory]
