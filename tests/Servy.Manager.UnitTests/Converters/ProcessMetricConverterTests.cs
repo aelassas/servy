@@ -81,23 +81,14 @@ namespace Servy.Manager.UnitTests.Converters
             // Arrange
             var mockKiller = new Mock<IProcessKiller>();
 
-            using (new AmbientAppServicesScope(sc => sc.AddSingleton<IProcessKiller>(mockKiller.Object)))
+            using (new AmbientAppServicesScope(sc => sc.AddSingleton(mockKiller.Object)))
             {
                 // Act
                 var converter = new TestMetricConverter();
 
                 // Assert
                 Assert.NotNull(converter.ExposedProcessHelper);
-
-                if (converter.ExposedProcessHelper is ProcessHelper)
-                {
-                    Assert.NotNull(converter.ExposedProcessHelper);
-                }
-                else
-                {
-                    // Ensure that it resolves precisely to the concrete design-time fallback class
-                    Assert.IsType<DesignTimeProcessHelper>(converter.ExposedProcessHelper);
-                }
+                Assert.IsType<DesignTimeProcessHelper>(converter.ExposedProcessHelper);
             }
         }
 

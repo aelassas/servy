@@ -43,7 +43,7 @@ namespace Servy.Manager.UnitTests.Converters
                 var converter = new CpuUsageConverter();
 
                 // Act
-                var result = converter.Convert(input, typeof(string), null!, CultureInfo.CurrentUICulture);
+                var result = converter.Convert(input, typeof(string), null!, CultureInfo.InvariantCulture);
 
                 // Assert
                 Assert.Equal(expectedFormattedValue, result);
@@ -73,7 +73,7 @@ namespace Servy.Manager.UnitTests.Converters
                 var converter = new CpuUsageConverter();
 
                 // Act
-                var result = converter.Convert(input!, typeof(string), null!, CultureInfo.CurrentUICulture);
+                var result = converter.Convert(input!, typeof(string), null!, CultureInfo.InvariantCulture);
 
                 // Assert
                 Assert.Equal(UiConstants.NotAvailable, result);
@@ -100,7 +100,7 @@ namespace Servy.Manager.UnitTests.Converters
                 var converter = new CpuUsageConverter();
 
                 // Act
-                var result = converter.ConvertBack(null!, typeof(double), null!, CultureInfo.CurrentUICulture);
+                var result = converter.ConvertBack(null!, typeof(double), null!, CultureInfo.InvariantCulture);
 
                 // Assert
                 Assert.Equal(Binding.DoNothing, result);

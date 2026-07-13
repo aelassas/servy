@@ -458,9 +458,11 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             string systemComSpec = Environment.GetEnvironmentVariable("COMSPEC")!;
+            string systemPath = Environment.GetEnvironmentVariable("PATH")!;
+
             var vars = new List<EnvironmentVariable>
             {
-                // Attempting to bypass using casing
+                // Attempting to bypass the block framework using scrambled character casings
                 new EnvironmentVariable { Name = "pAtH", Value = "C:\\Malicious" },
                 new EnvironmentVariable { Name = "comspec", Value = "C:\\Malicious\\cmd.exe" }
             };
@@ -469,8 +471,12 @@ namespace Servy.Service.UnitTests.Helpers
             var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
 
             // Assert
+            // Verify rejection of malicious values
             Assert.NotEqual("C:\\Malicious", expanded["PATH"]);
             Assert.NotEqual("C:\\Malicious\\cmd.exe", expanded["COMSPEC"]);
+
+            // Verify true underlying system configuration value preservation (Symmetric Verification)
+            Assert.Equal(systemPath, expanded["PATH"], ignoreCase: true);
             Assert.Equal(systemComSpec, expanded["COMSPEC"], ignoreCase: true);
         }
 
@@ -492,6 +498,10 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.NotEqual("C:\\Fake", expanded["SYSTEMROOT"]);
             Assert.NotEqual("C:\\FakeTemp", expanded["TEMP"]);
             Assert.NotEqual("Administrator", expanded["USERNAME"]);
+
+            Assert.Equal(Environment.GetEnvironmentVariable("SystemRoot"), expanded["SYSTEMROOT"], ignoreCase: true);
+            Assert.Equal(Environment.GetEnvironmentVariable("TEMP"), expanded["TEMP"], ignoreCase: true);
+            Assert.Equal(Environment.GetEnvironmentVariable("USERNAME"), expanded["USERNAME"], ignoreCase: true);
         }
 
         [Fact]
