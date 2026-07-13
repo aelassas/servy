@@ -1397,7 +1397,6 @@ namespace Servy.Core.UnitTests.IO
                 {
                     Directory.Delete(_testDir, true);
                 }
-                GC.SuppressFinalize(this);
             }
             catch
             {
