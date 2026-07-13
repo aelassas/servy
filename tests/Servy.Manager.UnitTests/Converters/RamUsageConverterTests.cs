@@ -44,7 +44,7 @@ namespace Servy.Manager.UnitTests.Converters
                 var converter = new RamUsageConverter();
 
                 // Act
-                var result = converter.Convert(input, typeof(string), null, CultureInfo.CurrentUICulture);
+                var result = converter.Convert(input, typeof(string), null, CultureInfo.InvariantCulture);
 
                 // Assert
                 Assert.Equal(mockTargetOutput, result);
@@ -74,7 +74,7 @@ namespace Servy.Manager.UnitTests.Converters
                 var converter = new RamUsageConverter();
 
                 // Act
-                var result = converter.Convert(input, typeof(string), null, CultureInfo.CurrentUICulture);
+                var result = converter.Convert(input, typeof(string), null, CultureInfo.InvariantCulture);
 
                 // Assert
                 Assert.Equal(UiConstants.NotAvailable, result);
@@ -101,7 +101,7 @@ namespace Servy.Manager.UnitTests.Converters
                 var converter = new RamUsageConverter();
 
                 // Act
-                var result = converter.ConvertBack(null, typeof(long), null, CultureInfo.CurrentUICulture);
+                var result = converter.ConvertBack(null, typeof(long), null, CultureInfo.InvariantCulture);
 
                 // Assert
                 Assert.Equal(Binding.DoNothing, result);

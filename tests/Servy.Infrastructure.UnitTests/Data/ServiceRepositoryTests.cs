@@ -650,35 +650,15 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task GetServicePidAsync_ServiceIsStopped_ReturnsNull()
+        public async Task GetServicePidAsync_NoPidAvailable_ReturnsNull()
         {
             // Arrange
-            var serviceName = "StoppedService";
+            var serviceName = "MissingOrStoppedService";
 
+            // Enforce the strict SQL matcher condition to lock down the targeted schema query pattern
             _mockDapper
-                .Setup(e => e.QueryFirstOrDefaultAsync<int?>(
+                .Setup(e => e.QuerySingleOrDefaultAsync<int?>(
                     It.Is<string>(sql => sql.Contains($"SELECT Pid FROM {SqlConstants.ServicesTableName}")),
-                    It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((int?)null);
-
-            var repo = CreateRepository();
-
-            // Act
-            var result = await repo.GetServicePidAsync(serviceName, CancellationToken.None);
-
-            // Assert
-            Assert.Null(result);
-        }
-
-        [Fact]
-        public async Task GetServicePidAsync_ServiceDoesNotExist_ReturnsNull()
-        {
-            // Arrange
-            var serviceName = "NonExistentService";
-
-            _mockDapper
-                .Setup(e => e.QueryFirstOrDefaultAsync<int?>(
-                    It.IsAny<string>(),
                     It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((int?)null);
 
