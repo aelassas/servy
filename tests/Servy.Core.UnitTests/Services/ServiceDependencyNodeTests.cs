@@ -9,16 +9,28 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange & Act
             var node = new ServiceDependencyNode("wuauserv", "Windows Update", true, true);
-            node.IsExpanded = true;
 
             // Assert
             Assert.Equal("wuauserv", node.ServiceName);
             Assert.Equal("Windows Update", node.DisplayName);
             Assert.True(node.IsRunning);
             Assert.True(node.IsCyclic);
-            Assert.True(node.IsExpanded);
+            Assert.False(node.IsExpanded); // Verifies the authentic constructor default initialization value
             Assert.NotNull(node.Dependencies);
             Assert.Empty(node.Dependencies);
+        }
+
+        [Fact]
+        public void IsExpanded_Property_CanBeMutatedSuccessfully()
+        {
+            // Arrange
+            var node = new ServiceDependencyNode("wuauserv", "Windows Update", true, false);
+
+            // Act
+            node.IsExpanded = true;
+
+            // Assert
+            Assert.True(node.IsExpanded);
         }
 
         [Fact]

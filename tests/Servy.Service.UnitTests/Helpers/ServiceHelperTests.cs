@@ -444,7 +444,10 @@ namespace Servy.Service.UnitTests.Helpers
                 _helper.RestartComputer(mockLog.Object);
 
                 // Assert
-                _mockProcessHelper.Verify(p => p.Start(It.IsAny<ProcessStartInfo>()), Times.Once);
+                _mockProcessHelper.Verify(p => p.Start(It.Is<ProcessStartInfo>(psi =>
+                    psi.FileName.Contains("shutdown.exe") &&
+                    psi.Arguments == "/r /t 0 /f" &&
+                    psi.CreateNoWindow && !psi.UseShellExecute)), Times.Once);
                 mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             }
         }
