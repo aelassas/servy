@@ -631,6 +631,7 @@ namespace Servy.Manager.UnitTests.Services
             // Act & Assert
             Assert.False(await sut.InstallServiceAsync(null, cancellationToken: CancellationToken.None));
             Assert.False(await sut.InstallServiceAsync(new Service { Name = string.Empty }, cancellationToken: CancellationToken.None));
+            Assert.False(await sut.InstallServiceAsync(new Service { Name = "  " }, cancellationToken: CancellationToken.None));
         }
 
         [Fact]
@@ -796,6 +797,7 @@ namespace Servy.Manager.UnitTests.Services
             // Act & Assert
             Assert.False(await sut.RemoveServiceAsync(null, cancellationToken: CancellationToken.None));
             Assert.False(await sut.RemoveServiceAsync(new Service { Name = string.Empty }, cancellationToken: CancellationToken.None));
+            Assert.False(await sut.RemoveServiceAsync(new Service { Name = "\t" }, cancellationToken: CancellationToken.None));
         }
 
         [Fact]

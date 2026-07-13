@@ -90,7 +90,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.NotNull(vm.SearchCommand);
                 Assert.NotNull(vm.RowClickCommand);
                 Assert.False(vm.IsBusy);
-                Assert.Contains("Search", vm.SearchButtonText);
+                Assert.Equal(Strings.Button_Search, vm.SearchButtonText);
                 Assert.NotNull(vm.FromDate);
                 Assert.NotNull(vm.ToDate);
                 Assert.Equal(EventLogLevel.All, vm.SelectedLevel);
@@ -360,7 +360,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                             Assert.True(enumerator.MoveNext());
                             Assert.False(enumerator.MoveNext());
                             Assert.True(scrollEventSource.Task.Result);
-                            Assert.Contains("Search", vm.SearchButtonText);
+                            Assert.Equal(Strings.Button_Search, vm.SearchButtonText);
                             Assert.False(vm.IsBusy);
 
                             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);

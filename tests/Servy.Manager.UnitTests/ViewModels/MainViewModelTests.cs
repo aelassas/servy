@@ -346,19 +346,19 @@ namespace Servy.Manager.UnitTests.ViewModels
                 };
 
                 var osMockPayload = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase)
-            {
                 {
-                    "DriftService",
-                    new ServiceInfo
                     {
-                        Name = "DriftService",
-                        Status = ServiceStatus.Stopped,
-                        Description = "New OS Desc",
-                        StartupType = ServiceStartType.Automatic,
-                        LogOnAs = "CustomUser"
+                        "DriftService",
+                        new ServiceInfo
+                        {
+                            Name = "DriftService",
+                            Status = ServiceStatus.Stopped,
+                            Description = "New OS Desc",
+                            StartupType = ServiceStartType.Automatic,
+                            LogOnAs = "CustomUser"
+                        }
                     }
-                }
-            };
+                };
 
                 var databaseDto = new ServiceDto
                 {
@@ -389,12 +389,14 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var status = uiUpdateType.GetProperty("Status").GetValue(uiUpdateInfo);
                 var startupType = uiUpdateType.GetProperty("StartupType").GetValue(uiUpdateInfo);
                 var description = uiUpdateType.GetProperty("Description").GetValue(uiUpdateInfo);
+                var logOnAs = uiUpdateType.GetProperty("LogOnAs").GetValue(uiUpdateInfo);
 
                 Assert.True(requiresPidUpdate);
                 Assert.Null(newPid);
                 Assert.Equal(ServiceStatus.Stopped, status);
                 Assert.Equal(ServiceStartType.Automatic, startupType);
                 Assert.Equal("New OS Desc", description);
+                Assert.Equal("CustomUser", logOnAs);
             }, createApp: true);
         }
 
