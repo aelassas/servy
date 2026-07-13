@@ -432,10 +432,14 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             // Act
             vm.Dispose();
+            bool isDisposedAfterFirstCall = TestReflection.GetField<bool>(vm, "_disposed");
 
-            // Assert - Should not throw
-            var exception = Record.Exception(() => vm.Dispose());
-            Assert.Null(exception);
+            // Re-invoke tracking logic to challenge the internal boolean field guard branch
+            var sequentialDisposeException = Record.Exception(() => vm.Dispose());
+
+            // Assert
+            Assert.True(isDisposedAfterFirstCall, "The underlying tracking field '_disposed' was not set to true during the first execution pass.");
+            Assert.Null(sequentialDisposeException);
         }
 
         #endregion

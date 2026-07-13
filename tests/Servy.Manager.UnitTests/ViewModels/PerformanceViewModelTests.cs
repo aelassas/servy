@@ -270,6 +270,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var fakeMetrics = new ProcessMetrics(45.5, 50 * 1024 * 1024);
                     _mockProcessHelper.Setup(p => p.GetProcessTreeMetrics(2050)).Returns(fakeMetrics);
 
+                    // Pin formatting inputs precisely to verify that collected metrics reach the formatters rather than generic defaults
+                    _mockProcessHelper.Setup(p => p.FormatCpuUsage(It.Is<double>(d => d == 45.5))).Returns("15%");
+                    _mockProcessHelper.Setup(p => p.FormatRamUsage(It.Is<long>(b => b == 50L * 1024 * 1024))).Returns("120 MB");
+
                     // Mock IUiDispatcher to invoke actions immediately on this thread
                     _mockUiDispatcher.Setup(d => d.InvokeAsync(It.IsAny<Action>()))
                                      .Callback<Action>(action => action())
