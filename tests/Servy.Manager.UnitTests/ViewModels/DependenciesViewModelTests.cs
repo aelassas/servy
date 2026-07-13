@@ -99,6 +99,33 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public void Constructor_NullServiceCommands_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+                _mockServiceRepository.Object, _mockServiceManager.Object, null!,
+                _mockAppConfig.Object, _mockCursorService.Object, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
+        }
+
+        [Fact]
+        public void Constructor_NullCursorService_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+                _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
+                _mockAppConfig.Object, null!, _mockUiDispatcher.Object, _mockMessageBoxService.Object));
+        }
+
+        [Fact]
+        public void Constructor_NullUiDispatcher_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            Assert.Throws<ArgumentNullException>(() => new DependenciesViewModel(
+                _mockServiceRepository.Object, _mockServiceManager.Object, _mockServiceCommands.Object,
+                _mockAppConfig.Object, _mockCursorService.Object, null!, _mockMessageBoxService.Object));
+        }
+
+        [Fact]
         public void DesignTimeConstructor_InitializesSuccessfully()
         {
             Helper.RunOnSTA(() =>

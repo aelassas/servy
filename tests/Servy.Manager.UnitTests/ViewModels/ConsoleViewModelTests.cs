@@ -76,6 +76,30 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public void Constructor_NullServiceCommand_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            Assert.Throws<ArgumentNullException>(() => new ConsoleViewModel(
+                _serviceRepoMock.Object, null!, _appConfigMock.Object, _cursorServiceMock.Object, _uiDispatcherMock.Object));
+        }
+
+        [Fact]
+        public void Constructor_NullCursorService_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            Assert.Throws<ArgumentNullException>(() => new ConsoleViewModel(
+                _serviceRepoMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, null!, _uiDispatcherMock.Object));
+        }
+
+        [Fact]
+        public void Constructor_NullUiDispatcher_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            Assert.Throws<ArgumentNullException>(() => new ConsoleViewModel(
+                _serviceRepoMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, null!));
+        }
+
+        [Fact]
         public void DesignTimeConstructor_InitializesSuccessfully()
         {
             // Arrange
