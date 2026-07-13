@@ -115,7 +115,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         [Fact]
-        public void Start_SynchronousTimeout_ThrowsTimeoutException_AndLogsCorrectly()
+        public void Start_SynchronousTimeout_LogErrorAsWarningFalse_ThrowsTimeoutExceptionAndLogsAsError()
         {
             // Arrange
             // Raised execution target, while keeping threshold low to ensure a deterministic timeout trip
@@ -123,21 +123,37 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             optionsError.WaitChunkMs = 100;
             optionsError.LogErrorAsWarning = false;
 
+            var errorLogger = new TestLogger();
+
             // Act
-            var ex1 = Assert.Throws<TimeoutException>(() => ProcessLauncher.Start(optionsError, _realFactory, _logger));
+            var ex = Assert.Throws<TimeoutException>(() => ProcessLauncher.Start(optionsError, _realFactory, errorLogger));
 
             // Assert
-            Assert.Contains("exceeded the maximum allowed timeout", ex1.Message);
-            Assert.Contains(_logger.Errors, m => m.Contains("timed out after"));
+            Assert.Contains("exceeded the maximum allowed timeout", ex.Message);
+            Assert.Contains(errorLogger.Errors, m => m.Contains("timed out after"));
+            Assert.Empty(errorLogger.Warnings); // Verifies the message did not bleed into the warnings channel
+        }
 
-            // Arrange (Warning variant)
+        [Fact]
+        public void Start_SynchronousTimeout_LogErrorAsWarningTrue_ThrowsTimeoutExceptionAndLogsAsWarning()
+        {
+            // Arrange
+            // Raised execution target, while keeping threshold low to ensure a deterministic timeout trip
             var optionsWarn = CreateOptions("powershell.exe", $"-NoProfile -Command \"Start-Sleep -Seconds {TestTimeouts.ProcessLauncherSynchronousTimeoutSeconds}\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherSynchronousTimeoutSeconds * 1000);
             optionsWarn.WaitChunkMs = 100;
             optionsWarn.LogErrorAsWarning = true;
 
-            // Act & Assert
-            Assert.Throws<TimeoutException>(() => ProcessLauncher.Start(optionsWarn, _realFactory, _logger));
-            Assert.Contains(_logger.Warnings, m => m.Contains("timed out after"));
+            var warnLogger = new TestLogger();
+
+            // Act
+            var ex = Assert.Throws<TimeoutException>(() => ProcessLauncher.Start(optionsWarn, _realFactory, warnLogger));
+
+            // Assert
+            Assert.Contains("exceeded the maximum allowed timeout", ex.Message);
+            Assert.Contains(warnLogger.Warnings, m => m.Contains("timed out after"));
+
+            // Symmetric Exclusion Check: Verifies that the warning configuration didn't leak down or duplicate onto the Error channel
+            Assert.DoesNotContain(warnLogger.Errors, m => m.Contains("timed out after"));
         }
 
         [Fact]

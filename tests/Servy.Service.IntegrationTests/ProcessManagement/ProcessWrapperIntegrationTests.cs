@@ -92,17 +92,21 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         [Fact]
-        public void Dispose_CalledMultipleTimes_BypassesSecondInvocationSafely()
+        public void Dispose_CalledMultipleTimes_ExecutesIdempotentlyAndIdlesSafe()
         {
             // Arrange
             var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"exit 0\"");
 
-            // Act
+            // Act 1: Initial Disposal execution window path
             wrapper.Dispose();
-            var exception = Record.Exception(() => wrapper.Dispose());
+            bool isDisposedAfterFirstCall = TestReflection.GetField<bool>(wrapper, "_disposed");
+
+            // Act 2: Submitting a secondary disposal invoke track
+            var secondaryException = Record.Exception(() => wrapper.Dispose());
 
             // Assert
-            Assert.Null(exception);
+            Assert.True(isDisposedAfterFirstCall, "The underlying tracking field '_disposed' was not set to true during the first execution pass.");
+            Assert.Null(secondaryException); // Re-entry remains stable and does not throw framework exceptions
         }
 
         #endregion

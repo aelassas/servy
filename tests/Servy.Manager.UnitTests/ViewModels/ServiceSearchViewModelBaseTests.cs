@@ -235,19 +235,30 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void Dispose_CalledMultipleTimes_ExecutesAtomicBlockOnce()
         {
             // Arrange
-            using (var cts = new CancellationTokenSource())
+            using (var cts1 = new CancellationTokenSource())
+            using (var cts2 = new CancellationTokenSource())
             {
-                _sut.SetCancellationTokenSource(cts);
+                _sut.SetCancellationTokenSource(cts1);
 
                 // Act
+                // First execution passes through and triggers the main cancellation path cleanly
                 _sut.Dispose();
+
+                // Post-Condition Check for pass one
+                Assert.True(cts1.IsCancellationRequested);
+                Assert.Null(_sut.GetCancellationTokenSource());
+
+                // Inject a fresh target payload. If the Interlocked guard is broken, this will get cleaned up too.
+                _sut.SetCancellationTokenSource(cts2);
 
                 // Second execution should return immediately through the Interlocked guard statement path
                 _sut.Dispose();
 
                 // Assert
-                Assert.Null(_sut.GetCancellationTokenSource());
-                Assert.True(cts.IsCancellationRequested);
+                // Verifies that the atomic block short-circuited and never touched or cleared the second token instance
+                Assert.NotNull(_sut.GetCancellationTokenSource());
+                Assert.Same(cts2, _sut.GetCancellationTokenSource());
+                Assert.False(cts2.IsCancellationRequested, "The second Dispose execution bypassed the Interlocked gate and modified the fresh token.");
             }
         }
 
