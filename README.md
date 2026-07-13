@@ -178,6 +178,7 @@ Thanks to [JetBrains](https://www.jetbrains.com/) for providing an [open-source 
 
 Special thanks to everyone who tested Servy, reported issues, and suggested improvements on GitHub and Reddit. Your feedback and contributions have shaped the project and made it better with every release.
 
+
 <!--
 <p>
   <a href="https://signpath.org/?utm_source=foundation&utm_medium=github&utm_campaign=servy">
