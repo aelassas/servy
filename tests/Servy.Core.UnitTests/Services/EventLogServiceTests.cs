@@ -374,15 +374,17 @@ namespace Servy.Core.UnitTests.Services
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>())).Returns(new[] { evt });
 
             var service = CreateService(mockReader);
-            var cts = new CancellationTokenSource();
-            cts.Cancel();
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
 
-            // Act & Assert
-            // CANCELLATION: Standardized the assertion to target the base type OperationCanceledException.
-            // This eliminates brittle exact-type constraints and mirrors the cancellation patterns 
-            // verified across sibling components like ServiceManager and DapperExecutor.
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-                service.SearchAsync(null, null, null, null, cts.Token));
+                // Act & Assert
+                // CANCELLATION: Standardized the assertion to target the base type OperationCanceledException.
+                // This eliminates brittle exact-type constraints and mirrors the cancellation patterns 
+                // verified across sibling components like ServiceManager and DapperExecutor.
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                    service.SearchAsync(null, null, null, null, cts.Token));
+            }
         }
 
         [Fact]

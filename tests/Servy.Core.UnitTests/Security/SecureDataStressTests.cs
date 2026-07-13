@@ -11,7 +11,7 @@ using Xunit.Abstractions;
 
 namespace Servy.Core.UnitTests.Security
 {
-    public class SecureDataStressTests
+    public class SecureDataStressTests : IDisposable
     {
         private readonly Mock<IProtectedKeyProvider> _mockKeyProvider;
         private readonly byte[] _testKey;
@@ -41,6 +41,8 @@ namespace Servy.Core.UnitTests.Security
 
             _sut = new SecureData(_mockKeyProvider.Object);
         }
+
+        public void Dispose() => _sut.Dispose();
 
         [Theory]
         [InlineData(1)]  // 1 MB: 1,048,576 chars, ~2 MB of RAM

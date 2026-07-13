@@ -42,10 +42,11 @@ namespace Servy.Core.UnitTests.Security
         public void Encrypt_Null_Throws(string input)
         {
             // Arrange
-            var sp = new SecureData(_mockProvider.Object);
-
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => sp.Encrypt(input));
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                // Act & Assert
+                Assert.Throws<ArgumentNullException>(() => sp.Encrypt(input));
+            }
         }
 
         [Theory]
@@ -53,10 +54,11 @@ namespace Servy.Core.UnitTests.Security
         public void Encrypt_Empty_Throws(string input)
         {
             // Arrange
-            var sp = new SecureData(_mockProvider.Object);
-
-            // Act & Assert
-            Assert.Throws<ArgumentException>(() => sp.Encrypt(input));
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                // Act & Assert
+                Assert.Throws<ArgumentException>(() => sp.Encrypt(input));
+            }
         }
 
         #endregion
@@ -67,17 +69,19 @@ namespace Servy.Core.UnitTests.Security
         public void EncryptV2_HandlesComplexCharacters_Successfully()
         {
             // Arrange
-            var sp = new SecureData(_mockProvider.Object);
-            // Testing multi-byte character boundary safety (Emoji uses 4 bytes)
-            var original = "Security is key! 🛡️🔐";
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                // Testing multi-byte character boundary safety (Emoji uses 4 bytes)
+                var original = "Security is key! 🛡️🔐";
 
-            // Act
-            var encrypted = sp.Encrypt(original);
-            var decrypted = sp.Decrypt(encrypted);
+                // Act
+                var encrypted = sp.Encrypt(original);
+                var decrypted = sp.Decrypt(encrypted);
 
-            // Assert
-            Assert.Equal(original, decrypted);
-            Assert.Contains("SERVY_ENC:v2:", encrypted);
+                // Assert
+                Assert.Equal(original, decrypted);
+                Assert.Contains("SERVY_ENC:v2:", encrypted);
+            }
         }
 
         [Theory]
@@ -93,36 +97,38 @@ namespace Servy.Core.UnitTests.Security
                 return;
             }
 
-            var sp = new SecureData(_mockProvider.Object);
-            var secret = "LegacySecret";
-
-            string rawV1Base64;
-            using (var aes = Aes.Create())
+            using (var sp = new SecureData(_mockProvider.Object))
             {
-                aes.Key = _key;
-                aes.IV = _iv;
+                var secret = "LegacySecret";
 
-                byte[] encryptedBytes;
-                using (var ms = new MemoryStream())
+                string rawV1Base64;
+                using (var aes = Aes.Create())
                 {
-                    using (var cs = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write))
+                    aes.Key = _key;
+                    aes.IV = _iv;
+
+                    byte[] encryptedBytes;
+                    using (var ms = new MemoryStream())
                     {
-                        byte[] input = Encoding.UTF8.GetBytes(secret);
-                        cs.Write(input, 0, input.Length);
+                        using (var cs = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write))
+                        {
+                            byte[] input = Encoding.UTF8.GetBytes(secret);
+                            cs.Write(input, 0, input.Length);
+                        }
+                        encryptedBytes = ms.ToArray();
                     }
-                    encryptedBytes = ms.ToArray();
+
+                    rawV1Base64 = Convert.ToBase64String(encryptedBytes);
                 }
 
-                rawV1Base64 = Convert.ToBase64String(encryptedBytes);
+                var fullCipherWithPrefix = prefix + rawV1Base64;
+
+                // Act
+                var decrypted = sp.Decrypt(fullCipherWithPrefix);
+
+                // Assert
+                Assert.Equal(secret, decrypted);
             }
-
-            var fullCipherWithPrefix = prefix + rawV1Base64;
-
-            // Act
-            var decrypted = sp.Decrypt(fullCipherWithPrefix);
-
-            // Assert
-            Assert.Equal(secret, decrypted);
         }
 
         #endregion
@@ -134,13 +140,14 @@ namespace Servy.Core.UnitTests.Security
         public void Decrypt_Null_ThrowsArgumentNullException(string input)
         {
             // Arrange
-            var sp = new SecureData(_mockProvider.Object);
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                // Act & Assert
+                var ex = Assert.Throws<ArgumentNullException>(() => sp.Decrypt(input));
 
-            // Act & Assert
-            var ex = Assert.Throws<ArgumentNullException>(() => sp.Decrypt(input));
-
-            // Verify the parameter name matches for extra precision
-            Assert.Equal("cipherText", ex.ParamName);
+                // Verify the parameter name matches for extra precision
+                Assert.Equal("cipherText", ex.ParamName);
+            }
         }
 
         [Theory]
@@ -148,13 +155,14 @@ namespace Servy.Core.UnitTests.Security
         public void Decrypt_Empty_ThrowsArgumentException(string input)
         {
             // Arrange
-            var sp = new SecureData(_mockProvider.Object);
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                // Act & Assert
+                var ex = Assert.Throws<ArgumentException>(() => sp.Decrypt(input));
 
-            // Act & Assert
-            var ex = Assert.Throws<ArgumentException>(() => sp.Decrypt(input));
-
-            // Verify the parameter name matches for extra precision
-            Assert.Equal("cipherText", ex.ParamName);
+                // Verify the parameter name matches for extra precision
+                Assert.Equal("cipherText", ex.ParamName);
+            }
         }
 
         [Theory]
@@ -171,23 +179,24 @@ namespace Servy.Core.UnitTests.Security
             // Arrange
             // If testing the V1 fallback, we must ensure the mock provider returns 
             // the keys needed for DecryptV1 to work without throwing.
-            var sp = new SecureData(_mockProvider.Object);
-
-            // Act
-            var result = sp.Decrypt(input);
-
-            // Assert
-            if (input == "SGVsbG8=")
+            using (var sp = new SecureData(_mockProvider.Object))
             {
-                // For the Base64 case, we just want to ensure it ATTEMPTED DecryptV1.
-                // If the test key/iv doesn't match the "SGVsbG8=" ciphertext, 
-                // it might hit the catch block and return the payload anyway.
-                // To truly cover the line, ensure the input is validly encrypted v1 data.
-                Assert.NotNull(result);
-            }
-            else
-            {
-                Assert.Equal(expected, result);
+                // Act
+                var result = sp.Decrypt(input);
+
+                // Assert
+                if (input == "SGVsbG8=")
+                {
+                    // For the Base64 case, we just want to ensure it ATTEMPTED DecryptV1.
+                    // If the test key/iv doesn't match the "SGVsbG8=" ciphertext, 
+                    // it might hit the catch block and return the payload anyway.
+                    // To truly cover the line, ensure the input is validly encrypted v1 data.
+                    Assert.NotNull(result);
+                }
+                else
+                {
+                    Assert.Equal(expected, result);
+                }
             }
         }
 
@@ -195,104 +204,114 @@ namespace Servy.Core.UnitTests.Security
         public void Decrypt_UnmarkedNonBase64_ReturnsRawInput()
         {
             // Arrange
-            var sp = new SecureData(_mockProvider.Object);
-            string input = "NotBase64!";
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                string input = "NotBase64!";
 
-            // Act
-            var result = sp.Decrypt(input);
+                // Act
+                var result = sp.Decrypt(input);
 
-            // Assert: Unmarked strings still return as-is for backward compatibility
-            Assert.Equal(input, result);
+                // Assert: Unmarked strings still return as-is for backward compatibility
+                Assert.Equal(input, result);
+            }
         }
 
         [Fact]
         public void Decrypt_MarkedButInvalidFormat_ThrowsIntegrityException()
         {
             // Arrange
-            var sp = new SecureData(_mockProvider.Object);
-            string input = "SERVY_ENC:NotBase64!";
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                string input = "SERVY_ENC:NotBase64!";
 
-            // Act & Assert
-            // Since the string has a marker, it MUST succeed or fail loud.
-            // Returning a substring is no longer permitted as it masks integrity issues.
-            Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(input));
+                // Act & Assert
+                // Since the string has a marker, it MUST succeed or fail loud.
+                // Returning a substring is no longer permitted as it masks integrity issues.
+                Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(input));
+            }
         }
 
         [Fact]
         public void Decrypt_TamperedV2_ThrowsIntegrityException()
         {
             // Arrange
-            var sp = new SecureData(_mockProvider.Object);
-            var original = "MySecret123";
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                var original = "MySecret123";
 
-            // Encrypting creates a valid v2 payload: [IV + Ciphertext + HMAC]
-            var encrypted = sp.Encrypt(original);
+                // Encrypting creates a valid v2 payload: [IV + Ciphertext + HMAC]
+                var encrypted = sp.Encrypt(original);
 
-            // 1. Extract the Base64 payload after the "SERVY_ENC:v2:" marker
-            var lastColonIndex = encrypted.LastIndexOf(':');
-            var rawBase64 = encrypted.Substring(lastColonIndex + 1);
-            byte[] data = Convert.FromBase64String(rawBase64);
+                // 1. Extract the Base64 payload after the "SERVY_ENC:v2:" marker
+                var lastColonIndex = encrypted.LastIndexOf(':');
+                var rawBase64 = encrypted.Substring(lastColonIndex + 1);
+                byte[] data = Convert.FromBase64String(rawBase64);
 
-            // 2. Tamper with the ciphertext
-            // Flipping a bit here ensures the HMAC-SHA256 signature will no longer match.
-            data[20] ^= 0x01;
+                // 2. Tamper with the ciphertext
+                // Flipping a bit here ensures the HMAC-SHA256 signature will no longer match.
+                data[20] ^= 0x01;
 
-            var tampered = "SERVY_ENC:v2:" + Convert.ToBase64String(data);
+                var tampered = "SERVY_ENC:v2:" + Convert.ToBase64String(data);
 
-            // 3. Act & Assert
-            // The Decrypt method now recognizes the v2 marker and enforces integrity.
-            // It must throw an exception rather than returning tampered "junk".
-            var ex = Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(tampered));
+                // 3. Act & Assert
+                // The Decrypt method now recognizes the v2 marker and enforces integrity.
+                // It must throw an exception rather than returning tampered "junk".
+                var ex = Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(tampered));
 
-            // Optional: Verify the error message relates to the integrity check
-            Assert.Contains("HMAC integrity check failed", ex.Message);
+                // Optional: Verify the error message relates to the integrity check
+                Assert.Contains("HMAC integrity check failed", ex.Message);
+            }
         }
 
         [Fact]
         public void Decrypt_MarkedInvalidBase64_ThrowsException()
         {
             // Arrange
-            var sp = new SecureData(_mockProvider.Object);
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                // This string has a marker, so the Decrypt method will attempt to decode it.
+                // It is no longer allowed to "swallow" the failure and return the junk string.
+                var tampered = "SERVY_ENC:v2:!!!NotBase64!!!";
 
-            // This string has a marker, so the Decrypt method will attempt to decode it.
-            // It is no longer allowed to "swallow" the failure and return the junk string.
-            var tampered = "SERVY_ENC:v2:!!!NotBase64!!!";
-
-            // Act & Assert
-            // Invalid Base64 strings must always be caught and wrapped by the cryptographic 
-            // provider to guarantee a deterministic SecureDataIntegrityException surface.
-            Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(tampered));
+                // Act & Assert
+                // Invalid Base64 strings must always be caught and wrapped by the cryptographic 
+                // provider to guarantee a deterministic SecureDataIntegrityException surface.
+                Assert.Throws<SecureDataIntegrityException>(() => sp.Decrypt(tampered));
+            }
         }
 
         [Fact]
         public void DecryptV2_Internal_InvalidBase64_Throws()
         {
             // Arrange
-            var sp = new SecureData(_mockProvider.Object);
-            var invalidBase64 = "!!!NotBase64!!!";
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                var invalidBase64 = "!!!NotBase64!!!";
 
-            // Act & Assert
-            // TestReflection natively unwraps TargetInvocationException to restore the original exception frame context
-            Assert.Throws<SecureDataIntegrityException>(() =>
-                TestReflection.InvokeNonPublic(sp, "DecryptV2", new object[] { invalidBase64 }));
+                // Act & Assert
+                // TestReflection natively unwraps TargetInvocationException to restore the original exception frame context
+                Assert.Throws<SecureDataIntegrityException>(() =>
+                    TestReflection.InvokeNonPublic(sp, "DecryptV2", new object[] { invalidBase64 }));
+            }
         }
 
         [Fact]
         public void DecryptV2_PayloadTooShort_Throws()
         {
             // Arrange
-            var sp = new SecureData(_mockProvider.Object);
+            using (var sp = new SecureData(_mockProvider.Object))
+            {
+                // A v2 payload must be at least 48 bytes (16-byte IV + 32-byte HMAC); ciphertext is additional.
+                // We provide only 10 bytes here.
+                var shortPayloadBase64 = Convert.ToBase64String(new byte[10]);
 
-            // A v2 payload must be at least 48 bytes (16-byte IV + 32-byte HMAC); ciphertext is additional.
-            // We provide only 10 bytes here.
-            var shortPayloadBase64 = Convert.ToBase64String(new byte[10]);
+                // Act & Assert
+                // TestReflection unwraps TargetInvocationException cleanly to target the inner exception directly
+                var ex = Assert.Throws<SecureDataIntegrityException>(() =>
+                    TestReflection.InvokeNonPublic(sp, "DecryptV2", new object[] { shortPayloadBase64 }));
 
-            // Act & Assert
-            // TestReflection unwraps TargetInvocationException cleanly to target the inner exception directly
-            var ex = Assert.Throws<SecureDataIntegrityException>(() =>
-                TestReflection.InvokeNonPublic(sp, "DecryptV2", new object[] { shortPayloadBase64 }));
-
-            Assert.Contains("V2 payload length is insufficient.", ex.Message);
+                Assert.Contains("V2 payload length is insufficient.", ex.Message);
+            }
         }
 
         #endregion
