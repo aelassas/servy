@@ -56,7 +56,7 @@ namespace Servy.Manager.UnitTests.Converters
         }
 
         [Fact]
-        public void Constructor_ServicesNull_FallsBackToDesignTimeHelperAndLogsWarning()
+        public void Constructor_ServicesNull_FallsBackToDesignTimeHelper()
         {
             // Arrange
             using (new AmbientAppServicesScope(sc => { /* Leaves collection completely empty */ }))
@@ -76,7 +76,7 @@ namespace Servy.Manager.UnitTests.Converters
         }
 
         [Fact]
-        public void Constructor_ServicesNotNullButHelperMissing_FallsBackToDesignTimeHelperAndLogsWarning()
+        public void Constructor_ServicesNotNullButHelperMissing_FallsBackToDesignTimeHelper()
         {
             // Arrange
             var mockKiller = new Mock<IProcessKiller>();

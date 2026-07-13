@@ -110,7 +110,7 @@ namespace Servy.Manager.UnitTests.Mappers
         [Theory]
         [InlineData(null, UiAppConfig.LocalSystem)]
         [InlineData("LocalSystem", UiAppConfig.LocalSystem)]
-        [InlineData("NT AUTHORITY\\LOCALSERVICE", UiAppConfig.LocalService)]
+        [InlineData("NT AUTHORITY\\LocalService", UiAppConfig.LocalService)]
         [InlineData("MyCustomUser", "MyCustomUser")]
         public void GetLogOnAsDisplayName_ResolvesCorrectly(string? input, string expected)
         {
