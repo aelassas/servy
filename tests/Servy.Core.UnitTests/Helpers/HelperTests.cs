@@ -660,7 +660,7 @@ namespace Servy.Core.UnitTests.Helpers
                 await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
                 {
                     byte[] data = Encoding.UTF8.GetBytes("atomic-async-test-48");
-                    await stream.WriteAsync(data, 0, data.Length, CancellationToken.None);
+                    await stream.WriteAsync(data, 0, data.Length, cancellationToken);
                 }, CancellationToken.None);
 
                 // Assert
@@ -693,7 +693,7 @@ namespace Servy.Core.UnitTests.Helpers
                 await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
                 {
                     byte[] data = Encoding.UTF8.GetBytes("nesting-test");
-                    await stream.WriteAsync(data, 0, data.Length, CancellationToken.None);
+                    await stream.WriteAsync(data, 0, data.Length, cancellationToken);
                 }, CancellationToken.None);
 
                 // Assert
