@@ -1,8 +1,10 @@
 ﻿using Moq;
 using Servy.Core.Common;
+using Servy.Core.Config;
 using Servy.Core.Domain;
 using Servy.Core.Enums;
 using Servy.Core.Services;
+using System;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
@@ -277,15 +279,48 @@ namespace Servy.Core.UnitTests.Domain
             };
 
             _serviceManagerMock
-                 .Setup(s => s.InstallServiceAsync(It.Is<InstallServiceOptions>(o =>
-                     o.ServiceName == service.Name &&
-                     o.EnableSizeRotation == true &&
-                     o.RotationSizeInBytes == (long)service.RotationSize * 1024L * 1024L &&
-                     o.EnableHealthMonitoring == true &&
-                     o.RecoveryAction == service.RecoveryAction
-                 ), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(OperationResult.Success())
-                 .Verifiable();
+                .Setup(s => s.InstallServiceAsync(It.Is<InstallServiceOptions>(o =>
+                    o.ServiceName == service.Name &&
+                    o.EnableSizeRotation == true &&
+                    o.RotationSizeInBytes == AppConfig.ToBytes(Math.Max(1, service.RotationSize)) &&
+                    o.EnableHealthMonitoring == true &&
+                    o.RecoveryAction == service.RecoveryAction
+                ), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success())
+                .Verifiable();
+
+            // Act
+            var result = await service.Install(cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            _serviceManagerMock.Verify();
+        }
+
+        [Fact]
+        public async Task Install_WithZeroRotationSize_ClampsToMinimumOneMegabyte()
+        {
+            // Arrange
+            var service = new Service(_serviceManagerMock.Object)
+            {
+                Name = "TestServiceZeroSize",
+                ExecutablePath = @"C:\real.exe",
+                EnableSizeRotation = true,
+                RotationSize = 0, // Lower bounds target value to test the Math.Max floor clamp logic
+                EnableHealthMonitoring = true,
+                RecoveryAction = RecoveryAction.RestartService
+            };
+
+            _serviceManagerMock
+                .Setup(s => s.InstallServiceAsync(It.Is<InstallServiceOptions>(o =>
+                    o.ServiceName == service.Name &&
+                    o.EnableSizeRotation == true &&
+                    o.RotationSizeInBytes == AppConfig.ToBytes(Math.Max(1, service.RotationSize)) && // Should compute to 1 MB in bytes
+                    o.EnableHealthMonitoring == true &&
+                    o.RecoveryAction == service.RecoveryAction
+                ), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success())
+                .Verifiable();
 
             // Act
             var result = await service.Install(cancellationToken: CancellationToken.None);

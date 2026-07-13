@@ -33,19 +33,22 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData(512, "512.0 B")]                // < KB
-        [InlineData(2048, "2.0 KB")]                // exact KB
-        [InlineData(3072, "3.0 KB")]                // KB range
-        [InlineData(1048576, "1.0 MB")]             // exact MB
-        [InlineData((1.5 * 1024 * 1024), "1.5 MB")] // MB range
-        [InlineData(1073741824, "1.0 GB")]          // exact GB
-        [InlineData((2.23 * 1024 * 1024 * 1024), "2.2 GB")] // GB range
-        [InlineData((2.25 * 1024 * 1024 * 1024), "2.3 GB")] // GB range
-        [InlineData(1099511627776, "1.0 TB")]       // exact TB
-        [InlineData((3.75 * 1024 * 1024 * 1024 * 1024), "3.8 TB")] // TB range
+        [InlineData(512L, "512.0 B")]                               // < KB
+        [InlineData(2048L, "2.0 KB")]                               // exact KB
+        [InlineData(3072L, "3.0 KB")]                               // KB range
+        [InlineData(1048576L, "1.0 MB")]                             // exact MB
+        [InlineData((long)(1.5 * 1024 * 1024), "1.5 MB")]           // MB range
+        [InlineData(1073741824L, "1.0 GB")]                         // exact GB
+        [InlineData((long)(2.23 * 1024 * 1024 * 1024), "2.2 GB")]   // GB range - Truncated fraction fixed via explicit cast context
+        [InlineData((long)(2.25 * 1024 * 1024 * 1024), "2.3 GB")]   // GB range
+        [InlineData(1099511627776L, "1.0 TB")]                      // exact TB
+        [InlineData((long)(3.75 * 1024 * 1024 * 1024 * 1024), "3.8 TB")] // TB range
         public void FormatRamUsage_ReturnsExpected(long input, string expected)
         {
+            // Arrange & Act
             var result = _processHelper.FormatRamUsage(input);
+
+            // Assert
             Assert.Equal(expected, result);
         }
 

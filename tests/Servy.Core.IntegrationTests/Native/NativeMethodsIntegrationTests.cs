@@ -88,43 +88,50 @@ namespace Servy.Core.IntegrationTests.Native
             IntPtr hSnapshot = NativeMethods.CreateToolhelp32Snapshot(NativeMethods.TH32CS_SNAPPROCESS, 0);
             Assert.NotEqual(NativeMethods.INVALID_HANDLE_VALUE, hSnapshot);
 
-            var pe32 = new NativeMethods.PROCESSENTRY32
+            try
             {
-                dwSize = (uint)Marshal.SizeOf<NativeMethods.PROCESSENTRY32>()
-            };
-
-            using (var currentProcess = Process.GetCurrentProcess())
-            {
-                uint currentPid = (uint)currentProcess.Id;
-                bool foundCurrentProcess = false;
-                string expectedProcessName = Path.GetFileName(currentProcess.MainModule?.FileName ?? "testhost.exe");
-
-                if (NativeMethods.Process32First(hSnapshot, ref pe32))
+                var pe32 = new NativeMethods.PROCESSENTRY32
                 {
-                    do
+                    dwSize = (uint)Marshal.SizeOf<NativeMethods.PROCESSENTRY32>()
+                };
+
+                using (var currentProcess = Process.GetCurrentProcess())
+                {
+                    uint currentPid = (uint)currentProcess.Id;
+                    bool foundCurrentProcess = false;
+                    string expectedProcessName = Path.GetFileName(currentProcess.MainModule?.FileName ?? "testhost.exe");
+
+                    if (NativeMethods.Process32First(hSnapshot, ref pe32))
                     {
-                        if (pe32.th32ProcessID == currentPid)
+                        do
                         {
-                            foundCurrentProcess = true;
-                            _output.WriteLine($"Found current process name: {pe32.szExeFile}");
+                            if (pe32.th32ProcessID == currentPid)
+                            {
+                                foundCurrentProcess = true;
+                                _output.WriteLine($"Found current process name: {pe32.szExeFile}");
 
-                            // Assert
-                            Assert.False(string.IsNullOrWhiteSpace(pe32.szExeFile));
+                                // Assert
+                                Assert.False(string.IsNullOrWhiteSpace(pe32.szExeFile));
 
-                            // 1. Verify it has a clean executable extension
-                            Assert.True(pe32.szExeFile.EndsWith(".exe", StringComparison.OrdinalIgnoreCase),
-                                $"The captured snapshot name '{pe32.szExeFile}' was corrupted into mojibake.");
+                                // 1. Verify it has a clean executable extension
+                                Assert.True(pe32.szExeFile.EndsWith(".exe", StringComparison.OrdinalIgnoreCase),
+                                    $"The captured snapshot name '{pe32.szExeFile}' was corrupted into mojibake.");
 
-                            // 2. Dynamically check against the actual host process name running this test frame
-                            // This handles local test execution AND arbitrary CI test host wrappers flawlessly.
-                            Assert.Contains(expectedProcessName, pe32.szExeFile, StringComparison.OrdinalIgnoreCase);
-                            break;
-                        }
-                    } while (NativeMethods.Process32Next(hSnapshot, ref pe32));
+                                // 2. Dynamically check against the actual host process name running this test frame
+                                // This handles local test execution AND arbitrary CI test host wrappers flawlessly.
+                                Assert.Contains(expectedProcessName, pe32.szExeFile, StringComparison.OrdinalIgnoreCase);
+                                break;
+                            }
+                        } while (NativeMethods.Process32Next(hSnapshot, ref pe32));
+                    }
+
+                    NativeMethods.CloseHandle(hSnapshot);
+                    Assert.True(foundCurrentProcess, "Process lookup snapshot tracking loop should isolate host runtime PID context.");
                 }
-
+            }
+            finally
+            {
                 NativeMethods.CloseHandle(hSnapshot);
-                Assert.True(foundCurrentProcess, "Process lookup snapshot tracking loop should isolate host runtime PID context.");
             }
         }
 
