@@ -1099,58 +1099,69 @@ namespace Servy.Core.UnitTests.IO
 
             // Provide a frozen baseline clock so live timestamps don't introduce drifts
             var testTime = new DateTime(2026, 6, 9, 9, 5, 0, DateTimeKind.Utc);
-            Func<DateTime> timeProvider = () => testTime;
-
-            using (var writer = new RotatingStreamWriter(
-                filePath,
-                enableSizeRotation: true,
-                rotationSizeInBytes: 5,
-                enableDateRotation: false,
-                dateRotationType: DateRotationType.Daily,
-                maxRotations: 0,
-                useLocalTimeForRotation: false,
-                timeProvider: timeProvider))
+            using (var writeReachedRotationCheckSignal = new ManualResetEventSlim(false))
             {
-                var startedSignal = new ManualResetEventSlim(false);
-                var locker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-
-                // Act
-                try
+                // Intercept the execution path inside the system thread loop when CheckRotation queries the current clock.
+                // This guarantees the stream writer has completed its flush cycle and is transitioning to evaluation states.
+                Func<DateTime> timeProvider = () =>
                 {
-                    var rotateTask = Task.Run(() =>
+                    writeReachedRotationCheckSignal.Set();
+                    return testTime;
+                };
+
+                using (var writer = new RotatingStreamWriter(
+                    filePath,
+                    enableSizeRotation: true,
+                    rotationSizeInBytes: 5,
+                    enableDateRotation: false,
+                    dateRotationType: DateRotationType.Daily,
+                    maxRotations: 0,
+                    useLocalTimeForRotation: false,
+                    timeProvider: timeProvider))
+                {
+                    var locker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+                    // Act
+                    try
                     {
-                        startedSignal.Set();
-                        writer.Write("trigger_rotation");
-                        writer.Flush();
-                    }, TestContext.Current.CancellationToken);
+                        var rotateTask = Task.Run(() =>
+                        {
+                            writer.Write("trigger_rotation");
+                            writer.Flush();
+                        }, TestContext.Current.CancellationToken);
 
-                    startedSignal.Wait(2000, TestContext.Current.CancellationToken);
+                        // Block the test execution thread until the background worker thread provably enters the rotation lifecycle
+                        writeReachedRotationCheckSignal.Wait(2000, TestContext.Current.CancellationToken);
 
-                    locker.Dispose(); // Release lock to let retry succeed
-                    await rotateTask;
+                        // Small intentional delay to allow the unlocked move try loop to actively crash against the file lock handle
+                        Thread.Sleep(50);
+
+                        locker.Dispose(); // Release lock to let retry succeed
+                        await rotateTask;
+                    }
+                    finally
+                    {
+                        locker.Dispose();
+                    }
+
+                    // Assert: Await state settlement loop pass
+                    // Because the background retry loops complete outside the public lock, 
+                    // we allow up to 1 second for the task success handler block to commit 
+                    // its state updates back down to the default variables.
+                    bool isDisabled = true;
+                    DateTime cooldown = DateTime.MaxValue;
+
+                    SpinWait.SpinUntil(() =>
+                    {
+                        isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled")!;
+                        cooldown = TestReflection.GetField<DateTime>(writer, "_rotationCooldownUntil")!;
+                        return cooldown == DateTime.MinValue;
+                    }, TimeSpan.FromSeconds(1));
+
+                    Assert.False(isDisabled, "Breaker should not trip on IOException.");
+                    Assert.Equal(DateTime.MinValue, cooldown);
+                    Assert.False(File.Exists(filePath));
                 }
-                finally
-                {
-                    locker.Dispose();
-                }
-
-                // Assert: Await state settlement loop pass
-                // Because the background retry loops complete outside the public lock, 
-                // we allow up to 1 second for the task success handler block to commit 
-                // its state updates back down to the default variables.
-                bool isDisabled = true;
-                DateTime cooldown = DateTime.MaxValue;
-
-                SpinWait.SpinUntil(() =>
-                {
-                    isDisabled = TestReflection.GetField<bool>(writer, "_rotationDisabled")!;
-                    cooldown = TestReflection.GetField<DateTime>(writer, "_rotationCooldownUntil")!;
-                    return cooldown == DateTime.MinValue;
-                }, TimeSpan.FromSeconds(1));
-
-                Assert.False(isDisabled, "Breaker should not trip on IOException.");
-                Assert.Equal(DateTime.MinValue, cooldown);
-                Assert.False(File.Exists(filePath));
             }
         }
 
