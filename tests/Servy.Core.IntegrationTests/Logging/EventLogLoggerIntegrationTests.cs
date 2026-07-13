@@ -142,7 +142,6 @@ namespace Servy.Core.IntegrationTests.Logging
                 string massiveString = new string('A', 40000);
 
                 // Act
-                // Invoke the log pipeline—should execute the truncation branch without throwing Win32Exception
                 Exception ex = Record.Exception(() => logger.Info(massiveString));
 
                 // Assert Execution State
@@ -153,18 +152,25 @@ namespace Servy.Core.IntegrationTests.Logging
                 {
                     eventLog.Source = source;
 
-                    // Retrieve the most recent written entry assigned to this specific source handle context
-                    var entriesCount = eventLog.Entries.Count;
-                    Assert.True(entriesCount > 0, "The oversized event log entry failed to write to the OS log repository container.");
+                    // Locate the specific entry we just wrote by checking the Source property,
+                    // avoiding the race condition where another process logs simultaneously.
+                    EventLogEntry foundEntry = null;
+                    for (int i = eventLog.Entries.Count - 1; i >= 0; i--)
+                    {
+                        if (eventLog.Entries[i].Source == source)
+                        {
+                            foundEntry = eventLog.Entries[i];
+                            break;
+                        }
+                    }
 
-                    var lastEntry = eventLog.Entries[entriesCount - 1];
-
+                    Assert.NotNull(foundEntry);
+                    
                     // Verify absolute length bounds and suffix marker format compliance
-                    Assert.True(lastEntry.Message.Length <= 31839 + "...[truncated]".Length + 200,
-                        $"Persisted message length ({lastEntry.Message.Length}) exceeds the physical truncation ceiling framework limitation.");
+                    Assert.True(foundEntry.Message.Length <= 31839 + "...[truncated]".Length + 200,
+                        $"Persisted message length ({foundEntry.Message.Length}) exceeds the physical truncation ceiling.");
 
-                    // Relaxed slightly to handle trailing OS error messages or environment strings appended past the truncation boundary
-                    Assert.Contains("...[truncated]", lastEntry.Message);
+                    Assert.Contains("...[truncated]", foundEntry.Message);
                 }
             }
         }
