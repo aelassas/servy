@@ -27,7 +27,7 @@ fs.writeFileSync(filePath, '', "utf8")
 // Append the current timestamp
 fs.appendFileSync(filePath, (new Date()).toISOString() + '\n', "utf8")
 
-const [node, _, ...args] = process.argv
+const [, , ...args] = process.argv
 fs.appendFileSync(filePath, args.join(' ') + '\n', "utf8")
 
 // let i = 0

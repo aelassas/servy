@@ -244,7 +244,7 @@ namespace Servy.CLI.UnitTests.Commands
         public virtual async Task Execute_ServiceNotInstalled_ReturnsServiceNotFoundError()
         {
             // Arrange
-            var serviceName = "MissingService";
+            const string serviceName = "MissingService";
             var options = CreateValidOptions(serviceName);
             MockServiceManager.Setup(sm => sm.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
 
