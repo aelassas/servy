@@ -193,10 +193,10 @@ namespace Servy.CLI.UnitTests.Commands
 
         #endregion
 
-        #region ProcessImportInternalAsync Internal Validation Branches
+        #region ExecuteAsync Internal Validation Branches
 
         [Fact]
-        public async Task ProcessImportInternalAsync_FormatValidationFails_ReturnsInvalidFormatResult()
+        public async Task ExecuteAsync_FormatValidationFails_ReturnsInvalidFormatResult()
         {
             // Arrange
             File.WriteAllText(_legalXmlPath, "<Malformed XML>");
@@ -213,7 +213,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public async Task ProcessImportInternalAsync_DeserializerReturnsNull_ReturnsDeserializationFailure()
+        public async Task ExecuteAsync_DeserializerReturnsNull_ReturnsDeserializationFailure()
         {
             // Arrange
             File.WriteAllText(_legalXmlPath, "<ServiceDto />");
@@ -231,7 +231,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public async Task ProcessImportInternalAsync_RepositoryUpsertReturnsZero_ReturnsRepoFailure()
+        public async Task ExecuteAsync_RepositoryUpsertReturnsZero_ReturnsRepoFailure()
         {
             // Arrange
             var realPath = @"C:\Windows\System32\notepad.exe";
@@ -254,10 +254,10 @@ namespace Servy.CLI.UnitTests.Commands
 
         #endregion
 
-        #region ValidateServicePaths Property Reflection Invariants
+        #region ExecuteAsync Property Reflection Invariants
 
         [Fact]
-        public async Task ValidateServicePaths_EmptyRequiredPathProperty_ReturnsExecutablePathSpecificFailure()
+        public async Task ExecuteAsync_EmptyRequiredPathProperty_ReturnsExecutablePathSpecificFailure()
         {
             // Arrange
             File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
@@ -276,7 +276,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public async Task ValidateServicePaths_InvalidExecutablePath_ReturnsPathSpecificFailure()
+        public async Task ExecuteAsync_InvalidExecutablePath_ReturnsPathSpecificFailure()
         {
             // Arrange
             File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
@@ -296,7 +296,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public async Task ValidateServicePaths_InvalidSecondaryConfigPath_ReturnsGeneralInvalidPathFailure()
+        public async Task ExecuteAsync_InvalidSecondaryConfigPath_ReturnsGeneralInvalidPathFailure()
         {
             // Arrange
             File.WriteAllText(_legalXmlPath, "<ServiceDto/>");
@@ -321,10 +321,10 @@ namespace Servy.CLI.UnitTests.Commands
 
         #endregion
 
-        #region TryInstallServiceAsync Workflow Boundaries
+        #region ExecuteAsync Workflow Installation Boundaries
 
         [Fact]
-        public async Task TryInstallServiceAsync_ServiceLookupFailsAfterImport_ReturnsLookupFailure()
+        public async Task ExecuteAsync_ServiceLookupFailsAfterImport_ReturnsLookupFailure()
         {
             // Arrange
             var realPath = @"C:\Windows\System32\notepad.exe";
@@ -347,7 +347,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public async Task TryInstallServiceAsync_InstallationDomainSucceeds_ReturnsSuccessMessage()
+        public async Task ExecuteAsync_InstallationDomainSucceeds_ReturnsSuccessMessage()
         {
             // Arrange
             var realPath = @"C:\Windows\System32\notepad.exe";
@@ -371,7 +371,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public async Task TryInstallServiceAsync_InstallationDomainFails_ReturnsDomainErrorMessage()
+        public async Task ExecuteAsync_InstallationDomainFails_ReturnsDomainErrorMessage()
         {
             // Arrange
             var realPath = @"C:\Windows\System32\notepad.exe";
