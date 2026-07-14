@@ -413,13 +413,21 @@ namespace Servy.Manager.UnitTests.ViewModels
             var receivedNotifications = 0;
             vm.PropertyChanged += (s, e) => receivedNotifications++;
 
+            // 1. Establish a positive baseline: change model state *before* disposing 
+            // and verify that the View Model correctly propagates property updates.
+            service.Status = ServiceStatus.Running;
+            Assert.True(receivedNotifications > 0, "The view model never forwarded notifications before disposal. Subscription wiring is likely missing.");
+
+            // Reset event receipt counter for post-disposal tracking
+            receivedNotifications = 0;
+
             // Act - Dispose to sever the lifecycle loop link
             vm.Dispose();
 
             // Fire model event changes post-disposal frame
             service.Status = ServiceStatus.Running;
 
-            // Assert
+            // Assert - No events should catch since the link was severed
             Assert.Equal(0, receivedNotifications);
         }
 

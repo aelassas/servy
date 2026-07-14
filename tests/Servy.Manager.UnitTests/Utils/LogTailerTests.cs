@@ -287,7 +287,8 @@ namespace Servy.Manager.UnitTests.Utils
                 tailer.OnLoopCompleted += () => loopCompletedTcs.TrySetResult(true);
 
                 // Start tailing from the end of pre-existing content
-                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, 26, DateTime.UtcNow, cts.Token);
+                var startPos = new FileInfo(_tempFilePath).Length;
+                var tailTask = tailer.RunFromPosition(_tempFilePath, LogType.StdOut, startPos, DateTime.UtcNow, cts.Token);
 
                 // Wait for the background reader loop to fully complete its initial cycle 
                 // and position its internal StreamReader handle directly at the EOF boundary.

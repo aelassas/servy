@@ -86,6 +86,26 @@ namespace Servy.UnitTests.ViewModels
             Assert.False(_viewModel.IsManagerAppAvailable);
         }
 
+        [Fact]
+        public void AppConfig_PropertyChanged_WithUnrelatedProperty_DoesNotUpdate_IsManagerAppAvailable()
+        {
+            // Arrange
+            // Initialize with the mock's default constructor setup value of 'true'
+            Assert.True(_viewModel.IsManagerAppAvailable);
+
+            // Setup the configuration mock to return 'false' for the actual target property.
+            // If the VM wrongly ignores the property name filter, it will read this new 'false' value.
+            _appConfigMock.Setup(c => c.IsManagerAppAvailable).Returns(false);
+
+            // Act
+            // Raise property changed on an unrelated configuration key
+            _appConfigMock.Raise(c => c.PropertyChanged += null, new PropertyChangedEventArgs(nameof(IAppConfiguration.ForceSoftwareRendering)));
+
+            // Assert
+            // Verifies that the VM ignored the event and did not pull/update the property value to 'false'
+            Assert.True(_viewModel.IsManagerAppAvailable, "The view model incorrectly reacted to an unrelated PropertyChanged event.");
+        }
+
         #endregion
 
         #region Service Action Command Tests
