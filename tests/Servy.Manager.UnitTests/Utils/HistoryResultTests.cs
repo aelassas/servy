@@ -17,8 +17,8 @@ namespace Servy.Manager.UnitTests.Utils
             // Arrange
             var sampleLines = new List<LogLine>
             {
-                new LogLine ("Line 1", LogType.StdOut,  DateTime.Now ),
-                new LogLine ("Line 2", LogType.StdOut, DateTime.Now ),
+                new LogLine("Line 1", LogType.StdOut,  DateTime.Now ),
+                new LogLine("Line 2", LogType.StdOut, DateTime.Now ),
             };
             long expectedPosition = 1024;
 
@@ -29,6 +29,7 @@ namespace Servy.Manager.UnitTests.Utils
             Assert.NotNull(result.Lines);
             Assert.Equal(2, result.Lines.Count);
             Assert.Equal("Line 1", result.Lines[0].Text);
+            Assert.Equal("Line 2", result.Lines[1].Text);
             Assert.Equal(expectedPosition, result.Position);
             Assert.Equal(ExpectedCreationTime, result.CreationTime);
         }

@@ -115,8 +115,7 @@ namespace Servy.Manager.UnitTests.Utils
                 Assert.NotNull(result);
                 Assert.Equal(new FileInfo(_tempFilePath).Length, result.Position);
                 Assert.Equal(3, result.Lines.Count);
-                Assert.Equal("L3", result.Lines[0].Text);
-                Assert.Equal("L5", result.Lines[2].Text);
+                Assert.Equal(new[] { "L3", "L4", "L5" }, result?.Lines.Select(l => l.Text).ToArray());
             }
         }
 

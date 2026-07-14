@@ -1,7 +1,7 @@
 ﻿using Servy.Core.Config;
 using Servy.Infrastructure.Helpers;
 
-namespace Servy.Infrastructure.Tests.Helpers
+namespace Servy.Infrastructure.UnitTests.Helpers
 {
     public class DatabaseValidatorTests
     {
