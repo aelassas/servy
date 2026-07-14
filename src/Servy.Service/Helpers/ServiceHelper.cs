@@ -93,14 +93,22 @@ namespace Servy.Service.Helpers
                  // as long as the next word isn't another CLI flag.
                  // Entire choice block is wrapped in an atomic group (?>...) to prevent catastrophic backtracking.
                  @"(?<sep>\s*[:=]\s*|/)" +
-                 @"(?<val>""[^""]*""|'[^']*'|[^\s""']+(?>(?:\s+(?![\-/]+[a-zA-Z]))[^\s""']+)*)" +
+                 @"(?>(?:" +
+                     @"(?<val>""[^""]*"")|" +            // Double quoted: captures quotes so the whole string gets masked cleanly
+                     @"(?<val>'[^']*')|" +               // Single quoted: captures quotes so the whole string gets masked cleanly
+                     @"(?<val>[^\s""']+(?:\s+(?![\-/]+[a-zA-Z])[^\s""']+)*)" + // Unquoted: isolates spaces cleanly without nested loops
+                 @"))" +
                  @"|" +
                  // BRANCH B: Space Separator
                  // Consumes unquoted strings, supporting multi-word values (e.g., "my secret pass")
                  // but stops consuming if it detects a subsequent CLI flag.
                  // Entire choice block is wrapped in an atomic group (?>...) to prevent catastrophic backtracking.
                  @"(?<sep>\s+)(?![\-/]+[a-zA-Z])" +
-                 @"(?<val>""[^""]*""|'[^']*'|[^\s""']+(?>(?:\s+(?![\-/]+[a-zA-Z]))[^\s""']+)*)" +
+                 @"(?>(?:" +
+                     @"(?<val>""[^""]*"")|" +            // Double quoted: captures quotes so the whole string gets masked cleanly
+                     @"(?<val>'[^']*')|" +               // Single quoted: captures quotes so the whole string gets masked cleanly
+                     @"(?<val>[^\s""']+(?:\s+(?![\-/]+[a-zA-Z])[^\s""']+)*)" + // Unquoted: isolates spaces cleanly without nested loops
+                 @"))" +
              @"))",
              RegexOptions.Compiled,
              AppConfig.InputRegexTimeout);
