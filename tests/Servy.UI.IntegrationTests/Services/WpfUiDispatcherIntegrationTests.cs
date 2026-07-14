@@ -40,21 +40,40 @@ namespace Servy.UI.IntegrationTests.Services
         {
             await Helper.RunOnSTA(async () =>
             {
-                bool yieldCompleted = false;
+                // Arrange
+                var executionSequence = new List<string>();
+                var lockObject = new object();
 
-                // Queue a higher priority operation
+                // Queue a higher priority operation on the STA Dispatcher thread.
+                // This operation should run and insert its tracking marker first because 
+                // the YieldAsync background continuation yields execution down to a lower background priority.
                 var highPriorityTask = Dispatcher.CurrentDispatcher.InvokeAsync(() =>
                 {
-                    // This should happen before the background yield if queued similarly, 
-                    // but we use it to verify the pump is active.
+                    lock (lockObject)
+                    {
+                        executionSequence.Add("HighPriority");
+                    }
                 }, DispatcherPriority.Send);
 
-                // Start the yield
-                var yieldTask = _uiDispatcher.YieldAsync().ContinueWith(_ => yieldCompleted = true);
+                // Start the yield task and append its verification sequence marker upon completion
+                var yieldTask = _uiDispatcher.YieldAsync().ContinueWith(t =>
+                {
+                    lock (lockObject)
+                    {
+                        executionSequence.Add("YieldContinuation");
+                    }
+                });
 
-                await yieldTask;
+                // Act
+                await Task.WhenAll(highPriorityTask.Task, yieldTask);
 
-                Assert.True(yieldCompleted);
+                // Assert
+                lock (lockObject)
+                {
+                    Assert.Equal(2, executionSequence.Count);
+                    Assert.Equal("HighPriority", executionSequence[0]);
+                    Assert.Equal("YieldContinuation", executionSequence[1]);
+                }
             });
         }
 
