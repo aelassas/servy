@@ -1,4 +1,5 @@
-﻿using Servy.Core.Native;
+﻿using Servy.Core.Config;
+using Servy.Core.Native;
 using System.ComponentModel;
 using System.Security;
 
@@ -229,20 +230,33 @@ namespace Servy.Core.UnitTests.Native
         public void GetFileIdentity_DifferentFileLengthsWithSamePrefix_ProduceDifferentDigests()
         {
             // Arrange
-            string prefix = "STATIC_HEADER_CONTENT_BLOCK";
+            // Generate a shared prefix block that spans exactly the 4096-byte prefix buffer window
+            int prefixSize = AppConfig.FileIdentityPrefixBytes; // 4096 bytes
+            byte[] sharedPrefix = new byte[prefixSize];
+            for (int i = 0; i < prefixSize; i++)
+            {
+                sharedPrefix[i] = (byte)'A';
+            }
 
             string file1Path = Path.Combine(_testDir, "file1.log");
             string file2Path = Path.Combine(_testDir, "file2.log");
 
-            // File 1: Just the prefix
-            File.WriteAllText(file1Path, prefix);
+            // File 1: Exactly the shared prefix (exactly 4096 bytes)
+            File.WriteAllBytes(file1Path, sharedPrefix);
 
-            // File 2: Same prefix, but larger file size
+            // File 2: Same prefix, but larger file size (additional characters appended past the 4096-byte limit)
             using (var fs = new FileStream(file2Path, FileMode.Create))
-            using (var writer = new StreamWriter(fs))
             {
-                writer.Write(prefix);
-                writer.Write(new string('A', 5000)); // Push size past prefix limit
+                fs.Write(sharedPrefix, 0, sharedPrefix.Length);
+
+                // Append extra padding. Because this sits past the 4096-byte boundary, 
+                // the content read by the digest buffer remains completely identical to File 1.
+                byte[] extraPadding = new byte[1000];
+                for (int i = 0; i < extraPadding.Length; i++)
+                {
+                    extraPadding[i] = (byte)'B';
+                }
+                fs.Write(extraPadding, 0, extraPadding.Length);
             }
 
             string digest1, digest2;
@@ -261,7 +275,10 @@ namespace Servy.Core.UnitTests.Native
             // Assert
             Assert.False(string.IsNullOrEmpty(digest1));
             Assert.False(string.IsNullOrEmpty(digest2));
-            Assert.NotEqual(digest1, digest2); // Length domain separator ensures they are different
+
+            // Under an identical 4096-byte prefix read, this assertion is guaranteed to fail 
+            // if the native length-domain separator logic is ever modified or removed.
+            Assert.NotEqual(digest1, digest2);
         }
 
         [Fact]

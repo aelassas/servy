@@ -389,8 +389,15 @@ namespace Servy.Manager.UnitTests.Services
                 // 2. HERMETIC VERIFICATION: Positively assert the precise launch state parameters
                 Assert.NotNull(capturedPsi);
                 Assert.Equal(tempTrackingFile, capturedPsi.FileName);
-                Assert.Contains($"\"{AppConfig.SkipSplashArgument}\"", capturedPsi.Arguments);
                 Assert.True(capturedPsi.UseShellExecute);
+
+                // 3. ARGUMENT VALIDATION: Ensure only the skip-splash argument is supplied, and no service name payload exists
+                Assert.Contains($"\"{AppConfig.SkipSplashArgument}\"", capturedPsi.Arguments);
+                Assert.DoesNotContain(AppConfig.ForceSoftwareRenderingArg, capturedPsi.Arguments); // Software rendering turned off in setup
+
+                // Confirm the arguments consist solely of the splash skip payload (and optional whitespace) without any service parameters
+                string expectedArgs = $"\"{AppConfig.SkipSplashArgument}\"";
+                Assert.Equal(expectedArgs, capturedPsi.Arguments.Trim());
             }
             finally
             {
