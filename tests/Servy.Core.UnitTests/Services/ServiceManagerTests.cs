@@ -2627,10 +2627,10 @@ namespace Servy.Core.UnitTests.Services
             ref int pcbBytesNeeded);
 
         // Delegate required for Moq to handle 'ref int' in QueryServiceConfig2
-        delegate bool QueryConfig2Delegate(SafeServiceHandle hService, uint dwInfoLevel, IntPtr lpBuffer, int cbBufSize, ref int pcbBytesNeeded);
+        private delegate bool QueryConfig2Delegate(SafeServiceHandle hService, uint dwInfoLevel, IntPtr lpBuffer, int cbBufSize, ref int pcbBytesNeeded);
 
         // Delegate needed for Moq to handle 'out' parameters in Callback
-        delegate void QueryConfigOut(SafeServiceHandle handle, IntPtr buffer, int size, out int required);
+        private delegate void QueryConfigOut(SafeServiceHandle handle, IntPtr buffer, int size, out int required);
 
         #endregion
 

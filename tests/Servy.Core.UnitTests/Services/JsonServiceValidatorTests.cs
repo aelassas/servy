@@ -21,21 +21,17 @@ namespace Servy.Core.UnitTests.Services
             _validator = new JsonServiceValidator(new ServiceValidationRules(_processHelperMock.Object));
         }
 
-        [Fact]
-        public void TryValidate_NullOrEmptyJson_ReturnsFalse()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void TryValidate_NullOrEmptyJson_ReturnsFalse(string input)
         {
             // Arrange
             var expectedError = string.Format(Strings.Msg_ImportInputEmptyOrWhitespace, "JSON");
 
             // Act
-            var result = _validator.TryValidate(null, out var error);
-
-            // Assert
-            Assert.False(result);
-            Assert.Equal(expectedError, error);
-
-            // Act
-            result = _validator.TryValidate("  ", out error);
+            var result = _validator.TryValidate(input, out var error);
 
             // Assert
             Assert.False(result);
