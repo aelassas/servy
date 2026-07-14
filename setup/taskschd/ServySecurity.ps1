@@ -82,11 +82,19 @@ function Protect-SensitiveString {
         "(?>(?:" +
             # BRANCH A: Explicit Separators (:, =, /)
             "(?<sep>\s*[:=]\s*|/)" +
-            "(?<val>`"[^`"]*`"|'[^']*'|[^\s`"']+(?>(?:\s+(?![\-/]+[a-zA-Z]))[^\s`"']+)*)" +
+            "(?>(?:" +
+                "(?<val>`"[^`"]*`")|" +            # Double quoted: captures quotes so the whole string gets masked cleanly
+                "(?<val>'[^']*')|" +               # Single quoted: captures quotes so the whole string gets masked cleanly
+                "(?<val>[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*)" + # Unquoted: isolates spaces cleanly without nested loops
+            "))" +
             "|" +
             # BRANCH B: Space Separator
             "(?<sep>\s+)(?![\-/]+[a-zA-Z])" +
-            "(?<val>`"[^`"]*`"|'[^']*'|[^\s`"']+(?>(?:\s+(?![\-/]+[a-zA-Z]))[^\s`"']+)*)" +
+            "(?>(?:" +
+                "(?<val>`"[^`"]*`")|" +            # Double quoted: captures quotes so the whole string gets masked cleanly
+                "(?<val>'[^']*')|" +               # Single quoted: captures quotes so the whole string gets masked cleanly
+                "(?<val>[^\s`"']+(?:\s+(?![\-/]+[a-zA-Z])[^\s`"']+)*)" + # Unquoted: isolates spaces cleanly without nested loops
+            "))" +
         "))"
 
     $maskingRegex = New-Object System.Text.RegularExpressions.Regex (
