@@ -31,9 +31,10 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         #region Invalid Input Constraint Validation Tests
 
         [Fact]
-        public void Validate_NameWithSpace_ReturnsFalse()
+        public void Validate_NameWithInvalidSpecialCharacter_ReturnsFalse()
         {
             // Arrange & Act
+            // Tests that a name containing an invalid special character like '#' is rejected
             var result = ServiceDependenciesValidator.Validate("Bad#Service", out var errors);
 
             // Assert

@@ -86,7 +86,7 @@ namespace Servy.CLI.UnitTests.Commands
             var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = invalidPath! };
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Success);
@@ -105,7 +105,7 @@ namespace Servy.CLI.UnitTests.Commands
                 var opts = new ImportServiceOptions { ConfigFileType = "xml", Path = badExtensionPath };
 
                 // Act
-                var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+                var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.False(result.Success);
@@ -127,7 +127,7 @@ namespace Servy.CLI.UnitTests.Commands
             var opts = new ImportServiceOptions { ConfigFileType = "ini", Path = _legalXmlPath };
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Success);
@@ -155,7 +155,7 @@ namespace Servy.CLI.UnitTests.Commands
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Success);
@@ -179,7 +179,7 @@ namespace Servy.CLI.UnitTests.Commands
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Success);
@@ -200,7 +200,7 @@ namespace Servy.CLI.UnitTests.Commands
             MockXmlValidator(false, "Missing close root tag definition context");
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Success);
@@ -218,7 +218,7 @@ namespace Servy.CLI.UnitTests.Commands
             _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns((ServiceDto?)null);
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Success);
@@ -240,7 +240,7 @@ namespace Servy.CLI.UnitTests.Commands
             _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Success);
@@ -263,7 +263,7 @@ namespace Servy.CLI.UnitTests.Commands
             _xmlServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Success);
@@ -283,7 +283,7 @@ namespace Servy.CLI.UnitTests.Commands
             _processHelper.Setup(p => p.ValidatePath(@"Z:\Missing\Dir\Engine.exe", It.IsAny<bool>())).Returns(false);
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Success);
@@ -306,7 +306,7 @@ namespace Servy.CLI.UnitTests.Commands
             _processHelper.Setup(p => p.ValidatePath(@"Y:\Invalid\Folder", false)).Returns(false);
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Success);
@@ -334,7 +334,7 @@ namespace Servy.CLI.UnitTests.Commands
             _serviceRepoMock.Setup(r => r.GetByNameAsync("GhostService", true, It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto?)null);
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Success);
@@ -358,7 +358,7 @@ namespace Servy.CLI.UnitTests.Commands
             _serviceManager.Setup(m => m.InstallServiceAsync(It.IsAny<Core.Services.InstallServiceOptions>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.Success);
@@ -385,7 +385,7 @@ namespace Servy.CLI.UnitTests.Commands
                            .ReturnsAsync(OperationResult.Failure(domainError));
 
             // Act
-            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+            var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(result.Success);

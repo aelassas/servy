@@ -197,7 +197,10 @@ namespace Servy.Core.IntegrationTests.Native
                 Assert.Equal(0, status);
                 Assert.Equal((uint)size, returnLength);
                 Assert.NotEqual(IntPtr.Zero, pbi.PebBaseAddress);
-                Assert.Equal(processHandle, NativeMethods.OpenProcess(NativeMethods.ProcessAccess.QueryInformation, false, currentProcess.Id).DangerousGetHandle() == IntPtr.Zero ? processHandle : processHandle);
+                using (var h = NativeMethods.OpenProcess(NativeMethods.ProcessAccess.QueryInformation, false, currentProcess.Id))
+                {
+                    Assert.False(h.IsInvalid);
+                }
             }
         }
 
@@ -414,9 +417,14 @@ namespace Servy.Core.IntegrationTests.Native
         {
             // Passing null removes or sets default configuration components depending on the trailing boolean flag state parameters.
             bool success = NativeMethods.SetConsoleCtrlHandler(null, true);
-
-            // Clean up to keep environment in equilibrium
-            if (success) NativeMethods.SetConsoleCtrlHandler(null, false);
+            try
+            {
+                Assert.True(success, "Registering the default Ctrl handler (null callback, add=true) should succeed.");
+            }
+            finally
+            {
+                NativeMethods.SetConsoleCtrlHandler(null, false); // restore process-global state regardless
+            }
         }
 
         #endregion

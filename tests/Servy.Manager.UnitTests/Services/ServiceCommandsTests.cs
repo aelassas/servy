@@ -154,7 +154,7 @@ namespace Servy.Manager.UnitTests.Services
 
             await sut.ImportJsonConfigAsync(TestContext.Current.CancellationToken);
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()));
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
             _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
 
             File.Delete(tempFile);
