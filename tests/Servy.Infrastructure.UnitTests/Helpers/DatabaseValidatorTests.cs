@@ -3,7 +3,7 @@ using Servy.Infrastructure.Helpers;
 using System;
 using Xunit;
 
-namespace Servy.Infrastructure.Tests.Helpers
+namespace Servy.Infrastructure.UnitTests.Helpers
 {
     public class DatabaseValidatorTests
     {

@@ -52,7 +52,7 @@ namespace Servy.Manager.UnitTests.Validation
         {
             // Arrange
             var dto = new ServiceDto();
-            var validResult = new ValidationResult { };
+            var validResult = new ValidationResult();
 
             _validationRulesMock
                 .Setup(r => r.Validate(dto, null, null, false))
@@ -73,9 +73,7 @@ namespace Servy.Manager.UnitTests.Validation
             // Arrange
             var dto = new ServiceDto();
             string expectedError = "Configuration error detected.";
-            var invalidResult = new ValidationResult
-            {
-            };
+            var invalidResult = new ValidationResult();
             invalidResult.Errors.Add(expectedError);
             invalidResult.Errors.Add("Second error that should be ignored");
 
