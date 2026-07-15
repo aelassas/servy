@@ -1,5 +1,6 @@
 ﻿using Servy.Testing;
 using Servy.UI.Services;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -22,18 +23,21 @@ namespace Servy.UI.IntegrationTests.Services
                 bool backgroundJobRan = false;
                 var frame = new DispatcherFrame();
 
+                // Keep references to prevent JIT GC/discard optimizations in Release mode
+                var jobs = new List<Task>();
+
                 // 1. Queue our background validation job.
-                _ = uiDispatcher.InvokeAsync(() =>
+                jobs.Add(uiDispatcher.InvokeAsync(() =>
                 {
                     backgroundJobRan = true;
-                }, DispatcherPriority.Background);
+                }, DispatcherPriority.Background));
 
                 // 2. Queue an explicit exit callback at a lower priority (ContextIdle).
                 // This guarantees the dispatcher cleanly processes background jobs first.
-                _ = uiDispatcher.InvokeAsync(() =>
+                jobs.Add(uiDispatcher.InvokeAsync(() =>
                 {
                     frame.Continue = false;
-                }, DispatcherPriority.ContextIdle);
+                }, DispatcherPriority.ContextIdle));
 
                 // Act: Start a local, deterministic message pump loop on this thread.
                 Dispatcher.PushFrame(frame);
@@ -41,6 +45,8 @@ namespace Servy.UI.IntegrationTests.Services
                 // Assert: Verify the Background item executed successfully
                 Assert.True(backgroundJobRan, "The dispatcher did not pump queued Background messages before the frame exited.");
 
+                // Keep the compiler happy and tasks observed
+                GC.KeepAlive(jobs);
                 await Task.CompletedTask;
             });
         }
@@ -55,27 +61,30 @@ namespace Servy.UI.IntegrationTests.Services
                 var executionSequence = new List<string>();
                 var frame = new DispatcherFrame();
 
+                // Keep references to prevent JIT GC/discard optimizations in Release mode
+                var operations = new List<object>();
+
                 // 1. Queue a high-priority operation (Send priority)
                 // This must execute first when the pump starts spinning.
-                _ = Dispatcher.CurrentDispatcher.InvokeAsync(() =>
+                operations.Add(Dispatcher.CurrentDispatcher.InvokeAsync(() =>
                 {
                     executionSequence.Add("HighPriority");
-                }, DispatcherPriority.Send);
+                }, DispatcherPriority.Send));
 
                 // 2. Queue the background verification task.
                 // We queue this directly at Background priority to mimic the exact resumption 
                 // level target of the YieldAsync engine without running into headless layout stalls.
-                _ = Dispatcher.CurrentDispatcher.InvokeAsync(() =>
+                operations.Add(Dispatcher.CurrentDispatcher.InvokeAsync(() =>
                 {
                     executionSequence.Add("YieldContinuation");
-                }, DispatcherPriority.Background);
+                }, DispatcherPriority.Background));
 
                 // 3. Queue the frame exit routine at ContextIdle.
                 // Since ContextIdle is lower than Background, this is guaranteed to run last.
-                _ = Dispatcher.CurrentDispatcher.InvokeAsync(() =>
+                operations.Add(Dispatcher.CurrentDispatcher.InvokeAsync(() =>
                 {
                     frame.Continue = false;
-                }, DispatcherPriority.ContextIdle);
+                }, DispatcherPriority.ContextIdle));
 
                 // Act: Start the localized pump loop.
                 Dispatcher.PushFrame(frame);
@@ -85,6 +94,8 @@ namespace Servy.UI.IntegrationTests.Services
                 Assert.Equal("HighPriority", executionSequence[0]);
                 Assert.Equal("YieldContinuation", executionSequence[1]);
 
+                // Keep the compiler happy and operations observed
+                GC.KeepAlive(operations);
                 await Task.CompletedTask;
             });
         }
