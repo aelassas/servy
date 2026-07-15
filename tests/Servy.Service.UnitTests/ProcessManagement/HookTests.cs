@@ -1,4 +1,5 @@
 ﻿using Servy.Service.ProcessManagement;
+using Servy.Testing;
 using System.Diagnostics;
 using Xunit;
 
@@ -55,15 +56,31 @@ namespace Servy.Service.UnitTests.ProcessManagement
         [Fact]
         public void Dispose_IsIdempotent()
         {
+            // Arrange
             var hook = new Hook();
+
+            // We instantiate a real Process to act as our disposable resource.
+            // Note: We don't call Start(), so no real OS process is spawned.
+            var process = new Process();
+            hook.Process = process;
+
+            // Verify initial state via reflection
+            bool disposedBefore = TestReflection.GetField<bool>(hook, "_disposed");
+            Assert.False(disposedBefore);
 
             // Act
             hook.Dispose();
 
-            // Second call should hit the 'if (_disposed) return;' branch
-            var ex = Record.Exception(() => hook.Dispose());
+            // Assert - First call should dispose process and set _disposed to true
+            bool disposedAfterFirst = TestReflection.GetField<bool>(hook, "_disposed");
+            Assert.True(disposedAfterFirst);
 
+            // Act & Assert - Second call should hit 'if (_disposed) return;' and return safely
+            var ex = Record.Exception(hook.Dispose);
             Assert.Null(ex);
+
+            // Clean up the shell process wrapper safely
+            process.Dispose();
         }
 
         [Fact]

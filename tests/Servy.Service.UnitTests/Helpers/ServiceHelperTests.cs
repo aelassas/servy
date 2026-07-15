@@ -1,7 +1,4 @@
 ﻿using Moq;
-#if !DEBUG
-using Servy.Core.Config;
-#endif
 using Servy.Core.Data;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
@@ -639,11 +636,10 @@ namespace Servy.Service.UnitTests.Helpers
 
         private static string GetBaseDirectory()
         {
-#if DEBUG
+            // ROBUSTNESS: Always output dummy test artifacts inside the isolated 
+            // unit-test output execution directory. Never target AppConfig.ProgramDataPath in 
+            // Release configurations to avoid clobbering production binaries.
             return AppDomain.CurrentDomain.BaseDirectory;
-#else
-            return AppConfig.ProgramDataPath;
-#endif
         }
 
         #endregion

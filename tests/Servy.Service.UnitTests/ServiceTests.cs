@@ -52,6 +52,9 @@ namespace Servy.Service.UnitTests
             _mockTimer = new Mock<ITimer>();
             _mockProcess = new Mock<IProcessWrapper>();
 
+            // Crucial setup: Stub the StartInfo property so it never returns null during tests
+            _mockProcess.Setup(p => p.StartInfo).Returns(new ProcessStartInfo());
+
             _mockStreamWriterFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()))
                 .Returns((string path, bool enableSizeRotation, long size, bool enableDateRotation, DateRotationType dateRotationType, int maxRotations, bool useLocalTimeForRotation) =>
                 {
@@ -825,8 +828,24 @@ namespace Servy.Service.UnitTests
         public void OnStop_ExecutesTeardown()
         {
             // Arrange
-            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe" };
+            var options = new StartOptions
+            {
+                ServiceName = "Test",
+                ExecutablePath = "test.exe",
+                StdoutPath = "C:\\Logs\\stdout.log",
+                StderrPath = "C:\\Logs\\stderr.log",
+                EnableHealthMonitoring = true,
+                HeartbeatInterval = 10,
+                MaxFailedChecks = 3
+            };
+
+            // Setup standard dependencies
             SetupStandardServiceStart(options);
+
+            // Stub the process wrapper so its Stop method returns success
+            _mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
+
+            // Start the service to initialize the writers, timer, and child process
             _service.StartForTest();
 
             bool stopped = false;
@@ -836,7 +855,18 @@ namespace Servy.Service.UnitTests
             _service.Stop();
 
             // Assert
+            // 1. Verify the stopping event fired successfully
             Assert.True(stopped);
+
+            // 2. Verify process stop was requested with its stop timeout limit
+            _mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
+
+            // 3. Verify that the health-monitoring timer was stopped
+            _mockTimer.Verify(t => t.Stop(), Times.Once);
+
+            // 4. Verify stdout and stderr writers were flushed and disposed cleanly
+            _mockStdoutWriter.Verify(w => w.Dispose(), Times.Once);
+            _mockStderrWriter.Verify(w => w.Dispose(), Times.Once);
         }
 
         [Fact]
