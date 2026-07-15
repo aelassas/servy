@@ -6,13 +6,6 @@ namespace Servy.UI.IntegrationTests.Services
 {
     public class WpfUiDispatcherIntegrationTests
     {
-        private readonly WpfUiDispatcher _uiDispatcher;
-
-        public WpfUiDispatcherIntegrationTests()
-        {
-            _uiDispatcher = new WpfUiDispatcher();
-        }
-
         #region YieldAsync Tests
 
         [Fact]
@@ -22,7 +15,6 @@ namespace Servy.UI.IntegrationTests.Services
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                // Instantiating WpfUiDispatcher inside the STA block captures this thread's Dispatcher.
                 var uiDispatcher = new WpfUiDispatcher();
                 bool backgroundJobRan = false;
                 var frame = new DispatcherFrame();
@@ -34,15 +26,12 @@ namespace Servy.UI.IntegrationTests.Services
                 }, DispatcherPriority.Background);
 
                 // 2. Queue an explicit exit callback at a lower priority (ContextIdle).
-                // This guarantees conhost drains the Background task queue entirely before exiting, 
-                // completely bypassing headless rendering environment deadlocks.
                 _ = uiDispatcher.InvokeAsync(() =>
                 {
                     frame.Continue = false;
                 }, DispatcherPriority.ContextIdle);
 
                 // Act: Start a local, deterministic message pump loop on this thread.
-                // It unblocks immediately once the ContextIdle operation clears.
                 Dispatcher.PushFrame(frame);
 
                 // Assert: Verify the Background item executed successfully
@@ -58,39 +47,39 @@ namespace Servy.UI.IntegrationTests.Services
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
+                // Instantiating inside the STA block binds the dispatcher wrapper to the active thread context
+                var uiDispatcher = new WpfUiDispatcher();
                 var executionSequence = new List<string>();
-                var lockObject = new object();
+                var frame = new DispatcherFrame();
 
-                // Queue a higher priority operation on the STA Dispatcher thread.
-                // This operation should run and insert its tracking marker first because 
-                // the YieldAsync background continuation yields execution down to a lower background priority.
-                var highPriorityTask = Dispatcher.CurrentDispatcher.InvokeAsync(() =>
+                // 1. Queue a high-priority operation
+                _ = Dispatcher.CurrentDispatcher.InvokeAsync(() =>
                 {
-                    lock (lockObject)
-                    {
-                        executionSequence.Add("HighPriority");
-                    }
+                    executionSequence.Add("HighPriority");
                 }, DispatcherPriority.Send);
 
-                // Start the yield task and append its verification sequence marker upon completion
-                var yieldTask = _uiDispatcher.YieldAsync().ContinueWith(t =>
+                // 2. Queue the yield task validation operation
+                _ = uiDispatcher.InvokeAsync(async () =>
                 {
-                    lock (lockObject)
-                    {
-                        executionSequence.Add("YieldContinuation");
-                    }
-                });
+                    await uiDispatcher.YieldAsync();
+                    executionSequence.Add("YieldContinuation");
+                }, DispatcherPriority.Normal);
 
-                // Act
-                await Task.WhenAll(highPriorityTask.Task, yieldTask);
+                // 3. Queue a final frame exit callback at ContextIdle to flush everything prior cleanly
+                _ = Dispatcher.CurrentDispatcher.InvokeAsync(() =>
+                {
+                    frame.Continue = false;
+                }, DispatcherPriority.ContextIdle);
+
+                // Act: Run the localized message loop to process operations in priority order without hanging
+                Dispatcher.PushFrame(frame);
 
                 // Assert
-                lock (lockObject)
-                {
-                    Assert.Equal(2, executionSequence.Count);
-                    Assert.Equal("HighPriority", executionSequence[0]);
-                    Assert.Equal("YieldContinuation", executionSequence[1]);
-                }
+                Assert.Equal(2, executionSequence.Count);
+                Assert.Equal("HighPriority", executionSequence[0]);
+                Assert.Equal("YieldContinuation", executionSequence[1]);
+
+                await Task.CompletedTask;
             });
         }
 
