@@ -772,6 +772,75 @@ namespace Servy.Core.UnitTests.Helpers
             }
         }
 
+        [Fact]
+        public async Task WriteFileAtomicAsync_OnException_CleansUpTempAndDoesNotCreateTarget()
+        {
+            // Arrange
+            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            string targetPath = Path.Combine(tempDir, "target.txt");
+            Directory.CreateDirectory(tempDir);
+
+            try
+            {
+                // Act & Assert
+                await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                {
+                    await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
+                    {
+                        byte[] data = Encoding.UTF8.GetBytes("partial-async-data");
+                        await stream.WriteAsync(data, 0, data.Length, cancellationToken);
+                        throw new InvalidOperationException("Simulated failure");
+                    }, TestContext.Current.CancellationToken);
+                });
+
+                // CleanupTempFile should be executed in the finally block of WriteFileAtomicCore
+                Assert.False(File.Exists(targetPath), "Target should not exist if move operation was never reached.");
+
+                // Ensure no dynamically generated GUID staging targets are leaked inside the scratch folder
+                var leftovers = Directory.GetFiles(tempDir, "*.tmp");
+                Assert.Empty(leftovers);
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+            }
+        }
+
+        [Fact]
+        public async Task WriteFileAtomicAsync_OverwritesReadOnlyFile()
+        {
+            // Arrange
+            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(tempDir);
+            string targetPath = Path.Combine(tempDir, "target.txt");
+
+            try
+            {
+                File.WriteAllText(targetPath, "initial-content");
+                // Set read-only to verify PrepareDestinationForMove behavior inside WriteFileAtomicCore
+                File.SetAttributes(targetPath, FileAttributes.ReadOnly);
+
+                // Act
+                await Helper.WriteFileAtomicAsync(targetPath, async (Stream stream, CancellationToken cancellationToken) =>
+                {
+                    byte[] data = Encoding.UTF8.GetBytes("new-async-content");
+                    await stream.WriteAsync(data, 0, data.Length, cancellationToken);
+                }, TestContext.Current.CancellationToken);
+
+                // Assert: Attributes must be normalized to prevent access exception boundaries
+                Assert.True(File.Exists(targetPath));
+                Assert.Equal("new-async-content", File.ReadAllText(targetPath));
+
+                FileAttributes attributes = File.GetAttributes(targetPath);
+                Assert.False((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly);
+            }
+            finally
+            {
+                if (File.Exists(targetPath)) File.SetAttributes(targetPath, FileAttributes.Normal);
+                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+            }
+        }
+
         #endregion
 
         #region HasAncestorReparsePoint tests

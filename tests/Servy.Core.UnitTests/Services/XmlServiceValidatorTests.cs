@@ -20,8 +20,11 @@ namespace Servy.Core.UnitTests.Services
             _validator = new XmlServiceValidator(new ServiceValidationRules(_processHelperMock.Object));
         }
 
-        [Fact]
-        public void TryValidate_NullOrEmptyXml_ReturnsFalse()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void TryValidate_NullOrWhitespaceXml_ReturnsFalse(string? xml)
         {
             // Arrange
             var expectedError = string.Format(Strings.Msg_ImportInputEmptyOrWhitespace, "XML");
@@ -34,7 +37,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(expectedError, error);
 
             // Act
-            result = _validator.TryValidate("   ", out error);
+            result = _validator.TryValidate(xml, out error);
 
             // Assert
             Assert.False(result);
