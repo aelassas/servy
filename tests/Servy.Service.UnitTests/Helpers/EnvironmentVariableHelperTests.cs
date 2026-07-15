@@ -147,7 +147,7 @@ namespace Servy.Service.UnitTests.Helpers
 
             // Act
             var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
-            string expected = Path.Combine(Environment.GetEnvironmentVariable("TEMP")!, "MyApp");
+            string expected = Environment.GetEnvironmentVariable("TEMP") + "\\MyApp";
 
             // Assert
             Assert.Equal(expected, expanded["MY_TEMP"]);

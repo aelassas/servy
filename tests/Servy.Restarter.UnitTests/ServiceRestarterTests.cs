@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Servy.Testing;
+using System.ComponentModel;
 using System.ServiceProcess;
 
 namespace Servy.Restarter.UnitTests
@@ -302,6 +303,82 @@ namespace Servy.Restarter.UnitTests
             Assert.Contains("failed to reach Stopped within the timeout period", ex.Message);
 
             // Verify teardown routines hit even under cascading exception loop conditions
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        #endregion
+
+        #region Disappearance Guard Tests
+
+        [Fact]
+        public void RestartService_StatusThrowsInSettleLoop_ReturnsCleanlyWithoutStopOrStart()
+        {
+            // Arrange
+            _mockController.Setup(c => c.Status).Throws<InvalidOperationException>();
+
+            // Act
+            var ex = Record.Exception(() => _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+
+            // Assert
+            Assert.Null(ex);
+            _mockController.Verify(c => c.Stop(), Times.Never);
+            _mockController.Verify(c => c.Start(), Times.Never);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
+        public void RestartService_RefreshThrowsInSettleLoop_ReturnsCleanlyWithoutStopOrStart(bool throwInvalidOperation)
+        {
+            // Arrange
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.StopPending);
+
+            if (throwInvalidOperation)
+            {
+                _mockController.Setup(c => c.Refresh()).Throws<InvalidOperationException>();
+            }
+            else
+            {
+                _mockController.Setup(c => c.Refresh()).Throws<Win32Exception>();
+            }
+
+            // Act
+            var ex = Record.Exception(() => _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+
+            // Assert
+            Assert.Null(ex);
+            _mockController.Verify(c => c.Stop(), Times.Never);
+            _mockController.Verify(c => c.Start(), Times.Never);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData(true)]  // Test InvalidOperationException path
+        [InlineData(false)] // Test Win32Exception path
+        public void RestartService_RefreshThrowsInStartPhase_ReturnsCleanlyWithoutStartCommand(bool throwInvalidOperation)
+        {
+            // Arrange
+            // We bypass the Settle loop by returning Stopped instantly, which also skips the Stop phase.
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Stopped)  // Settle loop entry
+                .Returns(ServiceControllerStatus.Stopped); // Stop phase skip-check
+
+            if (throwInvalidOperation)
+            {
+                _mockController.Setup(c => c.Refresh()).Throws<InvalidOperationException>();
+            }
+            else
+            {
+                _mockController.Setup(c => c.Refresh()).Throws<Win32Exception>();
+            }
+
+            // Act
+            var ex = Record.Exception(() => _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+
+            // Assert
+            Assert.Null(ex);
+            _mockController.Verify(c => c.Start(), Times.Never);
             _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
