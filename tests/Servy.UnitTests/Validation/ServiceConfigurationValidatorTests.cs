@@ -67,5 +67,45 @@ namespace Servy.UnitTests.Validation
             Assert.True(result);
             _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
+
+        [Fact]
+        public async Task ValidateAsync_PasswordMismatch_ShowsErrorAndReturnsFalse()
+        {
+            // Arrange
+            var dto = new ServiceDto
+            {
+                Name = "ValidService",
+                ExecutablePath = @"C:\ValidService.exe",
+                RunAsLocalSystem = false,
+                Password = "Password123"
+            };
+
+            _mockProcessHelper.Setup(p => p.ValidatePath(dto.ExecutablePath, true)).Returns(true);
+
+            // Act: Pass a confirmPassword parameter that explicitly mismatches the target DTO secret string
+            var result = await _validator.ValidateAsync(dto, confirmPassword: "DifferentPassword", cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result);
+            _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ValidateAsync_WithExplicitWrapperExePath_EvaluatesRulesAndReturnsTrue()
+        {
+            // Arrange
+            var dto = new ServiceDto { Name = "ValidService", ExecutablePath = @"C:\ValidService.exe", RunAsLocalSystem = true };
+            string wrapperExePath = @"C:\Servy\Servy.Service.exe";
+
+            _mockProcessHelper.Setup(p => p.ValidatePath(dto.ExecutablePath, true)).Returns(true);
+            _mockProcessHelper.Setup(p => p.ValidatePath(wrapperExePath, true)).Returns(true);
+
+            // Act: Exercise forwarding boundary loops by explicitly passing both wrapper paths and identical password structures
+            var result = await _validator.ValidateAsync(dto, wrapperExePath: wrapperExePath, confirmPassword: null, cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result);
+            _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
     }
 }

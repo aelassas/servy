@@ -45,11 +45,14 @@ namespace Servy.CLI.UnitTests.Commands
 
         #region Execute Method Tests
 
-        [Fact]
-        public async Task Execute_ShouldFail_WhenServiceNameIsNullOrEmpty()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task Execute_ShouldFail_WhenServiceNameIsNullOrWhiteSpace(string? name)
         {
             // Arrange
-            var opts = new ExportServiceOptions { ServiceName = "", ConfigFileType = "xml", Path = "file.xml" };
+            var opts = new ExportServiceOptions { ServiceName = name!, ConfigFileType = "xml", Path = "file.xml" };
 
             // Act
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);

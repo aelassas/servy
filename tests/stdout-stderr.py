@@ -5,19 +5,23 @@ ONE_MEGABYTE = 1024 * 1024
 data = b'a' * ONE_MEGABYTE
 data_err = b'b' * ONE_MEGABYTE
 
-while True:
-    try:
-        # Write 1MB to stdout
-        sys.stdout.buffer.write(data)
-        sys.stdout.flush()
-        print("Wrote 1MB to stdout", file=sys.stdout)
+try:
+    while True:
+        try:
+            # Write 1MB to stdout
+            sys.stdout.buffer.write(data)
+            sys.stdout.flush()
+            print("Wrote 1MB to stdout", file=sys.stdout)
 
-        # Write 1MB to stderr
-        sys.stderr.buffer.write(data_err)
-        sys.stderr.flush()
-        print("Wrote 1MB to stderr", file=sys.stderr)
+            # Write 1MB to stderr
+            sys.stderr.buffer.write(data_err)
+            sys.stderr.flush()
+            print("Wrote 1MB to stderr", file=sys.stderr)
 
-    except Exception as e:
-        print(f"An error occurred: {e}", file=sys.stderr)
+        except Exception as e:
+            print(f"An error occurred: {e}", file=sys.stderr)
 
-    time.sleep(5)
+        time.sleep(5)
+except KeyboardInterrupt:
+    print("\n(ctrlc) Goodbye! Script terminated.", file=sys.stdout)
+    sys.exit(0)
