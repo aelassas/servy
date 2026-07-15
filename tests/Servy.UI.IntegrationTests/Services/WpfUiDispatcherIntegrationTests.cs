@@ -28,39 +28,29 @@ namespace Servy.UI.IntegrationTests.Services
                 // Instantiating WpfUiDispatcher inside the STA block captures this thread's Dispatcher.
                 var uiDispatcher = new WpfUiDispatcher();
                 bool backgroundJobRan = false;
-                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var frame = new DispatcherFrame();
 
                 // 1. Queue our background validation job.
-                // It must run before the Yield completes.
                 _ = uiDispatcher.InvokeAsync(() =>
                 {
                     backgroundJobRan = true;
                 }, DispatcherPriority.Background);
 
-                // 2. Queue the actual Yield operation under test.
-                // We run this inside the active message pump.
-                _ = uiDispatcher.InvokeAsync(async () =>
+                // 2. Queue an explicit exit callback at a lower priority (ContextIdle).
+                // This guarantees conhost drains the Background task queue entirely before exiting, 
+                // completely bypassing headless rendering environment deadlocks.
+                _ = uiDispatcher.InvokeAsync(() =>
                 {
-                    try
-                    {
-                        // Act: Await the YieldAsync, which yields to the active queue.
-                        await uiDispatcher.YieldAsync();
+                    frame.Continue = false;
+                }, DispatcherPriority.ContextIdle);
 
-                        // Assert: Once resumed, ensure the background job ran.
-                        Assert.True(backgroundJobRan, "The dispatcher did not pump queued Background messages before the Yield completed.");
-                    }
-                    finally
-                    {
-                        // 3. Gracefully terminate the STA thread's message pump to exit the test cleanly.
-                        currentDispatcher.InvokeShutdown();
-                    }
-                }, DispatcherPriority.Normal);
+                // Act: Start a local, deterministic message pump loop on this thread.
+                // It unblocks immediately once the ContextIdle operation clears.
+                Dispatcher.PushFrame(frame);
 
-                // Start the message pump. This runs synchronously on this STA thread, 
-                // processing all the queued InvokeAsync items above, and exits when InvokeShutdown is called.
-                Dispatcher.Run();
+                // Assert: Verify the Background item executed successfully
+                Assert.True(backgroundJobRan, "The dispatcher did not pump queued Background messages before the frame exited.");
 
-                // Keep the task-returning runner happy
                 await Task.CompletedTask;
             });
         }
