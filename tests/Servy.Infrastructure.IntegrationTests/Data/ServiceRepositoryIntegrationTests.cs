@@ -445,20 +445,24 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Equal("C:\\sync.exe", resolved.ExecutablePath);
         }
 
-        [Fact]
-        public void GetByName_NullOrEmptyInput_ReturnsNull()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void GetByName_NullOrEmptyInput_ReturnsNull(string input)
         {
             // Act & Assert
-            Assert.Null(_repository.GetByName(null, decrypt: false));
-            Assert.Null(_repository.GetByName(string.Empty, decrypt: false));
+            Assert.Null(_repository.GetByName(input, decrypt: false));
         }
 
-        [Fact]
-        public async Task GetByNameAsync_NullOrEmptyInput_ReturnsNull()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task GetByNameAsync_NullOrEmptyInput_ReturnsNull(string input)
         {
             // Act & Assert
-            Assert.Null(await _repository.GetByNameAsync(null, decrypt: false, CancellationToken.None));
-            Assert.Null(await _repository.GetByNameAsync("   ", decrypt: false, CancellationToken.None));
+            Assert.Null(await _repository.GetByNameAsync(input, decrypt: false, CancellationToken.None));
         }
 
         #region Legacy Padded Trim Fallback Tests

@@ -99,11 +99,20 @@ namespace Servy.Core.UnitTests.Helpers
 
         [Theory]
         [InlineData("", "")]
-        [InlineData("dep1;dep2;dep3", "dep1\r\ndep2\r\ndep3")]
         [InlineData("singleDep", "singleDep")]
-        public void FormatServiceDependencies_ShouldReplaceSemicolonWithNewLine(string input, string expected)
+        [InlineData("dep1;dep2;dep3", "dep1|dep2|dep3")] // Use a temporary pipe delimiter for tokenization
+        public void FormatServiceDependencies_ShouldReplaceSemicolonWithNewLine(string input, string expectedTemplate)
         {
+            // Arrange
+            // Dynamically construct the cross-platform expected string if the token template is detected
+            string expected = expectedTemplate.Contains("|")
+                ? expectedTemplate.Replace("|", Environment.NewLine)
+                : expectedTemplate;
+
+            // Act
             var result = StringHelper.FormatServiceDependencies(input);
+
+            // Assert
             Assert.Equal(expected, result);
         }
 

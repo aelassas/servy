@@ -53,6 +53,8 @@ namespace Servy.Core.UnitTests.Helpers
 
         [Theory]
         [InlineData(null, true, true)]
+        [InlineData("", true, true)]
+        [InlineData("", false, false)]
         [InlineData("   ", false, false)]
         public void ParseBool_NullOrWhitespace_ReturnsDefault(string input, bool @default, bool expected)
         {

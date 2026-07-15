@@ -1300,7 +1300,7 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Fact]
-        public void CheckRotation_WhenDisabledAndFileIsHuge_LogsWarningAndReturnsEarly()
+        public void CheckRotation_WhenDisabledAndFileIsHuge_DoesNotRotateAndDoesNotThrow()
         {
             // Arrange: Set limit to 10 bytes
             var filePath = Path.Combine(_testDir, "huge.log");
