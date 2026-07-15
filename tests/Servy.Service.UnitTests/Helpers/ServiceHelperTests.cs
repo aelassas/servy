@@ -14,6 +14,10 @@ using System.Threading;
 using Xunit;
 using ServiceHelper = Servy.Service.Helpers.ServiceHelper;
 
+#if !DEBUG
+using Servy.Core.Config;
+#endif
+
 namespace Servy.Service.UnitTests.Helpers
 {
     public class ServiceHelperTests
@@ -384,7 +388,15 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             var mockLog = new Mock<IServyLogger>();
-            var restarterPath = Path.Combine(GetBaseDirectory(), "Servy.Restarter.Net48.exe");
+            var restarterPath = Path.Combine(GetTargetRestarterDirectory(), "Servy.Restarter.Net48.exe");
+
+            // Safe guard: Ensure target sandbox directory exists (crucial for ProgramData on barebones CI servers)
+            var directory = Path.GetDirectoryName(restarterPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
             File.WriteAllText(restarterPath, "dummy");
 
             try
@@ -408,7 +420,15 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             var mockLog = new Mock<IServyLogger>();
-            var restarterPath = Path.Combine(GetBaseDirectory(), "Servy.Restarter.Net48.exe");
+            var restarterPath = Path.Combine(GetTargetRestarterDirectory(), "Servy.Restarter.Net48.exe");
+
+            // Safe guard: Ensure target sandbox directory exists
+            var directory = Path.GetDirectoryName(restarterPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
             File.WriteAllText(restarterPath, "dummy");
 
             var mockProcess = new Mock<Process>();
@@ -634,12 +654,16 @@ namespace Servy.Service.UnitTests.Helpers
 
         #region Helpers
 
-        private static string GetBaseDirectory()
+        private static string GetTargetRestarterDirectory()
         {
-            // ROBUSTNESS: Always output dummy test artifacts inside the isolated 
-            // unit-test output execution directory. Never target AppConfig.ProgramDataPath in 
-            // Release configurations to avoid clobbering production binaries.
+            // ROBUSTNESS: In Release configurations, the SUT expects the restarter binary 
+            // to be located in AppConfig.ProgramDataPath. In Debug, it expects BaseDirectory.
+            // We write the file directly where the compiled execution path expects it.
+#if DEBUG
             return AppDomain.CurrentDomain.BaseDirectory;
+#else
+            return AppConfig.ProgramDataPath;
+#endif
         }
 
         #endregion

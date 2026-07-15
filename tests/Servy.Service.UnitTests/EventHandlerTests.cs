@@ -56,7 +56,14 @@ namespace Servy.Service.UnitTests
             service.InvokeOnOutputDataReceived(null, emptyStringArgs);
 
             // Assert
+            // 1. Verify the non-empty line was written exactly once
             mockWriter.Verify(w => w.WriteLine("output line"), Times.Once);
+
+            // 2. Verify that blank lines (empty strings) are written to preserve log formatting
+            mockWriter.Verify(w => w.WriteLine(string.Empty), Times.Once);
+
+            // 3. Verify that the stream-end sentinel (null) is ignored completely
+            mockWriter.Verify(w => w.WriteLine(null), Times.Never);
         }
 
         [Fact]
@@ -83,13 +90,24 @@ namespace Servy.Service.UnitTests
 
             service.InvokeHandleLogWriters(startOptions);
 
+            // Symmetry Verification: Assert the private _stderrWriter field was populated via reflection
+            var stderrWriterValue = TestReflection.GetField<object>(service, "_stderrWriter");
+            Assert.NotNull(stderrWriterValue);
+
             // Act
             service.InvokeOnErrorDataReceived(null, nonEmptyArgs);
             service.InvokeOnErrorDataReceived(null, emptyArgs);
             service.InvokeOnErrorDataReceived(null, emptyStringArgs);
 
             // Assert
+            // 1. Verify the non-empty line was written exactly once
             mockWriter.Verify(w => w.WriteLine("error line"), Times.Once);
+
+            // 2. Verify that blank lines (empty strings) are written to preserve log formatting
+            mockWriter.Verify(w => w.WriteLine(string.Empty), Times.Once);
+
+            // 3. Verify that the stream-end sentinel (null) is ignored completely
+            mockWriter.Verify(w => w.WriteLine(null), Times.Never);
         }
 
         [Fact]

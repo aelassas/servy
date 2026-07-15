@@ -160,11 +160,11 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Act & Assert PriorityClass
                 wrapper.PriorityClass = ProcessPriorityClass.BelowNormal;
-                Assert.Equal(ProcessPriorityClass.BelowNormal, wrapper.PriorityClass);
+                Assert.Equal(ProcessPriorityClass.BelowNormal, wrapper.UnderlyingProcess.PriorityClass);
 
                 // Act & Assert EnableRaisingEvents
                 wrapper.EnableRaisingEvents = false;
-                Assert.False(wrapper.EnableRaisingEvents);
+                Assert.False(wrapper.UnderlyingProcess.EnableRaisingEvents);
 
                 // Cleanup
                 wrapper.Kill();
@@ -523,7 +523,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.BeginErrorReadLine();
 
                 bool processExited = wrapper.WaitForExit(TestTimeouts.ProcessWrapperProcessTimeoutMsGenerous);
-                wrapper.UnderlyingProcess.WaitForExit();
+                // Parameterless WaitForExit also waits for async output/error event handlers to drain;
+                // the timeout overload above does not.
+                wrapper.WaitForExit();
 
                 bool signalsReceived = WaitHandle.WaitAll(
                     new[] { outputFinished.WaitHandle, errorFinished.WaitHandle },

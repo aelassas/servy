@@ -20,25 +20,25 @@ namespace Servy.Service.UnitTests.Helpers
     [Collection("SequentialEnvTests")]
     public class EnvironmentVariableHelperTests : IDisposable
     {
-        // Tracks temporarily modified OS environment variables to restore them after each test
-        private readonly List<string> _modifiedOsVars = new List<string>();
+        // Tracks temporarily modified OS environment variables and their exact original value to restore them precisely after each test pass
+        private readonly Dictionary<string, string> _originalOsVars = new Dictionary<string, string>();
 
         public void Dispose()
         {
-            // Cleanup OS environment state to ensure pristine runs for subsequent tests
-            foreach (var varName in _modifiedOsVars)
+            // Cleanup OS environment state to ensure pristine, deterministic runs for subsequent tests
+            foreach (var kvp in _originalOsVars)
             {
-                Environment.SetEnvironmentVariable(varName, null);
+                Environment.SetEnvironmentVariable(kvp.Key, kvp.Value); // Supplying the original value (or null) safely restores state mutations
             }
         }
 
         private void SetTempOsVariable(string name, string value)
         {
-            Environment.SetEnvironmentVariable(name, value);
-            if (!_modifiedOsVars.Contains(name))
+            if (!_originalOsVars.ContainsKey(name))
             {
-                _modifiedOsVars.Add(name);
+                _originalOsVars[name] = Environment.GetEnvironmentVariable(name);
             }
+            Environment.SetEnvironmentVariable(name, value);
         }
 
         #region Input Guards & Null Handling
@@ -46,7 +46,7 @@ namespace Servy.Service.UnitTests.Helpers
         [Fact]
         public void ExpandEnvironmentVariables_NullList_ReturnsSystemVariables()
         {
-            // Act
+            // Arrange & Act
             var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(null);
 
             // Assert
