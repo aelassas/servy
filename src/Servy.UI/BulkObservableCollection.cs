@@ -81,9 +81,9 @@ namespace Servy.UI
         /// </summary>
         /// <param name="maxItems">The maximum number of items allowed in the collection.</param>
         /// <remarks>
-        /// In .NET Framework 4.8, the internal <see cref="ObservableCollection{T}.Items"/> collection is a 
-        /// <see cref="List{T}"/>. This method uses <see cref="List{T}.RemoveRange"/> for O(n) performance 
-        /// instead of O(n²) for multiple <see cref="Collection{T}.RemoveAt"/> calls.
+        /// On .NET (net10.0-windows), the internal <see cref="ObservableCollection{T}.Items"/> collection
+        /// is guaranteed to be a <see cref="List{T}"/>. This method uses <see cref="List{T}.RemoveRange"/> for O(n)
+        /// performance instead of O(n²) for repeated <see cref="Collection{T}.RemoveAt"/> calls.
         /// </remarks>
         public void TrimToSize(int maxItems)
         {
@@ -92,23 +92,15 @@ namespace Servy.UI
             int removeCount = Items.Count - maxItems;
             if (removeCount <= 0) return;
 
-            // Use a flag to ensure we only notify if we actually modified the collection
             bool wasModified = false;
 
             try
             {
+                // Items is guaranteed to be List<T> in ObservableCollection's implementation
                 if (Items is List<T> list)
                 {
                     list.RemoveRange(0, removeCount);
                     wasModified = true;
-                }
-                else
-                {
-                    for (int i = 0; i < removeCount; i++)
-                    {
-                        Items.RemoveAt(0);
-                        wasModified = true;
-                    }
                 }
             }
             finally
