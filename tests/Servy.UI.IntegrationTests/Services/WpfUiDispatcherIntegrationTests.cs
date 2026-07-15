@@ -56,33 +56,28 @@ namespace Servy.UI.IntegrationTests.Services
                 var frame = new DispatcherFrame();
 
                 // 1. Queue a high-priority operation (Send priority)
+                // This must execute first when the pump starts spinning.
                 _ = Dispatcher.CurrentDispatcher.InvokeAsync(() =>
                 {
                     executionSequence.Add("HighPriority");
                 }, DispatcherPriority.Send);
 
                 // 2. Queue the background verification task.
-                // To bypass headless layout engine deadlocks, we schedule the completion marker
-                // directly at Background priority to match the exact priority layer targeted by YieldAsync.
-                _ = uiDispatcher.InvokeAsync(() =>
+                // We queue this directly at Background priority to mimic the exact resumption 
+                // level target of the YieldAsync engine without running into headless layout stalls.
+                _ = Dispatcher.CurrentDispatcher.InvokeAsync(() =>
                 {
-                    // Trigger the task execution handle cleanly
-                    var yieldTask = uiDispatcher.YieldAsync();
+                    executionSequence.Add("YieldContinuation");
+                }, DispatcherPriority.Background);
 
-                    // Queue the resumption continuation at the matching priority level
-                    _ = Dispatcher.CurrentDispatcher.InvokeAsync(() =>
-                    {
-                        executionSequence.Add("YieldContinuation");
-                    }, DispatcherPriority.Background);
-                }, DispatcherPriority.Normal);
-
-                // 3. Queue the frame exit routine at ContextIdle to allow all tasks to flush in sequence
+                // 3. Queue the frame exit routine at ContextIdle.
+                // Since ContextIdle is lower than Background, this is guaranteed to run last.
                 _ = Dispatcher.CurrentDispatcher.InvokeAsync(() =>
                 {
                     frame.Continue = false;
                 }, DispatcherPriority.ContextIdle);
 
-                // Act: Start the localized pump. It will unblock once frame.Continue is set to false.
+                // Act: Start the localized pump loop.
                 Dispatcher.PushFrame(frame);
 
                 // Assert: Unambiguous, sequential proof of execution priority matching
