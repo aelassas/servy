@@ -74,12 +74,13 @@ namespace Servy.Service.UnitTests.StreamWriters
         public void WriteLine_WritesToStreamSuccessfully()
         {
             // Arrange
-            var adapter = CreateAdapter();
             string testLine = "Log message content";
 
             // Act
-            adapter.WriteLine(testLine);
-            adapter.Dispose(); // Ensure flush
+            using (var adapter = CreateAdapter())
+            {
+                adapter.WriteLine(testLine);
+            }
 
             // Assert
             Assert.True(File.Exists(_tempPath));
@@ -91,12 +92,13 @@ namespace Servy.Service.UnitTests.StreamWriters
         public void Write_WritesToStreamSuccessfully()
         {
             // Arrange
-            var adapter = CreateAdapter();
             string testText = "Partial text";
 
             // Act
-            adapter.Write(testText);
-            adapter.Dispose();
+            using (var adapter = CreateAdapter())
+            {
+                adapter.Write(testText);
+            }
 
             // Assert
             Assert.True(File.Exists(_tempPath));

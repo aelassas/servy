@@ -4,6 +4,7 @@ using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Infrastructure.Helpers;
+using Servy.Testing;
 using Servy.UI.Bootstrapping;
 using System;
 using System.IO;
@@ -27,6 +28,7 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
 
         public AppBootstrapperIntegrationTests()
         {
+            // Arrange
             _testDir = Path.Combine(Path.GetTempPath(), $"ServyBootstrapperTests_{Guid.NewGuid():N}");
             Directory.CreateDirectory(_testDir);
 
@@ -53,13 +55,29 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
             Logger.Shutdown();
 
             // Intercept Win32 dialog triggers completely inside headless loops
-            SetStaticBooleanMock(typeof(MessageBox), "_bypassAndReturnOk", true);
+            // Instead of non-existent native MessageBox fields, configure the actual headless manager class
+            var headlessType = Type.GetType("Servy.UI.Services.UiHeadless, Servy.UI")
+                               ?? Type.GetType("Servy.UI.UiHeadless, Servy.UI");
+
+            if (headlessType != null)
+            {
+                TestReflection.SetFieldStatic(headlessType, "<IsEnabled>k__BackingField", true);
+            }
         }
 
         public void Dispose()
         {
+            // Arrange
             Logger.Shutdown();
-            ResetStaticField(typeof(MessageBox), "_bypassAndReturnOk");
+
+            // Clean up headless state
+            var headlessType = Type.GetType("Servy.UI.Services.UiHeadless, Servy.UI")
+                               ?? Type.GetType("Servy.UI.UiHeadless, Servy.UI");
+
+            if (headlessType != null)
+            {
+                TestReflection.SetFieldStatic(headlessType, "<IsEnabled>k__BackingField", false);
+            }
 
             try
             {
@@ -81,12 +99,14 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
         [Fact]
         public void Constructor_NullOptions_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => new AppBootstrapper(null, _mockProcessKiller.Object));
         }
 
         [Fact]
         public void Constructor_NullProcessKiller_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => new AppBootstrapper(_options, null));
         }
 
@@ -100,24 +120,30 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
             // Execute inside the managed thread context message loop to stay decoupled from external race states
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 var app = Helper.EnsureApplication();
                 var bootstrapper = new AppBootstrapper(_options, _mockProcessKiller.Object);
 
-                SetStaticBooleanMock(typeof(SecurityHelper), "_isAdministratorMockValue", true);
-                SetStaticBooleanMock(typeof(DatabaseValidator), "_isSqliteVersionSafeMockValue", true);
+                // Use TrySetStaticField to safely intercept environmental checks only if the assemblies contain mock seams.
+                // Otherwise, it safely proceeds, relying on local machine administrative states during execution.
+                bool hasAdminMock = TrySetStaticField(typeof(SecurityHelper), "_isAdministratorMockValue", true);
+                bool hasSqliteMock = TrySetStaticField(typeof(DatabaseValidator), "_isSqliteVersionSafeMockValue", true);
 
                 try
                 {
                     var startupArgs = CreateStartupEventArgs(new[] { AppConfig.ForceSoftwareRenderingArg });
+
+                    // Act
                     bool proceed = bootstrapper.OnStartup(app, startupArgs);
 
+                    // Assert
                     Assert.True(proceed);
                     Assert.True(bootstrapper.ForceSoftwareRendering);
                 }
                 finally
                 {
-                    ResetStaticField(typeof(SecurityHelper), "_isAdministratorMockValue");
-                    ResetStaticField(typeof(DatabaseValidator), "_isSqliteVersionSafeMockValue");
+                    if (hasAdminMock) TestReflection.SetFieldStatic(typeof(SecurityHelper), "_isAdministratorMockValue", false);
+                    if (hasSqliteMock) TestReflection.SetFieldStatic(typeof(DatabaseValidator), "_isSqliteVersionSafeMockValue", false);
                 }
 
                 await Task.CompletedTask;
@@ -130,26 +156,42 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
 
         private StartupEventArgs CreateStartupEventArgs(string[] args)
         {
+            // 1. Target the internal parameterless constructor used by the WPF runtime lifecycle
             var ctor = typeof(StartupEventArgs).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
+            if (ctor == null)
+            {
+                throw new InvalidOperationException("Failed to locate the internal parameterless constructor for StartupEventArgs.");
+            }
+
             var startupEventArgs = (StartupEventArgs)ctor.Invoke(null);
-            var backingField = typeof(StartupEventArgs).GetField("_args", BindingFlags.NonPublic | BindingFlags.Instance);
-            backingField?.SetValue(startupEventArgs, args);
+
+            // 2. Inject your custom test arguments directly into the private backing field using TestReflection
+            try
+            {
+                TestReflection.SetField(startupEventArgs, "_args", args);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidOperationException("Failed to locate private backing field '_args' inside StartupEventArgs.", ex);
+            }
+
             return startupEventArgs;
         }
 
-        private void SetStaticBooleanMock(Type targetType, string fieldName, bool value)
+        /// <summary>
+        /// Attempts to configure a static boolean field, returning false instead of crashing if the target field is missing.
+        /// Useful for optional environment-dependent integration test configurations.
+        /// </summary>
+        private bool TrySetStaticField(Type targetType, string fieldName, bool value)
         {
-            var field = targetType.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Static);
-            field?.SetValue(null, value);
-        }
-
-        private void ResetStaticField(Type targetType, string fieldName)
-        {
-            var field = targetType.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Static);
-            if (field != null)
+            try
             {
-                if (field.FieldType == typeof(bool)) field.SetValue(null, false);
-                else if (field.FieldType == typeof(string)) field.SetValue(null, null);
+                TestReflection.SetFieldStatic(targetType, fieldName, value);
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                return false;
             }
         }
 

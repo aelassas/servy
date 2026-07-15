@@ -12,6 +12,7 @@ using Servy.Service.Validation;
 using Servy.Testing;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -502,7 +503,7 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
-        public void MakeFilenameSafe_Issue2069_TrailingVariationsProduceUniqueOutputs()
+        public void MakeFilenameSafe_TrailingVariationsProduceUniqueOutputs()
         {
             // Arrange: Inputs that would natively collide on Win32 filesystems due to trailing strip behaviors
             string nameBase = "MyService";
@@ -516,16 +517,14 @@ namespace Servy.Service.UnitTests
             string outDot = Service.MakeFilenameSafe(nameWithDot);
             string outSpaces = Service.MakeFilenameSafe(nameWithSpaces);
 
-            // Assert: Verify that despite trimming, appending original hashes isolates filenames completely
-            Assert.NotEqual(outBase, outSpace);
-            Assert.NotEqual(outBase, outDot);
-            Assert.NotEqual(outSpace, outDot);
-            Assert.NotEqual(outSpace, outSpaces);
+            var allOutputs = new[] { outBase, outSpace, outDot, outSpaces };
+
+            // Assert: Verify that despite trimming, appending original hashes isolates filenames completely.
+            // Grouping the collection ensures all 6 pairwise distinctness paths are fully checked.
+            Assert.Equal(allOutputs.Length, allOutputs.Distinct(StringComparer.Ordinal).Count());
 
             // All must preserve base readability prefixing
-            Assert.StartsWith("MyService_", outBase);
-            Assert.StartsWith("MyService_", outSpace);
-            Assert.StartsWith("MyService_", outDot);
+            Assert.All(allOutputs, output => Assert.StartsWith("MyService_", output));
         }
 
         [Theory]
@@ -533,7 +532,7 @@ namespace Servy.Service.UnitTests
         [InlineData("..")]
         [InlineData("...")]
         [InlineData(" \t. ")]
-        public void MakeFilenameSafe_Issue2069_PathTraversalAndEmptyTrimsAreNeutralized(string input)
+        public void MakeFilenameSafe_PathTraversalAndEmptyTrimsAreNeutralized(string input)
         {
             // Arrange & Act
             string result = Service.MakeFilenameSafe(input);
