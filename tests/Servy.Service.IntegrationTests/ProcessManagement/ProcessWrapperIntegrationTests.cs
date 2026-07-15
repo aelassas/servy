@@ -301,13 +301,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void Stop_GracefulShutdown_ReturnsTrue()
         {
             // Arrange
-            // Launch a console app that handles the CancelKeyPress (Ctrl+C) signal and exits cleanly.
+            // Launch a console app that handles the CancelKeyPress (Ctrl+C) signal and exits cleanly
             const string script = "[Console]::CancelKeyPress += { [Environment]::Exit(0) }; while($true) { Start-Sleep 1 }";
-
-            // CRITICAL: We MUST set createNoWindow: false.
-            // If set to true, the child process may share or inherit the runner's console handle, 
-            // causing AttachConsole() to fail with INVALID_HANDLE, which falls back to process.Kill() (returning false).
-            using (var wrapper = CreateWrapper("powershell.exe", $"-NoProfile -Command \"{script}\"", createNoWindow: false))
+            using (var wrapper = CreateWrapper("powershell.exe", $"-NoProfile -Command \"{script}\"", createNoWindow: true))
             {
                 wrapper.Start();
 
