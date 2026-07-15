@@ -11,7 +11,7 @@ namespace Servy.UI.IntegrationTests.Helpers
         [Fact]
         public async Task GetVisualChild_NoChildren_ReturnsNull()
         {
-            await Helper.RunOnSTA(async () =>
+            Helper.RunOnSTA(() =>
             {
                 // Branch: Loop i < GetChildrenCount (zero count)
                 var border = new Border();

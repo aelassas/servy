@@ -21,17 +21,44 @@ namespace Servy.UI.IntegrationTests.Services
             // Branch: Execute InvokeAsync at Background priority
             await Helper.RunOnSTA(async () =>
             {
-                var task = _uiDispatcher.YieldAsync();
+                // Arrange
+                // Instantiating WpfUiDispatcher inside the STA block captures this thread's Dispatcher.
+                var uiDispatcher = new WpfUiDispatcher();
+                bool backgroundJobRan = false;
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
 
-                // Assert: The task is created
-                Assert.NotNull(task);
+                // 1. Queue our background validation job.
+                // It must run before the Yield completes.
+                _ = uiDispatcher.InvokeAsync(() =>
+                {
+                    backgroundJobRan = true;
+                }, DispatcherPriority.Background);
 
-                // Act: Wait for the yield to complete
-                await task;
+                // 2. Queue the actual Yield operation under test.
+                // We run this inside the active message pump.
+                _ = uiDispatcher.InvokeAsync(async () =>
+                {
+                    try
+                    {
+                        // Act: Await the YieldAsync, which yields to the active queue.
+                        await uiDispatcher.YieldAsync();
 
-                // Assert: If we reach here, the Background priority action was executed 
-                // and the dispatcher processed it.
-                Assert.True(task.IsCompletedSuccessfully);
+                        // Assert: Once resumed, ensure the background job ran.
+                        Assert.True(backgroundJobRan, "The dispatcher did not pump queued Background messages before the Yield completed.");
+                    }
+                    finally
+                    {
+                        // 3. Gracefully terminate the STA thread's message pump to exit the test cleanly.
+                        currentDispatcher.InvokeShutdown();
+                    }
+                }, DispatcherPriority.Normal);
+
+                // Start the message pump. This runs synchronously on this STA thread, 
+                // processing all the queued InvokeAsync items above, and exits when InvokeShutdown is called.
+                Dispatcher.Run();
+
+                // Keep the task-returning runner happy
+                await Task.CompletedTask;
             });
         }
 

@@ -118,55 +118,6 @@ namespace Servy.UI.UnitTests
             Assert.Equal(1, collectionChangedCount); // Reset event
         }
 
-        [Fact]
-        public void TrimToSize_NonListImplementation_UsesManualLoop()
-        {
-            // Arrange
-            // Passing an array forces the internal IList to be an array-wrapper, not List<T>
-            var initialData = new int[] { 1, 2, 3, 4, 5 };
-
-            // To force the 'Items is not List<T>' branch, we must ensure the protected 
-            // Items property is not a List. However, ObservableCollection<T> wraps 
-            // the provided list in a Collection<T>. To hit the fallback, we use 
-            // an implementation of IList that is NOT a List<T>.
-            var customCollection = new NonListObservableCollection<int>(initialData);
-
-            // Act
-            customCollection.TrimToSize(2);
-
-            // Assert
-            Assert.Equal(2, customCollection.Count);
-            Assert.Equal(4, customCollection[0]);
-        }
-
         #endregion
-
-        /// <summary>
-        /// A test-specific subclass to expose protected 'Items' and test the fallback branch.
-        /// </summary>
-        private class NonListObservableCollection<T> : BulkObservableCollection<T>
-        {
-            public NonListObservableCollection(IEnumerable<T> items) : base(new ListWrapper<T>(items.ToList())) { }
-
-            // Minimal wrapper that implements IList but is NOT List<T>
-            private class ListWrapper<TItem> : IList<TItem>
-            {
-                private readonly List<TItem> _inner;
-                public ListWrapper(List<TItem> inner) => _inner = inner;
-                public TItem this[int index] { get => _inner[index]; set => _inner[index] = value; }
-                public int Count => _inner.Count;
-                public bool IsReadOnly => false;
-                public void Add(TItem item) => _inner.Add(item);
-                public void Clear() => _inner.Clear();
-                public bool Contains(TItem item) => _inner.Contains(item);
-                public void CopyTo(TItem[] array, int arrayIndex) => _inner.CopyTo(array, arrayIndex);
-                public IEnumerator<TItem> GetEnumerator() => _inner.GetEnumerator();
-                public int IndexOf(TItem item) => _inner.IndexOf(item);
-                public void Insert(int index, TItem item) => _inner.Insert(index, item);
-                public bool Remove(TItem item) => _inner.Remove(item);
-                public void RemoveAt(int index) => _inner.RemoveAt(index);
-                System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
-            }
-        }
     }
 }

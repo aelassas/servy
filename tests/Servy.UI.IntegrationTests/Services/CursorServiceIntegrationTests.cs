@@ -40,35 +40,36 @@ namespace Servy.UI.IntegrationTests.Services
 
         #region Branch: Background Thread (Dispatcher.CheckAccess == false)
 
-        [Fact(Skip = "Flaky on CI")]
+        [Fact]
         public async Task ResetCursor_FromBackgroundThread_InvokesOnDispatcher()
         {
-            // Use the persistent STA context instead of the synchronous RunInSTA
+            // Act and assert are wrapped in RunOnSTA to ensure we have a valid STA context
             await Helper.RunOnSTA(async () =>
             {
+                // Arrange
                 Helper.EnsureApplication();
                 Mouse.OverrideCursor = Cursors.Hand;
 
-                // The service should detect we are on a background thread 
-                // and use Dispatcher.InvokeAsync
+                // Act
+                // The service detects we are on a background thread and marshals the call
+                // to the dispatcher thread via Dispatcher.InvokeAsync
                 await Task.Run(() =>
                 {
                     _service.ResetCursor();
                 });
 
-                // Force the Dispatcher to process the Reset operation
-                // This flushes the queue up to 'Background' priority
-                int retries = 0, maxRetries = 10;
-                while (Mouse.OverrideCursor != null && retries < maxRetries)
-                {
-                    await Dispatcher.Yield(DispatcherPriority.Background);
-                    await Task.Delay(100); // Small delay to allow the UI thread to process
-                    retries++;
-                }
+                // Force the Dispatcher thread to process the Reset operation.
+                // Invoking an empty action at ApplicationIdle priority synchronously blocks
+                // until all higher-priority queued dispatcher messages (including InvokeAsync) are fully executed.
+                Dispatcher.CurrentDispatcher.Invoke(
+                    () => { },
+                    DispatcherPriority.ApplicationIdle);
 
-                // Verification: Since we are back on the STA thread after the await,
-                // we can check the cursor state immediately.
+                // Assert
+                // Since the dispatcher queue was completely flushed, the cursor state check is now deterministic.
                 Assert.Null(Mouse.OverrideCursor);
+
+                await Task.CompletedTask;
             });
         }
 
