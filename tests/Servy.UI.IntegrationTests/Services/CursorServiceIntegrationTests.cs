@@ -1,5 +1,6 @@
 ﻿using Servy.Testing;
 using Servy.UI.Services;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -60,12 +61,21 @@ namespace Servy.UI.IntegrationTests.Services
                     _service.ResetCursor();
                 });
 
-                // Force the Dispatcher thread to process the Reset operation.
-                // Invoking an empty action at ApplicationIdle priority synchronously blocks
-                // until all higher-priority queued dispatcher messages (including InvokeAsync) are fully executed.
-                Dispatcher.CurrentDispatcher.Invoke(
-                    () => { },
-                    DispatcherPriority.ApplicationIdle);
+                // Deterministically flush the Dispatcher message queue without blocking indefinitely on CI.
+                // We push a nested frame and post a callback at Background priority to close it.
+                // This forces the queue to pump everything prior to (and including) Background tasks, 
+                // then exit safely without waiting for ApplicationIdle states.
+                var frame = new DispatcherFrame();
+                _ = Dispatcher.CurrentDispatcher.BeginInvoke(
+                    DispatcherPriority.Background,
+                    new SendOrPostCallback(state =>
+                    {
+                        ((DispatcherFrame)state).Continue = false;
+                    }),
+                    frame);
+
+                // Run the local pump on this thread until the background frame exit is processed.
+                Dispatcher.PushFrame(frame);
 
                 // Assert
                 // Since the dispatcher queue was completely flushed, the cursor state check is now deterministic.
