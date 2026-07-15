@@ -2,19 +2,21 @@
 
 Whenever I needed to run an app as a Windows service, I usually relied on tools like `sc.exe`, NSSM, or WinSW. They get the job done, but in real projects, their limitations quickly became frustrating.
 
-`sc.exe` only works with applications that are specifically designed to run as Windows services. NSSM is lightweight, but it doesn't offer monitoring, health checks, hooks, or a fully-featured user interface. WinSW is configurable, but it's XML-based, not very user-friendly for quick setups, and does not provide a UI.
+`sc.exe` only works with applications specifically compiled to run as Windows services. NSSM is lightweight, but it doesn't offer monitoring, health checks, hooks, or a fully-featured user interface, and hasn't seen a stable update in over a decade. WinSW is configurable, but it's XML-based, not very user-friendly for quick setups, and does not provide a UI.
 
 After running into these issues too many times, I decided to build my own tool.
 
-I wanted a solution that was easy to use, with a clean desktop app, but also scriptable through CLI and PowerShell for automation and CI/CD pipelines. It needed to be flexible enough to run any type of app (Node.js, Python, Go, .NET, scripts, and more). It also had to be robust, with built-in logging, health checks, recovery options, pre-launch and post-launch hooks, pre-stop and post-stop hooks, CPU and RAM monitoring, live stdout/stderr streaming, service dependencies visualization, and restart policies. Finally, it had to work across a wide range of Windows versions, from Windows 7 SP1 to Windows 11, including Server editions.
+I wanted a solution that was easy to use, with a clean desktop app, but also scriptable through CLI and PowerShell for automation and CI/CD pipelines. It needed to be flexible enough to run any type of app (Node.js, Python, Go, .NET, scripts, and more). It also had to be robust, with built-in logging, health checks, recovery options, pre-launch and post-launch hooks, pre-stop and post-stop hooks, CPU and RAM monitoring, live stdout/stderr streaming, service dependencies visualization, and restart policies. Finally, it had to work across a wide range of Windows versions, from Windows 7 SP1 to Windows 11, including Windows Server editions.
 
 The result is Servy, a tool that lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, hooks, and parameters. It is designed to be a full-featured alternative to NSSM, WinSW, and FireDaemon Pro.
 
 Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for easily monitoring and managing all installed services in real time.
 
-If you've ever struggled with the limitations of the built-in `sc.exe` tool or found NSSM lacking in features or UI, Servy might be exactly what you need. It solves a common limitation of Windows services by allowing you to set a custom working directory. The built-in `sc.exe` tool only works with applications specifically designed to run as Windows services and always uses `C:\Windows\System32` with no way to change it. This completely breaks modern applications (like Node.js or Python scripts) that rely on relative paths, local configurations, or local assets. Servy lets you run any app as a service and define the startup directory explicitly, ensuring it behaves exactly as if launched from a shortcut or command prompt.
+If you've ever struggled with the limitations of the built-in `sc.exe` tool or found NSSM lacking in features or UI, Servy might be exactly what you need. It solves a common limitation of Windows services by allowing you to set a custom working directory. The built-in `sc.exe` tool only works with applications specifically designed to run as Windows services and always uses `C:\Windows\System32` as the working directory with no way to change it. This completely breaks modern applications (like Node.js or Python scripts) that rely on relative paths, local configurations, or local assets. Servy lets you run any app as a service and define the startup directory explicitly, ensuring it behaves exactly as if launched from a shortcut or command prompt.
 
 Servy continuously monitors your app, restarting it automatically if it crashes, hangs, or stops. It is perfect for keeping non-service apps running in the background and ensuring they start automatically at system boot, even before logon, without rewriting them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
+
+A service wrapper is not just a starter script. In production, it is the heartbeat of your application. If your wrapper cannot handle graceful signal propagation or proper process cleanup, you risk leaked resources and orphaned processes that manual reboots cannot always fix. Servy is engineered to eliminate these vulnerabilities. By delivering live streaming output and real-time resource metrics (CPU/RAM), it ensures you can isolate and resolve critical issues in seconds rather than spending hours debugging in the dark.
 
 ## Points of Interest
 
@@ -33,5 +35,11 @@ Most of Servy's automation is powered by GitHub Actions, which runs automaticall
 The digital signing integration took some time and effort to set up, as it required writing the entire build pipeline to automate code signing using SignPath and GitHub Actions but it was a critical step to ensure that the final binaries and installers are verified, trusted, and safe for production environments. For reference, here are the build pipelines:
 * `main` branch: [publish.yml](https://github.com/aelassas/servy/blob/main/.github/workflows/publish.yml)
 * `net48` branch: [publish.yml](https://github.com/aelassas/servy/blob/net48/.github/workflows/publish.yml)
+
+Thanks to [SignPath](https://signpath.io/?utm_source=foundation&utm_medium=github&utm_campaign=servy) for providing a free code signing service, and to the [SignPath Foundation](https://signpath.org/?utm_source=foundation&utm_medium=github&utm_campaign=servy) for supplying a free code signing certificate.
+
+Thanks to [JetBrains](https://www.jetbrains.com/) for providing an [open-source license](https://www.jetbrains.com/community/opensource/) for their tools. Their software made it much easier to profile, debug, and optimize Servy, helping improve its performance and stability. Having access to these professional tools really made a difference during development and saved a lot of time.
+
+Once again, special thanks to everyone who tested Servy, reported issues, and suggested improvements on GitHub and Reddit. Your feedback and contributions have shaped the project and improved it with every release.
 
 That's it! I hope Servy saves you the troubleshooting time it was built to solve. If you end up using it in your own projects, feedback and contributions are always welcome.
