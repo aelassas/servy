@@ -498,7 +498,7 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
-        public void MakeFilenameSafe_Issue2069_TrailingVariationsProduceUniqueOutputs()
+        public void MakeFilenameSafe_TrailingVariationsProduceUniqueOutputs()
         {
             // Arrange: Inputs that would natively collide on Win32 filesystems due to trailing strip behaviors
             string nameBase = "MyService";
@@ -529,7 +529,7 @@ namespace Servy.Service.UnitTests
         [InlineData("..")]
         [InlineData("...")]
         [InlineData(" \t. ")]
-        public void MakeFilenameSafe_Issue2069_PathTraversalAndEmptyTrimsAreNeutralized(string input)
+        public void MakeFilenameSafe_PathTraversalAndEmptyTrimsAreNeutralized(string input)
         {
             // Arrange & Act
             string result = Service.MakeFilenameSafe(input);

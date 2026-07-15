@@ -18,19 +18,18 @@ namespace Servy.Service.UnitTests.StreamWriters
             int maxRotations = 3;
             bool useLocalTime = true;
 
-            // Act
-            var result = factory.Create(
+            // Act & Assert
+            using (var result = factory.Create(
                 path,
                 enableSizeRotation,
                 rotationSizeInBytes,
                 enableDateRotation,
                 dateRotationType,
                 maxRotations,
-                useLocalTime);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.IsType<RotatingStreamWriterAdapter>(result);
+                useLocalTime))
+            {
+                Assert.IsType<RotatingStreamWriterAdapter>(result);
+            }
         }
     }
 }
