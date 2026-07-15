@@ -5,6 +5,7 @@ using Servy.Core.Validation;
 using Servy.UI.Services;
 using Servy.Validation;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -35,7 +36,7 @@ namespace Servy.UnitTests.Validation
         [Fact]
         public async Task Validate_NullDto_ReturnsFalse()
         {
-            var result = await _validator.ValidateAsync(null);
+            var result = await _validator.ValidateAsync(null, cancellationToken: CancellationToken.None);
             Assert.False(result);
             _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
@@ -48,7 +49,7 @@ namespace Servy.UnitTests.Validation
                                         // This relies on the actual logic within ServiceValidationRules.Validate
 
             // Act
-            var result = await _validator.ValidateAsync(dto);
+            var result = await _validator.ValidateAsync(dto, cancellationToken: CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -64,7 +65,47 @@ namespace Servy.UnitTests.Validation
             _mockProcessHelper.Setup(p => p.ValidatePath(dto.ExecutablePath, true)).Returns(true);
 
             // Act
-            var result = await _validator.ValidateAsync(dto);
+            var result = await _validator.ValidateAsync(dto, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ValidateAsync_PasswordMismatch_ShowsErrorAndReturnsFalse()
+        {
+            // Arrange
+            var dto = new ServiceDto
+            {
+                Name = "ValidService",
+                ExecutablePath = @"C:\ValidService.exe",
+                RunAsLocalSystem = false,
+                Password = "Password123"
+            };
+
+            _mockProcessHelper.Setup(p => p.ValidatePath(dto.ExecutablePath, true)).Returns(true);
+
+            // Act: Pass a confirmPassword parameter that explicitly mismatches the target DTO secret string
+            var result = await _validator.ValidateAsync(dto, confirmPassword: "DifferentPassword", cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.False(result);
+            _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ValidateAsync_WithExplicitWrapperExePath_EvaluatesRulesAndReturnsTrue()
+        {
+            // Arrange
+            var dto = new ServiceDto { Name = "ValidService", ExecutablePath = @"C:\ValidService.exe", RunAsLocalSystem = true };
+            string wrapperExePath = @"C:\Servy\Servy.Service.exe";
+
+            _mockProcessHelper.Setup(p => p.ValidatePath(dto.ExecutablePath, true)).Returns(true);
+            _mockProcessHelper.Setup(p => p.ValidatePath(wrapperExePath, true)).Returns(true);
+
+            // Act: Exercise forwarding boundary loops by explicitly passing both wrapper paths and identical password structures
+            var result = await _validator.ValidateAsync(dto, wrapperExePath: wrapperExePath, confirmPassword: null, cancellationToken: CancellationToken.None);
 
             // Assert
             Assert.True(result);

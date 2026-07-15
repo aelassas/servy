@@ -28,9 +28,6 @@ namespace Servy.UI.UnitTests.Design
             // Act
             var helper = new DesignTimeProcessHelper();
 
-            // Assert: Verify the object is created successfully
-            Assert.NotNull(helper);
-
             // Assert: Verify it inherits from the base ProcessHelper
             Assert.IsAssignableFrom<ProcessHelper>(helper);
         }

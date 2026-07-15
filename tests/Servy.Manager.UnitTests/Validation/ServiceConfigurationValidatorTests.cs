@@ -47,28 +47,33 @@ namespace Servy.Manager.UnitTests.Validation
 
         #region Validate Tests
 
-        [Fact]
-        public async Task Validate_WhenConfigurationIsValid_ReturnsTrueAndDoesNotShowMessage()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task Validate_WhenConfigurationIsValid_ReturnsTrueAndDoesNotShowMessage(bool importMode)
         {
             // Arrange
             var dto = new ServiceDto();
             var validResult = new ValidationResult();
 
             _validationRulesMock
-                .Setup(r => r.Validate(dto, null, null, false))
+                .Setup(r => r.Validate(dto, null, null, importMode))
                 .Returns(validResult);
 
             // Act
-            var result = await _validator.ValidateAsync(dto, cancellationToken: CancellationToken.None);
+            var result = await _validator.ValidateAsync(dto, importMode: importMode, cancellationToken: CancellationToken.None);
 
             // Assert
             Assert.True(result);
+            _validationRulesMock.Verify(r => r.Validate(dto, null, null, importMode), Times.Once);
             _messageBoxServiceMock.Verify(m =>
                 m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
-        [Fact]
-        public async Task Validate_WhenConfigurationIsInvalid_ShowsErrorAndReturnsFalse()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task Validate_WhenConfigurationIsInvalid_ShowsErrorAndReturnsFalse(bool importMode)
         {
             // Arrange
             var dto = new ServiceDto();
@@ -78,14 +83,15 @@ namespace Servy.Manager.UnitTests.Validation
             invalidResult.Errors.Add("Second error that should be ignored");
 
             _validationRulesMock
-                .Setup(r => r.Validate(dto, null, null, false))
+                .Setup(r => r.Validate(dto, null, null, importMode))
                 .Returns(invalidResult);
 
             // Act
-            var result = await _validator.ValidateAsync(dto, cancellationToken: CancellationToken.None);
+            var result = await _validator.ValidateAsync(dto, importMode: importMode, cancellationToken: CancellationToken.None);
 
             // Assert
             Assert.False(result);
+            _validationRulesMock.Verify(r => r.Validate(dto, null, null, importMode), Times.Once);
 
             // Verify message box was shown with the FIRST error only
             _messageBoxServiceMock.Verify(m =>

@@ -347,26 +347,28 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         [Theory]
-        [InlineData("KEY=Line1\\\nLine2", "KEY")]
-        [InlineData("KEY=Line1\\\rLine2", "KEY")]
-        [InlineData("KEY=Line1\\\r\\\nLine2", "KEY")]
-        public void Parse_ValueContainsForbiddenNewline_ThrowsFormatException(string input, string expectedKeyInMessage)
+        [InlineData("KEY=Line1\\\nLine2")]
+        [InlineData("KEY=Line1\\\rLine2")]
+        [InlineData("KEY=Line1\\\r\\\nLine2")]
+        public void Parse_ValueContainsForbiddenNewline_ThrowsFormatException(string input)
         {
             // Arrange & Act
+            const string key = "KEY";
             var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
 
             // Assert
-            Assert.Contains($"Environment variable '{expectedKeyInMessage}' contains a forbidden newline character", ex.Message);
+            Assert.Contains($"Environment variable '{key}' contains a forbidden newline character", ex.Message);
             Assert.Contains("Multi-line values are not supported", ex.Message);
         }
 
         [Theory]
-        [InlineData("KEY=Line1\nLine2", "Line2")]
-        [InlineData("KEY=Line1\rLine2", "Line2")]
-        [InlineData("KEY=Line1\r\nLine2", "Line2")]
-        public void Parse_UnquotedRawNewline_ThrowsStructuralFormatException(string input, string expectedFragmentInMessage)
+        [InlineData("KEY=Line1\nLine2")]
+        [InlineData("KEY=Line1\rLine2")]
+        [InlineData("KEY=Line1\r\nLine2")]
+        public void Parse_UnquotedRawNewline_ThrowsStructuralFormatException(string input)
         {
             // Arrange & Act
+            const string expectedFragmentInMessage = "Line2";
             var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
 
             // Assert
