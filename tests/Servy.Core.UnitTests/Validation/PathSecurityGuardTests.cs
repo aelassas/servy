@@ -51,21 +51,19 @@ namespace Servy.Core.UnitTests.Validation
         public void ValidatePath_ReservedDeviceName_ReturnsFail(string fileName, FileMode mode, FileAccess access, FileShare share)
         {
             // Arrange
-            // Dynamically fetch the absolute root drive of the current workspace execution directory (e.g., "C:\")
-            string driveRoot = Path.GetPathRoot(Directory.GetCurrentDirectory()) ?? "C:\\";
-
-            // Combine to build a hardcoded absolute local disk path context (e.g., "C:\CON.json")
-            string secureLocalPath = Path.Combine(driveRoot, fileName);
+            // Theory parameterized inputs act as the structural payloads
 
             // Act
-            var result = PathSecurityGuard.ValidatePath(secureLocalPath, mode, access, share, out var stream);
+            var result = PathSecurityGuard.ValidatePath(fileName, mode, access, share, out var stream);
 
             // Assert
             Assert.False(result.IsValid);
             Assert.NotNull(result.ErrorMessage);
             Assert.Null(stream);
 
-            // Pin validation strictly back down to the local DOS-device name payload interceptor
+            // Narrow validation strictly down to the DOS-device-name guard checkpoint context.
+            // We strip out the lax 'hitUncGuard' fallback condition completely, ensuring that local device
+            // bypasses are explicitly intercepted by the localized device restriction engine.
             bool hitDosGuard = result.ErrorMessage.IndexOf(Path.GetFileNameWithoutExtension(fileName), StringComparison.OrdinalIgnoreCase) >= 0;
 
             Assert.True(hitDosGuard,
