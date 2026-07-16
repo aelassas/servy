@@ -185,7 +185,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task SearchServicesAsync_GenericExceptionThrown_LogsErrorAndCleansUpState()
+        public async Task SearchServicesAsync_GenericExceptionThrown_CleansUpState()
         {
             // Arrange
             _serviceCommandsMock

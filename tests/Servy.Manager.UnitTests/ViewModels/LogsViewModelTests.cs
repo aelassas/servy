@@ -420,7 +420,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task SearchCommand_ServiceThrowsException_LogsFaultContextAndRestoresCursorState()
+        public async Task SearchCommand_ServiceThrowsException_RestoresCursorState()
         {
             await Helper.RunOnSTA(async () =>
             {
