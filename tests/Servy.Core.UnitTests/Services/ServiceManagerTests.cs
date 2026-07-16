@@ -2185,14 +2185,15 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Theory]
-        [InlineData(ServiceControllerStatus.Stopped, Enums.ServiceStatus.Stopped)]
-        [InlineData(ServiceControllerStatus.Paused, Enums.ServiceStatus.Paused)]
-        [InlineData(ServiceControllerStatus.StartPending, Enums.ServiceStatus.StartPending)]
-        [InlineData(ServiceControllerStatus.StopPending, Enums.ServiceStatus.StopPending)]
-        [InlineData(ServiceControllerStatus.PausePending, Enums.ServiceStatus.PausePending)]
-        [InlineData(ServiceControllerStatus.ContinuePending, Enums.ServiceStatus.ContinuePending)]
-        [InlineData((ServiceControllerStatus)999, Enums.ServiceStatus.None)] // Covers 'default'
-        public void GetAllServices_ShouldMapAllStatuses(ServiceControllerStatus native, Enums.ServiceStatus expected)
+        [InlineData(ServiceControllerStatus.Running, ServiceStatus.Running)]
+        [InlineData(ServiceControllerStatus.Stopped, ServiceStatus.Stopped)]
+        [InlineData(ServiceControllerStatus.Paused, ServiceStatus.Paused)]
+        [InlineData(ServiceControllerStatus.StartPending, ServiceStatus.StartPending)]
+        [InlineData(ServiceControllerStatus.StopPending, ServiceStatus.StopPending)]
+        [InlineData(ServiceControllerStatus.PausePending, ServiceStatus.PausePending)]
+        [InlineData(ServiceControllerStatus.ContinuePending, ServiceStatus.ContinuePending)]
+        [InlineData((ServiceControllerStatus)999, ServiceStatus.None)] // Covers 'default'
+        public void GetAllServices_ShouldMapAllStatuses(ServiceControllerStatus native, ServiceStatus expected)
         {
             // Arrange
             var mockSvc = new Mock<IServiceControllerWrapper>();

@@ -136,10 +136,13 @@ namespace Servy.Core.UnitTests.Services
             // Act: At least one system filter is explicitly provided (Level)
             await service.SearchAsync(EventLogLevel.Error, null, null, null, CancellationToken.None);
 
-            // Assert: Verify the false branch of the ternary operator
+            // Assert: Verify the system query string construction
             Assert.NotNull(capturedQuery);
             Assert.StartsWith("*[System[", capturedQuery);
-            Assert.Contains("Level=2", capturedQuery); // 2 == Error
+
+            // Assert the full composite clause to verify that both Critical (1) and Error (2) levels are queried.
+            Assert.Contains("(Level=1 or Level=2)", capturedQuery);
+
             Assert.EndsWith("]]", capturedQuery);
         }
 

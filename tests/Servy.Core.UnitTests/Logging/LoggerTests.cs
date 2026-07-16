@@ -252,12 +252,16 @@ namespace Servy.Core.UnitTests.Logging
                 // 1. Verify exception unrolling and string replacement patterns work
                 Assert.Contains("Outer fail ; Multiline", content);
                 Assert.Contains(" [Inner -> InvalidOperationException: Inner fail", content);
-                Assert.Contains("]", content); // Closing brackets
 
                 // 2. Isolate the exact formatted exception segment text block
                 Assert.Contains("Exception test", content);
                 int exceptionMessageIndex = content.IndexOf("Exception test", StringComparison.Ordinal);
                 string exceptionSegment = content.Substring(exceptionMessageIndex).TrimEnd();
+
+                // Verify bracket matching directly on the isolated exception block.
+                // Since there is one level of inner exceptions nested here, the segment must end 
+                // with a single closed bracket matching the "[Inner -> " opening block.
+                Assert.EndsWith("]", exceptionSegment);
 
                 // 3. Confirm that the isolated exception text contains zero raw line breaks
                 Assert.DoesNotContain("\r", exceptionSegment);
@@ -367,9 +371,15 @@ namespace Servy.Core.UnitTests.Logging
             // The inner exception segment now correctly closes the inner context boundary without stray characters
             Assert.Contains("[Inner -> TypeLoadException: Could not load assembly Servy.Service]", content);
 
-            // 3. Structural validation: Verify brackets balance correctly for a single inner element match
-            // The string must now terminate with a balanced single bracket block
-            Assert.Contains("TypeLoadException: Could not load assembly Servy.Service]", content);
+            // 3. Structural validation - Verify bracket balancing on the isolated exception block.
+            // Isolate the formatted exception text block after our log message
+            Assert.Contains("Reflection execution pass", content);
+            int exceptionMessageIndex = content.IndexOf("Reflection execution pass", StringComparison.Ordinal);
+            string exceptionSegment = content.Substring(exceptionMessageIndex).TrimEnd();
+
+            // Since there is exactly one level of nested loader exceptions, the segment must 
+            // end with a single closed bracket matching the "[Inner -> " opening context block.
+            Assert.EndsWith("]", exceptionSegment);
         }
 
         [Fact]
