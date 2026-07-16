@@ -1719,7 +1719,7 @@ namespace Servy.Core.UnitTests.Services
         {
             _mockController.Setup(c => c.Status).Throws<InvalidOperationException>();
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new ServiceDto { Name = "TestService", StopTimeout = 10 });
+                .ReturnsAsync(new ServiceDto { Name = "TestService", StartTimeout = 10 });
 
             var result = await _serviceManager.StartServiceAsync("TestService", cancellationToken: TestContext.Current.CancellationToken);
 

@@ -135,6 +135,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.NotNull(xmlResult);
 
             // Check that it contains indented properties and tags
+            Assert.Contains(Environment.NewLine + "  <Name>", xmlResult); // newline + indentation before child elements
             Assert.Contains("<Name>XmlSerializationService</Name>", xmlResult);
             Assert.Contains("<StartTimeout>30</StartTimeout>", xmlResult);
 
