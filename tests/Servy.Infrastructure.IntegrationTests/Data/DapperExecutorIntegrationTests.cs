@@ -260,6 +260,16 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         #region Asynchronous Pipeline Integration Tests
 
         [Fact]
+        public async Task AsynchronousMethods_NullSql_ThrowsArgumentNullException()
+        {
+            // Arrange & Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _executor.ExecuteAsync(null, cancellationToken: CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _executor.ExecuteScalarAsync<int>(null, cancellationToken: CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _executor.QueryAsync<dynamic>(null, cancellationToken: CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _executor.QueryFirstOrDefaultAsync<dynamic>(null, cancellationToken: CancellationToken.None));
+        }
+
+        [Fact]
         public async Task Asynchronous_ExecuteAndScalarAsync_MutatesStateAsynchronously()
         {
             // Act
@@ -308,6 +318,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 {
                     await _executor.ExecuteAsync("DELETE FROM TestServices;", cancellationToken: cts.Token);
                 });
+
+                // The cancelled call must not have mutated state
+                long remaining = _executor.ExecuteScalar<long>("SELECT COUNT(*) FROM TestServices;");
+                Assert.Equal(2, remaining);
             }
         }
 

@@ -151,6 +151,7 @@ namespace Servy.Core.UnitTests.Validation
             var result = PathSecurityGuard.ValidatePath(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, out var stream);
 
             // Assert
+            Assert.NotNull(result.ErrorMessage);
             Assert.False(result.IsValid);
             Assert.Null(stream);
         }
