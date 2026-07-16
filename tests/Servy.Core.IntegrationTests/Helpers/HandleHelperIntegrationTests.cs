@@ -192,7 +192,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         }
 
         [Fact]
-        public void GetProcessesUsingFile_ShouldRespectAsyncTimeout()
+        public void GetProcessesUsingFile_NormalExecution_CompletesWell_UnderTimeout()
         {
             // Arrange
             string testFile = CreateTempFile();
