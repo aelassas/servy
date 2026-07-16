@@ -136,7 +136,7 @@ namespace Servy.CLI.UnitTests.Validation
         }
 
         [Fact]
-        public void Validate_AllChecksPass_LogsTelemetryAndReturnsOkResult()
+        public void Validate_AllChecksPass_ReturnsOkResult()
         {
             // Arrange
             var opts = CreateValidOptions();

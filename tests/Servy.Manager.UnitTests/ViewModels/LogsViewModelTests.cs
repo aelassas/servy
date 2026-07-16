@@ -403,6 +403,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Assert - Verify that the original token was forced into a cancelled state immediately
                     Assert.True(firstCtsInstance.IsCancellationRequested, "The previous CancellationTokenSource was not cancelled by the subsequent search.");
+                    Assert.Throws<ObjectDisposedException>(() => _ = firstCtsInstance.Token);
 
                     // 4. Tear down task blocks cleanly
                     firstSearchTcs.TrySetResult(Array.Empty<ServyEventLogEntry>());

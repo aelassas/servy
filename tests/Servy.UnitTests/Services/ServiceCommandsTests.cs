@@ -604,7 +604,7 @@ namespace Servy.UnitTests.Services
         }
 
         [Fact]
-        public async Task ImportConfig_DomainValidationFails_LogsInfoAndAbortsBinding()
+        public async Task ImportConfig_DomainValidationFails_AbortsBinding()
         {
             // Arrange
             var sampleDto = new ServiceDto { Name = "InvalidDomainImport" };
