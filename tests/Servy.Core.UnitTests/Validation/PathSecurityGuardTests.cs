@@ -61,6 +61,8 @@ namespace Servy.Core.UnitTests.Validation
             Assert.NotNull(result.ErrorMessage);
             Assert.Null(stream);
 
+            // NOTE: On .NET Framework 4.8, OS path expansion forces reserved device names into the 
+            // NT namespace format (\\.\CON), causing them to hit the UNC protection gate first.
             bool hitDosGuard = result.ErrorMessage.IndexOf(Path.GetFileNameWithoutExtension(fileName), StringComparison.OrdinalIgnoreCase) >= 0;
             bool hitUncGuard = result.ErrorMessage.IndexOf("UNC paths", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                result.ErrorMessage.IndexOf("UNC destination", StringComparison.OrdinalIgnoreCase) >= 0;
