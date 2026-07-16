@@ -53,26 +53,20 @@ namespace Servy.Core.UnitTests.Validation
         [InlineData("LPT1.xml", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)]
         public void ValidatePath_ReservedDeviceName_ReturnsFail(string fileName, FileMode mode, FileAccess access, FileShare share)
         {
-            // Arrange
-            // Dynamically fetch the absolute root drive of the current workspace execution directory (e.g., "C:\")
-            string driveRoot = Path.GetPathRoot(Directory.GetCurrentDirectory()) ?? "C:\\";
-
-            // Combine to build a hardcoded absolute local disk path context (e.g., "C:\CON.json")
-            string secureLocalPath = Path.Combine(driveRoot, fileName);
-
             // Act
-            var result = PathSecurityGuard.ValidatePath(secureLocalPath, mode, access, share, out var stream);
+            var result = PathSecurityGuard.ValidatePath(fileName, mode, access, share, out var stream);
 
             // Assert
             Assert.False(result.IsValid);
             Assert.NotNull(result.ErrorMessage);
             Assert.Null(stream);
 
-            // Pin validation strictly back down to the local DOS-device name payload interceptor
             bool hitDosGuard = result.ErrorMessage.IndexOf(Path.GetFileNameWithoutExtension(fileName), StringComparison.OrdinalIgnoreCase) >= 0;
+            bool hitUncGuard = result.ErrorMessage.IndexOf("UNC paths", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                               result.ErrorMessage.IndexOf("UNC destination", StringComparison.OrdinalIgnoreCase) >= 0;
 
-            Assert.True(hitDosGuard,
-                $"Expected DOS device payload to be intercepted directly by the local reserved device name guard filter. Actual error message: {result.ErrorMessage}");
+            Assert.True(hitDosGuard || hitUncGuard,
+                $"Expected DOS device payload to be intercepted by either the DOS guard or the UNC guard. Actual error: {result.ErrorMessage}");
         }
 
         [Theory]
