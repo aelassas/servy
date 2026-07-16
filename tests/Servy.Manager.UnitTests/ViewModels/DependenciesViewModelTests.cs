@@ -212,8 +212,16 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel = CreateViewModel();
                         var mockService = new DependencyService { Name = "TestService" };
 
-                        // First assignment: Legritimately triggers the initial dependency load pipeline loop
+                        // First assignment: Legitimately triggers the initial dependency load pipeline loop
                         viewModel.SelectedService = mockService;
+
+                        // Wait briefly for the fire-and-forget first load to land on the mock layer
+                        const int maxPollAttempts = 50; // Up to 500ms max total wait time
+                        int attempts = 0;
+                        while (_mockServiceManager.Invocations.Count == 0 && attempts++ < maxPollAttempts)
+                        {
+                            Thread.Sleep(10);
+                        }
 
                         bool anyPropertyChangedFired = false;
                         viewModel.PropertyChanged += (s, e) => anyPropertyChangedFired = true;
@@ -227,9 +235,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                         Assert.False(anyPropertyChangedFired);
 
                         // 2. Verify the 'OrReload' optimization contract.
-                        // If the same-reference early return guard behaves properly, the backend repository 
-                        // round-trip should have been hit EXACTLY once during the first initialization. 
-                        // A count of 2 indicates that the redundant second reload leaked past the guard.
+                        // Since we verified that the initial load was registered by the polling loop above, 
+                        // a count of EXACTLY once proves that the redundant second assignment was cleanly ignored.
                         _mockServiceManager.Verify(m => m.GetDependencies("TestService", It.IsAny<CancellationToken>()), Times.Once);
                     }
                     finally
