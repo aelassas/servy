@@ -48,7 +48,9 @@ namespace Servy.Core.UnitTests.Validation
             // Arrange
             string filePath = Path.Combine(TempDirectory, "huge.json");
             using (var fs = new FileStream(filePath, FileMode.CreateNew))
+            {
                 fs.SetLength(AppConfig.MaxConfigFileSizeBytes + 1); // sparse, no real IO cost
+            }
 
             // Act
             var result = ImportGuard.ValidatePathSecurityAndSize(filePath, out string? content);
@@ -56,7 +58,9 @@ namespace Servy.Core.UnitTests.Validation
             // Assert
             Assert.False(result.IsValid);
             Assert.Null(content);
-            Assert.Equal(string.Format(Strings.Msg_ConfigSizeLimitReached, filePath), result.ErrorMessage);
+
+            string expectedMessage = string.Format(Strings.Msg_ConfigSizeLimitReached, filePath, AppConfig.MaxConfigFileSizeMB);
+            Assert.Equal(expectedMessage, result.ErrorMessage);
         }
     }
 }
