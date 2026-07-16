@@ -286,11 +286,11 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             int rowsAffected = await _executor.ExecuteAsync(
                 "UPDATE TestServices SET Status = 1 WHERE ServiceName = @Name;",
                 new { Name = "ServyWatcher" },
-                cancellationToken: CancellationToken.None);
+                cancellationToken: TestContext.Current.CancellationToken);
 
             long activeCount = await _executor.ExecuteScalarAsync<long>(
                 "SELECT COUNT(*) FROM TestServices WHERE Status = 1;",
-                cancellationToken: CancellationToken.None);
+                cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(1, rowsAffected);
@@ -303,12 +303,12 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Act
             var records = await _executor.QueryAsync<TestServiceDto>(
                 "SELECT * FROM TestServices;",
-                cancellationToken: CancellationToken.None);
+                cancellationToken: TestContext.Current.CancellationToken);
 
             var match = await _executor.QueryFirstOrDefaultAsync<TestServiceDto>(
                 "SELECT * FROM TestServices WHERE ServiceName = @Name;",
                 new { Name = "NonExistentService" },
-                cancellationToken: CancellationToken.None);
+                cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(2, records.Count());
@@ -401,7 +401,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
             // Act & Assert
             await Assert.ThrowsAsync<SQLiteException>(async () =>
-                await _executor.BeginTransactionAsync(CancellationToken.None));
+                await _executor.BeginTransactionAsync(TestContext.Current.CancellationToken));
 
             // Assert that the resource was safely cleaned up following the asynchronous initialization crash
             Assert.True(brokenConnectionSpy.WasDisposed, "The connection was not explicitly disposed upon an OpenAsync() failure.");
@@ -420,7 +420,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             _mockDbContext.Setup(db => db.CreateConnection()).Returns(syncFallbackStub);
 
             // Act
-            using (var tx = await _executor.BeginTransactionAsync(CancellationToken.None))
+            using (var tx = await _executor.BeginTransactionAsync(TestContext.Current.CancellationToken))
             {
                 // Assert
                 Assert.NotNull(tx);
@@ -438,7 +438,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             _mockDbContext.Setup(db => db.CreateConnection()).Returns(nativeAsyncStub);
 
             // Act
-            using (var txNativeAsync = await _executor.BeginTransactionAsync(CancellationToken.None))
+            using (var txNativeAsync = await _executor.BeginTransactionAsync(TestContext.Current.CancellationToken))
             {
                 // Assert
                 Assert.NotNull(txNativeAsync);
@@ -455,7 +455,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             _mockDbContext.Setup(db => db.CreateConnection()).Returns(() => new SQLiteConnection(_connectionString));
 
             // Act
-            using (var tx3 = await _executor.BeginTransactionAsync(CancellationToken.None))
+            using (var tx3 = await _executor.BeginTransactionAsync(TestContext.Current.CancellationToken))
             {
                 // Assert
                 Assert.NotNull(tx3);
@@ -496,7 +496,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Act & Assert
             await Assert.ThrowsAsync<SQLiteException>(async () =>
             {
-                await _executor.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM TestServices;", cancellationToken: CancellationToken.None);
+                await _executor.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM TestServices;", cancellationToken: TestContext.Current.CancellationToken);
             });
 
             // Verify the engine systematically retried across the configured loop allocation space

@@ -1164,12 +1164,13 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 var service = new Service { Name = "FallbackSvc", Status = ServiceStatus.Running };
 
-                var allServices = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase)
-                {
-                    { "FallbackSvc", new ServiceInfo { Name = "FallbackSvc", Status = ServiceStatus.Running, StartupType = ServiceStartType.Disabled } }
-                };
+                // Completely omit the service from the OS dictionary map.
+                // This simulates an environment where the service is missing from OS query tracking,
+                // forcing the calculation pipeline to execute its ServiceDto fallback path.
+                var allServices = new Dictionary<string, ServiceInfo>(StringComparer.OrdinalIgnoreCase);
 
-                var serviceDto = new ServiceDto { Name = "FallbackSvc", StartupType = (int)ServiceStartType.Disabled };
+                // Provide a distinct configuration setting type profile in the database DTO layer
+                var serviceDto = new ServiceDto { Name = "FallbackSvc", StartupType = (int)ServiceStartType.Automatic };
 
                 // Act
                 var result = TestReflection.InvokeNonPublic(vm, "GetServiceUpdateInfo", service, allServices, serviceDto, CancellationToken.None);
@@ -1177,7 +1178,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.NotNull(result);
                 var updateInfo = (ServiceUpdateInfo)result.GetType().GetField("Item1")!.GetValue(result)!;
-                Assert.Equal(ServiceStartType.Disabled, updateInfo.StartupType);
+
+                // Asserting Automatic explicitly proves that the data payload bypassed the missing OS lookup frame
+                // and correctly unrolled into the database DTO fallback value layer.
+                Assert.Equal(ServiceStartType.Automatic, updateInfo.StartupType);
             }, createApp: true);
         }
 
