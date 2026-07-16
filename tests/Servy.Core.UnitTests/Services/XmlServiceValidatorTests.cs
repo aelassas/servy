@@ -163,7 +163,7 @@ namespace Servy.Core.UnitTests.Services
             {
                 Name = "MyService",
                 ExecutablePath = "C:\\Windows\\System32\\notepad.exe",
-                StopTimeout = 30000
+                StopTimeout = 30
             };
             var xml = ServiceDtoXml.Serialize(dto);
 

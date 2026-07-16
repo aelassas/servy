@@ -1,6 +1,7 @@
-﻿using Servy.Core.Validation;
+﻿using Servy.Core.Config;
+using Servy.Core.Resources;
+using Servy.Core.Validation;
 using Servy.Testing;
-using System;
 using System.IO;
 using Xunit;
 
@@ -41,6 +42,23 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Null(content);
             Assert.NotNull(result.ErrorMessage);
             Assert.Contains(".txt", result.ErrorMessage);
+        }
+
+        [Fact]
+        public void ValidatePathSecurityAndSize_FileExceedsSizeLimit_ReturnsFailureWithoutContent()
+        {
+            // Arrange
+            string filePath = Path.Combine(TempDirectory, "huge.json");
+            using (var fs = new FileStream(filePath, FileMode.CreateNew))
+                fs.SetLength(AppConfig.MaxConfigFileSizeBytes + 1); // sparse, no real IO cost
+
+            // Act
+            var result = ImportGuard.ValidatePathSecurityAndSize(filePath, out string content);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Null(content);
+            Assert.Equal(string.Format(Strings.Msg_ConfigSizeLimitReached, filePath), result.ErrorMessage);
         }
     }
 }
