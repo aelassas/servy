@@ -136,41 +136,74 @@ namespace Servy.Core.IntegrationTests.Logging
             if (!_isElevated) return;
 
             string source = GenerateSourceName();
-            using (var logger = new EventLogLogger(source, LogLevel.Info, true))
+
+            // Explicitly ensure the source is registered on the OS before writing,
+            // preventing fallback routing to the "Application" log
+            if (!EventLog.SourceExists(source))
             {
-                // Create a massive string guaranteed to exceed the standard 31839 character limit
-                string massiveString = new string('A', 40000);
+                EventLog.CreateEventSource(source, AppConfig.EventLogName);
+            }
 
-                // Act
-                Exception ex = Record.Exception(() => logger.Info(massiveString));
-
-                // Assert Execution State
-                Assert.Null(ex);
-
-                // Assert Structural Persistence Truncation Integrity
-                using (var eventLog = new EventLog(AppConfig.EventLogName))
+            try
+            {
+                using (var logger = new EventLogLogger(source, LogLevel.Info, true))
                 {
-                    eventLog.Source = source;
+                    // Create a massive string guaranteed to exceed the standard 31839 character limit
+                    string massiveString = new string('A', 40000);
 
-                    // Locate the specific entry we just wrote by checking the Source property,
-                    // avoiding the race condition where another process logs simultaneously.
-                    EventLogEntry foundEntry = null;
-                    for (int i = eventLog.Entries.Count - 1; i >= 0; i--)
+                    // Act
+                    Exception ex = Record.Exception(() => logger.Info(massiveString));
+
+                    // Assert Execution State
+                    Assert.Null(ex);
+
+                    // Assert Structural Persistence Truncation Integrity
+                    using (var eventLog = new EventLog(AppConfig.EventLogName))
                     {
-                        if (eventLog.Entries[i].Source == source)
+                        eventLog.Source = source;
+
+                        EventLogEntry foundEntry = null;
+
+                        // Introduce a polling loop with exponential backoff 
+                        // to account for asynchronous Event Log service disk-flushing delays
+                        const int maxRetries = 10;
+                        int retryCount = 0;
+                        int delayMs = 50;
+
+                        while (foundEntry == null && retryCount++ < maxRetries)
                         {
-                            foundEntry = eventLog.Entries[i];
-                            break;
+                            for (int i = eventLog.Entries.Count - 1; i >= 0; i--)
+                            {
+                                if (eventLog.Entries[i].Source == source)
+                                {
+                                    foundEntry = eventLog.Entries[i];
+                                    break;
+                                }
+                            }
+
+                            if (foundEntry == null)
+                            {
+                                Thread.Sleep(delayMs);
+                                delayMs *= 2; // Exponential backoff (50ms, 100ms, 200ms...)
+                            }
                         }
+
+                        Assert.NotNull(foundEntry);
+
+                        // Verify absolute length bounds and suffix marker format compliance
+                        Assert.True(foundEntry.Message.Length <= 31839 + "...[truncated]".Length + 200,
+                            $"Persisted message length ({foundEntry.Message.Length}) exceeds the physical truncation ceiling.");
+
+                        Assert.Contains("...[truncated]", foundEntry.Message);
                     }
-
-                    Assert.NotNull(foundEntry);
-                    
-                    // Verify absolute length bounds and suffix marker format compliance
-                    Assert.True(foundEntry.Message.Length <= 31839 + "...[truncated]".Length + 200,
-                        $"Persisted message length ({foundEntry.Message.Length}) exceeds the physical truncation ceiling.");
-
-                    Assert.Contains("...[truncated]", foundEntry.Message);
+                }
+            }
+            finally
+            {
+                // Clean up the temporary registered event source from the registry
+                if (EventLog.SourceExists(source))
+                {
+                    EventLog.DeleteEventSource(source);
                 }
             }
         }

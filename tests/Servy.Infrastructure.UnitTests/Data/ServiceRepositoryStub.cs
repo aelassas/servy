@@ -18,7 +18,7 @@ namespace Servy.Infrastructure.UnitTests.Data
     /// </summary>
     public class ServiceRepositoryStub : ServiceRepository
     {
-        private bool _returnNullDto;
+        private readonly bool _returnNullDto;
         private const string EncryptedPrefix = "[ENC]";
 
         public ServiceRepositoryStub(bool returnNullDto = false)
@@ -71,10 +71,9 @@ namespace Servy.Infrastructure.UnitTests.Data
 
         public override Task<ServiceDto> GetByNameAsync(string name, bool decrypt = true, CancellationToken token = default)
         {
-            // Returns the same DTO shape as GetByIdAsync so name- and id-based lookups stay symmetric
-            return _returnNullDto
-                ? Task.FromResult<ServiceDto>(null)
-                : Task.FromResult<ServiceDto>(CreateConsistentDto(1, name, decrypt));
+            if (_returnNullDto || string.IsNullOrWhiteSpace(name))
+                return Task.FromResult<ServiceDto>(null);
+            return Task.FromResult<ServiceDto>(CreateConsistentDto(1, name, decrypt));
         }
 
         public override Task<IEnumerable<ServiceDto>> GetAllAsync(bool decrypt = true, CancellationToken token = default)
