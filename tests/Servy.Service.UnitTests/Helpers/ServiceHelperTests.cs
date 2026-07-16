@@ -445,7 +445,7 @@ namespace Servy.Service.UnitTests.Helpers
         #region RestartComputer Tests
 
         [Fact]
-        public void RestartComputer_Success_StartsProcessAndDisposesCorrectly()
+        public void RestartComputer_Success_StartsProcessWithCorrectArguments()
         {
             // Arrange
             var mockLog = new Mock<IServyLogger>();
