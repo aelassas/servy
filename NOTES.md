@@ -16,7 +16,7 @@ If you've ever struggled with the limitations of the built-in `sc.exe` tool or f
 
 Servy continuously monitors your app, restarting it automatically if it crashes, hangs, or stops. It is perfect for keeping non-service apps running in the background and ensuring they start automatically at system boot, even before logon, without rewriting them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
 
-A service wrapper is not just a starter script. In production, it is the heartbeat of your application. If your wrapper cannot handle graceful signal propagation or proper process cleanup, you risk leaked resources and orphaned processes that manual reboots cannot always fix. Servy is engineered to eliminate these vulnerabilities. By delivering live streaming output and real-time resource metrics (CPU/RAM), it ensures you can isolate and resolve critical issues in seconds rather than spending hours debugging in the dark.
+A service wrapper is not just a starter script. In production, it is the heartbeat of your application. If your wrapper cannot handle graceful signal propagation or proper process cleanup, you risk leaked resources and orphaned processes that manual reboots cannot always fix. Servy is designed to eliminate these vulnerabilities. By delivering live streaming output and real-time resource metrics (CPU/RAM), it ensures you can isolate and resolve critical issues in seconds rather than spending hours debugging in the dark.
 
 ## Points of Interest
 
