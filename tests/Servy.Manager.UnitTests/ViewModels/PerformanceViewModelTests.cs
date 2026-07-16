@@ -130,6 +130,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(() =>
             {
+                // Arrange
                 // Preserve the original environment context firmly inside the thread scope boundary
                 var originalProvider = App.Services;
 
@@ -155,13 +156,25 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Act
                     vm.SelectedService = mockService;
 
-                    // Assert
+                    // Assert - Verification Part 1: State Changes & Buffers Cleared
                     Assert.True(propChangedFired);
                     Assert.Same(mockService, vm.SelectedService);
 
                     // Graph buffers should be completely reset to empty points during service transitions
                     Assert.Empty(vm.CpuPointCollection);
                     Assert.Empty(vm.RamPointCollection);
+
+                    // Assert - Verification Part 2: RestartsMonitoring
+                    // Verify that the underlying monitoring lifecycle is active and tracking tokens are initialized
+                    int isMonitoringFlag = TestReflection.GetField<int>(vm, "_isMonitoringFlag");
+                    var timer = TestReflection.GetField<DispatcherTimer>(vm, "_timer");
+                    var cancellationTokenSource = TestReflection.GetField<CancellationTokenSource>(vm, "_monitoringCts");
+
+                    Assert.Equal(1, isMonitoringFlag); // 1 flags that base class monitoring is active
+                    Assert.NotNull(timer);
+                    Assert.True(timer.IsEnabled); // The background polling loop timer is active
+                    Assert.NotNull(cancellationTokenSource);
+                    Assert.False(cancellationTokenSource.IsCancellationRequested); // Fresh, un-cancelled token source is active
                 }
                 finally
                 {

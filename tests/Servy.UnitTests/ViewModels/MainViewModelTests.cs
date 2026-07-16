@@ -498,7 +498,7 @@ namespace Servy.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task LoadServiceConfiguration_ExceptionBranch_LogsAndDisplaysErrorMessageBox()
+        public async Task LoadServiceConfiguration_ExceptionBranch_DisplaysErrorMessageBox()
         {
             // Arrange
             _serviceRepository.Setup(r => r.GetByNameAsync("ErrorService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("DB Corrupt"));

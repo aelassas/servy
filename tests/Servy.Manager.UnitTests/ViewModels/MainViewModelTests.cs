@@ -198,14 +198,27 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
-                _appConfigMock.Setup(c => c.IsDesktopAppAvailable).Returns(false);
 
-                // Act
+                // Initialize state: set to false and fire change notification
+                _appConfigMock.Setup(c => c.IsDesktopAppAvailable).Returns(false);
                 _appConfigMock.Raise(c => c.PropertyChanged += null, new PropertyChangedEventArgs(nameof(IAppConfiguration.IsDesktopAppAvailable)));
+                Assert.False(vm.IsConfiguratorEnabled);
+
+                // Act 1 (Control)
+                // Flip the mock value to true. If the view model filters correctly, raising an irrelevant 
+                // property will NOT trigger a re-read, and the VM state will stay 'false'.
+                _appConfigMock.Setup(c => c.IsDesktopAppAvailable).Returns(true);
                 _appConfigMock.Raise(c => c.PropertyChanged += null, new PropertyChangedEventArgs("OtherProperty"));
 
-                // Assert
+                // Assert 1: Verify the unrelated property change notification was ignored cleanly
                 Assert.False(vm.IsConfiguratorEnabled);
+
+                // Act 2 (Positive Path)
+                // Now fire the expected property change to prove that it reacts to the matching name filter rule
+                _appConfigMock.Raise(c => c.PropertyChanged += null, new PropertyChangedEventArgs(nameof(IAppConfiguration.IsDesktopAppAvailable)));
+
+                // Assert 2: Verify the target property filter caught the notification and updated the state
+                Assert.True(vm.IsConfiguratorEnabled);
             }, createApp: true);
         }
 
@@ -266,7 +279,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task SearchCommand_NullDispatcher_LogsWarningAndExits()
+        public async Task SearchCommand_NullDispatcher_ExitsWithoutSearching()
         {
             await Helper.RunOnSTA(async () =>
             {
@@ -443,8 +456,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.False(updateInfo.IsInstalled);
 
                 Assert.Null(updatedDto);
-
-                return true;
             }, createApp: true);
         }
 
@@ -452,7 +463,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         #region Bulk Operations (ExecuteBulkOperationAsync)
 
-        private async Task SetupAndRunBulkOperation(Action<MainViewModel> configureTest, Func<MainViewModel, Task> commandAction)
+        private async Task<Exception?> SetupAndRunBulkOperation(Action<MainViewModel> configureTest, Func<MainViewModel, Task> commandAction)
         {
             // 1. Enforce thread-local dispatcher alignment
             var threadDispatcher = Dispatcher.CurrentDispatcher;
@@ -471,13 +482,22 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             configureTest(vm);
 
-            // 2. Wrap via the unified message pump helper
+            Exception? capturedException = null;
+
+            // 2. Wrap via the unified message pump helper and track internal exception bubbles
             RunOnPump(threadDispatcher, async () =>
             {
-                await commandAction(vm);
+                try
+                {
+                    await commandAction(vm);
+                }
+                catch (Exception ex)
+                {
+                    capturedException = ex;
+                }
             });
 
-            await Task.CompletedTask;
+            return capturedException;
         }
 
         [Fact]
@@ -510,12 +530,13 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange & Act
-                await SetupAndRunBulkOperation(vm =>
+                var exception = await SetupAndRunBulkOperation(vm =>
                 {
                     TestReflection.SetField(vm, "_messageBoxService", null);
                 }, async vm => await vm.StartSelectedCommand.ExecuteAsync(null));
 
                 // Assert
+                Assert.Null(exception);
                 _serviceCommandsMock.Verify(c => c.StartServiceAsync(It.IsAny<Service>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             }, createApp: true);
         }
@@ -526,12 +547,13 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange & Act
-                await SetupAndRunBulkOperation(vm =>
+                var exception = await SetupAndRunBulkOperation(vm =>
                 {
                     _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(false);
                 }, async vm => await vm.StartSelectedCommand.ExecuteAsync(null));
 
                 // Assert
+                Assert.Null(exception);
                 _serviceCommandsMock.Verify(c => c.StartServiceAsync(It.IsAny<Service>(), false, It.IsAny<CancellationToken>()), Times.Never);
             }, createApp: true);
         }
@@ -923,8 +945,6 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // Assert
                 Assert.True(selectAllChangedFired);
-
-                return true;
             }, createApp: true);
         }
 
