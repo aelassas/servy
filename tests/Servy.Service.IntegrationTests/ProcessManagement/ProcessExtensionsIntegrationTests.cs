@@ -173,7 +173,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             finally
             {
                 foreach (var d in descendants) d.Dispose();
-                CleanupRoot(root);
             }
         }
 
@@ -182,13 +181,30 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         {
             // Arrange
             var root = SpawnProcessTree(1);
-            var invalidStartTime = DateTime.Now.AddHours(1);
 
-            // Act
-            var children = ProcessExtensions.GetChildren(root.Id, invalidStartTime);
+            // Act (Control) - Retrieve children using the genuine parent start time to verify tree visibility
+            var realChildren = WaitForProcessName(root, "powershell", ProcessExtensions.GetChildren);
+
+            // Act (Test Target) - Request children with a future parent start time to simulate PID reuse
+            var childrenWithReusedPid = ProcessExtensions.GetChildren(root.Id, DateTime.Now.AddHours(1));
 
             // Assert
-            Assert.Empty(children);
+            try
+            {
+                // Verify the Control state holds true (genuine children exist)
+                Assert.NotEmpty(realChildren);
+
+                // Verify the test target condition (reused PID should yield an empty list)
+                Assert.Empty(childrenWithReusedPid);
+            }
+            finally
+            {
+                // Cleanup transient child process handles
+                foreach (var c in realChildren)
+                {
+                    c.Dispose();
+                }
+            }
         }
 
         #endregion
@@ -300,15 +316,13 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             }, TimeSpan.FromSeconds(TestTimeouts.ChildTimeoutSeconds));
 
-            if (root.HasExited)
+            if (root.HasExited || !found)
             {
-                throw new InvalidOperationException($"The root parent process exited prematurely (ExitCode: {root.ExitCode}). The process tree collapsed.");
-            }
-
-            if (!found)
-            {
-                string foundNames = string.Join(", ", lastResults.Select(GetSafeProcessName));
-                throw new TimeoutException($"Failed to find '{targetName}' child process within {TestTimeouts.ChildTimeoutSeconds} seconds. Found instead: [{foundNames}]");
+                string foundNames = string.Join(", ", lastResults.Select(p => p.ProcessName));
+                foreach (var r in lastResults) r.Dispose();
+                throw root.HasExited
+                    ? new InvalidOperationException($"The root parent process exited prematurely (ExitCode: {root.ExitCode}). The process tree collapsed.")
+                    : throw new TimeoutException($"Failed to find '{targetName}' child process within {TestTimeouts.ChildTimeoutSeconds} seconds. Found instead: [{foundNames}]");
             }
 
             return lastResults;

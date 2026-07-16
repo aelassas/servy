@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -267,12 +268,13 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             {
                 wrapper.WaitForExit();
 
-                // Give the asynchronous background event queue a brief moment to process the stream failure
-                Thread.Sleep(TestTimeouts.ProcessLauncherEventQueueTimeoutMs);
+                bool logged = SpinWait.SpinUntil(
+                    () => _logger.Errors.Any(m => m.Contains("Disabling stdout capture for")),
+                    TimeSpan.FromSeconds(5));
 
                 // Assert 
                 Assert.True(wrapper.HasExited);
-                Assert.Contains(_logger.Errors, m => m.Contains("Disabling stdout capture for"));
+                Assert.True(logged, $"Expected 'Disabling stdout capture' error. Got: [{string.Join("; ", _logger.Errors)}]");
             }
         }
 
