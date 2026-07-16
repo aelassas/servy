@@ -285,7 +285,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.CopyPidCommand.Execute(null);
 
             // Assert
-            _serviceCommandsMock.Verify();
+            _serviceCommandsMock.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "RowSvc" && s.Pid == 123), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         #endregion

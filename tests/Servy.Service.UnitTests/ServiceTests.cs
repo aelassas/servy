@@ -747,7 +747,14 @@ namespace Servy.Service.UnitTests
         public async Task OnProcessExited_CleanExit_RecoveryDisabled_StopsService()
         {
             // Arrange
-            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe", RecoveryOnCleanExit = false, RecoveryAction = RecoveryAction.None };
+            var options = new StartOptions
+            {
+                ServiceName = "CleanExitTest",
+                ExecutablePath = "test.exe",
+                RecoveryOnCleanExit = false,
+                RecoveryAction = RecoveryAction.None, // Recovery disabled
+                EnableHealthMonitoring = false
+            };
             var scopedLogger = SetupStandardServiceStart(options);
 
             bool stopped = false;
@@ -755,15 +762,24 @@ namespace Servy.Service.UnitTests
             _service.StartForTest();
 
             _mockProcess.Setup(p => p.HasExited).Returns(true);
-            _mockProcess.Setup(p => p.ExitCode).Returns(0);
+            _mockProcess.Setup(p => p.ExitCode).Returns(0); // Clean exit
+
+            // Wire up a completion signal via Moq's Callback to handle the async void continuation cleanly
+            var stopLoggedSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            scopedLogger
+                .Setup(l => l.Info(It.Is<string>(s => s.Contains("Service will stop.")), It.IsAny<Exception>()))
+                .Callback(() => stopLoggedSignal.TrySetResult(true));
 
             // Act
+            // Invoke the non-public async void event handler via reflection
             TestReflection.InvokeNonPublic(_service, "OnProcessExited", _mockProcess.Object, EventArgs.Empty);
 
-            await Task.Delay(50, TestContext.Current.CancellationToken); // Allow async void to complete inner logic
-
             // Assert
-            Assert.True(stopped);
+            // Await either the log confirmation or the state callback completion block
+            await Task.WhenAny(stopLoggedSignal.Task, Task.Delay(2000, TestContext.Current.CancellationToken));
+
+            Assert.True(stopped, "The background clean exit stop sequence failed to invoke the OnStoppedForTest event callback.");
             scopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Service will stop.")), It.IsAny<Exception>()), Times.Once);
         }
 
@@ -783,38 +799,34 @@ namespace Servy.Service.UnitTests
             var scopedLogger = SetupStandardServiceStart(options);
             _service.StartForTest();
 
-            // CRITICAL: Populate the internal volatile state switches so recovery evaluations pass
+            // Populate the internal volatile state switches so recovery evaluations pass
             TestReflection.SetField(_service, "_maxFailedChecks", 1);
             TestReflection.SetField(_service, "_recoveryActionEnabled", true);
 
             _mockProcess.Setup(p => p.HasExited).Returns(true);
             _mockProcess.Setup(p => p.ExitCode).Returns(1);
 
+            // Wire up a TaskCompletionSource via Moq's Callback mechanism to signal completion 
+            // without using exceptions as control flow.
+            var recoveryLoggedSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            scopedLogger
+                .Setup(l => l.Warn(It.Is<string>(s => s.Contains("Initiating recovery")), It.IsAny<Exception>()))
+                .Callback(() => recoveryLoggedSignal.TrySetResult(true));
+
             // Act
-            // This executes up to the first internal await frame
+            // This invokes the asynchronous background loop state machine
             TestReflection.InvokeNonPublic(_service, "OnProcessExited", _mockProcess.Object, EventArgs.Empty);
 
-            // CRITICAL: Force the test context thread pool to yield execution control.
-            // This allows the async void state machine to complete its work behind the scenes.
-            int retries = 0;
-            bool foundLog = false;
-            while (retries < 10 && !foundLog)
-            {
-                await Task.Delay(20, TestContext.Current.CancellationToken);
-                try
-                {
-                    // Verify if the background loop successfully hit our warning marker block
-                    scopedLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Initiating recovery")), null), Times.Once());
-                    foundLog = true;
-                }
-                catch (MockException)
-                {
-                    retries++;
-                }
-            }
-
             // Assert
-            Assert.True(foundLog, "The internal recovery sequence was not scheduled or executed within the time limit.");
+            // Await the completion signal deterministically up to a generous 2-second timeout to accommodate slow CI runners.
+            await Task.WhenAny(recoveryLoggedSignal.Task, Task.Delay(2000, TestContext.Current.CancellationToken));
+
+            Assert.True(recoveryLoggedSignal.Task.IsCompleted,
+                "The internal recovery sequence was not scheduled or executed within the time limit.");
+
+            // Verify exactly once at the tail end. If a regression occurs, Moq will now surface its precise mismatch diagnostics.
+            scopedLogger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Initiating recovery")), null), Times.Once());
         }
 
         #endregion

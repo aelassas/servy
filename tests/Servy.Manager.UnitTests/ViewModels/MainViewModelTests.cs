@@ -1264,18 +1264,36 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(() =>
             {
                 var vm = CreateViewModel();
+
+                // Seed the collection so UpdateSelectAllState() can evaluate an expected tri-state
+                var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
+                var childRow = new ServiceRowViewModel(new Service { Name = "S1" }, _serviceCommandsMock.Object, _cursorServiceMock.Object)
+                {
+                    IsChecked = true
+                };
+
+                TestReflection.SetField(vm, "_isUpdatingSelectAll", true);
+                collection.Add(childRow);
+                TestReflection.SetField(vm, "_isUpdatingSelectAll", false);
+
                 bool hasSelectedServicesNotified = false;
+                bool selectAllNotified = false;
+
                 vm.PropertyChanged += (s, e) =>
                 {
                     if (e.PropertyName == nameof(MainViewModel.HasSelectedServices))
                         hasSelectedServicesNotified = true;
+                    if (e.PropertyName == nameof(MainViewModel.SelectAll))
+                        selectAllNotified = true;
                 };
 
-                // Act
-                TestReflection.InvokeNonPublic(vm, "Service_PropertyChanged", null!, new PropertyChangedEventArgs(nameof(ServiceRowViewModel.IsChecked)));
+                // Act - Simulate a child row selection status change notification event
+                TestReflection.InvokeNonPublic(vm, "Service_PropertyChanged", childRow, new PropertyChangedEventArgs(nameof(ServiceRowViewModel.IsChecked)));
 
-                // Assert
-                Assert.True(hasSelectedServicesNotified);
+                // Assert both components of the cascade are executed and raised
+                Assert.True(selectAllNotified, "The SelectAll property update cascade was not triggered or notified.");
+                Assert.True(hasSelectedServicesNotified, "The HasSelectedServices property change notification was not raised.");
+                Assert.True(vm.SelectAll, "The tri-state SelectAll flag failed to resolve to true based on collection status.");
             }, createApp: true);
         }
 

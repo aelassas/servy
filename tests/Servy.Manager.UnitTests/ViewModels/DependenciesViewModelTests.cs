@@ -336,7 +336,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                         viewModel.CopyPidCommand.ExecuteAsync(null).GetAwaiter().GetResult();
 
                         // Assert
-                        _mockServiceCommands.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "TestService"), It.IsAny<CancellationToken>()), Times.Once);
+                        _mockServiceCommands.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "TestService" && s.Pid == 5555), It.IsAny<CancellationToken>()), Times.Once);
                     }
                     finally
                     {
