@@ -13,24 +13,26 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
     [Collection("ProcessWrapperIntegrationTests")]
     public class ProcessWrapperIntegrationTests : IDisposable
     {
-        private readonly List<Process> _processesToCleanup = new List<Process>();
+        // Track active wrappers so we can safely read started PIDs during teardown
+        private readonly List<ProcessWrapper> _wrappersToCleanup = new List<ProcessWrapper>();
         private readonly TestLogger _logger = new TestLogger();
 
         public void Dispose()
         {
-            foreach (var p in _processesToCleanup)
+            // Iterate over all tracked wrappers and clean up their associated OS processes
+            foreach (var wrapper in _wrappersToCleanup)
             {
                 try
                 {
-                    if (!p.HasExited)
+                    // If the process was started and has not exited yet, kill it cleanly
+                    if (!wrapper.HasExited)
                     {
-                        p.Kill(true);
+                        wrapper.Kill(entireProcessTree: true);
                     }
                 }
-                catch { /* Ignore cleanup errors */ }
-                finally
+                catch (Exception)
                 {
-                    p.Dispose();
+                    // Swallowed: Safe lookup boundaries (wrapper already disposed or process dead)
                 }
             }
         }
@@ -49,7 +51,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             };
 
             var wrapper = new ProcessWrapper(psi, _logger);
-            _processesToCleanup.Add(wrapper.UnderlyingProcess);
+
+            // Add the wrapper to our safety tracking list
+            _wrappersToCleanup.Add(wrapper);
+
             return wrapper;
         }
 
