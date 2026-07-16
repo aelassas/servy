@@ -103,14 +103,26 @@ namespace Servy.Core.UnitTests.Config
         [Fact]
         public void GetHandleExePath_ShouldReturnFullPath()
         {
-            // Arrange (Architecture execution metadata)
+            // Arrange
+            // Host architecture is resolved dynamically via native environment reflection
 
             // Act
             var path = AppConfig.GetHandleExePath();
 
             // Assert
             Assert.False(string.IsNullOrWhiteSpace(path));
-            Assert.EndsWith(RuntimeInformation.OSArchitecture == Architecture.Arm64 ? AppConfig.HandleExeARM64 : AppConfig.HandleExeX64, path);
+
+            // Use literal expected values instead of re-evaluating production constants.
+            // This breaks the lockstep behavior and guarantees that inverted architectural mappings
+            // or swapped internal filenames are successfully caught by the test runner.
+            if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
+            {
+                Assert.EndsWith("handle64a.exe", path, StringComparison.OrdinalIgnoreCase);
+            }
+            else
+            {
+                Assert.EndsWith("handle64.exe", path, StringComparison.OrdinalIgnoreCase);
+            }
         }
 
         [Fact]

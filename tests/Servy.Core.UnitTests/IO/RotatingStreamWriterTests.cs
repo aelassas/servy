@@ -578,19 +578,25 @@ namespace Servy.Core.UnitTests.IO
             var logPath = Path.Combine(_testDir, "service.log");
             File.WriteAllText(logPath, "current");
 
-            var rotated1 = Path.Combine(_testDir, "service.log.1");
+            var rotated1 = Path.Combine(_testDir, "service.20260325_000001.log");
             File.WriteAllText(rotated1, "new");
 
-            var rotated2 = Path.Combine(_testDir, "service.log.2");
+            var rotated2 = Path.Combine(_testDir, "service.20260325_000002.log");
             File.WriteAllText(rotated2, "old");
 
-            File.SetLastWriteTimeUtc(rotated1, DateTime.UtcNow.AddMinutes(0));
-            File.SetLastWriteTimeUtc(rotated2, DateTime.UtcNow.AddMinutes(-1));
+            File.SetLastWriteTime(rotated1, DateTime.Now.AddMinutes(0));
+            File.SetLastWriteTime(rotated2, DateTime.Now.AddMinutes(-1));
 
-            using (var writer = CreateWriter(logPath, true, 1, false, DateRotationType.Daily, 1))
+            // Set the size rotation limit threshold high (e.g., 100 * 1024 * 1024 bytes)
+            // to prevent the writer from triggering an automatic internal rotation loop 
+            // during the writer.Write("") initialization pass.
+            long safeSizeLimit = 100 * 1024 * 1024;
+
+            using (var writer = CreateWriter(logPath, true, safeSizeLimit, false, DateRotationType.Daily, 1))
             {
-                writer.Write(""); // create lazy file 
+                writer.Write(""); // create lazy file inner handle context without triggering auto-rotation
 
+                // Set file attribute to ReadOnly to force an intentional IOException on deletion
                 File.SetAttributes(rotated2, FileAttributes.ReadOnly);
 
                 // Act
@@ -600,8 +606,10 @@ namespace Servy.Core.UnitTests.IO
                 });
 
                 // Assert
-                Assert.Null(ex);
-                File.SetAttributes(rotated2, FileAttributes.Normal); // Reset so test runner can clean it up
+                Assert.Null(ex); // Verifies that the internal catch-block swallows the IOException gracefully
+
+                // Reset attributes back to normal so the cleanup engine can purge the directory safely
+                File.SetAttributes(rotated2, FileAttributes.Normal);
             }
         }
 
