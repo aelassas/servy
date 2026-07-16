@@ -210,17 +210,27 @@ namespace Servy.Core.UnitTests.Validation
         {
             // Arrange
             var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.FailureProgramPath = "bad|path";
+            dto.FailureProgramStartupDirectory = "bad|dir";
             dto.PostLaunchExecutablePath = "bad|path";
+            dto.PostLaunchStartupDirectory = "bad|dir";
             dto.PreStopExecutablePath = "bad|path";
+            dto.PreStopStartupDirectory = "bad|dir";
             dto.PostStopExecutablePath = "bad|path";
+            dto.PostStopStartupDirectory = "bad|dir";
 
             // Act
             var result = _sut.Validate(dto);
 
             // Assert
+            Assert.Contains(Strings.Msg_InvalidFailureProgramPath, result.Errors);
+            Assert.Contains(Strings.Msg_InvalidFailureProgramStartupDirectory, result.Errors);
             Assert.Contains(Strings.Msg_InvalidPostLaunchPath, result.Errors);
+            Assert.Contains(Strings.Msg_InvalidPostLaunchStartupDirectory , result.Errors);
             Assert.Contains(Strings.Msg_InvalidPreStopPath, result.Errors);
+            Assert.Contains(Strings.Msg_InvalidPreStopStartupDirectory, result.Errors);
             Assert.Contains(Strings.Msg_InvalidPostStopPath, result.Errors);
+            Assert.Contains(Strings.Msg_InvalidPostStopStartupDirectory , result.Errors);
         }
 
         [Fact]
@@ -235,6 +245,22 @@ namespace Servy.Core.UnitTests.Validation
             // Assert
             Assert.True(result.IsValid);
             Assert.Empty(result.Errors);
+        }
+
+        [Fact]
+        public void Validate_ImportMode_SkipsCredentialValidation()
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.RunAsLocalSystem = false;
+            dto.UserAccount = "Admin";
+            dto.Password = "Secret123";
+
+            // Act
+            var result = _sut.Validate(dto, confirmPassword: "WrongPassword", importMode: true);
+
+            // Assert
+            Assert.DoesNotContain(Strings.Msg_PasswordsDontMatch, result.Errors);
         }
     }
 }
