@@ -186,7 +186,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task UpsertAsync_ExistingService_UpdatesAndReturnsId()
+        public async Task UpsertAsync_ReturnsGeneratedId_AndSetsDtoId()
         {
             // Arrange
             var dto = new ServiceDto { Name = "S1" };
@@ -194,7 +194,9 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(
                     It.IsAny<string>(),
-                    It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
+                    It.IsAny<object>(),
+                    It.IsAny<IDbTransaction>(),
+                    It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedId);
 
             _mockSecureData.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
@@ -211,28 +213,6 @@ namespace Servy.Infrastructure.UnitTests.Data
             // Assert
             Assert.Equal(expectedId, resultId);
             Assert.Equal(expectedId, dto.Id);
-        }
-
-        [Fact]
-        public async Task UpsertAsync_NewService_Adds()
-        {
-            // Arrange
-            var dto = new ServiceDto { Name = "NewService" };
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync((ServiceDto)null!);
-            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>())).ReturnsAsync(7);
-            _mockSecureData.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
-
-            var repo = CreateRepository();
-
-            // Act
-            var rows = await repo.UpsertAsync(
-                dto,
-                preserveExistingRuntimeState: false,
-                preserveExistingCredentials: false,
-                TestContext.Current.CancellationToken);
-
-            // Assert
-            Assert.Equal(7, rows);
         }
 
         [Fact]

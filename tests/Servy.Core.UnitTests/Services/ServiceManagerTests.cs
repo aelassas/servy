@@ -2124,7 +2124,7 @@ namespace Servy.Core.UnitTests.Services
                     .Returns(CreateScmHandle(0));
 
             // Act
-            var result = _serviceManager.GetServiceStartupType(serviceName, CancellationToken.None);
+            var result = _serviceManager.GetServiceStartupType(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             // It should stay 'Automatic' because the P/Invoke to check for 'Delayed' failed.
@@ -2145,7 +2145,7 @@ namespace Servy.Core.UnitTests.Services
             _mockController.Setup(c => c.StartType).Throws(expectedException);
 
             // Act
-            var result = _serviceManager.GetServiceStartupType(serviceName, CancellationToken.None);
+            var result = _serviceManager.GetServiceStartupType(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(ServiceStartType.Unknown, result);
@@ -2300,7 +2300,7 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(() => CreateServiceHandle(2));
 
             // Act
-            var result = _serviceManager.GetAllServices(CancellationToken.None);
+            var result = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(expected, result[0].StartupType);
@@ -2339,7 +2339,7 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(true);
 
             // Act
-            var result = _serviceManager.GetAllServices(CancellationToken.None);
+            var result = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(expectedUser, result[0].LogOnAs);
@@ -2423,7 +2423,7 @@ namespace Servy.Core.UnitTests.Services
                  }));
 
             // Act
-            var result = _serviceManager.GetAllServices(CancellationToken.None);
+            var result = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Single(result);
@@ -2516,7 +2516,7 @@ namespace Servy.Core.UnitTests.Services
                 }));
 
             // Act
-            var result = _serviceManager.GetAllServices(CancellationToken.None);
+            var result = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Single(result);
@@ -2597,7 +2597,7 @@ namespace Servy.Core.UnitTests.Services
                 }));
 
             // Act
-            var result = _serviceManager.GetAllServices(CancellationToken.None);
+            var result = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Single(result);

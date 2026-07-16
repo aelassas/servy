@@ -283,35 +283,59 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         [Fact]
-        public async Task ExportAndImport_XmlAndJson_PreservesConfigAcrossRoundTrips()
+        public async Task ExportAndImport_XmlRoundTrip_PreservesConfigFidelity()
         {
             // Arrange
-            var service = new ServiceDto { Name = "RoundTripService", ExecutablePath = "round.exe", Description = "SerializeMe" };
+            var service = new ServiceDto { Name = "RoundTripXmlService", ExecutablePath = "round_xml.exe", Description = "SerializeXml" };
             await _repository.AddAsync(service, TestContext.Current.CancellationToken);
 
-            // Act
-            string xmlData = await _repository.ExportXmlAsync("RoundTripService", TestContext.Current.CancellationToken);
-            string jsonData = await _repository.ExportJsonAsync("RoundTripService", TestContext.Current.CancellationToken);
-
+            // Act - Export configuration out to XML schema format
+            string xmlData = await _repository.ExportXmlAsync("RoundTripXmlService", TestContext.Current.CancellationToken);
             Assert.NotEmpty(xmlData);
+
+            // Purge database record to prepare for clean restoration validation path
+            var deleteResult = await _repository.DeleteAsync("RoundTripXmlService", TestContext.Current.CancellationToken);
+            Assert.Equal(1, deleteResult);
+            Assert.Null(await _repository.GetByNameAsync("RoundTripXmlService", decrypt: true, TestContext.Current.CancellationToken));
+
+            // Act - Import the serialized XML record back into the repository engine
+            bool xmlImportResult = await _repository.ImportXmlAsync(xmlData, TestContext.Current.CancellationToken);
+
+            // Assert - Verify operational success state and complete field mapping data fidelity (#3041 Fix)
+            Assert.True(xmlImportResult);
+
+            var recovered = await _repository.GetByNameAsync("RoundTripXmlService", decrypt: true, TestContext.Current.CancellationToken);
+            Assert.NotNull(recovered);
+            Assert.Equal("SerializeXml", recovered.Description);
+            Assert.Equal("round_xml.exe", recovered.ExecutablePath);
+        }
+
+        [Fact]
+        public async Task ExportAndImport_JsonRoundTrip_PreservesConfigFidelity()
+        {
+            // Arrange
+            var service = new ServiceDto { Name = "RoundTripJsonService", ExecutablePath = "round_json.exe", Description = "SerializeJson" };
+            await _repository.AddAsync(service, TestContext.Current.CancellationToken);
+
+            // Act - Export configuration out to JSON format layout specifications
+            string jsonData = await _repository.ExportJsonAsync("RoundTripJsonService", TestContext.Current.CancellationToken);
             Assert.NotEmpty(jsonData);
 
-            // Clear Database entries entirely
-            var deleteResult = await _repository.DeleteAsync("RoundTripService", TestContext.Current.CancellationToken);
+            // Purge database record to prepare for clean restoration validation path
+            var deleteResult = await _repository.DeleteAsync("RoundTripJsonService", TestContext.Current.CancellationToken);
             Assert.Equal(1, deleteResult);
-            Assert.Null(await _repository.GetByNameAsync("RoundTripService", decrypt: true, TestContext.Current.CancellationToken));
+            Assert.Null(await _repository.GetByNameAsync("RoundTripJsonService", decrypt: true, TestContext.Current.CancellationToken));
 
-            // Import back
-            bool xmlImportResult = await _repository.ImportXmlAsync(xmlData, TestContext.Current.CancellationToken);
+            // Act - Import the serialized JSON record back into the repository engine
             bool jsonImportResult = await _repository.ImportJsonAsync(jsonData, TestContext.Current.CancellationToken);
 
-            // Assert
-            Assert.True(xmlImportResult);
+            // Assert - Verify operational success state and complete field mapping data fidelity (#3041 Fix)
             Assert.True(jsonImportResult);
 
-            var recovered = await _repository.GetByNameAsync("RoundTripService", decrypt: true, TestContext.Current.CancellationToken);
+            var recovered = await _repository.GetByNameAsync("RoundTripJsonService", decrypt: true, TestContext.Current.CancellationToken);
             Assert.NotNull(recovered);
-            Assert.Equal("SerializeMe", recovered.Description);
+            Assert.Equal("SerializeJson", recovered.Description);
+            Assert.Equal("round_json.exe", recovered.ExecutablePath);
         }
 
         [Fact]
