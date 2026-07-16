@@ -439,12 +439,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                         _mockServiceManager.Setup(m => m.GetDependencies("FaultyService", It.IsAny<CancellationToken>())).Throws(exception);
 
                         // Act
-                        viewModel.SelectedService = mockService; // Triggers the 1st Load invocation internally
+                        viewModel.SelectedService = mockService; // Triggers the 1st Load invocation internally (fire-and-forget)
 
-                        // Await until the fire-and-forget task kicked off by the property setter 
-                        // completes its internal catch/finally blocks before continuing.
+                        // Wait securely for the fire-and-forget task to fully drain
+                        // its catch/finally frames by polling until IsBusy is false AND the first error box has landed.
                         await Helper.WaitUntilAsync(
-                            () => !viewModel.IsBusy,
+                            () => !viewModel.IsBusy && _mockMessageBoxService.Invocations.Count == 1,
                             TimeSpan.FromSeconds(2),
                             TimeSpan.FromMilliseconds(20),
                             TestContext.Current.CancellationToken);
