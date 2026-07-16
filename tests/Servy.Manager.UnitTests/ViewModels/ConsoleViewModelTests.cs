@@ -142,9 +142,21 @@ namespace Servy.Manager.UnitTests.ViewModels
                     // Act
                     vm.SelectedService = service;
 
-                    // Assert
+                    // Assert - Part 1: ResetsState & Property Echo Validation
                     Assert.Equal("AppService", vm.SelectedService.Name);
                     Assert.Empty(vm.RawLines);
+
+                    // Assert - Part 2: TriggersMonitoring
+                    // Verify that the underlying monitoring lifecycle is active and backing tracking structures are initialized
+                    int isMonitoringFlag = TestReflection.GetField<int>(vm, "_isMonitoringFlag");
+                    var timer = TestReflection.GetField<DispatcherTimer>(vm, "_timer");
+                    var cancellationTokenSource = TestReflection.GetField<CancellationTokenSource>(vm, "_monitoringCts");
+
+                    Assert.Equal(1, isMonitoringFlag); // 1 flags that base class monitoring loop is active
+                    Assert.NotNull(timer);
+                    Assert.True(timer.IsEnabled); // Background polling loop timer is actively running
+                    Assert.NotNull(cancellationTokenSource);
+                    Assert.False(cancellationTokenSource.IsCancellationRequested); // A fresh, un-cancelled token context is active
                 }
             });
         }
@@ -405,6 +417,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Assert
                     Assert.True(firstCts.IsCancellationRequested);
+                    Assert.Throws<ObjectDisposedException>(() => _ = firstCts.Token);
                 }
             });
         }

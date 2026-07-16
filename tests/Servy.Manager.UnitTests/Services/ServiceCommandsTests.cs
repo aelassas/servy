@@ -877,7 +877,7 @@ namespace Servy.Manager.UnitTests.Services
         }
 
         [Fact]
-        public async Task CopyPidAsync_SuccessfulClipboardAccess_LogsInfoAndShowsMessage()
+        public async Task CopyPidAsync_SuccessfulClipboardAccess_ShowsMessage()
         {
             // Arrange
             var sut = CreateServiceCommands();
