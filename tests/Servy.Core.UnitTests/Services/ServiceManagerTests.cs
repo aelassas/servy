@@ -2328,21 +2328,41 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>())).Returns(scmHandle);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "TestSvc", It.IsAny<uint>())).Returns(svcHandle);
 
-            // Setup QueryServiceConfig to return a valid user
-            int size = Marshal.SizeOf(typeof(QUERY_SERVICE_CONFIG)) + 100;
+            // Setup QueryServiceConfig size thresholds
+            int structSize = Marshal.SizeOf(typeof(QUERY_SERVICE_CONFIG));
             string expectedUser = "NT AUTHORITY\\NetworkService";
 
-            // First call: Get the size
+            // Calculate a safe continuous buffer block size (Structure size + String length + null terminator margin)
+            int size = structSize + ((expectedUser.Length + 1) * Marshal.SystemDefaultCharSize);
+
+            // First call: Get the required size payload
             _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig(svcHandle, IntPtr.Zero, 0, out It.Ref<int>.IsAny))
                 .Callback(new QueryConfigOut((SafeServiceHandle h, IntPtr p, int s, out int req) => req = size))
                 .Returns(false);
 
-            // Second call: Fill the structure
+            // Second call: Fill the structure and append string data within the caller-provided memory block
             _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig(svcHandle, It.Is<IntPtr>(p => p != IntPtr.Zero), size, out It.Ref<int>.IsAny))
                 .Callback(new QueryConfigOut((SafeServiceHandle h, IntPtr p, int s, out int req) =>
                 {
                     req = size;
-                    var config = new QUERY_SERVICE_CONFIG { lpServiceStartName = Marshal.StringToHGlobalAuto(expectedUser) };
+
+                    // Calculate target offset directly inside the tail block to avoid allocating an external HGlobal leak
+                    IntPtr stringTargetPtr = IntPtr.Add(p, structSize);
+
+                    // Write character buffer directly inside the contiguous native structure payload block
+                    if (Marshal.SystemDefaultCharSize == 1)
+                    {
+                        byte[] ansiBytes = System.Text.Encoding.Default.GetBytes(expectedUser + "\0");
+                        Marshal.Copy(ansiBytes, 0, stringTargetPtr, ansiBytes.Length);
+                    }
+                    else
+                    {
+                        char[] unicodeChars = (expectedUser + "\0").ToCharArray();
+                        Marshal.Copy(unicodeChars, 0, stringTargetPtr, unicodeChars.Length);
+                    }
+
+                    // Map native structure fields back to the internal continuous buffer address space pointers
+                    var config = new QUERY_SERVICE_CONFIG { lpServiceStartName = stringTargetPtr };
                     Marshal.StructureToPtr(config, p, false);
                 }))
                 .Returns(true);
@@ -2351,6 +2371,7 @@ namespace Servy.Core.UnitTests.Services
             var result = _serviceManager.GetAllServices(CancellationToken.None);
 
             // Assert
+            Assert.Single(result);
             Assert.Equal(expectedUser, result[0].LogOnAs);
         }
 

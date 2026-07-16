@@ -95,14 +95,23 @@ namespace Servy.Service.UnitTests.Helpers
         [Theory]
         [InlineData(null)]
         [InlineData("")]
+        [InlineData("   ")]
         public void ExpandAndAudit_HandlesNullOrEmptyContextPrefix(string prefix)
         {
+            // Arrange
+            var emptyVars = new List<EnvironmentVariable>();
+            string rawArgs = "cmd %VAR%";
+
             // Act
-            ProcessHelper.ExpandAndAudit(new List<EnvironmentVariable>(), "cmd %VAR%", _mockLogger.Object, prefix);
+            ProcessHelper.ExpandAndAudit(emptyVars, rawArgs, _mockLogger.Object, prefix);
 
             // Assert
-            // Verify it handles the prefix logic without throwing
-            _mockLogger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.AtLeastOnce);
+            // Verify that a null, empty, or whitespace prefix does not leave stray brackets 
+            // like "[] Arguments" or "null Arguments" inside the audited error context message string.
+            _mockLogger.Verify(l => l.Warn(
+                It.Is<string>(msg => msg == "Unexpanded environment variable %VAR% in Arguments"),
+                It.IsAny<Exception>()),
+                Times.Once);
         }
     }
 }

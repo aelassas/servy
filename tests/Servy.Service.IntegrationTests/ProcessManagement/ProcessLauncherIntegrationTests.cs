@@ -96,12 +96,17 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Act
             var wrapper = ProcessLauncher.Start(options, _realFactory, _logger);
 
-            // Assert
-            Assert.NotNull(wrapper);
-            Assert.False(wrapper.HasExited);
-
-            wrapper.Kill(true);
-            wrapper.Dispose();
+            try
+            {
+                // Assert
+                Assert.NotNull(wrapper);
+                Assert.False(wrapper.HasExited);
+            }
+            finally
+            {
+                wrapper.Kill(true);
+                wrapper.Dispose();
+            }
         }
 
         [Fact]
