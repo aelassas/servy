@@ -108,7 +108,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void DesignTimeConstructor_InitializesSuccessfully()
         {
-            // Arrange
+            // Arrange & Act & Assert
             Helper.RunOnSTA(() =>
             {
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -129,9 +129,10 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Property & Command Lifecycle Tests
 
         [Fact]
-        public async Task SelectedService_Change_ResetsStateAndTriggersMonitoring()
+        public void SelectedService_Change_ResetsStateAndTriggersMonitoring()
         {
-            await Helper.RunOnSTA(async () =>
+            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -162,9 +163,10 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task ClearSelectionCommand_Executes_SetsSelectionActiveFalse()
+        public void ClearSelectionCommand_Executes_SetsSelectionActiveFalse()
         {
-            await Helper.RunOnSTA(async () =>
+            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -185,6 +187,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public async Task CopyPidCommand_ValidPid_InvokesServiceCommandsMapping()
         {
+            // Arrange, Act & Assert (Kept Async Task - genuinely awaits async operation execution context)
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
@@ -195,7 +198,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     vm.SelectedService = mockService;
 
                     // Act
-                    vm.CopyPidCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+                    await vm.CopyPidCommand.ExecuteAsync(null);
 
                     // Assert
                     _serviceCommandsMock.Verify(c => c.CopyPidAsync(It.Is<Service>(s => s.Name == "TestService"), It.IsAny<CancellationToken>()), Times.Once);
@@ -206,6 +209,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public async Task ConsoleSearchText_Filter_FiltersVisibleLinesAndTriggersDebounce()
         {
+            // Arrange, Act & Assert (Kept Async Task - genuinely awaits Helper.WaitUntilAsync polling context)
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
@@ -240,6 +244,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public async Task OnTickAsync_SelectedServiceNull_ResetsConsole()
         {
+            // Arrange, Act & Assert (Kept Async Task - genuinely retrieves and awaits dynamic Task return type context)
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
@@ -252,7 +257,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Act
                     var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync");
-                    task.GetAwaiter().GetResult();
+                    await task;
 
                     // Assert
                     Assert.Equal(UiConstants.NotAvailable, vm.Pid);
@@ -264,6 +269,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public async Task OnTickAsync_SnapshotPidNull_ClearsPathsAndPid()
         {
+            // Arrange, Act & Assert (Kept Async Task - genuinely awaits underlying repository pipeline execution task)
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
@@ -279,7 +285,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Act
                     var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync");
-                    task.GetAwaiter().GetResult();
+                    await task;
 
                     // Assert
                     Assert.Null(service.Pid);
@@ -292,6 +298,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public async Task OnTickAsync_PathsChanged_UpdatesPathsAndTriggersSwitch()
         {
+            // Arrange, Act & Assert (Kept Async Task - genuinely awaits internal file parsing tick loops)
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
@@ -307,7 +314,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Act
                     var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync");
-                    task.GetAwaiter().GetResult();
+                    await task;
 
                     // Assert
                     Assert.Equal("new.txt", service.StdoutPath);
@@ -322,6 +329,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Dispose_CleansUpCancellationTokensAndEvents()
         {
+            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
             Helper.RunOnSTA(() =>
             {
                 // Arrange
@@ -345,9 +353,10 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Sorting Logic Proof Tests
 
         [Fact]
-        public async Task HistorySort_WithIdenticalTimestamps_ShouldPreserveArrivalOrder()
+        public void HistorySort_WithIdenticalTimestamps_ShouldPreserveArrivalOrder()
         {
-            await Helper.RunOnSTA(async () =>
+            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 var sameTime = new DateTime(2026, 1, 30, 10, 0, 0);
@@ -378,6 +387,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void CreateServiceItem_ValidServiceInput_MapsToConsoleServiceWithNullFields()
         {
+            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
             Helper.RunOnSTA(() =>
             {
                 // Arrange
@@ -400,9 +410,10 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task ApplyFilterWithDebounceAsync_OldCtsNotNull_CancelsAndDisposesPreviousFilterToken()
+        public void ApplyFilterWithDebounceAsync_OldCtsNotNull_CancelsAndDisposesPreviousFilterToken()
         {
-            await Helper.RunOnSTA(async () =>
+            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -425,6 +436,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public async Task SwitchServiceAsync_EmptyCombinedHistory_DoesNotTriggerSortOrCollectionMutation()
         {
+            // Arrange, Act & Assert (Kept Async Task - genuinely awaits programmatic log-switching infrastructure logic)
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
@@ -435,7 +447,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                     // Act - Invoke service transition with empty/null pathing arguments to trigger structural history emptiness
                     var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", string.Empty, string.Empty);
-                    task.GetAwaiter().GetResult();
+                    await task;
 
                     // Assert - Verify that the internal branch evaluation safely skipped AddRange loops since paths were empty
                     Assert.Empty(vm.RawLines);
@@ -444,9 +456,10 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task StartLiveTail_LogReceivedOnActiveSession_AppendsToRawLinesAndTrimsExcessRows()
+        public void StartLiveTail_LogReceivedOnActiveSession_AppendsToRawLinesAndTrimsExcessRows()
         {
-            await Helper.RunOnSTA(async () =>
+            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -486,9 +499,10 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task StartLiveTail_LogReceivedWhileSelectionIsActive_BypassesCollectionMutationToPreserveUserFocus()
+        public void StartLiveTail_LogReceivedWhileSelectionIsActive_BypassesCollectionMutationToPreserveUserFocus()
         {
-            await Helper.RunOnSTA(async () =>
+            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -513,9 +527,10 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task StartLiveTail_LogReceivedOnStaleSession_BypassesCollectionMutationSilently()
+        public void StartLiveTail_LogReceivedOnStaleSession_BypassesCollectionMutationSilently()
         {
-            await Helper.RunOnSTA(async () =>
+            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
@@ -539,9 +554,10 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task SetSelectionActive_SelectionCleared_ReTriggerServicesSwitchPipeline()
+        public void SetSelectionActive_SelectionCleared_ReTriggerServicesSwitchPipeline()
         {
-            await Helper.RunOnSTA(async () =>
+            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 var vm = CreateViewModel();
@@ -570,9 +586,10 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task Dispose_CalledMultipleTimes_ReturnsSilentlyThroughInternalDisposedValueGuard()
+        public void Dispose_CalledMultipleTimes_ReturnsSilentlyThroughInternalDisposedValueGuard()
         {
-            await Helper.RunOnSTA(async () =>
+            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))

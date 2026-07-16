@@ -165,7 +165,7 @@ namespace Servy.UI.UnitTests.Design
         #region Infrastructure Tests
 
         [Fact]
-        public async Task InvokeAsync_Action_CompletesSuccessfully()
+        public void InvokeAsync_Action_CompletesSuccessfully()
         {
             bool wasExecuted = false;
 
@@ -178,7 +178,7 @@ namespace Servy.UI.UnitTests.Design
         }
 
         [Fact]
-        public async Task InvokeAsync_ActionWithPriority_CompletesSuccessfully()
+        public void InvokeAsync_ActionWithPriority_CompletesSuccessfully()
         {
             bool wasExecuted = false;
 
@@ -205,7 +205,7 @@ namespace Servy.UI.UnitTests.Design
         }
 
         [Fact]
-        public async Task YieldAsync_CompletesSuccessfully()
+        public void YieldAsync_CompletesSuccessfully()
         {
             // Act
             Task task = _dispatcher.YieldAsync();

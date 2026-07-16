@@ -364,6 +364,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                             Assert.False(vm.IsBusy);
 
                             _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
+                            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
                         }
                     }
                 }
