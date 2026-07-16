@@ -44,10 +44,10 @@ namespace Servy.Core.UnitTests.Validation
         }
 
         [Theory]
-        [InlineData("CON.json", FileMode.Open, FileAccess.Read, FileShare.Read)]
-        [InlineData("PRN.xml", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)]
-        [InlineData("COM1.json", FileMode.Open, FileAccess.Read, FileShare.Read)]
-        [InlineData("LPT1.xml", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)]
+        [InlineData(".\\CON.json", FileMode.Open, FileAccess.Read, FileShare.Read)]
+        [InlineData(".\\PRN.xml", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)]
+        [InlineData(".\\COM1.json", FileMode.Open, FileAccess.Read, FileShare.Read)]
+        [InlineData(".\\LPT1.xml", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)]
         public void ValidatePath_ReservedDeviceName_ReturnsFail(string fileName, FileMode mode, FileAccess access, FileShare share)
         {
             // Arrange
