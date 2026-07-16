@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Security;
+using Servy.Testing;
 using System.Security.Cryptography;
 
 namespace Servy.Core.IntegrationTests.Security
@@ -268,20 +269,45 @@ namespace Servy.Core.IntegrationTests.Security
         public void GetMaterial_FileLocked_RetriesAndEventuallyThrows(string targetType)
         {
             // Arrange
-            var keyPath = GetTempFilePath("locked.key");
-            var ivPath = GetTempFilePath("locked.iv");
+            var keyPath = GetTempFilePath($"locked_{targetType}.key");
+            var ivPath = GetTempFilePath($"locked_{targetType}.iv");
             var targetPath = targetType == "key" ? keyPath : ivPath;
 
-            File.WriteAllBytes(targetPath, new byte[] { 0x01 }); // Create dummy file
+            // Save some mock dummy payload data to force execution past the file creation stage 
+            // directly into the ReadAllBytes runtime sequence block.
+            File.WriteAllBytes(targetPath, new byte[] { 0x01, 0x02, 0x03, 0x04 });
 
             using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
             // Lock the target file exclusively on this thread execution boundary
             using (var lockStream = new FileStream(targetPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
-                // Act & Assert
-                // Will attempt to read 3 times with exponential backoff and fail
-                Assert.Throws<IOException>(() =>
+                // Measure the exact elapsed execution time to verify the backoff retries took place
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                // Act
+                var exception = Assert.ThrowsAny<Exception>(() =>
                     targetType == "key" ? provider.GetKey() : provider.GetIV());
+
+                stopwatch.Stop();
+
+                // Assert
+                // 1. Verify the structural type of the exception bubble context matches the filesystem failure path
+                var baseException = exception is InvalidOperationException && exception.InnerException != null
+                    ? exception.InnerException
+                    : exception;
+
+                Assert.True(baseException is IOException || baseException is System.Security.SecurityException,
+                    $"Expected filesystem access error, but instead caught: {baseException.GetType().Name}");
+
+                // 2. Verify the backoff retry time logic contract.
+                // Loop behavior profiling constraints:
+                // Attempt 0: Fails -> Sleeps BaseMs * (1 << 0) = 50ms
+                // Attempt 1: Fails -> Sleeps BaseMs * (1 << 1) = 100ms
+                // Attempt 2: Fails -> Exhausted, throws directly out of the final phase without sleeping.
+                // Expected accumulated wait sleep window boundary: ~150ms total threshold.
+                var elapsedMs = stopwatch.ElapsedMilliseconds;
+                Assert.True(elapsedMs >= 140,
+                    $"The key provider did not retry or back off exponentially. Total execution time was only {elapsedMs}ms.");
             }
         }
 
@@ -298,15 +324,23 @@ namespace Servy.Core.IntegrationTests.Security
             var provider = new ProtectedKeyProvider(keyPath, ivPath);
 
             // Populate the cache
-            _ = provider.GetKey();
-            _ = provider.GetIV();
+            var key1 = provider.GetKey();
+            var iv1 = provider.GetIV();
 
             // Act
             provider.Dispose();
 
             // Assert
-            Assert.Throws<ObjectDisposedException>(() => provider.GetKey());
-            Assert.Throws<ObjectDisposedException>(() => provider.GetIV());
+            // Verify that subsequent access throws ObjectDisposedException
+            Assert.Throws<ObjectDisposedException>(provider.GetKey);
+            Assert.Throws<ObjectDisposedException>( provider.GetIV);
+
+            // Verify the backing fields are fully cleared out to null post-disposal
+            var cachedKey = TestReflection.GetField<byte[]?>(provider, "_cachedKey");
+            var cachedIv = TestReflection.GetField<byte[]?>(provider, "_cachedIv");
+
+            Assert.Null(cachedKey);
+            Assert.Null(cachedIv);
         }
 
         [Fact]

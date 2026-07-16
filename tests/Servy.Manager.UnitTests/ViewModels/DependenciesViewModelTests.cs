@@ -207,16 +207,26 @@ namespace Servy.Manager.UnitTests.ViewModels
                     {
                         viewModel = CreateViewModel();
                         var mockService = new DependencyService { Name = "TestService" };
+
+                        // First assignment: Legritimately triggers the initial dependency load pipeline loop
                         viewModel.SelectedService = mockService;
 
                         bool anyPropertyChangedFired = false;
                         viewModel.PropertyChanged += (s, e) => anyPropertyChangedFired = true;
 
                         // Act
+                        // Second assignment: Same exact reference. Should short-circuit completely.
                         viewModel.SelectedService = mockService;
 
                         // Assert
+                        // 1. Verify the notification suppression pathway holds true
                         Assert.False(anyPropertyChangedFired);
+
+                        // 2. Verify the 'OrReload' optimization contract.
+                        // If the same-reference early return guard behaves properly, the backend repository 
+                        // round-trip should have been hit EXACTLY once during the first initialization. 
+                        // A count of 2 indicates that the redundant second reload leaked past the guard.
+                        _mockServiceManager.Verify(m => m.GetDependencies("TestService", It.IsAny<CancellationToken>()), Times.Once);
                     }
                     finally
                     {
