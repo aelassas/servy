@@ -20,10 +20,10 @@ namespace Servy.Manager.UnitTests.ViewModels
             _cursorServiceMock = new Mock<ICursorService>();
         }
 
-        private ServiceRowViewModel CreateViewModel()
+        private ServiceRowViewModel CreateViewModel(string serviceName = "RowSvc")
         {
             return new ServiceRowViewModel(
-                new Service { Name = "S", Pid = 123 },
+                new Service { Name = serviceName, Pid = 123 },
                 _serviceCommandsMock.Object,
                 _cursorServiceMock.Object
             );
@@ -44,7 +44,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                new ServiceRowViewModel(new Service { Name = "S" }, null!, _cursorServiceMock.Object));
+                new ServiceRowViewModel(new Service { Name = "RowSvc" }, null!, _cursorServiceMock.Object));
         }
 
         [Fact]
@@ -52,7 +52,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
-                new ServiceRowViewModel(new Service { Name = "S" }, _serviceCommandsMock.Object, null!));
+                new ServiceRowViewModel(new Service { Name = "RowSvc" }, _serviceCommandsMock.Object, null!));
         }
 
         [Fact]
@@ -99,17 +99,18 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void StartCommand_ShouldCallStartServiceAsync()
         {
             // Arrange
-            var vm = CreateViewModel();
-            var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.StartServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.Is<bool>(b => b), It.IsAny<CancellationToken>()))
+            var vm = CreateViewModel("RowSvc");
+            var parameterService = new Service { Name = "ParamSvc" };
+
+            _serviceCommandsMock.Setup(s => s.StartServiceAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 
-            vm.Service!.IsInstalled = true;
-            vm.Service!.Status = ServiceStatus.Stopped;
+            vm.Service.IsInstalled = true;
+            vm.Service.Status = ServiceStatus.Stopped;
 
             // Act
-            vm.StartCommand.Execute(service);
+            vm.StartCommand.Execute(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
@@ -119,19 +120,19 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void StopCommand_ShouldCallStopServiceAsync()
         {
             // Arrange
-            var vm = CreateViewModel();
-            var service = new Service { Name = "S" };
+            var vm = CreateViewModel("RowSvc");
+            var parameterService = new Service { Name = "ParamSvc" };
 
             _serviceCommandsMock
-                .Setup(s => s.StopServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.Is<bool>(b => b), It.IsAny<CancellationToken>()))
+                .Setup(s => s.StopServiceAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 
-            vm.Service!.IsInstalled = true;
-            vm.Service!.Status = ServiceStatus.Running;
+            vm.Service.IsInstalled = true;
+            vm.Service.Status = ServiceStatus.Running;
 
             // Act
-            vm.StopCommand.Execute(service);
+            vm.StopCommand.Execute(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
@@ -141,17 +142,18 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void RestartCommand_ShouldCallRestartServiceAsync()
         {
             // Arrange
-            var vm = CreateViewModel();
-            var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.RestartServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.Is<bool>(b => b), It.IsAny<CancellationToken>()))
+            var vm = CreateViewModel("RowSvc");
+            var parameterService = new Service { Name = "ParamSvc" };
+
+            _serviceCommandsMock.Setup(s => s.RestartServiceAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 
-            vm.Service!.IsInstalled = true;
-            vm.Service!.Status = ServiceStatus.Running;
+            vm.Service.IsInstalled = true;
+            vm.Service.Status = ServiceStatus.Running;
 
             // Act
-            vm.RestartCommand.Execute(service);
+            vm.RestartCommand.Execute(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
@@ -161,14 +163,15 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void ConfigureCommand_ShouldCallConfigureServiceAsync()
         {
             // Arrange
-            var vm = CreateViewModel();
-            var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.ConfigureServiceAsync(It.IsAny<Service>(), It.IsAny<CancellationToken>()))
+            var vm = CreateViewModel("RowSvc");
+            var parameterService = new Service { Name = "ParamSvc" };
+
+            _serviceCommandsMock.Setup(s => s.ConfigureServiceAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.IsAny<CancellationToken>()))
               .Returns(Task.CompletedTask)
               .Verifiable();
 
             // Act
-            vm.ConfigureCommand.Execute(service);
+            vm.ConfigureCommand.Execute(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
@@ -178,14 +181,15 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void InstallCommand_ShouldCallInstallServiceAsync()
         {
             // Arrange
-            var vm = CreateViewModel();
-            var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.InstallServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<CancellationToken>()))
+            var vm = CreateViewModel("RowSvc");
+            var parameterService = new Service { Name = "ParamSvc" };
+
+            _serviceCommandsMock.Setup(s => s.InstallServiceAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 
             // Act
-            vm.InstallCommand.Execute(service);
+            vm.InstallCommand.Execute(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
@@ -195,16 +199,17 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void UninstallCommand_ShouldCallUninstallServiceAsync()
         {
             // Arrange
-            var vm = CreateViewModel();
-            var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.UninstallServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<CancellationToken>()))
+            var vm = CreateViewModel("RowSvc");
+            var parameterService = new Service { Name = "ParamSvc" };
+
+            _serviceCommandsMock.Setup(s => s.UninstallServiceAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 
-            vm.Service!.IsInstalled = true;
+            vm.Service.IsInstalled = true;
 
             // Act
-            vm.UninstallCommand.Execute(service);
+            vm.UninstallCommand.Execute(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
@@ -214,14 +219,15 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void RemoveCommand_ShouldCallRemoveServiceAsync()
         {
             // Arrange
-            var vm = CreateViewModel();
-            var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.RemoveServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<CancellationToken>()))
+            var vm = CreateViewModel("RowSvc");
+            var parameterService = new Service { Name = "ParamSvc" };
+
+            _serviceCommandsMock.Setup(s => s.RemoveServiceAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 
             // Act
-            vm.RemoveCommand.Execute(service);
+            vm.RemoveCommand.Execute(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
@@ -231,14 +237,15 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void ExportXmlCommand_ShouldCallExportServiceToXmlAsync()
         {
             // Arrange
-            var vm = CreateViewModel();
-            var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.ExportServiceToXmlAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<CancellationToken>()))
+            var vm = CreateViewModel("RowSvc");
+            var parameterService = new Service { Name = "ParamSvc" };
+
+            _serviceCommandsMock.Setup(s => s.ExportServiceToXmlAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
             // Act
-            vm.ExportXmlCommand.Execute(service);
+            vm.ExportXmlCommand.Execute(parameterService);
 
             // Assert
             _serviceCommandsMock.Verify();
@@ -248,10 +255,11 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void ExportJsonCommand_ShouldCallExportServiceToJsonAsync()
         {
             // Arrange
-            var vm = CreateViewModel();
+            var vm = CreateViewModel("RowSvc");
 
+            // Verify it binds securely back to the internal SUT Model reference when null is given
             _serviceCommandsMock
-                 .Setup(s => s.ExportServiceToJsonAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<CancellationToken>()))
+                 .Setup(s => s.ExportServiceToJsonAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.IsAny<CancellationToken>()))
                  .Returns(Task.CompletedTask)
                  .Verifiable();
 
@@ -266,9 +274,10 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void CopyPidCommand_ShouldCallCopyPidAsync()
         {
             // Arrange
-            var vm = CreateViewModel();
+            var vm = CreateViewModel("RowSvc");
+
             _serviceCommandsMock
-                .Setup(s => s.CopyPidAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<CancellationToken>()))
+                .Setup(s => s.CopyPidAsync(It.Is<Service>(srv => ReferenceEquals(srv, vm.Service)), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
@@ -342,7 +351,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void Service_PropertyChanged_NullOrEmptyName_ReturnsEarlyWithoutPropertyOrCommandEvaluation()
         {
             // Arrange
-            var service = new Service { Name = "S" };
+            var service = new Service { Name = "RowSvc" };
             var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
 
             bool localPropertyNotificationFired = false;
@@ -361,7 +370,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void Service_PropertyChanged_IrrelevantPropertyUpdated_DoesNotRaiseCanExecuteChangedOnCommands()
         {
             // Arrange
-            var service = new Service { Name = "S" };
+            var service = new Service { Name = "RowSvc" };
             var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
 
             // Act
@@ -387,7 +396,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 .ThrowsAsync(new InvalidOperationException("SCM access denied simulation error."));
 
             // Act
-            Func<Task> faultyAction = () => _serviceCommandsMock.Object.ConfigureServiceAsync(service, CancellationToken.None);
+            Func<Task> faultyAction = () => _serviceCommandsMock.Object.ConfigureServiceAsync(service, TestContext.Current.CancellationToken);
 
             var taskResult = (Task)TestReflection.InvokeNonPublic(vm, "ExecuteSafeAsync", faultyAction)!;
             await taskResult;

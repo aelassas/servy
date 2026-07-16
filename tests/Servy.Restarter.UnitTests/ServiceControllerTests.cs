@@ -10,10 +10,8 @@ namespace Servy.Restarter.UnitTests
         [Fact]
         public void Constructor_ShouldInitializeWithoutThrowing()
         {
-            // The constructor just assigns the new instance, it doesn't 
-            // validate the service existence until a method is called.
-            var controller = new ServiceController(DummyServiceName);
-            Assert.NotNull(controller);
+            var exception = Record.Exception(() => new ServiceController(DummyServiceName));
+            Assert.Null(exception);
         }
 
         [Fact]

@@ -20,15 +20,23 @@ namespace Servy.Restarter.UnitTests
         #region Factory Initialization Tests
 
         [Fact]
-        public void Constructor_NullFactory_FallbackToDefaultInstantiation()
+        public void Constructor_NullFactory_InstallsWorkingDefaultFactory()
         {
-            // Act
+            // Arrange
             var defaultRestarter = new ServiceRestarter(null);
 
+            // Act
+            // Passing an empty string or null forces the default factory lambda to execute
+            // and immediately throw an ArgumentException from the real ServiceController constructor stack.
+            var ex = Record.Exception(() =>
+                defaultRestarter.RestartService(string.Empty, TimeSpan.FromMilliseconds(1)));
+
             // Assert
-            Assert.NotNull(defaultRestarter);
-            // Since it uses a real concrete ServiceController internally on invocation,
-            // we verify it instantiates cleanly without throwing a NullReferenceException.
+            // The exception must be a native parameter validation error rather than a NullReferenceException,
+            // which confirms that the internal fallback factory is installed and functional.
+            Assert.NotNull(ex);
+            Assert.IsNotType<NullReferenceException>(ex);
+            Assert.IsAssignableFrom<ArgumentException>(ex);
         }
 
         #endregion
@@ -71,6 +79,28 @@ namespace Servy.Restarter.UnitTests
 
             // Ensure it successfully proceeded to issue the start command
             _mockController.Verify(c => c.Start(), Times.Once);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Fact]
+        public void RestartService_WaitForStoppedTimesOut_WrapsInSystemTimeoutException()
+        {
+            // Arrange
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Running)  // Settle phase check bypass
+                .Returns(ServiceControllerStatus.Running); // Stop phase conditional trigger
+
+            _mockController.Setup(c => c.WaitForStatus(ServiceControllerStatus.Stopped, It.IsAny<TimeSpan>()))
+                .Throws<System.ServiceProcess.TimeoutException>();
+
+            // Act
+            var ex = Assert.Throws<System.TimeoutException>(() =>
+                _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+
+            // Assert
+            Assert.Contains("did not reach Stopped within", ex.Message);
+            Assert.IsType<System.ServiceProcess.TimeoutException>(ex.InnerException);
+            _mockController.Verify(c => c.Stop(), Times.Once);
             _mockController.Verify(c => c.Dispose(), Times.Once);
         }
 
@@ -142,6 +172,29 @@ namespace Servy.Restarter.UnitTests
         #endregion
 
         #region Phase 3: Start Step Boundaries
+
+        [Fact]
+        public void RestartService_WaitForRunningTimesOut_WrapsInSystemTimeoutException()
+        {
+            // Arrange
+            _mockController.SetupSequence(c => c.Status)
+                .Returns(ServiceControllerStatus.Stopped)  // Settle loop bypass
+                .Returns(ServiceControllerStatus.Stopped)  // Stop phase bypass
+                .Returns(ServiceControllerStatus.Stopped); // Pre-start validation check
+
+            _mockController.Setup(c => c.WaitForStatus(ServiceControllerStatus.Running, It.IsAny<TimeSpan>()))
+                .Throws<System.ServiceProcess.TimeoutException>();
+
+            // Act
+            var ex = Assert.Throws<System.TimeoutException>(() =>
+                _restarter.RestartService("MyService", TestTimeouts.ServiceRestarterRestartTimeout));
+
+            // Assert
+            Assert.Contains("did not reach Running within", ex.Message);
+            Assert.IsType<System.ServiceProcess.TimeoutException>(ex.InnerException);
+            _mockController.Verify(c => c.Start(), Times.Once);
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
 
         [Fact]
         public void RestartService_TimeoutExpiresAfterStartIssued_ThrowsTimeoutException()

@@ -1124,7 +1124,7 @@ namespace Servy.Manager.UnitTests.Services
         #region Dispose Tests
 
         [Fact]
-        public async Task Dispose_CalledMultipleTimes_DisposesSemaphoresOnceAndClearsLocks()
+        public async Task Dispose_CalledMultipleTimes_DoesNotThrow()
         {
             // Arrange
             var sut = CreateServiceCommands();

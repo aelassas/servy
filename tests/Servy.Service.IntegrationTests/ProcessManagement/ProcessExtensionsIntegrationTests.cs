@@ -218,7 +218,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         [Fact]
-        public void TryResolveValidChild_ProcessFailsLifetimeValidationBounds_ReturnsNullAndDisposes()
+        public void TryResolveValidChild_ProcessFailsLifetimeValidationBounds_ReturnsNull()
         {
             // Arrange - Use a guaranteed active process (current process)
             using (var current = Process.GetCurrentProcess())
