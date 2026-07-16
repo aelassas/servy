@@ -544,19 +544,28 @@ namespace Servy.Manager.UnitTests.ViewModels
             await Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
-                using (var vm = CreateViewModel())
-                {
-                    var service = new ConsoleService { Name = "ActiveService", StdoutPath = "out.log", StderrPath = "err.log" };
-                    vm.SelectedService = service;
-                    vm.SetSelectionActive(true);
+                var vm = CreateViewModel();
+                var service = new ConsoleService { Name = "ActiveService", StdoutPath = "out.log", StderrPath = "err.log" };
+                vm.SelectedService = service;
+                vm.SetSelectionActive(true);
 
-                    // Act - Toggle selection state back to false to trigger the internal conditional reset pathway loop block
-                    vm.SetSelectionActive(false);
+                // Capture the tracking session ID right before deactivating the selection loop
+                int initialSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
 
-                    // Assert
-                    Assert.False(vm.IsPaused);
-                }
+                // Act - Toggle selection state back to false to trigger the internal conditional reset pathway loop block
+                vm.SetSelectionActive(false);
+
+                // Assert
+                // 1. Verify the foundational UI pause flag state flipped back cleanly
+                Assert.False(vm.IsPaused);
+
+                // 2. Verify that the internal switch pipeline was actively re-triggered.
+                // Re-triggering the log-switching engine forces the view model to increment the session identifier 
+                // to completely sever past background async streams.
+                int postDeactivationSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
+
+                Assert.True(postDeactivationSessionId > initialSessionId,
+                    $"The service switch pipeline was not re-triggered. The tracking session ID remained at {initialSessionId}.");
             });
         }
 
