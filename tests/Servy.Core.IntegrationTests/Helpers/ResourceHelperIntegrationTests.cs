@@ -58,11 +58,9 @@ namespace Servy.Core.IntegrationTests.Helpers
 
         public void Dispose()
         {
-            // Clean up temporary files after each test run to prevent disk pollution
-            if (Directory.Exists(_tempDirectory))
-            {
-                Directory.Delete(_tempDirectory, true);
-            }
+            // Clean up temporary files after each test
+            try { if (Directory.Exists(_tempDirectory)) Directory.Delete(_tempDirectory, true); }
+            catch { /* Prevent teardown exceptions from hiding test results */ }
         }
 
         #region Single Resource Copy Tests (Async & Sync)

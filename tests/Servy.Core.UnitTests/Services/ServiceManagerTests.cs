@@ -209,22 +209,85 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task InstallService_Returns_Failure_On_Win32_Errors()
+        public async Task InstallService_ReturnsFailure_WhenOpenSCManagerFails()
         {
-            // --- Arrange Common Setup ---
-            var validScmHandle = CreateScmHandle(123);
-
-            // Instantiating default safe handles sets IsInvalid = true automatically
-            var invalidScmHandle = new SafeScmHandle();
-            var invalidServiceHandle = new SafeServiceHandle();
-
+            // Arrange
+            var invalidScmHandle = new SafeScmHandle(); // IsInvalid = true automatically
             var serviceName = "TestService";
-            var description = "Test Description";
 
-            var options = new InstallServiceOptions
+            var options = CreateDefaultInstallOptions(serviceName);
+
+            // Mock database retrieval to bypass update layout mode
+            _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ServiceDto)null);
+
+            // Force OpenSCManager to return our invalid handle
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(invalidScmHandle);
+
+            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error())
+                .Returns(1074); // ERROR_SERVICE_DEPENDENCY_DELETED
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Failed to open Service Control Manager", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task InstallService_ReturnsFailure_WhenCreateServiceFails()
+        {
+            // Arrange
+            var validScmHandle = CreateScmHandle(123);
+            var invalidServiceHandle = new SafeServiceHandle(); // IsInvalid = true automatically
+            var serviceName = "TestService";
+
+            var options = CreateDefaultInstallOptions(serviceName);
+
+            // Mock database retrieval to bypass update layout mode
+            _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ServiceDto)null);
+
+            // OpenSCManager succeeds
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(validScmHandle);
+
+            // CreateService fails, returning our invalid handle reference
+            _mockWindowsServiceApi.Setup(x => x.CreateService(
+                validScmHandle,
+                serviceName,
+                serviceName,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                It.IsAny<string>(),
+                null,
+                null))
+                .Returns(invalidServiceHandle);
+
+            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error())
+                .Returns(5); // ERROR_ACCESS_DENIED
+
+            // Act
+            var result = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Failed to create service", result.ErrorMessage);
+        }
+
+        private static InstallServiceOptions CreateDefaultInstallOptions(string serviceName)
+        {
+            return new InstallServiceOptions
             {
                 ServiceName = serviceName,
-                Description = description,
+                Description = "Test Description",
                 WrapperExePath = "wrapper.exe",
                 RealExePath = "real.exe",
                 WorkingDirectory = "workingDir",
@@ -242,50 +305,6 @@ namespace Servy.Core.UnitTests.Services
                 PreLaunchTimeout = 30,
                 PreLaunchIgnoreFailure = true
             };
-
-            // Ensure repository lookup passes safely by returning null (not update layout mode)
-            _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, false, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((ServiceDto)null);
-
-            // --- Scenario 1: OpenSCManager works, but CreateService fails natively ---
-            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
-                .Returns(validScmHandle);
-
-            _mockWindowsServiceApi.Setup(x => x.CreateService(
-                validScmHandle,
-                serviceName,
-                serviceName,
-                It.IsAny<uint>(),
-                It.IsAny<uint>(),
-                It.IsAny<uint>(),
-                It.IsAny<uint>(),
-                It.IsAny<string>(),
-                null,
-                IntPtr.Zero,
-                It.IsAny<string>(),
-                null,
-                null))
-                .Returns(invalidServiceHandle); // Invalid handle intercepts leg
-
-            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(5); // ERROR_ACCESS_DENIED
-
-            // --- Act & Assert 1 ---
-            var result1 = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
-
-            Assert.False(result1.IsSuccess);
-            Assert.Contains("Failed to create service", result1.ErrorMessage);
-
-            // --- Scenario 2: OpenSCManager itself fails immediately ---
-            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
-                .Returns(invalidScmHandle);
-
-            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1074); // ERROR_SERVICE_DEPENDENCY_DELETED
-
-            // --- Act & Assert 2 ---
-            var result2 = await _serviceManager.InstallServiceAsync(options, cancellationToken: CancellationToken.None);
-
-            Assert.False(result2.IsSuccess);
-            Assert.Contains("Failed to open Service Control Manager", result2.ErrorMessage);
         }
 
         [Fact]
