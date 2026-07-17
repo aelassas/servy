@@ -51,17 +51,45 @@ namespace Servy.Core.IntegrationTests.Helpers
             }
         }
 
-        [Fact]
-        public void GetProcessMetrics_ForInvalidOrExitedPid_ReturnsZeroesGracefully()
+        [Theory]
+        [InlineData(false)] // Scenario 1: Never-existed PID (Throws ArgumentException)
+        [InlineData(true)]  // Scenario 2: Genuinely exited PID (Throws InvalidOperationException)
+        public void GetProcessMetrics_ForInvalidOrExitedPid_ReturnsZeroesGracefully(bool useExitedProcess)
         {
             // Arrange
-            // Using an extremely high PID that is virtually guaranteed not to exist.
-            int invalidPid = 999999;
+            int targetPid;
+
+            if (useExitedProcess)
+            {
+                // Start a transient native process that exits instantly
+                using (var transientProcess = Process.Start(new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = "/c exit",
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                }))
+                {
+                    Assert.NotNull(transientProcess);
+                    targetPid = transientProcess.Id;
+
+                    // Force the thread block to wait until the OS fully unregisters the process image
+                    transientProcess.WaitForExit(5000);
+                    Assert.True(transientProcess.HasExited, "Transient test process failed to exit within the allowed timeout window.");
+                }
+            }
+            else
+            {
+                // Use an out-of-bounds PID that is fundamentally guaranteed not to exist on standard Windows nodes
+                targetPid = 999999;
+            }
 
             // Act
-            var metrics = _sut.GetProcessMetrics(invalidPid);
+            var metrics = _sut.GetProcessMetrics(targetPid);
 
             // Assert
+            // Both code paths must cleanly intercept the respective native exception type 
+            // and fallback to a safe, neutral metric layout instead of blowing up.
             Assert.Equal(0, metrics.CpuUsage);
             Assert.Equal(0, metrics.RamUsage);
         }

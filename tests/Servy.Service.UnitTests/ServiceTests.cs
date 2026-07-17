@@ -726,7 +726,7 @@ namespace Servy.Service.UnitTests
         public void OnOutputDataReceived_NullData_DoesNothing()
         {
             // Arrange
-            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe", StdoutPath = "out.log" };
+            var options = new StartOptions { ServiceName = "Test", ExecutablePath = "test.exe", StdoutPath = "stdout.log" };
             SetupStandardServiceStart(options);
             _service.StartForTest();
 

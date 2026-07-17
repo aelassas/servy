@@ -163,6 +163,12 @@ namespace Servy.Core.UnitTests.DTOs
                     p.SetValue(dto, values.GetValue(seed % values.Length));
                 }
             }
+            else
+            {
+                throw new NotSupportedException(
+                    $"SetDummyValue has no rule for property '{p.Name}' of type '{targetType}'. " +
+                    "Add a case so Clone/ShouldSerialize coverage stays complete.");
+            }
         }
     }
 }

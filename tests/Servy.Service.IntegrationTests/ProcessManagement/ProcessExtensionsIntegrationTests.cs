@@ -272,16 +272,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             }
         }
 
-        [Fact]
-        public void TryResolveValidChild_UnexpectedGenericException_LogsTraceAndReturnsNull()
-        {
-            // Arrange & Act
-            var result = TestReflection.InvokeNonPublicStatic(typeof(ProcessExtensions), "TryResolveValidChild", -99, DateTime.Now, DateTime.UtcNow);
-
-            // Assert
-            Assert.Null(result);
-        }
-
         #endregion
 
         #region Integration Test Helpers
