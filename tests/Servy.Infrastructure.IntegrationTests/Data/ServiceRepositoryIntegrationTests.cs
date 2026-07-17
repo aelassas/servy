@@ -238,17 +238,35 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task DeleteAsync_ByNameAndId_RemovesTargetEntries()
         {
+            var cancellationToken = CancellationToken.None;
+
+            // --- 1. Verify "ByName" deletion path ---
             // Arrange
-            var service = new ServiceDto { Name = "KillMe", ExecutablePath = "kill.exe" };
-            int id = await _repository.AddAsync(service, CancellationToken.None);
+            var serviceByName = new ServiceDto { Name = "KillMeByName", ExecutablePath = "kill_name.exe" };
+            int nameId = await _repository.AddAsync(serviceByName, cancellationToken);
 
             // Act
-            int deletedCount = await _repository.DeleteAsync("KillMe", CancellationToken.None);
+            int deletedByNameCount = await _repository.DeleteAsync("KillMeByName", cancellationToken);
 
             // Assert
-            Assert.Equal(1, deletedCount);
-            var search = await _repository.GetByIdAsync(id, decrypt: true, CancellationToken.None);
-            Assert.Null(search);
+            Assert.Equal(1, deletedByNameCount);
+            var searchByName = await _repository.GetByIdAsync(nameId, decrypt: true, cancellationToken);
+            Assert.Null(searchByName);
+
+
+            // --- 2. Verify "ById" deletion path ---
+            // Arrange
+            var serviceById = new ServiceDto { Name = "KillMeById", ExecutablePath = "kill_id.exe" };
+            int idToDelete = await _repository.AddAsync(serviceById, cancellationToken);
+
+            // Act
+            // Act against the ID-based delete API overload to cover the other half of the name's promise
+            int deletedByIdCount = await _repository.DeleteAsync(idToDelete, cancellationToken);
+
+            // Assert
+            Assert.Equal(1, deletedByIdCount);
+            var searchById = await _repository.GetByIdAsync(idToDelete, decrypt: true, cancellationToken);
+            Assert.Null(searchById);
         }
 
         [Fact]

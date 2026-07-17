@@ -308,6 +308,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var service = new ConsoleService { Name = "ActiveService", Pid = 100, StdoutPath = "old.txt" };
                     vm.SelectedService = service;
 
+                    // Populate RawLines/ConsoleLines with dummy data first to verify SwitchServiceAsync clears it
+                    vm.RawLines.Add(new LogLine("Old Log Entry", LogType.StdOut, DateTime.Now));
+
                     // Simulate DB reporting a newly rotated log file path
                     _serviceRepoMock.Setup(r => r.GetServiceConsoleStateAsync("ActiveService", It.IsAny<CancellationToken>()))
                                     .ReturnsAsync(new ServiceConsoleStateDto { Pid = 100, ActiveStdoutPath = "new.txt" });
@@ -316,8 +319,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                     var task = (Task)TestReflection.InvokeNonPublic(vm, "OnTickAsync");
                     await task;
 
-                    // Assert
+                    // Assert 1: The "UpdatesPaths" half
                     Assert.Equal("new.txt", service.StdoutPath);
+
+                    // Assert 2: The "TriggersSwitch" half
+                    // SwitchServiceAsync clears the existing console buffer before re-tailing the new path.
+                    // Verifying the lines collection is empty proves the switch routine successfully ran.
+                    Assert.Empty(vm.RawLines);
                 }
             });
         }
@@ -434,7 +442,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task SwitchServiceAsync_EmptyCombinedHistory_DoesNotTriggerSortOrCollectionMutation()
+        public async Task SwitchServiceAsync_EmptyPaths_ClearsBufferAndSkipsHistoryReload()
         {
             // Arrange, Act & Assert (Kept Async Task - genuinely awaits programmatic log-switching infrastructure logic)
             await Helper.RunOnSTA(async () =>
@@ -443,7 +451,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 using (var vm = CreateViewModel())
                 {
-                    vm.RawLines.Add(new LogLine("Preserve Me", LogType.StdOut));
+                    vm.RawLines.Add(new LogLine("Cleared On Switch", LogType.StdOut));
 
                     // Act - Invoke service transition with empty/null pathing arguments to trigger structural history emptiness
                     var task = (Task)TestReflection.InvokeNonPublic(vm, "SwitchServiceAsync", string.Empty, string.Empty);

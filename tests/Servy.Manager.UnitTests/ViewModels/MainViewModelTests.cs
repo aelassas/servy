@@ -155,15 +155,52 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         #region Constructors & Properties
 
-        [Fact]
-        public void Constructor_NullGuards_ThrowsArgumentNullException()
+        [Theory]
+        [InlineData(0)]  // serviceManager
+        [InlineData(1)]  // serviceRepository
+        [InlineData(2)]  // serviceCommands
+        [InlineData(3)]  // helpService
+        [InlineData(4)]  // messageBoxService
+        [InlineData(5)]  // performanceVM
+        [InlineData(6)]  // consoleVM
+        [InlineData(7)]  // dependenciesVM
+        [InlineData(8)]  // appConfig
+        [InlineData(9)]  // cursorService
+        [InlineData(10)] // processHelper
+        public void Constructor_NullGuards_ThrowsArgumentNullException(int nullParamIndex)
         {
             // Arrange & Act & Assert
             Helper.RunOnSTA(() =>
             {
-                Assert.Throws<ArgumentNullException>(() => new MainViewModel(null, _serviceRepositoryMock.Object, _serviceCommandsMock.Object, _helpServiceMock.Object, _messageBoxServiceMock.Object, _performanceViewModelMock.Object, _consoleViewModelMock.Object, _dependenciesViewModelMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelperMock.Object, Dispatcher.CurrentDispatcher));
-                Assert.Throws<ArgumentNullException>(() => new MainViewModel(_serviceManagerMock.Object, null, _serviceCommandsMock.Object, _helpServiceMock.Object, _messageBoxServiceMock.Object, _performanceViewModelMock.Object, _consoleViewModelMock.Object, _dependenciesViewModelMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelperMock.Object, Dispatcher.CurrentDispatcher));
-                Assert.Throws<ArgumentNullException>(() => new MainViewModel(_serviceManagerMock.Object, _serviceRepositoryMock.Object, null, _helpServiceMock.Object, _messageBoxServiceMock.Object, _performanceViewModelMock.Object, _consoleViewModelMock.Object, _dependenciesViewModelMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelperMock.Object, Dispatcher.CurrentDispatcher));
+                var args = new object[]
+                {
+                    nullParamIndex == 0 ? null : _serviceManagerMock.Object,
+                    nullParamIndex == 1 ? null : _serviceRepositoryMock.Object,
+                    nullParamIndex == 2 ? null : _serviceCommandsMock.Object,
+                    nullParamIndex == 3 ? null : _helpServiceMock.Object,
+                    nullParamIndex == 4 ? null : _messageBoxServiceMock.Object,
+                    nullParamIndex == 5 ? null : _performanceViewModelMock.Object,
+                    nullParamIndex == 6 ? null : _consoleViewModelMock.Object,
+                    nullParamIndex == 7 ? null : _dependenciesViewModelMock.Object,
+                    nullParamIndex == 8 ? null : _appConfigMock.Object,
+                    nullParamIndex == 9 ? null : _cursorServiceMock.Object,
+                    nullParamIndex == 10 ? null : _processHelperMock.Object,
+                    Dispatcher.CurrentDispatcher // Dispatcher parameter is optional (nullable)
+                };
+
+                Assert.Throws<ArgumentNullException>(() =>
+                {
+                    try
+                    {
+                        Activator.CreateInstance(typeof(MainViewModel), args);
+                    }
+                    catch (System.Reflection.TargetInvocationException ex) when (ex.InnerException != null)
+                    {
+                        // TargetInvocationException is thrown when using Activator.CreateInstance.
+                        // Unwrap and throw the real inner ArgumentNullException so Assert.Throws catches it.
+                        throw ex.InnerException;
+                    }
+                });
             }, createApp: true);
         }
 
