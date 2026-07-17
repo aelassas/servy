@@ -150,16 +150,99 @@ namespace Servy.Core.IntegrationTests.Native
 
             string fullAccountName = $"{Environment.MachineName}\\{_testAccountName}";
 
-            // Act
-            // First call: Should handle the '0xC0000034' status (Not Found) internally and succeed
+            // Resolve the account name to a SecurityIdentifier (SID) to query LSA
+            var ntAccount = new NTAccount(fullAccountName);
+            var sid = (SecurityIdentifier)ntAccount.Translate(typeof(SecurityIdentifier));
+
+            // Allocate the buffer and use GetBinaryForm instead of GetBinaryBytes
+            byte[] sidBytes = new byte[sid.BinaryLength];
+            sid.GetBinaryForm(sidBytes, 0);
+
+            // Assert baseline - The freshly created account must not hold the logon right prior to execution
+            var initialRights = GetAccountRightsViaNativeMethods(sidBytes);
+            Assert.DoesNotContain("SeServiceLogonRight", initialRights);
+
+            // Act 1 - Execute first pass: captures the native 0xC0000034 status (Not Found) branch and grants privilege
             Exception? ex1 = Record.Exception(() => LogonAsServiceGrant.Ensure(fullAccountName));
 
-            // Second call: Should hit the 'found' branch and exit early (no-op)
+            // Assert 1 - Verify execution succeeded and the privilege was physically written to the OS LSA policy database
+            Assert.Null(ex1);
+            var postGrantRights = GetAccountRightsViaNativeMethods(sidBytes);
+            Assert.Contains("SeServiceLogonRight", postGrantRights);
+
+            // Act 2 - Execute second pass: must hit the cached 'found' match pipeline loop branch as an early exit no-op
             Exception? ex2 = Record.Exception(() => LogonAsServiceGrant.Ensure(fullAccountName));
 
-            // Assert
-            Assert.Null(ex1);
+            // Assert 2 - Verify no exceptions were raised, the privilege wasn't stripped, and structure remains unmodified
             Assert.Null(ex2);
+            var postIdempotentRights = GetAccountRightsViaNativeMethods(sidBytes);
+            Assert.Contains("SeServiceLogonRight", postIdempotentRights);
+
+            // Verify idempotency payload metrics: collection sizes must align perfectly without row duplications
+            Assert.Equal(postGrantRights.Count, postIdempotentRights.Count);
+        }
+
+        #endregion
+
+        #region Native Methods LSA Inspection Helper
+
+        private static List<string> GetAccountRightsViaNativeMethods(byte[] sidBytes)
+        {
+            var rightsList = new List<string>();
+
+            var objectAttributes = new NativeMethods.LSA_OBJECT_ATTRIBUTES { Length = Marshal.SizeOf<NativeMethods.LSA_OBJECT_ATTRIBUTES>() };
+            IntPtr policyHandle;
+
+            // Access permission combination required to inspect the account privilege definitions safely
+            uint desiredAccess = 0x00010000 /* STANDARD_RIGHTS_REQUIRED */ | NativeMethods.POLICY_ACCESS.POLICY_LOOKUP_NAMES;
+
+            int openStatus = NativeMethods.LsaOpenPolicy(IntPtr.Zero, ref objectAttributes, desiredAccess, out policyHandle);
+            if (openStatus != 0) return rightsList; // Abort if context window mapping fails
+
+            IntPtr rawSidAllocationPtr = Marshal.AllocHGlobal(sidBytes.Length);
+            try
+            {
+                Marshal.Copy(sidBytes, 0, rawSidAllocationPtr, sidBytes.Length);
+
+                IntPtr outUserRightsBufferPtr;
+                uint countOfRights;
+
+                // Query the operating system directly for the explicit privileges mapped to this SID allocation string
+                int enumStatus = NativeMethods.LsaEnumerateAccountRights(policyHandle, rawSidAllocationPtr, out outUserRightsBufferPtr, out countOfRights);
+
+                // If status is 0 (STATUS_SUCCESS) and buffer is allocated, unmarshal the string values sequentially
+                if (enumStatus == 0 && outUserRightsBufferPtr != IntPtr.Zero)
+                {
+                    try
+                    {
+                        IntPtr currentElementOffsetPtr = outUserRightsBufferPtr;
+                        int structSize = Marshal.SizeOf<NativeMethods.LSA_UNICODE_STRING>();
+
+                        for (int i = 0; i < countOfRights; i++)
+                        {
+                            var unicodeString = Marshal.PtrToStructure<NativeMethods.LSA_UNICODE_STRING>(currentElementOffsetPtr);
+                            if (unicodeString.Buffer != IntPtr.Zero && unicodeString.Length > 0)
+                            {
+                                // Length field contains bytes size. Divide by 2 to compute character boundary size
+                                string rightName = Marshal.PtrToStringUni(unicodeString.Buffer, unicodeString.Length / 2);
+                                rightsList.Add(rightName);
+                            }
+                            currentElementOffsetPtr = IntPtr.Add(currentElementOffsetPtr, structSize);
+                        }
+                    }
+                    finally
+                    {
+                        NativeMethods.LsaFreeMemory(outUserRightsBufferPtr);
+                    }
+                }
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(rawSidAllocationPtr);
+                if (policyHandle != IntPtr.Zero) NativeMethods.LsaClose(policyHandle);
+            }
+
+            return rightsList;
         }
 
         #endregion

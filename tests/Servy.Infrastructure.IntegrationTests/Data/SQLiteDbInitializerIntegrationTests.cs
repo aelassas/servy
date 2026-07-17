@@ -19,6 +19,17 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             return conn;
         }
 
+        /// <summary>
+        /// Shared helper to seed the SchemaInfo table utilizing the exact, production-grade 
+        /// constraint definitions to prevent test configuration drift.
+        /// </summary>
+        private static void SeedSchemaInfo(DbConnection conn, int version)
+        {
+            // Create table with production constraints (CHECK constraint for Id and NOT NULL on Version)
+            conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY CHECK (Id = 1), Version INTEGER NOT NULL);");
+            conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, @version);", new { version });
+        }
+
         #region Standard Migrations & Core Branches
 
         [Fact]
@@ -70,8 +81,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // By creating 'Services' as a VIEW, the subsequent 'CREATE UNIQUE INDEX' on it will throw a SQLiteException.
             using (var conn = CreateConnection())
             {
-                conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY CHECK (Id = 1), Version INTEGER NOT NULL);");
-                conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 0);");
+                SeedSchemaInfo(conn, 0);
                 conn.Execute($"CREATE VIEW {SqlConstants.ServicesTableName} AS SELECT 1 AS Id;");
 
                 // Act & Assert
@@ -147,11 +157,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void Initialize_Version3Database_WithOrphanColumn_PreservesOrphanDataInBackupTable()
         {
-            // Arrange: Set DB exactly to V3 state
+            // Arrange: Set DB exactly to V3 state using faithful schema constraints
             using (var conn = CreateConnection())
             {
-                conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY, Version INTEGER);");
-                conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 3);");
+                SeedSchemaInfo(conn, 3);
 
                 var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT NOT NULL", "OldOrphanData TEXT" };
                 var seedData = new Dictionary<string, string>
@@ -189,11 +198,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void MigrationHelpers_AlreadyApplied_SkipsGracefully()
         {
-            // Arrange: Set DB to V1 state
+            // Arrange: Set DB to V1 state using faithful schema constraints
             using (var conn = CreateConnection())
             {
-                conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY, Version INTEGER);");
-                conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 1);");
+                SeedSchemaInfo(conn, 1);
 
                 // Create table with 'EnableSizeRotation' already existing (triggers Rename skip existing branch)
                 // Lacks 'EnableRotation' (triggers Rename source missing branch)
@@ -221,8 +229,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // Arrange: Simulate a weird state where BOTH the old and new columns exist.
             using (var conn = CreateConnection())
             {
-                conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY, Version INTEGER);");
-                conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 1);");
+                SeedSchemaInfo(conn, 1);
                 conn.Execute($"CREATE TABLE {SqlConstants.ServicesTableName} (Id INTEGER PRIMARY KEY, EnableRotation INTEGER, EnableSizeRotation INTEGER);");
 
                 // Act: Invoke ApplyVersion2 directly to bypass V4's destructive rebuild logic
@@ -246,11 +253,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void ApplyVersion6_AsciiCasingDuplicates_DeduplicatesAndAppliesNoCaseIndex()
         {
-            // Arrange: Initialize a clean baseline up to Version 5 state
+            // Arrange: Initialize a clean baseline up to Version 5 state using faithful schema constraints
             using (var conn = CreateConnection())
             {
-                conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY, Version INTEGER);");
-                conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 5);");
+                SeedSchemaInfo(conn, 5);
 
                 var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT" };
                 var seedData = new Dictionary<string, string> { { "Name", "'Alpha-Service'" } };
@@ -301,11 +307,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public void ApplyVersion6_UnicodeCasingDuplicates_DeduplicatesAndAppliesUnicodeNoCaseIndex()
         {
-            // Arrange: Initialize baseline up to Version 5 state
+            // Arrange: Initialize baseline up to Version 5 state using faithful schema constraints
             using (var conn = CreateConnection())
             {
-                conn.Execute("CREATE TABLE SchemaInfo (Id INTEGER PRIMARY KEY, Version INTEGER);");
-                conn.Execute("INSERT INTO SchemaInfo (Id, Version) VALUES (1, 5);");
+                SeedSchemaInfo(conn, 5);
 
                 var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT" };
                 var seedData = new Dictionary<string, string> { { "Name", "'Ä-Service'" } };
