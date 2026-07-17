@@ -456,14 +456,26 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task DeleteAsync_ByName_ReturnsZero()
         {
             // Arrange
-            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
+            // Explicitly configure no database behavior setup for ExecuteAsync here. 
+            // The method under test should hit an early-return string constraint check, 
+            // meaning any Dapper routing constitutes a direct test failure.
             var repo = CreateRepository();
 
             // Act
             var rows = await repo.DeleteAsync(string.Empty, TestContext.Current.CancellationToken);
 
             // Assert
+            // 1. Verify that the method cleanly returned a neutral 0-row metric count
             Assert.Equal(0, rows);
+
+            // 2. Negative Verification: Explicitly prove that the empty-string guard clause 
+            // intercepted the execution path and never touch the underlying database layer.
+            _mockDapper.Verify(d => d.ExecuteAsync(
+                It.IsAny<string>(),
+                It.IsAny<object>(),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()),
+                Times.Never);
         }
 
         #endregion
@@ -718,25 +730,38 @@ namespace Servy.Infrastructure.UnitTests.Data
         {
             // Arrange
             var serviceName = "SqlVerifyService";
+            var expectedDto = new ServiceConsoleStateDto();
 
+            // Maintain a broad setup so that Dapper returns a valid instance when called, 
+            // ensuring execution proceeds smoothly to the assertion phase.
             _mockDapper
                 .Setup(e => e.QuerySingleOrDefaultAsync<ServiceConsoleStateDto?>(
-                    It.Is<string>(sql =>
-                        sql.Contains($"FROM {SqlConstants.ServicesTableName}") &&
-                        sql.Contains("WHERE Name = @Name") &&
-                        sql.Contains("LIMIT 1")),
-                    It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new ServiceConsoleStateDto());
+                    It.IsAny<string>(),
+                    It.IsAny<object>(),
+                    It.IsAny<IDbTransaction>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedDto);
 
             var repo = CreateRepository();
 
             // Act
-            await repo.GetServiceConsoleStateAsync(serviceName, TestContext.Current.CancellationToken);
+            var result = await repo.GetServiceConsoleStateAsync(serviceName, TestContext.Current.CancellationToken);
 
             // Assert
+            // 1. Verify structural response integrity to intercept unexpected setup misses
+            Assert.NotNull(result);
+            Assert.Same(expectedDto, result);
+
+            // 2. Firmly validate that the executed SQL structure conforms to design rules
             _mockDapper.Verify(e => e.QuerySingleOrDefaultAsync<ServiceConsoleStateDto?>(
-                It.IsAny<string>(),
-                It.Is<object>(p => p.GetType().GetProperty("Name") != null!), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()),
+                It.Is<string>(sql =>
+                    sql.Contains("SELECT Pid, ActiveStdoutPath, ActiveStderrPath") &&
+                    sql.Contains($"FROM {SqlConstants.ServicesTableName}") &&
+                    sql.Contains("WHERE Name = @Name") &&
+                    sql.Contains("LIMIT 1")),
+                It.Is<object>(p => p.GetType().GetProperty("Name") != null!),
+                It.IsAny<IDbTransaction>(),
+                It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 

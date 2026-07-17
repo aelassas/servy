@@ -6,13 +6,7 @@ using System.Security.Principal;
 
 namespace Servy.Core.IntegrationTests.Native
 {
-    [CollectionDefinition("LogonAsServiceGrantIntegrationTests", DisableParallelization = true)]
-    public class LogonAsServiceGrantIntegrationTestsCollection
-    {
-        // Enforces strict sequential isolation across the execution suite
-    }
-
-    [Collection("LogonAsServiceGrantIntegrationTests")]
+    [Collection("CoreOsIntegration")]
     public class LogonAsServiceGrantIntegrationTests : IDisposable
     {
         private readonly string _testAccountName;
