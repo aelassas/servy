@@ -34,10 +34,8 @@ namespace Servy.Core.IntegrationTests.Helpers
         public void Dispose()
         {
             // Clean up temporary files after each test
-            if (Directory.Exists(_tempDirectory))
-            {
-                Directory.Delete(_tempDirectory, true);
-            }
+            try { if (Directory.Exists(_tempDirectory)) Directory.Delete(_tempDirectory, true); }
+            catch { /* Prevent teardown exceptions from hiding test results */ }
         }
 
         [Fact]

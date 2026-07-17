@@ -15,8 +15,9 @@ namespace Servy.Core.UnitTests.Helpers
 
         public void Dispose()
         {
-            if (Directory.Exists(_tempDir))
-                Directory.Delete(_tempDir, true);
+            // Clean up temporary files after each test
+            try { if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, true); }
+            catch { /* Prevent teardown exceptions from hiding test results */ }
         }
 
         [Theory]

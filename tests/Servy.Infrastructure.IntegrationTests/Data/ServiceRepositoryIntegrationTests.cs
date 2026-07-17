@@ -150,24 +150,66 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task UpsertBatchAsync_LargeCollection_ExecutesWithinTransactionBoundaries()
         {
-            // Arrange
-            var batch = new List<ServiceDto>
+            var cancellationToken = TestContext.Current.CancellationToken;
+
+            // Arrange - Generate a genuinely large batch that exceeds default SQLite parameter/chunking limits
+            const int batchSize = AppConfig.DbBatchIdSyncChunkSize + 150;
+            var batch = new List<ServiceDto>();
+            for (int i = 1; i <= batchSize; i++)
             {
-                new ServiceDto { Name = "BatchItem1", ExecutablePath = "p1.exe" },
-                new ServiceDto { Name = "BatchItem2", ExecutablePath = "p2.exe" }
-            };
+                batch.Add(new ServiceDto
+                {
+                    Name = $"BatchItem_{Guid.NewGuid()}_{i}",
+                    ExecutablePath = $"path_{i}.exe"
+                });
+            }
 
             // Act
-            int affectedRows = await _repository.UpsertBatchAsync(batch, TestContext.Current.CancellationToken);
+            int affectedRows = await _repository.UpsertBatchAsync(batch, cancellationToken);
 
             // Assert
-            Assert.True(affectedRows > 0);
-            Assert.NotNull(batch[0].Id);
-            Assert.NotNull(batch[1].Id);
+            Assert.Equal(batchSize, affectedRows);
 
-            var fetched = await _repository.GetAllAsync(decrypt: true, TestContext.Current.CancellationToken);
-            Assert.Contains(fetched, s => s.Name == "BatchItem1");
-            Assert.Contains(fetched, s => s.Name == "BatchItem2");
+            // Ensure ID synchronization cleanly updated original references across chunk boundaries
+            for (int i = 0; i < batchSize; i++)
+            {
+                Assert.NotNull(batch[i].Id);
+                Assert.True(batch[i].Id > 0, $"Batch item at index {i} failed to sync its generated ID.");
+            }
+
+            // Spot-check first and last items in the database
+            var fetched = await _repository.GetAllAsync(decrypt: true, cancellationToken);
+            Assert.Contains(fetched, s => s.Name == batch[0].Name);
+            Assert.Contains(fetched, s => s.Name == batch[batchSize - 1].Name);
+        }
+
+        [Fact]
+        public async Task UpsertBatchAsync_ExceptionThrownMidBatch_RollsBackEntireTransaction()
+        {
+            var cancellationToken = TestContext.Current.CancellationToken;
+
+            // Arrange - Get baseline count
+            var initialCount = (await _repository.GetAllAsync(decrypt: true, cancellationToken)).Count();
+
+            // Generate a mix of valid records and a guaranteed fatal record positioned at the end.
+            // Since ServiceDto.Name has a NOT NULL constraint in the SQLite schema, a null Name causes an exception.
+            var batch = new List<ServiceDto>
+            {
+                new ServiceDto { Name = $"ValidBatch_Before_{Guid.NewGuid()}", ExecutablePath = "p1.exe" },
+                new ServiceDto { Name = null!, ExecutablePath = "invalid.exe" } // Will throw SQLiteException
+            };
+
+            // Act & Assert
+            // Verify that the operation throws a database constraint exception
+            await Assert.ThrowsAnyAsync<Exception>(async () =>
+            {
+                await _repository.UpsertBatchAsync(batch, cancellationToken);
+            });
+
+            // Verify Transaction Atomicity - The valid first item should have rolled back completely
+            var postFailureCollection = await _repository.GetAllAsync(decrypt: true, cancellationToken);
+            Assert.Equal(initialCount, postFailureCollection.Count());
+            Assert.DoesNotContain(postFailureCollection, s => s.Name == batch[0].Name);
         }
 
         [Fact]
@@ -266,14 +308,24 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task SearchAsync_UsingKeywords_EvaluatesWildcardAndSqlEscapeMatchers()
         {
-            // Arrange
-            await _repository.AddAsync(new ServiceDto { Name = "App_Development_%_Test", ExecutablePath = "a.exe" }, TestContext.Current.CancellationToken);
-            await _repository.AddAsync(new ServiceDto { Name = "App_Production", ExecutablePath = "b.exe" }, TestContext.Current.CancellationToken);
+            var cancellationToken = TestContext.Current.CancellationToken;
 
-            // Act - Search targeting literal % character using ESCAPE configurations
-            var results = (await _repository.SearchAsync("development_%", decrypt: true, TestContext.Current.CancellationToken)).ToList();
+            // Arrange
+            // 1. The target record containing literal % and _ characters
+            await _repository.AddAsync(new ServiceDto { Name = "App_Development_%_Test", ExecutablePath = "a.exe" }, cancellationToken);
+
+            // 2. Decoy A: Matches if '%' in "development_%" is treated as a wildcard instead of a literal '%'
+            await _repository.AddAsync(new ServiceDto { Name = "App_Development_XYZ_Test", ExecutablePath = "b.exe" }, cancellationToken);
+
+            // 3. Decoy B: Matches if '_' in "development" is treated as a wildcard (e.g. matching "developmenX")
+            await _repository.AddAsync(new ServiceDto { Name = "App_DevelopmenX_%_Test", ExecutablePath = "c.exe" }, cancellationToken);
+
+            // Act - Search targeting literal "_" and "%" characters using ESCAPE configurations
+            var results = (await _repository.SearchAsync("development_%", decrypt: true, cancellationToken)).ToList();
 
             // Assert
+            // If escaping is broken, "development_%" will match "App_Development_XYZ_Test" (wildcard %) 
+            // and return multiple results. Asserting single-result delivery ensures strict literal evaluation.
             Assert.Single(results);
             Assert.Equal("App_Development_%_Test", results[0].Name);
         }

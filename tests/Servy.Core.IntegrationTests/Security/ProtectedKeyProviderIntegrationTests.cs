@@ -184,25 +184,55 @@ namespace Servy.Core.IntegrationTests.Security
             var keyPath = GetTempFilePath("legacy.key");
             var ivPath = GetTempFilePath("legacy.iv");
 
-            // 1. Manually create a v7.8 legacy key without machine entropy
-            var rawLegacyData = new byte[32];
-            using (var rng = RandomNumberGenerator.Create()) { rng.GetBytes(rawLegacyData); }
-            byte[] legacyEncrypted = ProtectedData.Protect(rawLegacyData, null, DataProtectionScope.LocalMachine);
-            File.WriteAllBytes(keyPath, legacyEncrypted);
-
-            // Capture the exact file state prior to the migration execution step
-            byte[] bytesBeforeMigration = File.ReadAllBytes(keyPath);
-
-            // Act
-            using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+            try
             {
-                var retrievedKey = provider.GetKey();
+                // 1. Manually create a legacy v7.8 key without machine entropy
+                var rawLegacyData = new byte[32];
+                using (var rng = RandomNumberGenerator.Create())
+                {
+                    rng.GetBytes(rawLegacyData);
+                }
 
-                // Assert
-                Assert.Equal(rawLegacyData, retrievedKey); // Must successfully decrypt
+                // Encrypted with NULL entropy
+                byte[] legacyEncrypted = ProtectedData.Protect(rawLegacyData, null, DataProtectionScope.LocalMachine);
+                File.WriteAllBytes(keyPath, legacyEncrypted);
 
-                byte[] bytesAfterMigration = File.ReadAllBytes(keyPath);
-                Assert.NotEqual(bytesBeforeMigration, bytesAfterMigration); // Re-written during migration, no timing dependency
+                // Capture the exact file bytes prior to migration
+                byte[] bytesBeforeMigration = File.ReadAllBytes(keyPath);
+
+                // Act
+                using (var provider = new ProtectedKeyProvider(keyPath, ivPath))
+                {
+                    var retrievedKey = provider.GetKey();
+
+                    // Assert 1: Must successfully decrypt the legacy data
+                    Assert.Equal(rawLegacyData, retrievedKey);
+
+                    // Assert 2: The file on disk was rewritten
+                    byte[] bytesAfterMigration = File.ReadAllBytes(keyPath);
+                    Assert.NotEqual(bytesBeforeMigration, bytesAfterMigration);
+                }
+
+                // Assert 3: Verify the migrated file is genuinely entropy-protected
+                // Path A: A fresh provider instance can successfully read it (using machine entropy)
+                using (var freshProvider = new ProtectedKeyProvider(keyPath, ivPath))
+                {
+                    var roundTripKey = freshProvider.GetKey();
+                    Assert.Equal(rawLegacyData, roundTripKey);
+                }
+
+                // Path B: Raw decryption without entropy MUST fail
+                byte[] migratedBytes = File.ReadAllBytes(keyPath);
+                Assert.Throws<CryptographicException>(() =>
+                {
+                    ProtectedData.Unprotect(migratedBytes, null, DataProtectionScope.LocalMachine);
+                });
+            }
+            finally
+            {
+                // Clean up disk footprint
+                if (File.Exists(keyPath)) File.Delete(keyPath);
+                if (File.Exists(ivPath)) File.Delete(ivPath);
             }
         }
 
