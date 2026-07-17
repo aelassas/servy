@@ -69,12 +69,15 @@ namespace Servy.Core.IntegrationTests.Helpers
             return path;
         }
 
-        [Fact]
-        public void GetProcessesUsingFile_ShouldThrow_WhenPathsAreNullOrEmpty()
+        [Theory]
+        [InlineData(null, "C:\\temp\\file.txt")]
+        [InlineData("C:\\temp\\handle.exe", null)]
+        [InlineData("", "C:\\temp\\file.txt")]
+        [InlineData("C:\\temp\\handle.exe", "")]
+        public void GetProcessesUsingFile_ShouldThrow_WhenPathsAreNullOrEmpty(string handleExePath, string filePath)
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentException>(() => HandleHelper.GetProcessesUsingFile("", "C:\\test.txt"));
-            Assert.Throws<ArgumentException>(() => HandleHelper.GetProcessesUsingFile("handle.exe", ""));
+            Assert.Throws<ArgumentException>(() => HandleHelper.GetProcessesUsingFile(handleExePath, filePath));
         }
 
         [Fact]
