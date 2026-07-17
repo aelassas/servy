@@ -1091,7 +1091,7 @@ namespace Servy.Core.UnitTests.IO
 
                 // Set the cooldown to the future so the self-healing logic 
                 // doesn't immediately reset the breaker to false.
-                TestReflection.SetField(writer, "_disabledCooldownUntil", DateTime.Now.AddMinutes(10));
+                TestReflection.SetField(writer, "_disabledCooldownUntil", DateTime.UtcNow.AddMinutes(10));
 
                 // 2. Act: This would normally rotate, but is now blocked by the breaker
                 writer.Write(new string('X', 1100));

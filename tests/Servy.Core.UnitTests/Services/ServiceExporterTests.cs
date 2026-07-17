@@ -145,16 +145,88 @@ namespace Servy.Core.UnitTests.Services
             {
                 Name = "TestService",
                 ExecutablePath = "C:\\service.exe"
-                // other properties left null
+                // All other optional reference and nullable value types are left null/empty
             };
 
             // Act
             var json = ServiceExporter.ExportJson(service);
 
             // Assert
+            // 1. Verify populated properties are correctly rendered with explicit key-value structure
             Assert.Contains("\"Name\": \"TestService\"", json);
             Assert.Contains("\"ExecutablePath\": \"C:\\\\service.exe\"", json);
-            Assert.DoesNotContain("Description", json); // null properties should be ignored
+
+            // 2. Comprehensive validation: Ensure all properties matching dynamic conditional 
+            // serialization rules (ShouldSerialize*) are completely omitted when null or unassigned.
+            var keysToProveAbsent = new[]
+            {
+                "DisplayName",
+                "Description",
+                "StartupDirectory",
+                "Parameters",
+                "StartupType",
+                "Priority",
+                "EnableConsoleUI",
+                "StdoutPath",
+                "StderrPath",
+                "EnableSizeRotation",
+                "RotationSize",
+                "EnableDateRotation",
+                "DateRotationType",
+                "MaxRotations",
+                "UseLocalTimeForRotation",
+                "EnableHealthMonitoring",
+                "HeartbeatInterval",
+                "MaxFailedChecks",
+                "RecoveryAction",
+                "RecoveryOnCleanExit",
+                "MaxRestartAttempts",
+                "FailureProgramPath",
+                "FailureProgramStartupDirectory",
+                "FailureProgramParameters",
+                "EnvironmentVariables",
+                "ServiceDependencies",
+                "PreLaunchExecutablePath",
+                "PreLaunchStartupDirectory",
+                "PreLaunchParameters",
+                "PreLaunchEnvironmentVariables",
+                "PreLaunchStdoutPath",
+                "PreLaunchStderrPath",
+                "PreLaunchTimeoutSeconds",
+                "PreLaunchRetryAttempts",
+                "PreLaunchIgnoreFailure",
+                "PostLaunchExecutablePath",
+                "PostLaunchStartupDirectory",
+                "PostLaunchParameters",
+                "EnableDebugLogs",
+                "StartTimeout",
+                "StopTimeout",
+                "PreStopExecutablePath",
+                "PreStopStartupDirectory",
+                "PreStopParameters",
+                "PreStopTimeoutSeconds",
+                "PreStopLogAsError",
+                "PostStopExecutablePath",
+                "PostStopStartupDirectory",
+                "PostStopParameters",
+                
+                // Hardened Security Bounds: Validate explicit exclusion of unmanaged internal properties 
+                // and sensitive credentials that are decorated with [JsonIgnore] or skipped natively.
+                "Id",
+                "Pid",
+                "PreviousStopTimeout",
+                "ActiveStdoutPath",
+                "ActiveStderrPath",
+                "RunAsLocalSystem",
+                "UserAccount",
+                "Password"
+            };
+
+            foreach (var key in keysToProveAbsent)
+            {
+                // Quote the keys to prevent false positive substring matching against string field values
+                Assert.DoesNotContain($"\"{key}\"", json);
+            }
         }
 
         #region Null-DTO Contract Fallback Tests
