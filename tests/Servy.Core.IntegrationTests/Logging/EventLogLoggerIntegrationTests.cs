@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Servy.Core.IntegrationTests.Logging
 {
-    [Collection("EventLogLoggerIntegrationTests")]
+    [Collection("CoreOsIntegration")]
     public class EventLogLoggerIntegrationTests : IDisposable
     {
         private readonly bool _isElevated;
