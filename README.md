@@ -70,7 +70,7 @@ When it comes to features, Servy brings together the best parts of tools like NS
 * Browse and search logs by level, date, and keyword for faster troubleshooting from Servy Manager
 * Export/Import service configurations for easy backups and automation
 * Service Event Notification alerts on service failures via Windows notifications and email
-* Compatible with Windows 7-11 x64 and Windows Server editions
+* Compatible with Windows 7 SP1 to 11 (x64/ARM64) and Windows Server editions
 
 ## Support & Contributing
 
