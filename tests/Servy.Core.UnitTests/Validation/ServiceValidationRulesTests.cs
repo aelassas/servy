@@ -79,7 +79,7 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.Single(result.Errors);
-            Assert.Contains(result.Errors, w => w.Contains("exceeds"));
+            Assert.Contains(string.Format(Strings.Msg_DescriptionLengthReached, AppConfig.MaxDescriptionLength), result.Errors);
         }
 
         [Fact]
@@ -123,10 +123,10 @@ namespace Servy.Core.UnitTests.Validation
             var result = _sut.Validate(dto);
 
             // Assert
-            Assert.Contains(result.Errors, e => e.Contains("Start timeout"));
-            Assert.Contains(result.Errors, e => e.Contains("Stop timeout"));
-            Assert.Contains(result.Errors, e => e.Contains("Rotation size"));
-            Assert.Contains(result.Errors, e => e.Contains("Max rotations"));
+            Assert.Contains(string.Format(Strings.Msg_InvalidStartTimeout, AppConfig.MinStartTimeout, AppConfig.MaxStartTimeout), result.Errors);
+            Assert.Contains(string.Format(Strings.Msg_InvalidStopTimeout, AppConfig.MinStopTimeout, AppConfig.MaxStopTimeout), result.Errors);
+            Assert.Contains(string.Format(Strings.Msg_InvalidRotationSize, AppConfig.MinRotationSize, AppConfig.MaxRotationSize), result.Errors);
+            Assert.Contains(string.Format(Strings.Msg_InvalidMaxRotations, AppConfig.MinMaxRotations, AppConfig.MaxMaxRotations), result.Errors);
         }
 
         [Theory]
@@ -150,9 +150,9 @@ namespace Servy.Core.UnitTests.Validation
             var result = _sut.Validate(dto);
 
             // Assert
-            Assert.Contains(result.Errors, e => e.Contains("Heartbeat interval"));
-            Assert.Contains(result.Errors, e => e.Contains("Max Failed Checks"));
-            Assert.Contains(result.Errors, e => e.Contains("Max Restart Attempts"));
+            Assert.Contains(string.Format(Strings.Msg_InvalidHeartbeatInterval, AppConfig.MinHeartbeatInterval, AppConfig.MaxHeartbeatInterval), result.Errors);
+            Assert.Contains(string.Format(Strings.Msg_InvalidMaxFailedChecks, AppConfig.MinMaxFailedChecks, AppConfig.MaxMaxFailedChecks), result.Errors);
+            Assert.Contains(string.Format(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.MinMaxRestartAttempts, AppConfig.MaxMaxRestartAttempts), result.Errors);
         }
 
         [Fact]
@@ -202,8 +202,8 @@ namespace Servy.Core.UnitTests.Validation
 
             // Assert
             Assert.Contains(Strings.Msg_InvalidPreLaunchPath, result.Errors);
-            Assert.Contains(result.Errors, e => e.Contains(string.Format(Strings.Msg_InvalidPreLaunchTimeout, AppConfig.MinPreLaunchTimeoutSeconds, AppConfig.MaxPreLaunchTimeoutSeconds)));
-            Assert.Contains(result.Errors, e => e.Contains(string.Format(Strings.Msg_InvalidPreLaunchRetryAttempts, AppConfig.MinPreLaunchRetryAttempts, AppConfig.MaxPreLaunchRetryAttempts)));
+            Assert.Contains(string.Format(Strings.Msg_InvalidPreLaunchTimeout, AppConfig.MinPreLaunchTimeoutSeconds, AppConfig.MaxPreLaunchTimeoutSeconds), result.Errors);
+            Assert.Contains(string.Format(Strings.Msg_InvalidPreLaunchRetryAttempts, AppConfig.MinPreLaunchRetryAttempts, AppConfig.MaxPreLaunchRetryAttempts), result.Errors);
             Assert.Contains(Strings.Msg_InvalidPreLaunchStdoutPath, result.Errors);
             Assert.Contains(Strings.Msg_InvalidPreLaunchStderrPath, result.Errors);
         }
