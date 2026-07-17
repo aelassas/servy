@@ -5,6 +5,7 @@ using Servy.Core.Domain;
 using Servy.Core.Enums;
 using Servy.Core.Services;
 using System;
+using System.Linq;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
@@ -284,7 +285,13 @@ namespace Servy.Core.UnitTests.Domain
                     o.EnableSizeRotation == true &&
                     o.RotationSizeInBytes == AppConfig.ToBytes(Math.Max(1, service.RotationSize)) &&
                     o.EnableHealthMonitoring == true &&
-                    o.RecoveryAction == service.RecoveryAction
+                    o.RecoveryAction == service.RecoveryAction &&
+
+                    // Symmetrical Hardening: Firmly assert that the fallback mechanism routes to 
+                    // the default UI executable path and does not leak the alternative CLI variant.
+                    !string.IsNullOrWhiteSpace(o.WrapperExePath) &&
+                    o.WrapperExePath.Contains(AppConfig.ServyServiceUIExe) &&
+                    o.WrapperExePath.IndexOf(".CLI", StringComparison.OrdinalIgnoreCase) == -1
                 ), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success())
                 .Verifiable();
