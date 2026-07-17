@@ -38,19 +38,55 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         }
 
         [Fact]
-        public void Format_Win32ExceptionThrownOnAccess_CatchesAndReturnsFallbackString()
+        public void Format_NoAssociatedProcess_CatchesInvalidOperationExceptionAndReturnsFallback()
         {
-            // Arrange - Use a mock of a non-sealed component pattern or an uninitialized Process model
+            // Arrange
             using (var process = new Process())
             {
                 // Act
-                // Forcing an operations execution onto an unallocated Process object native handle
-                // throws an internal Win32Exception or InvalidOperationException depending on runtime state.
+                // An unassociated Process object throws InvalidOperationException on property access,
+                // cascading down to the inner try-catch block and ultimately returning the exited process fallback.
                 string formatted = process.Format();
 
                 // Assert
                 Assert.NotNull(formatted);
-                Assert.True(formatted.Contains("PID") || formatted.Contains("Process"));
+                Assert.Equal("(Exited Process)", formatted);
+            }
+        }
+
+        [Fact]
+        public void Format_AccessDeniedOnSystemProcess_CatchesWin32ExceptionAndReturnsFallback()
+        {
+            // Arrange
+            // PID 0 (Idle) or PID 4 (System) is guaranteed to exist on Windows and throws a Win32Exception 
+            // when attempting to query protected native properties (like ProcessName) under non-elevated states.
+            Process? systemProcess = null;
+            try
+            {
+                systemProcess = Process.GetProcessById(4); // System process
+            }
+            catch (ArgumentException)
+            {
+                // Fallback safe-guard for cross-platform/alternative test environments where PID 4 isn't "System"
+                try { systemProcess = Process.GetProcessById(0); } catch { /* Ignore */ }
+            }
+
+            if (systemProcess != null)
+            {
+                try
+                {
+                    // Act
+                    string formatted = systemProcess.Format();
+
+                    // Assert
+                    Assert.NotNull(formatted);
+                    // Since Id succeeds but ProcessName throws Win32Exception, it falls back to the ID or inaccessible string
+                    Assert.True(formatted.Contains("PID") || formatted.Contains("Inaccessible Process") || formatted.Contains("System"));
+                }
+                finally
+                {
+                    systemProcess.Dispose();
+                }
             }
         }
 
