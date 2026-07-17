@@ -127,16 +127,20 @@ namespace Servy.Core.UnitTests.Native
 
         #region AtomicSecureMove Tests
 
-        [Fact]
-        public void AtomicSecureMove_NullOrEmptySource_ThrowsArgumentException()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void AtomicSecureMove_NullOrEmptySource_ThrowsArgumentException(string? source)
         {
-            Assert.Throws<ArgumentException>("source", () => NativeMethodsHelpers.AtomicSecureMove("", "dest.txt"));
+            Assert.Throws<ArgumentException>("source", () => NativeMethodsHelpers.AtomicSecureMove(source!, "dest.txt"));
         }
 
-        [Fact]
-        public void AtomicSecureMove_NullOrEmptyDestination_ThrowsArgumentException()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void AtomicSecureMove_NullOrEmptyDestination_ThrowsArgumentException(string? destination)
         {
-            Assert.Throws<ArgumentException>("destination", () => NativeMethodsHelpers.AtomicSecureMove("src.txt", ""));
+            Assert.Throws<ArgumentException>("destination", () => NativeMethodsHelpers.AtomicSecureMove("src.txt", destination!));
         }
 
         [Fact]

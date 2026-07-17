@@ -34,11 +34,11 @@ namespace Servy.Core.UnitTests.Security
             Assert.Throws<ArgumentNullException>(() => new SecureData(null!));
         }
 
-        [Theory]
-        [InlineData(null)]
-        public void Encrypt_Null_Throws(string? input)
+        [Fact]
+        public void Encrypt_Null_Throws()
         {
             // Arrange
+            string? input = null;
             using (var sp = new SecureData(_mockProvider.Object))
             {
                 // Act & Assert
@@ -46,15 +46,15 @@ namespace Servy.Core.UnitTests.Security
             }
         }
 
-        [Theory]
-        [InlineData("")]
-        public void Encrypt_Empty_Throws(string? input)
+        [Fact]
+        public void Encrypt_Empty_Throws()
         {
             // Arrange
+            string input = string.Empty;
             using (var sp = new SecureData(_mockProvider.Object))
             {
                 // Act & Assert
-                Assert.Throws<ArgumentException>(() => sp.Encrypt(input!));
+                Assert.Throws<ArgumentException>(() => sp.Encrypt(input));
             }
         }
 
@@ -128,11 +128,11 @@ namespace Servy.Core.UnitTests.Security
 
         #region Branch Coverage: Fallbacks & Tampering
 
-        [Theory]
-        [InlineData(null)]
-        public void Decrypt_Null_ThrowsArgumentNullException(string? input)
+        [Fact]
+        public void Decrypt_Null_ThrowsArgumentNullException()
         {
             // Arrange
+            string? input = null;
             using (var sp = new SecureData(_mockProvider.Object))
             {
                 // Act & Assert
@@ -143,15 +143,15 @@ namespace Servy.Core.UnitTests.Security
             }
         }
 
-        [Theory]
-        [InlineData("")]
-        public void Decrypt_Empty_ThrowsArgumentException(string? input)
+        [Fact]
+        public void Decrypt_Empty_ThrowsArgumentException()
         {
             // Arrange
+            string input = string.Empty;
             using (var sp = new SecureData(_mockProvider.Object))
             {
                 // Act & Assert
-                var ex = Assert.Throws<ArgumentException>(() => sp.Decrypt(input!));
+                var ex = Assert.Throws<ArgumentException>(() => sp.Decrypt(input));
 
                 // Verify the parameter name matches for extra precision
                 Assert.Equal("cipherText", ex.ParamName);
