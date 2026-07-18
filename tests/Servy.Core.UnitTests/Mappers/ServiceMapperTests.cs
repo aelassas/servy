@@ -160,49 +160,7 @@ namespace Servy.Core.UnitTests.Mappers
         public void ToDomain_NullRepository_ThrowsArgumentNullException()
         {
             // Arrange
-            var dto = new ServiceDto
-            {
-                Name = "MyService",
-                Description = "Desc",
-                ExecutablePath = "C:\\service.exe",
-                StartupDirectory = "C:\\",
-                Parameters = "",
-                StartupType = null,
-                Priority = null,
-                StdoutPath = "stdout.log",
-                StderrPath = "stderr.log",
-                EnableSizeRotation = null,
-                RotationSize = null,
-                EnableDateRotation = null,
-                DateRotationType = null,
-                MaxRotations = null,
-                EnableDebugLogs = null,
-                EnableHealthMonitoring = null,
-                HeartbeatInterval = null,
-                MaxFailedChecks = null,
-                RecoveryAction = null,
-                MaxRestartAttempts = null,
-                FailureProgramPath = null,
-                FailureProgramStartupDirectory = null,
-                FailureProgramParameters = null,
-                EnvironmentVariables = null,
-                ServiceDependencies = null,
-                RunAsLocalSystem = null,
-                UserAccount = null,
-                Password = null,
-                PreLaunchExecutablePath = null,
-                PreLaunchStartupDirectory = null,
-                PreLaunchParameters = null,
-                PreLaunchEnvironmentVariables = null,
-                PreLaunchStdoutPath = null,
-                PreLaunchStderrPath = null,
-                PreLaunchTimeoutSeconds = null,
-                PreLaunchRetryAttempts = null,
-                PreLaunchIgnoreFailure = null,
-                PostLaunchExecutablePath = null,
-                PostLaunchStartupDirectory = null,
-                PostLaunchParameters = null,
-            };
+            var dto = new ServiceDto { Name = "MyService", ExecutablePath = @"C:\service.exe" };
 
             // Act & Assert
             var ex = Assert.Throws<ArgumentNullException>(() => ServiceMapper.ToDomain(null!, dto));
