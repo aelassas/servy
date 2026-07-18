@@ -9,6 +9,11 @@ namespace Servy.CLI.Helpers
     [ExcludeFromCodeCoverage]
     public static class ConsoleHelper
     {
+        // Test Seam: Allows test infrastructure suites to mock or force redirection states deterministically
+        private static bool? _isOutputRedirectedOverride;
+
+        private static bool IsOutputRedirected => _isOutputRedirectedOverride ?? Console.IsOutputRedirected;
+
         /// <summary>
         /// Runs an asynchronous action while displaying a console loading spinner.
         /// The spinner shows next to a custom message until the action completes.
@@ -33,7 +38,7 @@ namespace Servy.CLI.Helpers
                 var spinnerTask = Task.Run(async () =>
                 {
                     // Only attempt to show spinner if output is not redirected
-                    if (Console.IsOutputRedirected) return;
+                    if (IsOutputRedirected) return;
 
                     while (!cts.Token.IsCancellationRequested)
                     {
@@ -66,7 +71,7 @@ namespace Servy.CLI.Helpers
                     // This prevents IOException in CI/Piped environments
                     try
                     {
-                        if (!Console.IsOutputRedirected)
+                        if (!IsOutputRedirected)
                         {
                             int width = Console.WindowWidth;
                             if (width > 0)
@@ -84,6 +89,5 @@ namespace Servy.CLI.Helpers
                 }
             }
         }
-
     }
 }

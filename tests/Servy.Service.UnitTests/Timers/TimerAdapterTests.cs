@@ -80,6 +80,9 @@ namespace Servy.Service.UnitTests.Timers
                 case "ElapsedRemover":
                     Assert.Throws<ObjectDisposedException>(() => timer.Elapsed -= (s, e) => { });
                     break;
+                default:
+                    Assert.Fail($"Unhandled member name '{member}' in test case. Please ensure the test data is up to date with the TimerAdapter methods.");
+                    break;
             }
         }
 

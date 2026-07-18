@@ -373,11 +373,31 @@ namespace Servy.Manager.UnitTests.ViewModels
             var service = new Service { Name = "RowSvc" };
             var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
 
-            // Act
-            // Triggering a non-state tracking field update (like Description) shouldn't invoke structural command refreshes
-            TestReflection.InvokeNonPublic(vm, "Service_PropertyChanged", service, new PropertyChangedEventArgs(nameof(Service.Description)));
+            var wasRaised = false;
+            EventHandler handler = (sender, args) => wasRaised = true;
 
-            // Test successfully passes if no execution error leaks from command wrapper pipes
+            // Subscribe to representative commands that evaluate service state thresholds
+            vm.StartCommand.CanExecuteChanged += handler;
+            vm.StopCommand.CanExecuteChanged += handler;
+            vm.RestartCommand.CanExecuteChanged += handler;
+
+            try
+            {
+                // Act
+                // Triggering a non-state tracking field update (like Description) shouldn't invoke structural command refreshes
+                TestReflection.InvokeNonPublic(vm, "Service_PropertyChanged", service, new PropertyChangedEventArgs(nameof(Service.Description)));
+
+                // Assert
+                // Explicitly prove that no command re-evaluation was triggered by the change event
+                Assert.False(wasRaised, "CanExecuteChanged was erroneously raised on commands for an irrelevant property update.");
+            }
+            finally
+            {
+                // Clean up event handlers to prevent test-runner memory leaks
+                vm.StartCommand.CanExecuteChanged -= handler;
+                vm.StopCommand.CanExecuteChanged -= handler;
+                vm.RestartCommand.CanExecuteChanged -= handler;
+            }
         }
 
         #endregion

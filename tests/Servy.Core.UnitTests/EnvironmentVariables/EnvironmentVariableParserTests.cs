@@ -262,15 +262,16 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         [Theory]
-        [InlineData(@"KEY\\=NOEQUAL")]
-        [InlineData(@"KEY\\\\=NOEQUAL")]
-        public void Parse_EscapeBackslash(string input)
+        [InlineData(@"KEY\\=NOEQUAL", @"KEY\")]
+        [InlineData(@"KEY\\\\=NOEQUAL", @"KEY\\")]
+        public void Parse_EscapeBackslash(string input, string expectedName)
         {
             // Arrange & Act
             var result = EnvironmentVariableParser.Parse(input);
 
             // Assert
             Assert.Single(result);
+            Assert.Equal(expectedName, result[0].Name);
             Assert.Equal("NOEQUAL", result[0].Value);
         }
 
