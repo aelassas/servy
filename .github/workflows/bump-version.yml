@@ -32,7 +32,7 @@ jobs:
     steps:
       # 1. Checkout the repository with full history to allow pushing commits
       - name: Checkout repo
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4.3.1
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
         with:
           fetch-depth: 0
       # 1a. Write shared git helper to disk for use in subsequent steps
