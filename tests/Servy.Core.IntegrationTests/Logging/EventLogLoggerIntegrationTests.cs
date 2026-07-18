@@ -254,6 +254,8 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void ScopedLogger_SetIsEventLogEnabled_PropagatesToParent()
         {
+            if (!_isElevated) return;
+
             string source = GenerateSourceName();
             using (var rootLogger = new EventLogLogger(source, LogLevel.Error, false))
             {

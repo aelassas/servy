@@ -518,11 +518,13 @@ namespace Servy.Core.UnitTests.Logging
             Logger.Initialize(_testFileName);
             Logger.Info("First writer");
 
-            // Capture file state
-            var fileInfo = new FileInfo(_fullLogPath);
-            DateTime initialWriteTime = fileInfo.LastWriteTimeUtc;
+            // Behavioral Setup: Leverage centralized test infrastructure reflection engine
+            // to inject a non-zero sentinel into the private static fallback tracking variable slot.
+            // On a successful reconfiguration run, InternalInitialize() will reset this back to 0.
+            const string targetCounterFieldName = "_initFallbackWriteCount";
+            TestReflection.SetFieldStatic(typeof(Logger), targetCounterFieldName, 99);
 
-            // Act: Call setters with new values (branches that trigger InternalInitialize)
+            // Act: Call setters with values different from defaults to force InternalInitialize execution branches
             Logger.SetLogRotationSize(20);
             Logger.SetMaxBackupLogFiles(5);
             Logger.SetDateRotationType(DateRotationType.Daily);
@@ -531,9 +533,14 @@ namespace Servy.Core.UnitTests.Logging
             Logger.Shutdown();
 
             // Assert
+            // 1. Functional Integrity: Verify that the logs were appended successfully across configurations
             string content = File.ReadAllText(_fullLogPath);
             Assert.Contains("First writer", content);
             Assert.Contains("Second writer", content);
+
+            // 2. Behavioral Verification: Prove that re-initialization actually executed by checking the sentinel reset
+            int finalCounterValue = TestReflection.GetFieldStatic<int>(typeof(Logger), targetCounterFieldName);
+            Assert.Equal(0, finalCounterValue);
         }
 
         [Fact]
