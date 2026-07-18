@@ -314,7 +314,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Pid = 1234,
                 IsPidEnabled = true,
                 CpuUsage = 5.5,
-                RamUsage = 1024_1024
+                RamUsage = 1024 * 1024 // 1 MB
             };
 
             var vm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
@@ -332,7 +332,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             Assert.Equal(1234, vm.Pid);
             Assert.True(vm.IsPidEnabled);
             Assert.Equal(5.5, vm.CpuUsage);
-            Assert.Equal(1024_1024, vm.RamUsage);
+            Assert.Equal(1024 * 1024, vm.RamUsage);
 
             // Act - Change ViewModel properties directly
             vm.IsSelected = true;
