@@ -279,7 +279,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task SearchAsync_WithKeyword_EmptyResult()
+        public async Task Search_MessageWithoutBracketFormat_IsExcluded()
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
@@ -290,7 +290,7 @@ namespace Servy.Core.UnitTests.Services
             var service = CreateService(mockReader);
 
             // Act
-            var result = await service.SearchAsync(null, null, null, "servy", CancellationToken.None);
+            var result = await service.SearchAsync(null, null, null, null, CancellationToken.None);
 
             // Assert
             Assert.Empty(result);
