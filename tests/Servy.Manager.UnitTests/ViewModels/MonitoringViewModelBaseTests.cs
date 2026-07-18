@@ -287,7 +287,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void OnTick_ConsecutiveFailures_RateLimitsErrorLogsObservedByLoggers()
+        public void OnTick_ConsecutiveFailures_IncrementsErrorCountAndResetsRunningFlag()
         {
             // Arrange
             var vm = CreateViewModel(onTick: _ => throw new InvalidOperationException("SCM connection drop out panic."));

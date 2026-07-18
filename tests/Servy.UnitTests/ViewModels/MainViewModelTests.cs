@@ -169,6 +169,10 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.PostStopStartupDirectory = @"C:\post-stop";
             _viewModel.PostStopParameters = "post-stop-args";
 
+            _viewModel.EnableConsoleUI = true;
+            _viewModel.EnableDebugLogs = true;
+            _viewModel.RecoveryOnCleanExit = true;
+
             // Act
             await _viewModel.InstallCommand.ExecuteAsync(null);
 
@@ -226,7 +230,11 @@ namespace Servy.UnitTests.ViewModels
                     c.PreStopLogAsError == _viewModel.PreStopLogAsError &&
                     c.PostStopExecutablePath == _viewModel.PostStopExecutablePath &&
                     c.PostStopStartupDirectory == _viewModel.PostStopStartupDirectory &&
-                    c.PostStopParameters == _viewModel.PostStopParameters
+                    c.PostStopParameters == _viewModel.PostStopParameters &&
+
+                    c.EnableConsoleUI == _viewModel.EnableConsoleUI &&
+                    c.EnableDebugLogs == _viewModel.EnableDebugLogs &&
+                    c.RecoveryOnCleanExit == _viewModel.RecoveryOnCleanExit
                 ), It.IsAny<CancellationToken>()), Times.Once);
         }
 
