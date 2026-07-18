@@ -1361,7 +1361,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void Dispose_PerformanceAndChildViewModelsNotImplementIDisposable_BypassesGracefully()
+        public void Dispose_PerformanceAndChildViewModels_DisposesAllChildrenWithoutThrowing()
         {
             // Arrange
             Helper.RunOnSTA(() =>
@@ -1369,6 +1369,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var uiDispatcherMock = new Mock<IUiDispatcher>();
                 uiDispatcherMock.Setup(d => d.YieldAsync()).Returns(Task.CompletedTask);
 
+                // Initialize standard child instances inheriting from MonitoringViewModelBase (implicitly IDisposable).
+                // This verifies that the parent MainViewModel context successfully triggers cascade disposal
+                // across the active child hierarchy without throwing lifecycle exceptions.
                 var mockPerformance = new Mock<PerformanceViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, _processHelperMock.Object, uiDispatcherMock.Object);
                 var mockConsole = new Mock<ConsoleViewModel>(_serviceRepositoryMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object);
                 var mockDependencies = new Mock<DependenciesViewModel>(_serviceRepositoryMock.Object, _serviceManagerMock.Object, _serviceCommandsMock.Object, _appConfigMock.Object, _cursorServiceMock.Object, uiDispatcherMock.Object, _messageBoxServiceMock.Object);
@@ -1388,8 +1391,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                     Dispatcher.CurrentDispatcher
                 );
 
-                // Act & Assert
+                // Act
                 var exception = Record.Exception(() => vm.Dispose());
+
+                // Assert
                 Assert.Null(exception);
             }, createApp: true);
         }

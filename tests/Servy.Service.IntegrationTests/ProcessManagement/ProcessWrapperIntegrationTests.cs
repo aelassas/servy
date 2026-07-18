@@ -477,8 +477,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 // Act - Invoke SendCtrlC directly on a wrapper targeting a windowless background task runner profile
                 var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
 
-                // Assert: True/False depends cleanly on native environment access, but path must complete without unhandled crashes.
-                Assert.NotNull(result);
+                // Assert
+                Assert.False((bool)result);
 
                 // Cleanup
                 wrapper.Kill();

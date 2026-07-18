@@ -460,18 +460,29 @@ namespace Servy.Core.UnitTests.IO
             var filePath = Path.Combine(_testDir, "rotate2.txt");
 
             // Act
-            using (var writer = CreateWriter(filePath, true, 5))
+            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 5))
             {
-                writer.WriteLine("12345"); // exactly 5 bytes -> triggers rotation
+                writer.WriteLine("12345"); // exactly 5 bytes -> triggers rotation threshold
                 writer.Flush();
-                writer.WriteLine("12"); // write to new file
+                writer.WriteLine("12");    // write to newly initialized stream file
                 writer.Flush();
             }
 
             // Assert
+            // 1. Ensure the active tracking file base structure was cleanly recreated
             Assert.True(File.Exists(filePath));
-            var rotatedFiles = Directory.GetFiles(_testDir, "rotate2.txt.*");
+
+            // 2. Firm Validation: Target the middle-timestamp layout and explicitly filter out 
+            // the base tracking path to verify a genuine archival stream rotation took place.
+            var rotatedFiles = Directory.GetFiles(_testDir, "rotate2.*.txt")
+                                        .Where(f => !f.EndsWith("rotate2.txt", StringComparison.OrdinalIgnoreCase))
+                                        .ToList();
+
             Assert.NotEmpty(rotatedFiles);
+
+            // Optional: Confirm that the archived file contains our pre-rotated block
+            var historicalContent = File.ReadAllText(rotatedFiles.First());
+            Assert.Contains("12345", historicalContent);
         }
 
         [Fact]

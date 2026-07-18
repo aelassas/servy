@@ -151,24 +151,45 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void GetChildren_ValidParent_ReturnsOnlyImmediateChildren()
         {
             // Arrange
-            var root = SpawnProcessTree(1);
-            List<Process> children = new List<Process>();
+            // Explicitly spawn a depth-2 tree (Root -> Immediate Child -> Grandchild)
+            // to introduce an inner nested process boundary that must be excluded.
+            var root = SpawnProcessTree(2);
+            var children = new List<Process>();
+            var grandChildren = new List<Process>();
 
             // Act
             try
             {
+                // Retrieve the direct children using the extension method under test via direct method-group mapping
                 children = WaitForProcessName(root, "powershell", ProcessExtensions.GetChildren);
 
-                var targetProcess = children.FirstOrDefault(p =>
-                    p.ProcessName.Equals("powershell", StringComparison.OrdinalIgnoreCase));
-
                 // Assert
-                Assert.NotNull(targetProcess);
-                Assert.Equal(root.Id, GetParentPidViaWmi(targetProcess));
+                // 1. Core structural discovery checks
+                Assert.NotEmpty(children);
+
+                // 2. Immediate Child Verification: Verify the direct child is found and maps back to root
+                var directChild = children.FirstOrDefault(p =>
+                    p.ProcessName.Equals("powershell", StringComparison.OrdinalIgnoreCase) &&
+                    GetParentPidViaWmi(p) == root.Id);
+
+                Assert.NotNull(directChild);
+
+                // 3. Exclusion Boundary Assertion: Extract grandchildren via the same helper signature
+                // to explicitly prove they are completely absent from the direct children collection.
+                grandChildren = WaitForProcessName(directChild, "powershell", ProcessExtensions.GetChildren);
+                if (grandChildren.Any())
+                {
+                    var grandchildPid = grandChildren.First().Id;
+
+                    // The direct children list MUST NOT contain the grandchild PID if the contract holds true
+                    Assert.DoesNotContain(children, c => c.Id == grandchildPid);
+                }
             }
             finally
             {
+                // Clean up unmanaged OS process handles to prevent system resource leaks
                 foreach (var child in children) child.Dispose();
+                foreach (var grandchild in grandChildren) grandchild.Dispose();
             }
         }
 
