@@ -217,6 +217,7 @@ namespace Servy.Core.IntegrationTests.Helpers
             // Assert
             Assert.True(result);
             Assert.True(File.Exists(targetPath));
+            Assert.Equal(dummyData, File.ReadAllBytes(targetPath));
         }
 
         [Fact]

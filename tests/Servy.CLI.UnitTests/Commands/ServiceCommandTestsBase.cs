@@ -1,7 +1,9 @@
 ﻿using Moq;
+using Servy.CLI.Commands;
 using Servy.CLI.Models;
 using Servy.CLI.Resources;
 using Servy.Core.Services;
+using Servy.Testing;
 
 namespace Servy.CLI.UnitTests.Commands
 {
@@ -113,6 +115,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             try
             {
+                TestReflection.SetFieldStatic(typeof(BaseCommand), "_bypassElevationCheck", true);
                 var result = cmd.ExecuteAsync(options, TestContext.Current.CancellationToken);
                 return await result;
             }

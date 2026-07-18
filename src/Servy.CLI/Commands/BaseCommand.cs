@@ -14,6 +14,9 @@ namespace Servy.CLI.Commands
     /// </summary>
     public abstract class BaseCommand
     {
+        // Test Seam: Enables unit tests to bypass non-mockable static OS environment checks deterministically.
+        private static bool _bypassElevationCheck = false;
+
         /// <summary>
         /// Creates a pre-check delegate that verifies if a specific service is in a 'Disabled' state before proceeding with a command.
         /// </summary>
@@ -112,8 +115,11 @@ namespace Servy.CLI.Commands
         {
             return await ExecuteWithHandlingAsync(commandName, action, suggestion, async () =>
             {
-                // Pre-flight elevation check
-                SecurityHelper.EnsureAdministrator();
+                // Pre-flight elevation check wrapped inside a protective test seam hook
+                if (!_bypassElevationCheck)
+                {
+                    SecurityHelper.EnsureAdministrator();
+                }
 
                 if (string.IsNullOrWhiteSpace(serviceName))
                     return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
