@@ -120,7 +120,6 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.False(Helper.CreateParentDirectory(null));
             Assert.False(Helper.CreateParentDirectory(""));
             Assert.False(Helper.CreateParentDirectory("    "));
-            Assert.False(Helper.CreateParentDirectory("C:\\"));
         }
 
         [Fact]

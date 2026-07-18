@@ -15,6 +15,8 @@ namespace Servy.Core.IntegrationTests.Helpers
     [Collection("ProcessIntegrationTests")]
     public class ProcessKillerIntegrationTests : HandleExeIntegrationTestBase, IDisposable
     {
+        private static readonly string PowerShellPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"WindowsPowerShell\v1.0\powershell.exe");
+
         private readonly ProcessKiller _processKiller;
         private readonly List<Process> _trackedProcesses;
         private readonly List<string> _tempFiles;
@@ -426,8 +428,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         /// </summary>
         private (Process Parent, Process Child) SpawnProcessTree()
         {
-            string psPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),
-                @"WindowsPowerShell\v1.0\powershell.exe");
+            string psPath = PowerShellPath;
 
             string childScript = "while ($true) { Start-Sleep -Seconds 1 }";
             string encodedChildScript = Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(childScript));
@@ -500,7 +501,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             var psi = new ProcessStartInfo
             {
-                FileName = "powershell.exe",
+                FileName = PowerShellPath,
                 Arguments = $"-NoProfile -NonInteractive -Command \"{psScript}\"",
                 RedirectStandardOutput = true,
                 UseShellExecute = false,

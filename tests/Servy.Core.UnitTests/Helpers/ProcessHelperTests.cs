@@ -100,7 +100,7 @@ namespace Servy.Core.UnitTests.Helpers
             var ex = Assert.Throws<InvalidOperationException>(() =>
                 _processHelper.ResolvePath(input));
 
-            Assert.Contains("relative", ex.Message);
+            Assert.Contains("Only absolute paths are allowed", ex.Message);
         }
 
         [Fact]
