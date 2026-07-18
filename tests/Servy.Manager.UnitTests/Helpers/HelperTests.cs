@@ -9,7 +9,8 @@ namespace Servy.Manager.UnitTests.Helpers
         {
             // Arrange & Act & Assert
             // Should pass without throwing a NullReferenceException
-            Helper.CancelAndDisposeSafely(null);
+            var exception = Record.Exception(() => Helper.CancelAndDisposeSafely(null));
+            Assert.Null(exception);
         }
 
         [Fact]

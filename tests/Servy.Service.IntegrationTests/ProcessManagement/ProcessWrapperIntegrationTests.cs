@@ -458,7 +458,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.Null(result);
             }
         }
-
+            
         [Fact]
         public void SendCtrlC_ProcessWithNoConsoleAttached_GracefullyReturnsFalseToFallbackChain()
         {
@@ -470,8 +470,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 // Act - Trigger SendCtrlC directly on a wrapper targeting a windowless background task runner profile
                 var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
 
-                // Assert: True/False depends cleanly on native environment access, but path must complete without unhandled crashes.
-                Assert.NotNull(result);
+                // Assert
+                Assert.False((bool)result!);
 
                 // Cleanup
                 wrapper.Kill();

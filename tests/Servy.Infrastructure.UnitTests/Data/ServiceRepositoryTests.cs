@@ -670,7 +670,9 @@ namespace Servy.Infrastructure.UnitTests.Data
             // Assert
             _mockDapper.Verify(e => e.QuerySingleOrDefaultAsync<int?>(
                 It.IsAny<string>(),
-                It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()), Times.Once);
+                It.IsAny<object>(), 
+                It.IsAny<IDbTransaction>(),
+                It.Is<CancellationToken>(t => t == TestContext.Current.CancellationToken)), Times.Once);
         }
 
         [Fact]
