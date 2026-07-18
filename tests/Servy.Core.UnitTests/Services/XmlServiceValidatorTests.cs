@@ -113,6 +113,7 @@ namespace Servy.Core.UnitTests.Services
 
         [Theory]
         [InlineData(-1)]
+        [InlineData(AppConfig.MaxStartTimeout + 1)]
         public void TryValidate_InvalidTimeout_ReturnsFalse(int invalidTimeout)
         {
             // Arrange
