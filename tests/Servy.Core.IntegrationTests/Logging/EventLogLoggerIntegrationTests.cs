@@ -127,6 +127,36 @@ namespace Servy.Core.IntegrationTests.Logging
             }
         }
 
+        [Theory]
+        [InlineData(LogLevel.Debug)]
+        [InlineData(LogLevel.Info)]
+        [InlineData(LogLevel.Warn)]
+        [InlineData(LogLevel.Error)]
+        public void LogMethods_AllSeverities_ExecuteWithoutThrowingAndMaintainPrefix(LogLevel targetLevel)
+        {
+            // Arrange
+            string source = GenerateSourceName();
+
+            // Start with Error level (strictest), so Debug/Info/Warn should be ignored
+            using (var logger = new EventLogLogger(source, LogLevel.Error, false, "TestPrefix"))
+            {
+                // Act
+                logger.SetLogLevel(targetLevel);
+
+                // Act - Executing these covers the severity boundary checks
+                // Because event log is disabled in this test, it only hits the formatting and internal logger branches.
+                var ex = new Exception("Test Exception");
+                logger.Debug("Debug msg", ex);
+                logger.Info("Info msg", null);
+                logger.Warn("Warn msg", ex);
+                logger.Error("Error msg", null);
+
+                // Assert
+                // No exceptions thrown means branches were safely evaluated
+                Assert.Equal("[TestPrefix]", logger.Prefix);
+            }
+        }
+
         [Fact]
         public void SafeWriteToEventLog_OversizedMessage_TruncatesSuccessfully()
         {
