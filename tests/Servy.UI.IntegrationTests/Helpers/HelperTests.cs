@@ -1,5 +1,6 @@
 ﻿using Servy.Testing;
 using System;
+using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -104,8 +105,14 @@ namespace Servy.UI.IntegrationTests.Helpers
         [InlineData(1000000, "1,000,000")]
         public void FormatNumber_Integers_ReturnsInvariantCultureFormatting(int number, string expected)
         {
-            var result = UI.Helpers.Helper.FormatNumber(number);
-            Assert.Equal(expected, result);
+            var prev = CultureInfo.CurrentCulture;
+            try
+            {
+                CultureInfo.CurrentCulture = new CultureInfo("de-DE"); // Wrap the assertion in a non-comma culture to prove invariance
+                var result = UI.Helpers.Helper.FormatNumber(number);   // Still comma-grouped
+                Assert.Equal(expected, result);
+            }
+            finally { CultureInfo.CurrentCulture = prev; }
         }
 
         #endregion

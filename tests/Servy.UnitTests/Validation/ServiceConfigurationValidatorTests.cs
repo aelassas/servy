@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
+using Servy.Core.Resources;
 using Servy.Core.Validation;
 using Servy.UI.Services;
 using Servy.Validation;
@@ -45,17 +46,19 @@ namespace Servy.UnitTests.Validation
         public async Task Validate_ValidationFails_ShowsErrorAndReturnsFalse()
         {
             // Arrange
-            var dto = new ServiceDto(); // Assume this creates an invalid state
-                                        // This relies on the actual logic within ServiceValidationRules.Validate
+            var dto = new ServiceDto { Name = "", ExecutablePath = @"C:\Service.exe", RunAsLocalSystem = true };
 
             // Act
             var result = await _validator.ValidateAsync(dto, cancellationToken: CancellationToken.None);
 
             // Assert
             Assert.False(result);
-            _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
-        }
 
+            _mockMessageBox.Verify(m => m.ShowErrorAsync(
+                It.Is<string>(s => s != null && s.IndexOf(Strings.Msg_ServiceNameRequired, StringComparison.OrdinalIgnoreCase) >= 0),
+                It.IsAny<string>()
+            ), Times.Once);
+        }
         [Fact]
         public async Task Validate_ValidationPasses_ReturnsTrue()
         {
