@@ -1,14 +1,17 @@
-﻿using System;
+﻿using Servy.CLI.Helpers;
+using Servy.Testing;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Xunit;
-using Servy.CLI.Helpers;
 
 namespace Servy.CLI.UnitTests.Helpers
 {
     [Collection("SequentialConsoleTests")]
     public class ConsoleHelperTests
     {
+        private const string RedirectedOverrideFieldName = "_isOutputRedirectedOverride";
+
         /// <summary>
         /// Covers the branch where Console.IsOutputRedirected is true.
         /// The loading animation task should exit early, and the safe line clearing block 
@@ -26,32 +29,43 @@ namespace Servy.CLI.UnitTests.Helpers
                 return Task.CompletedTask;
             };
 
-            using (var sw = new StringWriter())
+            // Force the redirection state to true via centralized reflection utilities
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, true);
+
+            try
             {
-                var originalOut = Console.Out;
-                Console.SetOut(sw);
-
-                try
+                using (var sw = new StringWriter())
                 {
-                    // Act
-                    await ConsoleHelper.RunWithLoadingAnimation(dummyAction, "Testing Redirected...");
+                    var originalOut = Console.Out;
+                    Console.SetOut(sw);
+
+                    try
+                    {
+                        // Act
+                        await ConsoleHelper.RunWithLoadingAnimation(dummyAction, "Testing Redirected...");
+                    }
+                    finally
+                    {
+                        Console.SetOut(originalOut);
+                    }
+
+                    // Assert
+                    Assert.True(actionExecuted);
+
+                    // If the implementation is correct, only the action's output should be here.
+                    // If the action is silent, it will be empty. 
+                    // If the action DOES produce output, the helper shouldn't append animation frames.
+                    var output = sw.ToString();
+                    Assert.DoesNotContain("Testing Redirected...", output); // Ensure animation text is missing
+
+                    // Soft fallback: Do NOT use Assert.Empty(output) here because parallel tests 
+                    // writing to the global Console.Out will bleed into this StringWriter instance.
                 }
-                finally
-                {
-                    Console.SetOut(originalOut);
-                }
-
-                // Assert
-                Assert.True(actionExecuted);
-
-                // If the implementation is correct, only the action's output should be here.
-                // If the action is silent, it will be empty. 
-                // If the action DOES produce output, the helper shouldn't append animation frames.
-                var output = sw.ToString();
-                Assert.DoesNotContain("Testing Redirected...", output); // Ensure animation text is missing
-
-                // Soft fallback: Do NOT use Assert.Empty(output) here because parallel tests 
-                // writing to the global Console.Out will bleed into this StringWriter instance.
+            }
+            finally
+            {
+                // Reset the test seam state to prevent cross-test environment contamination
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, null);
             }
         }
 
@@ -101,27 +115,37 @@ namespace Servy.CLI.UnitTests.Helpers
             // Arrange
             Func<Task> dummyAction = () => Task.Delay(50); // Small delay to let the loop spin if it can
 
-            // Instantiating a TextWriter that forces an IOException upon attempting to check Console settings 
-            // or write operations, simulating terminal detachment during cleanup execution.
-            using (var faultingWriter = new FaultingStringWriter())
+            // Force output redirection to false to ensure the clear-line code path runs
+            TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, false);
+
+            try
             {
-                var originalOut = Console.Out;
-                Console.SetOut(faultingWriter);
-
-                try
+                // Instantiating a TextWriter that forces an IOException upon attempting to check Console settings 
+                // or write operations, simulating terminal detachment during cleanup execution.
+                using (var faultingWriter = new FaultingStringWriter())
                 {
-                    // Act
-                    await ConsoleHelper.RunWithLoadingAnimation(dummyAction, "Testing Fallback...");
-                }
-                finally
-                {
-                    Console.SetOut(originalOut);
-                }
+                    var originalOut = Console.Out;
+                    Console.SetOut(faultingWriter);
 
-                // Assert
-                // If Console.IsOutputRedirected is false in the runtime context but WindowWidth access drops an IOException,
-                // the catch block handles it by calling Console.WriteLine(), appending the Environment.NewLine sequence.
-                Assert.True(faultingWriter.IsFallbackWriteLineCalled || Console.IsOutputRedirected);
+                    try
+                    {
+                        // Act
+                        await ConsoleHelper.RunWithLoadingAnimation(dummyAction, "Testing Fallback...");
+                    }
+                    finally
+                    {
+                        Console.SetOut(originalOut);
+                    }
+
+                    // Assert
+                    // If Console.IsOutputRedirected is false in the runtime context but WindowWidth access drops an IOException,
+                    // the catch block handles it by calling Console.WriteLine(), appending the Environment.NewLine sequence.
+                    Assert.True(faultingWriter.IsFallbackWriteLineCalled);
+                }
+            }
+            finally
+            {
+                TestReflection.SetFieldStatic(typeof(ConsoleHelper), RedirectedOverrideFieldName, null);
             }
         }
 

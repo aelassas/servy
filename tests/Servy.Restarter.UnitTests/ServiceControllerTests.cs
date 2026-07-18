@@ -85,6 +85,9 @@ namespace Servy.Restarter.UnitTests
                     Assert.Throws<ObjectDisposedException>(() =>
                         controller.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(1)));
                     break;
+                default:
+                    Assert.Fail($"Unhandled method name '{methodName}' in test case. Please ensure the test data is up to date with the ServiceController methods.");
+                    break;
             }
         }
     }

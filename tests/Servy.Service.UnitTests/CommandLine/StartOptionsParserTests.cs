@@ -202,6 +202,7 @@ namespace Servy.Service.UnitTests.CommandLine
             var result = StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
 
             // Assert fallbacks are activated correctly using AppConfig thresholds
+            Assert.Equal(StartOptionsParser.MapPriority(AppConfig.DefaultProcessPriority), result.Priority);
             Assert.Equal(AppConfig.DefaultEnableConsoleUI, result.EnableConsoleUI);
             Assert.Equal(AppConfig.DefaultUseLocalTimeForRotation, result.UseLocalTimeForRotation);
             Assert.Equal(AppConfig.DefaultEnableHealthMonitoring, result.EnableHealthMonitoring);
