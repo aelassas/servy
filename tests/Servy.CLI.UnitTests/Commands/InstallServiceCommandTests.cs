@@ -109,6 +109,35 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
+        public async Task Execute_MissingWrapperExecutable_ReturnsFailure()
+        {
+            // Arrange
+            var options = new CLI.Options.InstallServiceOptions
+            {
+                ServiceName = "TestService",
+                ProcessPath = "C:\\path\\to\\app.exe"
+            };
+
+            // Validation passes, guiding the runtime flow straight down into the wrapper file check block
+            _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
+
+            TestReflection.SetFieldStatic(typeof(InstallServiceCommand), "_bypassElevationCheck", true);
+
+            // Interrupt-Driven Modification: Safely delete the dummy fixture file to emulate a clean missing binary state
+            if (File.Exists(_wrapperExePath))
+            {
+                File.Delete(_wrapperExePath);
+            }
+
+            // Act
+            var result = await _command.ExecuteAsync(options, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(Strings.Msg_WrapperNotFound, result.Message);
+        }
+
+        [Fact]
         public async Task Execute_ServiceManagerFails_ReturnsFailure()
         {
             // Arrange

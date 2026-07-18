@@ -231,6 +231,24 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
+        public async Task ExecuteAsync_JsonDeserializerReturnsNull_ReturnsDeserializationFailure()
+        {
+            // Arrange
+            File.WriteAllText(_legalJsonPath, "{}");
+            var opts = new ImportServiceOptions { ConfigFileType = "json", Path = _legalJsonPath };
+
+            MockJsonValidator(true);
+            _jsonServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns((ServiceDto)null);
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(Strings.Msg_ImportDeserializationFailure, result.Message);
+        }
+
+        [Fact]
         public async Task ExecuteAsync_RepositoryUpsertReturnsZero_ReturnsRepoFailure()
         {
             // Arrange
@@ -250,6 +268,28 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.False(result.Success);
             Assert.Equal(string.Format(Strings.Msg_ImportRepoFailure, "XML"), result.Message);
+        }
+
+        [Fact]
+        public async Task ExecuteAsync_JsonRepositoryUpsertReturnsZero_ReturnsRepoFailure()
+        {
+            // Arrange
+            var realPath = @"C:\Windows\System32\cmd.exe";
+            File.WriteAllText(_legalJsonPath, "{}");
+            var opts = new ImportServiceOptions { ConfigFileType = "json", Path = _legalJsonPath, InstallService = false };
+
+            MockJsonValidator(true);
+            var dto = new ServiceDto { Name = "TestService", ExecutablePath = realPath };
+            _jsonServiceSerializer.Setup(s => s.Deserialize(It.IsAny<string>())).Returns(dto);
+            _processHelper.Setup(ph => ph.ValidatePath(realPath, true)).Returns(true);
+            _serviceRepoMock.Setup(r => r.UpsertAsync(dto, true, true, It.IsAny<CancellationToken>())).ReturnsAsync(0);
+
+            // Act
+            var result = await _command.ExecuteAsync(opts, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(string.Format(Strings.Msg_ImportRepoFailure, "JSON"), result.Message);
         }
 
         #endregion
