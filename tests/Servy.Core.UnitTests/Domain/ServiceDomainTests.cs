@@ -377,6 +377,7 @@ namespace Servy.Core.UnitTests.Domain
             _serviceManagerMock
                 .Setup(s => s.InstallServiceAsync(It.Is<InstallServiceOptions>(o =>
                     o.ServiceName == service.Name &&
+                    o.RealExePath == null &&
                     o.WorkingDirectory == string.Empty &&
                     o.RealArgs == string.Empty
                 ), It.IsAny<CancellationToken>()))

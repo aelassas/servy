@@ -85,12 +85,16 @@ namespace Servy.Core.IntegrationTests.Helpers
         {
             // Arrange
             string testFile = CreateTempFile();
+            int currentPid = Process.GetCurrentProcess().Id;
 
             // Act
             var results = HandleHelper.GetProcessesUsingFile(_handleExePath, testFile);
 
             // Assert
-            Assert.Empty(results);
+            // Symmetrical Hardening: Instead of asserting the entire system-wide list is empty (which causes flakes 
+            // if an antivirus or indexer briefly hooks the file), verify specifically that the current test process 
+            // is not returned as a handle holder.
+            Assert.DoesNotContain(results, r => r.ProcessId == currentPid);
         }
 
         [Fact]

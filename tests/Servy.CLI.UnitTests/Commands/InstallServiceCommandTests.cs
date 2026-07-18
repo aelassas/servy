@@ -6,6 +6,7 @@ using Servy.CLI.Validation;
 using Servy.Core.Common;
 using Servy.Core.Config;
 using Servy.Core.Services;
+using Servy.Testing;
 using System;
 using System.IO;
 using System.Threading;
@@ -80,6 +81,8 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
 
+            TestReflection.SetFieldStatic(typeof(InstallServiceCommand), "_bypassElevationCheck", true);
+
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
 
@@ -94,6 +97,8 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             var options = new CLI.Options.InstallServiceOptions();
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Fail("Validation error."));
+
+            TestReflection.SetFieldStatic(typeof(InstallServiceCommand), "_bypassElevationCheck", true);
 
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
@@ -118,6 +123,8 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Failure("Failed to install service."));
 
+            TestReflection.SetFieldStatic(typeof(InstallServiceCommand), "_bypassElevationCheck", true);
+
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
 
@@ -141,6 +148,8 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .Throws<UnauthorizedAccessException>();
 
+            TestReflection.SetFieldStatic(typeof(InstallServiceCommand), "_bypassElevationCheck", true);
+
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
 
@@ -163,6 +172,8 @@ namespace Servy.CLI.UnitTests.Commands
 
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .Throws<Exception>();
+
+            TestReflection.SetFieldStatic(typeof(InstallServiceCommand), "_bypassElevationCheck", true);
 
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);

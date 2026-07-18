@@ -7,6 +7,7 @@ using Servy.UI.Constants;
 using Servy.UI.Services;
 using System;
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -381,11 +382,32 @@ namespace Servy.Manager.UnitTests.ViewModels
             Assert.Equal("1248", vm.Pid);
 
             // Branch 4: Optimization match path logic -> Value stays same, skips redundant evaluations
-            // Act
-            vm.ExposeSetPidText(itemWithValidPid);
+            // Arrange change tracking parameters
+            var propertyChangedFired = false;
+            PropertyChangedEventHandler handler = (sender, e) =>
+            {
+                if (e.PropertyName == nameof(vm.Pid))
+                {
+                    propertyChangedFired = true;
+                }
+            };
+            vm.PropertyChanged += handler;
 
-            // Assert
-            Assert.Equal("1248", vm.Pid);
+            try
+            {
+                // Act
+                vm.ExposeSetPidText(itemWithValidPid);
+
+                // Assert
+                Assert.Equal("1248", vm.Pid);
+                // Symmetrical Verification: Verify that the change-suppression optimization actually prevented event execution loops
+                Assert.False(propertyChangedFired, "PropertyChanged was erroneously raised for an optimized redundant value assignment.");
+            }
+            finally
+            {
+                // Tear down event handlers to preserve test runner sandbox limits
+                vm.PropertyChanged -= handler;
+            }
         }
 
         [Fact]
