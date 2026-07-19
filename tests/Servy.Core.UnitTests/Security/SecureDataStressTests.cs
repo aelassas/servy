@@ -42,6 +42,7 @@ namespace Servy.Core.UnitTests.Security
         public void Dispose() => _sut.Dispose();
 
         [Theory]
+        [Trait("Category", "Stress")]
         [InlineData(1)]  // 1 MB: 1,048,576 chars, ~2 MB of RAM
         [InlineData(10)] // 10 MB: 10,485,760 chars, ~20 MB of RAM
         [InlineData(50)] // 50 MB: 52,428,800 chars, ~100 MB of RAM
@@ -75,13 +76,10 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Fact]
+        [Trait("Category", "Stress")]
         public void StressTest_V1_BackwardCompatibility_LargePayload()
         {
-            if (!AppConfig.AllowLegacyV1Decryption)
-            {
-                // Skip this test if legacy decryption is disabled
-                return;
-            }
+            Assert.SkipWhen(!AppConfig.AllowLegacyV1Decryption, "Legacy V1 decryption is disabled in the configuration.");
 
             // Arrange
             int sizeInMb = 5;
