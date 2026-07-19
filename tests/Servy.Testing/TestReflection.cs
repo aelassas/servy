@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 
@@ -222,6 +224,20 @@ namespace Servy.Testing
                 }
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Reflection-driven comprehensive retrieval of all public instance properties mapped across serialization boundaries,
+        /// filtered against non-serializable internal metadata keys.
+        /// </summary>
+        /// <typeparam name="T">The specific Target DTO type system context token to analyze.</typeparam>
+        /// <param name="excludedProperties">An optional list of property names to filter out.</param>
+        /// <returns>An enumerable collection of valid readable system metadata property maps.</returns>
+        public static IEnumerable<PropertyInfo> GetMappedProperties<T>(IEnumerable<string> excludedProperties = null)
+        {
+            var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            return properties.Where(p => p.CanRead && !(excludedProperties?.Contains(p.Name) ?? false)).ToList();
         }
     }
 }

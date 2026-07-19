@@ -2,6 +2,7 @@
 using Servy.Core.DTOs;
 using Servy.Core.Services;
 using Servy.Core.UnitTests.Helpers;
+using Servy.Testing;
 using System;
 using Xunit;
 
@@ -60,20 +61,26 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.NotNull(actual);
 
-            // Validate all major categories
-            Assert.Equal(expected.Name, actual.Name);
-            Assert.Equal(expected.ExecutablePath, actual.ExecutablePath);
-            Assert.Equal(expected.StartupType, actual.StartupType);
-            Assert.Equal(expected.RotationSize, actual.RotationSize);
-            Assert.Equal(expected.MaxFailedChecks, actual.MaxFailedChecks);
-            Assert.Equal(expected.RecoveryAction, actual.RecoveryAction);
-            Assert.Equal(expected.PreLaunchTimeoutSeconds, actual.PreLaunchTimeoutSeconds);
-            Assert.Equal(expected.PreStopLogAsError, actual.PreStopLogAsError);
-            Assert.Equal(expected.PostStopParameters, actual.PostStopParameters);
-            Assert.Equal(expected.EnvironmentVariables, actual.EnvironmentVariables);
-            Assert.Equal(expected.ServiceDependencies, actual.ServiceDependencies);
+            // Reflection-driven comprehensive comparison of all properties mapped across serialization boundaries
+            var excludedProperties = new[] { "Id", "Pid", "UserAccount", "Password", "RunAsLocalSystem", "PreviousStopTimeout", "ActiveStdoutPath", "ActiveStderrPath" };
+            var properties = TestReflection.GetMappedProperties<ServiceDto>(excludedProperties);
 
-            // Check that the Password/Account (Sensitive data) handled by UntrustedDataSettings
+            foreach (var prop in properties)
+            {
+                var expectedValue = prop.GetValue(expected);
+                var actualValue = prop.GetValue(actual);
+
+                // If the expected fixture value is null, it skips evaluation to prevent 
+                // breaking on values hydrated to system defaults during deserialization.
+                if (expectedValue == null)
+                {
+                    continue;
+                }
+
+                Assert.Equal(expectedValue, actualValue);
+            }
+
+            // Check that the Password/Account (Sensitive data) handled by UntrustedDataSettings are omitted
             Assert.Null(actual.UserAccount);
             Assert.Null(actual.Password);
             Assert.True(actual.RunAsLocalSystem);
