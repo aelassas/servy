@@ -243,7 +243,7 @@ namespace Servy.Service.UnitTests
             var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
             var mockTimerFactory = new Mock<ITimerFactory>();
             var mockProcessFactory = new Mock<IProcessFactory>();
-            var mockPathValidator = new Mock<IPathValidator>();
+            var pathValidator = new Mock<IPathValidator>();
             var serviceRepository = new Mock<IServiceRepository>();
 
             using (var service = new TestableService(
@@ -252,17 +252,26 @@ namespace Servy.Service.UnitTests
                 mockStreamWriterFactory.Object,
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
-                mockPathValidator.Object,
+                pathValidator.Object,
                 serviceRepository.Object,
                 _mockProcessKiller.Object
             ))
             {
                 var options = new StartOptions
                 {
+                    EnableHealthMonitoring = true, // Attempt to request monitoring
                     HeartbeatInterval = heartbeat,
                     MaxFailedChecks = maxFailedChecks,
                     RecoveryAction = recovery
                 };
+
+                // Actively calculate the true production gating state based on configuration validation rules
+                bool calculatedRecoveryActionEnabled = options.EnableHealthMonitoring
+                    && options.HeartbeatInterval > 0
+                    && options.MaxFailedChecks > 0
+                    && options.RecoveryAction != RecoveryAction.None;
+
+                service.SetRecoveryActionEnabled(calculatedRecoveryActionEnabled);
 
                 // Act
                 service.InvokeSetupHealthMonitoring(options);
