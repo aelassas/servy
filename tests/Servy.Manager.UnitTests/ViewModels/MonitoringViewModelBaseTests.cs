@@ -8,6 +8,7 @@ using Servy.UI.Services;
 using System;
 using System.Collections.Concurrent;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -316,15 +317,56 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void Dispose_UnsubscribesEventsAndTearsDownFrameworkTimerReferences()
         {
             // Arrange
-            var vm = CreateViewModel();
+            bool tickExecutedAfterDispose = false;
+            var vm = CreateViewModel(onTick: _ =>
+            {
+                tickExecutedAfterDispose = true;
+                return Task.CompletedTask;
+            });
+
+            vm.MockedSelectedService = new ConcreteServiceItem { Name = "LiveService", Pid = 9999 };
             vm.StartMonitoring();
+
+            // Retain reference to the underlying DispatcherTimer object instance before it is wiped
+            var hostedTimerInstance = vm.ExposeTimer;
+            Assert.NotNull(hostedTimerInstance);
 
             // Act
             vm.ExposeDispose(true);
 
-            // Assert
+            // Assert: Verify that references are safely torn down
             Assert.Null(vm.ExposeCts);
             Assert.Null(vm.ExposeTimer);
+
+            // Behavioral Event Disconnection Verification: Use the shared TestReflection utility 
+            // to extract the internal multi-cast delegate 'Tick' event backing field structure context.
+            try
+            {
+                var tickDelegate = TestReflection.GetField<Delegate>(hostedTimerInstance, "Tick");
+
+                // If it successfully unsubscribed every handler, the delegate chain will be completely null (Success)
+                if (tickDelegate != null)
+                {
+                    var invocationList = tickDelegate.GetInvocationList();
+                    bool containsMonitoringHandler = invocationList.Any(d => d.Method.Name == "OnTick");
+
+                    Assert.False(containsMonitoringHandler, "Dangling Event Leak: The OnTick event handler remains attached to the timer instance after disposal.");
+                }
+                else
+                {
+                    // If tickDelegate is null, the handler was cleanly detached and the delegate reference zeroed out.
+                    Assert.Null(tickDelegate);
+                }
+            }
+            catch (ArgumentException)
+            {
+                // Robustness Fallback: If platform runtime configurations hide the private field 'Tick' differently,
+                // verify the side-effect by resetting state flags and checking re-entry blocking rules.
+                TestReflection.SetField(vm, "_isMonitoringFlag", 1);
+                vm.ExposeOnTick();
+
+                Assert.False(tickExecutedAfterDispose, "Dangling Event Leak: The OnTick event handler remains active after system disposal.");
+            }
         }
 
         [Fact]

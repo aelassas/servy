@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -172,6 +173,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Arrange & Act & Assert
             Helper.RunOnSTA(() =>
             {
+                // Symmetrical Hardening: Construct parameter inputs safely INSIDE the STA loop boundary
+                // so Dispatcher.CurrentDispatcher binds strictly to the newly initialized application thread context.
                 var args = new object[]
                 {
                     nullParamIndex == 0 ? null : _serviceManagerMock.Object,
@@ -185,22 +188,22 @@ namespace Servy.Manager.UnitTests.ViewModels
                     nullParamIndex == 8 ? null : _appConfigMock.Object,
                     nullParamIndex == 9 ? null : _cursorServiceMock.Object,
                     nullParamIndex == 10 ? null : _processHelperMock.Object,
-                    Dispatcher.CurrentDispatcher // Dispatcher parameter is optional (nullable)
+                    Dispatcher.CurrentDispatcher
                 };
 
-                Assert.Throws<ArgumentNullException>(() =>
+                var ex = Assert.Throws<ArgumentNullException>(() =>
                 {
                     try
                     {
                         Activator.CreateInstance(typeof(MainViewModel), args);
                     }
-                    catch (System.Reflection.TargetInvocationException ex) when (ex.InnerException != null)
+                    catch (System.Reflection.TargetInvocationException targetEx) when (targetEx.InnerException != null)
                     {
-                        // TargetInvocationException is thrown when using Activator.CreateInstance.
-                        // Unwrap and throw the real inner ArgumentNullException so Assert.Throws catches it.
-                        throw ex.InnerException;
+                        ExceptionDispatchInfo.Capture(targetEx.InnerException).Throw();
                     }
                 });
+
+                Assert.NotNull(ex);
             }, createApp: true);
         }
 
@@ -365,18 +368,30 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void OnTick_OverlappingTicks_PreventedByInterlocked()
+        public async Task OnTick_OverlappingTicks_PreventedByInterlocked()
         {
-            Helper.RunOnSTA(() =>
+            await Helper.RunOnSTA(async () =>
             {
                 // Arrange
                 var vm = CreateViewModel();
 
-                // Act & Assert
-                TestReflection.InvokeNonPublic(vm, "OnTick", null, EventArgs.Empty);
+                // Act
+                // 1. Trigger the first tick. It will run synchronously until its first await,
+                // setting the Interlocked flag to 1 inside the execution entry block.
                 TestReflection.InvokeNonPublic(vm, "OnTick", null, EventArgs.Empty);
 
-                Assert.True(true);
+                // 2. Fire the second tick immediately. Because the flag is now set to 1,
+                // this execution route will hit the CompareExchange block and return immediately.
+                TestReflection.InvokeNonPublic(vm, "OnTick", null, EventArgs.Empty);
+
+                // 3. Yield execution back to the dispatcher momentarily to ensure any scheduled 
+                // background processing paths are given time to settle before validation.
+                await Dispatcher.Yield(DispatcherPriority.Background);
+
+                // Assert
+                // Prove that the inner bulk service discovery routine was only invoked once,
+                // validating that the second overlapping tick was safely rejected.
+                _serviceManagerMock.Verify(m => m.GetAllServices(It.IsAny<CancellationToken>()), Times.Once);
             }, createApp: true);
         }
 
@@ -458,17 +473,30 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Arrange
                 var vm = CreateViewModel();
 
-                // Act & Assert
+                // Act 1: Force an early exit by removing the _serviceManager dependency field slot entirely
                 TestReflection.SetField(vm, "_serviceManager", null);
                 var task1 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None);
                 await task1;
 
+                // Assert 1: The engine must abort immediately. Downstream repository calls are never touched.
+                _serviceRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+                _serviceManagerMock.Verify(m => m.GetAllServices(It.IsAny<CancellationToken>()), Times.Never);
+
+                // Clear mock tracking data state before beginning Act 2
+                _serviceManagerMock.Invocations.Clear();
+                _serviceRepositoryMock.Invocations.Clear();
+
+                // Act 2: Restore the manager but corrupt the _serviceRepository dependency field slot instead
                 TestReflection.SetField(vm, "_serviceManager", _serviceManagerMock.Object);
                 TestReflection.SetField(vm, "_serviceRepository", null);
+
                 var task2 = (Task)TestReflection.InvokeNonPublic(vm, "RefreshAllServicesAsync", CancellationToken.None);
                 await task2;
 
-                Assert.True(true);
+                // Assert 2: The manager is queried for OS info, but execution safely short-circuits 
+                // before pulling DTO snapshots out of the database repository layer.
+                _serviceManagerMock.Verify(m => m.GetAllServices(It.IsAny<CancellationToken>()), Times.Once);
+                _serviceRepositoryMock.Verify(r => r.GetAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
             }, createApp: true);
         }
 
@@ -1414,12 +1442,31 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var collection = TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services");
                 collection.Add(new ServiceRowViewModel(new Service(), _serviceCommandsMock.Object, _cursorServiceMock.Object));
 
+                // Verify pre-conditions: timer is active before disposal
+                Assert.NotNull(TestReflection.GetField<DispatcherTimer>(vm, "_refreshTimer"));
+
                 // Act
                 vm.Dispose();
 
-                // Assert
+                // Assert: Collection is emptied
                 Assert.Empty(collection);
 
+                // Assert: Refresh timer has been completely dismantled and field nullified
+                Assert.Null(TestReflection.GetField<DispatcherTimer>(vm, "_refreshTimer"));
+
+                // Assert: Event subscription is verified detached.
+                // We change the mock's property return value, fire the PropertyChanged event,
+                // and verify that the view model does NOT update its state (meaning it unsubscribed).
+                var originalConfiguratorState = vm.IsConfiguratorEnabled;
+                bool dynamicToggleState = !originalConfiguratorState;
+
+                _appConfigMock.Setup(c => c.IsDesktopAppAvailable).Returns(dynamicToggleState);
+                _appConfigMock.Raise(c => c.PropertyChanged += null, new PropertyChangedEventArgs(nameof(IAppConfiguration.IsDesktopAppAvailable)));
+
+                // If unsubscription succeeded, the View Model's property will remain untouched
+                Assert.Equal(originalConfiguratorState, vm.IsConfiguratorEnabled);
+
+                // Assert: Double dispose scenario does not throw exceptions
                 var doubleDisposeException = Record.Exception(() => vm.Dispose());
                 Assert.Null(doubleDisposeException);
             }, createApp: true);
