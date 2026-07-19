@@ -1,5 +1,7 @@
 ﻿using Moq;
+using Servy.Core.Config;
 using Servy.Core.Data;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -11,6 +13,7 @@ using Servy.Service.UnitTests.Helpers;
 using Servy.Service.Validation;
 using Servy.Testing;
 using System;
+using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -85,6 +88,164 @@ namespace Servy.Service.UnitTests
                 _mockProcessKiller.Object
             );
         }
+
+        [Theory]
+        [InlineData(false, true, true, true, true, true, true, true, "serviceHelper")]
+        [InlineData(true, false, true, true, true, true, true, true, "logger")]
+        [InlineData(true, true, false, true, true, true, true, true, "streamWriterFactory")]
+        [InlineData(true, true, true, false, true, true, true, true, "timerFactory")]
+        [InlineData(true, true, true, true, false, true, true, true, "processFactory")]
+        [InlineData(true, true, true, true, true, false, true, true, "pathValidator")]
+        [InlineData(true, true, true, true, true, true, false, true, "serviceRepository")]
+        [InlineData(true, true, true, true, true, true, true, false, "processKiller")]
+        public void Constructor_WhenDependencyIsNull_ThrowsArgumentNullException(
+           bool useServiceHelper,
+           bool useLogger,
+           bool useStreamWriterFactory,
+           bool useTimerFactory,
+           bool useProcessFactory,
+           bool usePathValidator,
+           bool useServiceRepository,
+           bool useProcessKiller,
+           string expectedParamName)
+        {
+            // Arrange
+            var serviceHelper = useServiceHelper ? new Mock<IServiceHelper>().Object : null;
+            var logger = useLogger ? new Mock<IServyLogger>().Object : null;
+            var streamWriterFactory = useStreamWriterFactory ? new Mock<IStreamWriterFactory>().Object : null;
+            var timerFactory = useTimerFactory ? new Mock<ITimerFactory>().Object : null;
+            var processFactory = useProcessFactory ? new Mock<IProcessFactory>().Object : null;
+            var pathValidator = usePathValidator ? new Mock<IPathValidator>().Object : null;
+            var serviceRepository = useServiceRepository ? new Mock<IServiceRepository>().Object : null;
+            var processKiller = useProcessKiller ? new Mock<IProcessKiller>().Object : null;
+
+            // Act
+            var exception = Record.Exception(() => new Service(
+                serviceHelper,
+                logger,
+                streamWriterFactory,
+                timerFactory,
+                processFactory,
+                pathValidator,
+                serviceRepository,
+                processKiller
+            ));
+
+            // Assert
+            var argumentNullException = Assert.IsType<ArgumentNullException>(exception);
+            Assert.Equal(expectedParamName, argumentNullException.ParamName);
+        }
+
+        #region Production Constructor Functional Path Permutations (.NET 4.8 / App.config Isolation)
+
+        #region Production Constructor Functional Path Permutations (.NET 4.8 / App.config Isolation)
+
+        [Theory]
+        [InlineData("500", "3000", true)]   // Branch: Valid values parsed out cleanly
+        [InlineData("-10", "0", false)]     // Branch: Negative/zero values fall back to defaults
+        [InlineData("invalid", "", false)]  // Branch: Unparseable strings fall back to defaults
+        public void ProductionConstructor_ParsesTimingConfigurations_Correctly(
+            string configuredWaitChunk,
+            string configuredScmTime,
+            bool expectsConfiguredValues)
+        {
+            // Arrange
+            var serviceHelper = new Mock<IServiceHelper>().Object;
+            var logger = new Mock<IServyLogger>().Object;
+            var streamWriterFactory = new Mock<IStreamWriterFactory>().Object;
+            var timerFactory = new Mock<ITimerFactory>().Object;
+            var processFactory = new Mock<IProcessFactory>().Object;
+            var pathValidator = new Mock<IPathValidator>().Object;
+            var processKiller = new Mock<IProcessKiller>().Object;
+
+            // Capture the real configuration provider subsystem context before swapping
+            var configType = typeof(ConfigurationManager);
+            var originalConfigSystem = TestReflection.GetFieldStatic<object>(configType, "s_configSystem");
+
+            // Build a test collection tracking current parameter variations
+            var mockSettings = new System.Collections.Specialized.NameValueCollection();
+            mockSettings["Timing:WaitChunkMs"] = configuredWaitChunk;
+            mockSettings["Timing:ScmAdditionalTimeMs"] = configuredScmTime;
+
+            // Instantiating our lightweight isolated interception framework layer
+            var testConfigSystem = new EphemeralConfigSystem(mockSettings, originalConfigSystem);
+            TestReflection.SetFieldStatic(configType, "s_configSystem", testConfigSystem);
+
+            try
+            {
+                // Act
+                var service = new Service(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, processKiller);
+
+                // Assert
+                int actualWaitChunk = TestReflection.GetField<int>(service, "_waitChunkMs");
+                int actualScmTime = TestReflection.GetField<int>(service, "_scmAdditionalTimeMs");
+
+                if (expectsConfiguredValues)
+                {
+                    Assert.Equal(int.Parse(configuredWaitChunk), actualWaitChunk);
+                    Assert.Equal(int.Parse(configuredScmTime), actualScmTime);
+                }
+                else
+                {
+                    // Assert against the actual system production fallback constants directly
+                    Assert.Equal(AppConfig.DefaultWaitChunkMs, actualWaitChunk);
+                    Assert.Equal(AppConfig.DefaultScmAdditionalTimeMs, actualScmTime);
+                }
+
+                Assert.True(service.CanShutdown);
+            }
+            finally
+            {
+                // Clean up: Re-inject the original production system layer cleanly
+                TestReflection.SetFieldStatic(configType, "s_configSystem", originalConfigSystem);
+            }
+        }
+
+        #endregion
+
+        #endregion
+
+        #region Isolated Interception Framework
+
+        private class EphemeralConfigSystem : System.Configuration.Internal.IInternalConfigSystem
+        {
+            private readonly System.Collections.Specialized.NameValueCollection _customSettings;
+            private readonly object _fallbackSystem;
+
+            public EphemeralConfigSystem(System.Collections.Specialized.NameValueCollection customSettings, object fallbackSystem)
+            {
+                _customSettings = customSettings;
+                _fallbackSystem = fallbackSystem;
+            }
+
+            public object GetSection(string configKey)
+            {
+                if (configKey == "appSettings")
+                {
+                    return _customSettings;
+                }
+
+                if (_fallbackSystem != null)
+                {
+                    // Fall back cleanly to capture ConnectionStrings, database structures, or general runtime config tokens
+                    return (object)TestReflection.InvokeNonPublic(_fallbackSystem, "GetSection", configKey);
+                }
+
+                return null;
+            }
+
+            public void RefreshConfig(string sectionName)
+            {
+                if (_fallbackSystem != null)
+                {
+                    TestReflection.InvokeNonPublic(_fallbackSystem, "RefreshConfig", sectionName);
+                }
+            }
+
+            public bool SupportsUserConfig => _fallbackSystem != null && (bool)TestReflection.InvokeNonPublic(_fallbackSystem, "get_SupportsUserConfig");
+        }
+
+        #endregion
 
         [Fact]
         public void OnStart_ValidOptions_InitializesCorrectly()
@@ -584,6 +745,161 @@ namespace Servy.Service.UnitTests
             _mockProcess.Setup(p => p.Start()).Returns(true);
 
             return mockScopedLogger;
+        }
+
+        #endregion
+
+        #region PersistProcessState Branch Tests
+
+        [Fact]
+        public void PersistProcessState_WhenServiceNameIsBlank_ReturnsImmediately()
+        {
+            // Arrange
+            var repositoryMock = new Mock<IServiceRepository>();
+            var service = CreateTestService(repositoryMock.Object);
+
+            TestReflection.SetField(service, "_serviceName", "   ");
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { 1234, true });
+
+            // Assert
+            repositoryMock.Verify(r => r.GetByName(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+        }
+
+        [Fact]
+        public void PersistProcessState_WhenServiceDtoNotFound_DoesNotUpdateOrThrow()
+        {
+            // Arrange
+            var repositoryMock = new Mock<IServiceRepository>();
+            var service = CreateTestService(repositoryMock.Object);
+
+            TestReflection.SetField(service, "_serviceName", "ServyTest");
+            repositoryMock.Setup(r => r.GetByName("ServyTest", true)).Returns((ServiceDto)null);
+
+            // Act
+            var exception = Record.Exception(() =>
+                TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { 1234, true }));
+
+            // Assert
+            Assert.Null(exception);
+            repositoryMock.Verify(r => r.Update(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void PersistProcessState_WithActivePid_UpdatesPidAndPathsCorrectly(bool setPreviousStopTimeout)
+        {
+            // Arrange
+            var repositoryMock = new Mock<IServiceRepository>();
+            var service = CreateTestService(repositoryMock.Object);
+
+            TestReflection.SetField(service, "_serviceName", "ServyTest");
+
+            // Mock out a test configuration options block
+            var options = new StartOptions
+            {
+                StopTimeoutInSeconds = 30,
+                StdoutPath = "C:\\stdout.log",
+                StderrPath = "C:\\stderr.log"
+            };
+            TestReflection.SetField(service, "_options", options);
+
+            var testDto = new ServiceDto { Name = "ServyTest" };
+            repositoryMock.Setup(r => r.GetByName("ServyTest", true)).Returns(testDto);
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { 9999, setPreviousStopTimeout });
+
+            // Assert
+            Assert.Equal(9999, testDto.Pid);
+            Assert.Equal("C:\\stdout.log", testDto.ActiveStdoutPath);
+            Assert.Equal("C:\\stderr.log", testDto.ActiveStderrPath);
+
+            if (setPreviousStopTimeout)
+            {
+                Assert.Equal(30, testDto.PreviousStopTimeout);
+            }
+            else
+            {
+                Assert.Null(testDto.PreviousStopTimeout);
+            }
+
+            repositoryMock.Verify(r => r.Update(testDto, false, true), Times.Once);
+        }
+
+        [Fact]
+        public void PersistProcessState_WhenPidIsNull_ClearsActivePaths()
+        {
+            // Arrange
+            var repositoryMock = new Mock<IServiceRepository>();
+            var service = CreateTestService(repositoryMock.Object);
+
+            TestReflection.SetField(service, "_serviceName", "ServyTest");
+
+            var testDto = new ServiceDto
+            {
+                Name = "ServyTest",
+                Pid = 5555,
+                ActiveStdoutPath = "old_out.log",
+                ActiveStderrPath = "old_err.log"
+            };
+            repositoryMock.Setup(r => r.GetByName("ServyTest", true)).Returns(testDto);
+
+            // Act
+            TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { null, false });
+
+            // Assert
+            Assert.Null(testDto.Pid);
+            Assert.Null(testDto.ActiveStdoutPath);
+            Assert.Null(testDto.ActiveStderrPath);
+
+            repositoryMock.Verify(r => r.Update(testDto, false, true), Times.Once);
+        }
+
+        [Fact]
+        public void PersistProcessState_OnRepositoryException_IsCaughtAndLoggedSafely()
+        {
+            // Arrange
+            var repositoryMock = new Mock<IServiceRepository>();
+            var loggerMock = new Mock<IServyLogger>();
+            var service = CreateTestService(repositoryMock.Object, loggerMock.Object);
+
+            string serviceName = "ServyTest";
+            TestReflection.SetField(service, "_serviceName", serviceName);
+
+            var repositoryException = new InvalidOperationException("Database deadlock or lock failure");
+            repositoryMock.Setup(r => r.GetByName(serviceName, true)).Throws(repositoryException);
+
+            // Act
+            var testRunException = Record.Exception(() =>
+                TestReflection.InvokeNonPublic(service, "PersistProcessState", new object[] { 1234, true }));
+
+            // Assert
+            Assert.Null(testRunException); // Confirms the exception branch is swallowed inside the try-catch block
+            loggerMock.Verify(l => l.Error(
+                It.Is<string>(msg => msg.Contains($"Failed to persist PID 1234 for service '{serviceName}'.")),
+                repositoryException),
+                Times.Once);
+        }
+
+        #endregion
+
+        #region Helper Factory Builder
+
+        private Service CreateTestService(IServiceRepository repository, IServyLogger logger = null)
+        {
+            return new Service(
+                new Mock<IServiceHelper>().Object,
+                logger ?? new Mock<IServyLogger>().Object,
+                new Mock<IStreamWriterFactory>().Object,
+                new Mock<ITimerFactory>().Object,
+                new Mock<IProcessFactory>().Object,
+                new Mock<IPathValidator>().Object,
+                repository,
+                new Mock<IProcessKiller>().Object
+            );
         }
 
         #endregion
