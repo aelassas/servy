@@ -38,23 +38,29 @@ namespace Servy.UI.IntegrationTests.Services
             {
                 // Arrange: Bind the dispatcher wrapper inside the active STA thread execution loop
                 var uiDispatcher = new WpfUiDispatcher();
-                bool yieldCompleted = false;
+                var executionOrder = new System.Collections.Concurrent.ConcurrentQueue<string>();
 
                 // Queue a higher priority operation (Send priority)
                 var highPriorityTask = Dispatcher.CurrentDispatcher.InvokeAsync(() =>
                 {
-                    // High priority execution marker
+                    executionOrder.Enqueue("HighPriority");
                 }, DispatcherPriority.Send);
 
                 // Queue the yield operation which targets a lower priority (Background)
-                var yieldTask = uiDispatcher.YieldAsync().ContinueWith(_ => yieldCompleted = true);
+                var yieldTask = uiDispatcher.YieldAsync().ContinueWith(_ =>
+                {
+                    executionOrder.Enqueue("YieldBackground");
+                });
 
-                // Act: Await the tasks sequentially to verify priority processing flow
-                await highPriorityTask;
-                await yieldTask;
+                // Act: Await the tasks concurrently so the dispatcher pump handles them by priority
+                await Task.WhenAll(highPriorityTask.Task, yieldTask);
 
-                // Assert: Once high-priority processing completes, confirm the background yield executed
-                Assert.True(yieldCompleted);
+                // Assert: Verify that the queue tracks the correct prioritized processing flow
+                var results = executionOrder.ToArray();
+
+                Assert.Equal(2, results.Length);
+                Assert.Equal("HighPriority", results[0]);
+                Assert.Equal("YieldBackground", results[1]);
             });
         }
 

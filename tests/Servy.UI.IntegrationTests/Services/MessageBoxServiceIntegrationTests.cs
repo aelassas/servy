@@ -3,6 +3,7 @@ using Servy.UI.Services;
 
 namespace Servy.UI.IntegrationTests.Services
 {
+    [Collection("UiSta")]
     public class MessageBoxServiceIntegrationTests
     {
         private readonly MessageBoxService _service;

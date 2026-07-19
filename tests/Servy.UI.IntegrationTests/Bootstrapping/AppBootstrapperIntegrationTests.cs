@@ -12,13 +12,7 @@ using Helper = Servy.Testing.Helper;
 
 namespace Servy.UI.IntegrationTests.Bootstrapping
 {
-    [CollectionDefinition("Servy.UI.IntegrationTests.Bootstrapping", DisableParallelization = true)]
-    public class AppBootstrapperIntegrationTestsCollection
-    {
-        // Enforces strict sequential isolation across the execution suite
-    }
-
-    [Collection("Servy.UI.IntegrationTests.Bootstrapping")]
+    [Collection("UiSta")]
     public class AppBootstrapperIntegrationTests : IDisposable
     {
         private readonly string _testDir;
