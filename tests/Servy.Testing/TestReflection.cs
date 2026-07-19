@@ -160,7 +160,7 @@ namespace Servy.Testing
         /// <summary>
         /// Safely executes an internal or private static method on the specified target type, cleanly unwrapping TargetInvocationException lines.
         /// </summary>
-        /// <param name="type">The declarative <see cref="Type"/> token context architecture structure definition metadata layer.</param>
+        /// <param name="type">The declarative <see cref="Type"/> context metadata layer of the static target.</param>
         /// <param name="methodName">The exact string signature identifier mapping of the non-public static method target.</param>
         /// <param name="args">An optional array vector containing arguments passed sequentially down into the invocation layer.</param>
         /// <returns>The functional return type payload evaluation block from the invoked static target, or null if void.</returns>
@@ -221,6 +221,20 @@ namespace Servy.Testing
                 }
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Reflection-driven comprehensive retrieval of all public instance properties mapped across serialization boundaries,
+        /// filtered against non-serializable internal metadata keys.
+        /// </summary>
+        /// <typeparam name="T">The specific Target DTO type system context token to analyze.</typeparam>
+        /// <param name="excludedProperties">An optional list of property names to filter out.</param>
+        /// <returns>An enumerable collection of valid readable system metadata property maps.</returns>
+        public static IEnumerable<PropertyInfo> GetMappedProperties<T>(IEnumerable<string>? excludedProperties = null)
+        {
+            var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            return properties.Where(p => p.CanRead && !(excludedProperties?.Contains(p.Name) ?? false)).ToList();
         }
     }
 }

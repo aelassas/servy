@@ -46,12 +46,14 @@ namespace Servy.Core.UnitTests.Mappers
             var dto = new ServiceDto
             {
                 Name = "MyService",
+                DisplayName = "Custom Friendly Display Name",
                 Description = "Test Service",
                 ExecutablePath = @"C:\app\service.exe",
                 StartupDirectory = @"C:\app",
                 Parameters = "-arg1 -arg2",
                 StartupType = (int)ServiceStartType.Manual,
                 Priority = (int)ProcessPriority.BelowNormal,
+                EnableConsoleUI = true,
                 StdoutPath = "stdout.log",
                 StderrPath = "stderr.log",
                 EnableSizeRotation = true,
@@ -59,12 +61,13 @@ namespace Servy.Core.UnitTests.Mappers
                 EnableDateRotation = true,
                 DateRotationType = (int)DateRotationType.Weekly,
                 MaxRotations = 5,
-                UseLocalTimeForRotation = true, 
+                UseLocalTimeForRotation = true,
                 EnableDebugLogs = true,
                 EnableHealthMonitoring = true,
                 HeartbeatInterval = 90,
                 MaxFailedChecks = 7,
                 RecoveryAction = (int)RecoveryAction.None,
+                RecoveryOnCleanExit = true,
                 MaxRestartAttempts = 20,
                 FailureProgramPath = @"C:\apps\failure_prog.exe",
                 FailureProgramParameters = "--param1",
@@ -74,6 +77,9 @@ namespace Servy.Core.UnitTests.Mappers
                 RunAsLocalSystem = false,
                 UserAccount = "User2",
                 Password = "TopSecret",
+                Pid = 1234,
+                ActiveStdoutPath = @"C:\app\active_out.log",
+                ActiveStderrPath = @"C:\app\active_err.log",
                 PreLaunchExecutablePath = @"C:\prelaunch.exe",
                 PreLaunchStartupDirectory = @"C:\prelaunch",
                 PreLaunchParameters = "-pre2",
@@ -86,16 +92,16 @@ namespace Servy.Core.UnitTests.Mappers
                 PostLaunchExecutablePath = @"C:\apps\post_launch\post_launch.exe",
                 PostLaunchParameters = "--post-param1",
                 PostLaunchStartupDirectory = @"C:\apps\post_launch\",
-                StartTimeout = 40, 
-                StopTimeout = 50,  
-                PreStopExecutablePath = @"C:\prestop.exe", 
-                PreStopStartupDirectory = @"C:\prestop",    
-                PreStopParameters = "-pre-stop",           
-                PreStopTimeoutSeconds = 15,                
-                PreStopLogAsError = true,                 
-                PostStopExecutablePath = @"C:\poststop.exe", 
-                PostStopStartupDirectory = @"C:\poststop",   
-                PostStopParameters = "-post-stop"           
+                StartTimeout = 40,
+                StopTimeout = 50,
+                PreStopExecutablePath = @"C:\prestop.exe",
+                PreStopStartupDirectory = @"C:\prestop",
+                PreStopParameters = "-pre-stop",
+                PreStopTimeoutSeconds = 15,
+                PreStopLogAsError = true,
+                PostStopExecutablePath = @"C:\poststop.exe",
+                PostStopStartupDirectory = @"C:\poststop",
+                PostStopParameters = "-post-stop"
             };
 
             // Act
@@ -103,12 +109,14 @@ namespace Servy.Core.UnitTests.Mappers
 
             // Assert
             Assert.Equal(dto.Name, service.Name);
+            Assert.Equal(dto.DisplayName, service.DisplayName);
             Assert.Equal(dto.Description, service.Description);
             Assert.Equal(dto.ExecutablePath, service.ExecutablePath);
             Assert.Equal(dto.StartupDirectory, service.StartupDirectory);
             Assert.Equal(dto.Parameters, service.Parameters);
             Assert.Equal((ServiceStartType)dto.StartupType!, service.StartupType);
             Assert.Equal((ProcessPriority)dto.Priority!, service.Priority);
+            Assert.Equal(dto.EnableConsoleUI, service.EnableConsoleUI);
             Assert.Equal(dto.StdoutPath, service.StdoutPath);
             Assert.Equal(dto.StderrPath, service.StderrPath);
             Assert.Equal(dto.EnableSizeRotation, service.EnableSizeRotation);
@@ -116,12 +124,13 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(dto.EnableDateRotation, service.EnableDateRotation);
             Assert.Equal((DateRotationType)dto.DateRotationType!, service.DateRotationType);
             Assert.Equal(dto.MaxRotations, service.MaxRotations);
-            Assert.Equal(dto.UseLocalTimeForRotation, service.UseLocalTimeForRotation); 
+            Assert.Equal(dto.UseLocalTimeForRotation, service.UseLocalTimeForRotation);
             Assert.Equal(dto.EnableDebugLogs, service.EnableDebugLogs);
             Assert.Equal(dto.EnableHealthMonitoring, service.EnableHealthMonitoring);
             Assert.Equal(dto.HeartbeatInterval, service.HeartbeatInterval);
             Assert.Equal(dto.MaxFailedChecks, service.MaxFailedChecks);
             Assert.Equal((RecoveryAction)dto.RecoveryAction!, service.RecoveryAction);
+            Assert.Equal(dto.RecoveryOnCleanExit, service.RecoveryOnCleanExit);
             Assert.Equal(dto.MaxRestartAttempts, service.MaxRestartAttempts);
             Assert.Equal(dto.FailureProgramPath, service.FailureProgramPath);
             Assert.Equal(dto.FailureProgramStartupDirectory, service.FailureProgramStartupDirectory);
@@ -131,6 +140,9 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(dto.RunAsLocalSystem, service.RunAsLocalSystem);
             Assert.Equal(dto.UserAccount, service.UserAccount);
             Assert.Equal(dto.Password, service.Password);
+            Assert.Equal(dto.Pid, service.Pid);
+            Assert.Equal(dto.ActiveStdoutPath, service.ActiveStdoutPath);
+            Assert.Equal(dto.ActiveStderrPath, service.ActiveStderrPath);
             Assert.Equal(dto.PreLaunchExecutablePath, service.PreLaunchExecutablePath);
             Assert.Equal(dto.PreLaunchStartupDirectory, service.PreLaunchStartupDirectory);
             Assert.Equal(dto.PreLaunchParameters, service.PreLaunchParameters);

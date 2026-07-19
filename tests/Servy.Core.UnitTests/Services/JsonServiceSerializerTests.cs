@@ -1,7 +1,10 @@
 ﻿using Newtonsoft.Json;
 using Servy.Core.Config;
+using Servy.Core.DTOs;
 using Servy.Core.Services;
 using Servy.Core.UnitTests.Helpers;
+using Servy.Testing;
+using System.Reflection;
 
 namespace Servy.Core.UnitTests.Services
 {
@@ -90,15 +93,24 @@ namespace Servy.Core.UnitTests.Services
             // Assert
             Assert.NotNull(actual);
 
-            // Validate mapping for key categories
-            Assert.Equal(expected.Name, actual.Name);
-            Assert.Equal(expected.ExecutablePath, actual.ExecutablePath);
-            Assert.Equal(expected.StartupType, actual.StartupType);
-            Assert.Equal(expected.RotationSize, actual.RotationSize);
-            Assert.Equal(expected.RecoveryAction, actual.RecoveryAction);
-            Assert.Equal(expected.PreLaunchTimeoutSeconds, actual.PreLaunchTimeoutSeconds);
-            Assert.Equal(expected.PreStopLogAsError, actual.PreStopLogAsError);
-            Assert.Equal(expected.PostStopParameters, actual.PostStopParameters);
+            // Reflection-driven comprehensive comparison of all properties mapped across serialization boundaries
+            var excludedProperties = new[] { "Id", "Pid", "UserAccount", "Password", "RunAsLocalSystem", "PreviousStopTimeout", "ActiveStdoutPath", "ActiveStderrPath" };
+            var properties = TestReflection.GetMappedProperties<ServiceDto>(excludedProperties);
+
+            foreach (var prop in properties)
+            {
+                var expectedValue = prop.GetValue(expected);
+                var actualValue = prop.GetValue(actual);
+
+                // If the expected fixture value is null, it skips evaluation to prevent 
+                // breaking on values hydrated to system defaults during deserialization.
+                if (expectedValue == null)
+                {
+                    continue;
+                }
+
+                Assert.Equal(expectedValue, actualValue);
+            }
 
             // Assert baseline defaults here. Due to [JsonIgnore] decorations, 
             // these properties never hit the serialized string payload loop during SerializeObject passes.
@@ -126,12 +138,12 @@ namespace Servy.Core.UnitTests.Services
             var actual = _serializer.Deserialize(maliciousJson);
 
             // Assert
+            // SECURITY CONTRACT BOUNDARY: Verify that incoming credential vectors are completely ignored,
+            // preserving safe system defaults regardless of raw JSON stream content.
             Assert.NotNull(actual);
             Assert.Equal("MaliciousService", actual.Name);
             Assert.Equal("C:\\malicious.exe", actual.ExecutablePath);
 
-            // SECURITY CONTRACT BOUNDARY: Verify that incoming credential vectors are completely ignored,
-            // preserving safe system defaults regardless of raw JSON stream content.
             Assert.Null(actual.UserAccount);
             Assert.Null(actual.Password);
             Assert.True(actual.RunAsLocalSystem, "RunAsLocalSystem must fall back to its safe system default (true).");
