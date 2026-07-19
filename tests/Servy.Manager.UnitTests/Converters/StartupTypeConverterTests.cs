@@ -1,9 +1,8 @@
-﻿using System;
-using System.Globalization;
-using System.Windows.Data;
-using Servy.Core.Enums;
+﻿using Servy.Core.Enums;
 using Servy.Manager.Converters;
 using Servy.Manager.Resources;
+using System.Globalization;
+using System.Windows.Data;
 using Xunit;
 
 namespace Servy.Manager.UnitTests.Converters
