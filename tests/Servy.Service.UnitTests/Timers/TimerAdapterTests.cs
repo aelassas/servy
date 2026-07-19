@@ -1,5 +1,7 @@
 ﻿using Servy.Service.Timers;
+using Servy.Testing;
 using System;
+using System.Threading;
 using System.Timers;
 using Xunit;
 
@@ -12,19 +14,27 @@ namespace Servy.Service.UnitTests.Timers
         #region Initialization & Properties
 
         [Fact]
-        public void Constructor_InitializesCorrectly()
+        public void Constructor_InitializesInternalTimerWithCorrectInterval()
         {
+            // Arrange & Act
             using (var timer = new TimerAdapter(Interval))
             {
-                Assert.NotNull(timer);
+                // Assert
+                // Verify that the adapter's backing field dependency is configured with the expected runtime interval
+                var internalTimer = TestReflection.GetField<System.Timers.Timer>(timer, "_timer");
+
+                Assert.NotNull(internalTimer);
+                Assert.Equal(Interval, internalTimer.Interval);
             }
         }
 
         [Fact]
         public void AutoReset_GetSet_WorksCorrectly()
         {
+            // Arrange
             using (var timer = new TimerAdapter(Interval))
             {
+                // Act & Assert
                 timer.AutoReset = true;
                 Assert.True(timer.AutoReset);
 
@@ -40,13 +50,17 @@ namespace Servy.Service.UnitTests.Timers
         [Fact]
         public void Dispose_IsIdempotent()
         {
+            // Arrange
             var timer = new TimerAdapter(Interval);
 
+            // Act
             // First dispose
             timer.Dispose();
 
             // Second dispose should not throw
             var exception = Record.Exception(() => timer.Dispose());
+
+            // Assert
             Assert.Null(exception);
         }
 
@@ -59,9 +73,11 @@ namespace Servy.Service.UnitTests.Timers
         [InlineData("ElapsedRemover")]
         public void Member_WhenDisposed_ThrowsObjectDisposedException(string member)
         {
+            // Arrange
             var timer = new TimerAdapter(Interval);
             timer.Dispose();
 
+            // Act & Assert
             switch (member)
             {
                 case "Start":
@@ -95,34 +111,79 @@ namespace Servy.Service.UnitTests.Timers
         [Fact]
         public void Start_And_Stop_DoNotThrowExceptions()
         {
+            // Arrange
             using (var timer = new TimerAdapter(Interval))
             {
+                // Act
                 // Simple functional smoke test
                 var exceptionStart = Record.Exception(() => timer.Start());
-                Assert.Null(exceptionStart);
-
                 var exceptionStop = Record.Exception(() => timer.Stop());
+
+                // Assert
+                Assert.Null(exceptionStart);
                 Assert.Null(exceptionStop);
             }
         }
 
         [Fact]
-        public void Elapsed_EventSubscription_Works()
+        public void Elapsed_EventAddition_DelegatesToUnderlyingTimer()
         {
-            using (var timer = new TimerAdapter(Interval))
+            // Arrange
+            const double TestInterval = 10.0;
+            using (var timer = new TimerAdapter(TestInterval))
+            using (var resetEvent = new ManualResetEventSlim(false))
             {
                 bool eventRaised = false;
-                ElapsedEventHandler handler = (s, e) => eventRaised = true;
+                ElapsedEventHandler handler = (s, e) =>
+                {
+                    eventRaised = true;
+                    resetEvent.Set();
+                };
 
-                // Subscribe
+                // Act
                 timer.Elapsed += handler;
+                timer.AutoReset = false;
+                timer.Start();
 
-                // Unsubscribe
-                timer.Elapsed -= handler;
+                // Wait up to a generous 1 second for the background thread pool dispatch signal
+                bool signaled = resetEvent.Wait(1000, CancellationToken.None);
+                timer.Stop();
 
-                // If we reached here without ObjectDisposedException or NullReferenceException,
-                // the subscription logic is correctly delegated.
-                Assert.False(eventRaised);
+                // Assert
+                Assert.True(signaled, "The underlying timer event failed to fire within the allocated timeout.");
+                Assert.True(eventRaised);
+            }
+        }
+
+        [Fact]
+        public void Elapsed_EventRemoval_UnsubscribesFromUnderlyingTimer()
+        {
+            // Arrange
+            const double TestInterval = 10.0;
+            using (var timer = new TimerAdapter(TestInterval))
+            using (var resetEvent = new ManualResetEventSlim(false))
+            {
+                bool eventRaised = false;
+                ElapsedEventHandler handler = (s, e) =>
+                {
+                    eventRaised = true;
+                };
+
+                // Act
+                timer.Elapsed += handler;
+                timer.Elapsed -= handler; // Immediately remove delegation path
+
+                // Set up a second canary handler so we know exactly when the underlying timer ticked
+                timer.Elapsed += (s, e) => resetEvent.Set();
+                timer.AutoReset = false;
+                timer.Start();
+
+                bool signaled = resetEvent.Wait(1000, CancellationToken.None);
+                timer.Stop();
+
+                // Assert
+                Assert.True(signaled, "The canary event tracking loop failed to fire.");
+                Assert.False(eventRaised, "The handler was executed despite having been explicitly unsubscribed.");
             }
         }
 
