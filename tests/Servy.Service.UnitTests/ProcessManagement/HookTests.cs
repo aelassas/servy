@@ -15,12 +15,15 @@ namespace Servy.Service.UnitTests.ProcessManagement
         [Fact]
         public void Properties_SetGet_WorkCorrectly()
         {
+            var process = new Process();
             var hook = new Hook
             {
-                OperationName = "TestOp"
+                OperationName = "TestOp",
+                Process = process
             };
 
             Assert.Equal("TestOp", hook.OperationName);
+            Assert.Equal(process, hook.Process);
         }
 
         [Fact]

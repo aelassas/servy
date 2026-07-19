@@ -68,15 +68,9 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
             // Force static environmental resets
             Logger.Shutdown();
 
-            // INTERCEPT MESSAGES: Safely enable UI Headless mode using the real "UiHeadless" wrapper assembly field.
+            // INTERCEPT MESSAGES: enable UI Headless mode using "UiHeadless".
             // This prevents blocking popups from stalling the test pipeline.
-            var headlessType = Type.GetType("Servy.UI.Services.UiHeadless, Servy.UI")
-                               ?? Type.GetType("Servy.UI.UiHeadless, Servy.UI");
-
-            if (headlessType != null)
-            {
-                TestReflection.SetFieldStatic(headlessType, "<IsEnabled>k__BackingField", true);
-            }
+            UiHeadless.IsEnabled = true;
         }
 
         public void Dispose()
@@ -85,13 +79,7 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
             Logger.Shutdown();
 
             // Clean up headless state
-            var headlessType = Type.GetType("Servy.UI.Services.UiHeadless, Servy.UI")
-                               ?? Type.GetType("Servy.UI.UiHeadless, Servy.UI");
-
-            if (headlessType != null)
-            {
-                TestReflection.SetFieldStatic(headlessType, "<IsEnabled>k__BackingField", false);
-            }
+            UiHeadless.IsEnabled = false;
 
             try
             {
