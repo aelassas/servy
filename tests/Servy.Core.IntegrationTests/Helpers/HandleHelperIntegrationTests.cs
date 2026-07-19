@@ -5,7 +5,7 @@ namespace Servy.Core.IntegrationTests.Helpers
 {
     /// <summary>
     /// Integration tests for the HandleHelper class.
-    /// These tests require handle.exe to be present and the runner to be elevated.
+    /// These tests require handle64.exe/handle64a.exe to be present and the runner to be elevated.
     /// </summary>
     [Collection("ProcessIntegrationTests")]
     public class HandleHelperIntegrationTests : HandleExeIntegrationTestBase, IDisposable
