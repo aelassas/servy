@@ -206,8 +206,16 @@ namespace Servy.Service.UnitTests
             };
             var mockConfig = new ConfigurationBuilder().AddInMemoryCollection(memoryConfig).Build();
 
-            // Act
-            var service = new Service(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, processKiller);
+            // Act: Invoke the primary 7-argument production constructor natively
+            var service = new Service(
+                serviceHelper,
+                logger,
+                streamWriterFactory,
+                timerFactory,
+                processFactory,
+                pathValidator,
+                processKiller
+            );
 
             // Direct-inject our mock configuration values via reflection to simulate file-parsing results deterministically
             if (int.TryParse(mockConfig["Timing:WaitChunkMs"], out var waitChunkMs) && waitChunkMs > 0)
