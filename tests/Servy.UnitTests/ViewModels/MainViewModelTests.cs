@@ -3,6 +3,7 @@ using Servy.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Models;
 using Servy.Resources;
 using Servy.Services;
@@ -558,15 +559,15 @@ namespace Servy.UnitTests.ViewModels
                 FailureProgramPath = "fail.exe",
                 FailureProgramStartupDirectory = "fail_dir",
                 FailureProgramParameters = "--fail-args",
-                EnvironmentVariables = "A=1\nB=2",
-                ServiceDependencies = "ServiceA\nServiceB",
+                EnvironmentVariables = "A=1;b=2",
+                ServiceDependencies = "ServiceA;ServiceB",
                 RunAsLocalSystem = false,
                 UserAccount = "Admin",
                 Password = "ProtectedPassword",
                 PreLaunchExecutablePath = "pre.exe",
                 PreLaunchStartupDirectory = "pre_dir",
                 PreLaunchParameters = "--pre-args",
-                PreLaunchEnvironmentVariables = "X=9",
+                PreLaunchEnvironmentVariables = "X=9;Y=10",
                 PreLaunchStdoutPath = "pre_out.log",
                 PreLaunchStderrPath = "pre_err.log",
                 PreLaunchTimeoutSeconds = 15,
@@ -643,6 +644,12 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(dto.PostStopExecutablePath, _viewModel.PostStopExecutablePath);
             Assert.Equal(dto.PostStopStartupDirectory, _viewModel.PostStopStartupDirectory);
             Assert.Equal(dto.PostStopParameters, _viewModel.PostStopParameters);
+
+            // Added Assertions to close the coverage gap:
+            Assert.Equal(StringHelper.FormatEnvironmentVariables(dto.EnvironmentVariables), _viewModel.EnvironmentVariables);
+            Assert.Equal(StringHelper.FormatServiceDependencies(dto.ServiceDependencies), _viewModel.ServiceDependencies);
+            Assert.Equal(StringHelper.FormatEnvironmentVariables(dto.PreLaunchEnvironmentVariables), _viewModel.PreLaunchEnvironmentVariables);
+            Assert.Equal(dto.RunAsLocalSystem, _viewModel.RunAsLocalSystem);
         }
 
         [Fact]
@@ -737,14 +744,42 @@ namespace Servy.UnitTests.ViewModels
             Assert.True(dto.RunAsLocalSystem);
             Assert.Equal(_viewModel.UserAccount, dto.UserAccount);
             Assert.Equal(_viewModel.Password, dto.Password);
+
+            // Core Dependency & Environment Variables Mappings
+            Assert.Equal(_viewModel.EnvironmentVariables, dto.EnvironmentVariables);
+            Assert.Equal(_viewModel.ServiceDependencies, dto.ServiceDependencies);
+
+            // Pre-Launch Life-cycle Assertions
+            Assert.Equal(_viewModel.PreLaunchExecutablePath, dto.PreLaunchExecutablePath);
+            Assert.Equal(_viewModel.PreLaunchStartupDirectory, dto.PreLaunchStartupDirectory);
+            Assert.Equal(_viewModel.PreLaunchParameters, dto.PreLaunchParameters);
+            Assert.Equal(_viewModel.PreLaunchEnvironmentVariables, dto.PreLaunchEnvironmentVariables);
+            Assert.Equal(_viewModel.PreLaunchStdoutPath, dto.PreLaunchStdoutPath);
+            Assert.Equal(_viewModel.PreLaunchStderrPath, dto.PreLaunchStderrPath);
             Assert.Equal(5, dto.PreLaunchTimeoutSeconds);
             Assert.Equal(1, dto.PreLaunchRetryAttempts);
             Assert.False(dto.PreLaunchIgnoreFailure);
+
+            // Post-Launch Life-cycle Assertions
+            Assert.Equal(_viewModel.PostLaunchExecutablePath, dto.PostLaunchExecutablePath);
+            Assert.Equal(_viewModel.PostLaunchStartupDirectory, dto.PostLaunchStartupDirectory);
+            Assert.Equal(_viewModel.PostLaunchParameters, dto.PostLaunchParameters);
+
             Assert.False(dto.EnableDebugLogs);
             Assert.Equal(30, dto.StartTimeout);
             Assert.Equal(20, dto.StopTimeout);
+
+            // Pre-Stop Life-cycle Assertions
+            Assert.Equal(_viewModel.PreStopExecutablePath, dto.PreStopExecutablePath);
+            Assert.Equal(_viewModel.PreStopStartupDirectory, dto.PreStopStartupDirectory);
+            Assert.Equal(_viewModel.PreStopParameters, dto.PreStopParameters);
             Assert.Equal(10, dto.PreStopTimeoutSeconds);
             Assert.False(dto.PreStopLogAsError);
+
+            // Post-Stop Life-cycle Assertions
+            Assert.Equal(_viewModel.PostStopExecutablePath, dto.PostStopExecutablePath);
+            Assert.Equal(_viewModel.PostStopStartupDirectory, dto.PostStopStartupDirectory);
+            Assert.Equal(_viewModel.PostStopParameters, dto.PostStopParameters);
         }
 
         #endregion
