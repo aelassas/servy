@@ -1,8 +1,10 @@
-﻿using Servy.Core.DTOs;
+﻿using Newtonsoft.Json;
+using Servy.Core.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Xml.Serialization;
 using Xunit;
 
 namespace Servy.Core.UnitTests.DTOs
@@ -38,18 +40,40 @@ namespace Servy.Core.UnitTests.DTOs
             }
         }
 
+        #region Serialization Security Invariants
+
+        [Fact]
+        public void SensitiveProperties_MustCarryIgnoreSerializationAttributes()
+        {
+            // Arrange
+            var sensitiveProperties = new List<string>
+            {
+                "Id", "Pid", "RunAsLocalSystem", "UserAccount", "Password",
+                "PreviousStopTimeout", "ActiveStdoutPath", "ActiveStderrPath"
+            };
+
+            // Act & Assert
+            foreach (string propName in sensitiveProperties)
+            {
+                // Safely extract property data via the target public type reflection framework
+                var prop = typeof(ServiceDto).GetProperty(propName, BindingFlags.Public | BindingFlags.Instance);
+
+                Assert.NotNull(prop);
+
+                // Actively assert protection attributes are registered to enforce security constraints
+                bool hasJsonIgnore = prop.GetCustomAttribute<JsonIgnoreAttribute>() != null;
+                bool hasXmlIgnore = prop.GetCustomAttribute<XmlIgnoreAttribute>() != null;
+
+                Assert.True(hasJsonIgnore, $"Security Regression: Property '{propName}' is missing [JsonIgnore].");
+                Assert.True(hasXmlIgnore, $"Security Regression: Property '{propName}' is missing [XmlIgnore].");
+            }
+        }
+
         [Fact]
         public void ShouldSerialize_Methods_EvaluateCorrectlyBasedOnState()
         {
             // Arrange
             var dto = new ServiceDto();
-
-            // These properties are explicitly hardcoded to return false for security/internal reasons
-            var alwaysFalseProperties = new HashSet<string>
-            {
-                "Id", "Pid", "RunAsLocalSystem", "UserAccount", "Password",
-                "PreviousStopTimeout", "ActiveStdoutPath", "ActiveStderrPath"
-            };
 
             var shouldSerializeMethods = typeof(ServiceDto)
                 .GetMethods(BindingFlags.Public | BindingFlags.Instance)
@@ -57,26 +81,17 @@ namespace Servy.Core.UnitTests.DTOs
                 .ToList();
 
             // Act & Assert
-            Assert.NotEmpty(shouldSerializeMethods); // fail fast if the policy methods disappear
+            Assert.NotEmpty(shouldSerializeMethods); // Fail-fast if policy wrappers disappear
 
             foreach (var method in shouldSerializeMethods)
             {
-                if (!method.Name.StartsWith("ShouldSerialize")) continue;
-
                 string propName = method.Name.Substring("ShouldSerialize".Length);
-                var prop = typeof(ServiceDto).GetProperty(propName);
+                var prop = typeof(ServiceDto).GetProperty(propName, BindingFlags.Public | BindingFlags.Instance);
 
-                Assert.NotNull(prop); // Ensure a matching property actually exists
+                Assert.NotNull(prop); // Ensure matching target tracking property exists
 
-                // Case 1: Internal or sensitive properties that must never serialize
-                if (alwaysFalseProperties.Contains(propName))
-                {
-                    SetDummyValue(dto, prop); // Even if populated with valid data...
-                    bool result = (bool)method.Invoke(dto, null);
-                    Assert.False(result, $"Expected {method.Name}() to return false to prevent serialization of {propName}.");
-                }
-                // Case 2: String properties (Serialize only if not null or whitespace)
-                else if (prop.PropertyType == typeof(string))
+                // Case 1: String properties (Serialize only if not null or whitespace)
+                if (prop.PropertyType == typeof(string))
                 {
                     prop.SetValue(dto, null);
                     Assert.False((bool)method.Invoke(dto, null), $"{method.Name}() should be false when null.");
@@ -90,7 +105,7 @@ namespace Servy.Core.UnitTests.DTOs
                     prop.SetValue(dto, "ValidString");
                     Assert.True((bool)method.Invoke(dto, null), $"{method.Name}() should be true when populated.");
                 }
-                // Case 3: Nullable Value properties (Serialize only if .HasValue is true)
+                // Case 2: Nullable Value properties (Serialize only if .HasValue is true)
                 else
                 {
                     prop.SetValue(dto, null);
@@ -101,6 +116,8 @@ namespace Servy.Core.UnitTests.DTOs
                 }
             }
         }
+
+        #endregion
 
         /// <summary>
         /// Helper to ensure every property has a unique, non-default value.

@@ -27,6 +27,7 @@ namespace Servy.CLI.UnitTests.Commands
         private readonly ImportServiceCommand _command;
 
         // Authentic local paths within safe security boundaries
+        private readonly string _tempDirectory;
         private readonly string _legalXmlPath;
         private readonly string _legalJsonPath;
 
@@ -49,17 +50,21 @@ namespace Servy.CLI.UnitTests.Commands
                 _jsonValidatorMock.Object,
                 _processHelper.Object);
 
-            // Establish safe, legal physical file anchors in Temp to fulfill ImportGuard invariants
-            string baseTemp = Path.GetTempPath();
-            _legalXmlPath = Path.Combine(baseTemp, $"legal_import_{Guid.NewGuid()}.xml");
-            _legalJsonPath = Path.Combine(baseTemp, $"legal_import_{Guid.NewGuid()}.json");
+            // Establish safe, legal physical file anchors in a unique sub-directory to fulfill ImportGuard invariants
+            _tempDirectory = Path.Combine(Path.GetTempPath(), $"ImportTests_{Guid.NewGuid()}");
+            Directory.CreateDirectory(_tempDirectory);
+
+            _legalXmlPath = Path.Combine(_tempDirectory, "legal_import.xml");
+            _legalJsonPath = Path.Combine(_tempDirectory, "legal_import.json");
         }
 
         public void Dispose()
         {
-            // Wipe physical artifacts to clean up the workspace
-            if (File.Exists(_legalXmlPath)) File.Delete(_legalXmlPath);
-            if (File.Exists(_legalJsonPath)) File.Delete(_legalJsonPath);
+            // Wipe physical artifacts and the tracking directory completely to clean up the workspace safely
+            if (Directory.Exists(_tempDirectory))
+            {
+                Directory.Delete(_tempDirectory, recursive: true);
+            }
         }
 
         #region Constructor Guard Clauses
