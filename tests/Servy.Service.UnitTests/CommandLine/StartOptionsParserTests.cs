@@ -171,18 +171,72 @@ namespace Servy.Service.UnitTests.CommandLine
             Assert.Equal(serviceName, result.ServiceName);
             Assert.Equal(@"C:\App\worker.exe", result.ExecutablePath);
             Assert.Equal(@"--port 8080", result.ExecutableArgs);
+            Assert.Equal(@"C:\App", result.WorkingDirectory);
             Assert.Equal(ProcessPriorityClass.High, result.Priority);
             Assert.True(result.EnableConsoleUI);
+
+            // Assert Logging
+            Assert.Equal(@"C:\Logs\stdout.log", result.StdoutPath);
+            Assert.Equal(@"C:\Logs\stderr.log", result.StderrPath);
             Assert.Equal(50 * 1024 * 1024L, result.RotationSizeInBytes); // ToBytes verification
             Assert.True(result.UseLocalTimeForRotation);
 
-            // Assert Recovery and Lifecycle mapping profiles
+            // Assert Health Monitoring & Recovery Actions
             Assert.True(result.EnableHealthMonitoring);
+            Assert.Equal(15, result.HeartbeatInterval);
+            Assert.Equal(3, result.MaxFailedChecks);
             Assert.Equal(RecoveryAction.RestartService, result.RecoveryAction);
+            Assert.False(result.RecoveryOnCleanExit);
+            Assert.Equal(5, result.MaxRestartAttempts);
+
+            // Assert Environment Variables
+            Assert.NotNull(result.EnvironmentVariables);
+            Assert.Equal(2, result.EnvironmentVariables.Count);
+
+            // Assert Pre-Launch block
+            Assert.Equal(@"C:\App\init.exe", result.PreLaunchExecutablePath);
+            Assert.Equal(@"C:\App\init", result.PreLaunchWorkingDirectory);
+            Assert.Equal("--clean", result.PreLaunchExecutableArgs);
+            Assert.Equal(@"C:\Logs\init_out.log", result.PreLaunchStdoutPath);
+            Assert.Equal(@"C:\Logs\init_err.log", result.PreLaunchStderrPath);
             Assert.Equal(45, result.PreLaunchTimeoutInSeconds);
+            Assert.Equal(2, result.PreLaunchRetryAttempts);
             Assert.True(result.PreLaunchIgnoreFailure);
+            Assert.NotNull(result.PreLaunchEnvironmentVariables);
+            Assert.Single(result.PreLaunchEnvironmentVariables);
+
+            // Assert FailureProgram block
+            Assert.Equal(@"C:\App\alert.exe", result.FailureProgramPath);
+            Assert.Equal(@"C:\App\alert", result.FailureProgramWorkingDirectory);
+            Assert.Equal("--notify admin", result.FailureProgramArgs);
+
+            // Assert Post-Launch block
+            Assert.Equal(@"C:\App\post.exe", result.PostLaunchExecutablePath);
+            Assert.Equal(@"C:\App\post_dir", result.PostLaunchWorkingDirectory);
+            Assert.Equal("--sync", result.PostLaunchExecutableArgs);
+
+            // Assert Operational Toggles
+            Assert.True(result.EnableSizeRotation);
+            Assert.True(result.EnableDateRotation);
+            Assert.Equal(10, result.MaxRotations);
+            Assert.Equal(DateRotationType.Daily, result.DateRotationType);
+            Assert.False(result.EnableDebugLogs);
+
+            // Assert Lifespan Timeouts
+            Assert.Equal(90, result.StartTimeoutInSeconds);
+            Assert.Equal(60, result.StopTimeoutInSeconds);
+
+            // Assert Pre-Stop block
             Assert.Equal(@"C:\App\pre_stop.exe", result.PreStopExecutablePath);
+            Assert.Equal(@"C:\App\pre_stop_dir", result.PreStopWorkingDirectory);
+            Assert.Equal("--drain", result.PreStopExecutableArgs);
+            Assert.Equal(20, result.PreStopTimeoutInSeconds);
             Assert.True(result.PreStopLogAsError);
+
+            // Assert Post-Stop block
+            Assert.Equal(@"C:\App\post_stop.exe", result.PostStopExecutablePath);
+            Assert.Equal(@"C:\App\post_stop_dir", result.PostStopWorkingDirectory);
+            Assert.Equal("--cleanup", result.PostStopExecutableArgs);
         }
 
         [Fact]
@@ -192,7 +246,7 @@ namespace Servy.Service.UnitTests.CommandLine
             string serviceName = "MinimalService";
             string[] args = { "Servy.Service.exe", serviceName };
 
-            // Instantiate a DTO with all fields assigned to null to force fallback paths
+            // Leaves all fields at their implicit object defaults so the AppConfig fallback paths are exercised
             var sparseDto = new ServiceDto { Priority = null! };
             _mockRepository.Setup(r => r.GetByName(serviceName, It.IsAny<bool>())).Returns(sparseDto);
 
@@ -238,8 +292,9 @@ namespace Servy.Service.UnitTests.CommandLine
             var result = StartOptionsParser.Parse(_mockRepository.Object, _mockProcessHelper.Object, args);
 
             // Assert
+            // Short-circuit conditional block validation
             Assert.False(result.EnableHealthMonitoring);
-            Assert.Equal(RecoveryAction.None, result.RecoveryAction); // Short-circuit conditional block validation
+            Assert.Equal(RecoveryAction.None, result.RecoveryAction);
         }
 
         #endregion
