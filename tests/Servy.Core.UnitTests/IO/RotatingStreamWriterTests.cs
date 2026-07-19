@@ -226,7 +226,8 @@ namespace Servy.Core.UnitTests.IO
 
             // Create 10,000 colliding files: testlog.(1).txt to testlog.(10000).txt
             // Note: On modern SSDs, creating 10k empty files takes ~1-2 seconds.
-            for (int i = 1; i <= 10000; i++)
+            int max = AppConfig.RotatingStreamWriterMaxUniqueFilenameRetries;
+            for (int i = 1; i <= max; i++)
             {
                 string collisionPath = Path.Combine(_testDir, $"{namePart}.({i}){extension}");
                 File.WriteAllText(collisionPath, string.Empty);
@@ -238,7 +239,7 @@ namespace Servy.Core.UnitTests.IO
             var exception = Assert.Throws<IOException>(() =>
                 TestReflection.InvokeNonPublicStatic(typeof(RotatingStreamWriter), "GenerateUniqueFileName", new object[] { basePath }));
 
-            Assert.Contains("after 10000 attempts", exception.Message);
+            Assert.Contains($"after {max} attempts", exception.Message);
         }
 
         [Theory]

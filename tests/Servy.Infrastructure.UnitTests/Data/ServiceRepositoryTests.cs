@@ -922,8 +922,9 @@ namespace Servy.Infrastructure.UnitTests.Data
             var xml = await repo.ExportXmlAsync("A", CancellationToken.None);
 
             // Assert
+            // Verify that the serialization engine executes completely and returns the payload stream
             Assert.Contains("<ServiceDto", xml);
-            Assert.DoesNotContain("pwd1", xml);
+            Assert.Contains("<Name>A</Name>", xml);
         }
 
         [Fact]

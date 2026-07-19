@@ -479,15 +479,47 @@ namespace Servy.Manager.UnitTests.ViewModels
         #region Resource Management, Cleanup & Disposal Tests
 
         [Fact]
-        public void Cleanup_ShouldCancelAndDisposeToken()
+        public async Task Cleanup_ShouldCancelAndDisposeToken()
         {
-            using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
+            // Arrange
+            CancellationToken capturedToken = CancellationToken.None;
+            var searchStartedTcs = new TaskCompletionSource<bool>();
+            var searchHangTcs = new TaskCompletionSource<IEnumerable<ServyEventLogEntry>>();
+
+            // Set up the mock event log service to capture the token and block execution to simulate an active search
+            _eventLogServiceMock
+                .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Callback<EventLogLevel?, DateTime?, DateTime?, string, CancellationToken>((level, from, to, keyword, token) =>
+                {
+                    capturedToken = token;
+                    searchStartedTcs.SetResult(true);
+                })
+                .Returns(searchHangTcs.Task);
+
             using (var vm = CreateViewModel())
             {
+                // Start the search process asynchronously without awaiting its completion yet
+                var searchTask = vm.SearchCommand.ExecuteAsync(null);
+
+                // Wait until the pipeline executes and hits our service callback to ensure the token has been generated
+                await searchStartedTcs.Task;
+
+                // Validate the initial state of the active search operation token
+                Assert.NotEqual(CancellationToken.None, capturedToken);
+                Assert.False(capturedToken.IsCancellationRequested);
+
                 // Act
                 vm.CancelSearch();
 
-                // After cleanup, a second call should not throw
+                // Assert
+                // Pin the cancel contract: verify that the token supplied to our data fetching layer is now cancelled
+                Assert.True(capturedToken.IsCancellationRequested);
+
+                // Unblock the hanging task to allow the pipeline to run its finalizer blocks cleanly
+                searchHangTcs.TrySetCanceled(CancellationToken.None);
+                await Record.ExceptionAsync(() => searchTask);
+
+                // Idempotency verification: a second call to clean up or cancel should safely bypass without throwing exceptions
                 var exception = Record.Exception(() => vm.CancelSearch());
                 Assert.Null(exception);
             }

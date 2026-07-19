@@ -1,6 +1,7 @@
 ﻿using Servy.Core.DTOs;
 using Servy.Core.Services;
 using Servy.Core.UnitTests.Helpers;
+using System;
 using System.IO;
 using Xunit;
 
@@ -43,6 +44,12 @@ namespace Servy.Core.UnitTests.Services
             // PreLaunch Block
             Assert.Contains("<PreLaunchExecutablePath>pre.exe</PreLaunchExecutablePath>", xml);
             Assert.Contains("<PreLaunchTimeoutSeconds>30</PreLaunchTimeoutSeconds>", xml);
+
+            // Security Bounds Hardening: Ensure credential nodes and literal values are omitted via [XmlIgnore]
+            Assert.DoesNotContain("pass", xml, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("user", xml, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("<Password>", xml);
+            Assert.DoesNotContain("<UserAccount>", xml);
         }
 
         [Fact]
@@ -66,6 +73,12 @@ namespace Servy.Core.UnitTests.Services
                 Assert.Contains("<StartupType>2</StartupType>", content);
                 Assert.Contains("<RotationSize>1024</RotationSize>", content);
                 Assert.Contains("<PreLaunchExecutablePath>pre.exe</PreLaunchExecutablePath>", content);
+
+                // Security Bounds Hardening: Ensure file output on disk is strictly stripped of secrets
+                Assert.DoesNotContain("pass", content, StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain("user", content, StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain("<Password>", content);
+                Assert.DoesNotContain("<UserAccount>", content);
             }
             finally
             {
@@ -108,6 +121,12 @@ namespace Servy.Core.UnitTests.Services
             // PreLaunch Block
             Assert.Contains("\"PreLaunchExecutablePath\": \"pre.exe\"", json);
             Assert.Contains("\"PreLaunchTimeoutSeconds\": 30", json);
+
+            // Security Bounds Hardening: Ensure credential keys and literal values are omitted via [JsonIgnore]
+            Assert.DoesNotContain("pass", json, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("user", json, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("\"Password\"", json);
+            Assert.DoesNotContain("\"UserAccount\"", json);
         }
 
         [Fact]
@@ -130,6 +149,12 @@ namespace Servy.Core.UnitTests.Services
                 Assert.Contains("\"StartupType\": 2", content);
                 Assert.Contains("\"RotationSize\": 1024", content);
                 Assert.Contains("\"PreLaunchExecutablePath\": \"pre.exe\"", content);
+
+                // Security Bounds Hardening: Ensure file output on disk is strictly stripped of secrets
+                Assert.DoesNotContain("pass", content, StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain("user", content, StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain("\"Password\"", content);
+                Assert.DoesNotContain("\"UserAccount\"", content);
             }
             finally
             {
@@ -234,7 +259,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void ExportXml_NullService_ReturnsNull()
         {
-            // Act
+            // Arrange & Act
             var result = ServiceExporter.ExportXml((ServiceDto)null);
 
             // Assert
@@ -244,7 +269,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void ExportJson_NullService_ReturnsNull()
         {
-            // Act
+            // Arrange & Act
             var result = ServiceExporter.ExportJson((ServiceDto)null);
 
             // Assert
