@@ -402,8 +402,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Act
                 // Pass a non-existent, isolated PID space to execute the tracking loop cleanly.
-                // This validates the structural integrity of StopDescendants without exposing unowned 
-                // native handles to .NET 4.8's property evaluation crashes in StopTree.
                 int fakePid = 99999;
                 wrapper.StopDescendants(fakePid, DateTime.Now, 1000);
 
