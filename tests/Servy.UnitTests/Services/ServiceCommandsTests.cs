@@ -77,7 +77,7 @@ namespace Servy.UnitTests.Services
                 modelToServiceDto: _modelToServiceDtoMock.Object,
                 bindServiceDtoToModel: bindSpy ?? (dto => { }),
                 serviceManager: _serviceManagerMock.Object,
-                messageBoxService: _messageBoxServiceObject,
+                messageBoxService: _messageBoxService.Object,
                 dialogService: _dialogServiceMock.Object,
                 serviceConfigurationValidator: _serviceConfigurationValidator.Object,
                 xmlServiceValidator: _xmlServiceValidatorMock.Object,
@@ -110,8 +110,6 @@ namespace Servy.UnitTests.Services
                 throw new InvalidOperationException($"Critical: Failed to setup dummy wrapper at {_wrapperPath}", ex);
             }
         }
-
-        private IMessageBoxService _messageBoxServiceObject => _messageBoxService.Object;
 
         #region InstallService Branch and Catch Block Tests
 

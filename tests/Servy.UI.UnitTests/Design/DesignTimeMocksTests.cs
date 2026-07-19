@@ -74,24 +74,25 @@ namespace Servy.UI.UnitTests.Design
         public async Task DesignTimeServiceManager_Methods_ReturnSafeDefaults()
         {
             var manager = new DesignTimeServiceManager();
+            var ct = CancellationToken.None;
 
             // Result branches
-            var result = await manager.InstallServiceAsync(new InstallServiceOptions(), cancellationToken: CancellationToken.None);
+            var result = await manager.InstallServiceAsync(new InstallServiceOptions(), cancellationToken: ct);
             Assert.True(result.IsSuccess);
 
-            Assert.True((await manager.UninstallServiceAsync("test", cancellationToken: CancellationToken.None)).IsSuccess);
-            Assert.True((await manager.StartServiceAsync("test", cancellationToken: CancellationToken.None)).IsSuccess);
-            Assert.True((await manager.StopServiceAsync("test", cancellationToken: CancellationToken.None)).IsSuccess);
-            Assert.True((await manager.RestartServiceAsync("test", cancellationToken: CancellationToken.None)).IsSuccess);
+            Assert.True((await manager.UninstallServiceAsync("test", cancellationToken: ct)).IsSuccess);
+            Assert.True((await manager.StartServiceAsync("test", cancellationToken: ct)).IsSuccess);
+            Assert.True((await manager.StopServiceAsync("test", cancellationToken: ct)).IsSuccess);
+            Assert.True((await manager.RestartServiceAsync("test", cancellationToken: ct)).IsSuccess);
 
             // Status branches
-            Assert.Equal(ServiceControllerStatus.Stopped, manager.GetServiceStatus("test", cancellationToken: CancellationToken.None));
-            Assert.False(manager.IsServiceInstalled("test", CancellationToken.None));
-            Assert.Equal(ServiceStartType.Manual, manager.GetServiceStartupType("test", cancellationToken: CancellationToken.None));
+            Assert.Equal(ServiceControllerStatus.Stopped, manager.GetServiceStatus("test", cancellationToken: ct));
+            Assert.False(manager.IsServiceInstalled("test", ct));
+            Assert.Equal(ServiceStartType.Manual, manager.GetServiceStartupType("test", cancellationToken: ct));
 
             // Collection branches
-            Assert.Empty(manager.GetAllServices(cancellationToken: CancellationToken.None));
-            Assert.Null(manager.GetDependencies("test"));
+            Assert.Empty(manager.GetAllServices(cancellationToken: ct));
+            Assert.Null(manager.GetDependencies("test", ct));
         }
 
         #endregion

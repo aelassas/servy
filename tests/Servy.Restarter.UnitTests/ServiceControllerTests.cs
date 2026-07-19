@@ -1,6 +1,5 @@
 ﻿using Servy.Testing;
 using System;
-using System.ServiceProcess;
 using Xunit;
 
 namespace Servy.Restarter.UnitTests
@@ -12,7 +11,10 @@ namespace Servy.Restarter.UnitTests
         [Fact]
         public void Constructor_ShouldInitializeWithoutThrowing()
         {
+            // Arrange & Act
             var exception = Record.Exception(() => new ServiceController(DummyServiceName));
+
+            // Assert
             Assert.Null(exception);
         }
 
@@ -83,7 +85,7 @@ namespace Servy.Restarter.UnitTests
                     break;
                 case "WaitForStatus":
                     Assert.Throws<ObjectDisposedException>(() =>
-                        controller.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(1)));
+                        controller.WaitForStatus(System.ServiceProcess.ServiceControllerStatus.Running, TimeSpan.FromSeconds(1)));
                     break;
                 default:
                     Assert.Fail($"Unhandled method name '{methodName}' in test case. Please ensure the test data is up to date with the ServiceController methods.");

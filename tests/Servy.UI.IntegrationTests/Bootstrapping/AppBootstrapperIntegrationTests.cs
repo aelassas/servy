@@ -54,15 +54,9 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
 
             Logger.Shutdown();
 
-            // Intercept Win32 dialog triggers completely inside headless loops
-            // Instead of non-existent native MessageBox fields, configure the actual headless manager class
-            var headlessType = Type.GetType("Servy.UI.Services.UiHeadless, Servy.UI")
-                               ?? Type.GetType("Servy.UI.UiHeadless, Servy.UI");
-
-            if (headlessType != null)
-            {
-                TestReflection.SetFieldStatic(headlessType, "<IsEnabled>k__BackingField", true);
-            }
+            // INTERCEPT MESSAGES: enable UI Headless mode using "UiHeadless".
+            // This prevents blocking popups from stalling the test pipeline.
+            UiHeadless.IsEnabled = true;
         }
 
         public void Dispose()
@@ -71,13 +65,7 @@ namespace Servy.UI.IntegrationTests.Bootstrapping
             Logger.Shutdown();
 
             // Clean up headless state
-            var headlessType = Type.GetType("Servy.UI.Services.UiHeadless, Servy.UI")
-                               ?? Type.GetType("Servy.UI.UiHeadless, Servy.UI");
-
-            if (headlessType != null)
-            {
-                TestReflection.SetFieldStatic(headlessType, "<IsEnabled>k__BackingField", false);
-            }
+            UiHeadless.IsEnabled = false;
 
             try
             {
