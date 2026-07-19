@@ -15,6 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Xunit;
+using static Servy.Core.Config.AppConfig;
 
 namespace Servy.UnitTests.ViewModels
 {
@@ -361,9 +362,60 @@ namespace Servy.UnitTests.ViewModels
         {
             // Arrange
             _viewModel.ServiceName = "TestService";
+            _viewModel.ServiceDisplayName = "Display";
+            _viewModel.ServiceDescription = "Desc";
             _viewModel.ProcessPath = "test.exe";
-            _viewModel.EnableSizeRotation = true;
-            _viewModel.RotationSize = "555";
+            _viewModel.StartupDirectory = @"C:\App";
+            _viewModel.ProcessParameters = "--args";
+            _viewModel.SelectedStartupType = ServiceStartType.Disabled;
+            _viewModel.SelectedProcessPriority = ProcessPriority.RealTime;
+            _viewModel.EnableConsoleUI = !DefaultEnableConsoleUI;
+            _viewModel.EnableSizeRotation = !DefaultEnableSizeRotation;
+            _viewModel.RotationSize = "999";
+            _viewModel.MaxRotations = "888";
+            _viewModel.EnableDateRotation = !DefaultEnableDateRotation;
+            _viewModel.SelectedDateRotationType = DateRotationType.Monthly;
+            _viewModel.StdoutPath = "out.log";
+            _viewModel.StderrPath = "err.log";
+            _viewModel.EnableHealthMonitoring = !DefaultEnableHealthMonitoring;
+            _viewModel.SelectedRecoveryAction = RecoveryAction.RestartComputer;
+            _viewModel.RecoveryOnCleanExit = !DefaultRecoveryOnCleanExit;
+            _viewModel.UseLocalTimeForRotation = !DefaultUseLocalTimeForRotation;
+            _viewModel.HeartbeatInterval = "111";
+            _viewModel.MaxFailedChecks = "222";
+            _viewModel.MaxRestartAttempts = "333";
+            _viewModel.FailureProgramPath = "fail.exe";
+            _viewModel.FailureProgramStartupDirectory = "fail_dir";
+            _viewModel.FailureProgramParameters = "fail_args";
+            _viewModel.EnvironmentVariables = "V=1";
+            _viewModel.ServiceDependencies = "DepX";
+            _viewModel.RunAsLocalSystem = !DefaultRunAsLocalSystem;
+            _viewModel.UserAccount = "User";
+            _viewModel.Password = "Pass";
+            _viewModel.ConfirmPassword = "Pass";
+            _viewModel.PreLaunchExecutablePath = "pre.exe";
+            _viewModel.PreLaunchStartupDirectory = "pre_dir";
+            _viewModel.PreLaunchParameters = "pre_args";
+            _viewModel.PreLaunchEnvironmentVariables = "PV=1";
+            _viewModel.PreLaunchStdoutPath = "pre_out.log";
+            _viewModel.PreLaunchStderrPath = "pre_err.log";
+            _viewModel.PreLaunchTimeoutSeconds = "444";
+            _viewModel.PreLaunchRetryAttempts = "555";
+            _viewModel.PreLaunchIgnoreFailure = !DefaultPreLaunchIgnoreFailure;
+            _viewModel.PostLaunchExecutablePath = "post.exe";
+            _viewModel.PostLaunchStartupDirectory = "post_dir";
+            _viewModel.PostLaunchParameters = "post_args";
+            _viewModel.EnableDebugLogs = !DefaultEnableDebugLogs;
+            _viewModel.StartTimeout = "666";
+            _viewModel.StopTimeout = "777";
+            _viewModel.PreStopExecutablePath = "pre_stop.exe";
+            _viewModel.PreStopStartupDirectory = "pre_stop_dir";
+            _viewModel.PreStopParameters = "pre_stop_args";
+            _viewModel.PreStopTimeoutSeconds = "1515";
+            _viewModel.PreStopLogAsError = !DefaultPreStopLogAsError;
+            _viewModel.PostStopExecutablePath = "post_stop.exe";
+            _viewModel.PostStopStartupDirectory = "post_stop_dir";
+            _viewModel.PostStopParameters = "post_stop_args";
 
             _messageBoxService.Setup(ds => ds.ShowConfirmAsync(Strings.Confirm_ClearAll, UiAppConfig.Caption)).ReturnsAsync(true);
 
@@ -371,10 +423,80 @@ namespace Servy.UnitTests.ViewModels
             await _viewModel.ClearFormCommand.ExecuteAsync(null);
 
             // Assert
+            // Core Identification & Process Fields
             Assert.Equal(string.Empty, _viewModel.ServiceName);
+            Assert.Equal(string.Empty, _viewModel.ServiceDisplayName);
+            Assert.Equal(string.Empty, _viewModel.ServiceDescription);
             Assert.Equal(string.Empty, _viewModel.ProcessPath);
-            Assert.False(_viewModel.EnableSizeRotation);
-            Assert.Equal(Core.Config.AppConfig.DefaultRotationSizeMB.ToString(), _viewModel.RotationSize);
+            Assert.Equal(string.Empty, _viewModel.StartupDirectory);
+            Assert.Equal(string.Empty, _viewModel.ProcessParameters);
+            Assert.Equal(DefaultStartupType, _viewModel.SelectedStartupType);
+            Assert.Equal(DefaultProcessPriority, _viewModel.SelectedProcessPriority);
+            Assert.Equal(DefaultEnableConsoleUI, _viewModel.EnableConsoleUI);
+
+            // Rotation and Logs configuration
+            Assert.Equal(DefaultEnableSizeRotation, _viewModel.EnableSizeRotation);
+            Assert.Equal(DefaultRotationSizeMB.ToString(), _viewModel.RotationSize);
+            Assert.Equal(DefaultMaxRotations.ToString(), _viewModel.MaxRotations);
+            Assert.Equal(DefaultEnableDateRotation, _viewModel.EnableDateRotation);
+            Assert.Equal(DefaultDateRotationType, _viewModel.SelectedDateRotationType);
+            Assert.Equal(string.Empty, _viewModel.StdoutPath);
+            Assert.Equal(string.Empty, _viewModel.StderrPath);
+            Assert.Equal(DefaultUseLocalTimeForRotation, _viewModel.UseLocalTimeForRotation);
+
+            // Health and Recovery
+            Assert.Equal(DefaultEnableHealthMonitoring, _viewModel.EnableHealthMonitoring);
+            Assert.Equal(DefaultRecoveryAction, _viewModel.SelectedRecoveryAction);
+            Assert.Equal(DefaultRecoveryOnCleanExit, _viewModel.RecoveryOnCleanExit);
+            Assert.Equal(DefaultHeartbeatInterval.ToString(), _viewModel.HeartbeatInterval);
+            Assert.Equal(DefaultMaxFailedChecks.ToString(), _viewModel.MaxFailedChecks);
+            Assert.Equal(DefaultMaxRestartAttempts.ToString(), _viewModel.MaxRestartAttempts);
+            Assert.Equal(string.Empty, _viewModel.FailureProgramPath);
+            Assert.Equal(string.Empty, _viewModel.FailureProgramStartupDirectory);
+            Assert.Equal(string.Empty, _viewModel.FailureProgramParameters);
+
+            // Environment & Dependencies
+            Assert.Equal(string.Empty, _viewModel.EnvironmentVariables);
+            Assert.Equal(string.Empty, _viewModel.ServiceDependencies);
+
+            // Access Controls / Credentials
+            Assert.Equal(DefaultRunAsLocalSystem, _viewModel.RunAsLocalSystem);
+            Assert.Equal(string.Empty, _viewModel.UserAccount);
+            Assert.Equal(string.Empty, _viewModel.Password);
+            Assert.Equal(string.Empty, _viewModel.ConfirmPassword);
+
+            // Pre-Launch Hooks
+            Assert.Equal(string.Empty, _viewModel.PreLaunchExecutablePath);
+            Assert.Equal(string.Empty, _viewModel.PreLaunchStartupDirectory);
+            Assert.Equal(string.Empty, _viewModel.PreLaunchParameters);
+            Assert.Equal(string.Empty, _viewModel.PreLaunchEnvironmentVariables);
+            Assert.Equal(string.Empty, _viewModel.PreLaunchStdoutPath);
+            Assert.Equal(string.Empty, _viewModel.PreLaunchStderrPath);
+            Assert.Equal(DefaultPreLaunchTimeoutSeconds.ToString(), _viewModel.PreLaunchTimeoutSeconds);
+            Assert.Equal(DefaultPreLaunchRetryAttempts.ToString(), _viewModel.PreLaunchRetryAttempts);
+            Assert.Equal(DefaultPreLaunchIgnoreFailure, _viewModel.PreLaunchIgnoreFailure);
+
+            // Post-Launch Hooks
+            Assert.Equal(string.Empty, _viewModel.PostLaunchExecutablePath);
+            Assert.Equal(string.Empty, _viewModel.PostLaunchStartupDirectory);
+            Assert.Equal(string.Empty, _viewModel.PostLaunchParameters);
+
+            // Global Logging & System Lifecycles Timeouts
+            Assert.Equal(DefaultEnableDebugLogs, _viewModel.EnableDebugLogs);
+            Assert.Equal(DefaultStartTimeout.ToString(), _viewModel.StartTimeout);
+            Assert.Equal(DefaultStopTimeout.ToString(), _viewModel.StopTimeout);
+
+            // Pre-Stop Hooks
+            Assert.Equal(string.Empty, _viewModel.PreStopExecutablePath);
+            Assert.Equal(string.Empty, _viewModel.PreStopStartupDirectory);
+            Assert.Equal(string.Empty, _viewModel.PreStopParameters);
+            Assert.Equal(DefaultPreStopTimeoutSeconds.ToString(), _viewModel.PreStopTimeoutSeconds);
+            Assert.Equal(DefaultPreStopLogAsError, _viewModel.PreStopLogAsError);
+
+            // Post-Stop Hooks
+            Assert.Equal(string.Empty, _viewModel.PostStopExecutablePath);
+            Assert.Equal(string.Empty, _viewModel.PostStopStartupDirectory);
+            Assert.Equal(string.Empty, _viewModel.PostStopParameters);
         }
 
         [Fact]

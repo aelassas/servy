@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Config;
+using System.IO;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Config
@@ -111,6 +112,7 @@ namespace Servy.Core.UnitTests.Config
 
             // Assert
             Assert.False(string.IsNullOrWhiteSpace(path));
+            Assert.True(Path.IsPathRooted(path), $"Expected an absolute path but got: {path}");
             Assert.EndsWith(AppConfig.ServyServiceCLIExe, path);
         }
 
@@ -124,6 +126,7 @@ namespace Servy.Core.UnitTests.Config
 
             // Assert
             Assert.False(string.IsNullOrWhiteSpace(path));
+            Assert.True(Path.IsPathRooted(path), $"Expected an absolute path but got: {path}");
             Assert.EndsWith(AppConfig.ServyServiceUIExe, path);
         }
 
@@ -137,6 +140,7 @@ namespace Servy.Core.UnitTests.Config
 
             // Assert
             Assert.Contains(AppConfig.AppFolderName, path);
+            Assert.True(Path.IsPathRooted(path), $"Expected an absolute path but got: {path}");
         }
 
         [Fact]

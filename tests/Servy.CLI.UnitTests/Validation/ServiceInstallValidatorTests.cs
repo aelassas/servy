@@ -166,7 +166,7 @@ namespace Servy.CLI.UnitTests.Validation
         #region Reflection & Fallback Lookups Tests
 
         [Fact]
-        public void Validate_PropertyWithoutOptionAttribute_FallsBackToPropertyNameString()
+        public void Validate_InvalidEnum_IncludesOptionFlagInMessage()
         {
             // Arrange
             var opts = CreateValidOptions();
