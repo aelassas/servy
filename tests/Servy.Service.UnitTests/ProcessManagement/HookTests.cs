@@ -35,13 +35,9 @@ namespace Servy.Service.UnitTests.ProcessManagement
             var process = new Process();
             hook.Process = process;
 
-            // Act
+            // Act & Assert
             hook.Dispose();
-
-            // Assert
-            // No exception thrown = Success. 
-            // Note: Process does not expose a public "IsDisposed" property, 
-            // but the test verifies the Hook class handled the reference correctly.
+            Assert.Throws<InvalidOperationException>(() => _ = process.Id); // or ObjectDisposedException, depending on member
         }
 
         [Fact]
@@ -88,11 +84,19 @@ namespace Servy.Service.UnitTests.ProcessManagement
         [Fact]
         public void ProtectedDispose_WithFalse_DoesNotAttemptToDisposeProcess()
         {
+            // Arrange
             var hook = new TestableHook();
+            var process = new Process();
+            hook.Process = process;
+
+            // Act
+            hook.CallProtectedDispose(false);
+
             // Process should not be disposed here, ensuring we don't try to 
             // access managed objects during finalization.
             var ex = Record.Exception(() => hook.CallProtectedDispose(false));
 
+            // Assert
             Assert.Null(ex);
         }
     }

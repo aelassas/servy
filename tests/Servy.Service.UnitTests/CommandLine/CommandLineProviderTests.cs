@@ -5,17 +5,19 @@ namespace Servy.Service.UnitTests.CommandLine
     public class CommandLineProviderTests
     {
         [Fact]
-        public void GetArgs_ReturnsNonNullArray()
+        public void GetArgs_ReturnsCurrentEnvironmentCommandLineArguments()
         {
             // Arrange
             var provider = new CommandLineProvider();
+            string[] expectedArgs = Environment.GetCommandLineArgs();
 
             // Act
-            var args = provider.GetArgs();
+            string[] actualArgs = provider.GetArgs();
 
             // Assert
-            Assert.NotNull(args);
-            Assert.IsType<string[]>(args);
+            // Verifies the structural content equality to confirm the provider correctly forwards the BCL framework arrays
+            Assert.Equal(expectedArgs.Length, actualArgs.Length);
+            Assert.Equal(expectedArgs, actualArgs);
         }
     }
 }

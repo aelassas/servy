@@ -158,8 +158,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [InlineData("val1\\\"val2", "val1\"val2")]
         [InlineData("line1\\\nline2", "line1\nline2")] // Literal backslash + actual LF
         [InlineData("line1\\\rline2", "line1\rline2")] // Literal backslash + actual CR
-        // DUPLICATION FIX: Folded the unique sequential consecutive \r\n double-continuation path directly into 
-        // this method matrix to entirely drop the redundant Unescape_LiteralControlLineBreakContinuations method.
         [InlineData("ValueWith\\\r\\\nDoubleContinuation", "ValueWith\r\nDoubleContinuation")]
         public void Unescape_KnownEscapes_StripsBackslash(string input, string expected)
         {

@@ -26,7 +26,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var ctx = new ServiceTestContext();
             var service = ctx.Build(_mockProcessKiller.Object);
-            _disposableServices.Add(service); // LEAK FIX: Track SUT instance for teardown disposal
+            _disposableServices.Add(service); // Track SUT instance for teardown disposal
 
             var mockWriter = new Mock<IStreamWriter>();
             ctx.StreamWriterFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>())).Returns(mockWriter.Object);

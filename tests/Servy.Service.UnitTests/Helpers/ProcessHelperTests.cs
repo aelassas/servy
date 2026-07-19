@@ -7,6 +7,13 @@ using System.Text.RegularExpressions;
 
 namespace Servy.Service.UnitTests.Helpers
 {
+    [CollectionDefinition("SequentialProcessHelperTests", DisableParallelization = true)]
+    public class SequentialProcessHelperTests
+    {
+        // Enforces strict sequential isolation across the execution suite
+    }
+
+    [Collection("SequentialEnvTests")]
     public class ProcessHelperTests
     {
         private readonly Mock<IServyLogger> _mockLogger;
