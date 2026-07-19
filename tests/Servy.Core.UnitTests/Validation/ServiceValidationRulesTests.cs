@@ -143,7 +143,7 @@ namespace Servy.Core.UnitTests.Validation
             dto.EnableHealthMonitoring = enableMonitoringState;
 
             dto.HeartbeatInterval = AppConfig.MinHeartbeatInterval - 1;
-            dto.MaxFailedChecks = unchecked(AppConfig.MaxMaxFailedChecks + 1);
+            dto.MaxFailedChecks = AppConfig.MaxMaxFailedChecks + 1;
             dto.MaxRestartAttempts = -5;
 
             // Act

@@ -340,18 +340,18 @@ namespace Servy.Core.UnitTests.Mappers
             var service = ServiceMapper.ToDomain(_serviceManagerMock.Object, dto);
 
             // Assert: Verify every fallback branch was hit correctly
-            Assert.Equal(ServiceStartType.Automatic, service.StartupType); // StartupType == null branch
-            Assert.Equal(ProcessPriority.Normal, service.Priority);        // Priority == null branch
+            Assert.Equal(AppConfig.DefaultStartupType, service.StartupType); // StartupType == null branch
+            Assert.Equal(AppConfig.DefaultProcessPriority, service.Priority);        // Priority == null branch
             Assert.False(service.EnableSizeRotation);                         // ?? false
             Assert.Equal(AppConfig.DefaultRotationSizeMB, service.RotationSize); // ?? Default
             Assert.False(service.EnableDateRotation);                     // ?? false
-            Assert.Equal(DateRotationType.Daily, service.DateRotationType); // .HasValue == false branch
+            Assert.Equal(AppConfig.DefaultDateRotationType, service.DateRotationType); // .HasValue == false branch
             Assert.Equal(AppConfig.DefaultMaxRotations, service.MaxRotations);
             Assert.Equal(AppConfig.DefaultUseLocalTimeForRotation, service.UseLocalTimeForRotation);
             Assert.False(service.EnableHealthMonitoring);
             Assert.Equal(AppConfig.DefaultHeartbeatInterval, service.HeartbeatInterval);
             Assert.Equal(AppConfig.DefaultMaxFailedChecks, service.MaxFailedChecks);
-            Assert.Equal(RecoveryAction.RestartService, service.RecoveryAction); // RecoveryAction == null branch
+            Assert.Equal(AppConfig.DefaultRecoveryAction, service.RecoveryAction); // RecoveryAction == null branch
             Assert.Equal(AppConfig.DefaultMaxRestartAttempts, service.MaxRestartAttempts);
             Assert.True(service.RunAsLocalSystem);                        // ?? true
             Assert.Equal(AppConfig.DefaultPreLaunchTimeoutSeconds, service.PreLaunchTimeoutSeconds);

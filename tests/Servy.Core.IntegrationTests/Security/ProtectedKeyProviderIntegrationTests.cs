@@ -31,6 +31,7 @@ namespace Servy.Core.IntegrationTests.Security
         [InlineData("   ", "valid_iv_path")]
         [InlineData("valid_key_path", null)]
         [InlineData("valid_key_path", "")]
+        [InlineData("valid_key_path", "   ")]
         public void Constructor_InvalidPaths_ThrowsArgumentException(string keyPath, string ivPath)
         {
             // Act & Assert
