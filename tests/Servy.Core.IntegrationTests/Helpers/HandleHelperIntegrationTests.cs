@@ -3,17 +3,11 @@ using System.Diagnostics;
 
 namespace Servy.Core.IntegrationTests.Helpers
 {
-    [CollectionDefinition("HandleHelperIntegrationTests", DisableParallelization = true)]
-    public class HandleHelperIntegrationTestsCollection
-    {
-        // Enforces strict sequential isolation across the execution suite
-    }
-
     /// <summary>
     /// Integration tests for the HandleHelper class.
     /// These tests require handle.exe to be present and the runner to be elevated.
     /// </summary>
-    [Collection("HandleHelperIntegrationTests")]
+    [Collection("ProcessIntegrationTests")]
     public class HandleHelperIntegrationTests : HandleExeIntegrationTestBase, IDisposable
     {
         private readonly List<string> _tempFiles = new List<string>();
@@ -71,7 +65,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         public void GetProcessesUsingFile_ShouldThrow_WhenPathsAreNullOrEmpty(string? handleExePath, string? filePath)
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentException>(() => HandleHelper.GetProcessesUsingFile(handleExePath,filePath));
+            Assert.Throws<ArgumentException>(() => HandleHelper.GetProcessesUsingFile(handleExePath, filePath));
         }
 
         [Fact]
