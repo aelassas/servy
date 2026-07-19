@@ -127,6 +127,7 @@
     <Compile Include="Services\HelpServiceIntegrationTests.cs" />
     <Compile Include="Services\MessageBoxServiceIntegrationTests.cs" />
     <Compile Include="Services\WpfUiDispatcherIntegrationTests.cs" />
+    <Compile Include="UiStaCollection.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

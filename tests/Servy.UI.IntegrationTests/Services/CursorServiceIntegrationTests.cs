@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Servy.UI.IntegrationTests.Services
 {
+    [Collection("UiSta")]
     public class CursorServiceIntegrationTests
     {
         private readonly CursorService _service;
@@ -23,6 +24,9 @@ namespace Servy.UI.IntegrationTests.Services
         {
             // Branch: if (Application.Current?.Dispatcher == null) return;
             // This is the default state in standard xUnit runners because Application.Current is null.
+
+            // Reset the process-global Application instance using TestReflection to ensure branch isolation
+            TestReflection.SetFieldStatic(typeof(System.Windows.Application), "_appInstance", null);
 
             // Act
             var exception = Record.Exception(() =>

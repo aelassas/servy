@@ -105,7 +105,7 @@ namespace Servy.UI.UnitTests.Commands
         #region Execute (Async Void & Exceptions)
 
         [Fact]
-        public void Execute_SwallowsExceptionAndLogs()
+        public void Execute_DoesNotThrowWhenInnerTaskFails()
         {
             // Branch: catch (Exception ex) in Execute(object parameter)
             // This test ensures the 'async void' entry point does not crash the process.
@@ -120,7 +120,7 @@ namespace Servy.UI.UnitTests.Commands
         #endregion
 
         [Fact]
-        public void RaiseCanExecuteChanged_InvokesCommandManager()
+        public void RaiseCanExecuteChanged_DoesNotThrow()
         {
             // Arrange
             var command = new AsyncCommand(_ => Task.CompletedTask);
