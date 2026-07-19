@@ -75,7 +75,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Equal("KEY2", result[1].Name);
             Assert.Equal("VALUE2", result[1].Value);
 
-            // VALIDATION FIX: Ensure quote-stripping rules behavior acts symmetrically on the newline path
+            // Ensure quote-stripping rules behavior acts symmetrically on the newline path
             Assert.Equal("KEY3", result[2].Name);
             Assert.Equal("VALUE3", result[2].Value);
         }

@@ -488,7 +488,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         }
 
         /// <summary>
-        /// REFACTORING FIX: Shared abstraction builder to securely initialize legacy table instances 
+        /// Shared abstraction builder to securely initialize legacy table instances 
         /// while automatically aligning strict, un-seeded NOT NULL constraints dynamically.
         /// </summary>
         private static List<string> CreateLegacyServicesTable(

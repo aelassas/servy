@@ -42,6 +42,7 @@ namespace Servy.Service.UnitTests
                 var childProcess = service.GetChildProcess();
                 Assert.NotNull(childProcess);
                 Assert.Equal(mockProcess.Object, childProcess);
+                mockProcess.Verify(p => p.Start(), Times.Once);
             }
         }
 
