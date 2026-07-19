@@ -1,4 +1,5 @@
 ﻿using Moq;
+using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Services;
 using Servy.Manager.Mappers;
@@ -35,22 +36,45 @@ namespace Servy.Manager.UnitTests.Mappers
         [Fact]
         public async Task ToModelAsync_ValidService_MapsPropertiesCorrectly()
         {
-            // Arrange
+            // Arrange: Set up every single mapped property on the domain object to avoid hidden default pass-throughs
             var domainService = new Core.Domain.Service(_mockServiceManager.Object)
             {
                 Name = "Test",
+                Description = "High performance background daemon service.",
                 Pid = 1234,
-                RunAsLocalSystem = true
+                RunAsLocalSystem = true,
+                StdoutPath = @"C:\Logs\stdout.log",
+                StderrPath = @"C:\Logs\stderr.log",
+                ActiveStdoutPath = @"C:\Logs\active_stdout.log",
+                ActiveStderrPath = @"C:\Logs\active_stderr.log"
             };
 
             // Act
             var result = await ServiceMapper.ToModelAsync(domainService, true, false, _mockProcessHelper.Object, cancellationToken: TestContext.Current.CancellationToken);
 
-            // Assert
+            // Assert: Pin down all 14 mapped target fields, including shallow mapping placeholder defaults
             Assert.NotNull(result);
             Assert.Equal("Test", result.Name);
+            Assert.Equal("High performance background daemon service.", result.Description);
             Assert.Equal(1234, result.Pid);
+            Assert.True(result.IsPidEnabled);
+            Assert.True(result.IsDesktopAppAvailable);
             Assert.Equal(UiAppConfig.LocalSystem, result.LogOnAs);
+
+            Assert.Equal(@"C:\Logs\stdout.log", result.StdoutPath);
+            Assert.Equal(@"C:\Logs\stderr.log", result.StderrPath);
+            Assert.Equal(@"C:\Logs\active_stdout.log", result.ActiveStdoutPath);
+            Assert.Equal(@"C:\Logs\active_stderr.log", result.ActiveStderrPath);
+
+            // Verify performance calculation metrics remain unassigned when calc flag is false
+            Assert.Null(result.CpuUsage);
+            Assert.Null(result.RamUsage);
+
+            // Critical Contract Verification: Verify shallow mapping placeholder defaults are preserved 
+            // to shield the UI synchronization thread from bulk Service Control Manager block overhead.
+            Assert.Null(result.StartupType);
+            Assert.Equal(ServiceStatus.None, result.Status);
+            Assert.False(result.IsInstalled);
         }
 
         [Fact]
@@ -108,13 +132,31 @@ namespace Servy.Manager.UnitTests.Mappers
         #region GetLogOnAsDisplayName Tests
 
         [Theory]
-        [InlineData(null, UiAppConfig.LocalSystem)]
-        [InlineData("LocalSystem", UiAppConfig.LocalSystem)]
-        [InlineData("NT AUTHORITY\\LocalService", UiAppConfig.LocalService)]
+        [InlineData(null, "LocalSystem")]
+        [InlineData("LocalSystem", "LocalSystem")]
+        [InlineData("NT AUTHORITY\\System", "LocalSystem")]
+        [InlineData("NT AUTHORITY\\LocalService", "LocalService")]
+        [InlineData("NT AUTHORITY\\NetworkService", "NetworkService")] // Issue #2565: Pin network service branch mapping alias
         [InlineData("MyCustomUser", "MyCustomUser")]
-        public void GetLogOnAsDisplayName_ResolvesCorrectly(string? input, string expected)
+        public void GetLogOnAsDisplayName_ResolvesCorrectly(string? input, string expectedDisplayNameProp)
         {
-            // Arrange: Ensure ServiceAccounts constants match these inputs for test accuracy
+            // Arrange: Map literal token labels onto their respective static target property mappings
+            string expected;
+            switch (expectedDisplayNameProp)
+            {
+                case "LocalSystem":
+                    expected = UiAppConfig.LocalSystem;
+                    break;
+                case "LocalService":
+                    expected = UiAppConfig.LocalService;
+                    break;
+                case "NetworkService":
+                    expected = UiAppConfig.NetworkService;
+                    break;
+                default:
+                    expected = input!;
+                    break;
+            }
 
             // Act
             var result = ServiceMapper.GetLogOnAsDisplayName(input);

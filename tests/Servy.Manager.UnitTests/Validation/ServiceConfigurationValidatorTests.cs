@@ -92,6 +92,10 @@ namespace Servy.Manager.UnitTests.Validation
             // Verify message box was shown with the FIRST error only
             _messageBoxServiceMock.Verify(m =>
                 m.ShowErrorAsync(expectedError, UiAppConfig.Caption), Times.Once);
+
+            // Pin the fail-fast contract: guarantee no other error dialog is shown to the operator
+            _messageBoxServiceMock.Verify(m =>
+                m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
         #endregion
