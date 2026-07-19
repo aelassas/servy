@@ -111,6 +111,7 @@ namespace Servy.Core.UnitTests.Config
 
             // Assert
             Assert.False(string.IsNullOrWhiteSpace(path));
+            Assert.True(Path.IsPathRooted(path), $"Expected an absolute path but got: {path}");
 
             // Use literal expected values instead of re-evaluating production constants.
             // This breaks the lockstep behavior and guarantees that inverted architectural mappings
@@ -135,6 +136,7 @@ namespace Servy.Core.UnitTests.Config
 
             // Assert
             Assert.False(string.IsNullOrWhiteSpace(path));
+            Assert.True(Path.IsPathRooted(path), $"Expected an absolute path but got: {path}");
             Assert.EndsWith(AppConfig.ServyServiceCLIExe, path);
         }
 
@@ -148,6 +150,7 @@ namespace Servy.Core.UnitTests.Config
 
             // Assert
             Assert.False(string.IsNullOrWhiteSpace(path));
+            Assert.True(Path.IsPathRooted(path), $"Expected an absolute path but got: {path}");
             Assert.EndsWith(AppConfig.ServyServiceUIExe, path);
         }
 
