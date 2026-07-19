@@ -136,9 +136,7 @@ namespace Servy.Service.UnitTests
             Assert.Equal(expectedParamName, argumentNullException.ParamName);
         }
 
-        #region Production Constructor Functional Path Permutations (.NET 4.8 / App.config Isolation)
-
-        #region Production Constructor Functional Path Permutations (.NET 4.8 / App.config Isolation)
+        #region Production Constructor Functional Path Permutations
 
         [Theory]
         [InlineData("500", "3000", true)]   // Branch: Valid values parsed out cleanly
@@ -200,8 +198,6 @@ namespace Servy.Service.UnitTests
                 TestReflection.SetFieldStatic(configType, "s_configSystem", originalConfigSystem);
             }
         }
-
-        #endregion
 
         #endregion
 

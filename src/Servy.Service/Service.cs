@@ -235,6 +235,15 @@ namespace Servy.Service
             IProcessKiller processKiller
             )
         {
+            _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _streamWriterFactory = streamWriterFactory ?? throw new ArgumentNullException(nameof(streamWriterFactory));
+            _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
+            _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
+            _pathValidator = pathValidator ?? throw new ArgumentNullException(nameof(pathValidator));
+            _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
+            _options = null;
+
             Logger.Initialize("Servy.Service.log");
 
             try
@@ -243,15 +252,6 @@ namespace Servy.Service
 
                 // Ensure event source exists
                 Helper.EnsureEventSourceExists();
-
-                _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
-                _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-                _streamWriterFactory = streamWriterFactory ?? throw new ArgumentNullException(nameof(streamWriterFactory));
-                _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
-                _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
-                _pathValidator = pathValidator ?? throw new ArgumentNullException(nameof(pathValidator));
-                _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
-                _options = null;
 
                 // Load configuration
                 var config = ConfigurationManager.AppSettings;
