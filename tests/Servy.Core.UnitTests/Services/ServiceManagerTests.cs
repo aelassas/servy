@@ -1377,12 +1377,13 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void SetServiceDescription_WhenDescriptionIsNullOrEmpty()
+        public void SetServiceDescription_AlwaysCallsChangeServiceConfig2_EvenWhenDescriptionIsNullOrEmpty()
         {
             // Arrange
             var serviceHandle = CreateServiceHandle(456);
 
-            // Should not call ChangeServiceConfig2 if description is null or empty
+            // The underlying Windows API should be called unconditionally to allow passing 
+            // empty or null pointers down to clean or reset stale description registry settings.
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
                 .Returns(true);
 
@@ -1391,7 +1392,12 @@ namespace Servy.Core.UnitTests.Services
             _serviceManager.SetServiceDescription(serviceHandle, "");
 
             // Assert
-            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<uint>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny), Times.AtLeast(1));
+            // Pin the contract: verify exactly two distinct structural calls were marshaled downstream
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(
+                serviceHandle,
+                It.IsAny<uint>(),
+                ref It.Ref<SERVICE_DESCRIPTION>.IsAny),
+                Times.Exactly(2));
         }
 
         [Fact]
