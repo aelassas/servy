@@ -413,7 +413,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         #region Reconciliation Self-Healing (Missing, Orphans, Mismatches)
 
         [Fact]
-        public void ReconcileSchema_WithMissingOrphanAndMismatchedColumns_HealsAndLogs()
+        public void ReconcileSchema_WithMissingOrphanAndMismatchedColumns_Heals()
         {
             // Arrange
             using (var conn = CreateConnection())

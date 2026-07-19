@@ -1,8 +1,5 @@
 ﻿using Servy.Core.DTOs;
-using System;
-using System.Collections.Generic;
 using System.Reflection;
-using Xunit;
 
 namespace Servy.Core.UnitTests.DTOs
 {
