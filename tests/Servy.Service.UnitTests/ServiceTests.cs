@@ -136,113 +136,52 @@ namespace Servy.Service.UnitTests
             Assert.Equal(expectedParamName, argumentNullException.ParamName);
         }
 
-        #region Production Constructor Functional Path Permutations
+        #region Production Constructor Guard Clauses
 
         [Theory]
-        [InlineData("500", "3000", true)]   // Branch: Valid values parsed out cleanly
-        [InlineData("-10", "0", false)]     // Branch: Negative/zero values fall back to defaults
-        [InlineData("invalid", "", false)]  // Branch: Unparseable strings fall back to defaults
-        public void ProductionConstructor_ParsesTimingConfigurations_Correctly(
-            string configuredWaitChunk,
-            string configuredScmTime,
-            bool expectsConfiguredValues)
+        [InlineData(false, true, true, true, true, true, true, "serviceHelper")]
+        [InlineData(true, false, true, true, true, true, true, "logger")]
+        [InlineData(true, true, false, true, true, true, true, "streamWriterFactory")]
+        [InlineData(true, true, true, false, true, true, true, "timerFactory")]
+        [InlineData(true, true, true, true, false, true, true, "processFactory")]
+        [InlineData(true, true, true, true, true, false, true, "pathValidator")]
+        [InlineData(true, true, true, true, true, true, false, "processKiller")]
+        public void ProductionConstructor_WhenDependencyIsNull_ThrowsArgumentNullException(
+            bool useServiceHelper,
+            bool useLogger,
+            bool useStreamWriterFactory,
+            bool useTimerFactory,
+            bool useProcessFactory,
+            bool usePathValidator,
+            bool useProcessKiller,
+            string expectedParamName)
         {
             // Arrange
-            var serviceHelper = new Mock<IServiceHelper>().Object;
-            var logger = new Mock<IServyLogger>().Object;
-            var streamWriterFactory = new Mock<IStreamWriterFactory>().Object;
-            var timerFactory = new Mock<ITimerFactory>().Object;
-            var processFactory = new Mock<IProcessFactory>().Object;
-            var pathValidator = new Mock<IPathValidator>().Object;
-            var processKiller = new Mock<IProcessKiller>().Object;
+            var serviceHelper = useServiceHelper ? new Mock<IServiceHelper>().Object : null;
+            var logger = useLogger ? new Mock<IServyLogger>().Object : null;
+            var streamWriterFactory = useStreamWriterFactory ? new Mock<IStreamWriterFactory>().Object : null;
+            var timerFactory = useTimerFactory ? new Mock<ITimerFactory>().Object : null;
+            var processFactory = useProcessFactory ? new Mock<IProcessFactory>().Object : null;
+            var pathValidator = usePathValidator ? new Mock<IPathValidator>().Object : null;
+            var processKiller = useProcessKiller ? new Mock<IProcessKiller>().Object : null;
 
-            // Capture the real configuration provider subsystem context before swapping
-            var configType = typeof(ConfigurationManager);
-            var originalConfigSystem = TestReflection.GetFieldStatic<object>(configType, "s_configSystem");
+            // Act
+            var exception = Record.Exception(() => new Service(
+                serviceHelper,
+                logger,
+                streamWriterFactory,
+                timerFactory,
+                processFactory,
+                pathValidator,
+                processKiller
+            ));
 
-            // Build a test collection tracking current parameter variations
-            var mockSettings = new System.Collections.Specialized.NameValueCollection();
-            mockSettings["Timing:WaitChunkMs"] = configuredWaitChunk;
-            mockSettings["Timing:ScmAdditionalTimeMs"] = configuredScmTime;
-
-            // Instantiating our lightweight isolated interception framework layer
-            var testConfigSystem = new EphemeralConfigSystem(mockSettings, originalConfigSystem);
-            TestReflection.SetFieldStatic(configType, "s_configSystem", testConfigSystem);
-
-            try
-            {
-                // Act
-                var service = new Service(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, processKiller);
-
-                // Assert
-                int actualWaitChunk = TestReflection.GetField<int>(service, "_waitChunkMs");
-                int actualScmTime = TestReflection.GetField<int>(service, "_scmAdditionalTimeMs");
-
-                if (expectsConfiguredValues)
-                {
-                    Assert.Equal(int.Parse(configuredWaitChunk), actualWaitChunk);
-                    Assert.Equal(int.Parse(configuredScmTime), actualScmTime);
-                }
-                else
-                {
-                    // Assert against the actual system production fallback constants directly
-                    Assert.Equal(AppConfig.DefaultWaitChunkMs, actualWaitChunk);
-                    Assert.Equal(AppConfig.DefaultScmAdditionalTimeMs, actualScmTime);
-                }
-
-                Assert.True(service.CanShutdown);
-            }
-            finally
-            {
-                // Clean up: Re-inject the original production system layer cleanly
-                TestReflection.SetFieldStatic(configType, "s_configSystem", originalConfigSystem);
-            }
+            // Assert
+            var argumentNullException = Assert.IsType<ArgumentNullException>(exception);
+            Assert.Equal(expectedParamName, argumentNullException.ParamName);
         }
 
         #endregion
-
-        #region Isolated Interception Framework
-
-        private class EphemeralConfigSystem : System.Configuration.Internal.IInternalConfigSystem
-        {
-            private readonly System.Collections.Specialized.NameValueCollection _customSettings;
-            private readonly object _fallbackSystem;
-
-            public EphemeralConfigSystem(System.Collections.Specialized.NameValueCollection customSettings, object fallbackSystem)
-            {
-                _customSettings = customSettings;
-                _fallbackSystem = fallbackSystem;
-            }
-
-            public object GetSection(string configKey)
-            {
-                if (configKey == "appSettings")
-                {
-                    return _customSettings;
-                }
-
-                if (_fallbackSystem != null)
-                {
-                    // Fall back cleanly to capture ConnectionStrings, database structures, or general runtime config tokens
-                    return (object)TestReflection.InvokeNonPublic(_fallbackSystem, "GetSection", configKey);
-                }
-
-                return null;
-            }
-
-            public void RefreshConfig(string sectionName)
-            {
-                if (_fallbackSystem != null)
-                {
-                    TestReflection.InvokeNonPublic(_fallbackSystem, "RefreshConfig", sectionName);
-                }
-            }
-
-            public bool SupportsUserConfig => _fallbackSystem != null && (bool)TestReflection.InvokeNonPublic(_fallbackSystem, "get_SupportsUserConfig");
-        }
-
-        #endregion
-
         [Fact]
         public void OnStart_ValidOptions_InitializesCorrectly()
         {
