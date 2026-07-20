@@ -1,4 +1,8 @@
-﻿namespace Servy.Restarter.UnitTests
+﻿using Servy.Core.Logging;
+using Servy.Infrastructure.Data;
+using System.Data.SQLite;
+
+namespace Servy.Restarter.UnitTests
 {
     [CollectionDefinition("RestarterProgramTests", DisableParallelization = true)]
     public class RestarterProgramTestsCollection
@@ -13,8 +17,16 @@
         private const string ConfigFileName = "appsettings.restarter.json";
         private const string KeyFileName = "test_restarter_local.key";
         private const string IvFileName = "test_restarter_local.iv";
+        private const string LogFileName = "Servy.Restarter.log";
+
+        // Use a named in-memory database string with shared cache. This forces SQLite
+        // to share the exact same memory space across different connection instances instantiated 
+        // inside Program.Main as long as our _dbKeepAliveConnection handle remains open.
+        private const string SharedInMemoryConnectionString = "Data Source=RestarterTestDb;Mode=Memory;Cache=Shared;Version=3;";
 
         private readonly string _tempConfigPath;
+        private readonly string _expectedLogFilePath;
+        private readonly SQLiteConnection _dbKeepAliveConnection;
 
         public ProgramTests()
         {
@@ -23,10 +35,11 @@
 
             // Generate an appsettings layout in the local output context
             _tempConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ConfigFileName);
+            _expectedLogFilePath = Path.Combine(Logger.LogsPath, LogFileName);
 
             string mockConfigJson = "{\r\n" +
                 "  \"ConnectionStrings\": {\r\n" +
-                "    \"DefaultConnection\": \"Data Source=:memory:;Version=3;\"\r\n" +
+                "    \"DefaultConnection\": \" " + SharedInMemoryConnectionString + "\"\r\n" +
                 "  },\r\n" +
                 "  \"Security\": {\r\n" +
                 "    \"AESKeyFilePath\": \"" + KeyFileName + "\",\r\n" +
@@ -36,6 +49,13 @@
                 "}";
 
             File.WriteAllText(_tempConfigPath, mockConfigJson);
+
+            // Open the persistent handle to anchor the shared memory segment lifecycle
+            _dbKeepAliveConnection = new SQLiteConnection(SharedInMemoryConnectionString);
+            _dbKeepAliveConnection.Open();
+
+            // Bootstrap the schema table directly into the shared memory segment
+            SQLiteDbInitializer.Initialize(_dbKeepAliveConnection);
         }
 
         #region Guard Conditions Branch Coverage
@@ -51,6 +71,7 @@
 
             // Assert
             Assert.Equal(1, Environment.ExitCode);
+            AssertLogContainsMessage("Missing required argument: service name.");
         }
 
         [Theory]
@@ -66,6 +87,7 @@
 
             // Assert
             Assert.Equal(1, Environment.ExitCode);
+            AssertLogContainsMessage("Service name cannot be empty.");
         }
 
         #endregion
@@ -76,39 +98,43 @@
         public void Main_ValidNameButServiceNotManaged_TriggersValidationFailureBranch()
         {
             // Arrange
-            // We provide a dummy service name that doesn't exist in our volatile memory database.
+            // We provide a dummy service name that doesn't exist in our initialized memory database.
             // This triggers the serviceRepository.GetByName(...) == null failure branch cleanly.
-            string[] args = new string[] { "GhostUnmanagedService" };
+            string serviceName = "GhostUnmanagedService";
+            string[] args = new string[] { serviceName };
 
             // Act
             Program.Main(args);
 
             // Assert
-            // The code sets Environment.ExitCode = 1 and safely disposes elements in finally block
             Assert.Equal(1, Environment.ExitCode);
+            AssertLogContainsMessage($"Service '{serviceName}' is not managed by Servy.");
         }
 
         [Fact]
         public void Main_FallbackConfigurationParsing_HandlesInvalidTimeoutGracefully()
         {
             // Arrange
-            // Retain ConnectionStrings block to preserve :memory: context sandbox and prevent production DB fall-through
+            // Retain ConnectionStrings block to preserve shared memory database visibility
             string corruptedConfigJson = "{\r\n" +
                 "  \"ConnectionStrings\": {\r\n" +
-                "    \"DefaultConnection\": \"Data Source=:memory:;Version=3;\"\r\n" +
+                "    \"DefaultConnection\": \"" + SharedInMemoryConnectionString + "\"\r\n" +
                 "  },\r\n" +
                 "  \"RestartTimeoutSeconds\": \"NotAnInteger\"\r\n" +
                 "}";
             File.WriteAllText(_tempConfigPath, corruptedConfigJson);
 
-            string[] args = new string[] { "GhostUnmanagedService" };
+            string serviceName = "GhostUnmanagedService";
+            string[] args = new string[] { serviceName };
 
             // Act
             Program.Main(args);
 
             // Assert
-            // Program continues validation utilizing fallback default configuration bounds instead of throwing
+            // Program continues validation utilizing fallback default configuration bounds instead of throwing,
+            // passing the configuration validation seam and breaking on unmanaged database constraints.
             Assert.Equal(1, Environment.ExitCode);
+            AssertLogContainsMessage($"Service '{serviceName}' is not managed by Servy.");
         }
 
         #endregion
@@ -119,9 +145,8 @@
         public void Main_CorruptedAppDirectoryContext_FailsInitializationAndTriggersCatchBlocks()
         {
             // Arrange
-            // Instead of deleting the config file completely-which triggers a fallback 
-            // to the host's physical production Servy.db-provide a malformed layout containing an unparseable 
-            // connection string. This safely simulates database driver crashes while remaining completely isolated.
+            // Provide a malformed layout containing an unparseable connection string string. 
+            // This safely simulates database driver crashes while remaining completely isolated.
             string brokenConnectionConfigJson = "{\r\n" +
                 "  \"ConnectionStrings\": {\r\n" +
                 "    \"DefaultConnection\": \"Data Source=||InvalidPath||:?\"\r\n" +
@@ -137,20 +162,50 @@
             Program.Main(args);
 
             // Assert
-            // The catch block catches the error, assigns a diagnostic log fallback, and marks failure exit
             Assert.Equal(1, Environment.ExitCode);
+            // Confirms that the catch-all execution path was explicitly hit
+            AssertLogContainsMessage("Servy.Restarter.exe failed to restart the service.");
+        }
+
+        #endregion
+
+        #region Verification Helpers
+
+        /// <summary>
+        /// Scans the physical log output stream for the expected diagnostic signatures to discriminate between crash paths.
+        /// </summary>
+        private void AssertLogContainsMessage(string expectedMessage)
+        {
+            // Force the static logger to flush its handle completely to disk
+            Logger.Shutdown();
+
+            Assert.True(File.Exists(_expectedLogFilePath), "The diagnostic restarter log file was never initialized on disk.");
+
+            string logContent = File.ReadAllText(_expectedLogFilePath);
+            Assert.Contains(expectedMessage, logContent);
         }
 
         #endregion
 
         public void Dispose()
         {
+            // Force logger teardown first to unlock active files
+            Logger.Shutdown();
+
+            // Explicitly unlock and drop the keep-alive memory connection reference
+            _dbKeepAliveConnection?.Dispose();
+
             // Clean dynamic runtime artifacts cleanly
             try
             {
                 if (File.Exists(_tempConfigPath))
                 {
                     File.Delete(_tempConfigPath);
+                }
+
+                if (File.Exists(_expectedLogFilePath))
+                {
+                    File.Delete(_expectedLogFilePath);
                 }
 
                 if (File.Exists(KeyFileName)) File.Delete(KeyFileName);
