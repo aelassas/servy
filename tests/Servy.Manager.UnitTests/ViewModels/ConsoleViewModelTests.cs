@@ -337,21 +337,45 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Dispose_CleansUpCancellationTokensAndEvents()
         {
-            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            // Arrange, Act & Assert
             Helper.RunOnSTA(() =>
             {
                 // Arrange
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
-                using (var vm = CreateViewModel())
                 {
+                    var vm = CreateViewModel();
+
                     bool scrollTriggered = false;
                     vm.RequestScroll += (force) => scrollTriggered = true;
+
+                    // Create fresh token sources to securely anchor verification states
+                    var expectedTailingCts = new CancellationTokenSource();
+                    var expectedLogFilterCts = new CancellationTokenSource();
+
+                    // Forcefully mock-inject active token sources into the private instance fields 
+                    // using TestReflection. This sidesteps lazy initialization mechanics and guarantees 
+                    // that the structural cleanup blocks inside Dispose are explicitly exercised.
+                    TestReflection.SetField(vm, "_tailingCts", expectedTailingCts);
+                    TestReflection.SetField(vm, "_logFilterCts", expectedLogFilterCts);
 
                     // Act
                     vm.Dispose();
 
                     // Assert
+                    // 1. Verify structural cancellation behavior commitments on our anchored handles
+                    Assert.True(expectedTailingCts.IsCancellationRequested, "The active tailing cancellation token source was not cancelled during disposal.");
+                    Assert.True(expectedLogFilterCts.IsCancellationRequested, "The log filter debounce cancellation token source was not cancelled during disposal.");
+
+                    // 2. Verify instance field reference purging on the ViewModel container using nullable type flags
+                    Assert.Null(TestReflection.GetField<CancellationTokenSource>(vm, "_tailingCts"));
+                    Assert.Null(TestReflection.GetField<CancellationTokenSource>(vm, "_logFilterCts"));
+
+                    // 3. Verify event cleanup checks
                     Assert.False(scrollTriggered);
+
+                    // Final cleanup of local anchors
+                    expectedTailingCts.Dispose();
+                    expectedLogFilterCts.Dispose();
                 }
             });
         }

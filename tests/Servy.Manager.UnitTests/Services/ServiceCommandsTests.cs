@@ -149,21 +149,38 @@ namespace Servy.Manager.UnitTests.Services
         [Fact]
         public async Task ImportJsonConfigAsync_ShouldShowError_WhenJsonInvalid()
         {
+            // Arrange
             var sut = CreateServiceCommands();
-            var tempFile = Path.GetTempFileName();
-            File.WriteAllText(tempFile, "{ invalid-json }");
+            var rawTempFile = Path.GetTempFileName();
 
-            _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
+            // Mutate the extension to .json to safely pass the foundational ImportGuard path security check
+            var tempJsonFile = Path.ChangeExtension(rawTempFile, ".json");
+            File.WriteAllText(tempJsonFile, "{ invalid-json }");
+
+            _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempJsonFile);
 
             string outErr = "Invalid JSON";
-            _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(false);
+            _jsonServiceValidatorMock
+                .Setup(v => v.TryValidate(It.IsAny<string>(), out outErr))
+                .Returns(false);
 
-            await sut.ImportJsonConfigAsync(CancellationToken.None);
+            try
+            {
+                // Act
+                await sut.ImportJsonConfigAsync(CancellationToken.None);
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
-            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
-
-            File.Delete(tempFile);
+                // Assert
+                // Explicit verify constraint ensures that execution actually bypassed the path guard and hit the format validator
+                _jsonServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+                _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+            }
+            finally
+            {
+                // Clean up all local operating context artifacts cleanly
+                if (File.Exists(rawTempFile)) File.Delete(rawTempFile);
+                if (File.Exists(tempJsonFile)) File.Delete(tempJsonFile);
+            }
         }
 
         [Fact]
@@ -212,22 +229,39 @@ namespace Servy.Manager.UnitTests.Services
         [Fact]
         public async Task ImportXmlConfigAsync_ShouldShowError_WhenXmlInvalid()
         {
+            // Arrange
             var sut = CreateServiceCommands();
-            var tempFile = Path.GetTempFileName();
-            File.WriteAllText(tempFile, "<invalid><xml>");
+            var rawTempFile = Path.GetTempFileName();
 
-            _fileDialogServiceMock.Setup(d => d.OpenXml()).Returns(tempFile);
+            // Mutate the extension to .xml to safely pass the foundational ImportGuard path security check
+            var tempXmlFile = Path.ChangeExtension(rawTempFile, ".xml");
+            File.WriteAllText(tempXmlFile, "<invalid><xml>");
+
+            _fileDialogServiceMock.Setup(d => d.OpenXml()).Returns(tempXmlFile);
 
             string outErr = "Malformed XML";
-            _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr)).Returns(false);
+            _xmlServiceValidatorMock
+                .Setup(v => v.TryValidate(It.IsAny<string>(), out outErr))
+                .Returns(false);
 
-            await sut.ImportXmlConfigAsync(CancellationToken.None);
+            try
+            {
+                // Act
+                await sut.ImportXmlConfigAsync(CancellationToken.None);
 
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
-            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
-            Assert.False(_refreshCalled);
-
-            if (File.Exists(tempFile)) File.Delete(tempFile);
+                // Assert
+                // Explicit verify constraint ensures that execution actually bypassed the path guard and hit the format validator
+                _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Once);
+                _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+                _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+                Assert.False(_refreshCalled);
+            }
+            finally
+            {
+                // Clean up all local operating context artifacts cleanly
+                if (File.Exists(rawTempFile)) File.Delete(rawTempFile);
+                if (File.Exists(tempXmlFile)) File.Delete(tempXmlFile);
+            }
         }
 
         [Fact]
