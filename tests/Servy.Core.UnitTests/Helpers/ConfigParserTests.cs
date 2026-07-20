@@ -17,7 +17,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(null, 10, 10)]
         [InlineData("", 10, 10)]
         [InlineData("   ", 10, 10)]
-        public void ParseInt_NullOrWhitespace_ReturnsDefaultWithoutLogging(string? input, int @default, int expected)
+        public void ParseInt_NullOrWhitespace_ReturnsDefault(string? input, int @default, int expected)
         {
             // Act
             var result = ConfigParser.ParseInt(input, @default);
@@ -37,7 +37,7 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void ParseInt_MalformedInput_ReturnsDefaultAndLogsWarning()
+        public void ParseInt_MalformedInput_ReturnsDefault()
         {
             // Act
             var result = ConfigParser.ParseInt("not-a-number", 10);
@@ -189,21 +189,28 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(expected, result);
         }
 
-        [Fact]
-        public void ParseEnum_String_InvalidNumericInput_ReturnsDefault()
+        [Theory]
+        [InlineData("99")]
+        [InlineData("999")]
+        public void ParseEnum_String_UndefinedNumericInput_ReturnsDefault(string undefinedNumeric)
         {
             // Act
-            var result = ConfigParser.ParseEnum("99", TestStatus.None);
+            // Numeric values parse successfully but fail Enum.IsDefined verification, triggering the fallback loop
+            var result = ConfigParser.ParseEnum(undefinedNumeric, TestStatus.None);
 
             // Assert
             Assert.Equal(TestStatus.None, result);
         }
 
         [Fact]
-        public void ParseEnum_String_MalformedOrUndefined_ReturnsDefault()
+        public void ParseEnum_String_MalformedText_ReturnsDefaultAndLogsWarning()
         {
+            // Arrange
+            string malformedInput = "Banana";
+
             // Act
-            var result = ConfigParser.ParseEnum("999", TestStatus.None);
+            // Non-numeric arbitrary text cannot be parsed by Enum.TryParse, executing the true malformed branch
+            var result = ConfigParser.ParseEnum(malformedInput, TestStatus.None);
 
             // Assert
             Assert.Equal(TestStatus.None, result);

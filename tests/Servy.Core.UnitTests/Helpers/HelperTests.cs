@@ -337,11 +337,19 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void GetBuiltWithFramework_DefaultsToExecutingAssembly()
         {
-            // Call without passing an assembly
-            string result = Helper.GetBuiltWithFramework();
+            // Arrange
+            // Explicitly pass the production library assembly context to match what 
+            // Assembly.GetExecutingAssembly() resolves to internally inside the utility method.
+            var coreLibraryAssembly = typeof(Helper).Assembly;
+            string expectedFrameworkString = Helper.GetBuiltWithFramework(coreLibraryAssembly);
 
-            // It should return something based on the current executing assembly
-            Assert.NotNull(result);
+            // Act
+            // Invoke the parameterless signature to execute the 'assembly ??=' internal fallback branch
+            string actualFrameworkString = Helper.GetBuiltWithFramework();
+
+            // Assert
+            // Confirm the parameterless overload targets the core library assembly frame as its baseline
+            Assert.Equal(expectedFrameworkString, actualFrameworkString);
         }
 
         /// <summary>
