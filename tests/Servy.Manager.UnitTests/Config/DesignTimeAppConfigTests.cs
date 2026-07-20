@@ -26,7 +26,7 @@ namespace Servy.Manager.UnitTests.Config
             // Assert - Limits and Thresholds
             Assert.Equal(AppConfig.DefaultConsoleMaxLines, config.ConsoleMaxLines);
             Assert.Equal(AppConfig.DefaultLogsWindowDays, config.LogsWindowDays);
-            Assert.Equal(300, config.SearchDebounceDelayMs);
+            Assert.Equal(AppConfig.DefaultSearchDebounceDelayMs, config.SearchDebounceDelayMs);
             Assert.Equal(AppConfig.DefaultMaxBulkOperationParallelism, config.MaxBulkOperationParallelism);
 
             // Assert - Paths
