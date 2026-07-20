@@ -106,7 +106,15 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         {
             // Arrange
             int heartbeats = 0;
-            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"Write-Output 'OK'\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
+
+            // Inject a short sleep inside the command loop string to guarantee the process outlasts 
+            // the 10ms chunk window, forcing the heartbeat callback to fire reliably.
+            var options = CreateOptions(
+                "powershell.exe",
+                "-NoProfile -Command \"Start-Sleep -m 150; Write-Output 'OK'\"",
+                fireAndForget: false,
+                timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
+
             options.WaitChunkMs = 10;
             options.OnScmHeartbeat = new Action<int>((time) => Interlocked.Increment(ref heartbeats));
 
@@ -115,7 +123,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             {
                 // Assert
                 Assert.True(wrapper.HasExited);
-                Assert.True(heartbeats >= 0);
+
+                // Swap the tautological >= 0 check for a strict > 0 validation to prove the heartbeat callback ran.
+                Assert.True(heartbeats > 0, $"Expected SCM heartbeats to be reported, but captured count was {heartbeats}.");
             }
         }
 

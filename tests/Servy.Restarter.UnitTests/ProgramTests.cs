@@ -115,26 +115,62 @@ namespace Servy.Restarter.UnitTests
         public void Main_FallbackConfigurationParsing_HandlesInvalidTimeoutGracefully()
         {
             // Arrange
-            // Retain ConnectionStrings block to preserve shared memory database visibility
-            string corruptedConfigJson = "{\r\n" +
-                "  \"ConnectionStrings\": {\r\n" +
-                "    \"DefaultConnection\": \"" + SharedInMemoryConnectionString + "\"\r\n" +
-                "  },\r\n" +
-                "  \"RestartTimeoutSeconds\": \"NotAnInteger\"\r\n" +
-                "}";
-            File.WriteAllText(_tempConfigPath, corruptedConfigJson);
+            string serviceName = "ManagedTestServiceForTimeoutValidation";
 
-            string serviceName = "GhostUnmanagedService";
-            string[] args = new string[] { serviceName };
+            // 1. Manually seed the shared test database using the available System.Data.SQLite engine
+            // to ensure the service passes the unmanaged check cleanly.
+            using (var connection = new System.Data.SQLite.SQLiteConnection(SharedInMemoryConnectionString))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "INSERT OR IGNORE INTO Services (Name, ExecutablePath) VALUES (@name, @path);";
+                    command.Parameters.AddWithValue("@name", serviceName);
+                    command.Parameters.AddWithValue("@path", "C:\\MockPath\\Service.exe");
+                    command.ExecuteNonQuery();
+                }
+            }
 
-            // Act
-            Program.Main(args);
+            try
+            {
+                // 2. Build a structurally complete configuration payload where only the timeout option is corrupted.
+                string corruptedConfigJson = "{\r\n" +
+                    "  \"ConnectionStrings\": {\r\n" +
+                    "    \"DefaultConnection\": \"" + SharedInMemoryConnectionString + "\"\r\n" +
+                    "  },\r\n" +
+                    "  \"Security\": {\r\n" +
+                    "    \"EncryptionKey\": \"StandardKeyPlaceholderForTestingOnly\"\r\n" +
+                    "  },\r\n" +
+                    "  \"RestartTimeoutSeconds\": \"NotAnInteger\"\r\n" +
+                    "}";
+                File.WriteAllText(_tempConfigPath, corruptedConfigJson);
 
-            // Assert
-            // Program continues validation utilizing fallback default configuration bounds instead of throwing,
-            // passing the configuration validation seam and breaking on unmanaged database constraints.
-            Assert.Equal(1, Environment.ExitCode);
-            AssertLogContainsMessage($"Service '{serviceName}' is not managed by Servy.");
+                string[] args = new string[] { serviceName };
+
+                // Act
+                Program.Main(args);
+
+                // Assert
+                // The application successfully bypassed the corrupted token string and fell back 
+                // to standard timeout bounds, successfully finishing the operational lifecycle with ExitCode 0.
+                Assert.Equal(0, Environment.ExitCode);
+                AssertLogContainsMessage($"Successfully restarted service '{serviceName}'.");
+            }
+            finally
+            {
+                // Clean up the seeded service entry from the shared database context to prevent 
+                // side-effects or collision state leaks on subsequent unit test runs.
+                using (var connection = new SQLiteConnection(SharedInMemoryConnectionString))
+                {
+                    connection.Open();
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "DELETE FROM Services WHERE Name = @name;";
+                        command.Parameters.AddWithValue("@name", serviceName);
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
         }
 
         #endregion
