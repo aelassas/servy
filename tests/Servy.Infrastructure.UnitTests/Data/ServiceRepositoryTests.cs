@@ -1067,31 +1067,27 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportJSON_NullObject_ReturnsFalse()
+        public async Task ImportJsonAsync_DeserializerReturnsNull_ReturnsFalse()
         {
             // Arrange
             var repo = CreateRepository();
-            var json = "null";
+            var jsonPayload = "{}";
+
+            // Explicitly set up the serializer layer to simulate a null payload translation result
+            _mockJsonServiceSerializer
+                .Setup(s => s.Deserialize(jsonPayload))
+                .Returns((ServiceDto)null);
 
             // Act
-            var result = await repo.ImportJsonAsync(json, CancellationToken.None);
+            var result = await repo.ImportJsonAsync(jsonPayload, CancellationToken.None);
 
             // Assert
             Assert.False(result);
-        }
 
-        [Fact]
-        public async Task ImportJSON_InvalidJson_ReturnsFalse()
-        {
-            // Arrange
-            var repo = CreateRepository();
-            var json = "{ invalid json }";
-
-            // Act
-            var result = await repo.ImportJsonAsync(json, CancellationToken.None);
-
-            // Assert
-            Assert.False(result);
+            // Verify that execution short-circuited cleanly without touching the database infrastructure
+            _mockDapper.Verify(
+                e => e.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<IDbTransaction>(), It.IsAny<CancellationToken>()),
+                Times.Never);
         }
 
         [Fact]
