@@ -71,19 +71,16 @@ namespace Servy.Core.UnitTests.Native
         }
 
         [Fact]
-        public void Handle_ShouldSupportImplicitConversionToIntPtr()
+        public void DangerousGetHandle_ReturnsNonZeroPointer_ForCurrentProcess()
         {
             // Arrange
             int currentPid = GetCurrentProcessId();
 
-            // Act
+            // Act & Assert
             using (SafeWinProcessHandle handle = OpenProcess(ProcessAccess.QueryLimitedInformation, false, currentPid))
             {
                 IntPtr convertedPtr = handle.DangerousGetHandle();
 
-                // If you had an implicit operator, you would test it here.
-                // Note: SafeHandle does not provide an implicit cast to IntPtr by design 
-                // to prevent handle leaks. Use DangerousGetHandle() in tests only.
                 Assert.NotEqual(IntPtr.Zero, convertedPtr);
             }
         }

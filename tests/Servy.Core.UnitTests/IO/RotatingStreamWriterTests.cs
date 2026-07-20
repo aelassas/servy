@@ -1068,13 +1068,13 @@ namespace Servy.Core.UnitTests.IO
             // Arrange
             var filePath = Path.Combine(_testDir, $"date_ternary_{useLocal}.log");
 
-            // Act
+            // Act & Assert
             using (var writer = CreateWriter(filePath, enableDateRotation: true, dateRotationType: DateRotationType.Daily, useLocalTimeForRotation: useLocal))
             {
                 writer.Write("init"); // Ensure file and writer exist
 
-                // Force ShouldRotateByDate to return true by aging the last rotation
-                DateTime fakePast = useLocal ? DateTime.UtcNow.AddDays(-2) : DateTime.UtcNow.AddDays(-2);
+                // FIX: Differentiate local vs UTC time variants across the branches to resolve the redundant ternary smell.
+                DateTime fakePast = useLocal ? DateTime.Now.AddDays(-2) : DateTime.UtcNow.AddDays(-2);
                 TestReflection.SetField(writer, "_lastRotationDate", fakePast);
 
                 // Trigger write -> CheckRotation -> rotateByDate is true
