@@ -49,7 +49,7 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void SetIsEventLogEnabled_TogglesStateAndHandlesCorrectly()
         {
-            if (!_isElevated) return;
+            if (!_isElevated) Assert.Skip("Skipping test due to insufficient privileges.");
 
             string source = GenerateSourceName();
             using (var logger = new EventLogLogger(source, LogLevel.Info, isEventLogEnabled: false))
@@ -73,7 +73,7 @@ namespace Servy.Core.IntegrationTests.Logging
         [Fact]
         public void InitializeEventLog_WhenSourceAssignedToDifferentLog_DisablesLogger()
         {
-            if (!_isElevated) return;
+            if (!_isElevated) Assert.Skip("Skipping test due to insufficient privileges.");
 
             string mismatchSource = GenerateSourceName();
 
@@ -157,7 +157,7 @@ namespace Servy.Core.IntegrationTests.Logging
         public void SafeWriteToEventLog_OversizedMessage_TruncatesSuccessfully()
         {
             // Arrange
-            if (!_isElevated) return;
+            if (!_isElevated) Assert.Skip("Skipping test due to insufficient privileges.");
 
             string source = GenerateSourceName();
 
@@ -236,7 +236,7 @@ namespace Servy.Core.IntegrationTests.Logging
         public void SafeWriteToEventLog_OnNativeException_CatchesAndProceeds()
         {
             // Arrange
-            if (!_isElevated) return;
+            if (!_isElevated) Assert.Skip("Skipping test due to insufficient privileges.");
 
             // CRITICAL CONTRACT: Test the exception isolation boundaries directly on the 
             // internal structural wrapper method by feeding it an illegal, un-creatable source layout configuration.

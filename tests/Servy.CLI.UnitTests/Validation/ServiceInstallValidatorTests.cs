@@ -85,7 +85,7 @@ namespace Servy.CLI.UnitTests.Validation
             Assert.False(result.Success);
             // Must complain about the first encountered failure and skip computing the next one
             Assert.Contains("--startupType", result.Message);
-            Assert.DoesNotContain("--rotation-size", result.Message);
+            Assert.DoesNotContain("--rotationSize", result.Message);
         }
 
         [Theory]

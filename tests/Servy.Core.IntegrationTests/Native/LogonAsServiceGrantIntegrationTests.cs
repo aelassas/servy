@@ -97,7 +97,7 @@ namespace Servy.Core.IntegrationTests.Native
         public void Ensure_ShorthandLocalNotation_CorrectlyTranslatesMachinePrefix()
         {
             // Arrange
-            if (!_canModifyLsaPolicy || !_accountCreatedLocally) return;
+            if (!_canModifyLsaPolicy || !_accountCreatedLocally) Assert.Skip("Skipping test due to insufficient LSA policy access or account creation failure.");
 
             string shorthandAccount = $".\\{_testAccountName}";
             string fullyQualifiedAccount = $"{Environment.MachineName}\\{_testAccountName}";
@@ -140,7 +140,7 @@ namespace Servy.Core.IntegrationTests.Native
         public void Ensure_FreshAccountWithoutAnyRights_TriggersNotFoundBranchAndGrantsPrivilege()
         {
             // Arrange
-            if (!_canModifyLsaPolicy || !_accountCreatedLocally) return;
+            if (!_canModifyLsaPolicy || !_accountCreatedLocally) Assert.Skip("Skipping test due to insufficient LSA policy access or account creation failure.");
 
             string fullAccountName = $"{Environment.MachineName}\\{_testAccountName}";
 

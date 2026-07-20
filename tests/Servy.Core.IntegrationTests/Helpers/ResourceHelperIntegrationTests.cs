@@ -126,6 +126,71 @@ namespace Servy.Core.IntegrationTests.Helpers
             Assert.Equal(dummyData, writtenBytes);
         }
 
+        [Theory]
+        [InlineData(false)] // Tests the UI service routing path (isCli: false)
+        [InlineData(true)]  // Tests the CLI service routing path (isCli: true)
+        public async Task CopyEmbeddedResource_WhenStopServicesIsTrue_StopsAndRestartsDependentServices(bool isCli)
+        {
+            // Arrange
+            string fileName = "serviceapp";
+            string extension = "exe";
+            string targetPath = Path.Combine(_tempDirectory, $"{fileName}.{extension}");
+            var testServices = new List<string> { "Servy_Service_A", "Servy_Service_B" };
+
+            // Configure the process killer mock to return true for file handle clearing
+            _mockProcessKiller.Setup(p => p.KillProcessesUsingFile(targetPath)).Returns(true);
+
+            // Mock the assembly to return a valid manifest stream so execution passes the initial safeguards
+            var dummyResourceBytes = new byte[] { 0xAA, 0xBB, 0xCC };
+            _mockAssembly.Setup(a => a.GetManifestResourceStream(It.IsAny<string>()))
+                         .Returns(() => new MemoryStream(dummyResourceBytes));
+
+            // Setup the service helper to discover our running mock services based on the CLI layout flag
+            if (isCli)
+            {
+                _mockServiceHelper.Setup(s => s.GetRunningServyCLIServices()).Returns(testServices);
+            }
+            else
+            {
+                _mockServiceHelper.Setup(s => s.GetRunningServyUIServices()).Returns(testServices);
+            }
+
+            // Mock the lifecycle control methods to return successful completed tasks
+            _mockServiceHelper.Setup(s => s.StopServices(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _mockServiceHelper.Setup(s => s.StartServices(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+            // Act
+            bool result = await _resourceHelper.CopyEmbeddedResource(
+                _mockAssembly.Object,
+                "Servy.Resources",
+                fileName,
+                extension,
+                stopServices: true,
+                isCli: isCli,
+                cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            // 1. Verify the core copy transaction reported a success state
+            Assert.True(result);
+            Assert.True(File.Exists(targetPath));
+
+            // 2. VERIFICATION LOOP: Confirm the service management pipeline executed gracefully in order
+            if (isCli)
+            {
+                _mockServiceHelper.Verify(s => s.GetRunningServyCLIServices(), Times.Once);
+                _mockServiceHelper.Verify(s => s.GetRunningServyUIServices(), Times.Never);
+            }
+            else
+            {
+                _mockServiceHelper.Verify(s => s.GetRunningServyUIServices(), Times.Once);
+                _mockServiceHelper.Verify(s => s.GetRunningServyCLIServices(), Times.Never);
+            }
+
+            // 3. Confirm that the targeted services were both cleanly stopped and subsequently revived
+            _mockServiceHelper.Verify(s => s.StopServices(testServices, TestContext.Current.CancellationToken), Times.Once);
+            _mockServiceHelper.Verify(s => s.StartServices(testServices, CancellationToken.None), Times.Once);
+        }
+
         [Fact]
         public async Task CopyEmbeddedResource_ThrowsException_CaughtByOuterCatch_ReturnsFalse()
         {

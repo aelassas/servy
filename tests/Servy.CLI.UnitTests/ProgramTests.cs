@@ -1,4 +1,6 @@
-﻿namespace Servy.CLI.UnitTests
+﻿using System.Reflection;
+
+namespace Servy.CLI.UnitTests
 {
     [Collection("SequentialConsoleTests")]
     public class ProgramTests : IDisposable
@@ -137,7 +139,9 @@
         public async Task Main_QuietFlagProvided_AltersExecutionToQuietPath()
         {
             // Arrange
-            string[] args = { "status", "--quiet" };
+            // FIX: Supply the service name via the required explicit option switch (-n) 
+            // to satisfy the CommandLineParser constraints and successfully route into the quiet logic path.
+            string[] args = { "status", "-n", "NonExistentServiceForTestingOnly", "--quiet" };
 
             // Act
             var result = await RunWithConsoleCaptureAsync(async () =>
@@ -146,7 +150,53 @@
             });
 
             // Assert
-            Assert.True(result.ExitCode == (int)CliExitCode.Success || result.ExitCode == (int)CliExitCode.Error);
+            // The parser succeeds, but the execution layer yields Error (1) due to the missing database entry,
+            // proving the application operational pipeline ran while maintaining complete silence.
+            Assert.Equal((int)CliExitCode.Error, result.ExitCode);
+
+            // Verify that no loading animation frames or status text fragments were written to the console buffer
+            Assert.True(string.IsNullOrEmpty(result.Output), "Console output should be completely suppressed when the --quiet flag is supplied.");
+        }
+
+        [Fact]
+        public async Task RunWithLoadingAnimation_WhenOutputIsRedirectedOrQuiet_BypassesAnimationLoop()
+        {
+            // Arrange
+            var outputWriter = new StringWriter();
+            var originalOut = Console.Out;
+            Console.SetOut(outputWriter);
+
+            try
+            {
+                // Access the internal test seam via reflection to explicitly force an un-redirected state scenario 
+                // to verify that the internal evaluation flag catches the runtime configuration bypass blocks.
+                var field = typeof(CLI.Helpers.ConsoleHelper).GetField("_isOutputRedirectedOverride", BindingFlags.Static | BindingFlags.NonPublic);
+                field?.SetValue(null, true); // Force out-of-bounds skip branch simulation
+
+                bool executionCompleted = false;
+
+                // Act
+                await CLI.Helpers.ConsoleHelper.RunWithLoadingAnimation(async () =>
+                {
+                    await Task.Delay(10);
+                    executionCompleted = true;
+                }, "Testing Quiet Mode Animation");
+
+                // Assert
+                Assert.True(executionCompleted);
+
+                // An un-redirected normal console would print frame strings. Proving it is blank confirms the bypass executed successfully.
+                string capturedText = outputWriter.ToString();
+                Assert.True(string.IsNullOrEmpty(capturedText) || capturedText == Environment.NewLine,
+                    "The loading animation mechanism should skip writing animation frames when quiet conditions are enforced.");
+            }
+            finally
+            {
+                // Clean up console redirection states to preserve host environment test runner stability
+                Console.SetOut(originalOut);
+                var field = typeof(CLI.Helpers.ConsoleHelper).GetField("_isOutputRedirectedOverride", BindingFlags.Static | BindingFlags.NonPublic);
+                field?.SetValue(null, null);
+            }
         }
 
         #endregion
