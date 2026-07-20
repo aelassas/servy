@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Services;
+using Servy.Testing;
 
 namespace Servy.Core.UnitTests.Services
 {
@@ -95,12 +96,33 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void IsRunning_Getter_ShouldReturnFalse_IfBackingFieldNull()
         {
-            // Testing the fallback branch for the boolean logic
-            // We use a "hack" or reflection if we really want to force the backing field null,
-            // but typical usage confirms the default state.
-            var node = new ServiceDependencyNode("svc", "display", false);
+            // Arrange
+            var node = new ServiceDependencyNode("svc", "display", isRunning: false);
 
-            Assert.False(node.IsRunning);
+            // Force the backing field to null via TestReflection to explicitly target the ?? branch
+            TestReflection.SetField(node, "_isRunning", null);
+
+            // Act
+            var result = node.IsRunning;
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void IsExpanded_Getter_ShouldReturnFalse_IfBackingFieldNull()
+        {
+            // Arrange
+            var node = new ServiceDependencyNode("svc", "display", isRunning: false);
+
+            // Force the backing field to null via TestReflection to explicitly target the ?? branch
+            TestReflection.SetField(node, "_isExpanded", null);
+
+            // Act
+            var result = node.IsExpanded;
+
+            // Assert
+            Assert.False(result);
         }
 
         [Fact]
