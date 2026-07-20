@@ -92,7 +92,6 @@ namespace Servy.Core.UnitTests.Validation
             dto.StdoutPath = "invalid>out";
             dto.StderrPath = "invalid>err";
 
-
             // Testing non-existent wrapper path
             string nonExistentWrapper = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
@@ -150,6 +149,7 @@ namespace Servy.Core.UnitTests.Validation
             var result = _sut.Validate(dto);
 
             // Assert
+            // Render basic unit properties using clean markdown layout rules
             Assert.Contains(string.Format(Strings.Msg_InvalidHeartbeatInterval, AppConfig.MinHeartbeatInterval, AppConfig.MaxHeartbeatInterval), result.Errors);
             Assert.Contains(string.Format(Strings.Msg_InvalidMaxFailedChecks, AppConfig.MinMaxFailedChecks, AppConfig.MaxMaxFailedChecks), result.Errors);
             Assert.Contains(string.Format(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.MinMaxRestartAttempts, AppConfig.MaxMaxRestartAttempts), result.Errors);
@@ -176,14 +176,18 @@ namespace Servy.Core.UnitTests.Validation
         {
             // Arrange
             var dto = ServiceDtoFactory.CreateValidValidationBase();
-            dto.EnvironmentVariables = "INVALID_VAR"; // Missing '='
-            dto.ServiceDependencies = "MissingDep;"; // Ends with semicolon often allowed but let's assume validator catches empty entries
+            dto.EnvironmentVariables = "INVALID_VAR"; // Missing '=' -> Triggers Strings.Msg_EnvironmentVariableMissingEquals
+            dto.ServiceDependencies = "MissingDep?"; // '?' is illegal -> Triggers Strings.Msg_InvalidServiceDependencyName
 
             // Act
             var result = _sut.Validate(dto);
 
             // Assert
-            Assert.NotEmpty(result.Errors);
+            // 1. Verify environment variable syntax validation error
+            Assert.Contains(Strings.Msg_EnvironmentVariableMissingEquals, result.Errors);
+
+            // 2. Verify service dependency regex character validation error
+            Assert.Contains(string.Format(Strings.Msg_InvalidServiceDependencyName, "MissingDep?"), result.Errors);
         }
 
         [Fact]
@@ -263,6 +267,7 @@ namespace Servy.Core.UnitTests.Validation
             var result = _sut.Validate(dto, confirmPassword: "WrongPassword", importMode: true);
 
             // Assert
+            // Render basic comparison ratios safely as clean words
             Assert.DoesNotContain(Strings.Msg_PasswordsDontMatch, result.Errors);
         }
     }
