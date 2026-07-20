@@ -1,5 +1,4 @@
-﻿using Servy.Core.Config;
-using Servy.Infrastructure.Helpers;
+﻿using Servy.Infrastructure.Helpers;
 
 namespace Servy.Infrastructure.UnitTests.Helpers
 {
@@ -8,7 +7,7 @@ namespace Servy.Infrastructure.UnitTests.Helpers
         [Fact]
         public void IsSqliteVersionSafe_CurrentEnvironment_ReturnsParseableVersion()
         {
-            // Act
+            // Arrange & Act
             DatabaseValidator.IsSqliteVersionSafe(out string? detectedVersion);
 
             // Assert
@@ -20,27 +19,10 @@ namespace Servy.Infrastructure.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData("3.50.1", false)]  // Just below threshold
-        [InlineData("3.50.2", true)]   // Exactly at threshold
-        [InlineData("3.50.4", true)]   // Above threshold
-        [InlineData("4.0.0", true)]    // Future version
-        [InlineData("invalid", false)] // Unparseable string
-        public void SQLiteVersionComparison_LogicCheck(string versionToTest, bool expectedSafe)
-        {
-            // Note: Since we can't mock the static SQLiteVersion, 
-            // this test validates the comparison logic used in the implementation.
-
-            bool canParse = Version.TryParse(versionToTest, out var parsedVersion);
-
-            bool isSafe = canParse && parsedVersion >= AppConfig.MinRequiredSqliteVersion;
-
-            Assert.Equal(expectedSafe, isSafe);
-        }
-
-        [Theory]
         // Branch 1: Valid and Safe (sqlVersion >= MinRequiredSqliteVersion)
         [InlineData("3.50.2", true)]
         [InlineData("3.50.4", true)]
+        [InlineData("4.0.0", true)]  // Folded from old logic check to maintain future version variant coverage
         [InlineData("10.0.0", true)]
 
         // Branch 2: Valid but Unsafe (sqlVersion < MinRequiredSqliteVersion)
@@ -50,11 +32,14 @@ namespace Servy.Infrastructure.UnitTests.Helpers
 
         // Branch 3: Invalid/Unparseable (Version.TryParse returns false)
         [InlineData("not-a-version", false)]
+        [InlineData("invalid", false)]      // Retained value map from redundant check block
         [InlineData("v3.50.2", false)] // Version.TryParse fails on leading characters
         [InlineData("", false)]
         [InlineData(null, false)]
         public void ValidateVersion_CoverageTest(string? inputVersion, bool expectedResult)
         {
+            // Arrange - Handled by xUnit data attributes
+
             // Act
             bool actualResult = DatabaseValidator.ValidateVersion(inputVersion);
 
