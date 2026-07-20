@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -133,6 +134,51 @@ namespace Servy.Core.IntegrationTests.Helpers
 
             // Assert
             Assert.False(result);
+        }
+
+        [Fact]
+        public async Task CopyEmbeddedResource_WhenStopServicesIsTrue_StopsAndRestartsDependentServices()
+        {
+            // Arrange
+            string fileName = "serviceapp";
+            string extension = "exe";
+            string targetPath = Path.Combine(_tempDirectory, $"{fileName}.{extension}");
+            var testServices = new List<string> { "Servy_Service_A", "Servy_Service_B" };
+
+            // Configure the process killer mock to return true for process tree clearing (matching .NET 4.8 method signature)
+            _mockProcessKiller.Setup(p => p.KillProcessTreeAndParents($"{fileName}.{extension}", It.IsAny<bool>())).Returns(true);
+
+            // Setup our fake assembly abstraction to yield a valid, populated stream to pass upfront validation checks
+            var dummyResourceBytes = new byte[] { 0xAA, 0xBB, 0xCC };
+            _fakeAssembly.OnGetManifestResourceStream = name => new MemoryStream(dummyResourceBytes);
+
+            // Setup the service helper to discover our running mock services
+            _mockServiceHelper.Setup(s => s.GetRunningServyServices()).Returns(testServices);
+
+            // Mock the lifecycle control methods to return successful completed tasks
+            _mockServiceHelper.Setup(s => s.StopServices(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _mockServiceHelper.Setup(s => s.StartServices(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+            // Act
+            bool result = await _resourceHelper.CopyEmbeddedResource(
+                _fakeAssembly,
+                "Servy.Resources",
+                fileName,
+                extension,
+                stopServices: true,
+                cancellationToken: CancellationToken.None);
+
+            // Assert
+            // 1. Verify the core copy transaction reported a success state
+            Assert.True(result);
+            Assert.True(File.Exists(targetPath));
+
+            // 2. VERIFICATION LOOP: Confirm the service management pipeline executed gracefully in order
+            _mockServiceHelper.Verify(s => s.GetRunningServyServices(), Times.Once);
+
+            // 3. Confirm that the targeted services were both cleanly stopped and subsequently revived
+            _mockServiceHelper.Verify(s => s.StopServices(testServices, CancellationToken.None), Times.Once);
+            _mockServiceHelper.Verify(s => s.StartServices(testServices, CancellationToken.None), Times.Once);
         }
 
         [Fact]

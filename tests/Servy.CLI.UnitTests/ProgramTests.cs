@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -9,39 +10,18 @@ namespace Servy.CLI.UnitTests
     public class ProgramTests : IDisposable
     {
         // CONSTANT STRINGS HOISTING: Centralize artifact filenames to prevent cleanup drift
-        private const string AppSettingsFileName = "appsettings.cli.json";
         private const string AesKeyFileName = "test_aes.key";
         private const string AesIvFileName = "test_aes.iv";
         private const string DatabaseFileName = "Test_Servy.db";
 
-        private readonly string _tempConfigPath;
         private readonly TextWriter _originalConsoleOut;
         private readonly TextWriter _originalConsoleError;
 
         public ProgramTests()
         {
             // Arrange
-            // Establish isolated files environment for execution runs
-            _tempConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppSettingsFileName);
-
             _originalConsoleOut = Console.Out;
             _originalConsoleError = Console.Error;
-
-            // Generate a valid mock configuration structure to bypass missing setting errors
-            string fallbackDatabaseFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DatabaseFileName);
-            string testConnection = string.Format("Data Source={0};Version=3;", fallbackDatabaseFile);
-
-            string mockConfigJson = "{\r\n" +
-                "  \"ConnectionStrings\": {\r\n" +
-                "    \"DefaultConnection\": \"" + testConnection.Replace("\\", "\\\\") + "\"\r\n" +
-                "  },\r\n" +
-                "  \"Security\": {\r\n" +
-                "    \"AESKeyFilePath\": \"" + AesKeyFileName + "\",\r\n" +
-                "    \"AESIVFilePath\": \"" + AesIvFileName + "\"\r\n" +
-                "  }\r\n" +
-                "}";
-
-            File.WriteAllText(_tempConfigPath, mockConfigJson);
         }
 
         #region Private Test Orchestration Helpers
@@ -140,11 +120,14 @@ namespace Servy.CLI.UnitTests
             Assert.Contains("uninstall", result.Output);
         }
 
+
         [Fact]
         public async Task Main_QuietFlagProvided_AltersExecutionToQuietPath()
         {
             // Arrange
-            string[] args = { "status", "--quiet" };
+            // FIX: Supply the service name via the required explicit option switch (-n) 
+            // to satisfy the CommandLineParser constraints and successfully route into the quiet logic path.
+            string[] args = { "status", "-n", "NonExistentServiceForTestingOnly", "--quiet" };
 
             // Act
             var result = await RunWithConsoleCaptureAsync(async () =>
@@ -153,7 +136,53 @@ namespace Servy.CLI.UnitTests
             });
 
             // Assert
-            Assert.True(result.ExitCode == (int)CliExitCode.Success || result.ExitCode == (int)CliExitCode.Error);
+            // The parser succeeds, but the execution layer yields Error (1) due to the missing database entry,
+            // proving the application operational pipeline ran while maintaining complete silence.
+            Assert.Equal((int)CliExitCode.Error, result.ExitCode);
+
+            // Verify that no loading animation frames or status text fragments were written to the console buffer
+            Assert.True(string.IsNullOrEmpty(result.Output), "Console output should be completely suppressed when the --quiet flag is supplied.");
+        }
+
+        [Fact]
+        public async Task RunWithLoadingAnimation_WhenOutputIsRedirectedOrQuiet_BypassesAnimationLoop()
+        {
+            // Arrange
+            var outputWriter = new StringWriter();
+            var originalOut = Console.Out;
+            Console.SetOut(outputWriter);
+
+            try
+            {
+                // Access the internal test seam via reflection to explicitly force an un-redirected state scenario 
+                // to verify that the internal evaluation flag catches the runtime configuration bypass blocks.
+                var field = typeof(CLI.Helpers.ConsoleHelper).GetField("_isOutputRedirectedOverride", BindingFlags.Static | BindingFlags.NonPublic);
+                field?.SetValue(null, true); // Force out-of-bounds skip branch simulation
+
+                bool executionCompleted = false;
+
+                // Act
+                await CLI.Helpers.ConsoleHelper.RunWithLoadingAnimation(async () =>
+                {
+                    await Task.Delay(10);
+                    executionCompleted = true;
+                }, "Testing Quiet Mode Animation");
+
+                // Assert
+                Assert.True(executionCompleted);
+
+                // An un-redirected normal console would print frame strings. Proving it is blank confirms the bypass executed successfully.
+                string capturedText = outputWriter.ToString();
+                Assert.True(string.IsNullOrEmpty(capturedText) || capturedText == Environment.NewLine,
+                    "The loading animation mechanism should skip writing animation frames when quiet conditions are enforced.");
+            }
+            finally
+            {
+                // Clean up console redirection states to preserve host environment test runner stability
+                Console.SetOut(originalOut);
+                var field = typeof(CLI.Helpers.ConsoleHelper).GetField("_isOutputRedirectedOverride", BindingFlags.Static | BindingFlags.NonPublic);
+                field?.SetValue(null, null);
+            }
         }
 
         #endregion
@@ -167,11 +196,6 @@ namespace Servy.CLI.UnitTests
             // Clean environment layout files
             try
             {
-                if (File.Exists(_tempConfigPath))
-                {
-                    File.Delete(_tempConfigPath);
-                }
-
                 if (File.Exists(AesKeyFileName)) File.Delete(AesKeyFileName);
                 if (File.Exists(AesIvFileName)) File.Delete(AesIvFileName);
 
