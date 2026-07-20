@@ -26,6 +26,8 @@ namespace Servy.Core.UnitTests.Domain
             };
         }
 
+        #region Operational Process Control Lifecycle Hook Tests
+
         [Fact]
         public async Task Start_ShouldCallServiceManager()
         {
@@ -39,6 +41,21 @@ namespace Servy.Core.UnitTests.Domain
             // Assert
             Assert.True(result.IsSuccess);
             _serviceManagerMock.Verify(s => s.StartServiceAsync("TestService", true, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Start_ReturnsFalse_WhenServiceManagerReturnsFalse()
+        {
+            // Arrange
+            var service = CreateService();
+            _serviceManagerMock.Setup(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to start service."));
+
+            // Act
+            var result = await service.Start(cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            _serviceManagerMock.Verify(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -57,6 +74,21 @@ namespace Servy.Core.UnitTests.Domain
         }
 
         [Fact]
+        public async Task Stop_ReturnsFalse_WhenServiceManagerReturnsFalse()
+        {
+            // Arrange
+            var service = CreateService();
+            _serviceManagerMock.Setup(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to stop service."));
+
+            // Act
+            var result = await service.Stop(cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            _serviceManagerMock.Verify(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
         public async Task Restart_ShouldCallServiceManager()
         {
             // Arrange
@@ -72,17 +104,38 @@ namespace Servy.Core.UnitTests.Domain
         }
 
         [Fact]
+        public async Task Restart_ReturnsFalse_WhenServiceManagerReturnsFalse()
+        {
+            // Arrange
+            var service = CreateService();
+            _serviceManagerMock.Setup(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to restart service."));
+
+            // Act
+            var result = await service.Restart(cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            _serviceManagerMock.Verify(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        #endregion
+
+        #region Metadata Lookup Discovery Queries
+
+        [Fact]
         public void GetStatus_ShouldReturnNull_WhenServiceNotInstalled()
         {
             // Arrange
             var service = CreateService();
             _serviceManagerMock.Setup(s => s.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(false);
+            _serviceManagerMock.Setup(s => s.GetServiceStatus("TestService", It.IsAny<CancellationToken>())).Returns((ServiceControllerStatus?)null);
 
             // Act
             var result = service.GetStatus(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Null(result);
+            _serviceManagerMock.Verify(s => s.GetServiceStatus("TestService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -98,6 +151,7 @@ namespace Servy.Core.UnitTests.Domain
 
             // Assert
             Assert.Equal(ServiceControllerStatus.Running, result);
+            _serviceManagerMock.Verify(s => s.GetServiceStatus("TestService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -130,6 +184,10 @@ namespace Servy.Core.UnitTests.Domain
             Assert.Equal(ServiceStartType.Automatic, result);
             _serviceManagerMock.Verify(s => s.GetServiceStartupType("TestService", It.IsAny<CancellationToken>()), Times.Once);
         }
+
+        #endregion
+
+        #region Installation Registry Integration Handlers
 
         [Fact]
         public async Task Install_ShouldCallServiceManagerWithCorrectArguments()
@@ -401,5 +459,7 @@ namespace Servy.Core.UnitTests.Domain
             Assert.True(result.IsSuccess);
             _serviceManagerMock.Verify(s => s.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>()), Times.Once);
         }
+
+        #endregion
     }
 }

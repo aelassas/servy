@@ -35,6 +35,9 @@ namespace Servy.Core.UnitTests.Helpers
                 PreLaunchIgnoreFailure = null,
                 PreStopTimeoutSeconds = null,
                 PreStopLogAsError = null,
+                EnableConsoleUI = null,
+                RecoveryAction = null,
+                RecoveryOnCleanExit = null
             };
 
             // Act
@@ -62,6 +65,9 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(AppConfig.DefaultPreLaunchIgnoreFailure, dto.PreLaunchIgnoreFailure);
             Assert.Equal(AppConfig.DefaultPreStopTimeoutSeconds, dto.PreStopTimeoutSeconds);
             Assert.Equal(AppConfig.DefaultPreStopLogAsError, dto.PreStopLogAsError);
+            Assert.Equal(AppConfig.DefaultEnableConsoleUI, dto.EnableConsoleUI);
+            Assert.Equal((int)AppConfig.DefaultRecoveryAction, dto.RecoveryAction);
+            Assert.Equal(AppConfig.DefaultRecoveryOnCleanExit, dto.RecoveryOnCleanExit);
         }
 
         [Fact]

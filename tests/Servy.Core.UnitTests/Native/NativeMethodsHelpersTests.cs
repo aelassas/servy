@@ -98,7 +98,7 @@ namespace Servy.Core.UnitTests.Native
         }
 
         [Fact]
-        public void ValidateCredentials_ValidLocalAccount_BadPassword_ThrowsUnauthorizedAccessException()
+        public void ValidateCredentials_ValidLocalAccount_BadPassword_ThrowsException()
         {
             // Arrange
             // ENVIRONMENT DEPENDENCY NOTE: Environment.UserName maps to the current executing identity. 
@@ -286,7 +286,7 @@ namespace Servy.Core.UnitTests.Native
         }
 
         [Fact]
-        public void GetFileIdentity_ClosedStream_LogsAndHandlesGracefully()
+        public void GetFileIdentity_ClosedStream_HandlesGracefully()
         {
             // Arrange
             string filePath = Path.Combine(_testDir, "closed.log");
