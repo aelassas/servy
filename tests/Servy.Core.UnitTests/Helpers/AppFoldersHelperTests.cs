@@ -27,6 +27,9 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("", "key.aes", "iv.aes")]
         [InlineData("Data Source=db.db;", "", "iv.aes")]
         [InlineData("Data Source=db.db;", "key.aes", "")]
+        [InlineData("   ", "key.aes", "iv.aes")]
+        [InlineData("Data Source=db.db;", "   ", "iv.aes")]
+        [InlineData("Data Source=db.db;", "key.aes", "   ")]
         public void EnsureFolders_NullOrWhitespaceArgs_Throws(string? conn, string? key, string? iv)
         {
             Assert.Throws<ArgumentException>(() => AppFoldersHelper.EnsureFolders(conn!, key!, iv!));
@@ -44,13 +47,14 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void EnsureFolders_InvalidDbFilePath_ThrowsInvalidOperationExceptionOrArgumentException()
+        public void EnsureFolders_InvalidDbFilePath_ThrowsInvalidOperationException()
         {
             var conn = "Data Source=:db:"; // invalid path will fail Path.GetDirectoryName
             var key = Path.Combine(_tempDir, "key.aes");
             var iv = Path.Combine(_tempDir, "iv.aes");
 
-            Assert.ThrowsAny<Exception>(() => AppFoldersHelper.EnsureFolders(conn, key, iv));
+            var ex = Assert.Throws<InvalidOperationException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv));
+            Assert.Equal("Cannot determine database folder path.", ex.Message);
         }
 
         [Fact]

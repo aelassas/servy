@@ -46,6 +46,23 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
+        public override async Task Execute_ValidOptions_ReturnsSuccess()
+        {
+            // Arrange
+            const string serviceName = "TestService";
+            var options = CreateValidOptions(serviceName);
+            SetupServiceManagerSuccess(MockServiceManager, serviceName);
+
+            // Act
+            var result = await ExecuteCommandAsync(Command, options);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal(ExpectedSuccessMessage(serviceName), result.Message);
+            _mockRepository.Verify(r => r.DeleteAsync("TestService", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
         public override async Task Execute_ServiceNotInstalled_ReturnsServiceNotFoundError()
         {
             // Arrange
