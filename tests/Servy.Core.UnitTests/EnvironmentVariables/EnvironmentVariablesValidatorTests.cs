@@ -247,7 +247,7 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
             // Assert
             Assert.False(isValid);
-            Assert.NotEmpty(errorMessages);
+            Assert.Contains(errorMessages, e => e.Contains(Strings.Msg_EnvironmentVariableMissingEquals));
         }
 
         #region Key Formatting and Security Robustness Rule Tests
