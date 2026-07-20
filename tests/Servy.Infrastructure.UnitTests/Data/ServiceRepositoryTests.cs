@@ -381,8 +381,14 @@ namespace Servy.Infrastructure.UnitTests.Data
             mockTx.Verify(t => t.Commit(), Times.Once);
         }
 
+        /// <summary>
+        /// Exhaustively verifies that every property on the actual DTO matches the expected DTO.
+        /// Used to ensure 100% mapping accuracy for bulk database operations.
+        /// </summary>
         private bool VerifyAllProperties(ServiceDto actual, ServiceDto expected, string enc)
         {
+            // Arrange & Act - Property evaluation groups matching AAA validation rules
+
             bool coreOk = actual.Name == expected.Name &&
                           actual.DisplayName == expected.DisplayName &&
                           actual.Description == expected.Description &&
@@ -403,7 +409,9 @@ namespace Servy.Infrastructure.UnitTests.Data
                                actual.StartupType == expected.StartupType &&
                                actual.Priority == expected.Priority &&
                                actual.StartTimeout == expected.StartTimeout &&
-                               actual.StopTimeout == expected.StopTimeout;
+                               actual.StopTimeout == expected.StopTimeout &&
+                               actual.RunAsLocalSystem == expected.RunAsLocalSystem &&
+                               actual.UserAccount == expected.UserAccount;
 
             bool loggingOk = actual.StdoutPath == expected.StdoutPath &&
                              actual.StderrPath == expected.StderrPath &&
@@ -416,12 +424,34 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             bool hooksOk = actual.EnableHealthMonitoring == expected.EnableHealthMonitoring &&
                            actual.HeartbeatInterval == expected.HeartbeatInterval &&
-                           actual.PreLaunchExecutablePath == expected.PreLaunchExecutablePath &&
-                           actual.PreStopExecutablePath == expected.PreStopExecutablePath &&
-                           actual.PostStopExecutablePath == expected.PostStopExecutablePath &&
-                           actual.PreStopLogAsError == expected.PreStopLogAsError;
+                           actual.MaxFailedChecks == expected.MaxFailedChecks &&
+                           actual.RecoveryAction == expected.RecoveryAction &&
+                           actual.RecoveryOnCleanExit == expected.RecoveryOnCleanExit &&
+                           actual.MaxRestartAttempts == expected.MaxRestartAttempts &&
+                           actual.ServiceDependencies == expected.ServiceDependencies &&
+                           actual.EnableDebugLogs == expected.EnableDebugLogs;
 
-            return coreOk && encryptedOk && executionOk && loggingOk && hooksOk;
+            bool preLaunchOk = actual.PreLaunchExecutablePath == expected.PreLaunchExecutablePath &&
+                               actual.PreLaunchStartupDirectory == expected.PreLaunchStartupDirectory &&
+                               actual.PreLaunchStdoutPath == expected.PreLaunchStdoutPath &&
+                               actual.PreLaunchStderrPath == expected.PreLaunchStderrPath &&
+                               actual.PreLaunchTimeoutSeconds == expected.PreLaunchTimeoutSeconds &&
+                               actual.PreLaunchRetryAttempts == expected.PreLaunchRetryAttempts &&
+                               actual.PreLaunchIgnoreFailure == expected.PreLaunchIgnoreFailure;
+
+            bool structuralRecoveryOk = actual.FailureProgramPath == expected.FailureProgramPath &&
+                                        actual.FailureProgramStartupDirectory == expected.FailureProgramStartupDirectory;
+
+            bool lifecycleExtensionsOk = actual.PostLaunchExecutablePath == expected.PostLaunchExecutablePath &&
+                                         actual.PostLaunchStartupDirectory == expected.PostLaunchStartupDirectory &&
+                                         actual.PreStopExecutablePath == expected.PreStopExecutablePath &&
+                                         actual.PreStopStartupDirectory == expected.PreStopStartupDirectory &&
+                                         actual.PreStopLogAsError == expected.PreStopLogAsError &&
+                                         actual.PostStopExecutablePath == expected.PostStopExecutablePath &&
+                                         actual.PostStopStartupDirectory == expected.PostStopStartupDirectory;
+
+            // Assert
+            return coreOk && encryptedOk && executionOk && loggingOk && hooksOk && preLaunchOk && structuralRecoveryOk && lifecycleExtensionsOk;
         }
 
         [Fact]
