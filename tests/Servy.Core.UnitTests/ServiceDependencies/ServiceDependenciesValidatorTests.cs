@@ -14,7 +14,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         [InlineData("ServiceA\r\nService_B\nAnotherService-1")]  // Validate_MultipleValidNamesSeparatedByNewLines_ReturnsTrue
         [InlineData("ServiceA;;ServiceB\n\nServiceC")]           // Validate_EmptyEntriesBetweenSeparators_AreIgnored
         [InlineData("   ServiceA   ;  ServiceB  ")]              // Validate_NameWithLeadingOrTrailingWhitespace_TrimmedAndValid
-        [InlineData(";ServiceA;;ServiceB; ;\n;")]                 // Validate_InputWithEmptyEntries_SkipsEmptyEntriesWithoutError
+        [InlineData(";ServiceA;;ServiceB; ;\n;")]                // Validate_InputWithEmptyEntries_SkipsEmptyEntriesWithoutError
         [InlineData("MSSQL$SQLEXPRESS")]                         // Validate_SingleValidServiceNameWithDollarSign_ReturnsTrue (SQL Server Named Instances)
         public void Validate_ValidInput_ReturnsTrueWithNoErrors(string input)
         {

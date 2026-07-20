@@ -166,7 +166,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
         public void Dispose()
         {
-            throw new NotImplementedException();
+            // no-op for stub
         }
     }
 
