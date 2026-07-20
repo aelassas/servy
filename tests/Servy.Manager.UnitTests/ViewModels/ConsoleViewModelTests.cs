@@ -13,6 +13,7 @@ using Servy.UI.Constants;
 using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -131,7 +132,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void SelectedService_Change_ResetsStateAndTriggersMonitoring()
         {
-            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            // Arrange, Act & Assert
             Helper.RunOnSTA(() =>
             {
                 // Arrange
@@ -165,7 +166,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void ClearSelectionCommand_Executes_SetsSelectionActiveFalse()
         {
-            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            // Arrange, Act & Assert
             Helper.RunOnSTA(() =>
             {
                 // Arrange
@@ -387,28 +388,86 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void HistorySort_WithIdenticalTimestamps_ShouldPreserveArrivalOrder()
         {
-            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            // Arrange, Act & Assert
             Helper.RunOnSTA(() =>
             {
                 // Arrange
                 var sameTime = new DateTime(2026, 1, 30, 10, 0, 0);
 
-                var line2 = new LogLine("Line 2", LogType.StdErr, sameTime);
-                var line1 = new LogLine("Line 1", LogType.StdOut, sameTime);
+                // Create mock dependencies for the view model constructor
+                var mockRepo = new Mock<IServiceRepository>();
+                var mockCommands = new Mock<IServiceCommands>();
+                var mockConfig = new Mock<IAppConfiguration>();
+                var mockCursor = new Mock<ICursorService>();
+                var mockDispatcher = new Mock<IUiDispatcher>();
 
-                var combinedHistory = new List<LogLine> { line2, line1 };
+                // Mock application configurations
+                mockConfig.Setup(c => c.ConsoleMaxLines).Returns(1000);
+                mockConfig.Setup(c => c.ConsoleRefreshIntervalInMs).Returns(100);
 
-                // Act
-                var sortedHistory = combinedHistory
-                    .Select((line, index) => new { line, index })
-                    .OrderBy(x => x.line.Timestamp)
-                    .ThenBy(x => x.index)
-                    .Select(x => x.line)
-                    .ToList();
+                // Intercept dispatcher callbacks to execute immediately on the test thread context
+                mockDispatcher
+                    .Setup(d => d.InvokeAsync(It.IsAny<Action>()))
+                    .Callback<Action>((action) => action())
+                    .Returns(Task.CompletedTask);
 
-                // Assert
-                Assert.Equal("Line 2", sortedHistory[0].Text);
-                Assert.Equal("Line 1", sortedHistory[1].Text);
+                // Generate temporary clean workspace files to feed the internal LogTailer stream engines
+                string tempStdoutFile = Path.GetTempFileName();
+                string tempStderrFile = Path.GetTempFileName();
+
+                // Write sequential log statements sharing identical log line prefix timestamp keys
+                // Line 2 arrives first in the combined list ordering paradigm based on SwitchServiceAsync structure
+                File.WriteAllText(tempStdoutFile, $"[{sameTime:yyyy-MM-dd HH:mm:ss.fff}Z] [INFO] | Line 2{Environment.NewLine}");
+                File.WriteAllText(tempStderrFile, $"[{sameTime:yyyy-MM-dd HH:mm:ss.fff}Z] [ERROR] | Line 1{Environment.NewLine}");
+
+                var serviceName = "StableSortTestService";
+                var testService = new ConsoleService
+                {
+                    Name = serviceName,
+                    StdoutPath = tempStdoutFile,
+                    StderrPath = tempStderrFile
+                };
+
+                var stateDto = new ServiceConsoleStateDto
+                {
+                    Pid = 1234,
+                    ActiveStdoutPath = tempStdoutFile,
+                    ActiveStderrPath = tempStderrFile
+                };
+
+                mockRepo
+                    .Setup(r => r.GetServiceConsoleStateAsync(serviceName, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(stateDto);
+
+                var viewModel = new ConsoleViewModel(mockRepo.Object, mockCommands.Object, mockConfig.Object, mockCursor.Object, mockDispatcher.Object);
+
+                try
+                {
+                    // Act
+                    // Setting the selected service triggers the internal SwitchServiceAsync pipeline loop,
+                    // forcing the production merge-sort block to parse and arrange the matching timestamps.
+                    viewModel.SelectedService = testService;
+
+                    // Pump background tasks manually or allow Task.WhenAll background frames to resolve file I/O cycles
+                    Task.Delay(200).ContinueWith(_ => { }).Wait();
+
+                    // Assert
+                    // Verify against the real production collection state boundary rather than an inline duplicate
+                    Assert.NotEmpty(viewModel.RawLines);
+                    Assert.Equal(2, viewModel.RawLines.Count);
+
+                    // The LogLine loaded via LogTailer preserves the entire trace line format. 
+                    // Validate that the stable sort correctly placed the arrival elements chronologically by checking text content endings.
+                    Assert.EndsWith("Line 2", viewModel.RawLines[0].Text);
+                    Assert.EndsWith("Line 1", viewModel.RawLines[1].Text);
+                }
+                finally
+                {
+                    // Clean up disk footprint safely
+                    viewModel.Dispose();
+                    try { File.Delete(tempStdoutFile); } catch { /* fail-silent */ }
+                    try { File.Delete(tempStderrFile); } catch { /* fail-silent */ }
+                }
             });
         }
 
@@ -419,7 +478,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void CreateServiceItem_ValidServiceInput_MapsToConsoleServiceWithNullFields()
         {
-            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            // Arrange, Act & Assert
             Helper.RunOnSTA(() =>
             {
                 // Arrange
@@ -444,7 +503,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void ApplyFilterWithDebounceAsync_OldCtsNotNull_CancelsAndDisposesPreviousFilterToken()
         {
-            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            // Arrange, Act & Assert
             Helper.RunOnSTA(() =>
             {
                 // Arrange
@@ -490,7 +549,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void StartLiveTail_LogReceivedOnActiveSession_AppendsToRawLinesAndTrimsExcessRows()
         {
-            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            // Arrange, Act & Assert
             Helper.RunOnSTA(() =>
             {
                 // Arrange
@@ -533,7 +592,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void StartLiveTail_LogReceivedWhileSelectionIsActive_BypassesCollectionMutationToPreserveUserFocus()
         {
-            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            // Arrange, Act & Assert
             Helper.RunOnSTA(() =>
             {
                 // Arrange
@@ -561,7 +620,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void StartLiveTail_LogReceivedOnStaleSession_BypassesCollectionMutationSilently()
         {
-            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            // Arrange, Act & Assert
             Helper.RunOnSTA(() =>
             {
                 // Arrange
@@ -588,7 +647,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void SetSelectionActive_SelectionCleared_ReTriggerServicesSwitchPipeline()
         {
-            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            // Arrange, Act & Assert
             Helper.RunOnSTA(() =>
             {
                 // Arrange
@@ -620,7 +679,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Dispose_CalledMultipleTimes_ReturnsSilentlyThroughInternalDisposedValueGuard()
         {
-            // Arrange, Act & Assert (Fixed CS1998 - Converted to sync Action overload)
+            // Arrange, Act & Assert
             Helper.RunOnSTA(() =>
             {
                 // Arrange

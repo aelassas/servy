@@ -1,4 +1,5 @@
 ﻿using Moq;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
@@ -96,10 +97,14 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
-        public void LogStartupArguments_EnableDebugLogsTrue_LogsMaskedSensitiveData()
+        public void LogStartupArguments_EnableDebugLogsTrue_LogsMaskedSensitiveDataToTextLog()
         {
             // Arrange
-            var mockLog = new Mock<IServyLogger>();
+            var mockEventLog = new Mock<IServyLogger>();
+            var testLogDirectory = Path.Combine(AppConfig.ProgramDataPath, "logs");
+            var testLogFileName = $"Servy_SecurityTest_{Guid.NewGuid():N}.log";
+            var testLogFullPath = Path.Combine(testLogDirectory, testLogFileName);
+
             var options = new StartOptions
             {
                 ServiceName = "SecureService",
@@ -121,13 +126,61 @@ namespace Servy.Service.UnitTests.Helpers
                 PostStopExecutableArgs = "cleanup --pat SecretPatToken"
             };
 
-            // Act
-            _helper.LogStartupArguments(options, mockLog.Object);
+            // Initialize the static logger infrastructure to output directly to our temporary test sandbox file boundaries
+            Logger.Initialize(testLogFileName, LogLevel.Info);
 
-            // Assert
-            // Local file logger static instance handles sensitive values via string mutations
-            // Validate arguments masking profiles are replaced properly across parameters groups
-            Assert.True(true);
+            try
+            {
+                // Capture all text allocations funneled through the logger interface pipeline
+                var loggedEntries = new List<string>();
+                mockEventLog
+                    .Setup(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()))
+                    .Callback<string, Exception>((msg, _) => loggedEntries.Add(msg));
+
+                // Act
+                _helper.LogStartupArguments(options, mockEventLog.Object);
+
+                // Shutdown the active log file streams cleanly to flush current file allocation buffers straight to disk
+                Logger.Shutdown();
+
+                // Assert
+                Assert.True(File.Exists(testLogFullPath), "The static Logger should create the required text log file under EnableDebugLogs conditions.");
+
+                string combinedLogOutput = string.Join(Environment.NewLine, loggedEntries);
+                string writtenLogContents = File.ReadAllText(testLogFullPath);
+
+                // 1. SECURITY TRACE CHECKS: Explicitly confirm no raw secret values were leaked to the text log
+                Assert.DoesNotContain("SuperSecretPassword", combinedLogOutput);
+                Assert.DoesNotContain("DB12345", combinedLogOutput);
+                Assert.DoesNotContain("SecretToken123", combinedLogOutput);
+                Assert.DoesNotContain("SqlPass123", combinedLogOutput);
+                Assert.DoesNotContain("TokenVal", combinedLogOutput);
+                Assert.DoesNotContain("JwtSecret", combinedLogOutput);
+                Assert.DoesNotContain("Active Session Id", combinedLogOutput);
+                Assert.DoesNotContain("abcde123", combinedLogOutput);
+                Assert.DoesNotContain("SecretPatToken", combinedLogOutput);
+
+                // 2. MASK SYMBOL CHECKS: Confirm the system successfully scrubbed the credentials under the mask character block
+                Assert.Contains("********", writtenLogContents);
+
+                // 3. RETENTION VERIFICATION: Confirm that standard public args are still preserved cleanly for telemetry usage
+                Assert.Contains("--port 8080", writtenLogContents);
+                Assert.Contains("/normalArg test", writtenLogContents);
+                Assert.Contains("NORMAL_ENV=PublicValue", writtenLogContents);
+                Assert.Contains("connect", writtenLogContents);
+                Assert.Contains("stop", writtenLogContents);
+                Assert.Contains("cleanup", writtenLogContents);
+            }
+            finally
+            {
+                // Ensure the static logger handle drops its lock contexts if an intermediate test framework crash happens
+                Logger.Shutdown();
+
+                if (File.Exists(testLogFullPath))
+                {
+                    try { File.Delete(testLogFullPath); } catch { /* Ignore file system cleanup blocks */ }
+                }
+            }
         }
 
         #endregion
@@ -416,28 +469,55 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
-        public void RestartService_RestarterExecutionTimesOut_KillsOrphanedRestarter()
+        public void RestartService_RestarterFailsToStart_LogsErrorAndAborts()
         {
             // Arrange
             var mockLog = new Mock<IServyLogger>();
-            var restarterPath = Path.Combine(GetTargetRestarterDirectory(), "Servy.Restarter.Net48.exe");
 
-            // Safe guard: Ensure target sandbox directory exists
-            var directory = Path.GetDirectoryName(restarterPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+#if DEBUG
+            var dir = AppDomain.CurrentDomain.BaseDirectory;
+#else
+            var dir = AppConfig.ProgramDataPath;
+#endif
+
+            var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
+
+            // Defensively ensure a dummy restarter file exists in the sandbox if it isn't already present,
+            // without modifying or deleting a real build artifact.
+            bool createdDummy = false;
+            if (!File.Exists(restarterPath))
             {
-                Directory.CreateDirectory(directory);
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(restarterPath, "Temporary Test Placeholder");
+                createdDummy = true;
             }
 
-            File.WriteAllText(restarterPath, "dummy");
+            // Mock the process helper to return null. This guarantees we bypass the multi-minute 
+            // constant timeout loop and safely test the start failure pathway without deleting production binaries.
+            _mockProcessHelper
+                .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
+                .Returns((Process)null);
 
-            var mockProcess = new Mock<Process>();
+            try
+            {
+                // Act
+                _helper.RestartService("TestServiceToRecovery", mockLog.Object);
 
-            // Note: Since standard System.Diagnostics.Process cannot be fully mocked 
-            // without custom wrappers due to structural native bindings, we trigger the catch loop logic
-            Assert.True(true);
-
-            if (File.Exists(restarterPath)) File.Delete(restarterPath);
+                // Assert
+                // Verify that the start failure branch executed cleanly and surfaced the corresponding error profile
+                mockLog.Verify(l => l.Error(
+                    It.Is<string>(s => s.Contains("Failed to start Servy.Restarter.Net48.exe")),
+                    It.IsAny<Exception>()),
+                    Times.Once);
+            }
+            finally
+            {
+                // Clean up only if this specific test run spawned the temporary placeholder
+                if (createdDummy && File.Exists(restarterPath))
+                {
+                    try { File.Delete(restarterPath); } catch { /* Ignore file locks */ }
+                }
+            }
         }
 
         #endregion

@@ -108,17 +108,48 @@ namespace Servy.Restarter.UnitTests
             // Inject an unparseable non-integer token token directly into the runtime configuration matrix
             ConfigurationManager.AppSettings["RestartTimeoutSeconds"] = "NotAnInteger";
 
+            string connString = ConfigurationManager.AppSettings["DefaultConnection"];
             string serviceName = "UnmanagedNet48Service";
             string[] args = new string[] { serviceName };
 
-            // Act
-            Program.Main(args);
+            using (var connection = new SQLiteConnection(connString))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "INSERT OR IGNORE INTO Services (Name, ExecutablePath) VALUES (@name, @path);";
+                    command.Parameters.AddWithValue("@name", serviceName);
+                    command.Parameters.AddWithValue("@path", "C:\\MockPath\\Service.exe");
+                    command.ExecuteNonQuery();
+                }
+            }
 
-            // Assert
-            // Program continues validation utilizing fallback default configuration bounds instead of throwing,
-            // passing the configuration validation seam but breaking on unmanaged database constraints.
-            Assert.Equal(1, Environment.ExitCode);
-            AssertLogContainsMessage($"Service '{serviceName}' is not managed by Servy.");
+            try
+            {
+                // Act
+                Program.Main(args);
+
+                // Assert
+                // The application successfully bypassed the corrupted token string and fell back 
+                // to standard timeout bounds, successfully finishing the operational lifecycle with ExitCode 0.
+                Assert.Equal(0, Environment.ExitCode);
+                AssertLogContainsMessage($"Successfully restarted service '{serviceName}'.");
+            }
+            finally
+            {
+                // Clean up the seeded service entry from the shared database context to prevent 
+                // side-effects or collision state leaks on subsequent unit test runs.
+                using (var connection = new SQLiteConnection(connString))
+                {
+                    connection.Open();
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "DELETE FROM Services WHERE Name = @name;";
+                        command.Parameters.AddWithValue("@name", serviceName);
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
         }
 
         #endregion
