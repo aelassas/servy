@@ -8,11 +8,26 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Threading;
 
 namespace Servy.Core.Helpers
 {
+    /// <summary>
+    /// Stores the last CPU measurement for a process.
+    /// </summary>
+    internal sealed class CpuSample
+    {
+        /// <summary>
+        /// The date and time of the last CPU measurement.
+        /// </summary>
+        public DateTime LastTime;
+
+        /// <summary>
+        /// The total processor time used by the process at the last measurement.
+        /// </summary>
+        public TimeSpan LastTotalTime;
+    }
+
     /// <summary>
     /// Provides helper methods for retrieving and formatting process-related information
     /// such as CPU usage and RAM usage.
@@ -144,22 +159,6 @@ namespace Servy.Core.Helpers
         }
 
         #endregion
-
-        /// <summary>
-        /// Stores the last CPU measurement for a process.
-        /// </summary>
-        private sealed class CpuSample
-        {
-            /// <summary>
-            /// The date and time of the last CPU measurement.
-            /// </summary>
-            public DateTime LastTime;
-
-            /// <summary>
-            /// The total processor time used by the process at the last measurement.
-            /// </summary>
-            public TimeSpan LastTotalTime;
-        }
 
         /// <inheritdoc />
         public void MaintainCache()
