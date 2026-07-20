@@ -59,7 +59,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Assert
             Assert.True(result.Success);
             Assert.Equal(ExpectedSuccessMessage(serviceName), result.Message);
-            _mockRepository.Verify(r => r.DeleteAsync("TestService", It.IsAny<CancellationToken>()), Times.Once);
+            _mockRepository.Verify(r => r.DeleteAsync(serviceName, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
