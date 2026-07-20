@@ -33,22 +33,37 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         /// <summary>
-        /// Verifies that when a configured timeout is provided but falls below or equals the mandatory floor,
+        /// Verifies that when a configured timeout falls strictly below the mandatory floor,
         /// the system falls back to using the floor baseline instead of the weak user configuration.
         /// </summary>
-        /// <param name="lowConfiguredValue">A configured timeout value that is lower than or equal to the floor constraint.</param>
         [Theory]
         [InlineData(-5)]
         [InlineData(0)]
-        [InlineData(5)]
-        public void CalculateStartTimeout_WithTimeoutBelowOrEqualFloor_UsesFloorBaseline(int lowConfiguredValue)
+        public void CalculateStartTimeout_WithTimeoutBelowFloor_UsesFloorBaseline(int lowConfiguredValue)
         {
             // Arrange
             int preLaunchTimeoutSeconds = 0;
-            int expected = _floor + _buffer;
+            int expected = AppConfig.DefaultServiceStartTimeoutSeconds + AppConfig.ScmTimeoutBufferSeconds;
 
             // Act
             int actual = ServiceHelper.CalculateStartTimeout(lowConfiguredValue, preLaunchTimeoutSeconds);
+
+            // Assert
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void CalculateStartTimeout_WithTimeoutExactlyEqualToFloor_UsesFloorBaseline()
+        {
+            // Arrange
+            // Drive the evaluation input directly from the real infrastructure floor constant 
+            // to explicitly test the strict '>' boundary rule without relying on fragile magic-number assumptions.
+            int exactFloorValue = AppConfig.DefaultServiceStartTimeoutSeconds;
+            int preLaunchTimeoutSeconds = 0;
+            int expected = exactFloorValue + AppConfig.ScmTimeoutBufferSeconds;
+
+            // Act
+            int actual = ServiceHelper.CalculateStartTimeout(exactFloorValue, preLaunchTimeoutSeconds);
 
             // Assert
             Assert.Equal(expected, actual);

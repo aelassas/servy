@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Enums;
+using Servy.Core.IO;
 using Servy.Core.Logging;
 using Servy.Testing;
 using System;
@@ -83,12 +84,30 @@ namespace Servy.Core.UnitTests.Logging
         [Fact]
         public void Initialize_WithNullFileName_GracefullySkipsInitialization()
         {
-            // Arrange & Act
-            Logger.Initialize((string)null);
-            Logger.Info("Should drop silently");
+            // Arrange
+            // Ensure the static logger infrastructure is perfectly flushed and reset before testing bounds
+            Logger.Shutdown();
 
-            // Assert: No exception thrown, file shouldn't be made specifically for this
-            Assert.False(File.Exists(Path.Combine(Logger.LogsPath, "null")));
+            // Capture a directory listing snapshot to verify no file system leaks occur
+            var logDirectory = new DirectoryInfo(Logger.LogsPath);
+            int initialLogFileCount = logDirectory.Exists ? logDirectory.GetFiles("*.log").Length : 0;
+            string initializationErrorLogPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "LoggerInitializationErrors.log");
+
+            // Act
+            Logger.Initialize((string)null);
+            Logger.Info("Should drop silently and never instantiate a stream handle.");
+
+            // Assert
+            // 1. Structural State Check: route explicitly through the static field extraction engine targeting '_writer'
+            var internalWriter = TestReflection.GetFieldStatic<RotatingStreamWriter>(typeof(Logger), "_writer");
+            Assert.Null(internalWriter);
+
+            // 2. Error Fallback Isolation Check: Ensure null is treated as a purposeful skip, not an initialization error
+            Assert.False(File.Exists(initializationErrorLogPath), "A fallback error log was written for a graceful skip condition.");
+
+            // 3. File System Leak Check: Guarantee no alternative default or hardcoded log file materialized on disk
+            int currentLogFileCount = logDirectory.Exists ? logDirectory.GetFiles("*.log").Length : 0;
+            Assert.Equal(initialLogFileCount, currentLogFileCount);
         }
 
         [Fact]

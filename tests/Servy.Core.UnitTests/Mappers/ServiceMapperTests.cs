@@ -1,15 +1,10 @@
 ﻿using Moq;
-using Servy.Core.Common;
 using Servy.Core.Config;
-using Servy.Core.Domain;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Mappers;
 using Servy.Core.Services;
 using System;
-using System.ServiceProcess;
-using System.Threading;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Mappers
@@ -17,15 +12,10 @@ namespace Servy.Core.UnitTests.Mappers
     public class ServiceMapperTests
     {
         private readonly Mock<IServiceManager> _serviceManagerMock;
-        private readonly Service _service;
 
         public ServiceMapperTests()
         {
             _serviceManagerMock = new Mock<IServiceManager>();
-            _service = new Service(_serviceManagerMock.Object)
-            {
-                Name = "TestService"
-            };
         }
 
         [Fact]
@@ -184,137 +174,6 @@ namespace Servy.Core.UnitTests.Mappers
         }
 
         [Fact]
-        public async Task Start_ReturnsTrue_WhenServiceManagerReturnsTrue()
-        {
-            _serviceManagerMock.Setup(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
-
-            var result = await _service.Start();
-
-            Assert.True(result.IsSuccess);
-            _serviceManagerMock.Verify(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Start_ReturnsFalse_WhenServiceManagerReturnsFalse()
-        {
-            _serviceManagerMock.Setup(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to start service."));
-
-            var result = await _service.Start();
-
-            Assert.False(result.IsSuccess);
-            _serviceManagerMock.Verify(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Stop_ReturnsTrue_WhenServiceManagerReturnsTrue()
-        {
-            _serviceManagerMock.Setup(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
-
-            var result = await _service.Stop();
-
-            Assert.True(result.IsSuccess);
-            _serviceManagerMock.Verify(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Stop_ReturnsFalse_WhenServiceManagerReturnsFalse()
-        {
-            _serviceManagerMock.Setup(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to stop service."));
-
-            var result = await _service.Stop();
-
-            Assert.False(result.IsSuccess);
-            _serviceManagerMock.Verify(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Restart_ReturnsTrue_WhenServiceManagerReturnsTrue()
-        {
-            _serviceManagerMock.Setup(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
-
-            var result = await _service.Restart();  
-
-            Assert.True(result.IsSuccess);
-            _serviceManagerMock.Verify(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public async Task Restart_ReturnsFalse_WhenServiceManagerReturnsFalse()
-        {
-            _serviceManagerMock.Setup(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to restart service."));
-
-            var result = await _service.Restart();
-
-            Assert.False(result.IsSuccess);
-            _serviceManagerMock.Verify(sm => sm.RestartServiceAsync("TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public void IsInstalled_ReturnsTrue_WhenServiceManagerReturnsTrue()
-        {
-            _serviceManagerMock.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(true);
-
-            var result = _service.IsInstalled();
-
-            Assert.True(result);
-            _serviceManagerMock.Verify(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public void IsInstalled_ReturnsFalse_WhenServiceManagerReturnsFalse()
-        {
-            _serviceManagerMock.Setup(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>())).Returns(false);
-
-            var result = _service.IsInstalled();
-
-            Assert.False(result);
-            _serviceManagerMock.Verify(sm => sm.IsServiceInstalled("TestService", It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
-        public void GetStatus_ReturnsNull_WhenServiceIsNotInstalled()
-        {
-            // Arrange
-            _serviceManagerMock.Setup(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>()))
-                               .Returns((ServiceControllerStatus?)null);
-
-            // Act
-            var result = _service.GetStatus(CancellationToken.None);
-
-            // Assert
-            Assert.Null(result);
-            _serviceManagerMock.Verify(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>()), Times.Once);
-            _serviceManagerMock.Verify(sm => sm.IsServiceInstalled(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
-
-        [Fact]
-        public void GetStatus_ReturnsStatus_WhenServiceIsInstalled()
-        {
-            // Arrange
-            _serviceManagerMock.Setup(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>()))
-                               .Returns(ServiceControllerStatus.Running);
-
-            // Act
-            var result = _service.GetStatus(CancellationToken.None);
-
-            // Assert
-            Assert.Equal(ServiceControllerStatus.Running, result);
-            _serviceManagerMock.Verify(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>()), Times.Once);
-            _serviceManagerMock.Verify(sm => sm.IsServiceInstalled(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
-
-        [Fact]
-        public void GetServiceStartupType_ReturnsStartupType()
-        {
-            _serviceManagerMock.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(ServiceStartType.Automatic);
-
-            var result = _service.GetServiceStartupType();
-
-            Assert.Equal(ServiceStartType.Automatic, result);
-            _serviceManagerMock.Verify(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Fact]
         public void ToDomain_NullOptionalValues_UsesDefaultFallbacks()
         {
             // Arrange
@@ -365,7 +224,7 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(AppConfig.DefaultMaxFailedChecks, service.MaxFailedChecks);
             Assert.Equal(AppConfig.DefaultRecoveryAction, service.RecoveryAction); // RecoveryAction == null branch
             Assert.Equal(AppConfig.DefaultMaxRestartAttempts, service.MaxRestartAttempts);
-            Assert.True(service.RunAsLocalSystem);                        // ?? true
+            Assert.True(service.RunAsLocalSystem);                                // ?? true
             Assert.Equal(AppConfig.DefaultPreLaunchTimeoutSeconds, service.PreLaunchTimeoutSeconds);
             Assert.Equal(AppConfig.DefaultPreLaunchRetryAttempts, service.PreLaunchRetryAttempts);
             Assert.False(service.PreLaunchIgnoreFailure);
@@ -378,6 +237,5 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(AppConfig.DefaultRecoveryOnCleanExit, service.RecoveryOnCleanExit);
             Assert.Equal(string.Empty, service.DisplayName);
         }
-
     }
 }

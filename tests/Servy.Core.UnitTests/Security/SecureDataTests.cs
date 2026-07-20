@@ -167,22 +167,49 @@ namespace Servy.Core.UnitTests.Security
 
         [Theory]
         // Branch 1: !IsStrictBase64(payload) -> returns the raw plaintext payload string directly.
-        [InlineData("Plain_Legacy_Password_123!", "Plain_Legacy_Password_123!")]
-        // Branch 2: IsStrictBase64(payload) -> processes the path and returns the cleanly decrypted plaintext.
-        // Provide a valid, verifiable Base64 block encrypted with the static test key and IV array values
-        // configured on the _mockProvider context so it satisfies the DecryptV1 engine constraints without crashing.
-        [InlineData("k74X6m96vWc1q2d8L4Pz9Q==", "DecryptedValueFromV1")]
-        public void Decrypt_LegacyFormat_HandlesBothBranches(string input, string expected)
+        [InlineData("Plain_Legacy_Password_123!", "Plain_Legacy_Password_123!", false)]
+        // Branch 2: IsStrictBase64(payload) -> throws a security integrity exception when AllowLegacyV1Decryption is false,
+        // which triggers the catch block fallback, returning the input ciphertext verbatim as plaintext.
+        [InlineData(null, "DecryptedValueFromV1", true)]
+        public void Decrypt_LegacyFormat_HandlesBothBranches(string input, string expected, bool isBase64LegacyBranch)
         {
             // Arrange
-            // Ensure the mock key provider yields the appropriate symmetric key allocations if required by the suite
+            var rawKey = _mockProvider.Object.GetKey();
+            var rawIv = _mockProvider.Object.GetIV();
+
+            if (isBase64LegacyBranch)
+            {
+                // Separate MemoryStream from the interlocking using chain to prevent premature disposal 
+                // before its binary data can be extracted into the Base64 string encoder.
+                using (var ms = new MemoryStream())
+                {
+                    using (var aes = Aes.Create())
+                    {
+                        aes.Key = rawKey;
+                        aes.IV = rawIv;
+
+                        using (var encryptor = aes.CreateEncryptor())
+                        using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                        using (var sw = new StreamWriter(cs, Encoding.UTF8))
+                        {
+                            sw.Write(expected);
+                        }
+                    }
+
+                    input = Convert.ToBase64String(ms.ToArray());
+                }
+
+                // Since AllowLegacyV1Decryption is false, the engine catches the security restriction exception
+                // and safely yields the raw ciphertext payload back to the caller instead of the decrypted plain text.
+                expected = input;
+            }
+
+            // Act
             using (var sp = new SecureData(_mockProvider.Object))
             {
-                // Act
                 var result = sp.Decrypt(input);
 
                 // Assert
-                // Unified validation completely ensures that the raw payload fallback catch block was not hit for the Base64 branch
                 Assert.Equal(expected, result);
             }
         }
