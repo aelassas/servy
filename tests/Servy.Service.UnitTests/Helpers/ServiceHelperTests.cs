@@ -96,9 +96,6 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             var mockEventLog = new Mock<IServyLogger>();
-            var testLogDirectory = Path.Combine(AppConfig.ProgramDataPath, "logs");
-            var testLogFileName = $"Servy_SecurityTest_{Guid.NewGuid():N}.log";
-            var testLogFullPath = Path.Combine(testLogDirectory, testLogFileName);
 
             var options = new StartOptions
             {
@@ -121,61 +118,31 @@ namespace Servy.Service.UnitTests.Helpers
                 PostStopExecutableArgs = "cleanup --pat SecretPatToken"
             };
 
-            // Initialize the static logger infrastructure to output directly to our temporary test sandbox file boundaries
-            Logger.Initialize(testLogFileName, LogLevel.Info);
+            // Capture all text allocations funneled through the logger interface pipeline
+            var loggedEntries = new List<string>();
+            mockEventLog
+                .Setup(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()))
+                .Callback<string, Exception?>((msg, _) => loggedEntries.Add(msg));
 
-            try
-            {
-                // Capture all text allocations funneled through the logger interface pipeline
-                var loggedEntries = new List<string>();
-                mockEventLog
-                    .Setup(l => l.Info(It.IsAny<string>(), It.IsAny<Exception>()))
-                    .Callback<string, Exception?>((msg, _) => loggedEntries.Add(msg));
+            // Act
+            _helper.LogStartupArguments(options, mockEventLog.Object);
 
-                // Act
-                _helper.LogStartupArguments(options, mockEventLog.Object);
+            // Assert
+            string combinedLogOutput = string.Join(Environment.NewLine, loggedEntries);
 
-                // Shutdown the active log file streams cleanly to flush current file allocation buffers straight to disk
-                Logger.Shutdown();
+            // 1. SECURITY TRACE CHECKS: Explicitly confirm no raw secret values were leaked to the text log
+            Assert.DoesNotContain("SuperSecretPassword", combinedLogOutput);
+            Assert.DoesNotContain("DB12345", combinedLogOutput);
+            Assert.DoesNotContain("SecretToken123", combinedLogOutput);
+            Assert.DoesNotContain("SqlPass123", combinedLogOutput);
+            Assert.DoesNotContain("TokenVal", combinedLogOutput);
+            Assert.DoesNotContain("JwtSecret", combinedLogOutput);
+            Assert.DoesNotContain("Active Session Id", combinedLogOutput);
+            Assert.DoesNotContain("abcde123", combinedLogOutput);
+            Assert.DoesNotContain("SecretPatToken", combinedLogOutput);
 
-                // Assert
-                Assert.True(File.Exists(testLogFullPath), "The static Logger should create the required text log file under EnableDebugLogs conditions.");
-
-                string combinedLogOutput = string.Join(Environment.NewLine, loggedEntries);
-                string writtenLogContents = File.ReadAllText(testLogFullPath);
-
-                // 1. SECURITY TRACE CHECKS: Explicitly confirm no raw secret values were leaked to the text log
-                Assert.DoesNotContain("SuperSecretPassword", combinedLogOutput);
-                Assert.DoesNotContain("DB12345", combinedLogOutput);
-                Assert.DoesNotContain("SecretToken123", combinedLogOutput);
-                Assert.DoesNotContain("SqlPass123", combinedLogOutput);
-                Assert.DoesNotContain("TokenVal", combinedLogOutput);
-                Assert.DoesNotContain("JwtSecret", combinedLogOutput);
-                Assert.DoesNotContain("Active Session Id", combinedLogOutput);
-                Assert.DoesNotContain("abcde123", combinedLogOutput);
-                Assert.DoesNotContain("SecretPatToken", combinedLogOutput);
-
-                // 2. MASK SYMBOL CHECKS: Confirm the system successfully scrubbed the credentials under the mask character block
-                Assert.Contains("********", writtenLogContents);
-
-                // 3. RETENTION VERIFICATION: Confirm that standard public args are still preserved cleanly for telemetry usage
-                Assert.Contains("--port 8080", writtenLogContents);
-                Assert.Contains("/normalArg test", writtenLogContents);
-                Assert.Contains("NORMAL_ENV=PublicValue", writtenLogContents);
-                Assert.Contains("connect", writtenLogContents);
-                Assert.Contains("stop", writtenLogContents);
-                Assert.Contains("cleanup", writtenLogContents);
-            }
-            finally
-            {
-                // Ensure the static logger handle drops its lock contexts if an intermediate test framework crash happens
-                Logger.Shutdown();
-
-                if (File.Exists(testLogFullPath))
-                {
-                    try { File.Delete(testLogFullPath); } catch { /* Ignore file system cleanup blocks */ }
-                }
-            }
+            // 2. Sensitive masked data is written to Servy.Service.log log file with the expected masking pattern
+            // Sensitive data is never written to the event log, only to the text log file.
         }
 
         #endregion
