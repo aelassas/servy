@@ -72,33 +72,53 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void ApplyDefaults_WhenPropertiesAlreadyHaveValues_DoesNotOverwrite()
+        public void ApplyDefaultsAndResetIdentity_WhenPropertiesAlreadyHaveValues_PreservesExplicitNonIdentityValues()
         {
-            // Arrange: Set values that are specifically DIFFERENT from defaults
+            // Arrange: Assign explicit custom configurations that deviate from system defaults
             const int customTimeout = 999;
-            bool customToggle = !AppConfig.DefaultEnableSizeRotation; // guaranteed different from the default
+            bool customToggle = !AppConfig.DefaultEnableSizeRotation;
 
             var dto = new ServiceDto
             {
+                Name = "TestService",
                 StartTimeout = customTimeout,
                 EnableSizeRotation = customToggle,
-                RunAsLocalSystem = false, // Assuming default is true
-                UserAccount = @".\test_svc",
-                Password = "secret",
+                // Populate arbitrary properties as null to ensure hydration still executes as a sibling track
+                StopTimeout = null
             };
 
             // Act
             ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);
 
             // Assert
+            // 1. Verify custom parameter value allocations remain perfectly intact
             Assert.Equal(customTimeout, dto.StartTimeout);
             Assert.Equal(customToggle, dto.EnableSizeRotation);
-            Assert.True(dto.RunAsLocalSystem);
+
+            // 2. Verify unmatched null variables still pull successfully from base fallback policies
+            Assert.Equal(AppConfig.DefaultStopTimeout, dto.StopTimeout);
+        }
+
+        [Fact]
+        public void ApplyDefaultsAndResetIdentity_WithCustomIdentityPopulated_UnconditionallyResetsToLocalSystemBaseline()
+        {
+            // Arrange: Populate an explicit custom user account layout configuration
+            var dto = new ServiceDto
+            {
+                Name = "IdentitySecurityService",
+                RunAsLocalSystem = false,
+                UserAccount = @".\test_svc",
+                Password = "secret"
+            };
+
+            // Act
+            ServiceDtoHelper.ApplyDefaultsAndResetIdentity(dto);
+
+            // Assert
+            // Verify that the Global Identity Reset on Import policy strictly overwrites and purges the account context
+            Assert.True(dto.RunAsLocalSystem, "The identity was not securely reset to follow the password-less LocalSystem default state.");
             Assert.Null(dto.UserAccount);
             Assert.Null(dto.Password);
-
-            // Verify that other (null) properties WERE still populated
-            Assert.Equal(AppConfig.DefaultStopTimeout, dto.StopTimeout);
         }
 
         [Fact]

@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Servy.Core.Helpers;
+using Servy.Testing;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -46,17 +47,19 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData("app.exe")]
-        [InlineData("APP.EXE")]
-        [InlineData("App.Exe")]
-        public void KillProcessTreeAndParents_ShouldHandleExeExtensionCaseInsensitively(string input)
+        [InlineData("app.exe", "app")]
+        [InlineData("APP.EXE", "APP")]
+        [InlineData("App.Exe", "App")]
+        [InlineData("app", "app")]
+        public void StripExe_ShouldNormalizeExtensionsCaseInsensitively(string input, string expected)
         {
-            // Act
-            // This verifies the string manipulation logic doesn't throw when suffix is present
-            var result = _processKiller.KillProcessTreeAndParents(input);
+            // Arrange & Act
+            // Invoke the private 'StripExe' static method directly using the TestReflection engine. 
+            // This bypasses live process-table dependencies and targets the text manipulation algorithm directly.
+            string actual = TestReflection.InvokeNonPublicStatic(typeof(ProcessKiller), "StripExe", input) as string;
 
             // Assert
-            Assert.True(result);
+            Assert.Equal(expected, actual);
         }
 
         [Theory]
