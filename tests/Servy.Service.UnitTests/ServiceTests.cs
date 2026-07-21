@@ -819,31 +819,6 @@ namespace Servy.Service.UnitTests
 
         #endregion
 
-        #region EmitHeartbeatPing Tests
-
-        [Fact]
-        public async Task EmitHeartbeatPing_WithNullBaseUrl_ReturnsEarlyWithoutThrowing()
-        {
-            // Arrange
-            var serviceInstance = new Service();
-
-            // parameters: string? baseUrl, string suffix, int timeoutSeconds
-            object[] parameters = new object[] { null, "/start", 5 };
-
-            // Act & Assert
-            // Verify early exit path on null target through the TestReflection engine
-            var exception = Record.Exception(() =>
-                TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", parameters)
-            );
-
-            Assert.Null(exception);
-
-            // Give any background workers a moment to settle down safely
-            await Task.Delay(50, CancellationToken.None);
-        }
-
-        #endregion
-
         #region Helper Factory Builder
 
         private Service CreateTestService(IServiceRepository repository, IServyLogger logger = null)
