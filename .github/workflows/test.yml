@@ -82,8 +82,8 @@ jobs:
                   continue
               }
 
-              # Build target arguments for vstest.console.exe              
-              $targetArgs = "`"$dllPath`""
+              # Build target arguments for vstest.console.exe - Explicitly pass x64 Platform and Framework to prevent BadImageFormatException
+              $targetArgs = "`"$dllPath`" /Platform:x64 /Framework:.NETFramework,Version=v4.8"
               
               # Include the project name in the file so integration tests don't overwrite unit tests              
               $outPath = "$subDirName\$projName.coverage.cobertura.xml"
@@ -115,6 +115,7 @@ jobs:
                   "--targetargs", $targetArgs,
                   "--output", $outPath,
                   "--format", "cobertura",
+                  "--include", "[$targetModule]*",
                   "--include-directory", "$env:GITHUB_WORKSPACE",
                   "--exclude", "[*.UnitTests]*",
                   "--exclude", "[*.IntegrationTests]*",
@@ -192,7 +193,7 @@ jobs:
           foreach ($dll in $testDlls) {
               Write-Host "`nRunning tests in $($dll.Name)..." -ForegroundColor Yellow
               
-              $vsTestArgs = @($dll.FullName, "/Framework:.NETFramework,Version=v4.8", "/logger:trx")
+              $vsTestArgs = @($dll.FullName, "/Platform:x64", "/Framework:.NETFramework,Version=v4.8", "/logger:trx")
 
               & $vsTest @vsTestArgs
 
