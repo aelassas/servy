@@ -65,7 +65,7 @@ namespace Servy.Core.IntegrationTests.Helpers
         public void GetProcessesUsingFile_ShouldThrow_WhenPathsAreNullOrEmpty(string? handleExePath, string? filePath)
         {
             // Arrange & Act & Assert
-            Assert.Throws<ArgumentException>(() => HandleHelper.GetProcessesUsingFile(handleExePath, filePath));
+            Assert.Throws<ArgumentException>(() => HandleHelper.GetProcessesUsingFile(handleExePath!, filePath!));
         }
 
         [Fact]
