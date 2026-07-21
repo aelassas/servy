@@ -818,6 +818,62 @@ namespace Servy.Service.UnitTests
 
         #endregion
 
+        #region EmitHeartbeatPing Tests
+
+        [Fact]
+        public async Task EmitHeartbeatPing_WithNullBaseUrl_ReturnsEarlyWithoutThrowing()
+        {
+            // Arrange
+            var repositoryMock = new Mock<IServiceRepository>();
+            var serviceInstance = CreateTestService(repositoryMock.Object);
+
+            // parameters: string? baseUrl, string suffix, int timeoutSeconds
+            object?[] parameters = new object?[] { null, "/start", 5 };
+
+            // Act & Assert
+            // Verify early exit path on null target through the TestReflection engine
+            var exception = Record.Exception(() =>
+                TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", parameters)
+            );
+
+            Assert.Null(exception);
+
+            // Give any background workers a moment to settle down safely
+            await Task.Delay(50, TestContext.Current.CancellationToken);
+        }
+
+        [Fact]
+        public async Task EmitHeartbeatPing_WithValidUrl_ExecutesFireAndForgetWithoutBlocking()
+        {
+            // Arrange           
+            var repositoryMock = new Mock<IServiceRepository>();
+            var serviceInstance = CreateTestService(repositoryMock.Object);
+
+            // Inject options state using TestReflection to bypass the early return block checks
+            var mockOptions = new StartOptions
+            {
+                EnableHeartbeatUrlFlags = true
+            };
+            TestReflection.SetField(serviceInstance, "_options", mockOptions);
+
+            object?[] parameters = new object?[] { "https://hc-ping.com/test-uuid", "/start", 2 };
+
+            // Act
+            var watch = Stopwatch.StartNew();
+            TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", parameters);
+            watch.Stop();
+
+            // Assert
+            // The underlying method schedules execution on Task.Run, so the caller thread 
+            // must execute immediately (well under 50 milliseconds) regardless of actual network response latency.
+            Assert.True(watch.ElapsedMilliseconds < 50, $"Method blocked the primary thread execution context for {watch.ElapsedMilliseconds}ms");
+
+            // Allow background worker execution scope window time to wind down cleanly before test context teardown
+            await Task.Delay(100, TestContext.Current.CancellationToken);
+        }
+
+        #endregion
+
         #region Helper Factory Builder
 
         private Service CreateTestService(IServiceRepository repository, IServyLogger? logger = null)
