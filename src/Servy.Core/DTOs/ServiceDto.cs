@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.Xml.Serialization;
+using Servy.Core.Config;
 
 namespace Servy.Core.DTOs
 {
@@ -177,6 +178,27 @@ namespace Servy.Core.DTOs
         /// </summary>
         [SqlColumn("INTEGER")]
         public int? MaxRestartAttempts { get; set; }
+
+        /// <summary>
+        /// Absolute URL used to send out-of-band diagnostic heartbeat pings (e.g., dead man's switch platforms like healthchecks.io).
+        /// While the process is healthy, Servy periodically hits this endpoint to prove host and agent vitality.
+        /// </summary>
+        [SqlColumn("TEXT")]
+        public string? HeartbeatUrl { get; set; }
+
+        /// <summary>
+        /// Maximum time context in seconds allowed for the external heartbeat URL request to complete before cancellation.
+        /// Value must be clamped between <see cref="AppConfig.MinHeartbeatUrlTimeoutSeconds"/> and <see cref="AppConfig.MaxHeartbeatUrlTimeoutSeconds"/>.
+        /// </summary>
+        [SqlColumn("INTEGER")]
+        public int? HeartbeatUrlTimeoutSeconds { get; set; }
+
+        /// <summary>
+        /// Indicates whether extended operational lifecycle state tracking flags are appended to the heartbeat base URL destination.
+        /// When true, Servy appends <see cref="AppConfig.HeartbeatUrlStartFlag"/> during startup handshakes and <see cref="AppConfig.HeartbeatUrlFailFlag"/> upon failure cascades.
+        /// </summary>
+        [SqlColumn("INTEGER")]
+        public bool? EnableHeartbeatUrlFlags { get; set; }
 
         /// <summary>
         /// Path to the process to run on failure.
@@ -463,6 +485,9 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeRecoveryAction() => RecoveryAction.HasValue;
         public bool ShouldSerializeRecoveryOnCleanExit() => RecoveryOnCleanExit.HasValue;
         public bool ShouldSerializeMaxRestartAttempts() => MaxRestartAttempts.HasValue;
+        public bool ShouldSerializeHeartbeatUrl() => !string.IsNullOrWhiteSpace(HeartbeatUrl);
+        public bool ShouldSerializeHeartbeatUrlTimeoutSeconds() => HeartbeatUrlTimeoutSeconds.HasValue;
+        public bool ShouldSerializeEnableHeartbeatUrlFlags() => EnableHeartbeatUrlFlags.HasValue;
         public bool ShouldSerializeFailureProgramPath() => !string.IsNullOrWhiteSpace(FailureProgramPath);
         public bool ShouldSerializeFailureProgramStartupDirectory() => !string.IsNullOrWhiteSpace(FailureProgramStartupDirectory);
         public bool ShouldSerializeFailureProgramParameters() => !string.IsNullOrWhiteSpace(FailureProgramParameters);

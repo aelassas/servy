@@ -100,6 +100,8 @@ namespace Servy.Core.Validation
                 result.Errors.Add(string.Format(Strings.Msg_InvalidRotationSize, AppConfig.MinRotationSize, AppConfig.MaxRotationSize));
             if (dto.MaxRotations.HasValue && (dto.MaxRotations < AppConfig.MinMaxRotations || dto.MaxRotations > AppConfig.MaxMaxRotations))
                 result.Errors.Add(string.Format(Strings.Msg_InvalidMaxRotations, AppConfig.MinMaxRotations, AppConfig.MaxMaxRotations));
+            if (dto.HeartbeatUrlTimeoutSeconds.HasValue && (dto.HeartbeatUrlTimeoutSeconds < AppConfig.MinHeartbeatUrlTimeoutSeconds || dto.HeartbeatUrlTimeoutSeconds > AppConfig.MaxHeartbeatUrlTimeoutSeconds))
+                result.Errors.Add(string.Format(Strings.Msg_InvalidHeartbeatUrlTimeout, AppConfig.MinHeartbeatUrlTimeoutSeconds, AppConfig.MaxHeartbeatUrlTimeoutSeconds));
 
             // Health & Recovery
             if (dto.HeartbeatInterval.HasValue && (dto.HeartbeatInterval < AppConfig.MinHeartbeatInterval || dto.HeartbeatInterval > AppConfig.MaxHeartbeatInterval))
@@ -108,6 +110,17 @@ namespace Servy.Core.Validation
                 result.Errors.Add(string.Format(Strings.Msg_InvalidMaxFailedChecks, AppConfig.MinMaxFailedChecks, AppConfig.MaxMaxFailedChecks));
             if (dto.MaxRestartAttempts.HasValue && (dto.MaxRestartAttempts < AppConfig.MinMaxRestartAttempts || dto.MaxRestartAttempts > AppConfig.MaxMaxRestartAttempts))
                 result.Errors.Add(string.Format(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.MinMaxRestartAttempts, AppConfig.MaxMaxRestartAttempts));
+            
+            // Heartbeat URL Validation
+            if (!string.IsNullOrWhiteSpace(dto.HeartbeatUrl))
+            {
+                // Verify basic absolute structure and web scheme constraints
+                if (!Uri.TryCreate(dto.HeartbeatUrl, UriKind.Absolute, out var validatedUri) ||
+                    (validatedUri.Scheme != Uri.UriSchemeHttp && validatedUri.Scheme != Uri.UriSchemeHttps))
+                {
+                    result.Errors.Add(Strings.Msg_InvalidHeartbeatUrl);
+                }
+            }
 
             // Failure Program
             if (!string.IsNullOrWhiteSpace(dto.FailureProgramPath) && !_processHelper.ValidatePath(dto.FailureProgramPath))

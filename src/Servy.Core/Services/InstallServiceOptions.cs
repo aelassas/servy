@@ -68,6 +68,15 @@ namespace Servy.Core.Services
         /// <summary>Maximum number of restart attempts if the service fails. Only used when <see cref="EnableHealthMonitoring"/> is true.</summary>
         public int MaxRestartAttempts { get; set; } = AppConfig.DefaultMaxRestartAttempts;
 
+        /// <summary>The absolute URL used to send out-of-band diagnostic heartbeat pings (e.g., dead man's switch platforms like healthchecks.io).</summary>
+        public string? HeartbeatUrl { get; set; }
+
+        /// <summary>the maximum time context in seconds allowed for the external heartbeat URL request to complete before cancellation.</summary>
+        public int HeartbeatUrlTimeoutSeconds { get; set; } = AppConfig.DefaultHeartbeatUrlTimeoutSeconds;
+
+        /// <summary>Indicates whether extended operational lifecycle state tracking flags are appended to the heartbeat base URL destination. </summary>
+        public bool EnableHeartbeatUrlFlags { get; set; } = AppConfig.DefaultEnableHeartbeatUrlFlags;
+
         /// <summary>Failure program path.</summary>
         public string? FailureProgramPath { get; set; }
 

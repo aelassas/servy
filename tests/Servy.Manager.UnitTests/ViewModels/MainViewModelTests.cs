@@ -369,22 +369,53 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Arrange
                 var vm = CreateViewModel();
 
+                // Setup a TaskCompletionSource to pause the first invocation inside GetAllServices
+                // to GUARANTEE that tick 1 remains inside its execution block when tick 2 fires.
+                var getAllServicesCalledTcs = new TaskCompletionSource<bool>();
+                var unblockGetAllServicesTcs = new TaskCompletionSource<bool>();
+
+                _serviceManagerMock
+                    .Setup(m => m.GetAllServices(It.IsAny<CancellationToken>()))
+                    .Callback(() =>
+                    {
+                        getAllServicesCalledTcs.TrySetResult(true);
+                    })
+                    .Returns(() =>
+                    {
+                        // Wait until the test tells us to proceed
+                        unblockGetAllServicesTcs.Task.Wait();
+                        return new List<ServiceInfo>();
+                    });
+
+                // Ensure snapshot has an item so RefreshAllServicesAsync doesn't exit early
+                var service = new Service { Name = "TestService" };
+                var serviceRowVm = new ServiceRowViewModel(service, _serviceCommandsMock.Object, _cursorServiceMock.Object);
+
+                lock (TestReflection.GetField<object>(vm, "_servicesLock")!)
+                {
+                    var servicesCollection = (BulkObservableCollection<ServiceRowViewModel>)
+                        TestReflection.GetField<BulkObservableCollection<ServiceRowViewModel>>(vm, "_services")!;
+                    servicesCollection.Add(serviceRowVm);
+                }
+
                 // Act
-                // 1. Trigger the first tick. It will run synchronously until its first await,
-                // setting the Interlocked flag to 1 inside the execution entry block.
+                // 1. Fire first tick
                 TestReflection.InvokeNonPublic(vm, "OnTick", null!, EventArgs.Empty);
 
-                // 2. Fire the second tick immediately. Because the flag is now set to 1,
-                // this execution route will hit the CompareExchange block and return immediately.
+                // Wait until the first tick has actually entered GetAllServices
+                await Task.WhenAny(getAllServicesCalledTcs.Task, Task.Delay(2000));
+
+                // 2. Fire second tick while the first tick is guaranteed to be in-flight (_isRefreshingFlag == 1)
                 TestReflection.InvokeNonPublic(vm, "OnTick", null!, EventArgs.Empty);
 
-                // 3. Yield execution back to the dispatcher momentarily to ensure any scheduled 
-                // background processing paths are given time to settle before validation.
-                await Dispatcher.Yield(DispatcherPriority.Background);
+                // Unblock the first tick so it can complete cleanly
+                unblockGetAllServicesTcs.TrySetResult(true);
+
+                // Allow the dispatcher to flush remaining continuations
+                await Dispatcher.Yield(DispatcherPriority.ContextIdle);
 
                 // Assert
-                // Prove that the inner bulk service discovery routine was only invoked once,
-                // validating that the second overlapping tick was safely rejected.
+                // Verify that GetAllServices was invoked EXACTLY once
                 _serviceManagerMock.Verify(m => m.GetAllServices(It.IsAny<CancellationToken>()), Times.Once);
             }, createApp: true);
         }

@@ -114,6 +114,7 @@ namespace Servy.Core.UnitTests.Validation
             dto.StopTimeout = AppConfig.MaxStopTimeout + 1;
             dto.RotationSize = AppConfig.MinRotationSize - 1;
             dto.MaxRotations = AppConfig.MaxMaxRotations + 1;
+            dto.HeartbeatUrlTimeoutSeconds = AppConfig.MaxHeartbeatUrlTimeoutSeconds + 1;
 
             // Act
             var result = _sut.Validate(dto);
@@ -123,6 +124,7 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Contains(string.Format(Strings.Msg_InvalidStopTimeout, AppConfig.MinStopTimeout, AppConfig.MaxStopTimeout), result.Errors);
             Assert.Contains(string.Format(Strings.Msg_InvalidRotationSize, AppConfig.MinRotationSize, AppConfig.MaxRotationSize), result.Errors);
             Assert.Contains(string.Format(Strings.Msg_InvalidMaxRotations, AppConfig.MinMaxRotations, AppConfig.MaxMaxRotations), result.Errors);
+            Assert.Contains(string.Format(Strings.Msg_InvalidHeartbeatUrlTimeout, AppConfig.MinHeartbeatUrlTimeoutSeconds, AppConfig.MaxHeartbeatUrlTimeoutSeconds), result.Errors);
         }
 
         [Theory]
@@ -235,6 +237,63 @@ namespace Servy.Core.UnitTests.Validation
             Assert.Contains(Strings.Msg_InvalidPreStopStartupDirectory, result.Errors);
             Assert.Contains(Strings.Msg_InvalidPostStopPath, result.Errors);
             Assert.Contains(Strings.Msg_InvalidPostStopStartupDirectory, result.Errors);
+        }
+
+        [Theory]
+        [InlineData("not-a-url")]
+        [InlineData("C:\\local\\path\\instead\\of\\web\\url")]
+        [InlineData("ftp://hc-ping.com/your-uuid")]
+        [InlineData("mailto:alert@hc-ping.com")]
+        [InlineData("http://")]
+        public void Validate_InvalidHeartbeatUrlFormat_ReturnsValidationError(string malformedUrl)
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.HeartbeatUrl = malformedUrl;
+
+            // Act
+            var result = _sut.Validate(dto);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Contains(Strings.Msg_InvalidHeartbeatUrl, result.Errors);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void Validate_HeartbeatUrl_NullOrWhitespace_IsConsideredOptionalAndValid(string? omittedUrl)
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.HeartbeatUrl = omittedUrl;
+
+            // Act
+            var result = _sut.Validate(dto);
+
+            // Assert
+            Assert.True(result.IsValid);
+            Assert.DoesNotContain(Strings.Msg_InvalidHeartbeatUrl, result.Errors);
+        }
+
+        [Theory]
+        [InlineData("http://hc-ping.com/your-uuid")]
+        [InlineData("https://hc-ping.com/your-uuid")]
+        [InlineData("https://127.0.0.1:8080/ping")]
+        [InlineData("https://localhost/health?service=servy")]
+        public void Validate_WellFormedAbsoluteWebHeartbeatUrl_ReturnsValid(string validUrl)
+        {
+            // Arrange
+            var dto = ServiceDtoFactory.CreateValidValidationBase();
+            dto.HeartbeatUrl = validUrl;
+
+            // Act
+            var result = _sut.Validate(dto);
+
+            // Assert
+            Assert.True(result.IsValid);
+            Assert.Empty(result.Errors);
         }
 
         [Fact]

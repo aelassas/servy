@@ -191,6 +191,9 @@ namespace Servy.Services
                     RecoveryAction = (RecoveryAction)(dto.RecoveryAction ?? (int)AppConfig.DefaultRecoveryAction),
                     RecoveryOnCleanExit = dto.RecoveryOnCleanExit ?? AppConfig.DefaultRecoveryOnCleanExit,
                     MaxRestartAttempts = dto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
+                    HeartbeatUrl = dto.HeartbeatUrl,
+                    HeartbeatUrlTimeoutSeconds = dto.HeartbeatUrlTimeoutSeconds ?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds,
+                    EnableHeartbeatUrlFlags = dto.EnableHeartbeatUrlFlags ?? AppConfig.DefaultEnableHeartbeatUrlFlags,
 
                     EnvironmentVariables = dto.EnvironmentVariables,
                     ServiceDependencies = dto.ServiceDependencies,

@@ -180,6 +180,9 @@ namespace Servy.Service.Helpers
                   $"- recoveryAction: {options.RecoveryAction}\n" +
                   $"- recoveryOnCleanExit: {options.RecoveryOnCleanExit}\n" +
                   $"- maxRestartAttempts: {options.MaxRestartAttempts}\n" +
+                  $"- heartbeatUrl: {MaskUrl(options.HeartbeatUrl)}\n" +
+                  $"- heartbeatUrlTimeoutSeconds: {options.HeartbeatUrlTimeoutSeconds}\n" +
+                  $"- enableHeartbeatUrlFlags: {options.EnableHeartbeatUrlFlags}\n" +
                   $"- failureProgramPath: {options.FailureProgramPath}\n" +
                   $"- failureProgramWorkingDirectory: {options.FailureProgramWorkingDirectory}\n\n" +
 
@@ -579,6 +582,33 @@ namespace Servy.Service.Helpers
                 Logger.Warn("Regex timeout occurred while masking arguments. Output has been fully masked for security.");
                 return "[MASKED DUE TO TIMEOUT]";
             }
+        }
+
+        /// <summary>
+        /// Masks the dynamic segments of a URL for logging purposes, preserving only the scheme and host.
+        /// Explicitly strips out embedded credentials (UserInfo), query parameters, and down-path segments.
+        /// </summary>
+        /// <param name="url">The URL to mask.</param>
+        /// <returns>The fully scrubbed and masked URL.</returns>
+        internal static string MaskUrl(string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url) || !Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                return string.Empty;
+            }
+
+            // Capture solely the scheme and host boundary to strip user:pass, query string strings, and precise routing hashes
+            string baseSecuredUri = $"{uri.Scheme}://{uri.Host}";
+            string localPath = uri.LocalPath;
+
+            if (localPath.Length > 6)
+            {
+                // Keep the first few characters of the path for debugging recognition, mask the rest
+                string dynamicSegment = localPath.Substring(1, Math.Min(5, localPath.Length - 1));
+                return $"{baseSecuredUri}/{dynamicSegment}... [MASKED]";
+            }
+
+            return $"{baseSecuredUri}/... [MASKED]";
         }
 
         /// <summary>

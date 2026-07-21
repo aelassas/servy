@@ -78,6 +78,10 @@ namespace Servy.Service.CommandLine
                 RecoveryOnCleanExit = serviceDto.RecoveryOnCleanExit ?? AppConfig.DefaultRecoveryOnCleanExit,
 
                 MaxRestartAttempts = serviceDto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
+                HeartbeatUrl = serviceDto.HeartbeatUrl,
+                HeartbeatUrlTimeoutSeconds = serviceDto.HeartbeatUrlTimeoutSeconds ?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds,
+                EnableHeartbeatUrlFlags = serviceDto.EnableHeartbeatUrlFlags ?? AppConfig.DefaultEnableHeartbeatUrlFlags,
+
                 EnvironmentVariables = SafeParseEnvVars(serviceDto.EnvironmentVariables, nameof(serviceDto.EnvironmentVariables), serviceName),
 
                 // Pre-Launch settings

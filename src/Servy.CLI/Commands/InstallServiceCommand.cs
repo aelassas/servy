@@ -88,6 +88,7 @@ namespace Servy.CLI.Commands
                 int heartbeatInterval = ConfigParser.ParseInt(opts.HeartbeatInterval, AppConfig.DefaultHeartbeatInterval);
                 int maxFailedChecks = ConfigParser.ParseInt(opts.MaxFailedChecks, AppConfig.DefaultMaxFailedChecks);
                 int maxRestartAttempts = ConfigParser.ParseInt(opts.MaxRestartAttempts, AppConfig.DefaultMaxRestartAttempts);
+                int heartbeatUrlTimeout = ConfigParser.ParseInt(opts.HeartbeatUrlTimeoutSeconds, AppConfig.DefaultHeartbeatUrlTimeoutSeconds);
                 int preLaunchTimeout = ConfigParser.ParseInt(opts.PreLaunchTimeout, AppConfig.DefaultPreLaunchTimeoutSeconds);
                 int preLaunchRetryAttempts = ConfigParser.ParseInt(opts.PreLaunchRetryAttempts, AppConfig.DefaultPreLaunchRetryAttempts);
                 int maxRotations = ConfigParser.ParseInt(opts.MaxRotations, AppConfig.DefaultMaxRotations);
@@ -117,6 +118,9 @@ namespace Servy.CLI.Commands
                     RecoveryAction = recoveryAction,
                     RecoveryOnCleanExit = opts.RecoveryOnCleanExit,
                     MaxRestartAttempts = maxRestartAttempts,
+                    HeartbeatUrl = opts.HeartbeatUrl,
+                    HeartbeatUrlTimeoutSeconds = heartbeatUrlTimeout,
+                    EnableHeartbeatUrlFlags = opts.EnableHeartbeatUrlFlags,
                     EnvironmentVariables = opts.EnvironmentVariables,
                     ServiceDependencies = opts.ServiceDependencies,
 

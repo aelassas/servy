@@ -16,7 +16,7 @@ namespace Servy.Infrastructure.Data
         /// <summary>
         /// Single Source of Truth for the absolute latest schema migration version sequence.
         /// </summary>
-        public const int LatestSchemaVersion = 6;
+        public const int LatestSchemaVersion = 7;
 
         private static readonly char[] SplitWhitespaceChars = { ' ', '\t' };
 
@@ -172,8 +172,16 @@ namespace Servy.Infrastructure.Data
                             currentVersion = 6;
                         }
 
+                        // Version 7 Migration to add HeartbeatUrl, HeartbeatUrlTimeoutSeconds and EnableHeartbeatUrlFlags to support External Heartbeat Ping URL
+                        if (currentVersion < 7)
+                        {
+                            ApplyVersion7(connection, transaction);
+                            UpdateSchemaVersion(connection, 7, transaction);
+                            currentVersion = 7;
+                        }
+
                         // --- FUTURE MIGRATIONS GO HERE ---
-                        // if (currentVersion < 7) { ... }
+                        // if (currentVersion < 8) { ... }
 
                         // Double check that the final tracked migration index completely aligns with the central declaration
                         if (currentVersion != LatestSchemaVersion)
@@ -618,6 +626,18 @@ namespace Servy.Infrastructure.Data
             // Materialize the index using custom global query collation rules under a precise, maintainable identifier.
             connection.Execute($"CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_unique ON {SqlConstants.ServicesTableName}(Name COLLATE UNICODE_NOCASE);", transaction: transaction);
             Logger.Info("Database successfully migrated to Version 6.");
+        }
+
+        /// <summary>
+        /// Applies the Version 7 schema migration, adding the 'HeartbeatUrl', 'HeartbeatUrlTimeoutSeconds',
+        /// and 'EnableHeartbeatUrlFlags' columns to the 'Services' table to support External Heartbeat Ping URL.
+        /// </summary>
+        private static void ApplyVersion7(DbConnection connection, DbTransaction transaction)
+        {
+            const int version = 7;
+            AddColumnIfMissing(connection, transaction, version, "HeartbeatUrl");
+            AddColumnIfMissing(connection, transaction, version, "HeartbeatUrlTimeoutSeconds");
+            AddColumnIfMissing(connection, transaction, version, "EnableHeartbeatUrlFlags");
         }
 
         #endregion

@@ -694,6 +694,83 @@ namespace Servy.Service.UnitTests.Helpers
 
         #endregion
 
+        #region MaskUrl Tests
+
+        #region MaskUrl Tests
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData("not-a-valid-url")]
+        [InlineData("/relative/path/only")]
+        public void MaskUrl_InvalidOrNonAbsoluteInput_ShouldReturnEmptyString(string? inputUrl)
+        {
+            // Act
+            var result = ServiceHelper.MaskUrl(inputUrl);
+
+            // Assert
+            Assert.Equal(string.Empty, result);
+        }
+
+        [Theory]
+        [InlineData("https://hc-ping.com/12345678-abcd", "https://hc-ping.com/12345... [MASKED]")]
+        [InlineData("http://internal-webhook/secretkeyhere", "http://internal-webhook/secre... [MASKED]")]
+        [InlineData("https://api.test.org/abcdef", "https://api.test.org/abcde... [MASKED]")] // "/abcdef" length is 7 -> hits Math.Min(5, 6)
+        public void MaskUrl_WhenLocalPathLengthIsGreaterThanSix_ShouldPreserveHostAndFivePathCharacters(string inputUrl, string expectedUrl)
+        {
+            // Act
+            var result = ServiceHelper.MaskUrl(inputUrl);
+
+            // Assert
+            Assert.Equal(expectedUrl, result);
+        }
+
+        [Theory]
+        [InlineData("https://hc-ping.com", "https://hc-ping.com/... [MASKED]")]        // LocalPath is '/' (Length = 1)
+        [InlineData("https://hc-ping.com/", "https://hc-ping.com/... [MASKED]")]       // LocalPath is '/' (Length = 1)
+        [InlineData("http://my-host/123", "http://my-host/... [MASKED]")]             // LocalPath is '/123' (Length = 4)
+        [InlineData("https://api.switch.io/abcd", "https://api.switch.io/... [MASKED]")] // LocalPath is '/abcd' (Length = 5)
+        [InlineData("https://api.switch.io/abcde", "https://api.switch.io/... [MASKED]")] // LocalPath is '/abcde' (Length = 6)
+        public void MaskUrl_WhenLocalPathLengthIsSixOrLess_ShouldMaskPathCompletelyAfterHost(string inputUrl, string expectedUrl)
+        {
+            // Act
+            var result = ServiceHelper.MaskUrl(inputUrl);
+
+            // Assert
+            Assert.Equal(expectedUrl, result);
+        }
+
+        [Theory]
+        [InlineData("https://admin:secretPass123@hc-ping.com/12345678-abcd", "https://hc-ping.com/12345... [MASKED]")]
+        [InlineData("http://user:password@internal-webhook/secretkeyhere", "http://internal-webhook/secre... [MASKED]")]
+        [InlineData("https://token-string@api.test.org/abcdef", "https://api.test.org/abcde... [MASKED]")]
+        public void MaskUrl_WithEmbeddedUserInfoCredentials_ShouldStripCredentialsEntirely(string inputUrl, string expectedUrl)
+        {
+            // Act
+            var result = ServiceHelper.MaskUrl(inputUrl);
+
+            // Assert
+            Assert.Equal(expectedUrl, result);
+        }
+
+        [Theory]
+        [InlineData("https://hc-ping.com/12345678-abcd?token=sensitive_api_key&user=akram", "https://hc-ping.com/12345... [MASKED]")]
+        [InlineData("http://internal-webhook/secretkeyhere?auth=bearer_token", "http://internal-webhook/secre... [MASKED]")]
+        [InlineData("https://api.test.org/abcde?key=12345", "https://api.test.org/... [MASKED]")] // Path '/abcde' is length 6, query stripped
+        public void MaskUrl_WithQueryStringParameters_ShouldStripQueryParametersEntirely(string inputUrl, string expectedUrl)
+        {
+            // Act
+            var result = ServiceHelper.MaskUrl(inputUrl);
+
+            // Assert
+            Assert.Equal(expectedUrl, result);
+        }
+
+        #endregion
+
+        #endregion
+
         #region Helpers
 
         private static string GetTargetRestarterDirectory()

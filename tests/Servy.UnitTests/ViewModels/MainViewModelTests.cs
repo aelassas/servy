@@ -380,6 +380,9 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.HeartbeatInterval = "111";
             _viewModel.MaxFailedChecks = "222";
             _viewModel.MaxRestartAttempts = "333";
+            _viewModel.HeartbeatUrl = "https://example.com/heartbeat";
+            _viewModel.HeartbeatUrlTimeoutSeconds = "10";
+            _viewModel.EnableHeartbeatUrlFlags = true;
             _viewModel.FailureProgramPath = "fail.exe";
             _viewModel.FailureProgramStartupDirectory = "fail_dir";
             _viewModel.FailureProgramParameters = "fail_args";
@@ -450,6 +453,9 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(string.Empty, _viewModel.FailureProgramPath);
             Assert.Equal(string.Empty, _viewModel.FailureProgramStartupDirectory);
             Assert.Equal(string.Empty, _viewModel.FailureProgramParameters);
+            Assert.Equal(string.Empty, _viewModel.HeartbeatUrl);
+            Assert.Equal(DefaultHeartbeatUrlTimeoutSeconds.ToString(), _viewModel.HeartbeatUrlTimeoutSeconds);
+            Assert.Equal(DefaultEnableHeartbeatUrlFlags, _viewModel.EnableHeartbeatUrlFlags);
 
             // Environment & Dependencies
             Assert.Equal(string.Empty, _viewModel.EnvironmentVariables);

@@ -376,6 +376,16 @@ namespace Servy.Core.Config
         public const int DefaultMaxRestartAttempts = 3;
 
         /// <summary>
+        /// Default timeout applied to external heartbeat URL ping requests if no explicit timeout is configured.
+        /// </summary>
+        public const int DefaultHeartbeatUrlTimeoutSeconds = 10;
+
+        /// <summary>
+        /// Default flag for enabling heartbeat URL flags. Default is <c>false</c>.
+        /// </summary>
+        public const bool DefaultEnableHeartbeatUrlFlags = false;
+
+        /// <summary>
         /// Default recovery action.
         /// </summary>
         public const RecoveryAction DefaultRecoveryAction = RecoveryAction.RestartService;
@@ -649,6 +659,18 @@ namespace Servy.Core.Config
         /// in <c>AppBootstrapper.OnStartup</c>. Changing this configuration field guarantees that both boundaries remain synchronized.
         /// </remarks>
         public const string SkipSplashArgument = "false";
+
+        /// <summary>
+        /// The trailing URL suffix appended to the base heartbeat URI when signaling a service startup hook event.
+        /// Compatible with standard dead man's switch infrastructure rules (e.g., healthchecks.io).
+        /// </summary>
+        public const string HeartbeatUrlStartFlag = "/start";
+
+        /// <summary>
+        /// The trailing URL suffix appended to the base heartbeat URI when signaling a critical process or monitoring loop failure event.
+        /// Compatible with standard dead man's switch infrastructure rules (e.g., healthchecks.io).
+        /// </summary>
+        public const string HeartbeatUrlFailFlag = "/fail";
 
         #endregion
 
@@ -1248,6 +1270,12 @@ namespace Servy.Core.Config
         public const int MinMaxRestartAttempts = 0;
 
         /// <summary>
+        /// Minimum timeout allowed for external heartbeat URL ping requests.
+        /// Prevents aggressive network dropouts due to temporary latency spikes.
+        /// </summary>
+        public const int MinHeartbeatUrlTimeoutSeconds = 2;
+
+        /// <summary>
         /// Minimum pre-launch timeout in seconds.
         /// Set to 0 to run the pre-launch hook in fire-and-forget mode.
         /// </summary>
@@ -1301,6 +1329,12 @@ namespace Servy.Core.Config
         /// Maximum allowed restart attempts.
         /// </summary>
         public const int MaxMaxRestartAttempts = 100_000;
+
+        /// <summary>
+        /// Maximum timeout allowed for external heartbeat URL ping requests.
+        /// Acts as a hard boundary to prevent stalled HTTP connections from bleeding background worker threads.
+        /// </summary>
+        public const int MaxHeartbeatUrlTimeoutSeconds = 30;
 
         /// <summary>
         /// Maximum pre-launch timeout in seconds (24 hours).
