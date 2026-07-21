@@ -1779,7 +1779,6 @@ namespace Servy.Service
                 // Safely parse heartbeat metadata without NullReferenceException exposures
                 string heartbeatUrl = _options?.HeartbeatUrl;
                 int timeout = _options?.HeartbeatUrlTimeoutSeconds ?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds;
-                bool enableFlags = _options?.EnableHeartbeatUrlFlags == true;
 
                 if (shouldStop)
                 {
