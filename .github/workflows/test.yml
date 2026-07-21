@@ -73,9 +73,6 @@ jobs:
               # Re-map our parent folder tracking keys to dynamically support the Net48 project structures
               $subDirName = if ($projFile.Directory.Name -match 'Servy\.(.+?)\.') { $matches[1] } else { "UnitTests" }
               
-              # Extract the target module name (e.g., Servy.Service) to restrict coverage collection strictly to that assembly
-              $targetModule = $projName -replace '\.(Unit|Integration)Tests$', ''
-
               Write-Host "Running tests for $projName..." -ForegroundColor Cyan
               
               $dllPath = "tests\$projName\bin\x64\Debug\$projName.dll"
@@ -85,8 +82,8 @@ jobs:
                   continue
               }
 
-              # Build target arguments for vstest.console.exe - Explicitly pass x64 Platform and Framework to prevent BadImageFormatException
-              $targetArgs = "`"$dllPath`" /Platform:x64 /Framework:.NETFramework,Version=v4.8"
+              # Build target arguments for vstest.console.exe              
+              $targetArgs = "`"$dllPath`""
               
               # Include the project name in the file so integration tests don't overwrite unit tests              
               $outPath = "$subDirName\$projName.coverage.cobertura.xml"
@@ -111,14 +108,13 @@ jobs:
               # Define common exclusions 
               $TestExclusions = @("**/*.xaml", "**/*.xaml.cs", "**/*.g.cs", "**/*.Designer.cs", "**/obj/**/*")
 
-              # 1. Initialize the arguments array with base arguments including explicit single-assembly targeting
+              # 1. Initialize the arguments array with base arguments
               $coverletArgs = @(
                   $dllPath,
                   "--target", $vsTest,
                   "--targetargs", $targetArgs,
                   "--output", $outPath,
                   "--format", "cobertura",
-                  "--include", "[$targetModule]*",
                   "--include-directory", "$env:GITHUB_WORKSPACE",
                   "--exclude", "[*.UnitTests]*",
                   "--exclude", "[*.IntegrationTests]*",
@@ -131,7 +127,13 @@ jobs:
                   $coverletArgs += $pattern
               }
 
-              # 3. Execute using the splatting operator (@)
+              # 3. Add Infrastructure specific exclusion if needed
+              if ($projName -like "*Servy.Infrastructure*") {
+                  $coverletArgs += "--exclude"
+                  $coverletArgs += "[Servy.Core]*"
+              }
+
+              # 4. Execute using the splatting operator (@)
               & coverlet @coverletArgs
                   
               if ($LASTEXITCODE -ne 0) { 
@@ -190,7 +192,7 @@ jobs:
           foreach ($dll in $testDlls) {
               Write-Host "`nRunning tests in $($dll.Name)..." -ForegroundColor Yellow
               
-              $vsTestArgs = @($dll.FullName, "/Platform:x64", "/Framework:.NETFramework,Version=v4.8", "/logger:trx")
+              $vsTestArgs = @($dll.FullName, "/Framework:.NETFramework,Version=v4.8", "/logger:trx")
 
               & $vsTest @vsTestArgs
 
