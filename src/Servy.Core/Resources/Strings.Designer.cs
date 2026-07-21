@@ -313,6 +313,24 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à The provided heartbeat monitoring URL must be a well-formed absolute HTTP or HTTPS URL address..
+        /// </summary>
+        public static string Msg_InvalidHeartbeatUrl {
+            get {
+                return ResourceManager.GetString("Msg_InvalidHeartbeatUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Heartbeat URL timeout must be a number of seconds between {0} and {1}..
+        /// </summary>
+        public static string Msg_InvalidHeartbeatUrlTimeout {
+            get {
+                return ResourceManager.GetString("Msg_InvalidHeartbeatUrlTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Max Failed Checks must be a number between {0} and {1}..
         /// </summary>
         public static string Msg_InvalidMaxFailedChecks {

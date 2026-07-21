@@ -372,6 +372,33 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
+        /// Gets or sets the absolute URL used to send out-of-band diagnostic heartbeat pings (e.g., dead man's switch platforms like healthchecks.io).
+        /// </summary>
+        public string HeartbeatUrl
+        {
+            get => _config.HeartbeatUrl;
+            set => Set(() => _config.HeartbeatUrl, v => _config.HeartbeatUrl = v, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the maximum time context in seconds allowed for the external heartbeat URL request to complete before cancellation.
+        /// </summary>
+        public string HeartbeatUrlTimeoutSeconds
+        {
+            get => _config.HeartbeatUrlTimeoutSeconds;
+            set => Set(() => _config.HeartbeatUrlTimeoutSeconds, v => _config.HeartbeatUrlTimeoutSeconds = v, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a flag indicating whether extended operational lifecycle state tracking flags are appended to the heartbeat base URL destination.
+        /// </summary>
+        public bool EnableHeartbeatUrlFlags
+        {
+            get => _config.EnableHeartbeatUrlFlags;
+            set => Set(() => _config.EnableHeartbeatUrlFlags, v => _config.EnableHeartbeatUrlFlags = v, value);
+        }
+
+        /// <summary>
         /// Gets or sets failure program path as a string.
         /// </summary>
         public string FailureProgramPath
@@ -940,6 +967,9 @@ namespace Servy.ViewModels
             HeartbeatInterval = DefaultHeartbeatInterval.ToString();
             MaxFailedChecks = DefaultMaxFailedChecks.ToString();
             MaxRestartAttempts = DefaultMaxRestartAttempts.ToString();
+            HeartbeatUrl = string.Empty;
+            HeartbeatUrlTimeoutSeconds = DefaultHeartbeatUrlTimeoutSeconds.ToString();
+            EnableHeartbeatUrlFlags = DefaultEnableHeartbeatUrlFlags;
             FailureProgramPath = string.Empty;
             FailureProgramStartupDirectory = string.Empty;
             FailureProgramParameters = string.Empty;
@@ -1398,6 +1428,9 @@ namespace Servy.ViewModels
             SelectedRecoveryAction = dto.RecoveryAction == null ? DefaultRecoveryAction : (RecoveryAction)dto.RecoveryAction;
             RecoveryOnCleanExit = dto.RecoveryOnCleanExit ?? DefaultRecoveryOnCleanExit;
             MaxRestartAttempts = dto.MaxRestartAttempts == null ? DefaultMaxRestartAttempts.ToString() : dto.MaxRestartAttempts.Value.ToString();
+            HeartbeatUrl = dto.HeartbeatUrl ?? string.Empty;
+            HeartbeatUrlTimeoutSeconds = dto.HeartbeatUrlTimeoutSeconds == null ? DefaultHeartbeatUrlTimeoutSeconds.ToString() : dto.HeartbeatUrlTimeoutSeconds.Value.ToString();
+            EnableHeartbeatUrlFlags = dto.EnableHeartbeatUrlFlags ?? DefaultEnableHeartbeatUrlFlags;
             FailureProgramPath = dto.FailureProgramPath ?? string.Empty;
             FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory ?? string.Empty;
             FailureProgramParameters = dto.FailureProgramParameters ?? string.Empty;
@@ -1481,6 +1514,9 @@ namespace Servy.ViewModels
                 RecoveryAction = (int)SelectedRecoveryAction,
                 RecoveryOnCleanExit = RecoveryOnCleanExit,
                 MaxRestartAttempts = ConfigParser.ParseInt(MaxRestartAttempts, -1),
+                HeartbeatUrl = HeartbeatUrl,
+                HeartbeatUrlTimeoutSeconds = ConfigParser.ParseInt(HeartbeatUrlTimeoutSeconds, -1),
+                EnableHeartbeatUrlFlags = EnableHeartbeatUrlFlags,
 
                 // Failure Actions
                 FailureProgramPath = FailureProgramPath,

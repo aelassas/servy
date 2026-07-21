@@ -132,6 +132,21 @@ namespace Servy.Models
         public string MaxRestartAttempts { get; set; }
 
         /// <summary>
+        /// Gets or sets the absolute URL used to send out-of-band diagnostic heartbeat pings (e.g., dead man's switch platforms like healthchecks.io).
+        /// </summary>
+        public string HeartbeatUrl { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum time context in seconds allowed for the external heartbeat URL request to complete before cancellation.
+        /// </summary>
+        public string HeartbeatUrlTimeoutSeconds { get; set; }
+
+        /// <summary>
+        /// Gets or sets a flag indicating whether extended operational lifecycle state tracking flags are appended to the heartbeat base URL destination.
+        /// </summary>
+        public bool EnableHeartbeatUrlFlags { get; set; }
+
+        /// <summary>
         /// Gets or sets the path to the process to run on failure.
         /// </summary>
         public string FailureProgramPath { get; set; }

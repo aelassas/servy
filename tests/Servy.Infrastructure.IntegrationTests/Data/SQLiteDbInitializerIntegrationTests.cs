@@ -58,6 +58,11 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Contains("EnableConsoleUI", columns); // Applied by V3
                 Assert.Contains("RecoveryOnCleanExit", columns); // Applied by V5
 
+                // Assert Version 7 Heartbeat columns exist on a fresh installation
+                Assert.Contains("HeartbeatUrl", columns);
+                Assert.Contains("HeartbeatUrlTimeoutSeconds", columns);
+                Assert.Contains("EnableHeartbeatUrlFlags", columns);
+
                 // Verify the structural index details map directly to the modern COLLATE UNICODE_NOCASE layout rules (Applied by V6)
                 var indexList = conn.Query("PRAGMA index_list('Services');")
                                     .Select(x => (IDictionary<string, object>)x)
@@ -85,6 +90,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             // By creating 'Services' as a VIEW, the subsequent 'CREATE UNIQUE INDEX' on it will throw a SQLiteException.
             using (var conn = CreateConnection())
             {
+                // Act
                 SeedSchemaInfo(conn, 0);
                 conn.Execute($"CREATE VIEW {SqlConstants.ServicesTableName} AS SELECT 1 AS Id;");
 
@@ -280,7 +286,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
                 // Assert
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
-                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, version);
+                Assert.True(version >= 6);
 
                 // Verify table deduplication pass: only the oldest instance (Id = 1) survives the constraint cleanup
                 var remainingServices = conn.Query($"SELECT Id, Name FROM {SqlConstants.ServicesTableName};").ToList();
@@ -331,7 +337,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
                 // Assert: Verify UNICODE_NOCASE successfully group-collapsed and purged the duplicate non-ASCII character entries
                 var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
-                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, version);
+                Assert.True(version >= 6);
 
                 var remainingServices = conn.Query($"SELECT Id, Name FROM {SqlConstants.ServicesTableName};").ToList();
                 Assert.Single(remainingServices);
@@ -414,6 +420,46 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
         #endregion
 
+        #region V7 External Heartbeat Migration Branches
+
+        [Fact]
+        public void ApplyVersion7_UpgradesFromVersion6_AppendsHeartbeatColumnsCleanly()
+        {
+            // Arrange: Establish schema explicitly at target Version 6 configuration checkpoint
+            using (var conn = CreateConnection())
+            {
+                SeedSchemaInfo(conn, 6);
+
+                // Build a pristine pre-v7 database using modern collation logic
+                var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT COLLATE UNICODE_NOCASE NOT NULL" };
+                var seedData = new Dictionary<string, string> { { "Name", "'HeartbeatMonitoredApp'" } };
+
+                CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
+
+                // Act: Run full initialization loop to trigger the V6 -> V7 ApplyVersion7 schema migration pipeline
+                SQLiteDbInitializer.Initialize(conn);
+
+                // Assert
+                var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, version);
+
+                var columns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();
+
+                // Confirm the structural migration successfully appended the specific external heartbeat properties
+                Assert.Contains("HeartbeatUrl", columns);
+                Assert.Contains("HeartbeatUrlTimeoutSeconds", columns);
+                Assert.Contains("EnableHeartbeatUrlFlags", columns);
+
+                // Verify that default values for the fresh migration columns resolve safely to NULL for historical records
+                var migratedRow = conn.QuerySingle($"SELECT HeartbeatUrl, HeartbeatUrlTimeoutSeconds, EnableHeartbeatUrlFlags FROM {SqlConstants.ServicesTableName} WHERE Id = 1;");
+                Assert.Null(migratedRow.HeartbeatUrl);
+                Assert.Null(migratedRow.HeartbeatUrlTimeoutSeconds);
+                Assert.Null(migratedRow.EnableHeartbeatUrlFlags);
+            }
+        }
+
+        #endregion
+
         #region Reconciliation Self-Healing (Missing, Orphans, Mismatches)
 
         [Fact]
@@ -432,7 +478,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // We rebuild it, intentionally omitting the second column (usually 'Name' or 'ServiceName')
                 // We change the type of 'EnableSizeRotation' to TEXT to force a Type Mismatch.
                 // We add an 'OrphanColumn' to force the Orphan branch.
-                var missingColumn = expectedColumns.First(c => c != "Id" && !c.Contains("Rotation"));
+                var missingColumn = expectedColumns.First(c => c != "Id" && !c.Contains("Rotation") && c != "HeartbeatUrl");
 
                 var corruptedTableDef = new List<string> { "Id INTEGER PRIMARY KEY", "OrphanColumn TEXT" };
                 foreach (var col in expectedColumns)

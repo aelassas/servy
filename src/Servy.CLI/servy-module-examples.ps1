@@ -53,6 +53,10 @@ $installParams = @{
     HeartbeatInterval         = 5
     MaxFailedChecks           = 1
     MaxRestartAttempts        = 2
+    HeartbeatUrl              = "https://hc-ping.com/test-uuid"
+    HeartbeatUrlTimeoutSeconds = 5
+    EnableHeartbeatUrlFlags   = $true
+
     RecoveryAction            = "RestartService"
     RecoveryOnCleanExit       = $true
 

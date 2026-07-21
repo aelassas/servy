@@ -180,7 +180,6 @@ namespace Servy
                     Func<ServiceDto> modelToDtoProxy = () => viewModel?.ModelToServiceDto();
                     Action<ServiceDto> bindDtoProxy = (dto) => viewModel?.BindServiceDtoToModel(dto);
 
-
                     var serviceCommands = new ServiceCommands(
                         modelToDtoProxy,
                         bindDtoProxy,

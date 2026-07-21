@@ -521,6 +521,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Heartbeat URL Flags (/start, /fail).
+        /// </summary>
+        public static string Label_EnableHeartbeatUrlFlags {
+            get {
+                return ResourceManager.GetString("Label_EnableHeartbeatUrlFlags", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Enable size-based Rotation.
         /// </summary>
         public static string Label_EnableSizeRotation {
@@ -544,6 +553,24 @@ namespace Servy.Resources {
         public static string Label_HeartbeatInterval {
             get {
                 return ResourceManager.GetString("Label_HeartbeatInterval", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Heartbeat URL.
+        /// </summary>
+        public static string Label_HeartbeatUrl {
+            get {
+                return ResourceManager.GetString("Label_HeartbeatUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Heartbeat URL Timeout.
+        /// </summary>
+        public static string Label_HeartbeatUrlTimeoutSeconds {
+            get {
+                return ResourceManager.GetString("Label_HeartbeatUrlTimeoutSeconds", resourceCulture);
             }
         }
         

@@ -86,6 +86,7 @@ namespace Servy.CLI.Validation
             var maxFailedChecks = MapInt(opts.MaxFailedChecks, nameof(opts.MaxFailedChecks), ref internalError);
             var recoveryAction = MapEnum<RecoveryAction>(opts.RecoveryAction, nameof(opts.RecoveryAction), ref internalError);
             var maxRestartAttempts = MapInt(opts.MaxRestartAttempts, nameof(opts.MaxRestartAttempts), ref internalError);
+            var heartbeatUrlTimeout = MapInt(opts.HeartbeatUrlTimeoutSeconds, nameof(opts.HeartbeatUrlTimeoutSeconds), ref internalError);
             var preLaunchTimeout = MapInt(opts.PreLaunchTimeout, nameof(opts.PreLaunchTimeout), ref internalError);
             var preLaunchRetryAttempts = MapInt(opts.PreLaunchRetryAttempts, nameof(opts.PreLaunchRetryAttempts), ref internalError);
             var startTimeout = MapInt(opts.StartTimeout, nameof(opts.StartTimeout), ref internalError);
@@ -124,6 +125,9 @@ namespace Servy.CLI.Validation
                 RecoveryAction = recoveryAction,
                 RecoveryOnCleanExit = opts.RecoveryOnCleanExit,
                 MaxRestartAttempts = maxRestartAttempts,
+                HeartbeatUrl = opts.HeartbeatUrl,
+                HeartbeatUrlTimeoutSeconds = heartbeatUrlTimeout,
+                EnableHeartbeatUrlFlags = opts.EnableHeartbeatUrlFlags,
                 FailureProgramPath = opts.FailureProgramPath,
                 FailureProgramStartupDirectory = opts.FailureProgramStartupDir,
                 FailureProgramParameters = opts.FailureProgramParameters,

@@ -19,6 +19,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -79,6 +80,12 @@ namespace Servy.Service
         /// The base file name (without extension) of the embedded Servy Restarter executable.
         /// </summary>
         private const string ServyRestarterExeFileName = "Servy.Restarter.Net48";
+
+        #endregion
+
+        #region Static Fields
+
+        private static readonly HttpClient SharedPingClient = new HttpClient();
 
         #endregion
 
@@ -1226,6 +1233,7 @@ namespace Servy.Service
                 {
                     if (await capturedProcess.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(_options.StartTimeoutInSeconds), capturedToken))
                     {
+                        EmitHeartbeatPing(_options.HeartbeatUrl, AppConfig.HeartbeatUrlStartFlag, _options.HeartbeatUrlTimeoutSeconds);
                         StartPostLaunchProcess();
                     }
                 }
@@ -1239,6 +1247,70 @@ namespace Servy.Service
                     _logger?.Error("Unexpected error in post-launch action.", ex);
                 }
             }, capturedToken);
+        }
+
+        /// <summary>
+        /// Asynchronously emits an out-of-band diagnostic heartbeat ping to the configured external monitoring endpoint.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This operation runs entirely inside a fire-and-forget background task context. It is designed to be 
+        /// non-blocking and fail-silent to ensure that network latency, DNS failures, or remote proxy outages 
+        /// never delay or destabilize the primary process supervision loop.
+        /// </para>
+        /// <para>
+        /// Outbound requests are managed using a short timeout threshold to prevent backing up thread pool workers 
+        /// or exhausting available network socket allocations during persistent endpoint blackouts.
+        /// </para>
+        /// <para>
+        /// If a lifecycle suffix is provided but extended flags are disabled (<see cref="StartOptions.EnableHeartbeatUrlFlags"/> is false), 
+        /// the method exits immediately without scheduling a background task or making a network request.
+        /// </para>
+        /// </remarks>
+        /// <param name="baseUrl">The absolute base target destination URL (e.g., "https://hc-ping.com/your-uuid").</param>
+        /// <param name="suffix">An optional trailing lifecycle flag state indicator to append to the base URL (e.g., "start" or "fail"). Pass null or empty for a standard health check loop pass.</param>
+        /// <param name="timeoutSeconds">The maximum duration in seconds allowed for the HTTP connection handshake and headers transmission before automatic cancellation.</param>
+        private void EmitHeartbeatPing(string baseUrl, string suffix, int timeoutSeconds)
+        {
+            if (string.IsNullOrWhiteSpace(baseUrl) || _options == null || !_options.EnableHealthMonitoring) return;
+
+            // Capture the configuration state instantly on the caller thread to avoid thread-race NullReferenceExceptions
+            bool enableFlags = _options.EnableHeartbeatUrlFlags == true;
+
+            if (!string.IsNullOrEmpty(suffix) && !enableFlags) return;
+
+            // Fire-and-forget safely wrapped in an isolated background Task context
+            Task.Run(async () =>
+            {
+                try
+                {
+                    // Use native Uri combining rules to insulate from host-level file system path corruption
+                    var baseUri = new Uri(baseUrl);
+                    var targetUri = baseUri;
+                    if (!string.IsNullOrEmpty(suffix) && enableFlags)
+                    {
+                        var baseStr = baseUrl.EndsWith("/") ? baseUrl : baseUrl + "/";
+                        targetUri = new Uri(baseStr + suffix.TrimStart('/'));
+                    }
+
+                    using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds)))
+                    {
+                        // Execute using ResponseHeadersRead to avoid allocating buffers or reading potential body payload bytes
+                        using (var response = await SharedPingClient.GetAsync(targetUri, HttpCompletionOption.ResponseHeadersRead, cts.Token))
+                        {
+                            if (!response.IsSuccessStatusCode)
+                            {
+                                Logger.Debug($"Heartbeat ping to {targetUri} returned unexpected status code: {(int)response.StatusCode} ({response.StatusCode})");
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Fail-silent constraint: Log strictly at debug/trace level to eliminate local disk saturation if the network goes completely down
+                    Logger.Debug($"Heartbeat ping to base URL '{Helpers.ServiceHelper.MaskUrl(baseUrl)}' failed silently.", ex);
+                }
+            });
         }
 
         /// <summary>
@@ -1467,7 +1539,6 @@ namespace Servy.Service
             if (_isTearingDown || _disposed || _isRebooting) return;
 
             _logger?.Info("Child process exit detected via event.");
-            ClearProcessState();
 
             bool needsRecovery = false;
             bool shouldStop = false;
@@ -1475,6 +1546,9 @@ namespace Servy.Service
 
             lock (_healthCheckLock)
             {
+                // State cleanup inside the lock boundary to eliminate telemetry snapshot sync races
+                ClearProcessState();
+
                 try
                 {
                     exitCode = _childProcess?.ExitCode ?? -1;
@@ -1507,6 +1581,16 @@ namespace Servy.Service
                     _logger?.Error($"Process exited with code {exitCode} and recovery is disabled.");
                     shouldStop = true;
                 }
+            }
+
+            // Determine if this is an unrecovered error exit when recovery options are disabled
+            bool isCleanExit = exitCode == 0 && !_options?.RecoveryOnCleanExit == true;
+            bool isErrorStop = shouldStop && !isCleanExit; // True if it's an unrecovered crash or quota hit
+
+            // Trigger failure signal if local recovery handles it OR if recovery is disabled and it's an error exit
+            if ((needsRecovery || isErrorStop) && !_isTearingDown && !_disposed)
+            {
+                EmitHeartbeatPing(_options?.HeartbeatUrl, AppConfig.HeartbeatUrlFailFlag, _options?.HeartbeatUrlTimeoutSeconds?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds);
             }
 
             // Actions outside the lock
@@ -1692,9 +1776,16 @@ namespace Servy.Service
                     }
                 }
 
+                // Safely parse heartbeat metadata without NullReferenceException exposures
+                string heartbeatUrl = _options?.HeartbeatUrl;
+                int timeout = _options?.HeartbeatUrlTimeoutSeconds ?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds;
+                bool enableFlags = _options?.EnableHeartbeatUrlFlags == true;
 
                 if (shouldStop)
                 {
+                    // Emit external notification immediately when stopping due to exhausted quotas
+                    EmitHeartbeatPing(heartbeatUrl, AppConfig.HeartbeatUrlFailFlag, timeout);
+
                     RunFailureProgram();
                     Stop();
                     return;
@@ -1854,6 +1945,12 @@ namespace Servy.Service
                         // Unified recovery check for non-zero exit codes or missing processes
                         needsRecovery = RegisterFailureAndCheckRecovery();
                     }
+
+                    // PLACEMENT 1: Alert the external monitor immediately if we are escalating to full recovery action
+                    if (needsRecovery && _options != null)
+                    {
+                        EmitHeartbeatPing(_options.HeartbeatUrl, AppConfig.HeartbeatUrlFailFlag, _options.HeartbeatUrlTimeoutSeconds);
+                    }
                 }
                 else
                 {
@@ -1862,8 +1959,19 @@ namespace Servy.Service
                     {
                         _logger?.Info("Child process is healthy again. Resetting transient failure count.");
 
+                        // PLACEMENT 2: Send an explicit structural /start signal showing recovery completed
+                        if (_options != null)
+                            EmitHeartbeatPing(_options.HeartbeatUrl, AppConfig.HeartbeatUrlStartFlag, _options.HeartbeatUrlTimeoutSeconds);
+
+
                         // Always reset memory count immediately so we don't trigger recovery again unnecessarily
                         _failedChecks = 0;
+                    }
+                    else
+                    {
+                        // PLACEMENT 3: Standard routine operational tick (clean pass)
+                        if (_options != null)
+                            EmitHeartbeatPing(_options.HeartbeatUrl, string.Empty, _options.HeartbeatUrlTimeoutSeconds);
                     }
 
                     performStabilityCheck = true;

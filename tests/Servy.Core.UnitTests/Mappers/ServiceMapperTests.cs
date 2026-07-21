@@ -63,6 +63,9 @@ namespace Servy.Core.UnitTests.Mappers
                 RecoveryAction = (int)RecoveryAction.None,
                 RecoveryOnCleanExit = true,
                 MaxRestartAttempts = 20,
+                HeartbeatUrl = "https://hc-ping.com/test-uuid",
+                HeartbeatUrlTimeoutSeconds = 10,
+                EnableHeartbeatUrlFlags = true,
                 FailureProgramPath = @"C:\apps\failure_prog.exe",
                 FailureProgramParameters = "--param1",
                 FailureProgramStartupDirectory = @"C:\apps",
@@ -126,6 +129,9 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal((RecoveryAction)dto.RecoveryAction, service.RecoveryAction);
             Assert.Equal(dto.RecoveryOnCleanExit, service.RecoveryOnCleanExit);
             Assert.Equal(dto.MaxRestartAttempts, service.MaxRestartAttempts);
+            Assert.Equal(dto.HeartbeatUrl, service.HeartbeatUrl);
+            Assert.Equal(dto.HeartbeatUrlTimeoutSeconds, service.HeartbeatUrlTimeoutSeconds);
+            Assert.Equal(dto.EnableHeartbeatUrlFlags, service.EnableHeartbeatUrlFlags);
             Assert.Equal(dto.FailureProgramPath, service.FailureProgramPath);
             Assert.Equal(dto.FailureProgramStartupDirectory, service.FailureProgramStartupDirectory);
             Assert.Equal(dto.FailureProgramParameters, service.FailureProgramParameters);
@@ -196,6 +202,8 @@ namespace Servy.Core.UnitTests.Mappers
                 MaxFailedChecks = null,
                 RecoveryAction = null,
                 MaxRestartAttempts = null,
+                HeartbeatUrlTimeoutSeconds = null,
+                EnableHeartbeatUrlFlags = null,
                 RunAsLocalSystem = null,
                 PreLaunchTimeoutSeconds = null,
                 PreLaunchRetryAttempts = null,

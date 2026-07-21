@@ -846,6 +846,15 @@ function Install-ServyService {
     .PARAMETER MaxRestartAttempts
         Maximum number of restart attempts after failure. Optional. Set to 0 for unlimited restart attempts.
 
+    .PARAMETER HeartbeatUrl
+        Optional absolute URL used to send out-of-band diagnostic heartbeat pings (e.g., dead man's switch platforms like healthchecks.io).
+
+    .PARAMETER HeartbeatUrlTimeoutSeconds
+        Maximum time in seconds to wait for a response from the heartbeat URL. Optional. Set to 0 for unlimited wait.
+
+    .PARAMETER EnableHeartbeatUrlFlags
+        Switch to enable heartbeat URL flags ('/start', '/fail'). Optional.
+
     .PARAMETER FailureProgramPath
         Path to a failure program or script. Optional.
 
@@ -1072,6 +1081,13 @@ function Install-ServyService {
     [ValidateRange(0, 100000)]
     [int] $MaxRestartAttempts,
 
+    [string] $HeartbeatUrl,
+
+    [ValidateRange(2, 30)]
+    [int] $HeartbeatUrlTimeoutSeconds,
+
+    [switch] $EnableHeartbeatUrlFlags,
+
     [ValidateScript({ 
         if (Test-Path ([Environment]::ExpandEnvironmentVariables($_)) -PathType Leaf) { $true }
         else { throw "Failure program executable not found: $_" } 
@@ -1212,41 +1228,43 @@ function Install-ServyService {
   # NOTE: Non-password sensitive parameters have been removed from the mapping and are 
   # handled exclusively via environment variables to ensure memory safety and avoid CLI argument leaks.
   $paramMapping = @{
-      "--name"                     = "Name"
-      "--displayName"              = "DisplayName"
-      "--path"                     = "Path"
-      "--description"              = "Description"
-      "--startupDir"               = "StartupDir"
-      "--startupType"              = "StartupType"
-      "--priority"                 = "Priority"
-      "--stdout"                   = "Stdout"
-      "--stderr"                   = "Stderr"
-      "--startTimeout"             = "StartTimeout"
-      "--stopTimeout"              = "StopTimeout"
-      "--rotationSize"             = "RotationSize"
-      "--dateRotationType"         = "DateRotationType"
-      "--maxRotations"             = "MaxRotations"
-      "--heartbeatInterval"        = "HeartbeatInterval"
-      "--maxFailedChecks"          = "MaxFailedChecks"
-      "--recoveryAction"           = "RecoveryAction"
-      "--maxRestartAttempts"       = "MaxRestartAttempts"
-      "--failureProgramPath"       = "FailureProgramPath"
-      "--failureProgramStartupDir" = "FailureProgramStartupDir"
-      "--deps"                     = "Deps"
-      "--user"                     = "User"
-      "--preLaunchPath"            = "PreLaunchPath"
-      "--preLaunchStartupDir"      = "PreLaunchStartupDir"
-      "--preLaunchStdout"          = "PreLaunchStdout"
-      "--preLaunchStderr"          = "PreLaunchStderr"
-      "--preLaunchTimeout"         = "PreLaunchTimeout"
-      "--preLaunchRetryAttempts"   = "PreLaunchRetryAttempts"
-      "--postLaunchPath"           = "PostLaunchPath"
-      "--postLaunchStartupDir"     = "PostLaunchStartupDir"
-      "--preStopPath"              = "PreStopPath"
-      "--preStopStartupDir"        = "PreStopStartupDir"
-      "--preStopTimeout"           = "PreStopTimeout"
-      "--postStopPath"             = "PostStopPath"
-      "--postStopStartupDir"       = "PostStopStartupDir"
+      "--name"                       = "Name"
+      "--displayName"                = "DisplayName"
+      "--path"                       = "Path"
+      "--description"                = "Description"
+      "--startupDir"                 = "StartupDir"
+      "--startupType"                = "StartupType"
+      "--priority"                   = "Priority"
+      "--stdout"                     = "Stdout"
+      "--stderr"                     = "Stderr"
+      "--startTimeout"               = "StartTimeout"
+      "--stopTimeout"                = "StopTimeout"
+      "--rotationSize"               = "RotationSize"
+      "--dateRotationType"           = "DateRotationType"
+      "--maxRotations"               = "MaxRotations"
+      "--heartbeatInterval"          = "HeartbeatInterval"
+      "--maxFailedChecks"            = "MaxFailedChecks"
+      "--recoveryAction"             = "RecoveryAction"
+      "--maxRestartAttempts"         = "MaxRestartAttempts"
+      "--heartbeatUrl" 		         = "HeartbeatUrl"
+      "--heartbeatUrlTimeoutSeconds" = "HeartbeatUrlTimeoutSeconds"
+      "--failureProgramPath"         = "FailureProgramPath"
+      "--failureProgramStartupDir"   = "FailureProgramStartupDir"
+      "--deps"                       = "Deps"
+      "--user"                       = "User"
+      "--preLaunchPath"              = "PreLaunchPath"
+      "--preLaunchStartupDir"        = "PreLaunchStartupDir"
+      "--preLaunchStdout"            = "PreLaunchStdout"
+      "--preLaunchStderr"            = "PreLaunchStderr"
+      "--preLaunchTimeout"           = "PreLaunchTimeout"
+      "--preLaunchRetryAttempts"     = "PreLaunchRetryAttempts"
+      "--postLaunchPath"             = "PostLaunchPath"
+      "--postLaunchStartupDir"       = "PostLaunchStartupDir"
+      "--preStopPath"                = "PreStopPath"
+      "--preStopStartupDir"          = "PreStopStartupDir"
+      "--preStopTimeout"             = "PreStopTimeout"
+      "--postStopPath"               = "PostStopPath"
+      "--postStopStartupDir"         = "PostStopStartupDir"
   }
 
   # 2. Iterate through mapping to build arguments
@@ -1270,6 +1288,7 @@ function Install-ServyService {
   if ($UseLocalTimeForRotation)                { $argsList = Add-Arg $argsList "--useLocalTimeForRotation" -Flag }
   if ($EnableHealth)                           { $argsList = Add-Arg $argsList "--enableHealth" -Flag }
   if ($RecoveryOnCleanExit)                    { $argsList = Add-Arg $argsList "--recoveryOnCleanExit" -Flag }
+  if ($EnableHeartbeatUrlFlags)                { $argsList = Add-Arg $argsList "--enableHeartbeatUrlFlags" -Flag }
   if ($PreLaunchIgnoreFailure)                 { $argsList = Add-Arg $argsList "--preLaunchIgnoreFailure" -Flag }
   if ($EnableDebugLogs)                        { $argsList = Add-Arg $argsList "--debug" -Flag }
   if ($PreStopLogAsError)                      { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }
