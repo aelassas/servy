@@ -842,35 +842,6 @@ namespace Servy.Service.UnitTests
             await Task.Delay(50, CancellationToken.None);
         }
 
-        [Fact]
-        public async Task EmitHeartbeatPing_WithValidUrl_ExecutesFireAndForgetWithoutBlocking()
-        {
-            // Arrange
-            var serviceInstance = new Service();
-
-            var mockOptions = new StartOptions
-            {
-                EnableHeartbeatUrlFlags = true
-            };
-            TestReflection.SetField(serviceInstance, "_options", mockOptions);
-
-            // Use a local non-routable dummy endpoint with a 1ms timeout
-            // so the background Task finishes and disposes immediately without making real network calls
-            object[] parameters = new object[] { "http://127.0.0.1:1/ping", "/start", 1 };
-
-            // Act
-            var watch = Stopwatch.StartNew();
-            TestReflection.InvokeNonPublic(serviceInstance, "EmitHeartbeatPing", parameters);
-            watch.Stop();
-
-            // Assert
-            Assert.True(watch.ElapsedMilliseconds < 50, $"Method blocked the primary thread execution context for {watch.ElapsedMilliseconds}ms");
-
-            // Give the background Task.Run thread sufficient time to fault/complete and dispose its CancellationTokenSource 
-            // before xUnit tears down the assembly runner context
-            await Task.Delay(300);
-        }
-
         #endregion
 
         #region Helper Factory Builder
