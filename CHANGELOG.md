@@ -1,5 +1,29 @@
 # Changelog
 
+## [Servy 8.7](https://github.com/aelassas/servy/releases/tag/v8.7)
+
+**Date:** 2026-07-21 | **Tag:** [`v8.7`](https://github.com/aelassas/servy/tree/v8.7)
+
+* feat: add External Heartbeat Ping URL (#2700)
+* fix(service): move constructor guard clauses outside try-catch to prevent premature runner crash
+* fix(service): wrap masking regex value patterns in atomic groups to eliminate ReDoS timeouts
+* fix(service): move state cleanup inside the lock boundary to eliminate telemetry snapshot sync races
+* fix(ui): BulkObservableCollectionTests.cs - TrimToSize_NonListImplementation_UsesManualLoop never reaches the manual-loop branch: every ObservableCollection ctor copies into a List<T> (#3129)
+
+### Downloads
+* [servy-8.7-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.7/servy-8.7-arm64-installer.exe) - 76.23 MB
+* [servy-8.7-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.7/servy-8.7-arm64-portable.7z) - 77.58 MB
+* [servy-8.7-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.7/servy-8.7-net48-sbom.xml) - 0.03 MB
+* [servy-8.7-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.7/servy-8.7-net48-x64-installer.exe) - 4.32 MB
+* [servy-8.7-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.7/servy-8.7-net48-x64-portable.7z) - 2.06 MB
+* [servy-8.7-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.7/servy-8.7-sbom.xml) - 0.04 MB
+* [servy-8.7-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.7/servy-8.7-x64-installer.exe) - 82.26 MB
+* [servy-8.7-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.7/servy-8.7-x64-portable.7z) - 80.13 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v8.7.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v8.7.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v8.6...v8.7
+
 ## [Servy 8.6](https://github.com/aelassas/servy/releases/tag/v8.6)
 
 **Date:** 2026-07-12 | **Tag:** [`v8.6`](https://github.com/aelassas/servy/tree/v8.6)
