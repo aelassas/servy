@@ -847,14 +847,15 @@ namespace Servy.Service.UnitTests
             // Arrange
             var serviceInstance = new Service();
 
-            // Inject options state using TestReflection to bypass the early return block checks
             var mockOptions = new StartOptions
             {
                 EnableHeartbeatUrlFlags = true
             };
             TestReflection.SetField(serviceInstance, "_options", mockOptions);
 
-            object?[] parameters = new object?[] { "https://hc-ping.com/test-uuid", "/start", 2 };
+            // Use a local non-routable dummy endpoint with a 1ms timeout
+            // so the background Task finishes and disposes immediately without making real network calls
+            object?[] parameters = new object?[] { "http://127.0.0.1:1/ping", "/start", 1 };
 
             // Act
             var watch = Stopwatch.StartNew();
@@ -862,12 +863,11 @@ namespace Servy.Service.UnitTests
             watch.Stop();
 
             // Assert
-            // The underlying method schedules execution on Task.Run, so the caller thread 
-            // must execute immediately (well under 50 milliseconds) regardless of actual network response latency.
             Assert.True(watch.ElapsedMilliseconds < 50, $"Method blocked the primary thread execution context for {watch.ElapsedMilliseconds}ms");
 
-            // Allow background worker execution scope window time to wind down cleanly before test context teardown
-            await Task.Delay(100, TestContext.Current.CancellationToken);
+            // Give the background Task.Run thread sufficient time to fault/complete and dispose its CancellationTokenSource 
+            // before xUnit tears down the assembly runner context
+            await Task.Delay(300, TestContext.Current.CancellationToken);
         }
 
         #endregion

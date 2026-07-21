@@ -5,6 +5,7 @@
 # ARM64 platforms. Only the x64 execution node generates, compiles, and submits 
 # aggregated Cobertura coverage data to Codecov and Coveralls metrics platforms.
 # ==========================================================================================
+
 name: test
 
 on:
@@ -44,8 +45,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
         with:
-          fetch-depth: 0   # important, otherwise commit message won't be available                    
-
+          fetch-depth: 0   # important, otherwise commit message won't be available          
+          
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
 
@@ -70,9 +71,6 @@ jobs:
               # Derive the category segment (e.g. 'Core', 'UI') from the project folder name for the results path
               $subDirName = if ($projFile.Directory.Name -match 'Servy\.(.+?)\.') { $matches[1] } else { "UnitTests" }
               
-              # Target module extraction to restrict coverlet strictly to the target assembly
-              $targetModule = $projName -replace '\.(Unit|Integration)Tests$', ''
-
               Write-Host "Running tests for $projName..." -ForegroundColor Cyan
               
               $dotnetArgs = @(
@@ -86,10 +84,8 @@ jobs:
               $dotnetArgs += @(
                   '--',
                   'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura',
-                  "DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include=[$targetModule]*",
                   "DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=$($env:VSTEST_EXCLUSIONS)",
-                  'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeProperties="True"',
-                  'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.SingleHit="True"'
+                  'DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.IncludeProperties="True"'
               )
 
               & dotnet @dotnetArgs
