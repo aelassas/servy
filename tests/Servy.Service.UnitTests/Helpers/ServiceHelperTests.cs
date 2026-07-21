@@ -696,8 +696,6 @@ namespace Servy.Service.UnitTests.Helpers
 
         #region MaskUrl Tests
 
-        #region MaskUrl Tests
-
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -766,8 +764,6 @@ namespace Servy.Service.UnitTests.Helpers
             // Assert
             Assert.Equal(expectedUrl, result);
         }
-
-        #endregion
 
         #endregion
 
