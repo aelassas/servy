@@ -73,6 +73,9 @@ jobs:
               # Re-map our parent folder tracking keys to dynamically support the Net48 project structures
               $subDirName = if ($projFile.Directory.Name -match 'Servy\.(.+?)\.') { $matches[1] } else { "UnitTests" }
               
+              # Extract the target module name (e.g., Servy.Service) to restrict coverage collection strictly to that assembly
+              $targetModule = $projName -replace '\.(Unit|Integration)Tests$', ''
+
               Write-Host "Running tests for $projName..." -ForegroundColor Cyan
               
               $dllPath = "tests\$projName\bin\x64\Debug\$projName.dll"
@@ -108,7 +111,7 @@ jobs:
               # Define common exclusions 
               $TestExclusions = @("**/*.xaml", "**/*.xaml.cs", "**/*.g.cs", "**/*.Designer.cs", "**/obj/**/*")
 
-              # 1. Initialize the arguments array with base arguments
+              # 1. Initialize the arguments array with base arguments including explicit single-assembly targeting
               $coverletArgs = @(
                   $dllPath,
                   "--target", $vsTest,
@@ -128,13 +131,7 @@ jobs:
                   $coverletArgs += $pattern
               }
 
-              # 3. Add Infrastructure specific exclusion if needed
-              if ($projName -like "*Servy.Infrastructure*") {
-                  $coverletArgs += "--exclude"
-                  $coverletArgs += "[Servy.Core]*"
-              }
-
-              # 4. Execute using the splatting operator (@)
+              # 3. Execute using the splatting operator (@)
               & coverlet @coverletArgs
                   
               if ($LASTEXITCODE -ne 0) { 
