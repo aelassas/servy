@@ -31,7 +31,7 @@
 [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
 -->
 
-
+<!--
 <p align="center">
   <img src="https://servy-win.github.io/servy-tiny.png?v=4" alt="Servy">
   ⭐ Don't forget to give us a star on GitHub. It costs nothing but means a lot and helps the project grow!
@@ -41,6 +41,7 @@
     <img src="https://img.shields.io/badge/Watch%20Demo-0C0C0C?style=for-the-badge&logo=youtube" alt="Watch Demo on YouTube">
   </a>
 </p>
+-->
 
 # Servy
 
@@ -51,6 +52,10 @@ Servy is digitally signed using a trusted code-signing certificate provided by t
 Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for easily monitoring and managing all installed services in real time.
 
 Servy continuously monitors your app, restarting it automatically if it crashes, hangs, or stops. It is perfect for keeping non-service apps running in the background and ensuring they start automatically at system boot, even before logon, without rewriting them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
+
+## Demo Video
+
+[![Servy Demo Video](https://github.com/user-attachments/assets/183a48eb-0763-46b5-aba2-7db01857c942)](https://www.youtube.com/watch?v=biHq17j4RbI)
 
 ## Why?
 See [NOTES.md](NOTES.md) for details.
@@ -84,10 +89,10 @@ Here's a minimal example using the CLI to run a Node.js app as a Windows service
 
 ```powershell
 servy-cli install `
---name="MyService" `
---path="C:\Program Files\nodejs\node.exe" `
---startupDir="C:\MyServer" `
---params="C:\MyServer\server.js"    
+  --name="MyService" `
+  --path="C:\Program Files\nodejs\node.exe" `
+  --startupDir="C:\MyServer" `
+  --params="C:\MyServer\server.js"    
 ```
 
 This creates a service named `MyService` that runs your Node.js server in the background and starts automatically with Windows.
