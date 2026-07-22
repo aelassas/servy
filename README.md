@@ -12,6 +12,7 @@
 [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
 -->
 
+<!--
 <p align="center">
   <img src="https://servy-win.github.io/servy-tiny.png?v=4" alt="Servy">
   ⭐ Don't forget to give us a star on GitHub. It costs nothing but means a lot and helps the project grow!
@@ -21,6 +22,7 @@
     <img src="https://img.shields.io/badge/Watch%20Demo-0C0C0C?style=for-the-badge&logo=youtube" alt="Watch Demo on YouTube" />
   </a>
 </p>
+-->
 
 # Servy
  
