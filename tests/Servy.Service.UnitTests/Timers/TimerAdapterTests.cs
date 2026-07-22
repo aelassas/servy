@@ -126,29 +126,38 @@ namespace Servy.Service.UnitTests.Timers
         public void Elapsed_EventAddition_DelegatesToUnderlyingTimer()
         {
             // Arrange
-            const double TestInterval = 10.0;
-            using (var timer = new TimerAdapter(TestInterval))
+            // Use 1ms interval so the underlying timer queues the callback immediately
+            const double testInterval = 1.0;
+            using (var timer = new TimerAdapter(testInterval))
             using (var resetEvent = new ManualResetEventSlim(false))
             {
                 bool eventRaised = false;
+
                 ElapsedEventHandler handler = (s, e) =>
                 {
                     eventRaised = true;
                     resetEvent.Set();
                 };
 
-                // Act
-                timer.Elapsed += handler;
-                timer.AutoReset = false;
-                timer.Start();
+                try
+                {
+                    // Act
+                    timer.Elapsed += handler;
+                    timer.AutoReset = false;
+                    timer.Start();
 
-                // Wait up to a generous 1 second for the background thread pool dispatch signal
-                bool signaled = resetEvent.Wait(1000, TestContext.Current.CancellationToken);
-                timer.Stop();
+                    // Wait up to 5 seconds to account for CI thread-pool queue delays under heavy load
+                    bool signaled = resetEvent.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-                // Assert
-                Assert.True(signaled, "The underlying timer event failed to fire within the allocated timeout.");
-                Assert.True(eventRaised);
+                    // Assert
+                    Assert.True(signaled, "The underlying timer event failed to fire within the allocated timeout.");
+                    Assert.True(eventRaised, "The registered ElapsedEventHandler was not invoked.");
+                }
+                finally
+                {
+                    timer.Stop();
+                    timer.Elapsed -= handler;
+                }
             }
         }
 
@@ -156,8 +165,9 @@ namespace Servy.Service.UnitTests.Timers
         public void Elapsed_EventRemoval_UnsubscribesFromUnderlyingTimer()
         {
             // Arrange
-            const double TestInterval = 10.0;
-            using (var timer = new TimerAdapter(TestInterval))
+            // Use 1ms interval so the underlying timer queues the callback immediately
+            const double testInterval = 1.0;
+            using (var timer = new TimerAdapter(testInterval))
             using (var resetEvent = new ManualResetEventSlim(false))
             {
                 bool eventRaised = false;
@@ -166,21 +176,28 @@ namespace Servy.Service.UnitTests.Timers
                     eventRaised = true;
                 };
 
-                // Act
-                timer.Elapsed += handler;
-                timer.Elapsed -= handler; // Immediately remove delegation path
+                try
+                {
+                    // Act
+                    timer.Elapsed += handler;
+                    timer.Elapsed -= handler; // Immediately remove delegation path
 
-                // Set up a second canary handler so we know exactly when the underlying timer ticked
-                timer.Elapsed += (s, e) => resetEvent.Set();
-                timer.AutoReset = false;
-                timer.Start();
+                    // Set up a second canary handler so we know exactly when the underlying timer ticked
+                    timer.Elapsed += (s, e) => resetEvent.Set();
+                    timer.AutoReset = false;
+                    timer.Start();
 
-                bool signaled = resetEvent.Wait(1000, TestContext.Current.CancellationToken);
-                timer.Stop();
+                    // Wait up to 5 seconds to account for CI thread-pool queue delays under heavy load
+                    bool signaled = resetEvent.Wait(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-                // Assert
-                Assert.True(signaled, "The canary event tracking loop failed to fire.");
-                Assert.False(eventRaised, "The handler was executed despite having been explicitly unsubscribed.");
+                    // Assert
+                    Assert.True(signaled, "The canary event tracking loop failed to fire.");
+                    Assert.False(eventRaised, "The handler was executed despite having been explicitly unsubscribed.");
+                }
+                finally
+                {
+                    timer.Stop();
+                }
             }
         }
 
