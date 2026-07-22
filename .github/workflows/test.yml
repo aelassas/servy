@@ -186,6 +186,7 @@ jobs:
           name: codecov-coverage-report
           fail_ci_if_error: true   # let the action report failure
           verbose: false
+          commit_parent: ${{ github.event.before }}
 
       - name: Upload coverage to Coveralls
         id: coveralls
