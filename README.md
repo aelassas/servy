@@ -1,8 +1,6 @@
 [![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/aelassas/servy/actions/workflows/build.yml)
 [![test](https://github.com/aelassas/servy/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/aelassas/servy/actions/workflows/test.yml)
 [![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage&t=4)](https://codecov.io/gh/aelassas/servy)
-[![security](https://github.com/aelassas/servy/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/aelassas/servy/actions/workflows/security.yml)
-[![release](https://github.com/aelassas/servy/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/aelassas/servy/actions/workflows/release.yml)
 [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
 
 <!--
@@ -14,6 +12,9 @@
 [![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage&t=4)](https://codecov.io/gh/aelassas/servy)
 [![coveralls](https://coveralls.io/repos/github/aelassas/servy/badge.svg?branch=main)](https://coveralls.io/github/aelassas/servy?branch=main)
 
+[![security](https://github.com/aelassas/servy/actions/workflows/security.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/security.yml)
+[![release](https://github.com/aelassas/servy/actions/workflows/release.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/release.yml)
+
 [![scoop](https://github.com/aelassas/servy/actions/workflows/scoop.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/scoop.yml)
 [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
 
@@ -21,7 +22,6 @@
 [![winget](https://github.com/aelassas/servy/actions/workflows/winget.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/winget.yml)
 [![choco](https://github.com/aelassas/servy/actions/workflows/choco.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/choco.yml)
 [![bump-version](https://github.com/aelassas/servy/actions/workflows/bump-version.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/bump-version.yml)
-[![release](https://github.com/aelassas/servy/actions/workflows/release.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/release.yml)
 
 [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/aelassas/servy/total)](https://github.com/aelassas/servy/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/aelassas/servy)](https://github.com/aelassas/servy/releases/latest)
@@ -29,8 +29,6 @@
 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/aelassas/servy/pulls)
 [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
-
-[![security](https://github.com/aelassas/servy/actions/workflows/security.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/security.yml)
 -->
 
 
