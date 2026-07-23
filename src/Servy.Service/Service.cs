@@ -1536,7 +1536,7 @@ namespace Servy.Service
         /// <param name="e">Event data containing no specific exit information.</param>
         private void OnProcessExited(object sender, EventArgs e)
         {
-            if (_isTearingDown || _disposed || _isRebooting) return;
+            if (_isTearingDown || _disposed || _isRebooting || _options == null) return;
 
             _logger?.Info("Child process exit detected via event.");
 
@@ -1584,13 +1584,13 @@ namespace Servy.Service
             }
 
             // Determine if this is an unrecovered error exit when recovery options are disabled
-            bool isCleanExit = exitCode == 0 && !_options?.RecoveryOnCleanExit == true;
+            bool isCleanExit = exitCode == 0 && !_options.RecoveryOnCleanExit;
             bool isErrorStop = shouldStop && !isCleanExit; // True if it's an unrecovered crash or quota hit
 
             // Trigger failure signal if local recovery handles it OR if recovery is disabled and it's an error exit
             if ((needsRecovery || isErrorStop) && !_isTearingDown && !_disposed)
             {
-                EmitHeartbeatPing(_options?.HeartbeatUrl, AppConfig.HeartbeatUrlFailFlag, _options?.HeartbeatUrlTimeoutSeconds?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds);
+                EmitHeartbeatPing(_options.HeartbeatUrl, AppConfig.HeartbeatUrlFailFlag, _options.HeartbeatUrlTimeoutSeconds);
             }
 
             // Actions outside the lock

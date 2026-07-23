@@ -48,9 +48,21 @@ namespace Servy.CLI.UnitTests.Commands
             mockManager.Setup(sm => sm.GetServiceStatus(serviceName, It.IsAny<CancellationToken>())).Throws<TException>();
         }
 
-        // Bypasses testing hooks that are naturally unhandled by ServiceStatusCommand infrastructure paths.
         [Fact]
-        public override Task Execute_UnauthorizedAccessException_ReturnsFailure() => Task.CompletedTask;
+        public override async Task Execute_UnauthorizedAccessException_ReturnsFailure()
+        {
+            // Arrange
+            const string serviceName = "RestrictedService";
+            var options = CreateValidOptions(serviceName);
+            SetupServiceManagerException<UnauthorizedAccessException>(MockServiceManager, serviceName);
+
+            // Act
+            var result = await ExecuteCommandAsync(Command, options);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(string.Format(Strings.Msg_AdminPrivilegesRequired, "status"), result.Message);
+        }
 
         [Fact]
         public override async Task Execute_ServiceManagerFails_ReturnsFailure()

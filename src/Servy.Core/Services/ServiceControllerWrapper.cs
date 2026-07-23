@@ -189,7 +189,7 @@ namespace Servy.Core.Services
                             {
                                 foreach (var dep in deps)
                                 {
-                                    try { dep.Dispose(); } catch { }
+                                    try { dep.Dispose(); } catch { /* Ignore exceptions during disposal */ }
                                 }
                             }
                         }

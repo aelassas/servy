@@ -118,6 +118,17 @@ namespace Servy.Service.UnitTests
             var service = ctx.Build(_mockProcessKiller.Object);
             _disposableServices.Add(service);
 
+            var startOptions = new StartOptions
+            {
+                StdoutPath = "valid-path.log",
+                StderrPath = "error-path.log",
+                RecoveryOnCleanExit = false,
+                HeartbeatUrl = "https://hc-ping.com/test-uuid",
+                HeartbeatUrlTimeoutSeconds = 10,
+                HeartbeatInterval = 30
+            };
+            TestReflection.SetField(service, "_options", startOptions);
+
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Returns(0);
             service.SetChildProcess(mockProcess.Object);
@@ -137,6 +148,17 @@ namespace Servy.Service.UnitTests
             var service = ctx.Build(_mockProcessKiller.Object);
             _disposableServices.Add(service);
 
+            var startOptions = new StartOptions
+            {
+                StdoutPath = "valid-path.log",
+                StderrPath = "error-path.log",
+                RecoveryOnCleanExit = false,
+                HeartbeatUrl = "https://hc-ping.com/test-uuid",
+                HeartbeatUrlTimeoutSeconds = 10,
+                HeartbeatInterval = 30
+            };
+            TestReflection.SetField(service, "_options", startOptions);
+
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Returns(42);
             service.SetChildProcess(mockProcess.Object);
@@ -155,6 +177,17 @@ namespace Servy.Service.UnitTests
             var ctx = new ServiceTestContext();
             var service = ctx.Build(_mockProcessKiller.Object);
             _disposableServices.Add(service);
+
+            var startOptions = new StartOptions
+            {
+                StdoutPath = "valid-path.log",
+                StderrPath = "error-path.log",
+                RecoveryOnCleanExit = false,
+                HeartbeatUrl = "https://hc-ping.com/test-uuid",
+                HeartbeatUrlTimeoutSeconds = 10,
+                HeartbeatInterval = 30
+            };
+            TestReflection.SetField(service, "_options", startOptions);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Throws(new InvalidOperationException("boom"));
