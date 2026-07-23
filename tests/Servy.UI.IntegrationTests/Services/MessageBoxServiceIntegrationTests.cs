@@ -30,10 +30,11 @@ namespace Servy.UI.IntegrationTests.Services
                 // a virtual method to override it, but here we test the service orchestration.
 
                 // Act
-                _ = _service.ShowInfoAsync("Test", "Caption");
+                var task = _ = _service.ShowInfoAsync("Test", "Caption");
 
                 // Assert
                 // We do not await here in CI to avoid hanging the runner on a modal dialog.
+                Assert.NotNull(task);
             });
         }
 
@@ -51,9 +52,10 @@ namespace Servy.UI.IntegrationTests.Services
             Helper.RunOnSTA(() =>
             {
                 // Act
-                _ = _service.ShowConfirmAsync("Confirm?", "Caption");
+                var task = _service.ShowConfirmAsync("Confirm?", "Caption");
 
                 // Assert
+                Assert.NotNull(task);
             });
         }
 

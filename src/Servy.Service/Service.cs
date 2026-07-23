@@ -1594,7 +1594,7 @@ namespace Servy.Service
             try
             {
                 // Initial fast-path check
-                if (_isTearingDown || _disposed || _isRebooting) return;
+                if (_isTearingDown || _disposed || _isRebooting || _options == null) return;
 
                 _logger?.Info("Child process exit detected via event.");
 
@@ -1657,13 +1657,13 @@ namespace Servy.Service
                 }
 
                 // Determine if this is an error exit that will result in a hard service stop
-                bool isCleanExit = exitCode == 0 && !_options?.RecoveryOnCleanExit == true;
+                bool isCleanExit = exitCode == 0 && !_options.RecoveryOnCleanExit;
                 bool isErrorStop = shouldStop && !isCleanExit; // True if it's an unrecovered crash or quota hit
 
                 // Trigger failure signal if local recovery handles it OR if recovery is disabled and it's an error exit
                 if ((needsRecovery || isErrorStop) && !_isTearingDown && !_disposed)
                 {
-                    EmitHeartbeatPing(_options?.HeartbeatUrl, AppConfig.HeartbeatUrlFailFlag, _options?.HeartbeatUrlTimeoutSeconds ?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds);
+                    EmitHeartbeatPing(_options.HeartbeatUrl, AppConfig.HeartbeatUrlFailFlag, _options.HeartbeatUrlTimeoutSeconds);
                 }
 
                 // Actions outside the lock to avoid holding the semaphore during I/O or delays
@@ -1675,7 +1675,7 @@ namespace Servy.Service
                 else if (needsRecovery)
                 {
                     // Calculate delay: Heartbeat interval minus a 5s buffer, minimum 5s.
-                    var delayMs = Math.Max(ClampTimeout(_options!.HeartbeatInterval) - AppConfig.RecoverySchedulingDelayMs, AppConfig.RecoverySchedulingDelayMs);
+                    var delayMs = Math.Max(ClampTimeout(_options.HeartbeatInterval) - AppConfig.RecoverySchedulingDelayMs, AppConfig.RecoverySchedulingDelayMs);
                     _logger?.Info($"[OnProcessExited] Failure threshold reached. Scheduling recovery in {delayMs / AppConfig.MillisecondsPerSecond}s...");
 
                     // Fire-and-forget the recovery task safely
