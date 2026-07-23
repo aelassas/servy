@@ -92,7 +92,7 @@ servy-cli install `
   --name="MyService" `
   --path="C:\Program Files\nodejs\node.exe" `
   --startupDir="C:\MyServer" `
-  --params="C:\MyServer\server.js"    
+  --params="server.js"    
 ```
 
 This creates a service named `MyService` that runs your Node.js server in the background and starts automatically with Windows.
