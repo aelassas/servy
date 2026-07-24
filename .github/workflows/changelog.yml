@@ -89,7 +89,8 @@ jobs:
               $url = $Release.html_url
               
               $date = if (![string]::IsNullOrWhiteSpace($Release.published_at)) { 
-                  [datetime]::Parse($Release.published_at).ToString("yyyy-MM-dd") 
+                 [DateTime]::Parse($Release.published_at, [Globalization.CultureInfo]::InvariantCulture,
+                   [Globalization.DateTimeStyles]::AdjustToUniversal).ToString("yyyy-MM-dd")
               } else { 
                   "Pending" 
               }
