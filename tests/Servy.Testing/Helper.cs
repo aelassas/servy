@@ -28,7 +28,8 @@ namespace Servy.Testing
 
         private static readonly object _extractionLock = new object();
         private static readonly object _applicationLock = new object();
-        private static bool _applicationCreated;
+        private static volatile bool _applicationCreated;
+        private static Thread? _persistentAppThread;
 
         /// <summary>
         /// Extracts the architecture-appropriate Sysinternals handle binary
@@ -82,8 +83,8 @@ namespace Servy.Testing
         /// </summary>
         /// <param name="stream">The embedded resource data stream to extract. If null, the operation returns immediately.</param>
         /// <remarks>
-        /// This method enforces pessimistic file existence checks and leverages <see cref="FileMode.CreateNew"/> combined 
-        /// with <see cref="FileShare.ReadWrite"/> to safely navigate file-locking races caused by real-time background scanners, 
+        /// This method enforces pessimistic file existence checks and leverages atomic publishing via a temporary 
+        /// intermediate file to safely navigate file-locking races caused by real-time background scanners, 
         /// security software, or parallel test execution threads on continuous integration (CI) agents.
         /// </remarks>
         private static void WriteResourceToDisk(Stream? stream)
@@ -96,16 +97,34 @@ namespace Servy.Testing
                 // Only write when it is not physically there; a lost race surfaces as ERROR_FILE_EXISTS below.
                 if (File.Exists(HandleExePath)) return;
 
-                // FileShare.ReadWrite. On CI, Antivirus or Windows Indexer 
-                // often grab handles the millisecond a file is created.
-                using (FileStream fileStream = new FileStream(HandleExePath, FileMode.CreateNew, FileAccess.Write, FileShare.ReadWrite))
+                // Write to a temporary file first to guarantee atomic publishing and prevent 
+                // corrupted/truncated binary execution if a run is aborted mid-write.
+                string tempPath = $"{HandleExePath}.{Guid.NewGuid():N}.tmp";
+
+                try
                 {
-                    stream.CopyTo(fileStream);
+                    using (FileStream fileStream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    {
+                        stream.CopyTo(fileStream);
+                    }
+
+                    // Atomic publish to the final destination
+                    File.Move(tempPath, HandleExePath);
+                }
+                catch
+                {
+                    // Clean up the transient file if the write or move fails
+                    if (File.Exists(tempPath))
+                    {
+                        try { File.Delete(tempPath); }
+                        catch { /* Ignore cleanup exceptions on temporary file */ }
+                    }
+                    throw;
                 }
             }
-            catch (IOException ex) when (ex.HResult == unchecked((int)0x80070050)) // ERROR_FILE_EXISTS
+            catch (IOException ex) when (ex.HResult == unchecked((int)0x80070050) || ex is IOException) // ERROR_FILE_EXISTS / Destination exists
             {
-                // If we hit a race where the file was created between our check and our open, 
+                // If we hit a race where the file was created between our check and our move, 
                 // it's a win-the file is there.
             }
         }
@@ -137,26 +156,49 @@ namespace Servy.Testing
         /// STA-thread-bound UI components, converters, or resource dictionaries during testing.
         /// </summary>
         /// <remarks>
-        /// This method employs a double-checked locking pattern on an internal initialization lock
-        /// to ensure thread-safe, singleton initialization of the WPF application context, preventing
-        /// <see cref="InvalidOperationException"/> when UI-dependent code executes in isolated test environments.
+        /// This method instantiates the shared WPF <see cref="Application"/> on a dedicated, persistent 
+        /// background STA thread with an active <see cref="Dispatcher"/> pump. This prevents dead-dispatcher 
+        /// affinity issues when multiple isolated test runs execute across transient STA threads.
         /// </remarks>
         public static Application EnsureApplication()
         {
-            lock (_applicationLock)
+            if (!_applicationCreated)
             {
-                if (!_applicationCreated)
+                lock (_applicationLock)
                 {
-                    if (Application.Current == null)
+                    if (!_applicationCreated)
                     {
-                        // Explicitly force OnExplicitShutdown process-wide lifecycle behavior 
-                        // to prevent transient test window closures from tearing down the shared test host.
-                        new Application
+                        if (Application.Current == null)
                         {
-                            ShutdownMode = ShutdownMode.OnExplicitShutdown
-                        };
+                            var initSignal = new ManualResetEventSlim(false);
+
+                            _persistentAppThread = new Thread(() =>
+                            {
+                                // Explicitly force OnExplicitShutdown process-wide lifecycle behavior 
+                                // to prevent transient test window closures from tearing down the shared test host.
+                                _ = new Application
+                                {
+                                    ShutdownMode = ShutdownMode.OnExplicitShutdown
+                                };
+
+                                initSignal.Set();
+
+                                // Keep the persistent STA message pump pumping indefinitely for the AppDomain
+                                Dispatcher.Run();
+                            })
+                            {
+                                IsBackground = true
+                            };
+
+                            _persistentAppThread.SetApartmentState(ApartmentState.STA);
+                            _persistentAppThread.Start();
+
+                            // Wait for the Application object to initialize on the persistent STA thread
+                            initSignal.Wait();
+                        }
+
+                        _applicationCreated = true;
                     }
-                    _applicationCreated = true;
                 }
             }
 
@@ -338,9 +380,9 @@ namespace Servy.Testing
             CancellationToken cancellationToken = default)
         {
             var interval = pollInterval ?? TimeSpan.FromMilliseconds(20);
-            var deadline = DateTime.UtcNow + timeout;
+            var sw = Stopwatch.StartNew();
 
-            while (DateTime.UtcNow < deadline)
+            while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -349,7 +391,18 @@ namespace Servy.Testing
                     return;
                 }
 
+                if (sw.Elapsed >= timeout)
+                {
+                    break;
+                }
+
                 await Task.Delay(interval, cancellationToken);
+            }
+
+            // Final check: Catch cases where the predicate flipped during the final delay interval
+            if (predicate())
+            {
+                return;
             }
 
             throw new TimeoutException($"Test execution boundary reached a timeout condition while waiting for state fulfillment after {timeout.TotalSeconds}s.");
