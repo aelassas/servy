@@ -1,5 +1,4 @@
 ﻿using Moq;
-using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
@@ -436,11 +435,7 @@ namespace Servy.Service.UnitTests.Helpers
             // Arrange
             var mockLog = new Mock<IServyLogger>();
 
-#if DEBUG
-            var dir = AppFoldersHelper.GetAppDirectory();
-#else
-            var dir = AppConfig.ProgramDataPath;
-#endif
+            var dir = GetTargetRestarterDirectory();
 
             var restarterPath = Path.Combine(dir, "Servy.Restarter.exe");
 
@@ -775,7 +770,7 @@ namespace Servy.Service.UnitTests.Helpers
             // to be located in AppConfig.ProgramDataPath. In Debug, it expects BaseDirectory.
             // We write the file directly where the compiled execution path expects it.
 #if DEBUG
-            return AppDomain.CurrentDomain.BaseDirectory;
+            return AppFoldersHelper.GetAppDirectory();
 #else
             return AppConfig.ProgramDataPath;
 #endif
