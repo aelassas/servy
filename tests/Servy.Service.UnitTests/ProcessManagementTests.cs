@@ -82,7 +82,7 @@ namespace Servy.Service.UnitTests
                 service.InvokeSafeKillProcess(mockProcess.Object);
 
                 // Assert
-                ctx.Logger.Verify(l => l.Error(It.Is<string>(s => s.Equals("SafeKillProcess background task failed: Boom!")), It.IsAny<Exception>()), Times.Once);
+                ctx.Logger.Verify(l => l.Error("SafeKillProcess background task failed: Boom!", It.IsAny<Exception>()), Times.Once);
             }
         }
     }

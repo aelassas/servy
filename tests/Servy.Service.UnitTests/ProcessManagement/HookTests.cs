@@ -17,39 +17,50 @@ namespace Servy.Service.UnitTests.ProcessManagement
         [Fact]
         public void Properties_SetGet_WorkCorrectly()
         {
-            var process = new Process();
-            var hook = new Hook
+            // Arrange
+            using (var process = new Process())
             {
-                OperationName = "TestOp",
-                Process = process
-            };
+                // Act
+                var hook = new Hook
+                {
+                    OperationName = "TestOp",
+                    Process = process
+                };
 
-            Assert.Equal("TestOp", hook.OperationName);
-            Assert.Equal(process, hook.Process);
+                // Assert
+                Assert.Equal("TestOp", hook.OperationName);
+                Assert.Equal(process, hook.Process);
+            }
         }
 
         [Fact]
         public void Dispose_WhenProcessIsNotNull_DisposesProcess()
         {
+            // Arrange
             var hook = new Hook();
             // We create a dummy process instance. 
             // We do not Start() it, as we only want to test the disposal logic.
             var process = new Process();
             hook.Process = process;
 
-            // Act & Assert
+            // Act
             hook.Dispose();
+
+            // Assert
             Assert.Throws<InvalidOperationException>(() => _ = process.Id); // or ObjectDisposedException, depending on member
         }
 
         [Fact]
         public void Dispose_WhenProcessIsNull_DoesNotThrow()
         {
+            // Arrange
             var hook = new Hook();
             hook.Process = null;
 
-            // Act & Assert
+            // Act
             var ex = Record.Exception(() => hook.Dispose());
+
+            // Assert
             Assert.Null(ex);
         }
 
@@ -75,8 +86,10 @@ namespace Servy.Service.UnitTests.ProcessManagement
             bool disposedAfterFirst = TestReflection.GetField<bool>(hook, "_disposed");
             Assert.True(disposedAfterFirst);
 
-            // Act & Assert - Second call should hit 'if (_disposed) return;' and return safely
+            // Act
             var ex = Record.Exception(hook.Dispose);
+
+            // Assert - Second call should hit 'if (_disposed) return;' and return safely
             Assert.Null(ex);
 
             // Clean up the shell process wrapper safely
@@ -88,18 +101,20 @@ namespace Servy.Service.UnitTests.ProcessManagement
         {
             // Arrange
             var hook = new TestableHook();
-            var process = new Process();
-            hook.Process = process;
+            using (var process = new Process())
+            {
+                hook.Process = process;
 
-            // Act
-            hook.CallProtectedDispose(false);
+                // Act
+                hook.CallProtectedDispose(false);
 
-            // Process should not be disposed here, ensuring we don't try to 
-            // access managed objects during finalization.
-            var ex = Record.Exception(() => hook.CallProtectedDispose(false));
+                // Process should not be disposed here, ensuring we don't try to 
+                // access managed objects during finalization.
+                var ex = Record.Exception(() => hook.CallProtectedDispose(false));
 
-            // Assert
-            Assert.Null(ex);
+                // Assert
+                Assert.Null(ex);
+            }
         }
     }
 }
