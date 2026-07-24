@@ -378,7 +378,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets the maximum time context in seconds allowed for the external heartbeat URL request to complete before cancellation.
+        /// Gets or sets the maximum time in seconds allowed for the heartbeat URL request to complete before it is cancelled.
         /// </summary>
         public string? HeartbeatUrlTimeoutSeconds
         {
@@ -387,7 +387,7 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets a flag indicating whether extended operational lifecycle state tracking flags are appended to the heartbeat base URL destination.
+        /// Gets or sets a flag indicating whether start/fail status suffixes are appended to the heartbeat URL.
         /// </summary>
         public bool EnableHeartbeatUrlFlags
         {
