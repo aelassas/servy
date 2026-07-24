@@ -456,7 +456,7 @@ function Invoke-ServyCli {
       try {
         # Kill the entire process tree, not just the immediate CLI process
         & taskkill.exe /T /F /PID $process.Id 2>&1 | Out-Null
-        $process.WaitForExit($script:ServyDrainTimeoutMs)
+        [void]$process.WaitForExit($script:ServyDrainTimeoutMs)
         $killed = $process.HasExited
         if ($killed) { [void]$process.WaitForExit() }
       }
@@ -850,7 +850,7 @@ function Install-ServyService {
         Optional absolute URL used to send out-of-band diagnostic heartbeat pings (e.g., dead man's switch platforms like healthchecks.io).
 
     .PARAMETER HeartbeatUrlTimeoutSeconds
-        Maximum time in seconds to wait for a response from the heartbeat URL. Optional. Set to 0 for unlimited wait.
+        Maximum time in seconds to wait for a response from the heartbeat URL. Optional. Must be between 2 and 30 seconds
 
     .PARAMETER EnableHeartbeatUrlFlags
         Switch to enable heartbeat URL flags ('/start', '/fail'). Optional.
