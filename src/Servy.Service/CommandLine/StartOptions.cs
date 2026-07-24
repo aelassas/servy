@@ -108,14 +108,14 @@ namespace Servy.Service.CommandLine
         public string? HeartbeatUrl { get; set; }
 
         /// <summary>
-        /// Gets or sets the maximum time context in seconds allowed for the external heartbeat URL request to complete before cancellation.
+        /// Gets or sets the maximum time in seconds allowed for the external heartbeat URL request to complete before it is cancelled.
         /// Value must be clamped between <see cref="AppConfig.MinHeartbeatUrlTimeoutSeconds"/> and <see cref="AppConfig.MaxHeartbeatUrlTimeoutSeconds"/>.
         /// Default is <see cref="AppConfig.DefaultHeartbeatUrlTimeoutSeconds"/>.
         /// </summary>
         public int HeartbeatUrlTimeoutSeconds { get; set; } = AppConfig.DefaultHeartbeatUrlTimeoutSeconds;
 
         /// <summary>
-        /// Gets or sets a flag indicating whether extended operational lifecycle state tracking flags are appended to the heartbeat base URL destination.
+        /// Gets or sets a value indicating whether start/fail status flags are appended to the heartbeat URL.
         /// When true, Servy appends <see cref="AppConfig.HeartbeatUrlStartFlag"/> during startup handshakes and <see cref="AppConfig.HeartbeatUrlFailFlag"/> upon failure cascades.
         /// Default is <see cref="AppConfig.DefaultEnableHeartbeatUrlFlags"/>.
         /// </summary>
