@@ -131,6 +131,9 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.HeartbeatInterval = "60";
             _viewModel.MaxFailedChecks = "5";
             _viewModel.MaxRestartAttempts = "3";
+            _viewModel.HeartbeatUrl = "https://example.com/heartbeat";
+            _viewModel.HeartbeatUrlTimeoutSeconds = "10";
+            _viewModel.EnableHeartbeatUrlFlags = true;
             _viewModel.SelectedStartupType = ServiceStartType.Manual;
             _viewModel.SelectedProcessPriority = ProcessPriority.High;
             _viewModel.SelectedRecoveryAction = RecoveryAction.RestartService;
@@ -206,6 +209,9 @@ namespace Servy.UnitTests.ViewModels
                     c.MaxFailedChecks == _viewModel.MaxFailedChecks &&
                     c.RecoveryAction == _viewModel.SelectedRecoveryAction &&
                     c.MaxRestartAttempts == _viewModel.MaxRestartAttempts &&
+                    c.HeartbeatUrl == _viewModel.HeartbeatUrl &&
+                    c.HeartbeatUrlTimeoutSeconds == _viewModel.HeartbeatUrlTimeoutSeconds &&
+                    c.EnableHeartbeatUrlFlags == _viewModel.EnableHeartbeatUrlFlags &&
                     c.FailureProgramPath == _viewModel.FailureProgramPath &&
                     c.FailureProgramStartupDirectory == _viewModel.FailureProgramStartupDirectory &&
                     c.FailureProgramParameters == _viewModel.FailureProgramParameters &&
@@ -684,6 +690,9 @@ namespace Servy.UnitTests.ViewModels
                 RecoveryAction = (int)RecoveryAction.RestartProcess,
                 RecoveryOnCleanExit = true,
                 MaxRestartAttempts = 5,
+                HeartbeatUrl = "https://example.com/heartbeat",
+                HeartbeatUrlTimeoutSeconds = 10,
+                EnableHeartbeatUrlFlags = true,
                 FailureProgramPath = "fail.exe",
                 FailureProgramStartupDirectory = "fail_dir",
                 FailureProgramParameters = "--fail-args",
@@ -744,6 +753,9 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(RecoveryAction.RestartProcess, _viewModel.SelectedRecoveryAction);
             Assert.True(_viewModel.RecoveryOnCleanExit);
             Assert.Equal("5", _viewModel.MaxRestartAttempts);
+            Assert.Equal(dto.HeartbeatUrl, _viewModel.HeartbeatUrl);
+            Assert.Equal("10", _viewModel.HeartbeatUrlTimeoutSeconds);
+            Assert.True(_viewModel.EnableHeartbeatUrlFlags);
             Assert.Equal(dto.FailureProgramPath, _viewModel.FailureProgramPath);
             Assert.Equal(dto.FailureProgramStartupDirectory, _viewModel.FailureProgramStartupDirectory);
             Assert.Equal(dto.FailureProgramParameters, _viewModel.FailureProgramParameters);
@@ -807,6 +819,9 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.SelectedRecoveryAction = RecoveryAction.None;
             _viewModel.RecoveryOnCleanExit = false;
             _viewModel.MaxRestartAttempts = "0";
+            _viewModel.HeartbeatUrl = "https://example.com/heartbeat";
+            _viewModel.HeartbeatUrlTimeoutSeconds = "10";
+            _viewModel.EnableHeartbeatUrlFlags = true;
             _viewModel.FailureProgramPath = "kill.exe";
             _viewModel.FailureProgramStartupDirectory = "kill_dir";
             _viewModel.FailureProgramParameters = "--now";
@@ -866,6 +881,9 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal((int)RecoveryAction.None, dto.RecoveryAction);
             Assert.False(dto.RecoveryOnCleanExit);
             Assert.Equal(0, dto.MaxRestartAttempts);
+            Assert.Equal(_viewModel.HeartbeatUrl, dto.HeartbeatUrl);
+            Assert.Equal(10, dto.HeartbeatUrlTimeoutSeconds);
+            Assert.True(dto.EnableHeartbeatUrlFlags);
             Assert.Equal(_viewModel.FailureProgramPath, dto.FailureProgramPath);
             Assert.Equal(_viewModel.FailureProgramStartupDirectory, dto.FailureProgramStartupDirectory);
             Assert.Equal(_viewModel.FailureProgramParameters, dto.FailureProgramParameters);
@@ -908,6 +926,39 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(_viewModel.PostStopExecutablePath, dto.PostStopExecutablePath);
             Assert.Equal(_viewModel.PostStopStartupDirectory, dto.PostStopStartupDirectory);
             Assert.Equal(_viewModel.PostStopParameters, dto.PostStopParameters);
+        }
+
+        [Fact]
+        public void ModelToServiceDto_WithInvalidNumericInputs_FallsBackToDefaultValue()
+        {
+            // Arrange
+            _viewModel.RotationSize = "invalid";
+            _viewModel.MaxRotations = "abc";
+            _viewModel.HeartbeatInterval = "10.5";
+            _viewModel.MaxFailedChecks = "not_a_number";
+            _viewModel.MaxRestartAttempts = "xyz";
+            _viewModel.HeartbeatUrlTimeoutSeconds = "ten";
+            _viewModel.PreLaunchTimeoutSeconds = "5s";
+            _viewModel.PreLaunchRetryAttempts = "1_0";
+            _viewModel.StartTimeout = "3000ms";
+            _viewModel.StopTimeout = "2000ms";
+            _viewModel.PreStopTimeoutSeconds = "bad_val";
+
+            // Act
+            var dto = _viewModel.ModelToServiceDto();
+
+            // Assert
+            Assert.Equal(-1, dto.RotationSize);
+            Assert.Equal(-1, dto.MaxRotations);
+            Assert.Equal(-1, dto.HeartbeatInterval);
+            Assert.Equal(-1, dto.MaxFailedChecks);
+            Assert.Equal(-1, dto.MaxRestartAttempts);
+            Assert.Equal(-1, dto.HeartbeatUrlTimeoutSeconds);
+            Assert.Equal(-1, dto.PreLaunchTimeoutSeconds);
+            Assert.Equal(-1, dto.PreLaunchRetryAttempts);
+            Assert.Equal(-1, dto.StartTimeout);
+            Assert.Equal(-1, dto.StopTimeout);
+            Assert.Equal(-1, dto.PreStopTimeoutSeconds);
         }
 
         #endregion

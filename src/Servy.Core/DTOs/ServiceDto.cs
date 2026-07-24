@@ -188,15 +188,15 @@ namespace Servy.Core.DTOs
         public string HeartbeatUrl { get; set; }
 
         /// <summary>
-        /// Maximum time context in seconds allowed for the external heartbeat URL request to complete before cancellation.
+        /// Maximum time in seconds allowed for the heartbeat URL request to complete before it is cancelled.
         /// Value must be clamped between <see cref="AppConfig.MinHeartbeatUrlTimeoutSeconds"/> and <see cref="AppConfig.MaxHeartbeatUrlTimeoutSeconds"/>.
         /// </summary>
         [SqlColumn("INTEGER")]
         public int? HeartbeatUrlTimeoutSeconds { get; set; }
 
         /// <summary>
-        /// Indicates whether extended operational lifecycle state tracking flags are appended to the heartbeat base URL destination.
-        /// When true, Servy appends <see cref="AppConfig.HeartbeatUrlStartFlag"/> during startup handshakes and <see cref="AppConfig.HeartbeatUrlFailFlag"/> upon failure cascades.
+        /// Indicates whether start/fail status suffixes are appended to the heartbeat URL.
+        /// When true, Servy appends <see cref="AppConfig.HeartbeatUrlStartFlag"/> on startup and <see cref="AppConfig.HeartbeatUrlFailFlag"/> on failure.
         /// </summary>
         [SqlColumn("INTEGER")]
         public bool? EnableHeartbeatUrlFlags { get; set; }
