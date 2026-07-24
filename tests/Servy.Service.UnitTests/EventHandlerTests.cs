@@ -23,6 +23,16 @@ namespace Servy.Service.UnitTests
             _mockProcessKiller = new Mock<IProcessKiller>();
         }
 
+        private static StartOptions CreateDefaultStartOptions() => new StartOptions
+        {
+            StdoutPath = "valid-path.log",
+            StderrPath = "error-path.log",
+            RecoveryOnCleanExit = false,
+            HeartbeatUrl = "https://127.0.0.1:1/test-uuid",
+            HeartbeatUrlTimeoutSeconds = 10,
+            HeartbeatInterval = 30
+        };
+
         [Fact]
         public void OnOutputDataReceived_WritesToRotatingWriters_IgnoresNullOrEmpty()
         {
@@ -38,12 +48,8 @@ namespace Servy.Service.UnitTests
             var emptyArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(null);
             var emptyStringArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(string.Empty);
 
-            var startOptions = new StartOptions
-            {
-                StdoutPath = "valid-path.log",
-                StderrPath = "error-path.log",
-                RotationSizeInBytes = 1024 * 1024
-            };
+            var startOptions = CreateDefaultStartOptions();
+            startOptions.RotationSizeInBytes = 1024 * 1024;
 
             service.InvokeHandleLogWriters(startOptions);
 
@@ -81,12 +87,8 @@ namespace Servy.Service.UnitTests
             var emptyArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(null);
             var emptyStringArgs = DataReceivedEventArgsFactory.CreateDataReceivedEventArgs(string.Empty);
 
-            var startOptions = new StartOptions
-            {
-                StdoutPath = "valid-path.log",
-                StderrPath = "error-path.log",
-                RotationSizeInBytes = 1024 * 1024
-            };
+            var startOptions = CreateDefaultStartOptions();
+            startOptions.RotationSizeInBytes = 1024 * 1024;
 
             service.InvokeHandleLogWriters(startOptions);
 
@@ -118,16 +120,7 @@ namespace Servy.Service.UnitTests
             var service = ctx.Build(_mockProcessKiller.Object);
             _disposableServices.Add(service);
 
-            var startOptions = new StartOptions
-            {
-                StdoutPath = "valid-path.log",
-                StderrPath = "error-path.log",
-                RecoveryOnCleanExit = false,
-                HeartbeatUrl = "https://hc-ping.com/test-uuid",
-                HeartbeatUrlTimeoutSeconds = 10,
-                HeartbeatInterval = 30
-            };
-            TestReflection.SetField(service, "_options", startOptions);
+            TestReflection.SetField(service, "_options", CreateDefaultStartOptions());
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Returns(0);
@@ -148,16 +141,7 @@ namespace Servy.Service.UnitTests
             var service = ctx.Build(_mockProcessKiller.Object);
             _disposableServices.Add(service);
 
-            var startOptions = new StartOptions
-            {
-                StdoutPath = "valid-path.log",
-                StderrPath = "error-path.log",
-                RecoveryOnCleanExit = false,
-                HeartbeatUrl = "https://hc-ping.com/test-uuid",
-                HeartbeatUrlTimeoutSeconds = 10,
-                HeartbeatInterval = 30
-            };
-            TestReflection.SetField(service, "_options", startOptions);
+            TestReflection.SetField(service, "_options", CreateDefaultStartOptions());
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Returns(42);
@@ -178,16 +162,7 @@ namespace Servy.Service.UnitTests
             var service = ctx.Build(_mockProcessKiller.Object);
             _disposableServices.Add(service);
 
-            var startOptions = new StartOptions
-            {
-                StdoutPath = "valid-path.log",
-                StderrPath = "error-path.log",
-                RecoveryOnCleanExit = false,
-                HeartbeatUrl = "https://hc-ping.com/test-uuid",
-                HeartbeatUrlTimeoutSeconds = 10,
-                HeartbeatInterval = 30
-            };
-            TestReflection.SetField(service, "_options", startOptions);
+            TestReflection.SetField(service, "_options", CreateDefaultStartOptions());
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Throws(new InvalidOperationException("boom"));
