@@ -1,12 +1,10 @@
 ﻿using Servy.CLI.Resources;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Servy.CLI.Helpers
 {
     /// <summary>
     /// Provides helper methods for console applications.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public static class ConsoleHelper
     {
         // Test Seam: Allows test infrastructure suites to mock or force redirection states deterministically
