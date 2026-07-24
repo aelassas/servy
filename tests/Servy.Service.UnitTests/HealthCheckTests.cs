@@ -106,28 +106,24 @@ namespace Servy.Service.UnitTests
             service.InvokeCheckHealth(null, null);
 
             // Assert
-            if (action == RecoveryAction.None)
+            switch (action)
             {
-                ctx.Helper.VerifyNoOtherCalls();
-            }
-            else
-            {
-                switch (action)
-                {
-                    case RecoveryAction.RestartProcess:
-                        ctx.Helper.Verify(h => h.RestartProcess(
-                            It.IsAny<IProcessWrapper>(),
-                            It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
-                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
-                        break;
-                    case RecoveryAction.RestartService:
-                        ctx.Helper.Verify(h => h.RestartService(service.ServiceName, It.IsAny<IServyLogger>()), Times.Once);
-                        break;
-                    case RecoveryAction.RestartComputer:
-                        ctx.Helper.Verify(h => h.RestartComputer(It.IsAny<IServyLogger>()), Times.Once);
-                        break;
-                }
+                case RecoveryAction.None:
+                    ctx.Helper.VerifyNoOtherCalls();
+                    break;
+                case RecoveryAction.RestartProcess:
+                    ctx.Helper.Verify(h => h.RestartProcess(
+                        It.IsAny<IProcessWrapper>(),
+                        It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                    break;
+                case RecoveryAction.RestartService:
+                    ctx.Helper.Verify(h => h.RestartService(service.ServiceName, It.IsAny<IServyLogger>()), Times.Once);
+                    break;
+                case RecoveryAction.RestartComputer:
+                    ctx.Helper.Verify(h => h.RestartComputer(It.IsAny<IServyLogger>()), Times.Once);
+                    break;
             }
         }
 
@@ -171,7 +167,8 @@ namespace Servy.Service.UnitTests
             ctx.Helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>, CancellationToken>>(),
                                  It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                                  It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                  .Callback(() => {
+                  .Callback(() =>
+                  {
                       processHasExited = false;
                       recoveryTriggered.TrySetResult(true);
                   });
