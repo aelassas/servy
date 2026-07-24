@@ -71,10 +71,10 @@ namespace Servy.Core.Services
         /// <summary>The absolute URL used to send out-of-band diagnostic heartbeat pings (e.g., dead man's switch platforms like healthchecks.io).</summary>
         public string HeartbeatUrl { get; set; }
 
-        /// <summary>the maximum time context in seconds allowed for the external heartbeat URL request to complete before cancellation.</summary>
+        /// <summary>Maximum time in seconds to wait for the external heartbeat URL request to complete before it is cancelled.</summary>
         public int HeartbeatUrlTimeoutSeconds { get; set; } = AppConfig.DefaultHeartbeatUrlTimeoutSeconds;
 
-        /// <summary>Indicates whether extended operational lifecycle state tracking flags are appended to the heartbeat base URL destination. </summary>
+        /// <summary>Whether start/fail status flags are appended to the heartbeat URL query string.</summary>
         public bool EnableHeartbeatUrlFlags { get; set; } = AppConfig.DefaultEnableHeartbeatUrlFlags;
 
         /// <summary>Failure program path.</summary>
