@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 
@@ -12,8 +13,14 @@ namespace Servy.Service.UnitTests.Helpers
         /// <param name="data">The data to be passed to the DataReceivedEventArgs constructor.</param>
         public static DataReceivedEventArgs CreateDataReceivedEventArgs(string data)
         {
-            var constructor = typeof(DataReceivedEventArgs).GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault();
-            return (DataReceivedEventArgs)constructor?.Invoke(new object[] { data });
+            var constructor = typeof(DataReceivedEventArgs).GetConstructor(
+                BindingFlags.NonPublic | BindingFlags.Instance,
+                binder: null,
+                types: new[] { typeof(string) },
+                modifiers: null)
+                ?? throw new InvalidOperationException(
+                    "Internal DataReceivedEventArgs(string) constructor not found; the runtime layout may have changed.");
+            return (DataReceivedEventArgs)constructor.Invoke(new object[] { data });
         }
     }
 }

@@ -493,7 +493,7 @@ namespace Servy.Service.UnitTests.Helpers
             {
                 new EnvironmentVariable { Name = "SYSTEMROOT", Value = "C:\\Fake" },
                 new EnvironmentVariable { Name = "TEMP", Value = "C:\\FakeTemp" },
-                new EnvironmentVariable { Name = "USERNAME", Value = "Administrator" }
+                new EnvironmentVariable { Name = "USERNAME", Value = "__ServyFakeUser__" }
             };
 
             // Act
@@ -502,7 +502,7 @@ namespace Servy.Service.UnitTests.Helpers
             // Assert
             Assert.NotEqual("C:\\Fake", expanded["SYSTEMROOT"]);
             Assert.NotEqual("C:\\FakeTemp", expanded["TEMP"]);
-            Assert.NotEqual("Administrator", expanded["USERNAME"]);
+            Assert.NotEqual("__ServyFakeUser__", expanded["USERNAME"]);
 
             Assert.Equal(Environment.GetEnvironmentVariable("SystemRoot"), expanded["SYSTEMROOT"], ignoreCase: true);
             Assert.Equal(Environment.GetEnvironmentVariable("TEMP"), expanded["TEMP"], ignoreCase: true);

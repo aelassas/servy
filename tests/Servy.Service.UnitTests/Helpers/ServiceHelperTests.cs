@@ -1,5 +1,4 @@
 ﻿using Moq;
-using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
@@ -441,11 +440,7 @@ namespace Servy.Service.UnitTests.Helpers
             // Arrange
             var mockLog = new Mock<IServyLogger>();
 
-#if DEBUG
-            var dir = AppDomain.CurrentDomain.BaseDirectory;
-#else
-            var dir = AppConfig.ProgramDataPath;
-#endif
+            var dir = GetTargetRestarterDirectory();
 
             var restarterPath = Path.Combine(dir, "Servy.Restarter.Net48.exe");
 
