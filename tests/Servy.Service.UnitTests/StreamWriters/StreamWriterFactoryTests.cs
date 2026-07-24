@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Enums;
 using Servy.Service.StreamWriters;
+using Servy.Testing;
 using Xunit;
 
 namespace Servy.Service.UnitTests.StreamWriters
@@ -29,7 +30,10 @@ namespace Servy.Service.UnitTests.StreamWriters
                 maxRotations,
                 useLocalTime))
             {
-                Assert.IsType<RotatingStreamWriterAdapter>(result);
+                var adapter = Assert.IsType<RotatingStreamWriterAdapter>(result);
+                var inner = TestReflection.GetField<Core.IO.RotatingStreamWriter>(adapter, "_inner");
+                var innerUseLocalTimeForRotation = TestReflection.GetField<bool>(inner, "_useLocalTimeForRotation");
+                Assert.Equal(useLocalTime, innerUseLocalTimeForRotation);
             }
         }
     }

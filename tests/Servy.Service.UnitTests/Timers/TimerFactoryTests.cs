@@ -1,4 +1,5 @@
 ﻿using Servy.Service.Timers;
+using Servy.Testing;
 using Xunit;
 
 namespace Servy.Service.UnitTests.Timers
@@ -15,7 +16,9 @@ namespace Servy.Service.UnitTests.Timers
             // Act & Assert
             using (var result = factory.Create(interval))
             {
-                Assert.IsType<TimerAdapter>(result);
+                var adapter = Assert.IsType<TimerAdapter>(result);
+                var inner = TestReflection.GetField<System.Timers.Timer>(adapter, "_timer");
+                Assert.Equal(interval, inner.Interval);
             }
         }
     }

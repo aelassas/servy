@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 
 namespace Servy.Testing
 {
@@ -10,6 +11,8 @@ namespace Servy.Testing
     /// </summary>
     public abstract class TempDirectoryTestBase : IDisposable
     {
+        private const int MaxRetryAttempts = 3;
+
         /// <summary>
         /// Gets the absolute filesystem path to the isolated temporary directory allocated for the current test context.
         /// </summary>
@@ -27,11 +30,26 @@ namespace Servy.Testing
         /// </summary>
         public virtual void Dispose()
         {
-            if (Directory.Exists(TempDirectory))
+            if (!Directory.Exists(TempDirectory))
+                return;
+
+            // Retry loop to handle transient Windows file locks (AV scans, indexer, async streams)
+            for (int i = 0; i < MaxRetryAttempts; i++)
             {
-                // Note: Derived classes can override this method to add retry loops or handle 
-                // lingering OS handles from stream-bound assertions.
-                Directory.Delete(TempDirectory, true);
+                try
+                {
+                    Directory.Delete(TempDirectory, recursive: true);
+                    return; // Cleaned up successfully
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    if (i == MaxRetryAttempts - 1)
+                    {
+                        // Final attempt failed due to persistent lock; allow orphan in %TEMP% rather than failing a passing test
+                        break;
+                    }
+                    Thread.Sleep(50);
+                }
             }
         }
     }
