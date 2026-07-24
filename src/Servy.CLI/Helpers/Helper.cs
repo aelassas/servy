@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace Servy.CLI.Helpers
 {
+    /// <summary>
+    /// Provides utility methods for CLI verb extraction, console output formatting, and option parsing.
+    /// </summary>
     public static class Helper
     {
         /// <summary>
@@ -104,17 +107,25 @@ namespace Servy.CLI.Helpers
         public static bool TryParseFileType(string input, out ConfigFileType fileType, out string error)
         {
             var trimmed = input?.Trim();
-            if (string.IsNullOrEmpty(trimmed)
-                || trimmed.IndexOf(',') >= 0
-                || char.IsDigit(trimmed[0])
-                || !Enum.TryParse(trimmed, true, out fileType)
-                || !Enum.IsDefined(typeof(ConfigFileType), fileType))
+            if (string.IsNullOrEmpty(trimmed))
             {
                 fileType = default;
                 error = Strings.Msg_InvalidConfigFileType;
                 return false;
             }
 
+            // Match directly against defined enum names to reject numeric inputs (including signed numerics like +1, -0) or [Flags] comma syntax.
+            var match = Enum.GetNames(typeof(ConfigFileType))
+                .FirstOrDefault(n => n.Equals(trimmed, StringComparison.OrdinalIgnoreCase));
+
+            if (match == null)
+            {
+                fileType = default;
+                error = Strings.Msg_InvalidConfigFileType;
+                return false;
+            }
+
+            fileType = (ConfigFileType)Enum.Parse(typeof(ConfigFileType), match);
             error = string.Empty;
             return true;
         }
