@@ -208,26 +208,25 @@ namespace Servy.CLI.Options
         public string MaxRestartAttempts { get; set; }
 
         /// <summary>
-        /// Gets or sets the absolute URL used to send out-of-band diagnostic heartbeat pings (e.g., dead man's switch platforms like healthchecks.io).
-        /// While the process is healthy, Servy periodically hits this endpoint to prove host and agent vitality.
+        /// Gets or sets the absolute URL used to send out-of-band diagnostic heartbeat pings (e.g., healthchecks.io).
+        /// While the process is healthy, Servy periodically pings this endpoint to confirm service vitality.
         /// </summary>
         [Option("heartbeatUrl", HelpText = "Absolute URL for out-of-band diagnostic heartbeat pings.")]
         public string HeartbeatUrl { get; set; }
 
         /// <summary>
-        /// Gets or sets the maximum time context in seconds allowed for the external heartbeat URL request to complete before cancellation.
+        /// Gets or sets the HTTP request timeout in seconds for external heartbeat URL pings.
         /// Value must be clamped between <see cref="AppConfig.MinHeartbeatUrlTimeoutSeconds"/> and <see cref="AppConfig.MaxHeartbeatUrlTimeoutSeconds"/>.
         /// Default is <see cref="AppConfig.DefaultHeartbeatUrlTimeoutSeconds"/>.
         /// </summary>
-        [Option("heartbeatUrlTimeoutSeconds", HelpText = "Maximum time context in seconds for external heartbeat URL request.")]
+        [Option("heartbeatUrlTimeoutSeconds", HelpText = "Timeout in seconds for external heartbeat URL requests.")]
         public string HeartbeatUrlTimeoutSeconds { get; set; }
 
         /// <summary>
-        /// Gets or sets a flag indicating whether extended operational lifecycle state tracking flags are appended to the heartbeat base URL destination.
-        /// When true, Servy appends <see cref="AppConfig.HeartbeatUrlStartFlag"/> during startup handshakes and <see cref="AppConfig.HeartbeatUrlFailFlag"/> upon failure cascades.
+        /// Gets or sets a value indicating whether extended flags (/start, /fail) are appended to the heartbeat URL during service startup and failure events.
         /// Default is <see cref="AppConfig.DefaultEnableHeartbeatUrlFlags"/>.
         /// </summary>
-        [Option("enableHeartbeatUrlFlags", HelpText = "Enable extended operational lifecycle state tracking flags (/start, /fail) for heartbeat URL.")]
+        [Option("enableHeartbeatUrlFlags", HelpText = "Append /start and /fail to the heartbeat URL on service start and failure.")]
         public bool EnableHeartbeatUrlFlags { get; set; } = AppConfig.DefaultEnableHeartbeatUrlFlags;
 
         /// <summary>
