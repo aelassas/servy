@@ -1,4 +1,5 @@
-﻿using Servy.Core.Logging;
+﻿using Servy.Core.Config;
+using Servy.Core.Logging;
 using System.Runtime.InteropServices;
 using static Servy.Core.Native.NativeMethods;
 
@@ -39,7 +40,7 @@ namespace Servy.Core.Native
             IntPtr snapshot = IntPtr.Zero;
 
             // Bounded retry sequence matching Microsoft's explicit optimization guidance for busy systems
-            for (int attempt = 0; attempt < 5; attempt++)
+            for (int attempt = 0; attempt < AppConfig.Toolhelp32SnapshotMaxRetries; attempt++)
             {
                 snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 

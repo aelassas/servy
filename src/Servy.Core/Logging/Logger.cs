@@ -488,9 +488,9 @@ namespace Servy.Core.Logging
         /// <summary>
         /// Centralized parameterized pipeline to eliminate code duplication across target logging severities.
         /// </summary>
-        /// <param name="targetLevel">The operational <see cref="LogLevel"/> required to validate execution.</param>
-        /// <param name="message">The text string content entry template block targeted for extraction.</param>
-        /// <param name="ex">An optional <see cref="Exception"/> context structure hook to process and bind.</param>
+        /// <param name="targetLevel">The severity level of this entry; skipped if below the configured minimum.</param>
+        /// <param name="message">The log message.</param>
+        /// <param name="ex">An optional exception; when present it is formatted and appended as " | Exception: ...".</param>
         private static void WriteLeveled(LogLevel targetLevel, string? message, Exception? ex)
         {
             if (string.IsNullOrEmpty(message)) return;

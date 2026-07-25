@@ -156,8 +156,8 @@ namespace Servy.Core.IntegrationTests.Helpers
             }
 
             // Mock the lifecycle control methods to return successful completed tasks
-            _mockServiceHelper.Setup(s => s.StopServices(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _mockServiceHelper.Setup(s => s.StartServices(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _mockServiceHelper.Setup(s => s.StopServicesAsync(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _mockServiceHelper.Setup(s => s.StartServicesAsync(testServices, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
             // Act
             bool result = await _resourceHelper.CopyEmbeddedResource(
@@ -187,8 +187,8 @@ namespace Servy.Core.IntegrationTests.Helpers
             }
 
             // 3. Confirm that the targeted services were both cleanly stopped and subsequently revived
-            _mockServiceHelper.Verify(s => s.StopServices(testServices, TestContext.Current.CancellationToken), Times.Once);
-            _mockServiceHelper.Verify(s => s.StartServices(testServices, CancellationToken.None), Times.Once);
+            _mockServiceHelper.Verify(s => s.StopServicesAsync(testServices, TestContext.Current.CancellationToken), Times.Once);
+            _mockServiceHelper.Verify(s => s.StartServicesAsync(testServices, CancellationToken.None), Times.Once);
         }
 
         [Fact]

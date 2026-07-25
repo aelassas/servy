@@ -406,10 +406,16 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             try
             {
                 if (root != null && !root.HasExited)
+                {
                     root.Kill(entireProcessTree: true);
+                    root.WaitForExit(3000);
+                }
             }
             catch { }
-            root?.Dispose();
+            finally
+            {
+                root?.Dispose();
+            }
         }
 
         public void Dispose()

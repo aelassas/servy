@@ -20,11 +20,29 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
     public class ProcessLauncherIntegrationTests : IDisposable
     {
         private readonly List<string> _tempFiles = new List<string>();
+        private readonly List<IProcessWrapper> _spawnedWrappers = new List<IProcessWrapper>();
         private readonly TestLogger _logger = new TestLogger();
         private readonly IProcessFactory _realFactory = new ProcessFactory();
 
         public void Dispose()
         {
+            foreach (var wrapper in _spawnedWrappers)
+            {
+                try
+                {
+                    if (!wrapper.HasExited)
+                    {
+                        wrapper.Kill(entireProcessTree: true);
+                        wrapper.WaitForExit(2000);
+                    }
+                }
+                catch { /* Ignore cleanup exceptions on spawned process handles */ }
+                finally
+                {
+                    wrapper.Dispose();
+                }
+            }
+
             foreach (var file in _tempFiles)
             {
                 if (File.Exists(file))
@@ -87,6 +105,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             // Act
             var wrapper = ProcessLauncher.Start(options, _realFactory, _logger);
+            _spawnedWrappers.Add(wrapper);
 
             try
             {

@@ -65,7 +65,7 @@ namespace Servy.Core.Helpers
 
         /// <inheritdoc />
         [ExcludeFromCodeCoverage]
-        public async Task StartServices(IEnumerable<string> services, CancellationToken cancellationToken = default)
+        public async Task StartServicesAsync(IEnumerable<string> services, CancellationToken cancellationToken = default)
         {
             // Create a bucket to collect any errors that occur
             var exceptions = new List<Exception>();
@@ -182,6 +182,7 @@ namespace Servy.Core.Helpers
                     Logger.Warn(msg);
                     exceptions.Add(new InvalidOperationException(msg));
                 }
+                catch (OperationCanceledException) { throw; }
                 catch (Exception ex)
                 {
                     // Instead of throwing, we log the error and store it
@@ -203,7 +204,7 @@ namespace Servy.Core.Helpers
 
         /// <inheritdoc />
         [ExcludeFromCodeCoverage]
-        public async Task StopServices(IEnumerable<string> services, CancellationToken cancellationToken = default)
+        public async Task StopServicesAsync(IEnumerable<string> services, CancellationToken cancellationToken = default)
         {
             // Create a bucket to collect any errors that occur during the batch operation
             var exceptions = new List<Exception>();
@@ -274,6 +275,7 @@ namespace Servy.Core.Helpers
                     Logger.Warn(msg);
                     exceptions.Add(new InvalidOperationException(msg));
                 }
+                catch (OperationCanceledException) { throw; }
                 catch (Exception ex)
                 {
                     // Capture general exceptions (Access Denied, Service Not Found, etc.)

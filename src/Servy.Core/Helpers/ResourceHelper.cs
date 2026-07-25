@@ -96,7 +96,7 @@ namespace Servy.Core.Helpers
                         {
                             Logger.Info($"Stopping services before copying resource '{resourceName}': {string.Join(", ", runningServices)}");
                             // Forward the cancellation token to the polling routine
-                            await _serviceHelper.StopServices(runningServices, cancellationToken);
+                            await _serviceHelper.StopServicesAsync(runningServices, cancellationToken);
                         }
 
                         // Check cancellation boundary right before process execution checks
@@ -119,7 +119,7 @@ namespace Servy.Core.Helpers
 
                                 // Intentionally pass CancellationToken.None here so an upfront 
                                 // pipeline cancellation signal doesn't discard orphaned background services.
-                                await _serviceHelper.StartServices(runningServices, CancellationToken.None);
+                                await _serviceHelper.StartServicesAsync(runningServices, CancellationToken.None);
                             }
                             catch (Exception startEx)
                             {
@@ -144,6 +144,11 @@ namespace Servy.Core.Helpers
 
                 // Restart failures are surfaced via Logger.Error already, so the boolean does not need to encode them
                 return copyDone;
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Info($"Embedded resource copy for '{fileName}' was cancelled by the caller.");
+                return false;
             }
             catch (Exception ex)
             {

@@ -1165,6 +1165,16 @@ namespace Servy.Core.Config
         /// </remarks>
         public static readonly string[] AllowedConfigFileExtensions = { ".json", ".xml" };
 
+        /// <summary>
+        /// Specifies the maximum number of retry attempts for <c>CreateToolhelp32Snapshot</c> when encountering 
+        /// <c>ERROR_BAD_LENGTH</c> (0x18) caused by rapid process creation/destruction races.
+        /// </summary>
+        /// <remarks>
+        /// On busy systems with high process churn, the kernel snapshot size estimation can race with process lifecycles.
+        /// Retrying up to 5 times with thread yields follows Microsoft's recommended mitigation guidance.
+        /// </remarks>
+        public const int Toolhelp32SnapshotMaxRetries = 5;
+
         #endregion
 
         #region Manager Configuration Bounds

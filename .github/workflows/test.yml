@@ -45,8 +45,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
         with:
-          fetch-depth: 0   # important, otherwise commit message won't be available          
-          
+          fetch-depth: 0   # important, otherwise commit message won't be available                    
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
 
@@ -77,6 +76,8 @@ jobs:
                   'test', $projPath,
                   '--configuration', 'Debug',
                   '--no-build',
+                  '--blame-crash',
+                  '--blame-crash-dump-type', 'full',
                   '--collect', 'XPlat Code Coverage',
                   '--results-directory', "./TestResults/$subDirName/$projName"
               )
@@ -104,7 +105,7 @@ jobs:
         run: dotnet build Servy.sln --configuration Release --no-restore
 
       - name: Run all tests (Release)
-        run: dotnet test Servy.sln --configuration Release --no-build
+        run: dotnet test Servy.sln --configuration Release --no-build --blame-crash --blame-crash-dump-type full
 
       # -----------------------------------------------------
       # Coverage Report Merging (x64 Only Context)

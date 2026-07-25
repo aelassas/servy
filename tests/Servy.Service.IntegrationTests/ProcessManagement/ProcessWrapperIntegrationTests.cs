@@ -28,11 +28,16 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     if (!wrapper.HasExited)
                     {
                         wrapper.Kill(entireProcessTree: true);
+                        wrapper.WaitForExit(2000);
                     }
                 }
                 catch (Exception)
                 {
                     // Swallowed: Safe lookup boundaries (wrapper already disposed or process dead)
+                }
+                finally
+                {
+                    try { wrapper.Dispose(); } catch { }
                 }
             }
         }
@@ -615,11 +620,11 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 // Act - Invoke TryStopGracefullyOrKill on powershell.exe directly to isolate the test from child conhost.exe signal interference.
                 // TryStopGracefullyOrKill sends Ctrl+C, PowerShell catches it and exits with code 0, returning true.
                 bool? gracefulResult = (bool?)TestReflection.InvokeNonPublic(
-                                    wrapper,
-                                    "TryStopGracefullyOrKill",
-                                    wrapper.UnderlyingProcess,
-                                    TestTimeouts.ProcessWrapperProcessTimeoutMs,
-                                    500);
+                                            wrapper,
+                                            "TryStopGracefullyOrKill",
+                                            wrapper.UnderlyingProcess,
+                                            TestTimeouts.ProcessWrapperProcessTimeoutMs,
+                                            500);
 
                 if (gracefulResult == true)
                 {
