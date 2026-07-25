@@ -98,7 +98,7 @@ namespace Servy.Core.Helpers
                         {
                             Logger.Info($"Stopping services before copying resource '{resourceName}': {string.Join(", ", runningServices)}");
                             // Forward the cancellation token to the polling routine
-                            await _serviceHelper.StopServices(runningServices, cancellationToken);
+                            await _serviceHelper.StopServicesAsync(runningServices, cancellationToken);
                         }
 
                         // Check cancellation boundary right before process execution checks
@@ -120,7 +120,7 @@ namespace Servy.Core.Helpers
                                 Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
 
                                 // Force CancellationToken.None to avoid leaving services stopped if extraction was canceled midway
-                                await _serviceHelper.StartServices(runningServices, CancellationToken.None);
+                                await _serviceHelper.StartServicesAsync(runningServices, CancellationToken.None);
                             }
                             catch (Exception startEx)
                             {
@@ -145,6 +145,11 @@ namespace Servy.Core.Helpers
 
                 // Restart failures are surfaced via Logger.Error already, so the boolean does not need to encode them
                 return copyDone;
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Info($"Embedded resource copy for '{fileName}' was cancelled by the caller.");
+                return false;
             }
             catch (Exception ex)
             {
@@ -304,7 +309,7 @@ namespace Servy.Core.Helpers
                 try
                 {
                     if (stopServices && runningServices.Count > 0)
-                        await _serviceHelper.StopServices(runningServices, cancellationToken);
+                        await _serviceHelper.StopServicesAsync(runningServices, cancellationToken);
 
                     foreach (var resourceItem in resourceItems.Where(r => r.ShouldCopy))
                     {
@@ -350,7 +355,7 @@ namespace Servy.Core.Helpers
                         try
                         {
                             Logger.Info($"Starting stopped services after copying resources: {string.Join(", ", runningServices)}");
-                            await _serviceHelper.StartServices(runningServices, CancellationToken.None);
+                            await _serviceHelper.StartServicesAsync(runningServices, CancellationToken.None);
                         }
                         catch (Exception startEx)
                         {
@@ -361,6 +366,11 @@ namespace Servy.Core.Helpers
                         }
                     }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Info($"Embedded resources copy was cancelled by the caller.");
+                res = false;
             }
             catch (Exception ex)
             {

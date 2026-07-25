@@ -228,11 +228,11 @@ namespace Servy.Core.Logging
         /// Centralized wrapper used to write an entry to the Windows Event Log, enforcing message truncation rules
         /// and providing lazily synchronized registration safeguards across all domains.
         /// </summary>
-        /// <param name="logName">The target log file container directory name.</param>
-        /// <param name="source">The application identification handle mapping source reference token.</param>
+        /// <param name="logName">The Windows Event Log to write to (e.g., Application).</param>
+        /// <param name="source">The event source name.</param>
         /// <param name="message">The full string message layout definition data contents payload.</param>
         /// <param name="type">The standard Windows event severity logging level context enumeration.</param>
-        /// <param name="eventId">The deterministic application metric system cross-reference tracker key integer.</param>
+        /// <param name="eventId">The application-specific event ID.</param>
         internal static void WriteRawToWindowsEventLog(string logName, string source, string message, EventLogEntryType type, int eventId)
         {
             try

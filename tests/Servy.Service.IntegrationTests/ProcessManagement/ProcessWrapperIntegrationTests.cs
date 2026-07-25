@@ -34,6 +34,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     if (!wrapper.HasExited)
                     {
                         wrapper.Kill(entireProcessTree: true);
+                        wrapper.WaitForExit(2000);
                     }
                 }
                 catch (Exception)
