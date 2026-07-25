@@ -104,7 +104,7 @@ namespace Servy.UnitTests.Validation
             _mockProcessHelper.Setup(p => p.ValidatePath(dto.ExecutablePath, true)).Returns(true);
             _mockProcessHelper.Setup(p => p.ValidatePath(wrapperExePath, true)).Returns(true);
 
-            // Act: Exercise forwarding boundary loops by explicitly passing both wrapper paths and identical password structures
+            // Act: pass an explicit wrapperExePath so the wrapper-path validation rule is evaluated
             var result = await _validator.ValidateAsync(dto, wrapperExePath: wrapperExePath, confirmPassword: null, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert

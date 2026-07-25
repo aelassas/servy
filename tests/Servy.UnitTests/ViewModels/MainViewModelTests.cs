@@ -780,8 +780,6 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(dto.PostStopExecutablePath, _viewModel.PostStopExecutablePath);
             Assert.Equal(dto.PostStopStartupDirectory, _viewModel.PostStopStartupDirectory);
             Assert.Equal(dto.PostStopParameters, _viewModel.PostStopParameters);
-
-            // Added Assertions to close the coverage gap:
             Assert.Equal(StringHelper.FormatEnvironmentVariables(dto.EnvironmentVariables), _viewModel.EnvironmentVariables);
             Assert.Equal(StringHelper.FormatServiceDependencies(dto.ServiceDependencies), _viewModel.ServiceDependencies);
             Assert.Equal(StringHelper.FormatEnvironmentVariables(dto.PreLaunchEnvironmentVariables), _viewModel.PreLaunchEnvironmentVariables);
