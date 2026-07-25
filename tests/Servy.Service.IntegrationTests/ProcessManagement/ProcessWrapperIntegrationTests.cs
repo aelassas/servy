@@ -61,6 +61,10 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 WorkingDirectory = Path.GetTempPath(),
             };
 
+            // Prevent native Ctrl+C broadcasts from terminating the xUnit testhost process
+            const int CREATE_NEW_PROCESS_GROUP = 0x00000200;
+            psi.Environment["__CREATE_PROCESS_FLAGS"] = CREATE_NEW_PROCESS_GROUP.ToString();
+
             var wrapper = new ProcessWrapper(psi, _logger);
 
             // Add the wrapper to our safety tracking list
