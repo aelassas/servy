@@ -76,6 +76,7 @@ jobs:
                   'test', $projPath,
                   '--configuration', 'Debug',
                   '--no-build',
+                  '--blame',
                   '--blame-crash',
                   '--blame-crash-dump-type', 'full',
                   '--collect', 'XPlat Code Coverage',
@@ -105,7 +106,18 @@ jobs:
         run: dotnet build Servy.sln --configuration Release --no-restore
 
       - name: Run all tests (Release)
-        run: dotnet test Servy.sln --configuration Release --no-build --blame-crash --blame-crash-dump-type full
+        run: dotnet test Servy.sln --configuration Release --no-build --blame --blame-crash --blame-crash-dump-type full
+
+      - name: Upload Test Diagnostics & Crash Dumps on Failure
+        if: ${{ failure() || cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2
+        with:
+          name: test-diagnostics-${{ matrix.arch }}
+          path: |
+            TestResults/**/*.dmp
+            TestResults/**/*.xml
+            TestResults/**/*.trx
+          if-no-files-found: ignore
 
       # -----------------------------------------------------
       # Coverage Report Merging (x64 Only Context)

@@ -30,7 +30,12 @@ namespace Servy.Service.UnitTests.Helpers
             // Assert
             Assert.Equal("Value", result.env["VAR"]);
             Assert.Equal("arg1", result.expandedArgs);
-            _mockLogger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+
+            // Ignore diagnostic/host warnings injected during --blame-crash test runs
+            _mockLogger.Verify(l => l.Warn(
+                It.Is<string>(msg => !msg.Contains("COMPlus_") && !msg.Contains("DOTNET_")),
+                It.IsAny<Exception>()),
+                Times.Never);
         }
 
         [Fact]
@@ -52,11 +57,14 @@ namespace Servy.Service.UnitTests.Helpers
         [Fact]
         public void ExpandAndAudit_HandlesEmptyInputGracefully()
         {
-            // Act - should not throw or log
+            // Act - should not throw or log for test inputs
             ProcessHelper.ExpandAndAudit(new List<EnvironmentVariable>(), "", _mockLogger.Object);
 
             // Assert
-            _mockLogger.Verify(l => l.Warn(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+            _mockLogger.Verify(l => l.Warn(
+                It.Is<string>(msg => !msg.Contains("COMPlus_") && !msg.Contains("DOTNET_")),
+                It.IsAny<Exception>()),
+                Times.Never);
         }
 
         [Fact]

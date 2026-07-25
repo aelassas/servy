@@ -1,4 +1,3 @@
-
 #Requires -Version 5.1
 <#
 .SYNOPSIS
@@ -22,7 +21,6 @@
         - .NET SDK installed and accessible in PATH.
         - ReportGenerator tool installed and available in PATH.
 #>
-
 $ErrorActionPreference = "Stop"
 
 # Directories
@@ -55,6 +53,9 @@ foreach ($ProjFile in $RawTestProjects) {
     $dotnetArgs = @(
         'test', $Proj,
         '--configuration', 'Debug',
+        '--blame',
+        '--blame-crash',
+        '--blame-crash-dump-type', 'full',
         '--collect', 'XPlat Code Coverage',
         '--results-directory', (Join-Path $TestResultsDir $ProjName)
     )
@@ -82,6 +83,7 @@ reportgenerator `
     -reporttypes:Html `
     -assemblyfilters:"-*.UnitTests;-*.IntegrationTests;-Servy.Testing" `
     -filefilters:"-**/*.xaml;-**/*.xaml.cs;-**/*.g.cs;-**/*.Designer.cs;-**/obj/**/*"
+
 if ($LASTEXITCODE -ne 0) { Write-Host "reportgenerator failed"; exit $LASTEXITCODE }
 
 Write-Host "Coverage report generated at $CoverageReportDir"

@@ -170,7 +170,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.False(wrapper.UnderlyingProcess.EnableRaisingEvents);
 
                 // Cleanup
-                wrapper.Kill();
+                wrapper.Kill(entireProcessTree: true);
+                wrapper.WaitForExit(1000);
             }
         }
 
@@ -190,7 +191,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.Equal(wrapper.UnderlyingProcess.PriorityClass, priority);
 
                 // Cleanup
-                wrapper.Kill();
+                wrapper.Kill(entireProcessTree: true);
+                wrapper.WaitForExit(1000);
             }
         }
 
@@ -210,7 +212,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.Equal(IntPtr.Zero, windowHandle); // Console window initialized with CreateNoWindow = true returns Zero
 
                 // Cleanup
-                wrapper.Kill();
+                wrapper.Kill(entireProcessTree: true);
+                wrapper.WaitForExit(1000);
             }
         }
 
@@ -230,7 +233,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.False(closed);
 
                 // Cleanup
-                wrapper.Kill();
+                wrapper.Kill(entireProcessTree: true);
+                wrapper.WaitForExit(1000);
             }
         }
 
@@ -280,7 +284,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Assert
                 Assert.True(isHealthy);
-                wrapper.Kill();
+                wrapper.Kill(entireProcessTree: true);
+                wrapper.WaitForExit(1000);
             }
         }
 
@@ -315,7 +320,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     wrapper.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(10), cts.Token));
 
                 // Cleanup
-                wrapper.Kill();
+                wrapper.Kill(entireProcessTree: true);
+                wrapper.WaitForExit(1000);
             }
         }
 
@@ -445,7 +451,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Now forcefully clean up the actual running tree via the managed root wrapper asset
                 wrapper.Kill(entireProcessTree: true);
-                wrapper.WaitForExit(500);
+                wrapper.WaitForExit(1000);
 
                 // Assert
                 if (childSpawned && childPid > 0)
@@ -480,11 +486,13 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 {
                     if (underlyingProcess != null && !underlyingProcess.HasExited)
                     {
-                        underlyingProcess.Kill();
+                        underlyingProcess.Kill(entireProcessTree: true);
+                        underlyingProcess.WaitForExit(1000);
                     }
                     else if (!wrapper.HasExited)
                     {
-                        wrapper.Kill();
+                        wrapper.Kill(entireProcessTree: true);
+                        wrapper.WaitForExit(1000);
                     }
                 }
                 catch (InvalidOperationException) { }
@@ -504,7 +512,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Assert
                 Assert.Contains(_logger.Infos, m => m.Contains("No active descendants found for PID"));
-                wrapper.Kill();
+                wrapper.Kill(entireProcessTree: true);
+                wrapper.WaitForExit(1000);
             }
         }
 
@@ -545,6 +554,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
                 // Cleanup
                 wrapper.Kill(entireProcessTree: true);
+                wrapper.WaitForExit(1000);
             }
         }
 
@@ -730,7 +740,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.False((bool)result!);
 
                 // Cleanup
-                wrapper.Kill();
+                wrapper.Kill(entireProcessTree: true);
+                wrapper.WaitForExit(1000);
             }
         }
 
@@ -755,22 +766,19 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         public void SendCtrlC_WhenAttachFailsWithErrorPipeNotConnected_ReturnsTrue()
         {
             // Arrange
-            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 5\""))
             {
                 wrapper.Start();
 
-                // Create an exited process test double to satisfy the HasExited check if evaluated, or test fallback path
-                using (var deadProcess = new Process())
-                {
-                    // Act - Evaluating SendCtrlC behavior against unattached/invalid state handles
-                    var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
+                // Act - Evaluating SendCtrlC behavior against an unattached windowless process
+                var result = TestReflection.InvokeNonPublic(wrapper, "SendCtrlC", wrapper.UnderlyingProcess);
 
-                    // Assert - For windowless background processes, AttachConsole fails cleanly and returns false or null
-                    Assert.NotNull(result);
-                }
+                // Assert - For windowless background processes, SendCtrlC returns false or non-null fallback state
+                Assert.NotNull(result);
 
                 // Cleanup
-                wrapper.Kill();
+                wrapper.Kill(entireProcessTree: true);
+                wrapper.WaitForExit(1000);
             }
         }
 
@@ -789,7 +797,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 Assert.False((bool)result!);
 
                 // Cleanup
-                wrapper.Kill();
+                wrapper.Kill(entireProcessTree: true);
+                wrapper.WaitForExit(1000);
             }
         }
 

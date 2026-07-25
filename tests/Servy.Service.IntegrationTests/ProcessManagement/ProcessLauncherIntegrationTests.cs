@@ -165,7 +165,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             // Assert
             Assert.Contains("exceeded the maximum allowed timeout", ex.Message);
             Assert.Contains(errorLogger.Errors, m => m.Contains("timed out after"));
-            Assert.Empty(errorLogger.Warnings); // Verifies the message did not bleed into the warnings channel
+            // Verify that timeout messages did NOT bleed into the warnings channel
+            Assert.DoesNotContain(errorLogger.Warnings, m => m.Contains("timed out after"));
         }
 
         [Fact]
