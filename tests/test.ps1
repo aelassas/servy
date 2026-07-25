@@ -1,3 +1,4 @@
+#Requires -Version 5.1
 <#
 .SYNOPSIS
     Runs unit tests and integration tests, collects coverage with Coverlet, and generates an HTML coverage report.
@@ -19,7 +20,6 @@
     PS> .\test.ps1
     Runs tests for discovered suites, collects coverage, and generates an HTML report.
 #>
-
 $ErrorActionPreference = "Stop"
 
 # Path to MSBuild.exe for Visual Studio 2022 Community Edition
@@ -89,7 +89,7 @@ foreach ($ProjFile in $RawTestProjects) {
     # Execute test run session through Coverlet coverage runner natively
     coverlet "$DllPath" `
         --target "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
-        --targetargs "`"${DllPath}`" --ResultsDirectory:`"${TestResultsDir}`"" `
+        --targetargs "`"${DllPath}`" --ResultsDirectory:`"${TestResultsDir}`"/Blame /Blame:`"CollectDump;CrashDumpType=full`"" `
         --output (Join-Path $TestResultsDir "${ProjName}.coverage.xml") `
         --format "cobertura" `
         --include-directory "$ProjDir" `
