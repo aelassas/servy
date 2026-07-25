@@ -1,6 +1,7 @@
 ﻿using Servy.Service.ProcessManagement;
 using Servy.Testing;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Servy.Service.IntegrationTests.ProcessManagement
 {
@@ -16,6 +17,15 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
         // Track active wrappers so we can safely read started PIDs during teardown
         private readonly List<ProcessWrapper> _wrappersToCleanup = new List<ProcessWrapper>();
         private readonly TestLogger _logger = new TestLogger();
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetConsoleCtrlHandler(IntPtr HandlerRoutine, bool Add);
+
+        public ProcessWrapperIntegrationTests()
+        {
+            // Safeguard testhost.exe globally against console signal leaks from child process groups
+            SetConsoleCtrlHandler(IntPtr.Zero, true);
+        }
 
         public void Dispose()
         {
@@ -40,6 +50,9 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                     try { wrapper.Dispose(); } catch { }
                 }
             }
+
+            // Restore default handler settings during teardown
+            SetConsoleCtrlHandler(IntPtr.Zero, false);
         }
 
         private ProcessWrapper CreateWrapper(string fileName, string arguments, bool redirectOutput = false, bool createNoWindow = true)
@@ -54,10 +67,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 RedirectStandardError = redirectOutput,
                 WorkingDirectory = Path.GetTempPath(),
             };
-
-            // Prevent native Ctrl+C broadcasts from terminating the xUnit testhost process
-            const int CREATE_NEW_PROCESS_GROUP = 0x00000200;
-            psi.Environment["__CREATE_PROCESS_FLAGS"] = CREATE_NEW_PROCESS_GROUP.ToString();
 
             var wrapper = new ProcessWrapper(psi, _logger);
 
