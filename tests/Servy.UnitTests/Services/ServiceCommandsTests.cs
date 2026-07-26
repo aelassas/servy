@@ -278,6 +278,7 @@ namespace Servy.UnitTests.Services
             // Assert
             Assert.False(result);
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         #endregion
@@ -316,7 +317,7 @@ namespace Servy.UnitTests.Services
             // bypassing any real operating system ShellExecute tracking side effects.
             _processHelperMock
                 .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
-                .Throws(new System.ComponentModel.Win32Exception((int)System.Net.HttpStatusCode.Unauthorized, "Access denied simulation"));
+                .Throws(new System.ComponentModel.Win32Exception(5, "Access denied simulation")); // 5 = ERROR_ACCESS_DENIED
 
             var sut = CreateSut();
 
@@ -431,6 +432,52 @@ namespace Servy.UnitTests.Services
             // Assert
             Assert.False(result);
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        #endregion
+
+        #region Start & Stop Success Path Tests
+
+        [Fact]
+        public async Task StartService_SuccessfulExecution_DisplaysInfoAndReturnsTrue()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var serviceName = "StartableService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Automatic);
+            _serviceManagerMock.Setup(m => m.StartServiceAsync(serviceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.StartService(serviceName, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            _messageBoxService.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceStarted, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        [Fact]
+        public async Task StopService_SuccessfulExecution_DisplaysInfoAndReturnsTrue()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var serviceName = "StoppableService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.StopServiceAsync(serviceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.StopService(serviceName, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            _messageBoxService.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceStopped, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         #endregion
@@ -510,6 +557,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         #endregion
@@ -644,6 +692,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         #endregion
@@ -719,6 +768,7 @@ namespace Servy.UnitTests.Services
             // Assert
             Assert.False(result);
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         [Fact]
@@ -844,6 +894,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         #endregion
