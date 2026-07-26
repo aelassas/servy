@@ -55,6 +55,22 @@ namespace Servy.UI.UnitTests
             Assert.Contains("Item[]", changedProperties);
         }
 
+        [Fact]
+        public void AddRange_EmptyItems_RaisesNoNotifications()
+        {
+            // Arrange
+            var collection = new BulkObservableCollection<int>();
+            bool eventRaised = false;
+            collection.CollectionChanged += (s, e) => eventRaised = true;
+
+            // Act
+            collection.AddRange(Enumerable.Empty<int>());
+
+            // Assert
+            Assert.Empty(collection);
+            Assert.False(eventRaised);
+        }
+
         #endregion
 
         #region OnCollectionChanged Suppression Tests
@@ -116,6 +132,16 @@ namespace Servy.UI.UnitTests
             Assert.Equal(3, collection.Count);
             Assert.Equal(7, collection[0]); // Verification: 0-6 removed, 7 is the new first item
             Assert.Equal(1, collectionChangedCount); // Reset event
+        }
+
+        [Fact]
+        public void TrimToSize_NegativeMaxItems_ThrowsArgumentOutOfRangeException()
+        {
+            // Arrange
+            var collection = new BulkObservableCollection<int> { 1 };
+
+            // Act & Assert
+            Assert.Throws<ArgumentOutOfRangeException>(() => collection.TrimToSize(-1));
         }
 
         #endregion

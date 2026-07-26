@@ -30,7 +30,7 @@ namespace Servy.UI.IntegrationTests.Services
                 // a virtual method to override it, but here we test the service orchestration.
 
                 // Act
-                var task = _ = _service.ShowInfoAsync("Test", "Caption");
+                var task = _service.ShowInfoAsync("Test", "Caption");
 
                 // Assert
                 // We do not await here in CI to avoid hanging the runner on a modal dialog.
