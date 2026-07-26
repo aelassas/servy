@@ -143,7 +143,7 @@ jobs:
             git add $manifestPath
             git commit -m "chore: update setup/scoop/servy.json to version $env:VERSION"
             
-            # Cast string environment value safely outside parameter bindings
+            # Env vars are strings; -MaxRetries is [int]
             $maxRetries = [int]$env:MAX_RETRIES
             Invoke-PushWithRetry -PullRef 'main' -PushRef 'HEAD:main' -MaxRetries $maxRetries
           } else {
@@ -178,7 +178,7 @@ jobs:
             git add $manifestPath
             git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
             
-            # Cast string environment value safely outside parameter bindings
+            # Env vars are strings; -MaxRetries is [int]
             $maxRetries = [int]$env:MAX_RETRIES
             Invoke-PushWithRetry -PullRef 'HEAD' -PushRef 'HEAD' -MaxRetries $maxRetries
           } else {
@@ -199,7 +199,7 @@ jobs:
           git config url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
           $branchName = "update-servy-$env:VERSION"
 
-          # Query all PR state contexts associated with this destination branch layout mapping
+          # Check for an existing PR (merged or open) for this version's branch so we don't recreate it
           $existingPR = gh pr list --repo ScoopInstaller/Extras --head "aelassas:$branchName" --state all --json number,state --limit 1 | ConvertFrom-Json
           
           if ($existingPR.Count -gt 0) {

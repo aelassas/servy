@@ -43,8 +43,8 @@ $scriptDir = $PSScriptRoot
 $timestampFile = Join-Path $scriptDir "last-processed-email.dat"
 $fallbackLogFile = "ServyFailureEmail.log"
 
-# Central Sentinel Guard Domain Definition (RFC 2606 Reserved Domain).
-# Keeps the template independently modifiable and dynamically secures From/To fields.
+# Placeholder domain shipped in smtp-config.xml (RFC 2606 reserved).
+# Sending is refused while Server/From/To still reference it.
 $DefaultPlaceholderDomain = "example.com"
 
 # Event ID Taxonomy (Refer to src/Servy.Core/Logging/EventIds.cs for updates)
@@ -161,7 +161,7 @@ function Send-NotificationEmail {
   $timeout = if ([int]::TryParse($rawTimeout, [ref]$timeoutRef)) { $timeoutRef } else { 30000 }
 
   $credPath = Join-Path $ScriptDir "smtp-cred.xml"
-  $emailRegex = '^[^@\s]+@[^@\s]+\.[^@\s]+$' # Definition of the single address format validation rule
+  $emailRegex = '^[^@\s]+@[^@\s]+\.[^@\s]+$' # Single address format; comma/semicolon multi-recipient lists are split and validated below
 
   # --- VALIDATION GATE (Permanent Failures) ---
   
@@ -200,9 +200,7 @@ function Send-NotificationEmail {
       }
   }
 
-  # Hardened domain verification derived from global $DefaultPlaceholderDomain variable scope.
-  # Polymorphically screens Server, From, and sub-recipient properties against unconfigured templates.
-  # Adjusted From and To patterns to support matching both standard domain contexts and sub-domain structures after the '@' separator.
+  # Refuse sending if Server, From, or any recipient still uses the placeholder domain
   $isPlaceholderServer = $smtpServer -eq $DefaultPlaceholderDomain -or $smtpServer -like "*.$DefaultPlaceholderDomain"
   $isPlaceholderFrom   = $from -like "*@$DefaultPlaceholderDomain" -or $from -like "*@*.$DefaultPlaceholderDomain"
   $isPlaceholderTo     = $toList | Where-Object { $_ -like "*@$DefaultPlaceholderDomain" -or $_ -like "*@*.$DefaultPlaceholderDomain" }
@@ -350,7 +348,6 @@ foreach ($evt in $eventsToProcess) {
   # Basic HTML formatting (newlines to breaks)
   $htmlBody = $body -replace "`r?`n", "<br>"
     
-  # Attempt to send the email with explicit configuration encapsulation mapping
   $sendStatus = Send-NotificationEmail -Subject $subject -Body $htmlBody -Config $SmtpConfig -ScriptDir $scriptDir -FallbackLogFile $fallbackLogFile
   
   switch ($sendStatus) {

@@ -54,7 +54,7 @@ jobs:
       - name: Scan for vulnerable packages
         shell: pwsh
         run: |
-          # ROBUSTNESS: Pin execution language to English to ensure stable diagnostic pipelines
+          # Keep CLI messages in English so log output (and the human-readable rerun below) is consistent
           $env:DOTNET_CLI_UI_LANGUAGE = 'en'
 
           # Fetch structured analysis data directly via JSON serialization to avoid brittle string matching
@@ -68,11 +68,9 @@ jobs:
           $json = $rawJson | ConvertFrom-Json
           $hasVuln = $false
 
-          # Explicitly walk the object graph to inspect dependency payloads across all frameworks
           if ($json -and $json.projects) {
             foreach ($proj in $json.projects) {
               foreach ($fw in $proj.frameworks) {
-                # Trap vulnerabilities sitting in either top-level manifest declarations or transitive nodes
                 if ($fw.topLevelPackages -and $fw.topLevelPackages.vulnerabilities) { $hasVuln = $true }
                 if ($fw.transitivePackages -and $fw.transitivePackages.vulnerabilities) { $hasVuln = $true }
               }

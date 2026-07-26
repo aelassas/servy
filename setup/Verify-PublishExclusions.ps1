@@ -8,10 +8,8 @@
     while standard payloads are preserved.
 #>
 
-# Enforce script-root execution safety bounds
 $ScriptDir = Split-Path -Path $MyInvocation.MyCommand.Definition -Parent
 
-# Push location with try-finally to guarantee location rollback on script termination or failure
 Push-Location -Path $ScriptDir
 try {
     # ---------------------------------------------------------------------
@@ -22,10 +20,8 @@ try {
     $pkg         = Join-Path $SandboxRoot "staging_out"
     $destPath    = Join-Path $pkg "taskschd"
 
-    # Clean up any leftover previous test contexts
     if (Test-Path $SandboxRoot) { Remove-Item -Path $SandboxRoot -Recurse -Force -ErrorAction SilentlyContinue }
 
-    # Initialize source and staging directories
     New-Item -Path $sourcePath -ItemType Directory -Force | Out-Null
     New-Item -Path (Join-Path $sourcePath "SubFolder") -ItemType Directory -Force | Out-Null
 
@@ -38,15 +34,14 @@ try {
         @("ServySecurity.ps1", $true),
         @("TaskConfig.xml", $true),
         @("SubFolder\NestedScript.ps1", $true),
-        @("smtp-cred.xml", $false),       # Blacklisted file rule
+        @("smtp-cred.xml", $false),          # Blacklisted file rule
         @("ServySecurity.test.ps1", $false), # Hardened exclusion wildcard rule
         @("SubFolder\Nested.test.ps1", $false), # Nested wildcard rule
-        @("state.dat", $false),          # Prohibited extension rule
-        @("trace.log", $false),          # Prohibited extension rule
-        @("temp.ps1", $false)            # Prohibited temp.ps1 rule
+        @("state.dat", $false),              # Prohibited extension rule
+        @("trace.log", $false),              # Prohibited extension rule
+        @("temp.ps1", $false)                # Prohibited temp.ps1 rule
     )
 
-    # Populate test matrix data onto the filesystem
     foreach ($file in $MockFiles) {
         $filePath = Join-Path $sourcePath $file[0]
         $parentDir = Split-Path $filePath -Parent
@@ -74,7 +69,6 @@ try {
             $target = Join-Path $destPath $rel
             $parent = Split-Path $target -Parent
 
-            # Ensure the subdirectory exists in the staging folder
             if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
          
             Copy-Item -Path $_.FullName -Destination $target -Force
@@ -125,11 +119,9 @@ try {
         Write-Host "EXCLUSION FAILURES DETECTED: $Passed Passed, $Failed Failed." -ForegroundColor Red
     }
 
-    # Safely scrub local workspace changes
     if (Test-Path $SandboxRoot) { Remove-Item -Path $SandboxRoot -Recurse -Force | Out-Null }
     Write-Host "==========================================================" -ForegroundColor Cyan
 }
 finally {
-    # Pop location back to the caller's working directory context safely
     Pop-Location
 }

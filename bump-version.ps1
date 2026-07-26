@@ -76,7 +76,8 @@ function Update-FileContent {
             if ($regexMatches.Count -eq 0) {
                 Write-Warning "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern"
                 
-                # A pattern missing exception is always treated as an unrecoverable run failure to keep the automated release pipeline safe.
+                # Zero matches on a targeted file means the identifier was renamed/removed; flag it and keep
+                # scanning so all failures surface in one run (the script exits 1 at the end).
                 $script:HadFailure = $true
                 return
             }
@@ -91,7 +92,7 @@ function Update-FileContent {
         } else {
             Write-Warning "Skipping missing file: $Path"
             
-            # Missing files are now classified deterministically as build failures.
+            # A missing target file fails the run (deferred to the final exit).
             $script:HadFailure = $true
         }
     }

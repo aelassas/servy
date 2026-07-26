@@ -170,13 +170,13 @@ jobs:
           
           git add CHANGELOG.md
           
-          # Target the specific file path layout directly to ignore workspace noise
+          # Scope the check to CHANGELOG.md so unrelated working-tree changes don't trigger a commit
           if (-not (git status --porcelain CHANGELOG.md)) {
               Write-Host "No changes detected in CHANGELOG.md. Nothing to update."
               exit 0
           }
           git commit -m "docs: auto-update CHANGELOG.md"
 
-          # Cast string environment variable value safely into an int outside parameter string contexts
+          # Env vars are strings; -MaxRetries is [int]
           $maxRetries = [int]$env:MAX_RETRIES
           Invoke-PushWithRetry -PullRef 'main' -PushRef 'HEAD:main' -MaxRetries $maxRetries
