@@ -1,5 +1,6 @@
 ﻿using Servy.Design;
 using Servy.Models;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -13,22 +14,23 @@ namespace Servy.UnitTests.Design
             // Arrange
             var commands = new DesignTimeServiceCommands();
             var dummyConfig = new ServiceConfiguration();
+            var ct = CancellationToken.None;
 
             // Act & Assert - Boolean returning methods
-            Assert.True(await commands.InstallService(dummyConfig));
-            Assert.True(await commands.UninstallService("testService"));
-            Assert.True(await commands.StartService("testService"));
-            Assert.True(await commands.StopService("testService"));
-            Assert.True(await commands.RestartService("testService"));
+            Assert.True(await commands.InstallService(dummyConfig, ct));
+            Assert.True(await commands.UninstallService("testService", ct));
+            Assert.True(await commands.StartService("testService", ct));
+            Assert.True(await commands.StopService("testService", ct));
+            Assert.True(await commands.RestartService("testService", ct));
 
             // Act & Assert - Task.CompletedTask returning methods
             var exception = await Record.ExceptionAsync(async () =>
             {
-                await commands.ExportXmlConfig("password");
-                await commands.ExportJsonConfig("password");
-                await commands.ImportXmlConfig();
-                await commands.ImportJsonConfig();
-                await commands.OpenManager();
+                await commands.ExportXmlConfig("password", cancellationToken: ct);
+                await commands.ExportJsonConfig("password", cancellationToken: ct);
+                await commands.ImportXmlConfig(cancellationToken: ct);
+                await commands.ImportJsonConfig(cancellationToken: ct);
+                await commands.OpenManager(cancellationToken: ct);
             });
 
             Assert.Null(exception);
