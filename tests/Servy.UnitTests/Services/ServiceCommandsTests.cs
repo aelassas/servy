@@ -283,6 +283,7 @@ namespace Servy.UnitTests.Services
             // Assert
             Assert.False(result);
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         #endregion
@@ -300,7 +301,7 @@ namespace Servy.UnitTests.Services
             _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(path);
 
             // Act
-            await sut.OpenManager();
+            await sut.OpenManager(cancellationToken: CancellationToken.None);
 
             // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_ManagerAppNotFound, UiAppConfig.Caption), Times.Once);
@@ -321,7 +322,7 @@ namespace Servy.UnitTests.Services
             // bypassing any real operating system ShellExecute tracking side effects.
             _processHelperMock
                 .Setup(h => h.Start(It.IsAny<ProcessStartInfo>()))
-                .Throws(new System.ComponentModel.Win32Exception((int)System.Net.HttpStatusCode.Unauthorized, "Access denied simulation"));
+                .Throws(new System.ComponentModel.Win32Exception(5, "Access denied simulation")); // 5 = ERROR_ACCESS_DENIED
 
             var sut = CreateSut();
 
@@ -436,6 +437,52 @@ namespace Servy.UnitTests.Services
             // Assert
             Assert.False(result);
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        #endregion
+
+        #region Start & Stop Success Path Tests
+
+        [Fact]
+        public async Task StartService_SuccessfulExecution_DisplaysInfoAndReturnsTrue()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var serviceName = "StartableService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Automatic);
+            _serviceManagerMock.Setup(m => m.StartServiceAsync(serviceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.StartService(serviceName, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            _messageBoxService.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceStarted, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
+        }
+
+        [Fact]
+        public async Task StopService_SuccessfulExecution_DisplaysInfoAndReturnsTrue()
+        {
+            // Arrange
+            var sut = CreateSut();
+            var serviceName = "StoppableService";
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(true);
+            _serviceManagerMock.Setup(m => m.StopServiceAsync(serviceName, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await sut.StopService(serviceName, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            _messageBoxService.Verify(m => m.ShowInfoAsync(Resources.Strings.Msg_ServiceStopped, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         #endregion
@@ -473,7 +520,7 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.SaveXml(It.IsAny<string>())).Returns(string.Empty);
 
             // Act
-            await sut.ExportXmlConfig("password");
+            await sut.ExportXmlConfig("password", cancellationToken: CancellationToken.None);
 
             // Assert
             _modelToServiceDtoMock.Verify(m => m(), Times.Never);
@@ -492,7 +539,7 @@ namespace Servy.UnitTests.Services
             _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "password", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             // Act
-            await sut.ExportXmlConfig("password");
+            await sut.ExportXmlConfig("password", cancellationToken: CancellationToken.None);
 
             // Assert
             Assert.False(File.Exists(path));
@@ -511,10 +558,11 @@ namespace Servy.UnitTests.Services
             _modelToServiceDtoMock.Setup(m => m()).Throws(new IOException("Disk Full / Access Denied"));
 
             // Act
-            await sut.ExportXmlConfig("password");
+            await sut.ExportXmlConfig("password", cancellationToken: CancellationToken.None);
 
             // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         #endregion
@@ -531,7 +579,7 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(returnedPath);
 
             // Act
-            await sut.ImportXmlConfig();
+            await sut.ImportXmlConfig(cancellationToken: CancellationToken.None);
 
             // Assert
             _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string>.IsAny), Times.Never);
@@ -547,7 +595,7 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(uncPath);
 
             // Act
-            await sut.ImportXmlConfig();
+            await sut.ImportXmlConfig(cancellationToken: CancellationToken.None);
 
             // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_SecurityUncPathProhibited, UiAppConfig.Caption), Times.Once);
@@ -568,7 +616,7 @@ namespace Servy.UnitTests.Services
             try
             {
                 // Act
-                await sut.ImportJsonConfig();
+                await sut.ImportJsonConfig(cancellationToken: CancellationToken.None);
 
                 // Assert
                 _messageBoxService.Verify(m => m.ShowErrorAsync("Missing closing brace delimiter.", UiAppConfig.Caption), Times.Once);
@@ -595,7 +643,7 @@ namespace Servy.UnitTests.Services
             try
             {
                 // Act
-                await sut.ImportXmlConfig();
+                await sut.ImportXmlConfig(cancellationToken: CancellationToken.None);
 
                 // Assert
                 _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_FailedToLoadXml, UiAppConfig.Caption), Times.Once);
@@ -626,7 +674,7 @@ namespace Servy.UnitTests.Services
             try
             {
                 // Act
-                await sut.ImportJsonConfig();
+                await sut.ImportJsonConfig(cancellationToken: CancellationToken.None);
 
                 // Assert
                 Assert.False(bindCalled);
@@ -645,10 +693,11 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.OpenXml()).Throws(new IOException("Hardware File Lock Denied"));
 
             // Act
-            await sut.ImportXmlConfig();
+            await sut.ImportXmlConfig(cancellationToken: CancellationToken.None);
 
             // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         #endregion
@@ -724,6 +773,7 @@ namespace Servy.UnitTests.Services
             // Assert
             Assert.False(result);
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         [Fact]
@@ -807,7 +857,7 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(string.Empty);
 
             // Act
-            await sut.ExportJsonConfig("secretPassword");
+            await sut.ExportJsonConfig("secretPassword", cancellationToken: CancellationToken.None);
 
             // Assert
             _modelToServiceDtoMock.Verify(m => m(), Times.Never);
@@ -826,7 +876,7 @@ namespace Servy.UnitTests.Services
             _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "secretPassword", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             // Act
-            await sut.ExportJsonConfig("secretPassword");
+            await sut.ExportJsonConfig("secretPassword", cancellationToken: CancellationToken.None);
 
             // Assert
             Assert.False(File.Exists(path));
@@ -849,6 +899,7 @@ namespace Servy.UnitTests.Services
 
             // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
+            _cursorServiceMock.Verify(c => c.ResetCursor(), Times.Once);
         }
 
         #endregion
@@ -939,7 +990,7 @@ namespace Servy.UnitTests.Services
             try
             {
                 // Act
-                await sut.ImportXmlConfig();
+                await sut.ImportXmlConfig(cancellationToken: CancellationToken.None);
 
                 // Assert
                 Assert.True(bindActionWasExecuted, "The _bindServiceDtoToModel(dto) logic line was not executed.");
@@ -982,7 +1033,7 @@ namespace Servy.UnitTests.Services
             try
             {
                 // Act
-                await sut.ImportJsonConfig();
+                await sut.ImportJsonConfig(cancellationToken: CancellationToken.None);
 
                 // Assert
                 Assert.True(bindActionWasExecuted, "The _bindServiceDtoToModel(dto) logic line was not executed.");

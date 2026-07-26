@@ -94,7 +94,9 @@ namespace Servy.UnitTests.Validation
 
             // Assert
             Assert.False(result);
-            _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+            _mockMessageBox.Verify(m => m.ShowErrorAsync(
+                It.Is<string>(s => s != null && s.IndexOf(Strings.Msg_PasswordsDontMatch, StringComparison.OrdinalIgnoreCase) >= 0),
+                It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
