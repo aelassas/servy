@@ -45,6 +45,7 @@
         /// Creates a failed command result.
         /// </summary>
         /// <param name="message">Optional failure message.</param>
+        /// <param name="exitCode">Exit code to return. A value of 0 is coerced to 1 so a failed result can never signal success.</param>
         /// <returns>A <see cref="CommandResult"/> indicating failure.</returns>
         public static CommandResult Fail(string? message = "", int exitCode = 1) =>
             new CommandResult(false, message, exitCode == 0 ? 1 : exitCode);

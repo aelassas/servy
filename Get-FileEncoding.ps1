@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Reads the initial bytes of a file to determine if it is:
-    - UTF-32 Little Endian (New)
+    - UTF-32 Little Endian
     - UTF-32 Big Endian
     - UTF-8 with BOM
     - UTF-16 Little Endian (Unicode)

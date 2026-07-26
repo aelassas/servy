@@ -43,7 +43,8 @@ runs:
                 if ($i -eq ($retries - 1)) { 
                     throw "Failed to download $asset after $retries attempts. Error: $_" 
                 }
-                Write-Host "Transient download failure for $asset. Retrying in 3 seconds... (Attempt $($i + 1)/$retries)"
-                Start-Sleep -Seconds 3
+                $delay = 3 * [math]::Pow(2, $i)
+                Write-Host "Transient download failure for $asset. Retrying in $delay seconds... (Attempt $($i + 1)/$retries)"
+                Start-Sleep -Seconds $delay
             }
         }

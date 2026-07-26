@@ -1,7 +1,7 @@
 ﻿#requires -Version 5.0
 <#
 .SYNOPSIS
-    Updates .NET runtime target version across scripts, AppConfig, and project files.
+    Updates .NET runtime target version across scripts, workflow, and project files.
 
 .DESCRIPTION
     This script recursively updates `netX.Y` target framework versions 
@@ -9,9 +9,11 @@
     - PowerShell scripts (*.ps1)
     - Inno Setup files (*.iss)
     - .csproj project files
-    - src/Servy.Core/Config/AppConfig.cs
-    - .github/workflows/*.yml
+    - .github/workflows/publish.yml
     - global.json
+
+    Note: AppConfig.cs is intentionally not targeted because it derives the TFM 
+    dynamically at runtime via assembly metadata (BuiltWithFramework).
 
     Use -DryRun to preview changes without modifying anything.
 
@@ -150,7 +152,7 @@ $bulkFiles = Get-ChildItem -Path $baseDir -Recurse -Include *.ps1, *.iss, *.cspr
     Where-Object { $_.FullName -notmatch '[\\/](bin|obj|packages|node_modules|\.git|TestResults)[\\/]' }
 Update-Files -Files $bulkFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
 
-# 2. Specific Config/Workflow updates (Safe Pathing & Broadened Workflows)
+# 2. Target specific workflow files
 $workflowFiles = @($(Join-Path $baseDir ".github\workflows\publish.yml"))
 
 # Explicit targets must match version patterns to proceed safely
