@@ -232,9 +232,9 @@ function Format-SecureLogMessage {
   )
 
   # Construct the regex pattern dynamically
-  # Breakdown:
-  # (?i)                                   : Case-insensitive evaluation
-  # (--(?:...)[=\s]+)                      : Group $1 -> Matches the flag (e.g., --service-name= or --priority )
+  # The alternation is built from $sensitiveFields only; three patterns share the same $1 prefix group:
+  # (?i)                               : Case-insensitive evaluation
+  # (--(?:password|envVars|...)[=\s]+) : Group $1 -> Matches the sensitive flag (e.g., --password= or --preLaunchEnv )
   $fieldsRegex = $sensitiveFields -join '|'
   
   # ROBUSTNESS: PowerShell 2.0 cannot implicitly cast a ScriptBlock to a MatchEvaluator.
@@ -1345,7 +1345,9 @@ function Install-ServyService {
       Invoke-ServyCli -Command "install" -Arguments $argsList -Quiet:$Quiet -EnvironmentVariables $secureEnv -ErrorContext "Failed to install service '$Name'"
   }
   finally {
-      # Explicitly clear managed references to prevent sensitive data lingering in the heap
+      # Best effort: release our references so the GC can reclaim them sooner.
+      # NOTE: managed strings are immutable and cannot be deterministically scrubbed;
+      # copies of the plain-text password may persist in the heap until collected.
       $plainPassword = $null
       
       # Clear sensitive environment variables from the hashtable structure

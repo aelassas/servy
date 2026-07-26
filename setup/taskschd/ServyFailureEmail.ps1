@@ -37,7 +37,7 @@
 #>
 
 # -------------------------------
-# 1. Determine Script Root (PS 3.0+ Compatible)
+# 1. Determine Script Root
 # -------------------------------
 $scriptDir = $PSScriptRoot
 $timestampFile = Join-Path $scriptDir "last-processed-email.dat"

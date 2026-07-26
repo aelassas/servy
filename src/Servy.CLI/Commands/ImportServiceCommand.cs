@@ -228,7 +228,6 @@ namespace Servy.CLI.Commands
         /// <returns>A <see cref="CommandResult"/> indicating success or the specific validation failure.</returns>
         private CommandResult ValidateServicePaths(ServiceDto service)
         {
-            // Use an anonymous type and standard null checks for C# 7.3 compatibility
             var pathFields = typeof(ServiceDto).GetProperties()
                 .Select(p => new
                 {
