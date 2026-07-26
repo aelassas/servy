@@ -33,9 +33,9 @@ namespace Servy.Core.Services
     {
         /// <summary>
         /// Installs a Windows service using a wrapper executable that launches the real target executable
-        /// with specified arguments and working directory. If a linguistically identical service name variant 
-        /// exists in the database under a different casing layout, it automatically uninstalls the legacy OS instance 
-        /// to prevent duplicate task forks.
+        /// with the specified arguments and working directory. If a service whose name differs only in letter
+        /// casing already exists in the database, the existing OS service is uninstalled first to avoid a
+        /// duplicate/orphaned service registration.
         /// </summary>
         /// <param name="options">The options containing all configuration parameters for the service installation, including paths, names, and environment variables.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the installation to complete.</param>

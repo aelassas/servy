@@ -76,7 +76,7 @@ namespace Servy.Core.Helpers
         /// </list>
         /// </para>
         /// </remarks>
-        /// <exception cref="ArgumentNullException">Thrown if any of the provided paths or connection strings are null or whitespace.</exception>
+        /// <exception cref="ArgumentException">Thrown if any of the provided paths or connection strings are null or whitespace.</exception>
         /// <exception cref="InvalidOperationException">Thrown if the connection string format is invalid or directory names cannot be parsed.</exception>
         public static void EnsureFolders(string connectionString, string aesKeyFilePath, string aesIVFilePath)
         {

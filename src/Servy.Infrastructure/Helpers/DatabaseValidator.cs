@@ -36,7 +36,7 @@ namespace Servy.Infrastructure.Helpers
         /// </returns>
         /// <example>
         /// <code>
-        /// if (DatabaseValidator.ValidateVersion("3.50.4", out _)) { /* Safe */ }
+        /// if (DatabaseValidator.ValidateVersion("3.50.4")) { /* Safe */ }
         /// </code>
         /// </example>
         public static bool ValidateVersion(string versionText)

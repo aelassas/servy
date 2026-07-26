@@ -32,7 +32,7 @@ namespace Servy.Core.ServiceDependencies
                 return true;
             }
 
-            // Strip matching split copy-paste loops and stream from centralized tokenizer helper
+            // Validate each dependency name produced by the shared tokenizer.
             foreach (string serviceName in ServiceDependenciesParser.Tokenize(input))
             {
                 if (!ValidServiceNameRegex.IsMatch(serviceName))

@@ -35,8 +35,12 @@ namespace Servy.Core.Services
         }
 
         /// <summary>
-        /// Centralized unmanaged execution utility to safely project and drain ServiceController arrays.
+        /// Enumerates services via <see cref="ServiceController.GetServices()"/>, maps each with
+        /// <paramref name="projector"/>, and disposes every controller afterwards.
         /// </summary>
+        /// <typeparam name="T">The type of the projected result elements.</typeparam>
+        /// <param name="projector">A transform function to apply to each <see cref="ServiceController"/>.</param>
+        /// <returns>An array of projected elements containing data extracted from the service controllers.</returns>
         internal static T[] MapAndDisposeServices<T>(Func<ServiceController, T> projector)
         {
             var controllers = ServiceController.GetServices();

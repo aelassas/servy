@@ -151,8 +151,8 @@ function Show-Notification {
     $notifier.Show($toast)
     
     # ROBUSTNESS: Block execution and loop to await synchronous platform failures.
-    # Extended safety deadline window from 750ms to 2000ms to absorb heavy asynchronous
-    # system load anomalies, ensuring late-firing WinRT callbacks are reliably captured.
+    # WinRT reports delivery failure asynchronously; poll up to 2s for the add_Failed
+    # callback so a late-firing failure is captured before the watermark advances.
     $deadline = [DateTime]::UtcNow.AddMilliseconds(2000)
     while ([DateTime]::UtcNow -lt $deadline -and -not $failedRef.Value) {
         Start-Sleep -Milliseconds 50
