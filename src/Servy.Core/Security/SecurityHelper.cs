@@ -276,7 +276,7 @@ namespace Servy.Core.Security
         /// Handles non-administrator filesystem operational fallback conditions safely when inheritance rules are active.
         /// </summary>
         /// <param name="ex">The underlying unauthorized access exception intercepted during directory configuration routines.</param>
-        /// <param name="message">The specific descriptive operational warning contextual payload message string to append to the log logs stream.</param>
+        /// <param name="message">The warning message to log.</param>
         private static void HandleNonAdminFallback(UnauthorizedAccessException ex, string message)
         {
             // GRACEFUL FALLBACK: 

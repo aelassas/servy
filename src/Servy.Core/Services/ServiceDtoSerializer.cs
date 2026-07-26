@@ -5,13 +5,12 @@ using Servy.Core.Logging;
 namespace Servy.Core.Services
 {
     /// <summary>
-    /// Provides a unified base class that orchestrates the operational skeleton for serializing and 
-    /// deserializing <see cref="ServiceDto"/> objects, ensuring structural consistency across formats.
+    /// Provides a base class for serializing and deserializing <see cref="ServiceDto"/> objects.
     /// </summary>
     public abstract class ServiceDtoSerializer
     {
         /// <summary>
-        /// Gets the name of the data format (e.g., "JSON", "XML") used in structural logging diagnostics.
+        /// Gets the name of the data format (e.g., "JSON", "XML") used in log messages.
         /// </summary>
         protected abstract string FormatName { get; }
 
@@ -25,7 +24,7 @@ namespace Servy.Core.Services
         /// <summary>
         /// When overridden in a derived class, executes the format-specific serialization mechanics to transform a DTO into its string expression.
         /// </summary>
-        /// <param name="dto">The service definition metadata transfer object to transform.</param>
+        /// <param name="dto">The DTO to serialize.</param>
         /// <returns>A formatted representation string of the service definition.</returns>
         protected abstract string? SerializeCore(ServiceDto dto);
 
@@ -40,7 +39,7 @@ namespace Servy.Core.Services
         /// Deserializes a format-specific textual stream representation into a structured <see cref="ServiceDto"/>.
         /// </summary>
         /// <param name="input">The raw text block content.</param>
-        /// <returns>The populated data contract on successful parsing; otherwise, <c>null</c> if input is void or parsing errors materialize.</returns>
+        /// <returns>The DTO, or <c>null</c> if the input is null/empty or parsing fails.</returns>
         public ServiceDto? Deserialize(string? input)
         {
             // Initial guard: null/empty input deserializes to null per contract
@@ -70,8 +69,7 @@ namespace Servy.Core.Services
                 }
                 else
                 {
-                    // Catch-all fallthrough layer to protect against secondary runtime anomalies,
-                    // such as custom contract faults or helper assignment errors.
+                    // Log a generic failure message when no line info is available
                     Logger.Error($"{FormatName} Deserialization encountered a failure.", ex);
                 }
 
@@ -83,8 +81,8 @@ namespace Servy.Core.Services
         /// <summary>
         /// Serializes a structured <see cref="ServiceDto"/> instance into its corresponding format-specific textual expression.
         /// </summary>
-        /// <param name="dto">The source metadata object transfer layout.</param>
-        /// <returns>The formatted output manifest representation string; or <c>null</c> if serialization fails or argument is missing.</returns>
+        /// <param name="dto">The DTO to serialize.</param>
+        /// <returns>The serialized string, or <c>null</c> if the DTO is null or serialization fails.</returns>
         public string? Serialize(ServiceDto? dto)
         {
             if (dto == null)
