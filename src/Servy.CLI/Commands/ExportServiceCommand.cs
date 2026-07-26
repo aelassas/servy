@@ -3,15 +3,12 @@ using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Data;
-using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Core.Native;
 using Servy.Core.Security;
 using Servy.Core.Validation;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security;
 using System.Text;
 using System.Threading;
@@ -110,16 +107,14 @@ namespace Servy.CLI.Commands
         /// <exception cref="IOException">Thrown if the directory chain cannot be created or the file cannot be written.</exception>
         private void SaveFile(string userPath, string content)
         {
-            // Preliminary folder generation validation rule
             string fullPath = Path.GetFullPath(userPath);
             string parentDir = Path.GetDirectoryName(fullPath);
 
-            // Track directories created dynamically during this transaction loop to enable atomic rollbacks
+            // Track directories created in this invocation; cleanup is best-effort (only directories we created, only if empty)
             var directoriesCreatedByUs = new List<string>();
 
             if (!string.IsNullOrEmpty(parentDir) && !Directory.Exists(parentDir))
             {
-                // Map out the missing directory chain chunks hierarchically
                 string currentPath = parentDir;
                 var missingChain = new Stack<string>();
 
@@ -129,7 +124,6 @@ namespace Servy.CLI.Commands
                     currentPath = Path.GetDirectoryName(currentPath);
                 }
 
-                // Build the directory trees one by one, keeping track of our modifications
                 while (missingChain.Count > 0)
                 {
                     string targetDir = missingChain.Pop();
@@ -148,7 +142,6 @@ namespace Servy.CLI.Commands
             bool createdByUs = !File.Exists(fullPath);
             bool committed = false;
 
-            // Route execution flow securely through the centralized logic engine
             var validationResult = PathSecurityGuard.ValidatePath(
                 userPath,
                 FileMode.OpenOrCreate,
@@ -158,7 +151,7 @@ namespace Servy.CLI.Commands
 
             if (!validationResult.IsValid || fileStream == null)
             {
-                // Roll back directory creation side effects instantly on validation failure
+                // Clean up any empty directories created before the path security failure
                 for (int i = directoriesCreatedByUs.Count - 1; i >= 0; i--)
                 {
                     try
@@ -168,7 +161,7 @@ namespace Servy.CLI.Commands
                             Directory.Delete(directoriesCreatedByUs[i]);
                         }
                     }
-                    catch { /* Suppress rollback infrastructure exceptions to preserve original security errors */ }
+                    catch { /* Suppress cleanup exceptions to preserve original security errors */ }
                 }
 
                 string error = validationResult.ErrorMessage ?? "Security Guard Failure: Target file handle validation rejected.";
@@ -185,12 +178,11 @@ namespace Servy.CLI.Commands
             {
                 using (fileStream)
                 {
-                    // The handle layout has been cleanly verified; write configuration data safely
                     using (var sw = new StreamWriter(fileStream, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
                     {
                         sw.Write(content);
                         sw.Flush();
-                        fileStream.SetLength(fileStream.Position); // Truncate out stale bytes cleanly
+                        fileStream.SetLength(fileStream.Position); // Truncate existing content if file was larger
                         committed = true;
                     }
                 }
@@ -208,7 +200,7 @@ namespace Servy.CLI.Commands
                         try { File.Delete(fullPath); } catch { /* ignored */ }
                     }
 
-                    // Fallback rollback guard inside finally block for runtime IO or write-access failure states
+                    // Best-effort cleanup of empty directories created during write failure
                     for (int i = directoriesCreatedByUs.Count - 1; i >= 0; i--)
                     {
                         try

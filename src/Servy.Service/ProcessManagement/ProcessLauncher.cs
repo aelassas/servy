@@ -484,12 +484,12 @@ namespace Servy.Service.ProcessManagement
 
         /// <summary>
         /// Attempts to initialize a file log writer in append mode with broad thread-sharing permissions.
-        /// Handles directory generation and isolates structural resource allocation leaks.
+        /// Ensures the target directory exists and safely disposes file streams if opening fails.
         /// </summary>
         /// <param name="path">The target destination absolute disk path for log output.</param>
-        /// <param name="encoding">The character text encoding sequence configuration standard.</param>
-        /// <param name="exePath">The executable filename descriptor context used for telemetry boundaries.</param>
-        /// <param name="scope">The functional scope name identifier used in generating error logs.</param>
+        /// <param name="encoding">The text encoding for the log file.</param>
+        /// <param name="exePath">The executable path, used only for log/error messages.</param>
+        /// <param name="scope">A label (e.g. 'stdout' or 'stderr') used in failure log messages.</param>
         /// <param name="logger">The operational logging instance to output tracing to.</param>
         /// <returns>An active autoflushing <see cref="StreamWriter"/> instance if initialization succeeds; otherwise, <c>null</c>.</returns>
         private static StreamWriter TryOpenAppendWriter(string path, Encoding encoding, string exePath, string scope, IServyLogger logger)

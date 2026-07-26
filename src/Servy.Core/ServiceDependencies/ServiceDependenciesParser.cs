@@ -59,7 +59,7 @@ namespace Servy.Core.ServiceDependencies
             if (string.IsNullOrWhiteSpace(input))
                 return NoDependencies;
 
-            // Delegate string chunk extraction to our centralized token parser engine
+            // Tokenize, then drop case-insensitive duplicate dependency names.
             var parts = Tokenize(input)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
