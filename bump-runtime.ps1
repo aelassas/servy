@@ -152,7 +152,7 @@ $bulkFiles = Get-ChildItem -Path $baseDir -Recurse -Include *.ps1, *.iss, *.cspr
     Where-Object { $_.FullName -notmatch '[\\/](bin|obj|packages|node_modules|\.git|TestResults)[\\/]' }
 Update-Files -Files $bulkFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
 
-# 2. Target specific workflow files
+# 2. Explicitly-targeted files that must contain the version pattern (publish.yml TFM env)
 $workflowFiles = @($(Join-Path $baseDir ".github\workflows\publish.yml"))
 
 # Explicit targets must match version patterns to proceed safely
@@ -161,7 +161,7 @@ Update-Files -Files $workflowFiles -Pattern $currentVersionRegex -Replacement $n
 # 3. Update global.json SDK version to match the new TFM major via regex to perfectly preserve original file formatting
 $globalJsonFile = Join-Path $baseDir "global.json"
 if (Test-Path $globalJsonFile) {
-    # Captures the JSON property context and ensures we do not cross boundaries or break numerical groupings
+    # Capture group keeps the '"version": "' prefix; only the number is replaced
     $globalJsonPattern     = '("version"\s*:\s*")\d+\.\d+\.\d+'
     $globalJsonReplacement = "`${1}$Version.$SdkPatch"
     

@@ -34,12 +34,11 @@ namespace Servy.CLI.Commands
             };
 
         /// <summary>
-        /// Executes a synchronous command action with common error handling.
-        /// Wraps the action with common error handling <see cref="OperationCanceledException"/> is translated to a clean cancellation result, 
-        /// and all other exceptions are routed through <see cref="HandleException"/> (which additionally special-cases <see cref="UnauthorizedAccessException"/>).
+        /// Executes a synchronous command action with common error handling: <see cref="OperationCanceledException"/> 
+        /// is translated to a clean cancellation result, and all other exceptions are routed through <see cref="HandleException"/>.
         /// </summary>
-        /// <param name="commandName">Command name  (e.g., "install", "start").</param>
-        /// <param name="action">A description of what is being attempted (e.g., "install service 'MyService'").</param>
+        /// <param name="commandName">The name of the command executing (e.g., "install", "start"), used for logging scopes.</param>
+        /// <param name="action">Human-readable description of the attempted operation, used in error messages.</param>
         /// <param name="suggestion">Actionable advice for the user if the command fails.</param>
         /// <param name="task">The synchronous command logic to execute.</param>
         /// <returns>A <see cref="CommandResult"/> representing success or failure of the command.</returns>
@@ -60,12 +59,11 @@ namespace Servy.CLI.Commands
         }
 
         /// <summary>
-        /// Executes an asynchronous command action with common error handling.
-        /// Wraps the action with common error handling <see cref="OperationCanceledException"/> is translated to a clean cancellation result, 
-        /// and all other exceptions are routed through <see cref="HandleException"/> (which additionally special-cases <see cref="UnauthorizedAccessException"/>).
+        /// Executes an asynchronous command action with common error handling: <see cref="OperationCanceledException"/> 
+        /// is translated to a clean cancellation result, and all other exceptions are routed through <see cref="HandleException"/>.
         /// </summary>
-        /// <param name="commandName">Command name  (e.g., "install", "start").</param>
-        /// <param name="action">A description of what is being attempted (e.g., "start service 'MyService'").</param>
+        /// <param name="commandName">The name of the command executing (e.g., "install", "start"), used for logging scopes.</param>
+        /// <param name="action">Human-readable description of the attempted operation, used in error messages.</param>
         /// <param name="suggestion">Actionable advice for the user if the command fails.</param>
         /// <param name="task">The asynchronous command logic to execute.</param>
         /// <returns>A <see cref="Task{CommandResult}"/> representing success or failure of the command.</returns>
@@ -77,8 +75,6 @@ namespace Servy.CLI.Commands
             }
             catch (OperationCanceledException)
             {
-                // Return a clean failure result for user-initiated cancellations.
-                // This avoids logging a full stack trace for an expected event.
                 return CommandResult.Fail(string.Format(Strings.Msg_CommandCancelled, commandName));
             }
             catch (Exception ex)
@@ -88,19 +84,19 @@ namespace Servy.CLI.Commands
         }
 
         /// <summary>
-        /// Centralizes shared service management pre-flight validation, installation assertions, and operation logging pipelines.
+        /// Centralizes shared service management pre-flight validation, installation assertions, and operation logging.
         /// </summary>
-        /// <param name="commandName">The diagnostic name of the command executing the pipeline context used for logging scopes.</param>
-        /// <param name="action">The specific architectural intent verb used to construct detailed context error strings.</param>
-        /// <param name="suggestion">The informative remediation recommendation message provided to the end-user upon structural failures.</param>
-        /// <param name="serviceName">The system identity name of the target Windows service to evaluate.</param>
-        /// <param name="serviceManager">The operational management abstraction framework instance used to check installation topologies.</param>
-        /// <param name="operation">The core delegate wrapping the actual asynchronous SCM manipulation step.</param>
-        /// <param name="successMessageFormatter">A string manipulation delegate used to generate uniform success notification logs.</param>
-        /// <param name="preCheck">An optional delegate invocation layer that performs specialized pre-flight verification assertions.</param>
-        /// <param name="onSuccess">An optional asynchronous callback, awaited after the operation succeeds, used to synchronize repository state (e.g. DB upsert). Failures are caught and logged as a warning without failing the command.</param>
-        /// <param name="cancellationToken">A cancellation token tracking task state abandonment flags across runtime pools.</param>
-        /// <returns>An asynchronous task returning a definitive <see cref="CommandResult"/> representing pipeline execution outcomes.</returns>
+        /// <param name="commandName">The name of the command executing, used for logging scopes.</param>
+        /// <param name="action">Human-readable description of the attempted operation, used in error messages.</param>
+        /// <param name="suggestion">Remediation suggestion provided to the user on failure.</param>
+        /// <param name="serviceName">The name of the target Windows service.</param>
+        /// <param name="serviceManager">The service manager instance used to manage Windows services.</param>
+        /// <param name="operation">The delegate wrapping the actual asynchronous service operation.</param>
+        /// <param name="successMessageFormatter">Function used to format the success message string.</param>
+        /// <param name="preCheck">Optional delegate performing pre-flight checks before the main operation runs.</param>
+        /// <param name="onSuccess">Optional asynchronous callback executed after a successful operation to synchronize repository state (e.g. DB upsert). Failures are caught and logged as a warning without failing the command.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task returning a <see cref="CommandResult"/> representing the operation outcome.</returns>
         protected async Task<CommandResult> ExecuteServiceOperationAsync(
             string commandName,
             string action,
@@ -115,7 +111,6 @@ namespace Servy.CLI.Commands
         {
             return await ExecuteWithHandlingAsync(commandName, action, suggestion, async () =>
             {
-                // Pre-flight elevation check wrapped inside a protective test seam hook
                 if (!_bypassElevationCheck)
                 {
                     SecurityHelper.EnsureAdministrator();
@@ -147,8 +142,6 @@ namespace Servy.CLI.Commands
                         }
                         catch (Exception ex)
                         {
-                            // Transform terminal execution fault into an informative best-effort warning descriptor.
-                            // Prevents database write-locks or directory IO bottlenecks from masking a successful SCM operation.
                             Logger.Warn($"{commandName}: Service operation completed successfully, but post-success repository synchronization failed for '{serviceName}': {ex.Message}");
                         }
                     }
@@ -168,29 +161,24 @@ namespace Servy.CLI.Commands
         /// <summary>
         /// Centralizes exception logging and CommandResult formatting for both synchronous and asynchronous command executions.
         /// </summary>
-        /// <param name="ex">The intercepted <see cref="Exception"/> instance requiring diagnostics processing and logging.</param>
-        /// <param name="commandName">The execution name of the calling command used to populate localized remediation placeholders.</param>
-        /// <param name="action">The core operational verb mapping to the attempted system action being protected.</param>
-        /// <param name="suggestion">An optional actionable remediation fallback suggestion provided to the user upon command failure.</param>
-        /// <returns>A formatted <see cref="CommandResult"/> encapsulating the failure context and localized error templates.</returns>
+        /// <param name="ex">The thrown exception to process.</param>
+        /// <param name="commandName">The name of the command executing, used for logging scopes and formatting messages.</param>
+        /// <param name="action">Human-readable description of the attempted operation, used in error messages.</param>
+        /// <param name="suggestion">Actionable remediation suggestion provided to the user upon command failure.</param>
+        /// <returns>A <see cref="CommandResult"/> detailing the failure.</returns>
         private CommandResult HandleException(Exception ex, string commandName, string action, string suggestion)
         {
             if (ex is UnauthorizedAccessException)
             {
                 Logger.Error($"Failed to {action} (Unauthorized)", ex);
 
-                // This uses the specific resource string: 
-                // "Access Denied. Please restart the shell as Administrator to run the '{0}' command."
                 var errorMessage = string.Format(Strings.Msg_AdminPrivilegesRequired, commandName);
-
-                // We can skip the 'fallbackSuggestion' since the message is already so clear.
                 return CommandResult.Fail(errorMessage);
             }
             else
             {
                 Logger.Error($"Failed to {action}", ex);
 
-                // ROBUSTNESS: Utilize localized templates rather than hardcoded English string fragments.
                 var errorMessage = string.Format(Strings.Msg_CommandFailedTemplate, action, ex.Message);
 
                 if (!string.IsNullOrEmpty(suggestion))

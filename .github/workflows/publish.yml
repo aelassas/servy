@@ -96,14 +96,13 @@ jobs:
         run: |
           # 1. Define version and paths
           $version = $env:INNO_SETUP_VERSION
-          $expectedHash = $env:INNO_SETUP_HASH
           
           # Convert "6.6.1" to "6_6_1" for the URL directory
           $urlVersion = $version.Replace(".", "_") 
           $url = "https://github.com/jrsoftware/issrc/releases/download/is-$urlVersion/innosetup-$version.exe"
           $installer = "innosetup.exe"
           
-          Write-Host "Downloading Inno Setup v$version..."
+          Write-Host "Staging Inno Setup v$version download configuration..."
           
           # DRY UNIFICATION: Outsource loop payload mechanics to our central action infrastructure
           Add-Content -Path $env:GITHUB_ENV -Value "INNO_URL=$url"
@@ -153,7 +152,7 @@ jobs:
           $url = "https://github.com/ip7z/7zip/releases/download/$version/7z$fileVersion-x64.exe"
           $installer = "7z_setup.exe"
           
-          Write-Host "Downloading 7-Zip v$version..."
+          Write-Host "Staging 7-Zip v$version download configuration..."
           
           # Staged environment variable names updated to avoid numerical-starting parsing bugs
           Add-Content -Path $env:GITHUB_ENV -Value "SEVENZ_URL=$url"
@@ -182,11 +181,11 @@ jobs:
           }
           Write-Host "Checksum verified successfully."
 
-          # 3. Install silently to a fixed directory
+          # 1. Install silently to a fixed directory
           Write-Host "Installing to $installDir..."
           Start-Process ".\$installer" -ArgumentList "/S", "/D=$installDir" -Wait
 
-          # 4. Set variables for runtime state context
+          # 2. Set variables for runtime state context
           $env:SEVEN_ZIP = $exePath
           Add-Content -Path $env:GITHUB_ENV -Value "SEVEN_ZIP=$exePath"
           if (-not (Test-Path $exePath)) { throw "7z.exe not found at $exePath" }

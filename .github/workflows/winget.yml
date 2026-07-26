@@ -33,5 +33,5 @@ jobs:
           identifier: aelassas.Servy
           token: ${{ secrets.WINGET_TOKEN }}
           installers-regex: "servy-\\d+\\.\\d+-x64-installer\\.exe$"
-          # Dynamically resolve tag parameters across automated hooks and manual re-run triggers
+          # Manual dispatch tag wins; otherwise use the tag of the triggering release
           release-tag: ${{ github.event.inputs.tag || github.event.release.tag_name }}
