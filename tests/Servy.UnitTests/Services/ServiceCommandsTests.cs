@@ -118,10 +118,11 @@ namespace Servy.UnitTests.Services
             // Delete wrapper intentionally to force branch path execution
             var wrapperPath = Core.Config.AppConfig.GetServyUIServicePath();
             var backup = wrapperPath + ".bak";
-            if (File.Exists(wrapperPath)) File.Move(wrapperPath, backup);
 
             try
             {
+                if (File.Exists(wrapperPath)) File.Move(wrapperPath, backup);
+
                 // Act
                 var result = await sut.InstallService(config, CancellationToken.None);
 

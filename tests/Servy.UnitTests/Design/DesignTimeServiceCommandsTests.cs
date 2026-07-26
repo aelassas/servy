@@ -11,22 +11,23 @@ namespace Servy.UnitTests.Design
             // Arrange
             var commands = new DesignTimeServiceCommands();
             var dummyConfig = new ServiceConfiguration();
+            var ct = TestContext.Current.CancellationToken;
 
             // Act & Assert - Boolean returning methods
-            Assert.True(await commands.InstallService(dummyConfig, TestContext.Current.CancellationToken));
-            Assert.True(await commands.UninstallService("testService", TestContext.Current.CancellationToken));
-            Assert.True(await commands.StartService("testService", TestContext.Current.CancellationToken));
-            Assert.True(await commands.StopService("testService", TestContext.Current.CancellationToken));
-            Assert.True(await commands.RestartService("testService", TestContext.Current.CancellationToken));
+            Assert.True(await commands.InstallService(dummyConfig, ct));
+            Assert.True(await commands.UninstallService("testService", ct));
+            Assert.True(await commands.StartService("testService", ct));
+            Assert.True(await commands.StopService("testService", ct));
+            Assert.True(await commands.RestartService("testService", ct));
 
             // Act & Assert - Task.CompletedTask returning methods
             var exception = await Record.ExceptionAsync(async () =>
             {
-                await commands.ExportXmlConfig("password", cancellationToken: TestContext.Current.CancellationToken);
-                await commands.ExportJsonConfig("password", cancellationToken: TestContext.Current.CancellationToken);
-                await commands.ImportXmlConfig(cancellationToken: TestContext.Current.CancellationToken);
-                await commands.ImportJsonConfig(cancellationToken: TestContext.Current.CancellationToken);
-                await commands.OpenManager(cancellationToken: TestContext.Current.CancellationToken);
+                await commands.ExportXmlConfig("password", cancellationToken: ct);
+                await commands.ExportJsonConfig("password", cancellationToken: ct);
+                await commands.ImportXmlConfig(cancellationToken: ct);
+                await commands.ImportJsonConfig(cancellationToken: ct);
+                await commands.OpenManager(cancellationToken: ct);
             });
 
             Assert.Null(exception);
