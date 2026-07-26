@@ -610,11 +610,11 @@ namespace Servy.Core.Config
         public const int SplashMinDisplayThresholdMs = 1000;
 
         /// <summary>
-        /// Specifies the artificial cooling padding duration (in milliseconds) enforced when sub-system initializations complete prematurely.
+        /// Specifies the minimum splash screen display delay (in milliseconds) enforced when initialization completes quickly.
         /// </summary>
         /// <remarks>
-        /// This constant is injected into the sleep pipeline when a quick application boot bypasses the minimum display 
-        /// requirement threshold. It dampens the window transition, providing an intentional, smooth visual pause for the user.
+        /// When application startup completes faster than this threshold, a brief pause is added to ensure 
+        /// the splash screen displays long enough to prevent a jarring visual flicker before transitioning to the main UI.
         /// </remarks>
         public const int SplashMinDisplayPaddingMs = 500;
 
@@ -1012,47 +1012,42 @@ namespace Servy.Core.Config
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>Telemetry Dampening Circuit:</b> In long-running background worker environments, transient filesystem 
-        /// friction (such as temporary file locks from antivirus sweeps, backup software indexing, or active 
-        /// remote management tailing tools) can cause intermittent deletion failures. Logging these as critical 
-        /// immediately would pollute event streams with non-actionable noise.
+        /// <b>Telemetry Noise Reduction:</b> In long-running background worker environments, transient filesystem 
+        /// locks (such as temporary file locks from antivirus sweeps, backup software indexing, or active 
+        /// log monitoring tools) can cause intermittent deletion failures. Logging these as errors immediately 
+        /// would pollute event streams with non-actionable noise.
         /// </para>
         /// <para>
-        /// This constant establishes a threshold window. If the internal failure counter intercepts 
-        /// <value>10</value> consecutive exceptions without a successful pass, the retention lifecycle agent 
-        /// escalates the threat vector to an operational <c>Logger.Error</c> notification, warning administrators 
-        /// that disk space allocation boundaries are no longer actively contained.
+        /// If the cleanup loop encounters <value>10</value> consecutive deletion failures without a successful pass, 
+        /// it escalates the log level to <c>Logger.Error</c> to notify administrators that rotated log files are 
+        /// no longer being pruned and disk space may grow unbounded.
         /// </para>
         /// </remarks>
         public const int LogRotationDeletionFailureEscalationThreshold = 10;
 
         /// <summary>
-        /// Defines the maximum number of structural replacement attempts allowed when performing an atomic file swap operation.
+        /// Defines the maximum number of retry attempts allowed when performing an atomic file swap operation.
         /// </summary>
         /// <remarks>
-        /// This boundary value is a reliability safeguard against transient I/O conflicts during the final file replacement phase. 
-        /// Even though the file content is initially dumped into an isolated temporary file, the final transaction-which relies on 
-        /// an NTFS transactional metadata swap via <see cref="File.Move(string, string, bool)"/>-can trigger race conditions with background 
-        /// operating system filters. If a filter interceptor is actively evaluating the destination, this configuration permits up to 
-        /// <value>3</value> consecutive execution passes before propagating a failure exception up the stack.
+        /// Protects against transient I/O conflicts during atomic file replacement. While content is written to a temporary file, 
+        /// the final file move via <see cref="File.Move(string, string, bool)"/> can hit temporary locks if background OS processes 
+        /// (like file indexers or antivirus filters) inspect the destination. This setting allows up to <value>3</value> retries 
+        /// before propagating an exception.
         /// </remarks>
         public const int WriteFileAtomicMaxRetries = 3;
 
         /// <summary>
-        /// Specifies the defensive cooling or backoff duration (in milliseconds) introduced between subsequent transactional file move attempts.
+        /// Specifies the delay (in milliseconds) between retries during atomic file replacement.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>Win32 File Locking and Interception Dynamics:</b> When a new binary artifact or configuration profile is written to a storage volume, 
-        /// the Windows Kernel file system filter manager alerts registered background engines. Aggressive real-time security scanners, 
-        /// corporate endpoint detection agents (EDR), and local search indexing pipelines (such as Windows Search) immediately acquire short-lived, 
-        /// shared read locks on the temporary payload to verify integrity.
+        /// <b>Win32 File Locking Dynamics:</b> When a temporary file or configuration file is written to disk, 
+        /// background processes like antivirus scanners or Windows Search indexing may temporarily open a shared read lock on it.
         /// </para>
         /// <para>
-        /// If these hooks are running concurrently when the application executes its atomic metadata swap, the operation is blocked with a 
-        /// transient Win32 Error 5 (<see cref="UnauthorizedAccessException"/>) or Error 32 (<see cref="IOException"/> sharing violation). This 
-        /// value establishes a <value>100</value> millisecond pause, providing an adequate operational window for automated system hooks 
-        /// to conclude their evaluation and release their handles.
+        /// If a lock is active during an atomic file move, the operation fails with a Win32 Error 5 
+        /// (<see cref="UnauthorizedAccessException"/>) or Error 32 (<see cref="IOException"/> sharing violation). This 
+        /// <value>100</value> millisecond delay gives external locks time to release before the next retry.
         /// </para>
         /// </remarks>
         public const int WriteFileAtomicRetryDelayMs = 100;
@@ -1185,19 +1180,18 @@ namespace Servy.Core.Config
         public const int MaxLogsWindowDays = 30;
 
         /// <summary>
-        /// Defines the maximum number of structural allocation attempts permitted when setting text into the system clipboard.
+        /// Defines the maximum number of retry attempts permitted when setting text into the system clipboard.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>Win32 Shared Resource Architecture:</b> The Windows Clipboard is an unmanaged, session-wide shared resource. 
-        /// When another process opens the clipboard data broker loop (e.g., an active remote desktop session, a password manager 
-        /// clipboard clearing loop, or an intensive security scanning agent), subsequent allocation requests from other processes 
-        /// are rejected with an explicit <see cref="System.Runtime.InteropServices.COMException"/> or <see cref="System.Runtime.InteropServices.ExternalException"/>.
+        /// <b>Win32 Shared Resource Architecture:</b> The Windows Clipboard is a session-wide shared resource. 
+        /// When another process holds the clipboard open (e.g., Remote Desktop sessions, password managers, or security scanners), 
+        /// requests from other applications fail with a <see cref="System.Runtime.InteropServices.COMException"/> or 
+        /// <see cref="System.Runtime.InteropServices.ExternalException"/>.
         /// </para>
         /// <para>
-        /// To mitigate these transient environment locks without triggering application crashes or freezing the UI dispatcher thread, 
-        /// the copying pipeline employs an asynchronous spin-retry circuit. This constant caps the execution boundary to 
-        /// <value>5</value> attempts before giving up and logging an operational warning.
+        /// To handle these transient locks without crashing or freezing the UI dispatcher thread, 
+        /// the application retries up to <value>5</value> times before logging a warning and giving up.
         /// </para>
         /// </remarks>
         public const int ClipboardComMaxRetries = 5;
