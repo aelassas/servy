@@ -13,11 +13,14 @@ using Xunit;
 namespace Servy.UI.IntegrationTests.Services
 {
     [Collection("UiSta")]
-    public class HelpServiceIntegrationTests
+    public class HelpServiceIntegrationTests : IDisposable
     {
         private readonly Mock<IMessageBoxService> _mockMessageBox;
         private readonly HelpService _service;
         private const string Caption = "Help Test";
+
+        private HttpMessageHandler _originalHandler;
+        private HttpClient _targetClient;
 
         public HelpServiceIntegrationTests()
         {
@@ -26,11 +29,28 @@ namespace Servy.UI.IntegrationTests.Services
             UiHeadless.IsEnabled = true;
         }
 
+        public void Dispose()
+        {
+            // Restore the original handler to avoid cross-test static state pollution
+            if (_targetClient != null && _originalHandler != null)
+            {
+                try
+                {
+                    SetHandlerField(_targetClient, _originalHandler);
+                }
+                catch
+                {
+                    // Best effort cleanup during tear-down
+                }
+            }
+        }
+
         #region Constructor Tests
 
         [Fact]
         public void Constructor_NullMessageBoxService_ThrowsArgumentNullException()
         {
+            // Arrange & Act & Assert
             // Branch: messageBoxService ?? throw new ArgumentNullException
             Assert.Throws<ArgumentNullException>(() => new HelpService(null));
         }
@@ -42,10 +62,12 @@ namespace Servy.UI.IntegrationTests.Services
         [Fact]
         public async Task OpenDocumentation_InHeadlessMode_GracefullyDropsExecutionWithoutError()
         {
-            // Note: Process.Start(psi) is hard to mock directly without a wrapper.
-            // In a CI environment, this branch typically "hands off" or succeeds silently.
+            // Arrange & Act
+            // UiHeadless is enabled, so OpenExternalUrl short-circuits before Process.Start;
+            // verify no error dialog is raised.
             await _service.OpenDocumentationAsync(Caption);
 
+            // Assert
             _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
@@ -132,27 +154,52 @@ namespace Servy.UI.IntegrationTests.Services
 
         /// <summary>
         /// Bypasses runtime initonly restrictions by modifying the private execution handler 
-        /// instance deep inside the existing static HttpClient instance.
+        /// instance deep inside the existing static HttpClient instance across .NET Core/5+ and .NET Framework 4.8.
         /// </summary>
         private void InjectMockHandlerIntoStaticClient(HttpMessageHandler mockHandler)
         {
             // 1. Extract the active static HttpClient instance from HelpService
-            var clientInstance = TestReflection.GetFieldStatic<HttpClient>(typeof(HelpService), "_httpClient");
+            _targetClient = TestReflection.GetFieldStatic<HttpClient>(typeof(HelpService), "_httpClient");
 
-            if (clientInstance == null) return;
+            // 2. Capture the original handler before replacing it to support tear-down restoration
+            if (_originalHandler == null)
+            {
+                _originalHandler = GetHandlerField(_targetClient);
+            }
 
-            // 2. HttpClient inherits '_handler' from HttpMessageInvoker in modern .NET runtimes.
-            // TestReflection natively walks up the inheritance tree via .BaseType until found.
-            try
+            // 3. Set the mock handler into the private field using runtime-compatible field lookup
+            SetHandlerField(_targetClient, mockHandler);
+        }
+
+        private static HttpMessageHandler GetHandlerField(HttpClient client)
+        {
+            var fieldInfo = GetHandlerFieldInfo(client);
+            return (HttpMessageHandler)fieldInfo.GetValue(client);
+        }
+
+        private static void SetHandlerField(HttpClient client, HttpMessageHandler mockHandler)
+        {
+            var fieldInfo = GetHandlerFieldInfo(client);
+            fieldInfo.SetValue(client, mockHandler);
+        }
+
+        private static FieldInfo GetHandlerFieldInfo(HttpClient client)
+        {
+            var type = client.GetType();
+            while (type != null)
             {
-                TestReflection.SetField(clientInstance, "_handler", mockHandler);
+                var field = type.GetField("_handler", BindingFlags.Instance | BindingFlags.NonPublic)
+                         ?? type.GetField("handler", BindingFlags.Instance | BindingFlags.NonPublic);
+
+                if (field != null)
+                {
+                    return field;
+                }
+
+                type = type.BaseType;
             }
-            catch (ArgumentException)
-            {
-                // Fallback for distinct .NET runtime memory layouts if field definition drifts
-                var handlerField = typeof(HttpClient).GetField("_handler", BindingFlags.Instance | BindingFlags.NonPublic);
-                handlerField?.SetValue(clientInstance, mockHandler);
-            }
+
+            throw new InvalidOperationException("Could not locate handler field (_handler or handler) on HttpClient for this target framework.");
         }
 
         #endregion

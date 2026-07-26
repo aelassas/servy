@@ -49,10 +49,13 @@ namespace Servy.UI.IntegrationTests.Services
                 }, DispatcherPriority.Send);
 
                 // Queue the yield operation which targets a lower priority (Background)
-                var yieldTask = uiDispatcher.YieldAsync().ContinueWith(_ =>
+                async Task RunYieldAsync()
                 {
+                    await uiDispatcher.YieldAsync();
                     executionOrder.Enqueue("YieldBackground");
-                });
+                }
+
+                var yieldTask = RunYieldAsync();
 
                 // Act: Await the tasks concurrently so the dispatcher pump handles them by priority
                 await Task.WhenAll(highPriorityTask.Task, yieldTask);
