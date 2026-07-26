@@ -25,7 +25,7 @@ namespace Servy.UI.UnitTests.Design
         [Fact]
         public void DesignTimeProcessHelper_CanBeInstantiated()
         {
-            // Act
+            // Arrange & Act
             var helper = new DesignTimeProcessHelper();
 
             // Assert: Verify it inherits from the base ProcessHelper
@@ -39,31 +39,33 @@ namespace Servy.UI.UnitTests.Design
         [Fact]
         public async Task DesignTimeServiceRepository_Methods_ReturnDefaultValues()
         {
+            // Arrange
             var repo = new DesignTimeServiceRepository();
+            var ct = CancellationToken.None;
 
-            // Sync branches
+            // Act & Assert - Sync branches
             Assert.Null(repo.GetByName("test"));
             Assert.Null(repo.GetByName("test", decrypt: false));
 
-            // Async branches (Task.FromResult coverage)
-            Assert.Null(await repo.GetByIdAsync(1, cancellationToken: CancellationToken.None));
-            Assert.Null(await repo.GetByNameAsync("test", cancellationToken: CancellationToken.None));
-            Assert.Null(await repo.GetServicePidAsync("test", cancellationToken: CancellationToken.None));
-            Assert.Null(await repo.GetServiceConsoleStateAsync("test", cancellationToken: CancellationToken.None));
+            // Act & Assert - Async branches (Task.FromResult coverage)
+            Assert.Null(await repo.GetByIdAsync(1, cancellationToken: ct));
+            Assert.Null(await repo.GetByNameAsync("test", cancellationToken: ct));
+            Assert.Null(await repo.GetServicePidAsync("test", cancellationToken: ct));
+            Assert.Null(await repo.GetServiceConsoleStateAsync("test", cancellationToken: ct));
 
-            Assert.Empty(await repo.GetAllAsync(cancellationToken: CancellationToken.None));
-            Assert.Empty(await repo.SearchAsync("key", cancellationToken: CancellationToken.None));
+            Assert.Empty(await repo.GetAllAsync(cancellationToken: ct));
+            Assert.Empty(await repo.SearchAsync("key", cancellationToken: ct));
 
-            Assert.Equal(string.Empty, await repo.ExportXmlAsync("test", cancellationToken: CancellationToken.None));
-            Assert.Equal(string.Empty, await repo.ExportJsonAsync("test", cancellationToken: CancellationToken.None));
-            Assert.True(await repo.ImportXmlAsync("<xml/>", cancellationToken: CancellationToken.None));
-            Assert.True(await repo.ImportJsonAsync("{}", cancellationToken: CancellationToken.None));
+            Assert.Equal(string.Empty, await repo.ExportXmlAsync("test", cancellationToken: ct));
+            Assert.Equal(string.Empty, await repo.ExportJsonAsync("test", cancellationToken: ct));
+            Assert.True(await repo.ImportXmlAsync("<xml/>", cancellationToken: ct));
+            Assert.True(await repo.ImportJsonAsync("{}", cancellationToken: ct));
 
-            // Void/Int branches
+            // Act & Assert - Void/Int branches
             repo.Upsert(new ServiceDto());
             repo.Delete("test");
             Assert.Equal(0, repo.Update(new ServiceDto(), true, true));
-            Assert.Equal(0, await repo.DeleteAsync(1, cancellationToken: CancellationToken.None));
+            Assert.Equal(0, await repo.DeleteAsync(1, cancellationToken: ct));
         }
 
         #endregion
@@ -73,10 +75,11 @@ namespace Servy.UI.UnitTests.Design
         [Fact]
         public async Task DesignTimeServiceManager_Methods_ReturnSafeDefaults()
         {
+            // Arrange
             var manager = new DesignTimeServiceManager();
             var ct = CancellationToken.None;
 
-            // Result branches
+            // Act & Assert - Result branches
             var result = await manager.InstallServiceAsync(new InstallServiceOptions(), cancellationToken: ct);
             Assert.True(result.IsSuccess);
 
@@ -85,12 +88,12 @@ namespace Servy.UI.UnitTests.Design
             Assert.True((await manager.StopServiceAsync("test", cancellationToken: ct)).IsSuccess);
             Assert.True((await manager.RestartServiceAsync("test", cancellationToken: ct)).IsSuccess);
 
-            // Status branches
+            // Act & Assert - Status branches
             Assert.Equal(ServiceControllerStatus.Stopped, manager.GetServiceStatus("test", cancellationToken: ct));
             Assert.False(manager.IsServiceInstalled("test", ct));
             Assert.Equal(ServiceStartType.Manual, manager.GetServiceStartupType("test", cancellationToken: ct));
 
-            // Collection branches
+            // Act & Assert - Collection branches
             Assert.Empty(manager.GetAllServices(cancellationToken: ct));
             Assert.Null(manager.GetDependencies("test", ct));
         }
@@ -102,8 +105,10 @@ namespace Servy.UI.UnitTests.Design
         [Fact]
         public async Task DesignTimeMessageBoxService_ReturnsTrueAndCompletes()
         {
+            // Arrange
             var service = new DesignTimeMessageBoxService();
 
+            // Act & Assert
             Assert.True(await service.ShowConfirmAsync("Message", "Caption"));
 
             await service.ShowErrorAsync("Err", "Cap");
@@ -126,18 +131,23 @@ namespace Servy.UI.UnitTests.Design
         [Fact]
         public void DesignTimeCursorService_SetWaitCursor_DoesNotThrow()
         {
+            // Arrange
             var service = new DesignTimeCursorService();
 
-            var exception = Record.Exception(service.SetWaitCursor);
+            // Act
+            var exception = Record.Exception(() => service.SetWaitCursor());
 
+            // Assert
             Assert.Null(exception);
         }
 
         [Fact]
         public async Task DesignTimeHelpService_Methods_Complete()
         {
+            // Arrange
             var service = new DesignTimeHelpService();
 
+            // Act & Assert
             await service.OpenDocumentationAsync("caption");
             await service.CheckUpdatesAsync("caption");
             await service.OpenAboutDialogAsync("about", "caption");
@@ -168,6 +178,7 @@ namespace Servy.UI.UnitTests.Design
         [Fact]
         public void InvokeAsync_Action_CompletesSuccessfully()
         {
+            // Arrange
             bool wasExecuted = false;
 
             // Act
@@ -181,6 +192,7 @@ namespace Servy.UI.UnitTests.Design
         [Fact]
         public void InvokeAsync_ActionWithPriority_CompletesSuccessfully()
         {
+            // Arrange
             bool wasExecuted = false;
 
             // Act
@@ -194,10 +206,10 @@ namespace Servy.UI.UnitTests.Design
         [Fact]
         public async Task InvokeAsync_GenericFunc_ReturnsDefaultValue()
         {
-            // Act: Reference type
+            // Arrange & Act - Reference type
             Task<string> refTask = _dispatcher.InvokeAsync(() => "Value");
 
-            // Act: Value type
+            // Arrange & Act - Value type
             Task<int> valTask = _dispatcher.InvokeAsync(() => 42);
 
             // Assert
@@ -208,7 +220,7 @@ namespace Servy.UI.UnitTests.Design
         [Fact]
         public void YieldAsync_CompletesSuccessfully()
         {
-            // Act
+            // Arrange & Act
             Task task = _dispatcher.YieldAsync();
 
             // Assert
