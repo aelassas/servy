@@ -4,7 +4,7 @@
     /// Represents the result of an operation, providing a unified way to signal success 
     /// or failure with mandatory error context on failure.
     /// </summary>
-    public class OperationResult
+    public sealed class OperationResult
     {
         /// <summary>
         /// Gets a value indicating whether the operation completed successfully.
@@ -21,7 +21,7 @@
         /// </summary>
         /// <param name="isSuccess">Whether the operation succeeded.</param>
         /// <param name="errorMessage">The reason for failure, if applicable.</param>
-        protected OperationResult(bool isSuccess, string? errorMessage)
+        private OperationResult(bool isSuccess, string? errorMessage)
         {
             IsSuccess = isSuccess;
             ErrorMessage = errorMessage;

@@ -44,24 +44,14 @@ namespace Servy.Core.UnitTests.Common
         }
 
         [Fact]
-        public void Constructor_WhenCalledByDerivedClass_ShouldSetProperties()
+        public void Success_WithFailureMessage_ShouldSetProperties()
         {
-            // Testing the protected constructor via a mock derived class
-            var result = new TestOperationResult(true, "Custom Message");
+            // Act
+            var result = OperationResult.Success();
 
+            // Assert
             Assert.True(result.IsSuccess);
-            Assert.Equal("Custom Message", result.ErrorMessage);
-        }
-
-        /// <summary>
-        /// Simple derived class to test the protected constructor.
-        /// </summary>
-        private class TestOperationResult : OperationResult
-        {
-            public TestOperationResult(bool isSuccess, string? errorMessage)
-                : base(isSuccess, errorMessage)
-            {
-            }
+            Assert.Null(result.ErrorMessage);
         }
     }
 }

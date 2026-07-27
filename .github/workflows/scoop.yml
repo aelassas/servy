@@ -79,8 +79,7 @@ jobs:
       - name: Compute SHA256
         shell: pwsh
         run: |
-          $InstallerDir = "$env:GITHUB_WORKSPACE\_installer"
-          $InstallerPath = "$InstallerDir\servy-${env:VERSION}-x64-installer.exe"
+          $InstallerPath = $env:SCOOP_DOWNLOAD_OUT
           $HASH = Get-FileHash $InstallerPath -Algorithm SHA256
           $LOWER = $HASH.Hash.ToLower()
           Add-Content -Path $env:GITHUB_ENV -Value "HASH=$LOWER"
@@ -286,6 +285,5 @@ jobs:
                 --body "Update Servy to version $env:VERSION." `
                 --base master `
                 --head "aelassas:update-servy-$env:VERSION" `
-                --repo ScoopInstaller/Extras `
-                --fill
+                --repo ScoopInstaller/Extras
           }
