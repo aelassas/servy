@@ -724,7 +724,7 @@ namespace Servy.Manager.Services
                 var path = getFilePath();
                 if (string.IsNullOrEmpty(path)) return;
 
-                var dto = await _serviceRepository.GetByNameAsync(service.Name, cancellationToken: cancellationToken);
+                var dto = await _serviceRepository.GetByNameAsync(service.Name, decrypt: true, cancellationToken: cancellationToken);
                 if (dto == null)
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, UiAppConfig.Caption);
