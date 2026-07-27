@@ -147,17 +147,7 @@ namespace Servy.CLI.Commands
             if (!validationResult.IsValid || fileStream == null)
             {
                 // Clean up any empty directories created before the path security failure
-                for (int i = directoriesCreatedByUs.Count - 1; i >= 0; i--)
-                {
-                    try
-                    {
-                        if (Directory.Exists(directoriesCreatedByUs[i]) && Directory.GetFileSystemEntries(directoriesCreatedByUs[i]).Length == 0)
-                        {
-                            Directory.Delete(directoriesCreatedByUs[i]);
-                        }
-                    }
-                    catch { /* Suppress cleanup exceptions to preserve original security errors */ }
-                }
+                RollbackCreatedDirectories(directoriesCreatedByUs);
 
                 string error = validationResult.ErrorMessage ?? "Security Guard Failure: Target file handle validation rejected.";
 
@@ -196,18 +186,28 @@ namespace Servy.CLI.Commands
                     }
 
                     // Best-effort cleanup of empty directories created during write failure
-                    for (int i = directoriesCreatedByUs.Count - 1; i >= 0; i--)
+                    RollbackCreatedDirectories(directoriesCreatedByUs);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Performs a best-effort reverse-order cleanup of directories created during file saving,
+        /// removing only directories that are currently empty.
+        /// </summary>
+        /// <param name="directories">The list of directory paths created during execution.</param>
+        private static void RollbackCreatedDirectories(List<string> directories)
+        {
+            for (int i = directories.Count - 1; i >= 0; i--)
+            {
+                try
+                {
+                    if (Directory.Exists(directories[i]) && Directory.GetFileSystemEntries(directories[i]).Length == 0)
                     {
-                        try
-                        {
-                            if (Directory.Exists(directoriesCreatedByUs[i]) && Directory.GetFileSystemEntries(directoriesCreatedByUs[i]).Length == 0)
-                            {
-                                Directory.Delete(directoriesCreatedByUs[i]);
-                            }
-                        }
-                        catch { /* ignored */ }
+                        Directory.Delete(directories[i]);
                     }
                 }
+                catch { /* Best-effort cleanup: suppress exceptions to preserve original error context */ }
             }
         }
     }

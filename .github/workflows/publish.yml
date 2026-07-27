@@ -581,8 +581,7 @@ jobs:
       - name: Build portable 7z package
         shell: pwsh
         run: |
-          $name = "servy-$env:VERSION-$env:ARCH-portable"
-          $pkg = "$name"
+          $pkg = "servy-$env:VERSION-$env:ARCH-portable"
           New-Item -ItemType Directory -Force -Path $pkg | Out-Null
 
           $servy = "src/Servy/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/"
@@ -625,7 +624,7 @@ jobs:
                   Copy-Item -Path $_.FullName -Destination $target -Force
               }
 
-          $zip = "$name.7z"
+          $zip = "$pkg.7z"
 
           # Use advanced compression config for the portable release
           & "$env:SEVEN_ZIP" a `

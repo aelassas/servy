@@ -89,8 +89,12 @@ namespace Servy.Helpers
 
                 if (!GetIsUpdating(passwordBox))
                 {
-                    // Update the control's password from the VM
-                    passwordBox.Password = e.NewValue as string ?? string.Empty;
+                    // Update the control's password from the VM only if it has actually changed
+                    var newValue = e.NewValue as string ?? string.Empty;
+                    if (passwordBox.Password != newValue)
+                    {
+                        passwordBox.Password = newValue;
+                    }
                 }
 
                 // The critical step: wiring the event
