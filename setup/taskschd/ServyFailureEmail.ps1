@@ -116,6 +116,9 @@ function Send-NotificationEmail {
         
     .PARAMETER FallbackLogFile
         The log file string to route fallback errors towards.
+
+    .PARAMETER PlaceholderDomain
+        The domain string used to identify unconfigured template settings (defaults to "example.com").
   #>
   [CmdletBinding()]
   param (
@@ -123,7 +126,8 @@ function Send-NotificationEmail {
     [string]$Body,
     [xml]$Config,
     [string]$ScriptDir,
-    [string]$FallbackLogFile
+    [string]$FallbackLogFile,
+    [string]$PlaceholderDomain = "example.com"
   )
 
   # Masking is now performed by the caller before HTML encoding. 
@@ -201,12 +205,12 @@ function Send-NotificationEmail {
   }
 
   # Refuse sending if Server, From, or any recipient still uses the placeholder domain
-  $isPlaceholderServer = $smtpServer -eq $DefaultPlaceholderDomain -or $smtpServer -like "*.$DefaultPlaceholderDomain"
-  $isPlaceholderFrom   = $from -like "*@$DefaultPlaceholderDomain" -or $from -like "*@*.$DefaultPlaceholderDomain"
-  $isPlaceholderTo     = $toList | Where-Object { $_ -like "*@$DefaultPlaceholderDomain" -or $_ -like "*@*.$DefaultPlaceholderDomain" }
+  $isPlaceholderServer = $smtpServer -eq $PlaceholderDomain -or $smtpServer -like "*.$PlaceholderDomain"
+  $isPlaceholderFrom   = $from -like "*@$PlaceholderDomain" -or $from -like "*@*.$PlaceholderDomain"
+  $isPlaceholderTo     = $toList | Where-Object { $_ -like "*@$PlaceholderDomain" -or $_ -like "*@*.$PlaceholderDomain" }
 
   if ($isPlaceholderServer -or $isPlaceholderFrom -or $isPlaceholderTo) {
-    Write-FallbackError -Message "ServyFailureEmail: SMTP pipeline fields are still using default placeholder domain references ($DefaultPlaceholderDomain). Email skipped." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+    Write-FallbackError -Message "ServyFailureEmail: SMTP pipeline fields are still using default placeholder domain references ($PlaceholderDomain). Email skipped." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
     return 'PermanentFailure'
   }
 
@@ -259,12 +263,9 @@ function Send-NotificationEmail {
       # 4xx (e.g., 421, 450) are treated as Transient; 5xx (e.g., 550, 554) are Permanent.
       $status = $_.Exception.StatusCode
       
-      # Determine if the error is recoverable (Transient) or invalid (Permanent).
-      # ServiceNotAvailable, MailboxBusy, and TransactionFailed are explicitly mapped 
-      # to Transient, even if they sometimes present as 5xx-like behavior in specific drivers.
+      # 4xx replies are transient per RFC 5321; TransactionFailed (554) is also
+      # retried because some servers use it for greylisting-style rejections.
       $isTransient = ($status -ge 400 -and $status -lt 500) `
-        -or $status -eq [System.Net.Mail.SmtpStatusCode]::ServiceNotAvailable `
-        -or $status -eq [System.Net.Mail.SmtpStatusCode]::MailboxBusy `
         -or $status -eq [System.Net.Mail.SmtpStatusCode]::TransactionFailed
       
       $errorMsg = "ServyFailureEmail: SMTP $status sending to $to. Error: $($_.Exception.Message)"
@@ -348,7 +349,7 @@ foreach ($evt in $eventsToProcess) {
   # Basic HTML formatting (newlines to breaks)
   $htmlBody = $body -replace "`r?`n", "<br>"
     
-  $sendStatus = Send-NotificationEmail -Subject $subject -Body $htmlBody -Config $SmtpConfig -ScriptDir $scriptDir -FallbackLogFile $fallbackLogFile
+  $sendStatus = Send-NotificationEmail -Subject $subject -Body $htmlBody -Config $SmtpConfig -ScriptDir $scriptDir -FallbackLogFile $fallbackLogFile -PlaceholderDomain $DefaultPlaceholderDomain
   
   switch ($sendStatus) {
       'Success' {
