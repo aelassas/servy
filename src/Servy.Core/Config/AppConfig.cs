@@ -2,6 +2,7 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System;
+using System.Collections.Immutable;
 using System.IO;
 
 namespace Servy.Core.Config
@@ -1125,7 +1126,7 @@ namespace Servy.Core.Config
         /// This security policy centralizes the application's supported file types, keeping the validation 
         /// boundaries in <c>PathSecurityGuard</c> synchronized with the file dialog filters and serializers.
         /// </remarks>
-        public static readonly string[] AllowedConfigFileExtensions = { ".json", ".xml" };
+        public static readonly ImmutableArray<string> AllowedConfigFileExtensions = ImmutableArray.Create(".json", ".xml");
 
         /// <summary>
         /// Specifies the maximum number of retry attempts for <c>CreateToolhelp32Snapshot</c> when encountering 

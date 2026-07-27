@@ -599,8 +599,7 @@ jobs:
       - name: Build portable 7z package
         shell: pwsh
         run: |
-          $name = "servy-$env:VERSION-$env:FRAMEWORK-x64-portable"
-          $pkg = "$name"
+          $pkg = "servy-$env:VERSION-$env:FRAMEWORK-x64-portable"
           New-Item -ItemType Directory -Force -Path $pkg | Out-Null
 
           $servy = "src/Servy/bin/$env:PLATFORM/$env:BUILD_CONFIG"
@@ -659,7 +658,7 @@ jobs:
                   Copy-Item -Path $_.FullName -Destination $target -Force
               }
 
-          $zip = "$name.7z"
+          $zip = "$pkg.7z"
 
           # Use advanced compression config
           & "$env:SEVEN_ZIP" a `

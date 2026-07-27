@@ -220,7 +220,7 @@ namespace Servy.Core.Security
             // Determine inheritance flags safely based on object descriptor target type
             bool isDirectory = security is DirectorySecurity;
             var inheritanceFlags = isDirectory ? (InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit) : InheritanceFlags.None;
-            var propagationFlags = isDirectory ? PropagationFlags.None : PropagationFlags.None;
+            const PropagationFlags propagationFlags = PropagationFlags.None;
 
             // 4. Add mandatory high-privilege rules
             security.AddAccessRule(new FileSystemAccessRule(adminSid, FileSystemRights.FullControl, inheritanceFlags, propagationFlags, AccessControlType.Allow));
