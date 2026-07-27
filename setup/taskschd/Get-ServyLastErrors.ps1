@@ -48,79 +48,79 @@ function ConvertFrom-WatermarkString {
 }
 
 function Get-ServyLastErrors {
-  param(
-    $LastProcessed,
-    [int]$EventLogErrorId = 3103
-  )
+    param(
+        $LastProcessed,
+        [int]$EventLogErrorId = 3103
+    )
 
-  # 1. Self-derive location for logging
-  $scriptHome = $PSScriptRoot
+    # 1. Self-derive location for logging
+    $scriptHome = $PSScriptRoot
 
-  if ($null -ne $LastProcessed -and -not ($LastProcessed -is [datetime])) {
-      try {
-          $LastProcessed = ConvertFrom-WatermarkString -Value $LastProcessed
-      }
-      catch {
-          throw "Invalid datetime value for LastProcessed"
-      }
-  }
-
-  $filter = @{
-      LogName = 'Application'
-      ProviderName = 'Servy'
-      Level = 2  # Error
-  }
-  $errors = @()
-  
-  try {
-      # "Filter Left" - let the Event Log service handle the time filtering natively
-      if ($LastProcessed) {
-          $filter.StartTime = $LastProcessed
-          # Get-WinEvent requires Vista/2008+ (Event Log 6.0 API)
-          $errors = @(Get-WinEvent -FilterHashtable $filter -ErrorAction Stop)
-      } else {
-          # First run: fetch a wider window to allow the pre-filter to skip feedback 
-          # logs and still find a genuine service crash behind them.
-          $errors = @(Get-WinEvent -FilterHashtable $filter -MaxEvents 20 -ErrorAction Stop)
-      }
-  }
-  catch {
-    # Language-agnostic check: relies on the internal Error ID rather than translated text
-    if ($_.FullyQualifiedErrorId -match "NoMatchingEventsFound") {
-      # This is a standard state, not an error
-      return @() 
+    if ($null -ne $LastProcessed -and -not ($LastProcessed -is [datetime])) {
+        try {
+            $LastProcessed = ConvertFrom-WatermarkString -Value $LastProcessed
+        }
+        catch {
+            throw "Invalid datetime value for LastProcessed"
+        }
     }
 
-    $errorMsg = "Servy Notification Error: Failed to query Windows event log for Servy errors: $_"
+    $filter = @{
+        LogName = 'Application'
+        ProviderName = 'Servy'
+        Level = 2  # Error
+    }
+    $errors = @()
+    
     try {
-      # Fallback A: Try the Event Log
-      Write-EventLog -LogName Application -Source "Servy" -EventId $EventLogErrorId -EntryType Warning -Message $errorMsg -ErrorAction Stop
+        # "Filter Left" - let the Event Log service handle the time filtering natively
+        if ($LastProcessed) {
+            $filter.StartTime = $LastProcessed
+            # Get-WinEvent requires Vista/2008+ (Event Log 6.0 API)
+            $errors = @(Get-WinEvent -FilterHashtable $filter -ErrorAction Stop)
+        } else {
+            # First run: fetch a wider window to allow the pre-filter to skip feedback 
+            # logs and still find a genuine service crash behind them.
+            $errors = @(Get-WinEvent -FilterHashtable $filter -MaxEvents 20 -ErrorAction Stop)
+        }
     }
     catch {
-      # Fallback B: Try the local file log
-      $logPath = Join-Path $scriptHome "Get-ServyLastErrors.log"
-      $loggerScript = Join-Path $scriptHome "Write-ServyLog.ps1"
-      
-      if (Test-Path $loggerScript) {
-        . $loggerScript
-        Write-ServyLog -FilePath $logPath -Message $errorMsg
-      }
-      else {
-        Write-Warning "Get-ServyLastErrors: Missing required dependencies in '$scriptHome'"
-      }
+        # Language-agnostic check: relies on the internal Error ID rather than translated text
+        if ($_.FullyQualifiedErrorId -match "NoMatchingEventsFound") {
+            # This is a standard state, not an error
+            return @() 
+        }
+
+        $errorMsg = "Servy Notification Error: Failed to query Windows event log for Servy errors: $_"
+        try {
+            # Fallback A: Try the Event Log
+            Write-EventLog -LogName Application -Source "Servy" -EventId $EventLogErrorId -EntryType Warning -Message $errorMsg -ErrorAction Stop
+        }
+        catch {
+            # Fallback B: Try the local file log
+            $logPath = Join-Path $scriptHome "Get-ServyLastErrors.log"
+            $loggerScript = Join-Path $scriptHome "Write-ServyLog.ps1"
+            
+            if (Test-Path $loggerScript) {
+                . $loggerScript
+                Write-ServyLog -FilePath $logPath -Message $errorMsg
+            }
+            else {
+                Write-Warning "Get-ServyLastErrors: Missing required dependencies in '$scriptHome'"
+            }
+        }
+
+        # Throw instead of exit to preserve caller's process/cleanup
+        throw "Servy Event Query Failure: $errorMsg"
     }
 
-    # Throw instead of exit to preserve caller's process/cleanup
-    throw "Servy Event Query Failure: $errorMsg"
-  }
+    # -------------------------------
+    # Precision Filtering
+    # -------------------------------
+    # Filter out the event that exactly matches $LastProcessed (>= vs > issue)
+    if ($LastProcessed) {
+        $errors = @($errors | Where-Object { $_.TimeCreated -gt $LastProcessed })
+    }
 
-  # -------------------------------
-  # Precision Filtering
-  # -------------------------------
-  # Filter out the event that exactly matches $LastProcessed (>= vs > issue)
-  if ($LastProcessed) {
-      $errors = @($errors | Where-Object { $_.TimeCreated -gt $LastProcessed })
-  }
-
-  return $errors
+    return $errors
 }

@@ -76,24 +76,24 @@ function ConvertTo-HtmlSafe {
 # -------------------------------
 $configPath = Join-Path $scriptDir "smtp-config.xml"
 if (-not (Test-Path $configPath)) {
-  $errorMsg = "ServyFailureEmail: Configuration file not found at '$configPath'. Stopping script."
-  Write-FallbackError -Message $errorMsg -ScriptDir $scriptDir -FallbackFileName $fallbackLogFile
-  exit 1
+    $errorMsg = "ServyFailureEmail: Configuration file not found at '$configPath'. Stopping script."
+    Write-FallbackError -Message $errorMsg -ScriptDir $scriptDir -FallbackFileName $fallbackLogFile
+    exit 1
 }
 
 try {
-  [xml]$SmtpConfig = Get-Content $configPath -ErrorAction Stop
+    [xml]$SmtpConfig = Get-Content $configPath -ErrorAction Stop
 } catch {
-  $errorMsg = "ServyFailureEmail: Failed to parse XML configuration. Error: $($_.Exception.Message)"
-  Write-FallbackError -Message $errorMsg -ScriptDir $scriptDir -FallbackFileName $fallbackLogFile
-  exit 1
+    $errorMsg = "ServyFailureEmail: Failed to parse XML configuration. Error: $($_.Exception.Message)"
+    Write-FallbackError -Message $errorMsg -ScriptDir $scriptDir -FallbackFileName $fallbackLogFile
+    exit 1
 }
 
 # -------------------------------
 # 4. Email Notification Function
 # -------------------------------
 function Send-NotificationEmail {
-  <#
+    <#
     .SYNOPSIS
         Dispatches a sanitised HTML notification email via SMTP.
 
@@ -119,184 +119,184 @@ function Send-NotificationEmail {
 
     .PARAMETER PlaceholderDomain
         The domain string used to identify unconfigured template settings (defaults to "example.com").
-  #>
-  [CmdletBinding()]
-  param (
-    [string]$Subject,
-    [string]$Body,
-    [xml]$Config,
-    [string]$ScriptDir,
-    [string]$FallbackLogFile,
-    [string]$PlaceholderDomain = "example.com"
-  )
+    #>
+    [CmdletBinding()]
+    param (
+        [string]$Subject,
+        [string]$Body,
+        [xml]$Config,
+        [string]$ScriptDir,
+        [string]$FallbackLogFile,
+        [string]$PlaceholderDomain = "example.com"
+    )
 
-  # Masking is now performed by the caller before HTML encoding. 
-  # This ensures the regex tail (?:"[^"]*"|'[^']*'|\S+) matches full quoted strings 
-  # before quotes are converted to &quot; or &#39;.
+    # Masking is now performed by the caller before HTML encoding. 
+    # This ensures the regex tail (?:"[^"]*"|'[^']*'|\S+) matches full quoted strings 
+    # before quotes are converted to &quot; or &#39;.
 
-  # --- HARDENED CONFIGURATION ACCESS ---
-  
-  # 1. Check root structure passed via parameters
-  $configRoot = $Config.SmtpConfig
-  if ($null -eq $configRoot) {
-    Write-FallbackError -Message "ServyFailureEmail: Could not find <SmtpConfig> root element in configuration context." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
-    return 'PermanentFailure'
-  }
-
-  $smtpServer = $configRoot.Server
-  $from        = $configRoot.From
-  $to          = $configRoot.To
-
-  $rawPort    = ([string]$configRoot.Port).Trim()
-  $rawUseSsl  = ([string]$configRoot.UseSsl).Trim()
-  $rawTimeout = ([string]$configRoot.TimeoutMs).Trim()
-  
-  # 2. Safe Port Resolution (Prevents [int]$null becoming 0)
-  $portRef = 0
-  $smtpPort = if ([int]::TryParse($rawPort, [ref]$portRef)) { $portRef } else { 0 }
-  
-  # 3. Safe SSL Preference Resolution (Case-insensitive, defaults to true)
-  # Casts to string and trims whitespace to prevent parsing errors. 
-  # Uses case-insensitive regex '(?i)' to match "false", "FALSE", "False", or "0".
-  $useSsl = if ($rawUseSsl  -match '^(?i)(false|0)$') { $false }        else { $true }
-
-  # 4. Safe Timeout Resolution (Defaults to 30000ms / 30s)
-  $timeoutRef = 0
-  $timeout = if ([int]::TryParse($rawTimeout, [ref]$timeoutRef)) { $timeoutRef } else { 30000 }
-
-  $credPath = Join-Path $ScriptDir "smtp-cred.xml"
-  $emailRegex = '^[^@\s]+@[^@\s]+\.[^@\s]+$' # Single address format; comma/semicolon multi-recipient lists are split and validated below
-
-  # --- VALIDATION GATE (Permanent Failures) ---
-  
-  # Check for missing essential fields
-  if ([string]::IsNullOrWhiteSpace($smtpServer) -or [string]::IsNullOrWhiteSpace($from) -or [string]::IsNullOrWhiteSpace($to)) {
-    Write-FallbackError -Message "ServyFailureEmail: Incomplete configuration. Missing Server, From, or To." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
-    return 'PermanentFailure'
-  }
-
-  # Check for invalid port
-  if ($smtpPort -le 0 -or $smtpPort -gt 65535) {
-    Write-FallbackError -Message "ServyFailureEmail: Invalid or missing Port ($smtpPort) in smtp-config.xml." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
-    return 'PermanentFailure'
-  }
-
-  # Email format checks (Prevent .NET ArgumentException/FormatException)
-  if ($from -notmatch $emailRegex) {
-    Write-FallbackError -Message "ServyFailureEmail: Invalid 'From' email format ($from) in smtp-config.xml." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
-    return 'PermanentFailure'
-  }
-
-  # --- ROBUSTNESS: Parse and accommodate multi-recipient address fields ---
-  # Split the input on commas or semicolons, trimming surrounding whitespace automatically
-  $toList = $to -split '\s*[,;]\s*' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
-
-  if ($toList.Count -eq 0) {
-      Write-FallbackError -Message "ServyFailureEmail: The 'To' field evaluates to empty in smtp-config.xml." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
-      return 'PermanentFailure'
-  }
-
-  # Validate each split address block individually against the single-address regex gate
-  foreach ($addr in $toList) {
-      if ($addr -notmatch $emailRegex) {
-          Write-FallbackError -Message "ServyFailureEmail: Invalid 'To' email format ($addr) in smtp-config.xml. Multi-recipient lists must be separated by commas or semicolons." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
-          return 'PermanentFailure'
-      }
-  }
-
-  # Refuse sending if Server, From, or any recipient still uses the placeholder domain
-  $isPlaceholderServer = $smtpServer -eq $PlaceholderDomain -or $smtpServer -like "*.$PlaceholderDomain"
-  $isPlaceholderFrom   = $from -like "*@$PlaceholderDomain" -or $from -like "*@*.$PlaceholderDomain"
-  $isPlaceholderTo     = $toList | Where-Object { $_ -like "*@$PlaceholderDomain" -or $_ -like "*@*.$PlaceholderDomain" }
-
-  if ($isPlaceholderServer -or $isPlaceholderFrom -or $isPlaceholderTo) {
-    Write-FallbackError -Message "ServyFailureEmail: SMTP pipeline fields are still using default placeholder domain references ($PlaceholderDomain). Email skipped." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
-    return 'PermanentFailure'
-  }
-
-  if (-not (Test-Path $credPath)) {
-    Write-FallbackError -Message "ServyFailureEmail: Credential file not found at '$credPath'. Skipping email." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
-    return 'PermanentFailure'
-  }
-
-  # --- CRYPTOGRAPHIC HARDENING (Issue #2078 Mitigation) ---
-  # Pin TLS to prevent silent downgrade to broken protocols (SSL3/TLS1.0) on older Windows host defaults.
-  try {
-      # Build the explicit allow-list from scratch instead of OR-ing onto the runtime default.
-      $allowed = [Net.SecurityProtocolType]::Tls12
-      if ([enum]::IsDefined([Net.SecurityProtocolType], 'Tls13')) {
-          $allowed = $allowed -bor [Net.SecurityProtocolType]::Tls13
-      }
-      [Net.ServicePointManager]::SecurityProtocol = $allowed
-  } catch {
-      Write-Warning "ServyFailureEmail: Could not pin explicit TLS version; relying on system environment defaults. $_"
-  }
-
-  # --- EXECUTION ---
-  try {
-    $cred = Import-Clixml $credPath
-
-    $smtp = New-Object System.Net.Mail.SmtpClient($smtpServer, $smtpPort)
-    $smtp.EnableSsl = $useSsl
-    $smtp.Timeout = $timeout
-    $smtp.Credentials = $cred.GetNetworkCredential()
-
-    $mailMessage = New-Object System.Net.Mail.MailMessage
-    $mailMessage.From = $from
-    # Safely load the validated addresses into the MailAddressCollection array
-    foreach ($addr in $toList) {
-        $mailMessage.To.Add($addr)
+    # --- HARDENED CONFIGURATION ACCESS ---
+    
+    # 1. Check root structure passed via parameters
+    $configRoot = $Config.SmtpConfig
+    if ($null -eq $configRoot) {
+        Write-FallbackError -Message "ServyFailureEmail: Could not find <SmtpConfig> root element in configuration context." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+        return 'PermanentFailure'
     }
-    $mailMessage.Subject = $Subject
-    $mailMessage.Body = $Body
-    $mailMessage.IsBodyHtml = $true
 
-    $smtp.Send($mailMessage)
-    return 'Success'
-  } catch [System.Security.Cryptography.CryptographicException] {
-      # The credential file exists but cannot be decrypted (e.g., scheduled task running as wrong user)
-      $errorMsg = "ServyFailureEmail: Failed to decrypt credentials. Ensure the task runs as the user who created smtp-cred.xml. Error: $($_.Exception.Message)"
-      Write-FallbackError -Message $errorMsg -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
-      return 'PermanentFailure'
-  } catch [System.Net.Mail.SmtpException] {
-      # SMTP-level errors: Apply granular classification based on RFC 5321 codes.
-      # 4xx (e.g., 421, 450) are treated as Transient; 5xx (e.g., 550, 554) are Permanent.
-      $status = $_.Exception.StatusCode
-      
-      # 4xx replies are transient per RFC 5321; TransactionFailed (554) is also
-      # retried because some servers use it for greylisting-style rejections.
-      $isTransient = ($status -ge 400 -and $status -lt 500) `
-        -or $status -eq [System.Net.Mail.SmtpStatusCode]::TransactionFailed
-      
-      $errorMsg = "ServyFailureEmail: SMTP $status sending to $to. Error: $($_.Exception.Message)"
-      
-      # Record to fallback logs (disk and Application Event Log) before deciding exit status.
-      Write-FallbackError -Message $errorMsg -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile    
-      
-      # Return status determines if the watermark advances.
-      # TransientFailure: Queue processing halts to wait for system recovery.
-      # PermanentFailure: Event processed (watermark advances) to prevent head-of-line blocking.
-      if ($isTransient) { return 'TransientFailure' }
-      return 'PermanentFailure'
-  } catch [System.FormatException] {
-      # Malformed e-mail address slipped past validation - never going to succeed.
-      Write-FallbackError -Message "ServyFailureEmail: Permanent format failure: $($_.Exception.Message)" -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
-      return 'PermanentFailure'
-  } catch [System.IO.IOException], [System.Net.WebException], [System.Net.Sockets.SocketException], [System.TimeoutException] {
-      # ROBUSTNESS: Explicitly isolate known transient/retryable physical infrastructure and network faults.
-      $errorMsg = "ServyFailureEmail: Transient network I/O failure to $to. Error: $($_.Exception.Message)"
-      Write-FallbackError -Message $errorMsg -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
-      return 'TransientFailure'
-  } catch {
-      # ROBUSTNESS: Treat unrecognized structural errors (e.g. ArgumentException on CRLF header injection) 
-      # as permanent failures to ensure a corrupted log payload cannot block the entire pipeline execution loop.
-      $errorMsg = "ServyFailureEmail: Unexpected permanent script failure to $to. Type: $($_.Exception.GetType().FullName). Error: $($_.Exception.Message)"
-      Write-FallbackError -Message $errorMsg -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
-      return 'PermanentFailure'
-  } finally {
-      if ($null -ne $mailMessage) { $mailMessage.Dispose() }
-      if ($null -ne $smtp) { $smtp.Dispose() }
-  }
+    $smtpServer = $configRoot.Server
+    $from        = $configRoot.From
+    $to          = $configRoot.To
+
+    $rawPort    = ([string]$configRoot.Port).Trim()
+    $rawUseSsl  = ([string]$configRoot.UseSsl).Trim()
+    $rawTimeout = ([string]$configRoot.TimeoutMs).Trim()
+    
+    # 2. Safe Port Resolution (Prevents [int]$null becoming 0)
+    $portRef = 0
+    $smtpPort = if ([int]::TryParse($rawPort, [ref]$portRef)) { $portRef } else { 0 }
+    
+    # 3. Safe SSL Preference Resolution (Case-insensitive, defaults to true)
+    # Casts to string and trims whitespace to prevent parsing errors. 
+    # Uses case-insensitive regex '(?i)' to match "false", "FALSE", "False", or "0".
+    $useSsl = if ($rawUseSsl -match '^(?i)(false|0)$') { $false } else { $true }
+
+    # 4. Safe Timeout Resolution (Defaults to 30000ms / 30s)
+    $timeoutRef = 0
+    $timeout = if ([int]::TryParse($rawTimeout, [ref]$timeoutRef)) { $timeoutRef } else { 30000 }
+
+    $credPath = Join-Path $ScriptDir "smtp-cred.xml"
+    $emailRegex = '^[^@\s]+@[^@\s]+\.[^@\s]+$' # Single address format; comma/semicolon multi-recipient lists are split and validated below
+
+    # --- VALIDATION GATE (Permanent Failures) ---
+    
+    # Check for missing essential fields
+    if ([string]::IsNullOrWhiteSpace($smtpServer) -or [string]::IsNullOrWhiteSpace($from) -or [string]::IsNullOrWhiteSpace($to)) {
+        Write-FallbackError -Message "ServyFailureEmail: Incomplete configuration. Missing Server, From, or To." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+        return 'PermanentFailure'
+    }
+
+    # Check for invalid port
+    if ($smtpPort -le 0 -or $smtpPort -gt 65535) {
+        Write-FallbackError -Message "ServyFailureEmail: Invalid or missing Port ($smtpPort) in smtp-config.xml." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+        return 'PermanentFailure'
+    }
+
+    # Email format checks (Prevent .NET ArgumentException/FormatException)
+    if ($from -notmatch $emailRegex) {
+        Write-FallbackError -Message "ServyFailureEmail: Invalid 'From' email format ($from) in smtp-config.xml." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+        return 'PermanentFailure'
+    }
+
+    # --- ROBUSTNESS: Parse and accommodate multi-recipient address fields ---
+    # Split the input on commas or semicolons, trimming surrounding whitespace automatically
+    $toList = $to -split '\s*[,;]\s*' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+    if ($toList.Count -eq 0) {
+        Write-FallbackError -Message "ServyFailureEmail: The 'To' field evaluates to empty in smtp-config.xml." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+        return 'PermanentFailure'
+    }
+
+    # Validate each split address block individually against the single-address regex gate
+    foreach ($addr in $toList) {
+        if ($addr -notmatch $emailRegex) {
+            Write-FallbackError -Message "ServyFailureEmail: Invalid 'To' email format ($addr) in smtp-config.xml. Multi-recipient lists must be separated by commas or semicolons." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+            return 'PermanentFailure'
+        }
+    }
+
+    # Refuse sending if Server, From, or any recipient still uses the placeholder domain
+    $isPlaceholderServer = $smtpServer -eq $PlaceholderDomain -or $smtpServer -like "*.$PlaceholderDomain"
+    $isPlaceholderFrom   = $from -like "*@$PlaceholderDomain" -or $from -like "*@*.$PlaceholderDomain"
+    $isPlaceholderTo     = $toList | Where-Object { $_ -like "*@$PlaceholderDomain" -or $_ -like "*@*.$PlaceholderDomain" }
+
+    if ($isPlaceholderServer -or $isPlaceholderFrom -or $isPlaceholderTo) {
+        Write-FallbackError -Message "ServyFailureEmail: SMTP pipeline fields are still using default placeholder domain references ($PlaceholderDomain). Email skipped." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+        return 'PermanentFailure'
+    }
+
+    if (-not (Test-Path $credPath)) {
+        Write-FallbackError -Message "ServyFailureEmail: Credential file not found at '$credPath'. Skipping email." -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+        return 'PermanentFailure'
+    }
+
+    # --- CRYPTOGRAPHIC HARDENING (Issue #2078 Mitigation) ---
+    # Pin TLS to prevent silent downgrade to broken protocols (SSL3/TLS1.0) on older Windows host defaults.
+    try {
+        # Build the explicit allow-list from scratch instead of OR-ing onto the runtime default.
+        $allowed = [Net.SecurityProtocolType]::Tls12
+        if ([enum]::IsDefined([Net.SecurityProtocolType], 'Tls13')) {
+            $allowed = $allowed -bor [Net.SecurityProtocolType]::Tls13
+        }
+        [Net.ServicePointManager]::SecurityProtocol = $allowed
+    } catch {
+        Write-Warning "ServyFailureEmail: Could not pin explicit TLS version; relying on system environment defaults. $_"
+    }
+
+    # --- EXECUTION ---
+    try {
+        $cred = Import-Clixml $credPath
+
+        $smtp = New-Object System.Net.Mail.SmtpClient($smtpServer, $smtpPort)
+        $smtp.EnableSsl = $useSsl
+        $smtp.Timeout = $timeout
+        $smtp.Credentials = $cred.GetNetworkCredential()
+
+        $mailMessage = New-Object System.Net.Mail.MailMessage
+        $mailMessage.From = $from
+        # Safely load the validated addresses into the MailAddressCollection array
+        foreach ($addr in $toList) {
+            $mailMessage.To.Add($addr)
+        }
+        $mailMessage.Subject = $Subject
+        $mailMessage.Body = $Body
+        $mailMessage.IsBodyHtml = $true
+
+        $smtp.Send($mailMessage)
+        return 'Success'
+    } catch [System.Security.Cryptography.CryptographicException] {
+        # The credential file exists but cannot be decrypted (e.g., scheduled task running as wrong user)
+        $errorMsg = "ServyFailureEmail: Failed to decrypt credentials. Ensure the task runs as the user who created smtp-cred.xml. Error: $($_.Exception.Message)"
+        Write-FallbackError -Message $errorMsg -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+        return 'PermanentFailure'
+    } catch [System.Net.Mail.SmtpException] {
+        # SMTP-level errors: Apply granular classification based on RFC 5321 codes.
+        # 4xx (e.g., 421, 450) are treated as Transient; 5xx (e.g., 550, 554) are Permanent.
+        $status = $_.Exception.StatusCode
+        
+        # 4xx replies are transient per RFC 5321; TransactionFailed (554) is also
+        # retried because some servers use it for greylisting-style rejections.
+        $isTransient = ($status -ge 400 -and $status -lt 500) `
+            -or $status -eq [System.Net.Mail.SmtpStatusCode]::TransactionFailed
+        
+        $errorMsg = "ServyFailureEmail: SMTP $status sending to $to. Error: $($_.Exception.Message)"
+        
+        # Record to fallback logs (disk and Application Event Log) before deciding exit status.
+        Write-FallbackError -Message $errorMsg -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile    
+        
+        # Return status determines if the watermark advances.
+        # TransientFailure: Queue processing halts to wait for system recovery.
+        # PermanentFailure: Event processed (watermark advances) to prevent head-of-line blocking.
+        if ($isTransient) { return 'TransientFailure' }
+        return 'PermanentFailure'
+    } catch [System.FormatException] {
+        # Malformed e-mail address slipped past validation - never going to succeed.
+        Write-FallbackError -Message "ServyFailureEmail: Permanent format failure: $($_.Exception.Message)" -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+        return 'PermanentFailure'
+    } catch [System.IO.IOException], [System.Net.WebException], [System.Net.Sockets.SocketException], [System.TimeoutException] {
+        # ROBUSTNESS: Explicitly isolate known transient/retryable physical infrastructure and network faults.
+        $errorMsg = "ServyFailureEmail: Transient network I/O failure to $to. Error: $($_.Exception.Message)"
+        Write-FallbackError -Message $errorMsg -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+        return 'TransientFailure'
+    } catch {
+        # ROBUSTNESS: Treat unrecognized structural errors (e.g. ArgumentException on CRLF header injection) 
+        # as permanent failures to ensure a corrupted log payload cannot block the entire pipeline execution loop.
+        $errorMsg = "ServyFailureEmail: Unexpected permanent script failure to $to. Type: $($_.Exception.GetType().FullName). Error: $($_.Exception.Message)"
+        Write-FallbackError -Message $errorMsg -ScriptDir $ScriptDir -FallbackFileName $FallbackLogFile
+        return 'PermanentFailure'
+    } finally {
+        if ($null -ne $mailMessage) { $mailMessage.Dispose() }
+        if ($null -ne $smtp) { $smtp.Dispose() }
+    }
 }
 
 # -------------------------------
@@ -318,55 +318,55 @@ if ($null -eq $eventsToProcess) {
 # 7. Process Events & Send Emails
 # -------------------------------
 foreach ($evt in $eventsToProcess) {
-  $parsed = ConvertFrom-ServyEventMessage -Message $evt.Message
+    $parsed = ConvertFrom-ServyEventMessage -Message $evt.Message
 
-  # 1. MASKING (Stage 1: Plain Text)
-  # We mask the raw strings before any HTML encoding occurs.
-  # This ensures the regex successfully captures PASSWORD="my secret token" 
-  # before it becomes PASSWORD=&quot;my secret token&quot;
-  $maskedLogText = Protect-SensitiveString -Text $parsed.LogText
-  $maskedServiceName = Protect-SensitiveString -Text $parsed.ServiceName
+    # 1. MASKING (Stage 1: Plain Text)
+    # We mask the raw strings before any HTML encoding occurs.
+    # This ensures the regex successfully captures PASSWORD="my secret token" 
+    # before it becomes PASSWORD=&quot;my secret token&quot;
+    $maskedLogText = Protect-SensitiveString -Text $parsed.LogText
+    $maskedServiceName = Protect-SensitiveString -Text $parsed.ServiceName
 
-  # 2. ENCODING (Stage 2: Markup Preparation)
-  # Now that secrets are replaced with asterisks, we can safely convert 
-  # any remaining metacharacters to HTML entities.
-  $safeLogText = ConvertTo-HtmlSafe -Text $maskedLogText
-  $safeServiceName = ConvertTo-HtmlSafe -Text $maskedServiceName
+    # 2. ENCODING (Stage 2: Markup Preparation)
+    # Now that secrets are replaced with asterisks, we can safely convert 
+    # any remaining metacharacters to HTML entities.
+    $safeLogText = ConvertTo-HtmlSafe -Text $maskedLogText
+    $safeServiceName = ConvertTo-HtmlSafe -Text $maskedServiceName
 
-  # 3. COMPOSITION
-  # Scrub the subject using the raw service name (masker handles this internally)
-  $subject = "Servy - $($parsed.ServiceName) Failure"
-  $subject = Protect-SensitiveString -Text $subject
-  
-  # ROBUSTNESS: Sanitise the subject string value of CR/LF injection characters
-  # explicitly to block .NET ArgumentException errors at the MailMessage property setter stage.
-  $subject = $subject -replace "[\r\n]", ' '
-
-  # Build the HTML body using the safe, pre-masked segments
-  $body = "A failure has been detected in service '$safeServiceName'." + 
-          [Environment]::NewLine + "Details: $safeLogText"
-  
-  # Basic HTML formatting (newlines to breaks)
-  $htmlBody = $body -replace "`r?`n", "<br>"
+    # 3. COMPOSITION
+    # Scrub the subject using the raw service name (masker handles this internally)
+    $subject = "Servy - $($parsed.ServiceName) Failure"
+    $subject = Protect-SensitiveString -Text $subject
     
-  $sendStatus = Send-NotificationEmail -Subject $subject -Body $htmlBody -Config $SmtpConfig -ScriptDir $scriptDir -FallbackLogFile $fallbackLogFile -PlaceholderDomain $DefaultPlaceholderDomain
-  
-  switch ($sendStatus) {
-      'Success' {
-          Write-Host "Email Notification sent for '$($parsed.ServiceName)'."
-          # Track this timestamp as successfully processed
-          Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir
-      }
-      'PermanentFailure' {
-          # Logged internally. Advance the watermark because retrying won't fix bad config.
-          Write-Host "Permanent configuration failure for '$($parsed.ServiceName)'. Skipping to prevent endless fallback logging." -ForegroundColor Yellow
-          Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir
-      }
-      'TransientFailure' {
-          # Network drop, timeout, or SMTP temp-fail. DO NOT advance the watermark. 
-          # We break the loop immediately; if SMTP is down, subsequent events in this batch will fail too.
-          Write-Host "Transient failure sending email for '$($parsed.ServiceName)'. Halting processing to preserve event queue." -ForegroundColor Red
-      }
-  }
-  if ($sendStatus -eq 'TransientFailure') { break }   # break the foreach explicitly
+    # ROBUSTNESS: Sanitise the subject string value of CR/LF injection characters
+    # explicitly to block .NET ArgumentException errors at the MailMessage property setter stage.
+    $subject = $subject -replace "[\r\n]", ' '
+
+    # Build the HTML body using the safe, pre-masked segments
+    $body = "A failure has been detected in service '$safeServiceName'." + 
+            [Environment]::NewLine + "Details: $safeLogText"
+    
+    # Basic HTML formatting (newlines to breaks)
+    $htmlBody = $body -replace "`r?`n", "<br>"
+      
+    $sendStatus = Send-NotificationEmail -Subject $subject -Body $htmlBody -Config $SmtpConfig -ScriptDir $scriptDir -FallbackLogFile $fallbackLogFile -PlaceholderDomain $DefaultPlaceholderDomain
+    
+    switch ($sendStatus) {
+        'Success' {
+            Write-Host "Email Notification sent for '$($parsed.ServiceName)'."
+            # Track this timestamp as successfully processed
+            Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir
+        }
+        'PermanentFailure' {
+            # Logged internally. Advance the watermark because retrying won't fix bad config.
+            Write-Host "Permanent configuration failure for '$($parsed.ServiceName)'. Skipping to prevent endless fallback logging." -ForegroundColor Yellow
+            Update-Watermark -TimestampFile $timestampFile -TimeCreated $evt.TimeCreated -ScriptDir $scriptDir
+        }
+        'TransientFailure' {
+            # Network drop, timeout, or SMTP temp-fail. DO NOT advance the watermark. 
+            # We break the loop immediately; if SMTP is down, subsequent events in this batch will fail too.
+            Write-Host "Transient failure sending email for '$($parsed.ServiceName)'. Halting processing to preserve event queue." -ForegroundColor Red
+        }
+    }
+    if ($sendStatus -eq 'TransientFailure') { break }   # break the foreach explicitly
 }
