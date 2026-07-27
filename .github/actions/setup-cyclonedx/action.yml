@@ -41,9 +41,11 @@ runs:
     # --- 2. CycloneDX CLI Cryptographic Verification & Path Exposure ---
     - name: Verify and Register CycloneDX CLI
       shell: pwsh
+      env:
+        INPUT_CLI_HASH: ${{ inputs.cli_hash }}
       run: |
-        $cliHash = "${{ inputs.cli_hash }}"
-        $cliDir = "$env:USERPROFILE\cyclonedx-cli"
+        $cliHash = $env:INPUT_CLI_HASH
+        $cliDir  = "$env:USERPROFILE\cyclonedx-cli"
         $outPath = "$cliDir\cyclonedx.exe"
 
         # --- SECURITY CHECK: SHA256 PINNING ---
@@ -69,13 +71,16 @@ runs:
     # --- 4. CycloneDX .NET Tool Verification & Isolated Installation ---
     - name: Verify and Install CycloneDX .NET Tool
       shell: pwsh
+      env:
+        INPUT_TOOL_VERSION: ${{ inputs.tool_version }}
+        INPUT_TOOL_HASH: ${{ inputs.tool_hash }}
       run: |
         # --- SECURITY CHECK: SHA256 PINNING FOR .NET TOOL ---
         # We verify the CycloneDX nupkg itself. To ensure transitive dependencies 
         # are also verified/pinned, we utilize an isolated NuGet.config below.
-        $toolVersion = "${{ inputs.tool_version }}"
-        $toolHash = "${{ inputs.tool_hash }}"
-        $toolPkgDir = "$env:USERPROFILE\cyclonedx-tool"
+        $toolVersion = $env:INPUT_TOOL_VERSION
+        $toolHash    = $env:INPUT_TOOL_HASH
+        $toolPkgDir  = "$env:USERPROFILE\cyclonedx-tool"
         $toolPkgPath = "$toolPkgDir\CycloneDX.$toolVersion.nupkg"
 
         Write-Host "Verifying SHA256 checksum of CycloneDX .NET Tool package..."

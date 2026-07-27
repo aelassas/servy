@@ -253,7 +253,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Default Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.
         /// </summary>
-        public const int DefaultWaitChunkMs = 5000;
+        public const int DefaultWaitChunkMs = 5_000;
 
         /// <summary>
         /// Specifies the default additional time, in milliseconds, used for Service Control Manager (SCM) operations.
@@ -291,7 +291,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Populate native service details timeout in milliseconds. This is the maximum time allowed for retrieving native service details.
         /// </summary>
-        public const int PopulateNativeDetailsTimeoutMs = 5000;
+        public const int PopulateNativeDetailsTimeoutMs = 5_000;
 
         /// <summary>
         /// The default startup type for a new service.
@@ -551,7 +551,7 @@ namespace Servy.Core.Config
         /// A value of 3000ms (3 seconds) provides a balance between UI responsiveness and 
         /// minimizing background I/O overhead.
         /// </remarks>
-        public const int AppAvailabilityPollIntervalMs = 3000;
+        public const int AppAvailabilityPollIntervalMs = 3_000;
 
         /// <summary>
         /// The GitHub API endpoint used to retrieve the latest release metadata.
@@ -589,7 +589,7 @@ namespace Servy.Core.Config
         /// The sleep duration in milliseconds before the tailing loop restarts after encountering 
         /// an unexpected, unhandled exception.
         /// </summary>
-        public const int LogTailerUnhandledErrorRecoveryDelayMs = 1000;
+        public const int LogTailerUnhandledErrorRecoveryDelayMs = 1_000;
 
         /// <summary>
         /// The allocation buffer size in bytes used by the log tailer during background backward-scan file operations.
@@ -598,7 +598,7 @@ namespace Servy.Core.Config
         /// This value directly controls the chunk size for sequential disk reads when parsing log file history 
         /// up to the maximum line threshold, mitigating multiple small I/O calls on larger files.
         /// </remarks>
-        public const int LogTailerHistoryScanBufferSize = 4096;
+        public const int LogTailerHistoryScanBufferSize = 4_096;
 
         /// <summary>
         /// Defines the minimum execution duration threshold (in milliseconds) required to keep the splash screen visible.
@@ -608,7 +608,7 @@ namespace Servy.Core.Config
         /// If the core application subsystem initialization sequence completes faster than this designated time window, 
         /// the layout engine introduces an artificial padding delay before transitioning to the primary application workspace.
         /// </remarks>
-        public const int SplashMinDisplayThresholdMs = 1000;
+        public const int SplashMinDisplayThresholdMs = 1_000;
 
         /// <summary>
         /// Specifies the minimum splash screen display delay (in milliseconds) enforced when initialization completes quickly.
@@ -747,7 +747,7 @@ namespace Servy.Core.Config
         /// While the registry can technically store larger strings, this limit prevents 
         /// unnecessary bloat in the Windows Registry and the local SQLite database.
         /// </remarks>
-        public const int MaxDescriptionLength = 8192;
+        public const int MaxDescriptionLength = 8_192;
 
         /// <summary>
         /// The maximum permitted length for command-line arguments.
@@ -756,7 +756,7 @@ namespace Servy.Core.Config
         /// The theoretical Win32 limit for the CreateProcess argument string is 32,767 characters. 
         /// This value is set slightly lower to provide a safety margin for internal path canonicalization.
         /// </remarks>
-        public const int MaxArgumentLength = 32000;
+        public const int MaxArgumentLength = 32_000;
 
         /// <summary>
         /// Safety threshold that defines the maximum number of recursive expansion passes 
@@ -770,7 +770,7 @@ namespace Servy.Core.Config
         /// Set to 32,768 characters to align with the maximum environment variable 
         /// size limit on modern Windows systems.
         /// </summary>
-        public const int MaxEnvVarExpandedLength = 32768;
+        public const int MaxEnvVarExpandedLength = 32_768;
 
         /// <summary>
         /// The maximum allowed size for imported configuration files (XML or JSON) in Megabytes.
@@ -797,7 +797,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Bytes in a Megabyte (MB). Used for converting rotation size from MB to bytes.
         /// </summary>
-        public const long BytesInMegabyte = 1024 * 1024;
+        public const long BytesInMegabyte = 1_024 * 1_024;
 
         /// <summary>
         /// The maximum time in milliseconds to wait for the standard output and error streams 
@@ -810,14 +810,14 @@ namespace Servy.Core.Config
         /// The minimum duration to wait after a non-critical rotation failure (e.g., transient IO contention) 
         /// before attempting another rotation.
         /// </summary>
-        public const int LogRotationCooldownMs = 1000;
+        public const int LogRotationCooldownMs = 1_000;
 
         /// <summary>
         /// The duration the rotation circuit breaker remains tripped after a critical failure. 
         /// Defaults to 10 minutes to prevent log-storming and excessive CPU usage during persistent 
         /// infrastructure issues (e.g., unmounted drives or roaming profile sync locks).
         /// </summary>
-        public const int LogRotationCriticalFailureCooldownMs = 600000; // 10 Minutes
+        public const int LogRotationCriticalFailureCooldownMs = 600_000; // 10 Minutes
 
         /// <summary>
         /// The maximum number of synchronous retries for the low-level <c>File.Move</c> operation 
@@ -840,7 +840,7 @@ namespace Servy.Core.Config
         /// The maximum character length for a formatted exception string. 
         /// Excessively large stack traces or messages are truncated to prevent application memory pressure and excessive disk usage in log files.
         /// </summary>
-        public const int LoggerMaxFormattedExceptionLength = 16384; // 16 KB cap to prevent log bloat
+        public const int LoggerMaxFormattedExceptionLength = 16_384; // 16 KB cap to prevent log bloat
 
         /// <summary>
         /// Default maximum number of backup log files to keep. When the number of rotated files exceeds this limit, the oldest files will be deleted.
@@ -878,7 +878,7 @@ namespace Servy.Core.Config
         /// (like re-extracting resources) fail because the OS hasn't fully released file 
         /// handles held by the terminated process tree.
         /// </remarks>
-        public const int DefaultDescendantPostKillWaitMs = 3000;
+        public const int DefaultDescendantPostKillWaitMs = 3_000;
 
         /// <summary>
         /// Specifies the delay in milliseconds to wait after registering the PRESHUTDOWN notification 
@@ -890,7 +890,7 @@ namespace Servy.Core.Config
         /// Specifies the maximum duration in milliseconds to wait for the internal logger 
         /// to flush its final buffers to disk during service shutdown.
         /// </summary>
-        public const int LoggerFlushTimeoutMs = 1500;
+        public const int LoggerFlushTimeoutMs = 1_500;
 
         /// <summary>
         /// Specifies the minimum safety buffer in seconds used to determine if a service 
@@ -902,7 +902,7 @@ namespace Servy.Core.Config
         /// Specifies the fixed delay in milliseconds applied when scheduling service recovery 
         /// actions to prevent rapid restart loops.
         /// </summary>
-        public const int RecoverySchedulingDelayMs = 5000;
+        public const int RecoverySchedulingDelayMs = 5_000;
 
         /// <summary>
         /// Specifies the absolute maximum duration in milliseconds added to the cumulative 
@@ -979,7 +979,7 @@ namespace Servy.Core.Config
         /// The number of bytes read from the beginning of a file to generate a prefix digest. 
         /// 4096 bytes is the default to clear common application log headers and prologues.
         /// </summary>
-        public const int FileIdentityPrefixBytes = 4096;
+        public const int FileIdentityPrefixBytes = 4_096;
 
         /// <summary>
         /// The safety window, in seconds, used to detect Windows PID reuse during recursive process tree traversals.
@@ -1073,7 +1073,7 @@ namespace Servy.Core.Config
         /// Absolute cap (in seconds) on the stability window used by ConditionalResetRestartAttempts
         /// before the persistent restart-attempts counter is reset. Excludes the pre-launch budget.
         /// </summary>
-        public const int ConditionalResetMaxThresholdSeconds = 3600;
+        public const int ConditionalResetMaxThresholdSeconds = 3_600;
 
         /// <summary>
         /// The maximum time, in milliseconds, that a logging thread will wait for an 
@@ -1145,7 +1145,7 @@ namespace Servy.Core.Config
         /// <summary>Minimum allowed interval for the main service list refresh.</summary>
         public const int MinRefreshIntervalInSeconds = 1;
         /// <summary>Maximum allowed interval for the main service list refresh (1 hour).</summary>
-        public const int MaxRefreshIntervalInSeconds = 3600;
+        public const int MaxRefreshIntervalInSeconds = 3_600;
 
         /// <summary>Minimum allowed interval for performance metric updates.</summary>
         public const int MinPerformanceRefreshIntervalInMs = 100;
@@ -1168,7 +1168,7 @@ namespace Servy.Core.Config
         /// <summary>Minimum delay for search input debouncing to prevent UI flicker.</summary>
         public const int MinSearchDebounceDelayMs = 100;
         /// <summary>Maximum delay for search input debouncing.</summary>
-        public const int MaxSearchDebounceDelayMs = 2000;
+        public const int MaxSearchDebounceDelayMs = 2_000;
 
         /// <summary>Minimum number of parallel tasks allowed for bulk service operations.</summary>
         public const int MinMaxBulkOperationParallelism = 1;
@@ -1280,7 +1280,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Maximum rotation size in MB (10 GB).
         /// </summary>
-        public const int MaxRotationSize = 10240;
+        public const int MaxRotationSize = 10_240;
 
         /// <summary>
         /// Maximum number of rotated log files to keep.
@@ -1325,7 +1325,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Delay before retrying when the log file is not found (usually during initial startup).
         /// </summary>
-        public const int LogTailerFileNotFoundRetryDelayMs = 1000;
+        public const int LogTailerFileNotFoundRetryDelayMs = 1_000;
 
         /// <summary>
         /// Delay before retrying after a file I/O error (sharing violation).
@@ -1341,7 +1341,7 @@ namespace Servy.Core.Config
         /// Grace period in milliseconds to wait for a process to fully terminate and release kernel handles 
         /// before the restarter attempts to launch the new instance.
         /// </summary>
-        public const int RestarterKillGracePeriodMs = 3000;
+        public const int RestarterKillGracePeriodMs = 3_000;
 
         /// <summary>
         /// Max retries for asynchronous SQLite operations encountering "Database is locked".
@@ -1534,7 +1534,7 @@ namespace Servy.Core.Config
         #region Native Error Codes
 
         /// <summary>Win32 ERROR_SERVICE_SPECIFIC_ERROR (1066); reported to the SCM so it reads dwServiceSpecificExitCode.</summary>
-        public const int ServiceSpecificErrorCode = 1066;
+        public const int ServiceSpecificErrorCode = 1_066;
 
         #endregion
 
