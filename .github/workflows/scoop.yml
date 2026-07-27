@@ -41,8 +41,8 @@ jobs:
       contents: write # Needed here to push commits back
       
     env:
-        RUN_EXTRAS_PR: ${{ github.event.inputs.run_extras_pr || 'false' }}
-        MAX_RETRIES: 5
+      RUN_EXTRAS_PR: ${{ github.event.inputs.run_extras_pr || 'false' }}
+      MAX_RETRIES: 5
 
     steps:
       - name: Checkout repo
