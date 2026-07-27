@@ -22,7 +22,7 @@ namespace Servy.CLI.Commands
         }
 
         /// <summary>
-        /// Executes the stop operation for the specified service.
+        /// Executes the stop of the service with the specified options.
         /// </summary>
         /// <param name="opts">Options containing the service name to stop.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>

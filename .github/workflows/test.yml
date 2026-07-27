@@ -140,7 +140,7 @@ jobs:
 
           Push-Location $localTools
           & dotnet tool install dotnet-reportgenerator-globaltool --version $env:REPORTGENERATOR_VERSION
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($LASTEXITCODE -ne 0) { Write-Error "dotnet tool install failed (exit $LASTEXITCODE)" }
 
           $joinedReports = $coverageFiles.FullName -join ';'
           & dotnet tool run reportgenerator `

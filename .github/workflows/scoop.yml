@@ -117,13 +117,13 @@ jobs:
           }
           '@
           # Write to temp directory to ensure accessibility across subfolders
-          $script | Out-File -FilePath "$env:TEMP\ScoopUtils.ps1" -Encoding utf8
+          $script | Out-File -FilePath "$env:RUNNER_TEMP\ScoopUtils.ps1" -Encoding utf8
 
       - name: Update servy.json in current repository
         shell: pwsh
         run: |
           . "$env:RUNNER_TEMP\git-helpers.ps1"
-          . "$env:TEMP\ScoopUtils.ps1"
+          . "$env:RUNNER_TEMP\ScoopUtils.ps1"
           $manifestPath = "setup/scoop/servy.json"
           if (-Not (Test-Path $manifestPath)) { throw "Manifest not found at $manifestPath" }
 
@@ -157,7 +157,7 @@ jobs:
           GH_PAT: ${{ secrets.PAT }}
         run: |
           . "$env:RUNNER_TEMP\git-helpers.ps1"
-          . "$env:TEMP\ScoopUtils.ps1"
+          . "$env:RUNNER_TEMP\ScoopUtils.ps1"
           git clone https://github.com/aelassas/scoop-bucket.git scoop-bucket
           Set-Location scoop-bucket
            
@@ -191,7 +191,7 @@ jobs:
           GH_PAT: ${{ secrets.PAT }}    # Used for Git URL injection
           GH_TOKEN: ${{ secrets.PAT }}  # Used for GH CLI authentication
         run: |
-          . "$env:TEMP\ScoopUtils.ps1"
+          . "$env:RUNNER_TEMP\ScoopUtils.ps1"
           git clone https://github.com/aelassas/Extras.git extras
           Set-Location extras
 

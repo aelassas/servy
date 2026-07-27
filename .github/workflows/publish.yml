@@ -584,16 +584,16 @@ jobs:
           $pkg = "servy-$env:VERSION-$env:ARCH-portable"
           New-Item -ItemType Directory -Force -Path $pkg | Out-Null
 
-          $servy = "src/Servy/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/"
-          $cli = "src/Servy.CLI/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/"
-          $manager = "src/Servy.Manager/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/"
+          $servy   = "src/Servy/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish"
+          $cli     = "src/Servy.CLI/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish"
+          $manager = "src/Servy.Manager/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish"
 
           # Desktop app and Manager app
-          Copy-Item "$servy\Servy.exe" $pkg -Force
-          Copy-Item "$manager\Servy.Manager.exe" $pkg -Force
+          Copy-Item (Join-Path $servy 'Servy.exe') $pkg -Force
+          Copy-Item (Join-Path $manager 'Servy.Manager.exe') $pkg -Force
 
           # CLI
-          Copy-Item "$cli\Servy.CLI.exe" "$pkg\servy-cli.exe" -Force
+          Copy-Item (Join-Path $cli 'Servy.CLI.exe') "$pkg\servy-cli.exe" -Force
 
           # PowerShell module
           Copy-Item "src/Servy.CLI/Servy.psm1" $pkg -Force
