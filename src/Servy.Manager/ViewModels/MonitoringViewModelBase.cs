@@ -223,6 +223,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public virtual void StartMonitoring()
         {
+            if (Volatile.Read(ref _isDisposed) != 0) return;
             ResetMonitoringCts();
             Interlocked.Exchange(ref _tickErrorCount, 0); // start each session with a fresh throttle window
             Interlocked.Exchange(ref _isMonitoringFlag, 1);
