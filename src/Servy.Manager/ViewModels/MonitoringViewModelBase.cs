@@ -306,11 +306,6 @@ namespace Servy.Manager.ViewModels
         /// </param>
         protected override void Dispose(bool disposing)
         {
-            if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
-            {
-                return;
-            }
-
             if (disposing)
             {
                 var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
