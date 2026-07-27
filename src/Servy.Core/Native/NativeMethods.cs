@@ -418,7 +418,7 @@ namespace Servy.Core.Native
 
         /// <summary>Sends a control code to a service.</summary>
         [DllImport("advapi32.dll", SetLastError = true)]
-        public static extern bool ControlService(SafeServiceHandle hService, int dwControl, ref SERVICE_STATUS lpServiceStatus);
+        public static extern bool ControlService(SafeServiceHandle hService, uint dwControl, ref SERVICE_STATUS lpServiceStatus);
 
         /// <summary>Retrieves the configuration parameters of the specified service.</summary>
         [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
