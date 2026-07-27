@@ -45,9 +45,6 @@ namespace Servy.CLI.Commands
 
             return await ExecuteWithHandlingAsync("export", action, suggestion, async () =>
             {
-                // Pre-flight elevation check
-                SecurityHelper.EnsureAdministrator();
-
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 
@@ -57,6 +54,9 @@ namespace Servy.CLI.Commands
 
                 if (string.IsNullOrWhiteSpace(opts.Path))
                     return CommandResult.Fail(Strings.Msg_PathRequired);
+
+                // Pre-flight elevation check
+                SecurityHelper.EnsureAdministrator();
 
                 var exists = await _serviceRepository.GetByNameAsync(opts.ServiceName, cancellationToken: cancellationToken);
 

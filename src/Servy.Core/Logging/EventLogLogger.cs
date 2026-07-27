@@ -11,8 +11,8 @@ namespace Servy.Core.Logging
     {
         #region Private Fields
 
-        private EventLog _eventLog;
         private readonly object _eventLogLock = new object();
+        private bool _isInitialized;
 
         // Volatile backing fields ensure thread visibility when updated dynamically
         private volatile int _currentLogLevel;
@@ -72,7 +72,7 @@ namespace Servy.Core.Logging
             {
                 if (isEnabled)
                 {
-                    if (_eventLog == null)
+                    if (!_isInitialized)
                     {
                         InitializeEventLog();
                         // InitializeEventLog sets _isEventLogEnabled to false on failure.
@@ -85,10 +85,6 @@ namespace Servy.Core.Logging
                 else
                 {
                     _isEventLogEnabled = false;
-
-                    // CLEANUP: Dispose and null the handle when logging is explicitly turned off.
-                    _eventLog?.Dispose();
-                    _eventLog = null;
                 }
             }
         }
@@ -176,8 +172,8 @@ namespace Servy.Core.Logging
             {
                 lock (_eventLogLock)
                 {
-                    _eventLog?.Dispose();
-                    _eventLog = null;
+                    _isInitialized = false;
+                    _isEventLogEnabled = false;
                 }
             }
 
@@ -270,7 +266,7 @@ namespace Servy.Core.Logging
         {
             lock (_eventLogLock)
             {
-                if (_eventLog == null) return;
+                if (!_isInitialized) return;
             }
 
             // Threading the raw execution directly into the static shared utility layout context
@@ -296,6 +292,7 @@ namespace Servy.Core.Logging
                         // Re-register requires DeleteEventSource + CreateEventSource (admin only).
                         // At minimum, refuse silent misrouting and tell the operator.
                         _isEventLogEnabled = false;
+                        _isInitialized = false;
                         Logger.Error(
                             $"Event source '{_source}' is already registered to log '{currentLog}', " +
                             $"not '{AppConfig.EventLogName}'. Refusing to write to the wrong log - " +
@@ -304,18 +301,14 @@ namespace Servy.Core.Logging
                     }
                 }
 
-                _eventLog = new EventLog
-                {
-                    Log = AppConfig.EventLogName,
-                    Source = _source,
-                };
-
+                _isInitialized = true;
                 _isEventLogEnabled = true; // Ensure flag matches successful initialization
             }
             catch (Exception ex)
             {
                 // If we fail to initialize (e.g. lack of admin rights), 
                 // we fall back to file-only logging.
+                _isInitialized = false;
                 _isEventLogEnabled = false;
                 Logger.Error($"Failed to initialize Windows Event Log for source '{_source}'. Falling back to file-only logging.", ex);
             }

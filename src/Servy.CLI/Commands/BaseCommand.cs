@@ -114,13 +114,13 @@ namespace Servy.CLI.Commands
         {
             return await ExecuteWithHandlingAsync(commandName, action, suggestion, async () =>
             {
+                if (string.IsNullOrWhiteSpace(serviceName))
+                    return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
+
                 if (!_bypassElevationCheck)
                 {
                     SecurityHelper.EnsureAdministrator();
                 }
-
-                if (string.IsNullOrWhiteSpace(serviceName))
-                    return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 
                 var exists = serviceManager.IsServiceInstalled(serviceName, cancellationToken: cancellationToken);
                 if (!exists)

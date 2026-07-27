@@ -79,9 +79,6 @@ namespace Servy.CLI.Commands
 
             return await ExecuteWithHandlingAsync("import", action, suggestion, async () =>
             {
-                // Pre-flight elevation check
-                SecurityHelper.EnsureAdministrator();
-
                 // Validate configuration file type
                 if (!Helpers.Helper.TryParseFileType(opts.ConfigFileType, out var configFileType, out var parseError))
                     return CommandResult.Fail(parseError);
@@ -89,6 +86,9 @@ namespace Servy.CLI.Commands
                 // Validate file path presence
                 if (string.IsNullOrWhiteSpace(opts.Path))
                     return CommandResult.Fail(Strings.Msg_PathRequired);
+
+                // Pre-flight elevation check
+                SecurityHelper.EnsureAdministrator();
 
                 // ROBUSTNESS: Delegate the complex path canonicalization, UNC blocking, and 
                 // defense-in-depth symlink/junction guard checks to the centralized ImportGuard.
