@@ -27,11 +27,16 @@ jobs:
   publish:
     runs-on: windows-latest
     steps:
+      - name: Resolve release version
+        uses: ./.github/actions/resolve-version
+        with:
+          manual_tag: ${{ github.event.inputs.tag }}
+          release_tag: ${{ github.event.release.tag_name }}
+
       - name: Publish Servy to WinGet
         uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e #v2
         with:
           identifier: aelassas.Servy
           token: ${{ secrets.WINGET_TOKEN }}
           installers-regex: "servy-\\d+\\.\\d+-x64-installer\\.exe$"
-          # Manual dispatch tag wins; otherwise use the tag of the triggering release
-          release-tag: ${{ github.event.inputs.tag || github.event.release.tag_name }}
+          release-tag: ${{ env.TAG }}
