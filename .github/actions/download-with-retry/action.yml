@@ -28,11 +28,16 @@ runs:
   steps:
     - name: Execute Resilient Download Loop
       shell: pwsh
+      env:
+        INPUT_URL: ${{ inputs.url }}
+        INPUT_OUTPUT_PATH: ${{ inputs.output_path }}
+        INPUT_ASSET_NAME: ${{ inputs.asset_name }}
+        INPUT_MAX_RETRIES: ${{ inputs.max_retries }}
       run: |
-        $url = "${{ inputs.url }}"
-        $out = "${{ inputs.output_path }}"
-        $asset = "${{ inputs.asset_name }}"
-        $retries = [int]"${{ inputs.max_retries }}"
+        $url     = $env:INPUT_URL
+        $out     = $env:INPUT_OUTPUT_PATH
+        $asset   = $env:INPUT_ASSET_NAME
+        $retries = [int]$env:INPUT_MAX_RETRIES
         
         # Ensure destination directory exists prior to initiating download stream
         $parentDir = Split-Path -Path $out -Parent
