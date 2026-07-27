@@ -30,7 +30,27 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$script:HadFailure     = $false
+$script:HadFailure      = $false
+
+# Base directory of the script
+$baseDir = $PSScriptRoot
+
+# ----------------------------------------------------------------------
+# Dot-source shared helpers
+# ----------------------------------------------------------------------
+$helperFile = "Update-FileHelpers.ps1"
+$helperPath = Join-Path $baseDir $helperFile
+
+if (Test-Path $helperPath) {
+    . $helperPath
+} else {
+    throw "Critical dependency missing: '$helperFile' was not found at '$helperPath'. Ensure the helper is in the same directory as this script."
+}
+
+# Statistics counters
+$script:totalFilesScanned = 0
+$script:filesModified     = 0
+$script:totalReplacements = 0
 
 # -----------------------------
 # Convert short version to full versions
@@ -40,111 +60,36 @@ $fileVersion = "$Version.0.0"
 
 Write-Host "Updating Servy version to $Version..."
 
-# Base directory of the script
-$baseDir = $PSScriptRoot
-
-# ----------------------------------------------------------------------
-# Dot-source shared helpers
-# ----------------------------------------------------------------------
-$helperFile = "Get-FileEncoding.ps1"
-$helperPath = Join-Path $baseDir $helperFile
-
-if (Test-Path $helperPath) {
-    . $helperPath
-} else {
-    throw "Critical dependency missing: '$helperFile' was not found at '$helperPath'. Ensure the helper is in the same directory as this script."
-}
-
-# ----------------------------------------------------------------------
-# Helper: Update-FileContent
-# Safely updates file content while preserving the original encoding.
-# ----------------------------------------------------------------------
-function Update-FileContent {
-    param(
-        [string]$Path,
-        [string]$Pattern, 
-        [string]$Replacement
-    )
-    
-    try {
-        if (Test-Path $Path) {
-            $encoding = Get-FileEncoding $Path
-            $content = [System.IO.File]::ReadAllText($Path, $encoding)
-        
-            # Count matches before attempting replacement
-            $regexMatches = [regex]::Matches($content, $Pattern)
-            if ($regexMatches.Count -eq 0) {
-                Write-Warning "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern"
-                
-                # Zero matches on a targeted file means the identifier was renamed/removed; flag it and keep
-                # scanning so all failures surface in one run (the script exits 1 at the end).
-                $script:HadFailure = $true
-                return
-            }
-        
-            # Perform replacement
-            $newContent = [regex]::Replace($content, $Pattern, { 
-                param($m) "$($m.Groups[1].Value)$Replacement$($m.Groups[2].Value)" 
-            })
-        
-            [System.IO.File]::WriteAllText($Path, $newContent, $encoding)
-            Write-Host "Successfully updated ($($encoding.BodyName)): $Path ($($regexMatches.Count) replacements)" -ForegroundColor Green
-        } else {
-            Write-Warning "Skipping missing file: $Path"
-            
-            # A missing target file fails the run (deferred to the final exit).
-            $script:HadFailure = $true
-        }
-    }
-    catch {
-        # Non-terminating under Stop preference: use Write-Warning, not Write-Error
-        Write-Warning "Failed to update file: $Path. $($_.Exception.Message)"
-        $script:HadFailure = $true
-    }
-}
-
 # -----------------------------
 # 1. Update setup\build-config.ps1
 # -----------------------------
-Update-FileContent `
-    -Path (Join-Path $baseDir 'setup\build-config.ps1') `
+$buildConfigPath = Join-Path $baseDir 'setup\build-config.ps1'
+Update-FilesContent `
+    -Files @($buildConfigPath) `
     -Pattern '(Version\s*=\s*")[^"]*(")' `
-    -Replacement $Version
+    -Replacement { param($m) "$($m.Groups[1].Value)$Version$($m.Groups[2].Value)" } `
+    -ExpectMatch
 
 # -----------------------------
 # 2. Update all *.csproj files recursively
 # -----------------------------
 Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -notmatch '\\(bin|obj|\.git|packages|node_modules)\\' } |
+    Where-Object { $_.FullName -notmatch $global:BuildArtifactExclusionRegex } |
     ForEach-Object {
 
     $csproj = $_.FullName
     try {
-        # Detect encoding first to prevent corruption
         $encoding = Get-FileEncoding $csproj
         $content = [System.IO.File]::ReadAllText($csproj, $encoding)
 
-        # Track total matches across all tags to ensure the script is not silent on no-match.
-        # This prevents the "worst failure mode" where projects appear updated but remain on old versions.
         $totalReplacements = 0
         $versionTags = @('Version', 'FileVersion', 'AssemblyVersion')
 
         foreach ($tag in $versionTags) {
-            $replacementValue = ""
-        
-            switch ($tag) {
-                "Version" { 
-                    $replacementValue = $fullVersion 
-                    break 
-                }
-                "FileVersion" { 
-                    $replacementValue = $fileVersion 
-                    break 
-                }
-                "AssemblyVersion" { 
-                    $replacementValue = $fileVersion 
-                    break 
-                }
+            $replacementValue = switch ($tag) {
+                "Version"         { $fullVersion }
+                "FileVersion"     { $fileVersion }
+                "AssemblyVersion" { $fileVersion }
             }
 
             $tagPattern = "(<$tag(?:\s+[^>]*)?>)[^<]*(</$tag>)"
@@ -159,17 +104,16 @@ Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyCont
         }
 
         if ($totalReplacements -gt 0) {
-            # Write back using the detected encoding only if at least one tag was successfully replaced
             [System.IO.File]::WriteAllText($csproj, $content, $encoding)
-            Write-Host "Successfully updated project ($($encoding.BodyName)): $csproj ($totalReplacements replacements)" -ForegroundColor Green
+            $script:filesModified++
+            $script:totalReplacements += $totalReplacements
+            Write-Host "UPDATED ($($encoding.BodyName)): $csproj" -ForegroundColor Green
         } else {
-            # Warn instead of Error, as non-shipping helper projects may legitimately lack version tags.
-            # This mirrors the visibility of Update-FileContent without strictly terminating the script.
             Write-Warning "Skipped project: No versioning identifiers found in $csproj. Verify if this project requires version metadata."
         }
+        $script:totalFilesScanned++
     }
     catch {
-        # Non-terminating under Stop preference: use Write-Warning, not Write-Error
         Write-Warning "Failed to update project: $csproj. $($_.Exception.Message)"
         $script:HadFailure = $true
     }
@@ -180,7 +124,11 @@ Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyCont
 # -----------------------------
 $psd1Path = Join-Path $baseDir "src\Servy.CLI\Servy.psd1"
 
-Update-FileContent -Path $psd1Path -Pattern "(ModuleVersion\s*=\s*')[^']*(')" -Replacement $fullVersion
+Update-FilesContent `
+    -Files @($psd1Path) `
+    -Pattern "(ModuleVersion\s*=\s*')[^']*(')" `
+    -Replacement { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" } `
+    -ExpectMatch
 
 if ($script:HadFailure) {
     Write-Host "Version update process completed with errors." -ForegroundColor Red
