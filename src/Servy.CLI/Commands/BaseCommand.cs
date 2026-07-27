@@ -17,8 +17,10 @@ namespace Servy.CLI.Commands
     /// </summary>
     public abstract class BaseCommand
     {
-        // Test Seam: Enables unit tests to bypass non-mockable static OS environment checks deterministically.
-        private static bool _bypassElevationCheck = false;
+        /// <summary>
+        /// Test Seam: Enables unit tests to bypass non-mockable static OS environment checks deterministically.
+        /// </summary>
+        internal static bool BypassElevationCheck = false;
 
         /// <summary>
         /// Creates a pre-check delegate that verifies if a specific service is in a 'Disabled' state before proceeding with a command.
@@ -117,7 +119,7 @@ namespace Servy.CLI.Commands
                 if (string.IsNullOrWhiteSpace(serviceName))
                     return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 
-                if (!_bypassElevationCheck)
+                if (!BypassElevationCheck)
                 {
                     SecurityHelper.EnsureAdministrator();
                 }

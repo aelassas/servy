@@ -119,7 +119,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             try
             {
-                TestReflection.SetFieldStatic(typeof(BaseCommand), "_bypassElevationCheck", true);
+                BaseCommand.BypassElevationCheck = true;
                 var result = cmd.ExecuteAsync(options, CancellationToken.None);
                 return await result;
             }

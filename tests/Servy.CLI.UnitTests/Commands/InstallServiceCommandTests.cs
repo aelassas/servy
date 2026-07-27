@@ -81,7 +81,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Success());
 
-            TestReflection.SetFieldStatic(typeof(InstallServiceCommand), "_bypassElevationCheck", true);
+            InstallServiceCommand.BypassElevationCheck = true;
 
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
@@ -98,7 +98,7 @@ namespace Servy.CLI.UnitTests.Commands
             var options = new CLI.Options.InstallServiceOptions();
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Fail("Validation error."));
 
-            TestReflection.SetFieldStatic(typeof(InstallServiceCommand), "_bypassElevationCheck", true);
+            InstallServiceCommand.BypassElevationCheck = true;
 
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
@@ -121,7 +121,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Validation passes, guiding the runtime flow straight down into the wrapper file check block
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Ok(""));
 
-            TestReflection.SetFieldStatic(typeof(InstallServiceCommand), "_bypassElevationCheck", true);
+            InstallServiceCommand.BypassElevationCheck = true;
 
             // Interrupt-Driven Modification: Safely delete the dummy fixture file to emulate a clean missing binary state
             if (File.Exists(_wrapperExePath))
@@ -152,7 +152,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(OperationResult.Failure("Failed to install service."));
 
-            TestReflection.SetFieldStatic(typeof(InstallServiceCommand), "_bypassElevationCheck", true);
+            InstallServiceCommand.BypassElevationCheck = true;
 
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
@@ -177,7 +177,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .Throws<UnauthorizedAccessException>();
 
-            TestReflection.SetFieldStatic(typeof(InstallServiceCommand), "_bypassElevationCheck", true);
+            InstallServiceCommand.BypassElevationCheck = true;
 
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
@@ -202,7 +202,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
                 .Throws<Exception>();
 
-            TestReflection.SetFieldStatic(typeof(InstallServiceCommand), "_bypassElevationCheck", true);
+            InstallServiceCommand.BypassElevationCheck = true;
 
             // Act
             var result = await _command.ExecuteAsync(options, CancellationToken.None);
