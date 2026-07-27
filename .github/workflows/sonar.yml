@@ -71,7 +71,7 @@ jobs:
         if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          if (!(Test-Path ${{ runner.temp }}\scanner)) { New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory }
+          if (-not (Test-Path ${{ runner.temp }}\scanner)) { New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory | Out-Null }
           # Utilizing 'update' ensures version switches don't crash when versionless fallbacks populate the tool-path
           dotnet tool update dotnet-sonarscanner --version $env:SONAR_SCANNER_VERSION --tool-path ${{ runner.temp }}\scanner
 
