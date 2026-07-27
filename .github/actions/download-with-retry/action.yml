@@ -34,6 +34,12 @@ runs:
         $asset = "${{ inputs.asset_name }}"
         $retries = [int]"${{ inputs.max_retries }}"
         
+        # Ensure destination directory exists prior to initiating download stream
+        $parentDir = Split-Path -Path $out -Parent
+        if ($parentDir -and -not (Test-Path -Path $parentDir)) {
+            New-Item -ItemType Directory -Force -Path $parentDir | Out-Null
+        }
+
         for ($i = 0; $i -lt $retries; $i++) {
             try {
                 Invoke-WebRequest -Uri $url -OutFile $out -ErrorAction Stop
