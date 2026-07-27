@@ -36,10 +36,10 @@ $ErrorActionPreference = "Stop"
 $configPath = Join-Path $PSScriptRoot "build-config.ps1"
 if (Test-Path $configPath) {
     $buildConfig = & $configPath
-    if (-not $Tfm) { $Tfm = $buildConfig.Tfm.Trim() }
-    if (-not $Version) { $Version = $buildConfig.Version.Trim() }
-    $BuildConfiguration = $buildConfig.BuildConfiguration.Trim()
-    $Runtime = $buildConfig.Runtime.Trim()
+    if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
+    if (-not $Version) { $Version = $buildConfig.Version }
+    $BuildConfiguration = $buildConfig.BuildConfiguration
+    $Runtime = $buildConfig.Runtime
 } else {
     throw "Central build configuration not found at $configPath"
 }

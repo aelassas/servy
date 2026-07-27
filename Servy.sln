@@ -79,6 +79,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup", "setup", "{11479D8F
 	ProjectSection(SolutionItems) = preProject
 		setup\build-common.ps1 = setup\build-common.ps1
 		setup\build-config.ps1 = setup\build-config.ps1
+		setup\build-config.test.ps1 = setup\build-config.test.ps1
 		setup\common-helpers.ps1 = setup\common-helpers.ps1
 		setup\generate-sbom.ps1 = setup\generate-sbom.ps1
 		setup\publish-common.ps1 = setup\publish-common.ps1
