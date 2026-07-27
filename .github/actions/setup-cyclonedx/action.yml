@@ -2,8 +2,8 @@
 # Composite Action - Setup and Verify CycloneDX Tools
 # ------------------------------------------------------------------------------
 # Purpose:
-#   Downloads, hash-verifies, and securely isolates both the CycloneDX CLI 
-#   and the CycloneDX .NET tool within single-pass workflow runners.
+#    Downloads, hash-verifies, and securely isolates both the CycloneDX CLI 
+#    and the CycloneDX .NET tool within single-pass workflow runners.
 # ==============================================================================
 
 name: 'Setup CycloneDX'
@@ -30,49 +30,22 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Provision CycloneDX Environment
+    # --- 1. Download CycloneDX CLI Executable via Shared Helper ---
+    - name: Download CycloneDX CLI
+      uses: ./.github/actions/download-with-retry
+      with:
+        url: "https://github.com/CycloneDX/cyclonedx-cli/releases/download/${{ inputs.cli_version }}/cyclonedx-win-x64.exe"
+        output_path: "$env:USERPROFILE\\cyclonedx-cli\\cyclonedx.exe"
+        asset_name: "CycloneDX CLI executable"
+
+    # --- 2. CycloneDX CLI Cryptographic Verification & Path Exposure ---
+    - name: Verify and Register CycloneDX CLI
       shell: pwsh
       run: |
-        # --- Centralized Net Download Helper Primitives ---
-        function Invoke-DownloadWithRetry {
-            param(
-                [string]$Uri, 
-                [string]$OutFile, 
-                [string]$What, 
-                [int]$MaxRetries = 5, 
-                [int]$DelaySeconds = 3
-            )
-            for ($i = 0; $i -lt $MaxRetries; $i++) {
-                try {
-                    Invoke-WebRequest -Uri $Uri -OutFile $OutFile -ErrorAction Stop
-                    return
-                }
-                catch {
-                    if ($i -eq ($MaxRetries - 1)) {
-                        throw "Failed to download $What after $MaxRetries attempts. Error: $_"
-                    }
-                    Write-Host "Warning: Transient download interruption detected for $What. Retrying in $DelaySeconds seconds... (Attempt $($i + 1)/$MaxRetries)" -ForegroundColor Yellow
-                    Start-Sleep -Seconds $DelaySeconds
-                }
-            }
-        }
-
-        # --- 1. CycloneDX CLI Install & Verify ---
-        $v = "${{ inputs.cli_version }}"
         $cliHash = "${{ inputs.cli_hash }}"
-        
-        # Force a hard stop if the download fails (e.g., GitHub is down or version is wrong)
-        $uri = "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe"
-        Write-Host "Downloading CycloneDX CLI from $uri"
-        
-        # Isolate the binary in a dedicated subfolder to prevent broad PATH exposure
         $cliDir = "$env:USERPROFILE\cyclonedx-cli"
-        New-Item -ItemType Directory -Force -Path $cliDir | Out-Null
         $outPath = "$cliDir\cyclonedx.exe"
-        
-        # Wrap download inside a defensive retry loop to withstand network instability
-        Invoke-DownloadWithRetry -Uri $uri -OutFile $outPath -What "CycloneDX CLI executable"
-        
+
         # --- SECURITY CHECK: SHA256 PINNING ---
         Write-Host "Verifying SHA256 checksum of CycloneDX CLI..."
         $actualHash = (Get-FileHash $outPath -Algorithm SHA256).Hash
@@ -85,19 +58,25 @@ runs:
         # Append only the isolated subfolder to PATH
         Add-Content -Path $env:GITHUB_PATH -Value $cliDir
 
+    # --- 3. Download CycloneDX .NET Tool Package via Shared Helper ---
+    - name: Download CycloneDX .NET Tool Package
+      uses: ./.github/actions/download-with-retry
+      with:
+        url: "https://www.nuget.org/api/v2/package/CycloneDX/${{ inputs.tool_version }}"
+        output_path: "$env:USERPROFILE\\cyclonedx-tool\\CycloneDX.${{ inputs.tool_version }}.nupkg"
+        asset_name: "CycloneDX NuGet package"
+
+    # --- 4. CycloneDX .NET Tool Verification & Isolated Installation ---
+    - name: Verify and Install CycloneDX .NET Tool
+      shell: pwsh
+      run: |
         # --- SECURITY CHECK: SHA256 PINNING FOR .NET TOOL ---
         # We verify the CycloneDX nupkg itself. To ensure transitive dependencies 
         # are also verified/pinned, we utilize an isolated NuGet.config below.
-        Write-Host "Downloading CycloneDX .NET Tool package for verification..."
         $toolVersion = "${{ inputs.tool_version }}"
         $toolHash = "${{ inputs.tool_hash }}"
-        $toolPkgUri = "https://www.nuget.org/api/v2/package/CycloneDX/$toolVersion"
         $toolPkgDir = "$env:USERPROFILE\cyclonedx-tool"
-        New-Item -ItemType Directory -Force -Path $toolPkgDir | Out-Null
         $toolPkgPath = "$toolPkgDir\CycloneDX.$toolVersion.nupkg"
-        
-        # Wrap package payload resolution inside a defensive retry loop matching sibling actions
-        Invoke-DownloadWithRetry -Uri $toolPkgUri -OutFile $toolPkgPath -What "CycloneDX NuGet package"
 
         Write-Host "Verifying SHA256 checksum of CycloneDX .NET Tool package..."
         $actualToolHash = (Get-FileHash $toolPkgPath -Algorithm SHA256).Hash
