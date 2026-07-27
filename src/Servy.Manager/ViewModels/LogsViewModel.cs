@@ -152,7 +152,7 @@ namespace Servy.Manager.ViewModels
                 {
                     _selectedLog = value;
                     SelectedLogMessage = value?.Message ?? string.Empty;
-                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(SelectedLog));
                 }
             }
         }
@@ -169,7 +169,7 @@ namespace Servy.Manager.ViewModels
                 if (_selectedLogMessage != value)
                 {
                     _selectedLogMessage = value;
-                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(SelectedLogMessage));
                 }
             }
         }

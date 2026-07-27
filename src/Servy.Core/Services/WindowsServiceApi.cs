@@ -61,7 +61,7 @@ namespace Servy.Core.Services
 
         /// <inheritdoc />
         [ExcludeFromCodeCoverage]
-        public bool ControlService(SafeServiceHandle hService, int dwControl, ref SERVICE_STATUS lpServiceStatus)
+        public bool ControlService(SafeServiceHandle hService, uint dwControl, ref SERVICE_STATUS lpServiceStatus)
             => NativeMethods.ControlService(hService, dwControl, ref lpServiceStatus);
 
         /// <inheritdoc />

@@ -59,7 +59,7 @@ jobs:
         shell: pwsh
         run: |
           # The native filesystem globbing filter (*Tests.csproj) already naturally excludes 'Servy.Testing.csproj'.
-          $RawTestProjects = Get-ChildItem -Path "${{ github.workspace }}/tests" -Recurse -Filter '*Tests.csproj'
+          $RawTestProjects = Get-ChildItem -Path "$env:GITHUB_WORKSPACE/tests" -Recurse -Filter '*Tests.csproj'
 
           $failed = $false
 
