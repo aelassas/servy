@@ -10,6 +10,11 @@ namespace Servy.CLI.Options
     [Verb("install", HelpText = "Install a Windows service.")]
     public class InstallServiceOptions : GlobalOptionsBase
     {
+        private const string SecurityWarningPrefix = " SECURITY WARNING: Use the ";
+        private const string SecurityWarningSuffixParams = " environment variable instead to avoid exposing sensitive parameters in OS process listings.";
+        private const string SecurityWarningSuffixCreds = " environment variable instead to avoid exposing credentials in OS process listings.";
+        private const string EnvVarEscapingRecipe = "Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';', \\\\ to escape '\\', and %% to escape '%' (collapses to a single '%'). Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin.";
+
         /// <summary>
         /// Gets or sets the service name.
         /// This option is required and specifies the unique name of the service to install.
@@ -54,7 +59,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("params", HelpText = "Additional parameters for the process. Supports environment variable expansion, example: --params=\"%ProgramData%\\MyApp\" --params=\"%MY_VAR%\\bin\". SECURITY WARNING: Use the " + AppConfig.ProcessParametersEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
+        [Option("params", HelpText = "Additional parameters for the process. Supports environment variable expansion, example: --params=\"%ProgramData%\\MyApp\" --params=\"%MY_VAR%\\bin\"." + SecurityWarningPrefix + AppConfig.ProcessParametersEnvVarName + SecurityWarningSuffixParams)]
         public string ProcessParameters { get; set; }
 
         /// <summary>
@@ -253,7 +258,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("failureProgramParams", HelpText = "Additional parameters for the failure program. SECURITY WARNING: Use the " + AppConfig.FailureProgramParametersEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
+        [Option("failureProgramParams", HelpText = "Additional parameters for the failure program." + SecurityWarningPrefix + AppConfig.FailureProgramParametersEnvVarName + SecurityWarningSuffixParams)]
         public string FailureProgramParameters { get; set; }
 
         /// <summary>
@@ -266,7 +271,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("envVars", HelpText = "Environment variables for the process. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';', \\\\ to escape '\\', and %% to escape '%' (collapses to a single '%'). Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin. SECURITY WARNING: Use the " + AppConfig.EnvironmentVariablesEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
+        [Option("envVars", HelpText = "Environment variables for the process. " + EnvVarEscapingRecipe + SecurityWarningPrefix + AppConfig.EnvironmentVariablesEnvVarName + SecurityWarningSuffixParams)]
         public string EnvironmentVariables { get; set; }
 
         /// <summary>
@@ -299,7 +304,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("password", HelpText = "The service account password. SECURITY WARNING: Use the " + AppConfig.PasswordEnvVarName + " environment variable instead to avoid exposing credentials in OS process listings.")]
+        [Option("password", HelpText = "The service account password." + SecurityWarningPrefix + AppConfig.PasswordEnvVarName + SecurityWarningSuffixCreds)]
         public string Password { get; set; }
 
         /// <summary>
@@ -326,7 +331,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("preLaunchParams", HelpText = "Additional parameters for the pre-launch executable. SECURITY WARNING: Use the " + AppConfig.PreLaunchParametersEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
+        [Option("preLaunchParams", HelpText = "Additional parameters for the pre-launch executable." + SecurityWarningPrefix + AppConfig.PreLaunchParametersEnvVarName + SecurityWarningSuffixParams)]
         public string PreLaunchParameters { get; set; }
 
         /// <summary>
@@ -339,7 +344,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("preLaunchEnv", HelpText = "Environment variables for the pre-launch executable. Enter variables in the format varName=varValue separated by semicolons (;). Use \\= to escape '=', \\\" to escape '\"', \\; to escape ';', \\\\ to escape '\\', and %% to escape '%' (collapses to a single '%'). Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin. SECURITY WARNING: Use the " + AppConfig.PreLaunchEnvironmentVariablesEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
+        [Option("preLaunchEnv", HelpText = "Environment variables for the pre-launch executable. " + EnvVarEscapingRecipe + SecurityWarningPrefix + AppConfig.PreLaunchEnvironmentVariablesEnvVarName + SecurityWarningSuffixParams)]
         public string PreLaunchEnvironmentVariables { get; set; }
 
         /// <summary>
@@ -402,7 +407,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("postLaunchParams", HelpText = "Additional parameters for the post-launch executable. SECURITY WARNING: Use the " + AppConfig.PostLaunchParametersEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
+        [Option("postLaunchParams", HelpText = "Additional parameters for the post-launch executable." + SecurityWarningPrefix + AppConfig.PostLaunchParametersEnvVarName + SecurityWarningSuffixParams)]
         public string PostLaunchParameters { get; set; }
 
         /// <summary>
@@ -453,7 +458,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("preStopParams", HelpText = "Additional parameters for the pre-stop executable. SECURITY WARNING: Use the " + AppConfig.PreStopParametersEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
+        [Option("preStopParams", HelpText = "Additional parameters for the pre-stop executable." + SecurityWarningPrefix + AppConfig.PreStopParametersEnvVarName + SecurityWarningSuffixParams)]
         public string PreStopParameters { get; set; }
 
         /// <summary>
@@ -494,7 +499,7 @@ namespace Servy.CLI.Options
         /// variable instead.
         /// </remarks>
         [Sensitive]
-        [Option("postStopParams", HelpText = "Additional parameters for the post-stop executable. SECURITY WARNING: Use the " + AppConfig.PostStopParametersEnvVarName + " environment variable instead to avoid exposing sensitive parameters in OS process listings.")]
+        [Option("postStopParams", HelpText = "Additional parameters for the post-stop executable." + SecurityWarningPrefix + AppConfig.PostStopParametersEnvVarName + SecurityWarningSuffixParams)]
         public string PostStopParameters { get; set; }
     }
 }
