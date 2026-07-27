@@ -1,4 +1,4 @@
-#requires -Version 5.0
+#Requires -Version 5.0
 param(
     [string]$Tfm     = "net10.0-windows",
     [string]$Runtime = "win-x64"

@@ -1,4 +1,4 @@
-#requires -Version 5.0
+#Requires -Version 5.0
 <#
 .SYNOPSIS
     Shared helper routines for encoding-preserving file update operations.
