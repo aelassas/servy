@@ -59,12 +59,26 @@ param(
 $ErrorActionPreference = "Stop"
 $script:HadFailure     = $false
 
+# Base directory of the script
+$baseDir = $PSScriptRoot
+
+# ----------------------------------------------------------------------
+# Dot-source shared helpers
+# ----------------------------------------------------------------------
+$helperFile = "Update-FileHelpers.ps1"
+$helperPath = Join-Path $baseDir $helperFile
+
+if (Test-Path $helperPath) {
+    . $helperPath
+} else {
+    throw "Critical dependency missing: '$helperFile' was not found at '$helperPath'. Ensure the helper is in the same directory as this script."
+}
+
 # -----------------------------
 # Variables
 # -----------------------------
 $currentVersionRegex = '(?<![A-Za-z0-9])net\d+\.\d+(?![A-Za-z0-9.])'
 $netVersion = "net$Version"
-$baseDir = $PSScriptRoot
 
 Write-Host "Updating .NET runtime to $netVersion..." -ForegroundColor Cyan
 if ($DryRun) { Write-Host "(Dry Run Mode - no files will be modified)" -ForegroundColor Yellow }
@@ -75,97 +89,25 @@ $script:filesModified     = 0
 $script:totalReplacements = 0
 
 # ----------------------------------------------------------------------
-# Dot-source shared helpers
-# ----------------------------------------------------------------------
-$helperFile = "Get-FileEncoding.ps1"
-$helperPath = Join-Path $baseDir $helperFile
-
-if (Test-Path $helperPath) {
-    . $helperPath
-} else {
-    throw "Critical dependency missing: '$helperFile' was not found at '$helperPath'. Ensure the helper is in the same directory as this script."
-}
-
-# ----------------------------------------------------------------------
-# Helper: Update-Files
-# ----------------------------------------------------------------------
-function Update-Files {
-    param(
-        [Parameter(Mandatory)] $Files,
-        [Parameter(Mandatory)] [string]$Pattern,
-        [Parameter(Mandatory)] [string]$Replacement,
-        [Parameter(Mandatory)] [bool]$DryRun,
-        [switch]$ExpectMatch
-    )
-
-    foreach ($file in $Files) {
-        if ($null -eq $file) { continue }
-        $path = if ($file -is [string]) { $file } else { $file.FullName }
-        
-        if (-not (Test-Path $path)) {
-            Write-Warning "Skipping missing file: $path"
-            if ($ExpectMatch) {
-                $script:HadFailure = $true
-            }
-            continue
-        }
-
-        $script:totalFilesScanned++
-
-        try {
-            $encoding = Get-FileEncoding $path
-            $content = [System.IO.File]::ReadAllText($path, $encoding)
-
-            $regexMatches = [regex]::Matches($content, $Pattern)
-            $matchCount = $regexMatches.Count
-
-            if ($matchCount -gt 0) {
-                $script:filesModified++
-                $script:totalReplacements += $matchCount
-
-                if ($DryRun) {
-                    Write-Host "DRY-RUN: Would update $path ($matchCount matches)" -ForegroundColor Gray
-                } else {
-                    $newContent = [regex]::Replace($content, $Pattern, $Replacement)
-                    [System.IO.File]::WriteAllText($path, $newContent, $encoding)
-                    Write-Host "UPDATED ($($encoding.BodyName)): $path" -ForegroundColor Green
-                }
-            } elseif ($ExpectMatch) {
-                # A pattern missing condition on a targeted file is treated as an unrecoverable migration failure.
-                Write-Warning "No version patterns matching '$Pattern' were located in explicitly-targeted path: $path"
-                $script:HadFailure = $true
-            }
-        }
-        catch {
-            Write-Warning "Failed to update file: $path. $_"
-            $script:HadFailure = $true
-        }
-    }
-}
-
-# ----------------------------------------------------------------------
 # Execution Logic
 # ----------------------------------------------------------------------
 
 # 1. Bulk file updates (PowerShell, Inno, Projects)
 $bulkFiles = Get-ChildItem -Path $baseDir -Recurse -Include *.ps1, *.iss, *.csproj -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -notmatch '[\\/](bin|obj|packages|node_modules|\.git|TestResults)[\\/]' }
-Update-Files -Files $bulkFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
+    Where-Object { $_.FullName -notmatch $global:BuildArtifactExclusionRegex }
+Update-FilesContent -Files $bulkFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
 
 # 2. Explicitly-targeted files that must contain the version pattern (publish.yml TFM env)
 $workflowFiles = @($(Join-Path $baseDir ".github\workflows\publish.yml"))
-
-# Explicit targets must match version patterns to proceed safely
-Update-Files -Files $workflowFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun -ExpectMatch
+Update-FilesContent -Files $workflowFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun -ExpectMatch
 
 # 3. Update global.json SDK version to match the new TFM major via regex to perfectly preserve original file formatting
 $globalJsonFile = Join-Path $baseDir "global.json"
 if (Test-Path $globalJsonFile) {
-    # Capture group keeps the '"version": "' prefix; only the number is replaced
     $globalJsonPattern     = '("version"\s*:\s*")\d+\.\d+\.\d+'
     $globalJsonReplacement = "`${1}$Version.$SdkPatch"
     
-    Update-Files -Files @($globalJsonFile) -Pattern $globalJsonPattern -Replacement $globalJsonReplacement -DryRun:$DryRun -ExpectMatch
+    Update-FilesContent -Files @($globalJsonFile) -Pattern $globalJsonPattern -Replacement $globalJsonReplacement -DryRun:$DryRun -ExpectMatch
 }
 
 # -----------------------------
