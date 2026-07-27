@@ -37,6 +37,24 @@ $EVENT_ID_ERROR = 3103
 # -------------------------------
 # Helper: Fallback Logging
 # -------------------------------
+function Write-WatermarkLocalLog {
+    <#
+    .SYNOPSIS
+        Safely writes watermark error messages to the local disk log, suppressing secondary disk exceptions.
+    #>
+    param(
+        [string]$ScriptDir,
+        [string]$Message
+    )
+    if (-not $ScriptDir) { return }
+    $logFile = Join-Path $ScriptDir "ServyWatermarkErrors.log"
+    try {
+        Write-ServyLog -FilePath $logFile -Message $Message
+    } catch {
+        # Silence to prevent script termination if the disk is completely inaccessible
+    }
+}
+
 function Write-FallbackError {
     <#
     .SYNOPSIS
@@ -196,27 +214,13 @@ function Update-Watermark {
             $errorMessage = "CRITICAL: Watermark update lost due to persistent lock contention. Duplicate notifications will follow for this time slice. Error: $($_.Exception.Message)"
             Write-Warning "ServyWatermark: $errorMessage"
             
-            if ($ScriptDir) {
-                $logFile = Join-Path $ScriptDir "ServyWatermarkErrors.log"
-                try {
-                    Write-ServyLog -FilePath $logFile -Message $errorMessage
-                } catch {
-                    # Silence to prevent script termination if the disk is completely inaccessible
-                }
-            }
+            Write-WatermarkLocalLog -ScriptDir $ScriptDir -Message $errorMessage
         } catch {
             # Bypass EventLog to prevent feedback loops. Record locally only.
             $errorMessage = "Failed to update timestamp file: $($_.Exception.Message)"
             Write-Warning "ServyWatermark: $errorMessage"
             
-            if ($ScriptDir) {
-                $logFile = Join-Path $ScriptDir "ServyWatermarkErrors.log"
-                try {
-                    Write-ServyLog -FilePath $logFile -Message $errorMessage
-                } catch {
-                    # Silence to prevent script termination if the disk is completely inaccessible
-                }
-            }
+            Write-WatermarkLocalLog -ScriptDir $ScriptDir -Message $errorMessage
             break # Exit loop for non-IO exceptions
         } finally {
             # Safely release active tracking handles, files, and staging contexts
