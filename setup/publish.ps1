@@ -106,9 +106,6 @@ catch {
     $scriptHadError = $true
     Write-Host "`nERROR OCCURRED:" -ForegroundColor Red
     Write-Host $_
-    # ROBUSTNESS: Explicitly override the native global tracking variable immediately 
-    # to guarantee failure persistence across subsequent inner catch/finally blocks.
-    $global:LASTEXITCODE = 1
 }
 finally {
     # ROBUSTNESS: Detect if running in a non-interactive environment (CI pipeline, automated task).

@@ -263,12 +263,9 @@ function Send-NotificationEmail {
       # 4xx (e.g., 421, 450) are treated as Transient; 5xx (e.g., 550, 554) are Permanent.
       $status = $_.Exception.StatusCode
       
-      # Determine if the error is recoverable (Transient) or invalid (Permanent).
-      # ServiceNotAvailable, MailboxBusy, and TransactionFailed are explicitly mapped 
-      # to Transient, even if they sometimes present as 5xx-like behavior in specific drivers.
+      # 4xx replies are transient per RFC 5321; TransactionFailed (554) is also
+      # retried because some servers use it for greylisting-style rejections.
       $isTransient = ($status -ge 400 -and $status -lt 500) `
-        -or $status -eq [System.Net.Mail.SmtpStatusCode]::ServiceNotAvailable `
-        -or $status -eq [System.Net.Mail.SmtpStatusCode]::MailboxBusy `
         -or $status -eq [System.Net.Mail.SmtpStatusCode]::TransactionFailed
       
       $errorMsg = "ServyFailureEmail: SMTP $status sending to $to. Error: $($_.Exception.Message)"

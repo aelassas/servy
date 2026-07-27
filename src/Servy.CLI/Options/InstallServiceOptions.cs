@@ -159,7 +159,7 @@ namespace Servy.CLI.Options
         /// <para>When <c>true</c>, rotation occurs at local midnight. When <c>false</c>, rotation occurs at UTC midnight.</para>
         /// </remarks>
         [Option("useLocalTimeForRotation", HelpText = "Use local server time for log rotation instead of UTC. Default is false.")]
-        public bool UseLocalTimeForRotation { get; set; } = AppConfig.DefaultUseLocalTimeForRotation;
+        public bool UseLocalTimeForRotation { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether health monitoring is enabled.
@@ -198,7 +198,7 @@ namespace Servy.CLI.Options
         /// Gets or sets a value indicating whether to run recovery action even if the process exits successfully.
         /// </summary>
         [Option("recoveryOnCleanExit", HelpText = "Enable running recovery action even if the process exits successfully. Default is false.")]
-        public bool RecoveryOnCleanExit { get; set; } = AppConfig.DefaultRecoveryOnCleanExit;
+        public bool RecoveryOnCleanExit { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum number of restart attempts after failure.
@@ -227,7 +227,7 @@ namespace Servy.CLI.Options
         /// Default is <see cref="AppConfig.DefaultEnableHeartbeatUrlFlags"/>.
         /// </summary>
         [Option("enableHeartbeatUrlFlags", HelpText = "Append /start and /fail to the heartbeat URL on service start and failure.")]
-        public bool EnableHeartbeatUrlFlags { get; set; } = AppConfig.DefaultEnableHeartbeatUrlFlags;
+        public bool EnableHeartbeatUrlFlags { get; set; }
 
         /// <summary>
         /// Gets or sets the failure program path.

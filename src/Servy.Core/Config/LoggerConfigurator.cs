@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 
@@ -53,14 +52,16 @@ namespace Servy.Core.Config
                     dateRotationType: dateRotationType,
                     useLocalTimeForRotation: useLocalTimeForRotation,
                     maxBackupLogFiles: maxBackupLogFiles
-               );
+                );
             }
+
+            string eventLogStatus = instanceLogger != null ? isEventLogEnabled.ToString() : "n/a (no event-log sink in this process)";
 
             // Centralized debug logging prevents asymmetric log outputs
             Logger.Debug("Servy Logger Configuration Loaded:" + Environment.NewLine +
                 $"  LogLevel: {logLevel}" + Environment.NewLine +
                 $"  LogRollingInterval: {dateRotationType.ToString("D")} ({dateRotationType})" + Environment.NewLine +
-                $"  EnableEventLog: {isEventLogEnabled}" + Environment.NewLine +
+                $"  EnableEventLog: {eventLogStatus}" + Environment.NewLine +
                 $"  LogRotationSizeMB: {logRotationSizeMB}" + Environment.NewLine +
                 $"  MaxBackupLogFiles: {maxBackupLogFiles}" + Environment.NewLine +
                 $"  UseLocalTimeForRotation: {useLocalTimeForRotation}");

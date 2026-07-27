@@ -21,7 +21,7 @@ runs:
         $maxRetries = 5
         for ($i = 0; $i -lt $maxRetries; $i++) {
           # Use --fail to force exit code 22 on HTTP 400+, allowing the retry loop to capture transient server errors.
-          curl.exe -fL --retry 5 --retry-all-errors $url -o $installerPath
+          curl.exe -fL $url -o $installerPath
 
           if ($LASTEXITCODE -eq 0) {
             break
