@@ -44,6 +44,7 @@ namespace Servy.CLI.Validation
             // short-circuits to CommandResult.Fail before the core validation runs.
             if (!TryMapToDto(opts, out var dto, out var mappingError))
             {
+                Logger.Error($"Service install option mapping failed: {mappingError}");
                 return CommandResult.Fail(mappingError);
             }
 
@@ -53,6 +54,7 @@ namespace Servy.CLI.Validation
             {
                 // CLI reports the first (blocking) error; ValidationResult only contains errors.
                 var firstIssue = result.Errors.First();
+                Logger.Warn($"Service install validation failed for '{opts.ServiceName}': {firstIssue}");
                 return CommandResult.Fail(firstIssue);
             }
 
