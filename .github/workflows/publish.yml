@@ -602,16 +602,16 @@ jobs:
           $pkg = "servy-$env:VERSION-$env:FRAMEWORK-x64-portable"
           New-Item -ItemType Directory -Force -Path $pkg | Out-Null
 
-          $servy = "src/Servy/bin/$env:PLATFORM/$env:BUILD_CONFIG"
-          $cli = "src/Servy.CLI/bin/$env:PLATFORM/$env:BUILD_CONFIG"
+          $servy   = "src/Servy/bin/$env:PLATFORM/$env:BUILD_CONFIG"
+          $cli     = "src/Servy.CLI/bin/$env:PLATFORM/$env:BUILD_CONFIG"
           $manager = "src/Servy.Manager/bin/$env:PLATFORM/$env:BUILD_CONFIG"
 
           # Desktop app and Manager app
-          Copy-Item "$servy\*" $pkg -Recurse -Force
-          Copy-Item "$manager\*" $pkg -Recurse -Force
+          Copy-Item (Join-Path $servy '*') $pkg -Recurse -Force
+          Copy-Item (Join-Path $manager '*') $pkg -Recurse -Force
 
           # CLI
-          Copy-Item "$cli\*" "$pkg" -Recurse -Force
+          Copy-Item (Join-Path $cli '*') $pkg -Recurse -Force
           
           # Rename Servy.CLI.exe to servy-cli.exe
           $sourceExe  = Join-Path $pkg "Servy.CLI.exe"

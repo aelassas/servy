@@ -32,7 +32,7 @@ namespace Servy.CLI.Commands
         }
 
         /// <summary>
-        /// Executes the uninstall operation for the specified service.
+        /// Executes the uninstall of the service with the specified options.
         /// </summary>
         /// <param name="opts">Options containing the service name to uninstall.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
