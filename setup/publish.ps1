@@ -1,4 +1,4 @@
-#requires -Version 5.0
+#Requires -Version 5.0
 <#
 .SYNOPSIS
 Main setup bundle script for the .NET Framework 4.8 build of Servy.

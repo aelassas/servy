@@ -1,4 +1,4 @@
-#requires -Version 5.1
+#Requires -Version 5.1
 <#
 .SYNOPSIS
     Centralized macro runner to validate and import script dependencies into the caller's active scope.
