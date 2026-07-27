@@ -2,8 +2,8 @@
 # Shared Utility Script - Generate Solution SBOM
 # ------------------------------------------------------------------------------
 # Purpose:
-#   Maps solution assembly structures, runs CycloneDX dependency tracking,
-#   and combines outputs into a finalized, unified CycloneDX SBOM XML file.
+#    Maps solution assembly structures, runs CycloneDX dependency tracking,
+#    and combines outputs into a finalized, unified CycloneDX SBOM XML file.
 # ==============================================================================
 
 param (
@@ -25,17 +25,28 @@ $projects = @(
     @{ Path = 'src\Servy.Service\Servy.Service.csproj';      File = 'sbom-Servy.Service.xml' }
 )
 
-# Explicitly check for native command failures to prevent partial SBOMs
-foreach ($p in $projects) {
-    dotnet-CycloneDX $p.Path --recursive --set-version "$FullSbomVersion" --output . --filename $p.File
+$inputFiles = $projects | ForEach-Object { $_.File }
+
+try {
+    # Explicitly check for native command failures to prevent partial SBOMs
+    foreach ($p in $projects) {
+        dotnet-CycloneDX $p.Path --recursive --set-version "$FullSbomVersion" --output . --filename $p.File
+        if ($LASTEXITCODE -ne 0) {
+            throw "dotnet-CycloneDX failed for $($p.Path) (exit $LASTEXITCODE)"
+        }
+    }
+
+    # Merge all component project files into the single specified target output file
+    cyclonedx merge --input-files $inputFiles --output-file "$OutputFile"
     if ($LASTEXITCODE -ne 0) {
-        throw "dotnet-CycloneDX failed for $($p.Path) (exit $LASTEXITCODE)"
+        throw "cyclonedx merge failed (exit $LASTEXITCODE)"
     }
 }
-
-# Merge all component project files into the single specified target output file
-$inputFiles = $projects | ForEach-Object { $_.File }
-cyclonedx merge --input-files $inputFiles --output-file "$OutputFile"
-if ($LASTEXITCODE -ne 0) {
-    throw "cyclonedx merge failed (exit $LASTEXITCODE)"
+finally {
+    # Clean up intermediate component SBOM files after generation pass
+    foreach ($file in $inputFiles) {
+        if (Test-Path $file) {
+            Remove-Item -Path $file -Force -ErrorAction SilentlyContinue
+        }
+    }
 }

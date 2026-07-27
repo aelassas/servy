@@ -73,7 +73,7 @@ namespace Servy.CLI
                     {
                         e.Cancel = true;          // first press: graceful cancellation
                         cts.Cancel();
-                        Console.WriteLine("Cancelling... press Ctrl+C again to force exit.");
+                        Console.Error.WriteLine("Cancelling... press Ctrl+C again to force exit.");
                     }
                     // second press: leave e.Cancel = false -> process terminates
                 };
@@ -268,7 +268,7 @@ namespace Servy.CLI
                 }
                 catch (OperationCanceledException)
                 {
-                    Console.WriteLine("\nOperation cancelled by user.");
+                    Console.Error.WriteLine("\nOperation cancelled by user.");
                     return (int)CliExitCode.Error;
                 }
                 catch (Exception ex)

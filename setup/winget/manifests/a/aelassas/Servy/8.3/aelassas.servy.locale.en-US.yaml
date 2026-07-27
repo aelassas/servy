@@ -72,8 +72,7 @@ Tags:
 - winsw
 ReleaseNotes: |-
   Servy 8.3 improves the UI experience and includes many fixes. The full changelog is available below.
-  Full Changelog
-  Click to expand release notes!
+  
   - fix(service): Console.CursorVisible causes service crash when running console app as Windows service (#814)
   - fix(core): ImportServiceCommandTests - MockXmlValidator/MockJsonValidator ignore isValid parameter (#738)
   - fix(core): implement fine-grained per-PID locking and atomic cache pruning in ProcessHelper (#796)

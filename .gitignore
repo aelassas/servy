@@ -441,3 +441,7 @@ repomix-output.xml
 smtp-cred.xml
 tmp.ps1
 temp.ps1
+
+# Temporary & Generated SBOM Artifacts
+sbom-*.xml
+servy-*-sbom.xml
