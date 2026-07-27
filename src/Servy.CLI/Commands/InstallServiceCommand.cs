@@ -18,9 +18,6 @@ namespace Servy.CLI.Commands
         private readonly IServiceManager _serviceManager;
         private readonly IServiceInstallValidator _validator;
 
-        // Test seam: lets unit tests bypass the non-mockable SecurityHelper.EnsureAdministrator.
-        private static bool _bypassElevationCheck = false;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="InstallServiceCommand"/> class.
         /// </summary>
@@ -49,7 +46,7 @@ namespace Servy.CLI.Commands
             return await ExecuteWithHandlingAsync("install", action, suggestion, async () =>
             {
                 // Separate from BaseCommand's field because install runs its own pre-flight check.
-                if (!_bypassElevationCheck)
+                if (!BypassElevationCheck)
                 {
                     SecurityHelper.EnsureAdministrator();
                 }

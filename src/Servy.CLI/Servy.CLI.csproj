@@ -74,6 +74,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Servy.CLI.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Update="Resources\Strings.Designer.cs">
       <DependentUpon>Strings.resx</DependentUpon>
       <DesignTime>True</DesignTime>
