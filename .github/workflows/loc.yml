@@ -88,7 +88,7 @@ jobs:
           # Percent-encode commas defensively so the badge message survives any URL handling verbatim
           ENCODED_TOTAL=$(echo "$TOTAL_COMMA" | sed 's/,/%2C/g')
           
-          URL="https://img.shields.io/badge/LoC%20total-${ENCODED_TOTAL}-${{ env.LOC_BADGE_COLOR }}"
+          URL="https://img.shields.io/badge/LoC%20total-${ENCODED_TOTAL}-${LOC_BADGE_COLOR}"
           echo "URL: ${URL}"
 
           # Fail step on HTTP errors (-f) and show errors (-S) to prevent publishing garbage
