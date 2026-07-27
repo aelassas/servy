@@ -469,6 +469,7 @@ namespace Servy.Manager.Utils
             {
                 // 1. Break the strong reference to the subscriber
                 OnNewLines = null;
+                OnLoopCompleted = null;
 
                 // 2. CRITICAL: Cancel the internal token to instantly kill the while-loop 
                 // and release any active FileStreams or Task.Delays.

@@ -35,11 +35,14 @@ namespace Servy.UnitTests.Validation
         }
 
         [Fact]
-        public async Task Validate_NullDto_ReturnsFalse()
+        public async Task Validate_NullDto_ShowsErrorAndReturnsFalse()
         {
             var result = await _validator.ValidateAsync(null, cancellationToken: CancellationToken.None);
             Assert.False(result);
-            _mockMessageBox.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _mockMessageBox.Verify(m => m.ShowErrorAsync(
+                It.Is<string>(s => s != null && s.IndexOf(Strings.Msg_ValidationError, StringComparison.OrdinalIgnoreCase) >= 0),
+                It.IsAny<string>()
+            ), Times.Once);
         }
 
         [Fact]

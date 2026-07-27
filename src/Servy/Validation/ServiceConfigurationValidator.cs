@@ -39,8 +39,6 @@ namespace Servy.Validation
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (dto == null) return false;
-
             // Delegate logic to the shared Core rules engine
             var result = _serviceValidationRules.Validate(dto, wrapperExePath, confirmPassword, importMode: importMode);
 
