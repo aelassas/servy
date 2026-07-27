@@ -35,7 +35,8 @@ runs:
         INPUT_MAX_RETRIES: ${{ inputs.max_retries }}
       run: |
         $url     = $env:INPUT_URL
-        $out     = $env:INPUT_OUTPUT_PATH
+        # Expand any literal environment variable expressions (e.g. $env:USERPROFILE) passed in output_path
+        $out     = $ExecutionContext.InvokeCommand.ExpandString($env:INPUT_OUTPUT_PATH)
         $asset   = $env:INPUT_ASSET_NAME
         $retries = [int]$env:INPUT_MAX_RETRIES
         
