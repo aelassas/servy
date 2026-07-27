@@ -32,6 +32,21 @@
 # Event ID Taxonomy (Refer to src/Servy.Core/Logging/EventIds.cs for updates)
 # 3000-3099: Core Errors | 3100-3199: Script Errors
 
+function ConvertFrom-WatermarkString {
+    <#
+    .SYNOPSIS
+        Parses an ISO-8601 round-trip formatted date string into a DateTime instance.
+    #>
+    param([string]$Value)
+    if ([string]::IsNullOrWhiteSpace($Value)) { return $null }
+    return [DateTime]::ParseExact(
+        $Value.Trim(),
+        'o',
+        [System.Globalization.CultureInfo]::InvariantCulture,
+        [System.Globalization.DateTimeStyles]::RoundtripKind
+    )
+}
+
 function Get-ServyLastErrors {
   param(
     $LastProcessed,
@@ -43,12 +58,7 @@ function Get-ServyLastErrors {
 
   if ($null -ne $LastProcessed -and -not ($LastProcessed -is [datetime])) {
       try {
-          $LastProcessed = [DateTime]::ParseExact(
-              $LastProcessed,
-              'o',
-              [System.Globalization.CultureInfo]::InvariantCulture,
-              [System.Globalization.DateTimeStyles]::RoundtripKind
-          )
+          $LastProcessed = ConvertFrom-WatermarkString -Value $LastProcessed
       }
       catch {
           throw "Invalid datetime value for LastProcessed"

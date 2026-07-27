@@ -86,12 +86,7 @@ function Read-Watermark {
     if (Test-Path $TimestampFile) {
         try {
             $raw = (Get-Content $TimestampFile -Raw -ErrorAction Stop)
-            $lastProcessed = [DateTime]::ParseExact(
-                $raw.Trim(),
-                'o',
-                [System.Globalization.CultureInfo]::InvariantCulture,
-                [System.Globalization.DateTimeStyles]::RoundtripKind
-            )
+            $lastProcessed = ConvertFrom-WatermarkString -Value $raw
         } catch { 
             Write-Warning "Could not parse timestamp file; treating as first run - will only show the most recent event."
         }
@@ -146,13 +141,8 @@ function Update-Watermark {
 
                 if (-not [string]::IsNullOrWhiteSpace($currentFileContent)) {
                     try {
-                        $fileTimestamp = [DateTime]::ParseExact(
-                            $currentFileContent,
-                            'o',
-                            [System.Globalization.CultureInfo]::InvariantCulture,
-                            [System.Globalization.DateTimeStyles]::RoundtripKind
-                        )
-                        if ($newestTimestamp -le $fileTimestamp) {
+                        $fileTimestamp = ConvertFrom-WatermarkString -Value $currentFileContent
+                        if ($fileTimestamp -ne $null -and $newestTimestamp -le $fileTimestamp) {
                             $shouldWrite = $false
                         }
                     } catch {
@@ -311,4 +301,4 @@ function ConvertFrom-ServyEventMessage {
     }
 }
 
-Export-ModuleMember -Function Write-FallbackError, Read-Watermark, Update-Watermark, Get-EventsToProcess, ConvertFrom-ServyEventMessage
+Export-ModuleMember -Function Write-FallbackError, Read-Watermark, Update-Watermark, Get-EventsToProcess, ConvertFrom-ServyEventMessage, ConvertFrom-WatermarkString
