@@ -598,11 +598,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         protected override void Dispose(bool disposing)
         {
-            if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
-            {
-                return;
-            }
-
             if (disposing)
             {
                 // 1. Dispose active log tailers
