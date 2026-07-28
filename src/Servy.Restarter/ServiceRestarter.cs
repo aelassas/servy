@@ -100,7 +100,9 @@ namespace Servy.Restarter
                         controller.Stop();
                         var stopRemaining = timeout - stopwatch.Elapsed;
                         if (stopRemaining <= TimeSpan.Zero)
-                            throw new System.TimeoutException($"No time remaining to stop service '{serviceName}'.");
+                            throw new System.TimeoutException(
+                                $"Timeout expired while waiting for service '{serviceName}' to reach Stopped. " +
+                                "The Stop command was issued; the service is stopping and will not be restarted by this run.");
 
                         try
                         {

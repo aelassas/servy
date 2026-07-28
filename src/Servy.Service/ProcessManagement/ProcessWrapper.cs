@@ -617,11 +617,12 @@ namespace Servy.Service.ProcessManagement
                     // Detach from the child's console
                     _ = FreeConsole();
 
-                    // Restore default Ctrl+C handling (remove the ignore flag) for the service process
-                    if (!SetConsoleCtrlHandler(null, false))
+                    // Re-assert the service's own ignore flag (set in OnStart) — the service must not be
+                    // killable by a console control event outside of child-process creation.
+                    if (!SetConsoleCtrlHandler(null, true))
                     {
                         int error = Marshal.GetLastWin32Error();
-                        _logger?.Error($"Failed to restore console control handlers in the service (Win32 Error: {error}).");
+                        _logger?.Error($"Failed to re-assert the service's console control handler (Win32 Error: {error}).");
                     }
                 }
 
