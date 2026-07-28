@@ -87,9 +87,11 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Since we now use "Option A" (no background updates while paused),
-        /// we only need to handle the scroll snap when resuming.
+        /// Reacts to the view model leaving the paused state: clears the list selection and
+        /// snaps the log list to the bottom once the reloaded history has been rendered.
         /// </summary>
+        /// <param name="sender">The source of the property change event, expected to be a <see cref="ConsoleViewModel"/> instance.</param>
+        /// <param name="e">A <see cref="PropertyChangedEventArgs"/> containing event data such as the property name.</param>
         private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs? e)
         {
             if (e?.PropertyName == nameof(ConsoleViewModel.IsPaused) && sender is ConsoleViewModel vm && !vm.IsPaused)
@@ -226,7 +228,7 @@ namespace Servy.Manager.Views
                 LogList.SelectedItems.Clear();
                 e.Handled = true;
             }
-            // 2. Existing Ctrl+C handler
+            // 2. Handle Ctrl+C to copy the selected lines
             else if (e.Key == Key.C && Keyboard.Modifiers == ModifierKeys.Control)
             {
                 CopyMenuItem_Click(null, null);

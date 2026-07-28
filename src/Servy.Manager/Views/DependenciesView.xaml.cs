@@ -1,5 +1,4 @@
-﻿using Servy.Manager.ViewModels;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace Servy.Manager.Views
 {
@@ -17,7 +16,6 @@ namespace Servy.Manager.Views
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DependenciesView"/> class.
-        /// Sets up the data context change listener to wire up ViewModel events and manages selection changes.
         /// </summary>
         public DependenciesView()
         {

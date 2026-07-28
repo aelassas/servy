@@ -150,8 +150,8 @@ namespace Servy.Manager.Services
             var results = await _serviceRepository.SearchAsync(
                 searchText ?? string.Empty, decrypt: false, cancellationToken).ConfigureAwait(false);
 
-            // Implemented SemaphoreSlim throttling aligned with sibling paths to prevent unbounded thread pool 
-            // exhaustion during concurrent GetProcessTreeMetrics heavy OS calls.
+            // Bound concurrent process-tree metric collection; GetProcessTreeMetrics issues heavy
+            // OS calls and an unbounded fan-out over the result set can exhaust the thread pool.
             using (var throttler = new SemaphoreSlim(Environment.ProcessorCount))
             {
                 // Map all domain services to Service models in parallel with a bounded degree of parallelism
@@ -383,7 +383,7 @@ namespace Servy.Manager.Services
                     var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, UiAppConfig.Caption);
                     if (!confirm) return false;
 
-                    // 1. Try standard fallback-resilient check directly in the DB
+                    // 1. Confirm the row still exists before attempting the delete
                     var existsInDb = await _serviceRepository.GetByNameAsync(service.Name, decrypt: false, cancellationToken);
                     if (existsInDb == null)
                     {
@@ -537,10 +537,13 @@ namespace Servy.Manager.Services
         }
 
         /// <summary>
-        /// Releases the managed resources used by <see cref="ServiceCommands"/> — the per-service
+        /// Releases the managed resources used by <see cref="ServiceCommands"/> - the per-service
         /// semaphores in the lock dictionary.
         /// </summary>
-        /// <param name="disposing"><c>true</c> when called from <see cref="Dispose()"/>.</param>
+        /// <param name="disposing">
+        /// <see langword="true"/> when called from <see cref="Dispose()"/>. This type has no finalizer,
+        /// so it is never <see langword="false"/>; the parameter exists for derived types to override.
+        /// </param>
         protected virtual void Dispose(bool disposing)
         {
             // Atomic guard: Only the first caller proceeds to disposal
@@ -555,7 +558,6 @@ namespace Servy.Manager.Services
                 {
                     try
                     {
-                        // Semaphores are now exclusively owned by the disposal path
                         sem.Value.Dispose();
                     }
                     catch (Exception ex)

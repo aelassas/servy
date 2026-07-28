@@ -604,7 +604,7 @@ namespace Servy.Service.ProcessManagement
                     // Detach from the child's console
                     _ = FreeConsole();
 
-                    // Re-assert the service's own ignore flag (set in OnStart) — the service must not be
+                    // Re-assert the service's own ignore flag (set in OnStart) - the service must not be
                     // killable by a console control event outside of child-process creation.
                     if (!SetConsoleCtrlHandler(null, true))
                     {

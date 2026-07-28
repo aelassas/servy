@@ -50,7 +50,7 @@ namespace Servy.Manager.ViewModels
         private string _pid = UiConstants.NotAvailable;
 
         /// <summary>
-        /// Tracks whether a valid selection state loop context boundary had been verified on a previous evaluation frame step.
+        /// Whether the previous tick had a service selected, used to detect the selection-lost transition.
         /// </summary>
         protected bool _hadSelectedService;
 
@@ -139,7 +139,6 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                // Unify error policy: Throttles background logging without losing observability traces.
                 // Increments atomically to maintain accurate tracking if multi-tab components ever fire concurrently.
                 long currentErrorCount = Interlocked.Increment(ref _tickErrorCount);
 
@@ -194,11 +193,11 @@ namespace Servy.Manager.ViewModels
         protected abstract void ResetMonitoringState();
 
         /// <summary>
-        /// When overridden in a derived class, executes the core domain lookup payload logic pass for an active monitoring slice frame step.
+        /// When overridden in a derived class, performs the per-tick refresh for the selected service.
         /// </summary>
-        /// <param name="selection">The current snapshot context instance handle of the evaluated target service model metadata.</param>
-        /// <param name="token">The coordination lifetime boundary cancellation token.</param>
-        /// <returns>A execution task tracker model wrapper.</returns>
+        /// <param name="selection">The currently selected service; never <see langword="null"/>.</param>
+        /// <param name="token">Token for the current monitoring session; may already be cancelled.</param>
+        /// <returns>A task that completes when the tick's work is done.</returns>
         protected abstract Task ApplyTickAsync(ServiceItemBase selection, CancellationToken token);
 
         /// <summary>
@@ -248,8 +247,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         protected virtual void OnMonitoringStopped()
         {
-            // Base implementation is empty. Derived view models (e.g., ConsoleViewModel)
-            // should override this to handle shutdown tasks, such as flushing snapshots or disposing helpers.
         }
 
         /// <summary>
@@ -298,12 +295,12 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// Explicitly unhooks timer events to prevent <see cref="DispatcherTimer"/> memory leaks.
+        /// Releases the managed resources used by <see cref="MonitoringViewModelBase"/>, explicitly
+        /// stopping the timer and unhooking its tick event to prevent <see cref="DispatcherTimer"/> memory leaks.
         /// </summary>
         /// <param name="disposing">
-        /// <see langword="true"/> to release both managed and unmanaged resources; 
-        /// <see langword="false"/> to release only unmanaged resources.
+        /// <see langword="true"/> when called from <see cref="IDisposable.Dispose()"/>. This type has no finalizer,
+        /// so it is never <see langword="false"/>; the parameter exists for derived types to override.
         /// </param>
         protected override void Dispose(bool disposing)
         {
