@@ -192,7 +192,7 @@ namespace Servy.Models
         /// <summary>
         /// Gets or sets the confirmation copy of the service account password.
         /// </summary>
-        public string? ConfirmPassword { get; set; }
+        public string? ConfirmPassword { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the path to the pre-launch executable process to run.

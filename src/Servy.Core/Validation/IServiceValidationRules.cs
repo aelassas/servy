@@ -18,8 +18,9 @@ namespace Servy.Core.Validation
         /// If provided, the validator ensures the file exists on the physical disk.
         /// </param>
         /// <param name="confirmPassword">
-        /// Optional password string used to verify that a user-entered password matches 
-        /// the password stored in the <paramref name="dto"/>.
+        /// Optional password confirmation string. If provided as a non-null string (including empty <c>""</c>), 
+        /// the validator enforces an exact match against <see cref="ServiceDto.Password"/>. Pass <c>null</c> 
+        /// when invoking from contexts without a confirmation input field (e.g. CLI or background imports).
         /// </param>
         /// <param name="importMode">Import mode flag to skip credentials validation.</param>
         /// <returns>
