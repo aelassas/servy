@@ -76,7 +76,9 @@ namespace Servy.Service.ProcessManagement
             {
                 FileName = executablePath,
                 Arguments = finalArgs,
-                WorkingDirectory = workingDirectory ?? Path.GetDirectoryName(executablePath) ?? string.Empty,
+                WorkingDirectory = string.IsNullOrWhiteSpace(workingDirectory)
+                    ? Path.GetDirectoryName(executablePath) ?? string.Empty
+                    : workingDirectory,
                 UseShellExecute = false,
                 CreateNoWindow = !enableConsoleUI,
                 RedirectStandardOutput = !enableConsoleUI,
