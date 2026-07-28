@@ -56,21 +56,7 @@ namespace Servy.Manager.Views
         {
             InitializeComponent();
 
-            DataContextChanged += (s, e) =>
-            {
-                if (_currentViewModel != null)
-                {
-                    _currentViewModel.PropertyChanged -= OnVmPropertyChanged;
-                    _currentViewModel.RequestScroll -= OnRequestScroll;
-                }
-
-                if (DataContext is ConsoleViewModel vm)
-                {
-                    _currentViewModel = vm;
-                    vm.RequestScroll += OnRequestScroll;
-                    vm.PropertyChanged += OnVmPropertyChanged;
-                }
-            };
+            DataContextChanged += ConsoleView_DataContextChanged;
 
             LogList.SelectionChanged += (_, __) =>
             {
@@ -79,6 +65,28 @@ namespace Servy.Manager.Views
                     vm.SetSelectionActive(LogList.SelectedItems.Count > 0);
                 }
             };
+        }
+
+        /// <summary>
+        /// Handles changes to the <see cref="FrameworkElement.DataContext"/>, detaching event handlers 
+        /// from the previous <see cref="ConsoleViewModel"/> and attaching them to the new instance.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">Event arguments containing <see cref="DependencyPropertyChangedEventArgs.OldValue"/> 
+        /// and <see cref="DependencyPropertyChangedEventArgs.NewValue"/> used for clean event unsubscription and resubscription.</param>
+        private void ConsoleView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (e.OldValue is ConsoleViewModel oldVm)
+            {
+                oldVm.PropertyChanged -= OnVmPropertyChanged;
+                oldVm.RequestScroll -= OnRequestScroll;
+            }
+
+            if (e.NewValue is ConsoleViewModel newVm)
+            {
+                newVm.RequestScroll += OnRequestScroll;
+                newVm.PropertyChanged += OnVmPropertyChanged;
+            }
         }
 
         /// <summary>

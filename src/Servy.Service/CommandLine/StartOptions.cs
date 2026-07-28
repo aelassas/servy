@@ -52,7 +52,7 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Gets or sets the maximum size in bytes for log rotation.
         /// </summary>
-        public long RotationSizeInBytes { get; set; }
+        public long RotationSizeInBytes { get; set; } = AppConfig.ToBytes(AppConfig.DefaultRotationSizeMB);
 
         /// <summary>
         /// Gets or sets a value indicating whether to use local system time for log rotation.
@@ -74,7 +74,7 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Gets or sets the heartbeat interval in seconds for health monitoring.
         /// </summary>
-        public int HeartbeatInterval { get; set; } = AppConfig.DefaultHeartbeatInterval;
+        public int HeartbeatIntervalInSeconds { get; set; } = AppConfig.DefaultHeartbeatInterval;
 
         /// <summary>
         /// Gets or sets the maximum allowed consecutive failed health checks before recovery action is triggered.
@@ -113,7 +113,7 @@ namespace Servy.Service.CommandLine
         /// Value must be clamped between <see cref="AppConfig.MinHeartbeatUrlTimeoutSeconds"/> and <see cref="AppConfig.MaxHeartbeatUrlTimeoutSeconds"/>.
         /// Default is <see cref="AppConfig.DefaultHeartbeatUrlTimeoutSeconds"/>.
         /// </summary>
-        public int HeartbeatUrlTimeoutSeconds { get; set; } = AppConfig.DefaultHeartbeatUrlTimeoutSeconds;
+        public int HeartbeatUrlTimeoutInSeconds { get; set; } = AppConfig.DefaultHeartbeatUrlTimeoutSeconds;
 
         /// <summary>
         /// Gets or sets a flag indicating whether extended operational lifecycle state tracking flags are appended to the heartbeat base URL destination.

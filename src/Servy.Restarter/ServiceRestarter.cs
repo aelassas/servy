@@ -44,6 +44,11 @@ namespace Servy.Restarter
                         // There is no longer an active handle to manage or restart; exit cleanly.
                         return;
                     }
+                    catch (Win32Exception)
+                    {
+                        // ROBUSTNESS: Handle native SCM teardowns (e.g. ERROR_SERVICE_DOES_NOT_EXIST).
+                        return;
+                    }
 
                     var remaining = timeout - stopwatch.Elapsed;
                     if (remaining <= TimeSpan.Zero)

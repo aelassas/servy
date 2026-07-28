@@ -71,7 +71,7 @@ namespace Servy.Service.CommandLine
 
                 // Health Monitoring
                 EnableHealthMonitoring = serviceDto.EnableHealthMonitoring ?? AppConfig.DefaultEnableHealthMonitoring,
-                HeartbeatInterval = serviceDto.HeartbeatInterval ?? AppConfig.DefaultHeartbeatInterval,
+                HeartbeatIntervalInSeconds = serviceDto.HeartbeatInterval ?? AppConfig.DefaultHeartbeatInterval,
                 MaxFailedChecks = serviceDto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks,
 
                 // Validate RecoveryAction to ensure pattern matching in health handlers behaves predictably.
@@ -82,7 +82,7 @@ namespace Servy.Service.CommandLine
 
                 MaxRestartAttempts = serviceDto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
                 HeartbeatUrl = serviceDto.HeartbeatUrl,
-                HeartbeatUrlTimeoutSeconds = serviceDto.HeartbeatUrlTimeoutSeconds ?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds,
+                HeartbeatUrlTimeoutInSeconds = serviceDto.HeartbeatUrlTimeoutSeconds ?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds,
                 EnableHeartbeatUrlFlags = serviceDto.EnableHeartbeatUrlFlags ?? AppConfig.DefaultEnableHeartbeatUrlFlags,
 
                 EnvironmentVariables = SafeParseEnvVars(serviceDto.EnvironmentVariables, nameof(serviceDto.EnvironmentVariables), serviceName),

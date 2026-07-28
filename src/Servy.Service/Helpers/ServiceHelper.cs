@@ -181,13 +181,13 @@ namespace Servy.Service.Helpers
                   $"- useLocalTimeForRotation: {options.UseLocalTimeForRotation}\n\n" +
 
                   "--------Recovery---------------\n" +
-                  $"- heartbeatInterval: {options.HeartbeatInterval}\n" +
+                  $"- heartbeatInterval: {options.HeartbeatIntervalInSeconds}\n" +
                   $"- maxFailedChecks: {options.MaxFailedChecks}\n" +
                   $"- recoveryAction: {options.RecoveryAction}\n" +
                   $"- recoveryOnCleanExit: {options.RecoveryOnCleanExit}\n" +
                   $"- maxRestartAttempts: {options.MaxRestartAttempts}\n" +
                   $"- heartbeatUrl: {MaskUrl(options.HeartbeatUrl)}\n" +
-                  $"- heartbeatUrlTimeoutSeconds: {options.HeartbeatUrlTimeoutSeconds}\n" +
+                  $"- heartbeatUrlTimeoutSeconds: {options.HeartbeatUrlTimeoutInSeconds}\n" +
                   $"- enableHeartbeatUrlFlags: {options.EnableHeartbeatUrlFlags}\n" +
                   $"- failureProgramPath: {options.FailureProgramPath}\n" +
                   $"- failureProgramWorkingDirectory: {options.FailureProgramWorkingDirectory}\n\n" +

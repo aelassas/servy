@@ -29,8 +29,8 @@ namespace Servy.Service.UnitTests
             StderrPath = "error-path.log",
             RecoveryOnCleanExit = false,
             HeartbeatUrl = "https://127.0.0.1:1/test-uuid",
-            HeartbeatUrlTimeoutSeconds = 10,
-            HeartbeatInterval = 30
+            HeartbeatUrlTimeoutInSeconds = 10,
+            HeartbeatIntervalInSeconds = 30
         };
 
         [Fact]

@@ -63,6 +63,16 @@ namespace Servy.Manager.Utils
         public event NewLinesHandler OnNewLines;
 
         /// <summary>
+        /// Evaluates metadata signals (creation timestamp drift or file truncation) to determine if a log file has rotated.
+        /// </summary>
+        /// <param name="info">The file metadata snapshot.</param>
+        /// <param name="lastCreationTime">The expected creation timestamp from the previous check.</param>
+        /// <param name="lastPosition">The last known byte offset read from the file.</param>
+        /// <returns><c>true</c> if the file metadata indicates a rotation or truncation event; otherwise, <c>false</c>.</returns>
+        private static bool LooksRotated(FileInfo info, DateTime lastCreationTime, long lastPosition) =>
+            info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition;
+
+        /// <summary>
         /// Starts a continuous tailing loop for a specific file, beginning at a designated position.
         /// This method handles file rotation detection and batched UI updates.
         /// </summary>
@@ -127,7 +137,7 @@ namespace Servy.Manager.Utils
                             // 1. Initial attach or Post-Rotation setup
                             if (knownIdentity == null)
                             {
-                                if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
+                                if (LooksRotated(info, lastCreationTime, lastPosition))
                                 {
                                     lastPosition = 0;
                                     lastCreationTime = info.CreationTimeUtc;
@@ -141,8 +151,7 @@ namespace Servy.Manager.Utils
                                 // 3. Metadata Check: Even if the identity is the same (truncation), 
                                 //    or handle info failed, check for size/time signals of rotation.
                                 if (currentIdentity.IsDifferentFrom(knownIdentity.Value) ||
-                                    info.CreationTimeUtc != lastCreationTime ||
-                                    (lastPosition > 0 && info.Length < lastPosition))
+                                    LooksRotated(info, lastCreationTime, lastPosition))
                                 {
                                     lastPosition = 0;
                                     lastCreationTime = info.CreationTimeUtc;
@@ -237,7 +246,7 @@ namespace Servy.Manager.Utils
                                             rotated = true;
                                             Logger.Debug("[LogTailer] Rotation detected: File no longer exists.");
                                         }
-                                        else if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
+                                        else if (LooksRotated(info, lastCreationTime, lastPosition))
                                         {
                                             rotated = true;
                                             Logger.Debug("[LogTailer] Rotation detected during tailing (Metadata fallback).");
