@@ -137,6 +137,25 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
+        public void ExpandEnvironmentVariables_CustomRefToVarHoldingSystemPlaceholder_ResolvesFully()
+        {
+            // Arrange
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "LOG_DIR", Value = "%ProgramData%\\Servy\\logs" },
+                new EnvironmentVariable { Name = "APP_HOME", Value = "%LOG_DIR%\\bin" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            var programData = Environment.GetEnvironmentVariable("ProgramData")!;
+            Assert.Equal($"{programData}\\Servy\\logs", expanded["LOG_DIR"]);
+            Assert.Equal($"{programData}\\Servy\\logs\\bin", expanded["APP_HOME"]);
+        }
+
+        [Fact]
         public void ExpandEnvironmentVariables_ShouldExpandMixedSystemAndCustomVariables()
         {
             // Arrange
