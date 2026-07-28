@@ -23,15 +23,15 @@ permissions:
   contents: read
 
 # Ensure only one concurrent deployment runs at a time
-#concurrency:
-  #group: security-audit-${{ github.ref }}
-  #cancel-in-progress: true
+concurrency:
+  group: security-audit-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # 1. Dependency Scanning
   # Uses native .NET NuGet Audit to check for vulnerable packages
   dependency-scan:
-    timeout-minutes: 10
+    timeout-minutes: 30
     name: Dependency Scanning
     runs-on: windows-latest
     steps:
@@ -90,7 +90,7 @@ jobs:
   # 2. Static Analysis (SAST)
   # Uses GitHub CodeQL to find security vulnerabilities in the C# code
   static-analysis:
-    timeout-minutes: 10
+    timeout-minutes: 30
     name: Static Analysis (CodeQL)
     runs-on: windows-latest
     # Elevate permissions specifically for CodeQL to write security results
@@ -125,7 +125,7 @@ jobs:
   # 3. Secret Scanning
   # Checks the commit history for leaked credentials, API keys, and tokens
   secret-scanning:
-    timeout-minutes: 10
+    timeout-minutes: 30
     name: Secret Scanning
     runs-on: ubuntu-latest
     steps:
