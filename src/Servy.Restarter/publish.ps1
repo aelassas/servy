@@ -4,9 +4,9 @@
     Publishes the Servy.Restarter project as a self-contained, single-file executable.
 
 .DESCRIPTION
-    This script builds the Servy.Restarter project following the standard repository 
-    build pattern (Pattern A). It publishes to the default bin directory and 
-    optionally signs the artifact using SignPath.
+    This script builds the Servy.Restarter project using the interactive publish pattern
+    shared with Servy.Service: [CmdletBinding()] plus a -Pause switch for manual runs.
+    It publishes to the default bin directory and optionally signs the artifact using SignPath.
 
 .PARAMETER Tfm
     Target framework to build against. Default is "net10.0-windows".

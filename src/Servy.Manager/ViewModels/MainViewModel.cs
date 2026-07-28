@@ -668,6 +668,12 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Executes a bulk operation on all selected and installed services.
         /// </summary>
+        /// <param name="operation">
+        /// The asynchronous action delegate to execute for each service. Must handle any UI updates safely on the UI thread.
+        /// </param>
+        /// <param name="confirmMessage">Confirmation prompt displayed to the user before starting the operation.</param>
+        /// <param name="logErrorMessage">Error message logged if the overall bulk operation fails.</param>
+        /// <param name="token">Cancellation token to observe during execution.</param>
         private async Task ExecuteBulkOperationAsync(
             Func<Service?, CancellationToken, Task<bool>> operation,
             string confirmMessage,
@@ -696,8 +702,7 @@ namespace Servy.Manager.ViewModels
 
                 await SetBusyStateAsync(true);
 
-                // 3. Dispatch all operations concurrently: Scale based on hardware
-                // Guard against 0. Ensure at least 1 thread is allowed.
+                // 3. Dispatch all operations concurrently: Scale parallelism up to 2x logical CPU cores, capped by application configuration.
                 int maxDegreeOfParallelism = Math.Max(1, Math.Min(Environment.ProcessorCount * 2, _appConfig.MaxBulkOperationParallelism));
 
                 using (var throttler = new SemaphoreSlim(maxDegreeOfParallelism))
@@ -709,8 +714,6 @@ namespace Servy.Manager.ViewModels
                         {
                             token.ThrowIfCancellationRequested();
 
-                            // If operation() modifies UI-bound properties (like Status), it must do 
-                            // so safely. If this hangs, check what 'operation' is doing internally.
                             bool success = await operation(service, token).ConfigureAwait(false);
                             return new { ServiceName = service?.Name ?? string.Empty, Success = success };
                         }
@@ -726,7 +729,6 @@ namespace Servy.Manager.ViewModels
                     var failed = results.Where(r => !r.Success).Select(r => r.ServiceName).ToList();
 
                     // 4. Handle results and UI feedback
-                    // Correctly await the async Dispatcher operation to prevent fire-and-forget
                     await await _dispatcher.InvokeAsync(new Func<Task>(async () =>
                     {
                         if (failed.Count == 0)
@@ -741,7 +743,7 @@ namespace Servy.Manager.ViewModels
 
                             await _messageBoxService.ShowWarningAsync(message, UiAppConfig.Caption);
                         }
-                    })).Task; // Await the inner Task produced by Func<Task>
+                    }));
                 }
             }
             catch (OperationCanceledException)
@@ -794,6 +796,7 @@ namespace Servy.Manager.ViewModels
                 // We collect the updates in thread-safe bags instead of applying them immediately
                 var changedDtos = new System.Collections.Concurrent.ConcurrentBag<ServiceDto>();
                 var uiUpdates = new System.Collections.Concurrent.ConcurrentBag<ServiceUpdateInfo>();
+                // Scale parallelism up to 2x logical CPU cores, capped by application configuration.
                 int maxRefreshDegreeOfParallelism = Math.Max(1, Math.Min(Environment.ProcessorCount * 2, _appConfig.MaxBulkOperationParallelism));
 
                 using (var semaphore = new SemaphoreSlim(maxRefreshDegreeOfParallelism))
@@ -1038,7 +1041,7 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Simple nested class to hold the results of background work securely
+        /// Simple nested class to hold the results of background work.
         /// </summary>
         internal sealed class ServiceUpdateInfo
         {
@@ -1103,7 +1106,7 @@ namespace Servy.Manager.ViewModels
                 ServicesView.Refresh();
 
                 stopwatch.Stop();
-                ClearActiveSearchContext(); // Base telemetry reset handles clearing background jobs cleanly
+                ClearActiveSearchContext();
                 UpdateSelectAllState();
             };
 
@@ -1149,7 +1152,7 @@ namespace Servy.Manager.ViewModels
             {
                 // Stop the main timer first so no more ticks reach ServiceCommands.
                 StopRefreshTimer();
-                ClearActiveSearchContext(); // Drain core abstract tokens
+                ClearActiveSearchContext();
 
                 // Dispose child VMs so their timers/CTS/tailers stop before we tear down
                 // the shared ServiceCommands instance they still reference.

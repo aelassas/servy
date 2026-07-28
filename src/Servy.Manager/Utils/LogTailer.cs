@@ -196,9 +196,8 @@ namespace Servy.Manager.Utils
                                             }
                                         }
 
-                                        // --- EOF Reached. Verify File Integrity / Flush-Torn Status ---
-                                        // Abandon unstable internal loop stream position delta arithmetic. 
-                                        // Instead, evaluate the physical trailing byte on disk deterministically if data was processed.
+                                        // --- EOF reached. A file not ending in '\n' means the writer was caught mid-flush;
+                                        //     check the trailing byte on disk rather than inferring from the reader's position.
                                         if (lastSuccessfullyReadLine != null && fs.Length > 0)
                                         {
                                             fs.Seek(-1, SeekOrigin.End);
@@ -228,7 +227,7 @@ namespace Servy.Manager.Utils
                                         }
                                         else if (string.IsNullOrEmpty(carryOverFragment))
                                         {
-                                            // Secure baseline EOF tracking position advance
+                                            // Complete line at EOF: publish it and commit the new offset.
                                             lastPosition = fs.Position;
                                         }
 
@@ -299,14 +298,13 @@ namespace Servy.Manager.Utils
                     {
                         consecutiveFailures++;
 
-                        // CRITICAL: Erase any mid-flush carry over memory state because the outer loop
-                        // is re-opening the file and rescanning parameters cleanly from the disk layout context.
+                        // The carried fragment is tied to a stream position the reopen invalidates; drop it.
                         carryOverFragment = string.Empty;
 
                         // CIRCUIT BREAKER: Suppress continuous log spam for recurring permanent failures.
                         if (consecutiveFailures == 1 || consecutiveFailures % AppConfig.LogTailerErrorLogThrottlingInterval == 0)
                         {
-                            Logger.Error($"Unexpected error in log tailer for {path} (Concealed Failure Block #{consecutiveFailures}).", ex);
+                            Logger.Error($"Unexpected error in log tailer for {path} (occurrence #{consecutiveFailures}, throttled).", ex);
                         }
 
                         // LINEAR BACKOFF: Progressively scale recovery wait by attempt number, capped at MaxDelay.
@@ -346,7 +344,6 @@ namespace Servy.Manager.Utils
         /// <returns>A list of log lines retrieved from the end of the file.</returns>
         private List<LogLine> LoadHistory(string? path, LogType type, int maxLines, out long finalPos, out DateTime creationTime)
         {
-            // Initialize out parameters immediately to satisfy the compiler
             finalPos = 0;
             creationTime = DateTime.MinValue;
             List<LogLine> lines = new List<LogLine>();

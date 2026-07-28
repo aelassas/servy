@@ -427,7 +427,6 @@ namespace Servy.Manager.ViewModels
                         }
 
                         // Perform an in-place sort on a background thread.
-                        // This avoids the GC pressure of the previous anonymous object LINQ chain.
                         await Task.Run(() =>
                         {
                             indexedHistory.Sort((a, b) =>
@@ -437,8 +436,7 @@ namespace Servy.Manager.ViewModels
                             });
                         });
 
-                        // CRITICAL RE-CHECK: Validate session state again after returning from the threaded background sorting await block.
-                        // This prevents stale log data injections if a user switched selections while Task.Run was active.
+                        // Re-check: see the stale-session guard above.
                         if (sessionId != _currentSessionId) return;
 
                         combinedHistory.Clear();
@@ -451,7 +449,7 @@ namespace Servy.Manager.ViewModels
                         RequestScroll?.Invoke(true);
                     }
 
-                    // CRITICAL RE-CHECK: Ensure session equilibrium before initializing new active log tailer handles.
+                    // Re-check: see the stale-session guard above.
                     if (sessionId != _currentSessionId) return;
 
                     // 5. Start Live Tailing, passing the Session ID
@@ -518,8 +516,6 @@ namespace Servy.Manager.ViewModels
             // Store the lambda in a local variable so we can safely register and track it
             NewLinesHandler handler = (lines) =>
             {
-                // Rely on the injected IUiDispatcher instead of Application.Current.
-                // The abstraction provides internal defensiveness against null dispatchers during background ticks.
                 _uiDispatcher.InvokeAsync(() =>
                 {
                     // ONLY add the lines if this tailer still belongs to the ACTIVE session
