@@ -574,9 +574,10 @@ namespace Servy.Manager.Views
         /// <remarks>
         /// This override ensures that when the main window is closed:
         /// 1. All child processes spawned by Servy are terminated to prevent orphans.
-        /// 2. All ViewModels are explicitly cleaned up to stop DispatcherTimers and cancel 
+        /// 2. All ViewModels are explicitly cleaned up to stop DispatcherTimers and cancel
         ///    async background tasks.
-        /// 3. Secure data and the global logger are safely disposed.
+        /// Secure data and the global logger are disposed later, in <see cref="App.OnExit"/> -
+        /// see #2027; shutting the logger down here suppresses disposal warnings.
         /// </remarks>
         protected override void OnClosed(EventArgs e)
         {
