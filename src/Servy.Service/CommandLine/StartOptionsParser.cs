@@ -15,15 +15,22 @@ namespace Servy.Service.CommandLine
     public static class StartOptionsParser
     {
         /// <summary>
-        /// Parses the specified array of command-line arguments into a <see cref="StartOptions"/> instance.
+        /// Resolves the service name from the command-line arguments, loads that service's stored
+        /// configuration from the repository, and projects it into a <see cref="StartOptions"/> instance.
         /// </summary>
         /// <param name="serviceRepository">An instance of <see cref="IServiceRepository"/> used to retrieve service configuration from the database.</param>
         /// <param name="processHelper">The process helper used to format process commands.</param>
-        /// <param name="fullArgs">An array of strings representing the command-line arguments.</param>
+        /// <param name="fullArgs">An array of strings representing the command-line arguments. Element 1 is the service name.</param>
         /// <returns>
-        /// A <see cref="StartOptions"/> object populated with values parsed from the input arguments.
-        /// Missing or invalid values will be set to default values.
+        /// A <see cref="StartOptions"/> object populated from the stored service configuration.
+        /// Stored fields that are null fall back to their <see cref="AppConfig"/> defaults.
         /// </returns>
+        /// <exception cref="ArgumentException">
+        /// Thrown when <paramref name="fullArgs"/> is null/empty or carries no service name.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when no service with that name exists in the database.
+        /// </exception>
         public static StartOptions Parse(IServiceRepository serviceRepository, IProcessHelper processHelper, string[] fullArgs)
         {
             if (fullArgs == null || fullArgs.Length == 0)

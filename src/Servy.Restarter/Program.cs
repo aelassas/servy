@@ -6,17 +6,16 @@ using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 
-/// <summary>
-/// A simple console application to restart a Windows service.
-/// </summary>
-/// <remarks>
-/// This application is intended to be used as a recovery action for services that need to be restarted.
-/// </remarks>
 namespace Servy.Restarter
 {
     /// <summary>
-    /// Program entry point for the service restarter console app.
+    /// Program entry point for the service restarter console app: a simple console
+    /// application that restarts a Servy Windows service.
     /// </summary>
+    /// <remarks>
+    /// Intended to be used as an SCM recovery action for services that need to be restarted.
+    /// Expects the service name as <c>args[0]</c> and sets a non-zero exit code on failure.
+    /// </remarks>
     public static class Program
     {
         /// <summary>

@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Servy.Infrastructure.Data
 {
     /// <summary>
-    /// Provides a database context for creating SQLite connections and Dapper executors.
+    /// Provides a database context for creating SQLite connections.
     /// Implements the standard .NET disposal pattern.
     /// </summary>
     [ExcludeFromCodeCoverage]
@@ -54,12 +54,6 @@ namespace Servy.Infrastructure.Data
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;
-
-            if (disposing)
-            {
-                // Release managed resources if any are added in the future 
-                // (e.g., a shared DbConnection or a CancellationSource)
-            }
 
             _disposed = true;
         }
