@@ -452,7 +452,7 @@ namespace Servy.Manager.Utils
         }
 
         /// <summary>
-        /// Releases resources and detaches event handlers to prevent memory leaks.
+        /// Cancels active background tailing tasks, detaches event handlers, and releases managed resources.
         /// </summary>
         public void Dispose()
         {
@@ -461,11 +461,11 @@ namespace Servy.Manager.Utils
         }
 
         /// <summary>
-        /// Protected implementation of the Dispose pattern.
+        /// Releases the managed resources used by <see cref="LogTailer"/>.
         /// </summary>
         /// <param name="disposing">
-        /// <c>true</c> to release both managed and unmanaged resources; 
-        /// <c>false</c> to release only unmanaged resources.
+        /// <see langword="true"/> when called from <see cref="Dispose()"/>. This type has no finalizer,
+        /// so it is never <see langword="false"/>; the parameter exists for derived types to override.
         /// </param>
         protected virtual void Dispose(bool disposing)
         {

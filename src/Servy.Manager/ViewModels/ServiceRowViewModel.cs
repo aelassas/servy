@@ -299,8 +299,8 @@ namespace Servy.Manager.ViewModels
         #region IDisposable Implementation
 
         /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// Unsubscribes from Model events to prevent memory leaks.
+        /// Unsubscribes from the underlying <see cref="Service"/> model's events so the view model
+        /// can be garbage-collected.
         /// </summary>
         public void Dispose()
         {
@@ -309,17 +309,16 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Releases the unmanaged resources used by the <see cref="ServiceRowViewModel"/> and optionally releases the managed resources.
+        /// Releases the managed resources used by <see cref="ServiceRowViewModel"/>.
         /// </summary>
         /// <param name="disposing">
-        /// <c>true</c> to release both managed and unmanaged resources; 
-        /// <c>false</c> to release only unmanaged resources.
+        /// <see langword="true"/> when called from <see cref="Dispose()"/>. This type has no finalizer,
+        /// so it is never <see langword="false"/>; the parameter exists for derived types to override.
         /// </param>
         /// <remarks>
-        /// This method is part of the standard <see cref="IDisposable"/> pattern. 
-        /// It is critical for breaking the strong reference held by the <see cref="Service"/> model 
+        /// This method is critical for breaking the strong reference held by the <see cref="Service"/> model 
         /// through the <see cref="Service.PropertyChanged"/> event. Without this unsubscription, 
-        /// the ViewModel would remain rooted in memory, leading to a leak.
+        /// the ViewModel would remain rooted in memory, leading to a memory leak.
         /// </remarks>
         protected virtual void Dispose(bool disposing)
         {
