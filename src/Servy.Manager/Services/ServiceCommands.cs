@@ -534,7 +534,7 @@ namespace Servy.Manager.Services
         }
 
         /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// Releases the per-service <see cref="SemaphoreSlim"/> locks held by this instance.
         /// </summary>
         public void Dispose()
         {
@@ -543,12 +543,10 @@ namespace Servy.Manager.Services
         }
 
         /// <summary>
-        /// Releases the unmanaged resources used by the <see cref="ServiceCommands"/> and optionally releases the managed resources.
+        /// Releases the managed resources used by <see cref="ServiceCommands"/> — the per-service
+        /// semaphores in the lock dictionary.
         /// </summary>
-        /// <param name="disposing">
-        /// <c>true</c> to release both managed and unmanaged resources; 
-        /// <c>false</c> to release only unmanaged resources.
-        /// </param>
+        /// <param name="disposing"><c>true</c> when called from <see cref="Dispose()"/>.</param>
         protected virtual void Dispose(bool disposing)
         {
             // Atomic guard: Only the first caller proceeds to disposal
