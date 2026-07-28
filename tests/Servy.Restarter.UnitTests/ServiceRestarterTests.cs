@@ -132,6 +132,7 @@ namespace Servy.Restarter.UnitTests
         public void RestartService_StopIssuedButNoTimeToAwaitStopped_ThrowsTimeoutException()
         {
             // Arrange
+            const string serviceName = "MyService";
             _mockController.SetupSequence(c => c.Status)
                 .Returns(ServiceControllerStatus.Running)  // Step 1: Passes pending check
                 .Returns(ServiceControllerStatus.Running); // Step 2: Enters Stop block
@@ -139,9 +140,9 @@ namespace Servy.Restarter.UnitTests
             // Act & Assert
             // Force remaining time to evaluate to <= 0 immediately inside the phase execution by using zero timeout
             var ex = Assert.Throws<System.TimeoutException>(() =>
-                _restarter.RestartService("MyService", TimeSpan.Zero));
+                _restarter.RestartService(serviceName, TimeSpan.Zero));
 
-            Assert.Contains("No time remaining to stop service", ex.Message);
+            Assert.Contains($"Timeout expired while waiting for service '{serviceName}' to reach Stopped.", ex.Message);
             _mockController.Verify(c => c.Stop(), Times.Once); // Stop is issued before the time check
 
             // Verify context handle cleanup rules execute on immediate stop timeouts
