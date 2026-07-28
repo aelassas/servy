@@ -2,11 +2,13 @@
 using Servy.Core.Logging;
 using Servy.Manager.Config;
 using Servy.Manager.Resources;
+using Servy.Manager.Utils;
 using Servy.Manager.ViewModels;
 using Servy.UI.Services;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -637,12 +639,13 @@ namespace Servy.Manager.Views
         /// Executes an asynchronous task in a fire-and-forget manner, typically for UI event handlers.
         /// </summary>
         /// <param name="action">The asynchronous work to execute.</param>
+        /// <param name="callerName">The automatically captured member name of the calling UI event handler, used for context-aware error logging.</param>
         /// <remarks>
         /// <para>
-        /// This method returns <c>Task</c> but is invoked as fire-and-forget via 
+        /// This method returns <see cref="Task"/> but is invoked as fire-and-forget via 
         /// <c>_ = RunAsync(...)</c> from synchronous UI event handlers. Because the 
         /// returned task is discarded, exceptions would otherwise be observed only on 
-        /// finalizer/GC. The top-level try-catch ensures all failures are recorded by 
+        /// finalizer/GC. The top-level try-catch inside <see cref="UiTaskRunner"/> ensures all failures are recorded by 
         /// the <see cref="Logger"/> instead.
         /// </para>
         /// <para>
@@ -650,20 +653,9 @@ namespace Servy.Manager.Views
         /// need to know when the operation completes.
         /// </para>
         /// </remarks>
-        private async Task RunAsync(Func<Task> action)
+        private Task RunAsync(Func<Task> action, [CallerMemberName] string callerName = "")
         {
-            try
-            {
-                await action();
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected - a newer user action has superseded this one, so we can silently exit without logging.
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("Async UI handler failed.", ex);
-            }
+            return UiTaskRunner.RunAsync(action, $"MainWindow.{callerName}");
         }
     }
 }

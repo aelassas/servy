@@ -65,9 +65,10 @@ jobs:
         if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          if (-not (Test-Path ${{ runner.temp }}\scanner)) { New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory | Out-Null }
+          $scannerDir = "$env:RUNNER_TEMP\scanner"
+          if (-not (Test-Path $scannerDir)) { New-Item -Path $scannerDir -ItemType Directory | Out-Null }
           # Utilizing 'update' ensures version switches don't crash when versionless fallbacks populate the tool-path
-          dotnet tool update dotnet-sonarscanner --version $env:SONAR_SCANNER_VERSION --tool-path ${{ runner.temp }}\scanner
+          dotnet tool update dotnet-sonarscanner --version $env:SONAR_SCANNER_VERSION --tool-path $scannerDir
 
       # 7. Build and Analyze
       - name: Build and analyze
@@ -76,7 +77,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: pwsh
         run: |
-          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin `
+          $scannerDir = "$env:RUNNER_TEMP\scanner"
+          & "$scannerDir\dotnet-sonarscanner" begin `
             /k:"aelassas_servy" `
             /o:"aelassas" `
             /d:sonar.token="$env:SONAR_TOKEN" `
@@ -87,7 +89,7 @@ jobs:
           dotnet build Servy.sln --configuration Release
           $buildExit = $LASTEXITCODE
 
-          ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="$env:SONAR_TOKEN"
+          & "$scannerDir\dotnet-sonarscanner" end /d:sonar.token="$env:SONAR_TOKEN"
           $endExit = $LASTEXITCODE
 
           if ($buildExit -ne 0) { throw "dotnet build failed (exit $buildExit)" }

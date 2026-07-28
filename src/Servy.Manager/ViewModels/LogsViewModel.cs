@@ -290,7 +290,7 @@ namespace Servy.Manager.ViewModels
         protected override async Task HandleSearchExceptionAsync(Exception ex)
         {
             Logger.Error($"Failed to search logs.", ex);
-            await _messageBoxService.ShowWarningAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
+            await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption);
         }
 
         /// <summary>

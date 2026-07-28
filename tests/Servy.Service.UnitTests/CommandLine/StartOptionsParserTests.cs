@@ -183,7 +183,7 @@ namespace Servy.Service.UnitTests.CommandLine
 
             // Assert Health Monitoring & Recovery Actions
             Assert.True(result.EnableHealthMonitoring);
-            Assert.Equal(15, result.HeartbeatInterval);
+            Assert.Equal(15, result.HeartbeatIntervalInSeconds);
             Assert.Equal(3, result.MaxFailedChecks);
             Assert.Equal(RecoveryAction.RestartService, result.RecoveryAction);
             Assert.False(result.RecoveryOnCleanExit);
@@ -258,7 +258,7 @@ namespace Servy.Service.UnitTests.CommandLine
             Assert.Equal(AppConfig.DefaultEnableConsoleUI, result.EnableConsoleUI);
             Assert.Equal(AppConfig.DefaultUseLocalTimeForRotation, result.UseLocalTimeForRotation);
             Assert.Equal(AppConfig.DefaultEnableHealthMonitoring, result.EnableHealthMonitoring);
-            Assert.Equal(AppConfig.DefaultHeartbeatInterval, result.HeartbeatInterval);
+            Assert.Equal(AppConfig.DefaultHeartbeatInterval, result.HeartbeatIntervalInSeconds);
             Assert.Equal(AppConfig.DefaultMaxFailedChecks, result.MaxFailedChecks);
             Assert.Equal(AppConfig.DefaultRecoveryOnCleanExit, result.RecoveryOnCleanExit);
             Assert.Equal(AppConfig.DefaultMaxRestartAttempts, result.MaxRestartAttempts);

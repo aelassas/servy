@@ -142,7 +142,7 @@ namespace Servy.Service.UnitTests
 
                 var options = new StartOptions
                 {
-                    HeartbeatInterval = 5,
+                    HeartbeatIntervalInSeconds = 5,
                     MaxFailedChecks = 3,
                     RecoveryAction = RecoveryAction.RestartService,
                     EnableHealthMonitoring = true,
@@ -152,7 +152,7 @@ namespace Servy.Service.UnitTests
                 service.InvokeSetupHealthMonitoring(options);
 
                 // Assert
-                ctx.TimerFactory.Verify(f => f.Create(options.HeartbeatInterval * 1000.0), Times.Once);
+                ctx.TimerFactory.Verify(f => f.Create(options.HeartbeatIntervalInSeconds * 1000.0), Times.Once);
 
                 mockTimer.VerifyAdd(t => t.Elapsed += It.IsAny<ElapsedEventHandler>(), Times.Once);
                 mockTimer.VerifySet(t => t.AutoReset = true, Times.Once);
@@ -177,14 +177,14 @@ namespace Servy.Service.UnitTests
                 var options = new StartOptions
                 {
                     EnableHealthMonitoring = true, // Attempt to request monitoring
-                    HeartbeatInterval = heartbeat,
+                    HeartbeatIntervalInSeconds = heartbeat,
                     MaxFailedChecks = maxFailedChecks,
                     RecoveryAction = recovery
                 };
 
                 // Actively calculate the true production gating state based on configuration validation rules
                 bool calculatedRecoveryActionEnabled = options.EnableHealthMonitoring
-                    && options.HeartbeatInterval > 0
+                    && options.HeartbeatIntervalInSeconds > 0
                     && options.MaxFailedChecks > 0
                     && options.RecoveryAction != RecoveryAction.None;
 

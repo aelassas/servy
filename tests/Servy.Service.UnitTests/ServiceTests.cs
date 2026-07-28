@@ -188,7 +188,7 @@ namespace Servy.Service.UnitTests
                 ExecutablePath = "C:\\Windows\\notepad.exe",
                 WorkingDirectory = "C:\\Windows",
                 EnableHealthMonitoring = true,
-                HeartbeatInterval = 10,
+                HeartbeatIntervalInSeconds = 10,
                 MaxFailedChecks = 3,
                 RecoveryAction = RecoveryAction.RestartProcess,
                 StdoutPath = "C:\\Logs\\stdout.log",
@@ -1101,7 +1101,7 @@ namespace Servy.Service.UnitTests
                 RecoveryAction = RecoveryAction.RestartProcess,
                 EnableHealthMonitoring = true,
                 MaxFailedChecks = 1,
-                HeartbeatInterval = 10
+                HeartbeatIntervalInSeconds = 10
             };
             var scopedLogger = SetupStandardServiceStart(options);
             _service.StartForTest();
@@ -1151,7 +1151,7 @@ namespace Servy.Service.UnitTests
                 StdoutPath = "C:\\Logs\\stdout.log",
                 StderrPath = "C:\\Logs\\stderr.log",
                 EnableHealthMonitoring = true,
-                HeartbeatInterval = 10,
+                HeartbeatIntervalInSeconds = 10,
                 MaxFailedChecks = 3
             };
 

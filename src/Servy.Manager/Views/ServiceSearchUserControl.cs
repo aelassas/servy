@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Logging;
+using Servy.Manager.Utils;
 using Servy.Manager.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,7 +29,7 @@ namespace Servy.Manager.Views
         /// </summary>
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            _ = UserControl_LoadedAsync(sender, e);
+            _ = UiTaskRunner.RunAsync(() => UserControl_LoadedAsync(sender, e), ViewName);
         }
 
         /// <summary>

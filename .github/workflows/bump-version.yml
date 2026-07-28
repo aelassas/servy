@@ -15,13 +15,20 @@ on:
     workflows: ["choco"]    # must match the `name:` in choco.yml
     types:
       - completed
+
   workflow_dispatch:
     inputs:
       tag:
         description: 'Release tag (e.g. v1.1)'
         required: false    # Optional manual trigger
+
+concurrency:
+  group: bump-version-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write       # Needed to push commits back
+
 jobs:
   bump-version:
     runs-on: windows-latest

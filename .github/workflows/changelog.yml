@@ -26,6 +26,10 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: changelog-${{ github.ref }}
+  cancel-in-progress: false
+
 # Default to read-only for the entire workflow
 permissions:
   contents: read

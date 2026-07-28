@@ -430,7 +430,7 @@ namespace Servy.Service
                 _serviceHelper.EnsureValidWorkingDirectory(options, _logger!);
 
                 _serviceName = options.ServiceName;
-                _recoveryActionEnabled = options.EnableHealthMonitoring && options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None;
+                _recoveryActionEnabled = options.EnableHealthMonitoring && options.HeartbeatIntervalInSeconds > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None;
                 _maxRestartAttempts = options.MaxRestartAttempts;
                 _maxFailedChecks = options.MaxFailedChecks;
                 _recoveryAction = options.RecoveryAction;
@@ -815,7 +815,7 @@ namespace Servy.Service
                 }
 
                 // 3. Evaluate Thresholds
-                long product = (long)options.HeartbeatInterval * options.MaxFailedChecks;
+                long product = (long)options.HeartbeatIntervalInSeconds * options.MaxFailedChecks;
                 int detectionWindowSeconds = product > int.MaxValue ? int.MaxValue : (int)product;
 
                 // Base threshold: detection window + buffer (min 30s or the detection window itself)
@@ -1288,7 +1288,7 @@ namespace Servy.Service
                 {
                     if (await capturedProcess.WaitAndCheckStillRunningAsync(TimeSpan.FromSeconds(_options!.StartTimeoutInSeconds), capturedToken))
                     {
-                        EmitHeartbeatPing(_options.HeartbeatUrl, AppConfig.HeartbeatUrlStartFlag, _options.HeartbeatUrlTimeoutSeconds);
+                        EmitHeartbeatPing(_options.HeartbeatUrl, AppConfig.HeartbeatUrlStartFlag, _options.HeartbeatUrlTimeoutInSeconds);
                         StartPostLaunchProcess();
                     }
                 }
@@ -1663,7 +1663,7 @@ namespace Servy.Service
                 // Trigger failure signal if local recovery handles it OR if recovery is disabled and it's an error exit
                 if ((needsRecovery || isErrorStop) && !_isTearingDown && !_disposed)
                 {
-                    EmitHeartbeatPing(_options.HeartbeatUrl, AppConfig.HeartbeatUrlFailFlag, _options.HeartbeatUrlTimeoutSeconds);
+                    EmitHeartbeatPing(_options.HeartbeatUrl, AppConfig.HeartbeatUrlFailFlag, _options.HeartbeatUrlTimeoutInSeconds);
                 }
 
                 // Actions outside the lock to avoid holding the semaphore during I/O or delays
@@ -1675,7 +1675,7 @@ namespace Servy.Service
                 else if (needsRecovery)
                 {
                     // Calculate delay: Heartbeat interval minus a 5s buffer, minimum 5s.
-                    var delayMs = Math.Max(ClampTimeout(_options.HeartbeatInterval) - AppConfig.RecoverySchedulingDelayMs, AppConfig.RecoverySchedulingDelayMs);
+                    var delayMs = Math.Max(ClampTimeout(_options.HeartbeatIntervalInSeconds) - AppConfig.RecoverySchedulingDelayMs, AppConfig.RecoverySchedulingDelayMs);
                     _logger?.Info($"[OnProcessExited] Failure threshold reached. Scheduling recovery in {delayMs / AppConfig.MillisecondsPerSecond}s...");
 
                     // Fire-and-forget the recovery task safely
@@ -1807,7 +1807,7 @@ namespace Servy.Service
         {
             if (_recoveryActionEnabled)
             {
-                _healthCheckTimer = _timerFactory.Create(options.HeartbeatInterval * (double)AppConfig.MillisecondsPerSecond);
+                _healthCheckTimer = _timerFactory.Create(options.HeartbeatIntervalInSeconds * (double)AppConfig.MillisecondsPerSecond);
                 _healthCheckTimer.Elapsed += CheckHealth;
                 _healthCheckTimer.AutoReset = true;
                 _healthCheckTimer.Start();
@@ -1901,7 +1901,7 @@ namespace Servy.Service
 
                 // Safely parse heartbeat metadata without NullReferenceException exposures
                 string? heartbeatUrl = _options?.HeartbeatUrl;
-                int timeout = _options?.HeartbeatUrlTimeoutSeconds ?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds;
+                int timeout = _options?.HeartbeatUrlTimeoutInSeconds ?? AppConfig.DefaultHeartbeatUrlTimeoutSeconds;
 
                 if (shouldStop)
                 {
@@ -2091,7 +2091,7 @@ namespace Servy.Service
                         // PLACEMENT 1: Alert the external monitor immediately if we are escalating to full recovery action
                         if (needsRecovery && _options != null)
                         {
-                            EmitHeartbeatPing(_options!.HeartbeatUrl, AppConfig.HeartbeatUrlFailFlag, _options.HeartbeatUrlTimeoutSeconds);
+                            EmitHeartbeatPing(_options!.HeartbeatUrl, AppConfig.HeartbeatUrlFailFlag, _options.HeartbeatUrlTimeoutInSeconds);
                         }
                     }
                     else
@@ -2103,7 +2103,7 @@ namespace Servy.Service
 
                             // PLACEMENT 2: Send an explicit structural /start signal showing recovery completed
                             if (_options != null)
-                                EmitHeartbeatPing(_options!.HeartbeatUrl, AppConfig.HeartbeatUrlStartFlag, _options.HeartbeatUrlTimeoutSeconds);
+                                EmitHeartbeatPing(_options!.HeartbeatUrl, AppConfig.HeartbeatUrlStartFlag, _options.HeartbeatUrlTimeoutInSeconds);
 
                             // Always reset memory count immediately so we don't trigger recovery again unnecessarily
                             _failedChecks = 0;
@@ -2112,7 +2112,7 @@ namespace Servy.Service
                         {
                             // PLACEMENT 3: Standard routine operational tick (clean pass)
                             if (_options != null)
-                                EmitHeartbeatPing(_options!.HeartbeatUrl, string.Empty, _options.HeartbeatUrlTimeoutSeconds);
+                                EmitHeartbeatPing(_options!.HeartbeatUrl, string.Empty, _options.HeartbeatUrlTimeoutInSeconds);
                         }
 
                         // Flag to perform disk-bound stability check outside the lock
