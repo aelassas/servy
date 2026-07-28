@@ -81,10 +81,10 @@ namespace Servy.Service.Helpers
             // Runtime Custom Component Loading & Assembly Layout Adjustments
             "DOTNET_GCName",                   "COMPlus_GCName",
             "DOTNET_GCPath",                   "COMPlus_GCPath",
-            "DOTNET_LegacyHostPolicy",         "COMPlus_LegacyHostPolicy",
+            "DOTNET_LegacyHostPolicy",          "COMPlus_LegacyHostPolicy",
             "DOTNET_LegacyTransform",          "COMPlus_LegacyTransform",
-            "DOTNET_PerfMapEnabled",           "COMPlus_PerfMapEnabled",
-            "DOTNET_ZapDisable",               "COMPlus_ZapDisable",
+            "DOTNET_PerfMapEnabled",            "COMPlus_PerfMapEnabled",
+            "DOTNET_ZapDisable",                "COMPlus_ZapDisable",
             
             // MiniDump Storage Layout Targets (Prevents sensitive memory leakage redirection)
             "DOTNET_DbgEnableMiniDump",        "COMPlus_DbgEnableMiniDump",
@@ -197,9 +197,9 @@ namespace Servy.Service.Helpers
                     string original = result[key];
                     if (string.IsNullOrEmpty(original)) continue;
 
-                    // Pass protectInjectedValues: true here so any literal '%' evaluated from custom variables
-                    // is instantly masked as PercentEscapeToken, blocking it from parsing as a variable on Pass 2.
-                    string expanded = ExpandWithDictionary(original, passSnapshot, key, protectInjectedValues: true);
+                    // Pass protectInjectedValues: true so literal '%' evaluated from custom variables
+                    // is masked as PercentEscapeToken, blocking it from re-expansion on Pass 2.
+                    string expanded = ExpandWithDictionary(original, passSnapshot, systemEnv, key, protectInjectedValues: true);
 
                     // Exponential growth guard
                     if (!string.IsNullOrEmpty(expanded) && expanded.Length > AppConfig.MaxEnvVarExpandedLength)
@@ -234,7 +234,7 @@ namespace Servy.Service.Helpers
 
                 // Safely expand remaining real system placeholders (e.g. %ProgramData%) without touching 
                 // protected tokens. We use protectInjectedValues: true to shelter any nested percentage content.
-                string systemExpanded = ExpandWithDictionary(result[key], systemEnv, null, protectInjectedValues: true);
+                string systemExpanded = ExpandWithDictionary(result[key], systemEnv, null, null, protectInjectedValues: true);
                 result[key] = Environment.ExpandEnvironmentVariables(systemExpanded);
             }
 
@@ -268,11 +268,39 @@ namespace Servy.Service.Helpers
             // Since 'expandedEnv' is already resolved to a fixed point by the dictionary builder,
             // only one pass is needed here. We pass 'protectInjectedValues: true' so that any literal 
             // '%' characters injected from the dictionary aren't accidentally re-expanded by the OS.
-            string result = ExpandWithDictionary(encodedInput, expandedEnv, null, protectInjectedValues: true);
+            string result = ExpandWithDictionary(encodedInput, expandedEnv, null, null, protectInjectedValues: true);
             result = Environment.ExpandEnvironmentVariables(result);
 
             // Decode '%%' protection token back to a single literal '%'
             return result.Replace(PercentEscapeToken, "%");
+        }
+
+        /// <summary>
+        /// Protects literal percent characters in substituted values by converting them to <see cref="PercentEscapeToken"/>,
+        /// while selectively preserving valid system environment variable placeholders (such as <c>%ProgramData%</c>) so they can be expanded downstream.
+        /// </summary>
+        /// <param name="value">The string value being substituted during environment variable expansion.</param>
+        /// <param name="systemEnv">A dictionary of active system environment variables used to verify whether a percentage token represents a recognized OS variable.</param>
+        /// <returns>
+        /// The input string with non-system percent signs and unrecognized variable placeholders masked, and valid system placeholders preserved intact.
+        /// </returns>
+        private static string ProtectNonSystemPercents(string value, IDictionary<string, string> systemEnv)
+        {
+            if (string.IsNullOrEmpty(value) || value.IndexOf('%') < 0) return value;
+
+            // Matches %varName% where varName does not contain percent signs or control characters, or falls back to bare '%'
+            return Regex.Replace(value, @"%([^%\r\n]+)%|%", m =>
+            {
+                if (m.Value == "%") return PercentEscapeToken;
+
+                string varName = m.Groups[1].Value;
+                if (systemEnv != null && systemEnv.ContainsKey(varName))
+                {
+                    return m.Value; // Preserve valid system placeholder like %ProgramData%
+                }
+
+                return PercentEscapeToken + varName + PercentEscapeToken;
+            });
         }
 
         /// <summary>
@@ -285,7 +313,12 @@ namespace Servy.Service.Helpers
         /// <param name="currentKey">The specific variable key currently being expanded, if any.</param>
         /// <param name="protectInjectedValues">If true, encodes '%' in the substituted values to prevent later OS expansion.</param>
         /// <returns>The expanded string.</returns>
-        private static string ExpandWithDictionary(string value, IDictionary<string, string> variables, string currentKey = null, bool protectInjectedValues = false)
+        private static string ExpandWithDictionary(
+            string value,
+            IDictionary<string, string> variables,
+            IDictionary<string, string> systemEnv = null,
+            string currentKey = null,
+            bool protectInjectedValues = false)
         {
             if (string.IsNullOrEmpty(value))
                 return value;
@@ -336,9 +369,11 @@ namespace Servy.Service.Helpers
                     }
                 }
 
-                // If requested, protect any '%' in the finalized replacement value so it survives 
-                // subsequent OS expansion without being re-evaluated.
-                string safeReplacement = protectInjectedValues ? replacement.Replace("%", PercentEscapeToken) : replacement;
+                // If requested, protect literal '%' in the replacement value, while selectively preserving 
+                // genuine system placeholders (e.g. %ProgramData%) so they can expand in Step 4.
+                string safeReplacement = protectInjectedValues
+                    ? ProtectNonSystemPercents(replacement, systemEnv)
+                    : replacement;
 
                 int index = 0;
                 while ((index = expanded.IndexOf(token, index, StringComparison.OrdinalIgnoreCase)) >= 0)
