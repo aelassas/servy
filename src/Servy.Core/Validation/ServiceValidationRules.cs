@@ -136,7 +136,7 @@ namespace Servy.Core.Validation
             {
                 try
                 {
-                    if (!string.IsNullOrEmpty(confirmPassword) && !string.Equals(dto.Password ?? "", confirmPassword, StringComparison.Ordinal))
+                    if (confirmPassword != null && !string.Equals(dto.Password ?? "", confirmPassword, StringComparison.Ordinal))
                         result.Errors.Add(Strings.Msg_PasswordsDontMatch);
                     else
                         NativeMethodsHelpers.ValidateCredentials(dto.UserAccount, dto.Password);
