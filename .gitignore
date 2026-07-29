@@ -447,3 +447,5 @@ temp.ps1
 # Temporary & Generated SBOM Artifacts
 sbom-*.xml
 servy-*-sbom.xml
+
+setup/PublishTestSandbox/

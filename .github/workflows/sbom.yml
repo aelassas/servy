@@ -43,6 +43,7 @@ permissions:
 jobs:
   sbom:
     runs-on: windows-latest
+    timeout-minutes: 20
     env:
       # Mapping to an environment variable prevents Expression Injection attacks
       INPUT_VERSION: ${{ github.event.inputs.version }}

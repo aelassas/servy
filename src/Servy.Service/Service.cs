@@ -92,9 +92,9 @@ namespace Servy.Service
         #region Private Fields
 
         /// <summary>The interval, in milliseconds, at which the launcher checks the process status and invokes the OnScmHeartbeat delegate.</summary>
-        private readonly int _waitChunkMs;
+        private readonly int _waitChunkMs = AppConfig.DefaultWaitChunkMs;
         /// <summary>Additional time, in milliseconds, used for Service Control Manager (SCM) operations.</summary>
-        private readonly int _scmAdditionalTimeMs;
+        private readonly int _scmAdditionalTimeMs = AppConfig.DefaultScmAdditionalTimeMs;
 
         private readonly SecureData _secureData;
         private readonly Helpers.IServiceHelper _serviceHelper;
@@ -1011,7 +1011,7 @@ namespace Servy.Service
                             return false;
                         }
 
-                        int slice = Math.Min(_waitChunkMs, delayMs - elapsed);
+                        int slice = Math.Max(1, Math.Min(_waitChunkMs, delayMs - elapsed));
 
                         if (_cancellationSource != null)
                         {

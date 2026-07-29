@@ -134,9 +134,11 @@ function Update-Watermark {
     $maxRetries = 5
     $retryDelayMs = 200
 
-    # Define explicit temporary paths in the same directory to execute an atomic NTFS swap
-    $tempFile   = "$TimestampFile.new"
-    $backupFile = "$TimestampFile.bak"
+    # Define unique per-writer temporary paths in the same directory to execute an atomic NTFS swap
+    # Using PID, thread ID, and high-resolution ticks prevents concurrent instances from truncating each other's staged files.
+    $writerId    = "$PID.$([System.Threading.Thread]::CurrentThread.ManagedThreadId).$([DateTime]::UtcNow.Ticks)"
+    $tempFile    = "$TimestampFile.$writerId.new"
+    $backupFile  = "$TimestampFile.$writerId.bak"
 
     for ($attempt = 1; $attempt -le $maxRetries; $attempt++) {
         $fs = $null
@@ -199,6 +201,9 @@ function Update-Watermark {
                         [System.IO.File]::Move($absoluteTemp, $absoluteTimestamp)
                     }
                     Write-Verbose "Timestamp updated atomically to: $timestampString"
+                } else {
+                    # Staging file disappeared unexpectedly; treat as an IO failure to force retry loop evaluation
+                    throw [System.IO.IOException]::new("Staging file '$tempFile' was deleted before commit.")
                 }
             }
 

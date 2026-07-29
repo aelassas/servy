@@ -45,6 +45,7 @@ namespace Servy.CLI.Commands
 
             return await ExecuteWithHandlingAsync("export", action, suggestion, async () =>
             {
+
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 
@@ -139,8 +140,8 @@ namespace Servy.CLI.Commands
                 }
             }
 
-            bool createdByUs = !File.Exists(fullPath);
             bool committed = false;
+            bool createdByUs = false;
 
             var validationResult = PathSecurityGuard.ValidatePath(
                 userPath,
@@ -166,6 +167,9 @@ namespace Servy.CLI.Commands
 
             try
             {
+                // Inspect open stream handle length to reliably snapshot whether the file was newly created by us
+                createdByUs = fileStream.Length == 0;
+
                 using (fileStream)
                 {
                     using (var sw = new StreamWriter(fileStream, new UTF8Encoding(false), bufferSize: 1024, leaveOpen: true))
@@ -173,9 +177,12 @@ namespace Servy.CLI.Commands
                         sw.Write(content);
                         sw.Flush();
                         fileStream.SetLength(fileStream.Position); // Truncate existing content if file was larger
-                        committed = true;
+                        fileStream.Flush(true); // Force intermediate buffer flush to disk before disposing handle
                     }
                 }
+
+                // Mark committed strictly AFTER stream handle dispose and flush completes successfully
+                committed = true;
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
             {

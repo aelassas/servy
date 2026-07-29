@@ -139,6 +139,13 @@ namespace Servy.Service.ProcessManagement
                     nameof(options));
             }
 
+            if (!options.FireAndForget && options.WaitChunkMs <= 0)
+            {
+                throw new ArgumentException(
+                    "Synchronous launch requires WaitChunkMs > 0.",
+                    nameof(options));
+            }
+
             // 1. Delegate generation to our unified static factory step
             var redirectOutput = !options.EnableConsoleUI && options.RedirectToWriters && !options.FireAndForget;
             var psi = CreateStartInfo(
@@ -326,12 +333,12 @@ namespace Servy.Service.ProcessManagement
             finally
             {
                 // Dispose writers safely to release file locks.
-                try { stdoutWriter?.Dispose(); }
+                try { stdoutWriter.Dispose(); }
                 catch (Exception ex) { logger.Warn($"Failed to dispose stdout writer: {ex.Message}"); }
 
                 if (!pathsMatch)
                 {
-                    try { stderrWriter?.Dispose(); }
+                    try { stderrWriter.Dispose(); }
                     catch (Exception ex) { logger.Warn($"Failed to dispose stderr writer: {ex.Message}"); }
                 }
 
@@ -362,14 +369,6 @@ namespace Servy.Service.ProcessManagement
         /// </summary>
         private static void WaitForExitWithHeartbeat(IProcessWrapper process, ProcessLaunchOptions options, IServyLogger logger)
         {
-            // Fail fast with a clear contract violation
-            if (!options.FireAndForget && options.WaitChunkMs <= 0)
-            {
-                throw new ArgumentException(
-                    "Synchronous launch requires WaitChunkMs > 0.",
-                    nameof(options));
-            }
-
             var sw = Stopwatch.StartNew();
             while (true)
             {
@@ -412,7 +411,7 @@ namespace Servy.Service.ProcessManagement
             try { isPython = PythonExeRegex.IsMatch(fileNameOnly); }
             catch (RegexMatchTimeoutException ex)
             {
-                logger?.Warn($"ApplyLanguageFixes: Python detection regex timed out on '{fileNameOnly}' ({ex.Message}); assuming not Python.");
+                logger.Warn($"ApplyLanguageFixes: Python detection regex timed out on '{fileNameOnly}' ({ex.Message}); assuming not Python.");
                 isPython = false;
             }
 
@@ -444,7 +443,7 @@ namespace Servy.Service.ProcessManagement
                 }
                 catch (RegexMatchTimeoutException ex)
                 {
-                    logger?.Warn($"ApplyLanguageFixes: -Dfile.encoding detection regex timed out on Java arguments ({ex.Message}); assuming not present.");
+                    logger.Warn($"ApplyLanguageFixes: -Dfile.encoding detection regex timed out on Java arguments ({ex.Message}); assuming not present.");
                     hasEncoding = false;
                 }
 

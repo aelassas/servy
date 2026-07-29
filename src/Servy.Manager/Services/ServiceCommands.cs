@@ -122,6 +122,9 @@ namespace Servy.Manager.Services
         /// </summary>
         private async Task<T> ExecuteLockedAsync<T>(string serviceName, Func<Task<T>> action, CancellationToken cancellationToken = default)
         {
+            if (Volatile.Read(ref _isDisposed) != 0)
+                throw new ObjectDisposedException(nameof(ServiceCommands));
+
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentException("Service name cannot be null, empty, or whitespace.", nameof(serviceName));
 
@@ -142,7 +145,8 @@ namespace Servy.Manager.Services
             }
             finally
             {
-                sem.Release();
+                try { sem.Release(); }
+                catch (ObjectDisposedException) { /* disposed while the operation was in flight */ }
             }
         }
 

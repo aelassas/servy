@@ -5,6 +5,7 @@
 .DESCRIPTION
     Reads the initial bytes of a file to determine if it is:
     - UTF-32 Little Endian
+    - UTF-32 Big Endian
     - UTF-8 with BOM
     - UTF-16 Little Endian (Unicode)
     - UTF-16 Big Endian
@@ -41,6 +42,12 @@ function Get-FileEncoding {
         return [System.Text.Encoding]::UTF32
     }
 
+    # UTF-32 BE (00 00 FE FF)
+    if ($readCount -ge 4 -and $buffer[0] -eq 0x00 -and $buffer[1] -eq 0x00 -and $buffer[2] -eq 0xFE -and $buffer[3] -eq 0xFF) {
+        # .NET ships GetEncoding(12001) for UTF-32 BE; new System.Text.UTF32Encoding($true, $true) also works.
+        return [System.Text.Encoding]::GetEncoding(12001)
+    }
+
     # UTF-8 with BOM (EF BB BF)
     if ($readCount -ge 3 -and $buffer[0] -eq 0xEF -and $buffer[1] -eq 0xBB -and $buffer[2] -eq 0xBF) {
         return [System.Text.Encoding]::UTF8
@@ -56,6 +63,7 @@ function Get-FileEncoding {
         return [System.Text.Encoding]::BigEndianUnicode
     }
 
-    # Default: UTF-8 without BOM (Standard for modern .NET and Git)
-    return New-Object System.Text.UTF8Encoding($false)
+    # Default: UTF-8 without BOM; throwOnInvalidBytes=true so a legacy-ANSI file
+    # fails loudly instead of being silently rewritten with U+FFFD replacements
+    return New-Object System.Text.UTF8Encoding($false, $true)
 }

@@ -6,7 +6,24 @@
 .DESCRIPTION
     Loops through required assets, checks filesystem paths, writes warning errors to the 
     Windows Application Event Log on failure, and handles dot-sourcing or module imports dynamically.
+
+.NOTES
+    Required Caller-Scope Variables:
+    - $RequiredDependencies : String array of dependency filenames to import (e.g. @('Servy-Watermark.psm1')).
+    - $scriptDir           : Resolved absolute path to the directory containing script dependencies.
+    - $EVENT_ID_DEPENDENCY_ERROR : Integer event ID for logging missing dependency warnings to Windows Application Event Log.
 #>
+
+# Caller contract validation: Fail fast if required variables are missing or invalid
+if ($null -eq $RequiredDependencies -or $RequiredDependencies.Count -eq 0) {
+    throw "Import-ServyDependencies: caller must set `$RequiredDependencies before dot-sourcing."
+}
+if ([string]::IsNullOrWhiteSpace($scriptDir)) {
+    throw "Import-ServyDependencies: caller must set `$scriptDir before dot-sourcing."
+}
+if (-not $EVENT_ID_DEPENDENCY_ERROR) {
+    throw "Import-ServyDependencies: caller must set `$EVENT_ID_DEPENDENCY_ERROR before dot-sourcing."
+}
 
 foreach ($dep in $RequiredDependencies) {
     $depPath = Join-Path $scriptDir $dep

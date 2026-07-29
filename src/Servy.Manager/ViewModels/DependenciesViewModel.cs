@@ -313,11 +313,7 @@ namespace Servy.Manager.ViewModels
             {
                 // Dispose Tree Loading CTS
                 var oldLoadTreeCts = Interlocked.Exchange(ref _loadTreeCts, null);
-                if (oldLoadTreeCts != null)
-                {
-                    oldLoadTreeCts.Cancel();
-                    oldLoadTreeCts.Dispose();
-                }
+                Helpers.Helper.CancelAndDisposeSafely(oldLoadTreeCts);
             }
 
             base.Dispose(disposing);

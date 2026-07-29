@@ -614,19 +614,11 @@ namespace Servy.Manager.ViewModels
 
                 // 2. Dispose Tailing CTS
                 var oldTailingCts = Interlocked.Exchange(ref _tailingCts, null);
-                if (oldTailingCts != null)
-                {
-                    oldTailingCts.Cancel();
-                    oldTailingCts.Dispose();
-                }
+                Helpers.Helper.CancelAndDisposeSafely(oldTailingCts);
 
                 // 3. Dispose Log Filter Debounce CTS
                 var oldFilterCts = Interlocked.Exchange(ref _logFilterCts, null);
-                if (oldFilterCts != null)
-                {
-                    oldFilterCts.Cancel();
-                    oldFilterCts.Dispose();
-                }
+                Helpers.Helper.CancelAndDisposeSafely(oldFilterCts);
             }
 
             base.Dispose(disposing);
