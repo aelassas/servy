@@ -15,8 +15,8 @@ namespace Servy.UI.Converters
         /// </summary>
         /// <param name="value">The source data being passed to the target (expected to be a bool).</param>
         /// <param name="targetType">The type of the binding target property (ignored).</param>
-        /// <param name="parameter">Optional parameter (ignored).</param>
-        /// <param name="culture">The culture to use in the converter (ignored).</param>
+        /// <param name="parameter">Not used.</param>
+        /// <param name="culture">Not used.</param>
         /// <returns>The inverted boolean value if <paramref name="value"/> is a bool; otherwise <see cref="Binding.DoNothing"/>.</returns>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
@@ -29,8 +29,8 @@ namespace Servy.UI.Converters
         /// </summary>
         /// <param name="value">The value from the binding target (expected to be a bool).</param>
         /// <param name="targetType">The type to convert to (ignored).</param>
-        /// <param name="parameter">Optional parameter (ignored).</param>
-        /// <param name="culture">The culture to use in the converter (ignored).</param>
+        /// <param name="parameter">Not used.</param>
+        /// <param name="culture">Not used.</param>
         /// <returns>The inverted boolean value if <paramref name="value"/> is a bool; otherwise <see cref="Binding.DoNothing"/>.</returns>
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {

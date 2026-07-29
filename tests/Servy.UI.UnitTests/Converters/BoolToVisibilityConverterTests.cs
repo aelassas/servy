@@ -1,6 +1,7 @@
 ﻿using Servy.UI.Converters;
 using System.Globalization;
 using System.Windows;
+using System.Windows.Data;
 using Xunit;
 
 namespace Servy.UI.UnitTests.Converters
@@ -21,7 +22,7 @@ namespace Servy.UI.UnitTests.Converters
         [InlineData(false, Visibility.Collapsed)]
         public void Convert_BoolValue_ReturnsExpectedVisibility(bool input, Visibility expected)
         {
-            // Act
+            // Arrange & Act
             var result = _converter.Convert(input, typeof(Visibility), null, CultureInfo.InvariantCulture);
 
             // Assert
@@ -32,13 +33,13 @@ namespace Servy.UI.UnitTests.Converters
         [InlineData(null)]
         [InlineData("not a bool")]
         [InlineData(1)]
-        public void Convert_InvalidValue_ReturnsCollapsed(object input)
+        public void Convert_InvalidValue_ReturnsBindingDoNothing(object input)
         {
-            // Act
+            // Arrange & Act
             var result = _converter.Convert(input, typeof(Visibility), null, CultureInfo.InvariantCulture);
 
             // Assert
-            Assert.Equal(Visibility.Collapsed, result);
+            Assert.Equal(Binding.DoNothing, result);
         }
 
         #endregion
@@ -48,7 +49,7 @@ namespace Servy.UI.UnitTests.Converters
         [Fact]
         public void ConvertBack_Visible_ReturnsTrue()
         {
-            // Act
+            // Arrange & Act
             var result = _converter.ConvertBack(Visibility.Visible, typeof(bool), null, CultureInfo.InvariantCulture);
 
             // Assert
@@ -60,7 +61,7 @@ namespace Servy.UI.UnitTests.Converters
         [InlineData(Visibility.Hidden)]
         public void ConvertBack_NotVisible_ReturnsFalse(Visibility input)
         {
-            // Act
+            // Arrange & Act
             var result = _converter.ConvertBack(input, typeof(bool), null, CultureInfo.InvariantCulture);
 
             // Assert
@@ -71,13 +72,13 @@ namespace Servy.UI.UnitTests.Converters
         [InlineData(null)]
         [InlineData("Visible")]
         [InlineData(true)]
-        public void ConvertBack_InvalidType_ReturnsFalse(object input)
+        public void ConvertBack_InvalidType_ReturnsBindingDoNothing(object input)
         {
-            // Act
+            // Arrange & Act
             var result = _converter.ConvertBack(input, typeof(bool), null, CultureInfo.InvariantCulture);
 
             // Assert
-            Assert.False((bool)result);
+            Assert.Equal(Binding.DoNothing, result);
         }
 
         #endregion
