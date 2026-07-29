@@ -166,7 +166,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 using (var vm = CreateViewModel())
                 {
-                    vm.SetSelectionActive(true);
+                    vm.SetPaused(true);
                     Assert.True(vm.IsPaused);
 
                     // Act
@@ -592,7 +592,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 using (new AmbientAppServicesScope(sc => sc.AddSingleton(_mockProcessKiller.Object)))
                 using (var vm = CreateViewModel())
                 {
-                    vm.SetSelectionActive(true); // User is selecting text in the UI terminal window frame
+                    vm.SetPaused(true); // User is selecting text in the UI terminal window frame
 
                     int currentSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
 
@@ -638,7 +638,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public void SetSelectionActive_SelectionCleared_ReTriggerServicesSwitchPipeline()
+        public void SetPaused_SelectionCleared_ReTriggerServicesSwitchPipeline()
         {
             // Arrange, Act & Assert
             Helper.RunOnSTA(() =>
@@ -647,13 +647,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var vm = CreateViewModel();
                 var service = new ConsoleService { Name = "ActiveService", StdoutPath = "out.log", StderrPath = "err.log" };
                 vm.SelectedService = service;
-                vm.SetSelectionActive(true);
+                vm.SetPaused(true);
 
                 // Capture the tracking session ID right before deactivating the selection loop
                 int initialSessionId = TestReflection.GetField<int>(vm, "_currentSessionId");
 
                 // Act - Toggle selection state back to false to trigger the internal conditional reset pathway loop block
-                vm.SetSelectionActive(false);
+                vm.SetPaused(false);
 
                 // Assert
                 // 1. Verify the foundational UI pause flag state flipped back cleanly

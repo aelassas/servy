@@ -218,7 +218,7 @@ namespace Servy.Core.Validation
 
                 stream = fileStream;
                 fileStream = null; // ownership transferred to caller; don't dispose
-                return PathSecurityResult.Success(fullPath);
+                return PathSecurityResult.Success(normalizedPath); // normalizedPath is the kernel-resolved target that the security re-checks above validated
             }
             catch (Exception ex)
             {

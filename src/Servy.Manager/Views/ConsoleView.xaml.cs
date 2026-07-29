@@ -30,11 +30,6 @@ namespace Servy.Manager.Views
         private bool _isFirstLoad = true;
 
         /// <summary>
-        /// The view model currently bound to the console view, tracked so its events can be unhooked on DataContext change.
-        /// </summary>
-        private ConsoleViewModel? _currentViewModel;
-
-        /// <summary>
         /// Define a small tolerance for floating point comparisons 
         /// </summary>
         private const double ScrollTolerance = 0.001;
@@ -59,7 +54,7 @@ namespace Servy.Manager.Views
             {
                 if (DataContext is ConsoleViewModel vm)
                 {
-                    vm.SetSelectionActive(LogList.SelectedItems.Count > 0);
+                    vm.SetPaused(LogList.SelectedItems.Count > 0);
                 }
             };
         }
@@ -133,14 +128,14 @@ namespace Servy.Manager.Views
                 {
                     if (vm.IsPaused)
                     {
-                        vm.SetSelectionActive(false);
+                        vm.SetPaused(false);
                     }
                 }
                 else
                 {
                     if (!vm.IsPaused)
                     {
-                        vm.SetSelectionActive(true);
+                        vm.SetPaused(true);
                     }
                 }
             }

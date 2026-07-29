@@ -255,10 +255,10 @@ namespace Servy.Manager.ViewModels
             await ExecuteSearchPipelineAsync(
                 async (token) =>
                 {
-                    // Step 2: Run search in background
+                    // Run search in background
                     var results = await _eventLogService.SearchAsync(SelectedLevel, FromDate, ToDate, Keyword, token);
 
-                    // Step 3: Update UI safely
+                    // Update UI safely
                     token.ThrowIfCancellationRequested();
 
                     // Materialize the search results and construct the data model in a single pass

@@ -24,7 +24,6 @@ namespace Servy.Manager.ViewModels
         private string? _searchText;
         private string? _searchButtonText = Strings.Button_Search;
         private bool _isBusy;
-        protected int _isDisposed = 0; // 0 = false, 1 = true
 
         #endregion
 
@@ -44,6 +43,11 @@ namespace Servy.Manager.ViewModels
         /// Cursor service for managing wait cursor state during long-running operations.
         /// </summary>
         protected readonly ICursorService _cursorService;
+
+        /// <summary>
+        /// Atomic flag representing whether the current instance has been disposed (0 = false, 1 = true).
+        /// </summary>
+        protected int _isDisposed = 0;
 
         #endregion
 
@@ -93,7 +97,8 @@ namespace Servy.Manager.ViewModels
         public IServiceCommands ServiceCommands { get; set; }
 
         /// <summary>
-        /// Gets the command triggered by the UI to start a new search.
+        /// Gets or sets the command triggered by the UI to start a new search.
+        /// The set is used in unit tests.
         /// </summary>
         public IAsyncCommand SearchCommand { get; protected set; }
 
@@ -222,10 +227,13 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Disposes the ViewModel, safely cancelling and releasing the search token.
         /// </summary>
+        /// <param name="disposing">
+        /// <see langword="true"/> when called from <see cref="IDisposable.Dispose()"/>. This type has no finalizer,
+        /// so it is never <see langword="false"/>; the parameter exists for derived types to override.
+        /// </param>
         protected virtual void Dispose(bool disposing)
         {
-            // Convert flag to atomic int and trip it FIRST 
-            // before cleaning tokens. This forces any racing search threads to immediately self-terminate.
+            // Trip the flag FIRST, before cleaning tokens, so racing search threads self-terminate immediately.
             if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
             {
                 return;
@@ -236,7 +244,6 @@ namespace Servy.Manager.ViewModels
                 var oldSearchCts = Interlocked.Exchange(ref _serviceSearchCts, null);
                 if (oldSearchCts != null)
                 {
-                    // Defer directly to the shared safe-teardown infrastructure tool
                     Helpers.Helper.CancelAndDisposeSafely(oldSearchCts);
                 }
             }
