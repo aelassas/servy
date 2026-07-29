@@ -22,7 +22,10 @@ namespace Servy.Core.Validation
         /// the validator enforces an exact match against <see cref="ServiceDto.Password"/>. Pass <c>null</c> 
         /// when invoking from contexts without a confirmation input field (e.g. CLI or background imports).
         /// </param>
-        /// <param name="importMode">Import mode flag to skip credentials validation.</param>
+        /// <param name="importMode">
+        /// When <c>true</c>, skips the credential-validation stage entirely (used by XML/JSON imports,
+        /// whose identity fields are reset to LocalSystem after deserialization).
+        /// </param>
         /// <returns>
         /// A <see cref="ValidationResult"/> containing a collection of errors (blocking issues). 
         /// All structural validation failures - including string length-limit or boundary violations - are reported 
@@ -43,7 +46,13 @@ namespace Servy.Core.Validation
         /// <description><b>Configuration Bounds:</b> Ensures timeouts, rotation sizes, and health intervals stay within defined application limits.</description>
         /// </item>
         /// <item>
-        /// <description><b>Credential Security:</b> Validates account identities via native methods and enforces password matching logic.</description>
+        /// <description>
+        /// <b>Credential Security:</b> Validates account identities via native methods and enforces password
+        /// matching logic. This stage runs only when <paramref name="importMode"/> is <c>false</c> <b>and</b>
+        /// <see cref="ServiceDto.RunAsLocalSystem"/> is not <c>true</c>; a service configured to run as
+        /// LocalSystem has no account or password to verify. Note that an unset (<c>null</c>)
+        /// <c>RunAsLocalSystem</c> takes the validating branch and will report a missing-username error.
+        /// </description>
         /// </item>
         /// </list>
         /// </remarks>

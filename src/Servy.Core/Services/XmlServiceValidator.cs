@@ -28,8 +28,9 @@ namespace Servy.Core.Services
         /// <inheritdoc/>
         protected override ServiceDto? Parse(string content)
         {
-            // Prevent XXE Attacks
             var serializer = new XmlSerializer(typeof(ServiceDto));
+
+            // Prevent XXE attacks: SecureXml prohibits DTD processing and nulls the resolver.
             using (var stringReader = new StringReader(content))
             using (var xmlReader = SecureXml.CreateReader(stringReader))
             {
