@@ -74,14 +74,14 @@ Name: "addpath"; Description: "Add Servy to PATH"; GroupDescription: "Additional
 ; Main app EXE
 Source: "..\src\Servy\bin\Release\net10.0-windows\win-x64\publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_main_app
 
-; Appsettings.json (only copy if not present, and never uninstall)
-; Source: "..\src\Servy\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
+; appsettings.desktop.json (only copy if not present, and never uninstall)
+; Source: "..\src\Servy\appsettings.desktop.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_main_app
 
 ; CLI
 Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\win-x64\publish\Servy.CLI.exe"; DestDir: "{app}"; DestName: "{#CliExeName}"; Flags: ignoreversion; Components: install_cli
 
-; CLI appsettings.json (only copy if not present, and never uninstall)
-; Source: "..\src\Servy.CLI\appsettings.json"; DestDir: "{app}\cli"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
+; appsettings.cli.json (only copy if not present, and never uninstall)
+; Source: "..\src\Servy.CLI\appsettings.cli.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_cli
 
 ; PowerShell Module
 Source: "..\src\Servy.CLI\Servy.psm1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
@@ -90,6 +90,9 @@ Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: i
 
 ; Manager
 Source: "..\src\Servy.Manager\bin\Release\net10.0-windows\win-x64\publish\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_manager
+
+; appsettings.manager.json (only copy if not present, and never uninstall)
+; Source: "..\src\Servy.Manager\appsettings.manager.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_manager
 
 ; taskschd
 ; 1. Copy everything EXCEPT the config, credentials, transient state files, and test/temp scripts

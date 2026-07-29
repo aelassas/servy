@@ -46,7 +46,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Content Include="appsettings.json">
+    <Content Include="appsettings.service.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

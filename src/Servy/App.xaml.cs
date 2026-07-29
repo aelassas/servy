@@ -143,7 +143,7 @@ namespace Servy
             var options = new BootstrapperOptions
             {
                 LogFileName = "Servy.log",
-                AppSettingsFileName = "appsettings.json",
+                AppSettingsFileName = "appsettings.desktop.json",
                 ResourcesNamespace = ResourcesNamespace,
                 SecurityWarningTitle = Strings.SecurityWarningTitle,
                 SecurityWarningMessage = Strings.SecurityWarningMessage,
