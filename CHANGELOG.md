@@ -1,5 +1,48 @@
 # Changelog
 
+## [Servy 8.8](https://github.com/aelassas/servy/releases/tag/v8.8)
+
+**Date:** 2026-07-29 | **Tag:** [`v8.8`](https://github.com/aelassas/servy/tree/v8.8)
+
+* feat: allow configuring CPU affinity in service definitions (#4436)
+* feat: Add ARM64 architecture support to WinGet, Chocolatey and Scoop (#4199,#4206)
+* fix(core): ResourceHelper.cs - CopyEmbeddedResource generic catch logs OperationCanceledException as 'Failed to copy' Error and swallows the cancellation (post-#3222) (#4331)
+* fix(core): ServiceHelper.cs - StartServices/StopServices catch OperationCanceledException from the wait loops as a service failure (mislogged Error; last-service cancel throws AggregateException not OCE) (#4332)
+* fix(core): ImportGuard.cs / ServiceDtoImportValidator.cs - the same MaxConfigFileSizeBytes rejection is logged as Error in one half of the import guard and Warn in the other (#4419)
+* fix(service): ProcessLauncher.cs - CreateStartInfo documents a null-or-whitespace working-directory fallback but uses ??, so an empty string silently inherits the service's System32 directory (#4405)
+* fix(service): ProcessWrapper.cs - SendCtrlC's finally clears the service's Ctrl+C ignore flag instead of restoring it, undoing what OnStart set and StartProcess carefully preserves (#4408)
+* fix(service): EnvironmentVariableHelper.cs  a custom variable referencing another whose value holds a system placeholder never resolves it; the class's own <example> documents output the engine cannot produce (#4409)
+* fix(restarter): ServiceRestarter.cs - stop-phase timeout message says 'No time remaining to stop' although Stop() was already issued; the service is left stopped and never started (residual of #949) (#4388)
+* fix(desktop): ServiceConfigurationValidator.cs (Servy vs Manager) - a null DTO is silently swallowed in the desktop validator but reported to the user in the Manager one (#4361)
+* fix(desktop): ServiceValidationRules.cs - an empty Confirm password field skips the mismatch check entirely, so an unconfirmed password installs in the desktop app (#4400)
+* fix(manager): Manager monitoring ViewModels - shared _isDisposed guard tripped in every Dispose(bool) override makes base.Dispose() skip its cleanup (DispatcherTimer/CTS leak) (#4323)
+* fix(manager): ServiceCommands.cs (Manager) - export path is the only GetByNameAsync call site that relies on the implicit decrypt:true default (#4337)
+* fix(manager): ServiceCommands.cs (Manager) - ImportConfigAsync silently overwrites an existing service; InstallServiceAsync confirms first (#4341)
+* fix(manager): ConsoleViewModel.cs - unchecked 'as' cast on Clone() makes a type mismatch silently clear the console every tick (#4348)
+* fix(manager): LogTailer.cs - Dispose nulls OnNewLines but not OnLoopCompleted, though the doc says it detaches event handlers (#4357)
+* fix(manager): MonitoringViewModelBase.cs - StartMonitoring has no _isDisposed gate; it rebuilds the timer and CTS on a disposed view model and re-hooks the Tick handler Dispose removed (#4370)
+* fix(cli): Helper.cs (Servy.CLI) - TryParseFileType digit guard misses sign-prefixed numerics: '+1' is accepted as Json, '-0' as Xml (#4237)
+* fix(cli): InstallServiceOptions.cs - 'Maximum time context in seconds' word salad leaks into user-facing --help; preLaunch/preStop timeout HelpTexts omit their unit (#4238)
+* fix(psm1): Servy.psm1 - timeout-kill path leaks WaitForExit's Boolean return into the pipeline (missing [void]) (#4252)
+* fix(psm1): Servy.psm1 - HeartbeatUrlTimeoutSeconds help promises 'Set to 0 for unlimited wait' but ValidateRange(2,30) rejects 0 (#4253)
+* ci: changelog.yml - [datetime]::Parse converts the Z-suffixed published_at to runner-local time; release dates shift by a day on non-UTC runners (#4268)
+* chore(deps): update dependencies
+* other fixes: check GitHub Issues for details.
+
+### Downloads
+* [servy-8.8-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.8/servy-8.8-arm64-installer.exe) - 76.22 MB
+* [servy-8.8-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.8/servy-8.8-arm64-portable.7z) - 77.62 MB
+* [servy-8.8-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.8/servy-8.8-net48-sbom.xml) - 0.03 MB
+* [servy-8.8-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.8/servy-8.8-net48-x64-installer.exe) - 4.33 MB
+* [servy-8.8-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.8/servy-8.8-net48-x64-portable.7z) - 2.07 MB
+* [servy-8.8-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.8/servy-8.8-sbom.xml) - 0.04 MB
+* [servy-8.8-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.8/servy-8.8-x64-installer.exe) - 82.26 MB
+* [servy-8.8-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.8/servy-8.8-x64-portable.7z) - 80.13 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v8.8.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v8.8.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v8.7...v8.8
+
 ## [Servy 8.7](https://github.com/aelassas/servy/releases/tag/v8.7)
 
 **Date:** 2026-07-21 | **Tag:** [`v8.7`](https://github.com/aelassas/servy/tree/v8.7)
