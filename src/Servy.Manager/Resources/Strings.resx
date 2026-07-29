@@ -388,11 +388,18 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>An error occurred while switching tabs. Please try again.</value>
   </data>
 
-  <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
+	<data name="Msg_ServiceAlreadyExists" xml:space="preserve">
   <value>A service with this name already exists. Would you like to replace it?
 
-If the service is disabled and marked for deletion, the installation will fail until you restart your PC.</value>
+If the service is disabled and marked for deletion, installation will fail until you restart your PC.</value>
 </data>
+	<data name="Msg_ImportServiceConfirmation" xml:space="preserve">
+    <value>A service with this name already exists. Would you like to replace it?
+
+You need to click Install after importing and restart the service for changes to take effect.
+If the service is disabled and marked for deletion, installation will fail until you restart your PC.</value>
+  </data>
+	
   <data name="Msg_ServiceDisabledError" xml:space="preserve">
     <value>The specified service is disabled.</value>
   </data>

@@ -808,6 +808,18 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to A service with this name already exists. Would you like to replace it?
+        ///
+        ///You need to click Install after importing and restart the service for changes to take effect.
+        ///If the service is disabled and marked for deletion, installation will fail until you restart your PC..
+        /// </summary>
+        public static string Msg_ImportServiceConfirmation {
+            get {
+                return ResourceManager.GetString("Msg_ImportServiceConfirmation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Invalid service name..
         /// </summary>
         public static string Msg_InvalidServiceName {
@@ -909,7 +921,7 @@ namespace Servy.Manager.Resources {
         /// <summary>
         ///   Looks up a localized string similar to A service with this name already exists. Would you like to replace it?
         ///
-        ///If the service is disabled and marked for deletion, the installation will fail until you restart your PC..
+        ///If the service is disabled and marked for deletion, installation will fail until you restart your PC..
         /// </summary>
         public static string Msg_ServiceAlreadyExists {
             get {
