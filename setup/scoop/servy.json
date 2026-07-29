@@ -10,7 +10,7 @@
         },
         "arm64": {
             "url": "https://github.com/aelassas/servy/releases/download/v8.8/servy-8.8-arm64-installer.exe",
-            "hash": "264d7f6fafd6a102c04da2b8ad4e613fbc20e60121d6e812abd177d6950a26d3"
+            "hash": "a2eafde697f1dc7c4f4598bb9972f09ec7ac9ade4ffc0c935ad7074326afdb40"
         }
     },
     "innosetup": true,
