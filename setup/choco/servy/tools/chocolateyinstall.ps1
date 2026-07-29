@@ -12,7 +12,7 @@ $url64         = 'https://github.com/aelassas/servy/releases/download/v8.8/servy
 $checksum64    = 'D21158C52AC231EA2B4D6D72ABD98E630E27E8622A6EFC6AF93ADBC639BB9063'
 
 $urlArm64      = 'https://github.com/aelassas/servy/releases/download/v8.8/servy-8.8-arm64-installer.exe'
-$checksumArm64 = '264D7F6FAFD6A102C04DA2B8AD4E613FBC20E60121D6E812ABD177D6950A26D3'
+$checksumArm64 = 'A2EAFDE697F1DC7C4F4598BB9972F09EC7AC9ADE4FFC0C935AD7074326AFDB40'
 
 # Detect OS architecture dynamically
 $isArm64 = ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') -or ($env:PROCESSOR_ARCHITEW6432 -eq 'ARM64')
