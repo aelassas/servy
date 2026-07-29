@@ -42,7 +42,7 @@ namespace Servy.Manager.ViewModels
         private string _stdoutPath;
         private string _stderrPath;
         private int _currentSessionId = 0; // Track the "active" switch request
-        private volatile bool _isSelectionActive;
+        private volatile bool _isPaused;
         private readonly IAppConfiguration _appConfig;
 
         // Active tailers and their handlers to prevent memory leaks during service switching
@@ -94,9 +94,9 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Gets a value indicating whether the selection process is currently paused.
+        /// Gets a value indicating whether log tailing is currently paused due to active UI selection.
         /// </summary>
-        public bool IsPaused => _isSelectionActive;
+        public bool IsPaused => _isPaused;
 
         #endregion
 
@@ -152,7 +152,7 @@ namespace Servy.Manager.ViewModels
         #region Commands
 
         /// <summary>
-        /// Command to clear selection.
+        /// Command to clear selection and resume log tailing.
         /// </summary>
         public ICommand ClearSelectionCommand { get; }
 
@@ -179,7 +179,7 @@ namespace Servy.Manager.ViewModels
         {
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
-            ClearSelectionCommand = new RelayCommand<object>(_ => SetSelectionActive(false));
+            ClearSelectionCommand = new RelayCommand<object>(_ => SetPaused(false));
 
             // Capture while on the UI thread during creation
             _maxLines = _appConfig.ConsoleMaxLines;
@@ -222,7 +222,7 @@ namespace Servy.Manager.ViewModels
         /// <inheritdoc/>
         protected override ServiceItemBase CreateServiceItem(Service service)
         {
-            return new ConsoleService { Name = service?.Name, Pid = null, StdoutPath = null, StderrPath = null };
+            return new ConsoleService { Name = service.Name };
         }
 
         /// <inheritdoc/>
@@ -330,31 +330,31 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
+        /// Unsubscribes and disposes a single active tailer and handler pair.
+        /// </summary>
+        /// <param name="tailer">A reference to the <see cref="LogTailer"/> instance to unsubscribe from and dispose.</param>
+        /// <param name="handler">A reference to the <see cref="NewLinesHandler"/> delegate attached to the tailer's event.</param>
+        private static void StopTailer(ref LogTailer tailer, ref NewLinesHandler handler)
+        {
+            if (tailer != null)
+            {
+                if (handler != null)
+                {
+                    tailer.OnNewLines -= handler;
+                    handler = null;
+                }
+                tailer.Dispose();
+                tailer = null;
+            }
+        }
+
+        /// <summary>
         /// Disposes of active log tailers and unsubscribes from their events to prevent memory leaks.
         /// </summary>
         private void StopActiveTailers()
         {
-            if (_activeStdoutTailer != null)
-            {
-                if (_stdoutTailerHandler != null)
-                {
-                    _activeStdoutTailer.OnNewLines -= _stdoutTailerHandler;
-                    _stdoutTailerHandler = null;
-                }
-                _activeStdoutTailer.Dispose();
-                _activeStdoutTailer = null;
-            }
-
-            if (_activeStderrTailer != null)
-            {
-                if (_stderrTailerHandler != null)
-                {
-                    _activeStderrTailer.OnNewLines -= _stderrTailerHandler;
-                    _stderrTailerHandler = null;
-                }
-                _activeStderrTailer.Dispose();
-                _activeStderrTailer = null;
-            }
+            StopTailer(ref _activeStdoutTailer, ref _stdoutTailerHandler);
+            StopTailer(ref _activeStderrTailer, ref _stderrTailerHandler);
         }
 
         /// <summary>
@@ -526,7 +526,7 @@ namespace Servy.Manager.ViewModels
                     if (sessionId != _currentSessionId) return;
 
                     // HARD STOP: do not mutate collection while user is selecting
-                    if (_isSelectionActive)
+                    if (_isPaused)
                         return;
 
                     RawLines.AddRange(lines);
@@ -539,15 +539,19 @@ namespace Servy.Manager.ViewModels
             tailer.OnNewLines += handler;
 
             // Track the tailer and handler for explicit disposal
-            if (type == LogType.StdOut)
+            switch (type)
             {
-                _activeStdoutTailer = tailer;
-                _stdoutTailerHandler = handler;
-            }
-            else if (type == LogType.StdErr)
-            {
-                _activeStderrTailer = tailer;
-                _stderrTailerHandler = handler;
+                case LogType.StdOut:
+                    _activeStdoutTailer = tailer;
+                    _stdoutTailerHandler = handler;
+                    break;
+                case LogType.StdErr:
+                    _activeStderrTailer = tailer;
+                    _stderrTailerHandler = handler;
+                    break;
+                default:
+                    tailer.Dispose();
+                    throw new ArgumentOutOfRangeException(nameof(type), type, "Unsupported LogType provided for live tailing.");
             }
 
             _ = tailer.RunFromPosition(path, type, pos, created, cancellationToken)
@@ -573,18 +577,21 @@ namespace Servy.Manager.ViewModels
         #region Public Methods
 
         /// <summary>
-        /// Sets the selection active state, used to manage UI selection preservation during log updates.
+        /// Sets the paused state of log tailing, used to manage UI selection preservation during log updates.
         /// </summary>
-        /// <param name="isActive"></param>
-        public void SetSelectionActive(bool isActive)
+        /// <param name="isPaused">
+        /// <see langword="true"/> to pause log stream updates while user is interacting or selecting text;
+        /// otherwise <see langword="false"/> to resume stream updates.
+        /// </param>
+        public void SetPaused(bool isPaused)
         {
-            if (_isSelectionActive == isActive) return;
+            if (_isPaused == isPaused) return;
 
-            _isSelectionActive = isActive;
+            _isPaused = isPaused;
             OnPropertyChanged(nameof(IsPaused));
 
             // When the user "Resumes" (Selection cleared)
-            if (!_isSelectionActive)
+            if (!_isPaused)
             {
                 // Restart the process (This will reload history + start new tailer)
                 // Re-run the switch logic using the current paths.

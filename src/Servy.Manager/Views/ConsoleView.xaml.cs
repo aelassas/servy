@@ -62,7 +62,7 @@ namespace Servy.Manager.Views
             {
                 if (DataContext is ConsoleViewModel vm)
                 {
-                    vm.SetSelectionActive(LogList.SelectedItems.Count > 0);
+                    vm.SetPaused(LogList.SelectedItems.Count > 0);
                 }
             };
         }
@@ -136,14 +136,14 @@ namespace Servy.Manager.Views
                 {
                     if (vm.IsPaused)
                     {
-                        vm.SetSelectionActive(false);
+                        vm.SetPaused(false);
                     }
                 }
                 else
                 {
                     if (!vm.IsPaused)
                     {
-                        vm.SetSelectionActive(true);
+                        vm.SetPaused(true);
                     }
                 }
             }
