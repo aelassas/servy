@@ -61,7 +61,7 @@ namespace Servy.Core.Validation
             if (byteLength > AppConfig.MaxConfigFileSizeBytes)
             {
                 errorMessage = string.Format(Strings.Msg_ImportPayloadTooLarge, FormatName, AppConfig.MaxConfigFileSizeMB);
-                Logger.Warn($"{FormatName} Import Blocked: Payload size limit exceeded.");
+                Logger.Error(errorMessage);
                 return false;
             }
 
