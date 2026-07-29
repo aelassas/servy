@@ -57,7 +57,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
-            Assert.True(result.Success);
+            Assert.True(result.IsSuccess);
             Assert.Equal(ExpectedSuccessMessage(serviceName), result.Message);
             _mockRepository.Verify(r => r.DeleteAsync(serviceName, It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -74,7 +74,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(Strings.Msg_ServiceNotFound, result.Message);
         }
     }

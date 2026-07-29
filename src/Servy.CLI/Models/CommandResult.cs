@@ -8,7 +8,7 @@
         /// <summary>
         /// Gets a value indicating whether the command succeeded.
         /// </summary>
-        public bool Success { get; }
+        public bool IsSuccess { get; }
 
         /// <summary>
         /// Gets the message associated with the command result.
@@ -29,7 +29,7 @@
         /// <param name="exitCode">The exit code to return.</param>
         private CommandResult(bool success, string? message, int exitCode)
         {
-            Success = success;
+            IsSuccess = success;
             Message = message;
             ExitCode = exitCode;
         }

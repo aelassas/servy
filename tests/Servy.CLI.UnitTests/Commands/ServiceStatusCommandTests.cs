@@ -56,7 +56,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_AdminPrivilegesRequired, "status"), result.Message);
         }
 
@@ -72,7 +72,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Contains(ExpectedGenericActionMessage(serviceName), result.Message);
         }
 
@@ -92,7 +92,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Contains(ExpectedGenericActionMessage(serviceName), result.Message);
         }
     }

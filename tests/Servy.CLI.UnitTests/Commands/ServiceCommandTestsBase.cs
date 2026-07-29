@@ -158,7 +158,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
-            Assert.True(result.Success);
+            Assert.True(result.IsSuccess);
             Assert.Equal(ExpectedSuccessMessage(serviceName), result.Message);
         }
 
@@ -178,7 +178,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(Strings.Msg_ServiceNameRequired, result.Message);
         }
 
@@ -198,7 +198,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(expectedFailureText, result.Message);
         }
 
@@ -217,7 +217,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Contains("Access Denied", result.Message);
         }
 
@@ -236,7 +236,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Contains(ExpectedGenericActionMessage(serviceName), result.Message);
         }
 
@@ -255,7 +255,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(Strings.Msg_ServiceNotFound, result.Message);
         }
 

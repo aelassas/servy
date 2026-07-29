@@ -61,7 +61,7 @@ namespace Servy.CLI.Helpers
 
             if (!string.IsNullOrWhiteSpace(result.Message))
             {
-                if (result.Success)
+                if (result.IsSuccess)
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine(result.Message);

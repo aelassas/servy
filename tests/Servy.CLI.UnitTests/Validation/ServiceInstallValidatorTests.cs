@@ -47,7 +47,7 @@ namespace Servy.CLI.UnitTests.Validation
             var result = _validator.Validate(opts);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.StartsWith(expectedError, result.Message);
             _rulesMock.Verify(r => r.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
         }
@@ -65,7 +65,7 @@ namespace Servy.CLI.UnitTests.Validation
             var result = _validator.Validate(opts);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(expectedError, result.Message);
             _rulesMock.Verify(r => r.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
         }
@@ -82,7 +82,7 @@ namespace Servy.CLI.UnitTests.Validation
             var result = _validator.Validate(opts);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             // Must complain about the first encountered failure and skip computing the next one
             Assert.Contains("--startupType", result.Message);
             Assert.DoesNotContain("--rotationSize", result.Message);
@@ -106,7 +106,7 @@ namespace Servy.CLI.UnitTests.Validation
             var result = _validator.Validate(opts);
 
             // Assert
-            Assert.True(result.Success);
+            Assert.True(result.IsSuccess);
             _rulesMock.Verify(r => r.Validate(It.Is<ServiceDto>(dto =>
                 dto.RotationSize == null &&
                 dto.Priority == null),
@@ -131,7 +131,7 @@ namespace Servy.CLI.UnitTests.Validation
             var result = _validator.Validate(opts);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal("First Core Error Rule Violation", result.Message);
         }
 
@@ -150,7 +150,7 @@ namespace Servy.CLI.UnitTests.Validation
             var result = _validator.Validate(opts);
 
             // Assert
-            Assert.True(result.Success);
+            Assert.True(result.IsSuccess);
             Assert.Contains("ServyEngine", result.Message);
 
             _rulesMock.Verify(r => r.Validate(It.Is<ServiceDto>(dto =>

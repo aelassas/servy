@@ -82,7 +82,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Success);
+            Assert.True(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_InstallSuccess, options.ServiceName), result.Message);
         }
 
@@ -99,7 +99,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal("Validation error.", result.Message);
         }
 
@@ -128,7 +128,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(Strings.Msg_WrapperNotFound, result.Message);
         }
 
@@ -153,7 +153,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal("Failed to install service.", result.Message);
         }
 
@@ -178,7 +178,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Contains("Access Denied", result.Message);
         }
 
@@ -203,7 +203,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(options, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Contains(string.Format(Strings.Msg_InstallServiceAction, options.ServiceName), result.Message);
         }
 

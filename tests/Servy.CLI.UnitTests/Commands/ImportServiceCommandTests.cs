@@ -94,7 +94,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(Strings.Msg_PathRequired, result.Message);
         }
 
@@ -111,7 +111,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Contains(".txt", result.Message);
         }
 
@@ -128,7 +128,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(Strings.Msg_InvalidConfigFileType, result.Message);
         }
 
@@ -156,7 +156,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Success);
+            Assert.True(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ImportSuccessNoInstall, "XML"), result.Message);
         }
 
@@ -180,7 +180,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Success);
+            Assert.True(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ImportSuccessNoInstall, "JSON"), result.Message);
         }
 
@@ -201,7 +201,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ImportFormatInvalid, "XML", "Missing close root tag definition context"), result.Message);
         }
 
@@ -219,7 +219,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(Strings.Msg_ImportDeserializationFailure, result.Message);
         }
 
@@ -237,7 +237,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(Strings.Msg_ImportDeserializationFailure, result.Message);
         }
 
@@ -259,7 +259,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ImportRepoFailure, "XML"), result.Message);
         }
 
@@ -281,7 +281,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ImportRepoFailure, "JSON"), result.Message);
         }
 
@@ -304,7 +304,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_InvalidExecutablePath, string.Empty), result.Message);
         }
 
@@ -324,7 +324,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_InvalidExecutablePath, @"Z:\Missing\Dir\Engine.exe"), result.Message);
         }
 
@@ -347,7 +347,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             // Proves execution hit the generalized config path error message branch fallback path
             Assert.Equal(string.Format(Strings.Msg_InvalidPathInConfig, "startup directory"), result.Message);
         }
@@ -375,7 +375,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ImportInstallLookupFailure, "GhostService"), result.Message);
         }
 
@@ -399,7 +399,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result.Success);
+            Assert.True(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ImportInstallSuccess, "XML", "OperationalService"), result.Message);
         }
 
@@ -426,7 +426,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(domainError, result.Message);
         }
 

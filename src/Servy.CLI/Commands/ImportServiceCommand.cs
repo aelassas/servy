@@ -109,7 +109,7 @@ namespace Servy.CLI.Commands
                         return CommandResult.Fail(string.Format(Strings.Msg_UnsupportedFileType, opts.ConfigFileType));
                 }
 
-                if (result.Success)
+                if (result.IsSuccess)
                 {
                     Logger.Info($"Successfully imported {configFileType} configuration from {fullPath}.");
                 }
@@ -195,7 +195,7 @@ namespace Servy.CLI.Commands
 
             // 3. Path validation
             var pathValidation = ValidateServicePaths(dto);
-            if (!pathValidation.Success)
+            if (!pathValidation.IsSuccess)
                 return pathValidation;
 
             // 4. Repository Import (only after validation passes)
