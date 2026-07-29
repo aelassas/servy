@@ -7,10 +7,6 @@
         "64bit": {
             "url": "https://github.com/aelassas/servy/releases/download/v8.7/servy-8.7-x64-installer.exe",
             "hash": "3f27bdf8f6100d3c6dc1ceda72137d4c54a330d1334dd5b6a08b5605f7193053"
-        },
-        "arm64": {
-            "url": "https://github.com/aelassas/servy/releases/download/v8.7/servy-8.7-arm64-installer.exe",
-            "hash": "e6cf8221a54f40f3a2566560d3ba32ce7c1c00cf39e19d4795636d88844c0967"
         }
     },
     "innosetup": true,
@@ -32,9 +28,6 @@
         "architecture": {
             "64bit": {
                 "url": "https://github.com/aelassas/servy/releases/download/v$version/servy-$version-x64-installer.exe"
-            },
-            "arm64": {
-                "url": "https://github.com/aelassas/servy/releases/download/v$version/servy-$version-arm64-installer.exe"
             }
         }
     }
