@@ -134,10 +134,17 @@ jobs:
           Invoke-Git add setup/choco/servy/*
            
           # Check if there is actually anything to commit
-          $hasChanges = Invoke-Git status --porcelain setup/choco/servy/*
-          if (-not $hasChanges) {
+          $hasChanges = (Invoke-Git status --porcelain setup/choco/servy/*) -join "`n"
+          if ([string]::IsNullOrWhiteSpace($hasChanges)) {
               Write-Host "No changes to commit. Skipping push."
               exit 0
+          }
+
+          git diff --staged --quiet
+          if ($LASTEXITCODE -ne 0) {
+              Invoke-Git commit -m "chore: update Chocolatey package definitions"
+          } else {
+              Write-Host "Index is clean after staging. Skipping commit."
           }
 
           Invoke-Git commit -m "chore(choco): update package for version ${env:VERSION}"

@@ -97,12 +97,18 @@ jobs:
               if ($LASTEXITCODE -ne 0) { throw "bump-version.ps1 failed with exit $LASTEXITCODE on branch $branch" }
 
               # Using porcelain check consistently to prevent silent skips across branches.
-              $hasChanges = Invoke-Git status --porcelain
-              if ($hasChanges) {
+              $hasChanges = (Invoke-Git status --porcelain) -join "`n"
+              if (-not [string]::IsNullOrWhiteSpace($hasChanges)) {
                   Invoke-Git add --all
-                  Invoke-Git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
-                  Invoke-Git push origin $branch
-                  Write-Host "Successfully committed and pushed version updates to $branch"
+
+                  git diff --staged --quiet
+                  if ($LASTEXITCODE -ne 0) {
+                      Invoke-Git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
+                      Invoke-Git push origin $branch
+                      Write-Host "Successfully committed and pushed version updates to $branch"
+                  } else {
+                      Write-Host "Index is clean after staging. Skipping commit on $branch branch."
+                  }
               } else {
                   Write-Host "No changes detected on $branch branch, skipping commit."
               }
