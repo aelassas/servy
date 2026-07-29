@@ -179,14 +179,21 @@ jobs:
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          $hasChanges = Invoke-Git status --porcelain $manifestPath
-          if ($hasChanges) {
+          $hasChanges = (Invoke-Git status --porcelain $manifestPath) -join "`n"
+          if (-not [string]::IsNullOrWhiteSpace($hasChanges)) {
             Invoke-Git add $manifestPath
-            Invoke-Git commit -m "chore: update setup/scoop/servy.json to version $env:VERSION"
             
-            # Env vars are strings; -MaxRetries is [int]
-            $maxRetries = [int]$env:MAX_RETRIES
-            Invoke-PushWithRetry -PullRef 'main' -PushRef 'HEAD:main' -MaxRetries $maxRetries
+            # Guard against edge-case clean index after git add
+            git diff --staged --quiet
+            if ($LASTEXITCODE -ne 0) {
+              Invoke-Git commit -m "chore: update setup/scoop/servy.json to version $env:VERSION"
+              
+              # Env vars are strings; -MaxRetries is [int]
+              $maxRetries = [int]$env:MAX_RETRIES
+              Invoke-PushWithRetry -PullRef 'main' -PushRef 'HEAD:main' -MaxRetries $maxRetries
+            } else {
+              Write-Host "Index is clean after staging. No changes to commit."
+            }
           } else {
             Write-Host "No changes to local manifest."
           }
@@ -239,14 +246,20 @@ jobs:
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          $hasChanges = Invoke-Git status --porcelain $manifestPath
-          if ($hasChanges) {
+          $hasChanges = (Invoke-Git status --porcelain $manifestPath) -join "`n"
+          if (-not [string]::IsNullOrWhiteSpace($hasChanges)) {
             Invoke-Git add $manifestPath
-            Invoke-Git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
             
-            # Env vars are strings; -MaxRetries is [int]
-            $maxRetries = [int]$env:MAX_RETRIES
-            Invoke-PushWithRetry -PullRef 'HEAD' -PushRef 'HEAD' -MaxRetries $maxRetries
+            git diff --staged --quiet
+            if ($LASTEXITCODE -ne 0) {
+              Invoke-Git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
+              
+              # Env vars are strings; -MaxRetries is [int]
+              $maxRetries = [int]$env:MAX_RETRIES
+              Invoke-PushWithRetry -PullRef 'HEAD' -PushRef 'HEAD' -MaxRetries $maxRetries
+            } else {
+              Write-Host "Index is clean after staging. No changes to commit."
+            }
           } else {
             Write-Host "No changes to commit"
           }
@@ -355,10 +368,16 @@ jobs:
 
               Write-ScoopManifest -jsonObj $jsonObj -jsonPath $fullPath
             
-              $hasChanges = Invoke-Git status --porcelain $manifestPath
-              if ($hasChanges) {
+              $hasChanges = (Invoke-Git status --porcelain $manifestPath) -join "`n"
+              if (-not [string]::IsNullOrWhiteSpace($hasChanges)) {
                   Invoke-Git add $manifestPath
-                  Invoke-Git commit -m "servy: Update to version $env:VERSION"
+                  
+                  git diff --staged --quiet
+                  if ($LASTEXITCODE -ne 0) {
+                      Invoke-Git commit -m "servy: Update to version $env:VERSION"
+                  } else {
+                      Write-Host "Index is clean after staging. Skipping commit."
+                  }
               }
           }
           Invoke-Git push origin $branchName --force-with-lease
