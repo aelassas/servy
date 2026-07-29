@@ -69,7 +69,7 @@ namespace Servy.CLI.Commands
 
                 // Validate options
                 var validation = _validator.Validate(opts);
-                if (!validation.Success)
+                if (!validation.IsSuccess)
                     return validation;
 
                 // Ensure wrapper executable exists

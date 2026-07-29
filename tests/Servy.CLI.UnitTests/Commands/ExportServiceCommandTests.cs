@@ -63,7 +63,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(Strings.Msg_ServiceNameRequired, result.Message);
         }
 
@@ -77,7 +77,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(Strings.Msg_InvalidConfigFileType, result.Message);
         }
 
@@ -91,7 +91,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(Strings.Msg_PathRequired, result.Message);
         }
 
@@ -106,7 +106,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(Strings.Msg_ServiceNotFound, result.Message);
         }
 
@@ -124,7 +124,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
-            Assert.True(result.Success);
+            Assert.True(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ExportSuccess, "XML", opts.Path), result.Message);
             Assert.True(File.Exists(filePath));
             Assert.Equal("<xml>data</xml>", File.ReadAllText(filePath));
@@ -144,7 +144,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
-            Assert.True(result.Success);
+            Assert.True(result.IsSuccess);
             Assert.Equal(string.Format(Strings.Msg_ExportSuccess, "JSON", opts.Path), result.Message);
             Assert.True(File.Exists(filePath));
             Assert.Equal("{\"name\":\"svc\"}", File.ReadAllText(filePath));
@@ -161,7 +161,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.ExecuteAsync(opts, CancellationToken.None);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Contains(string.Format(Strings.Msg_ExportServiceAction, "svc"), result.Message);
         }
 

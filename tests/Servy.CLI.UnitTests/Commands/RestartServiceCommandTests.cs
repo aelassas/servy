@@ -58,7 +58,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await ExecuteCommandAsync(Command, options);
 
             // Assert
-            Assert.False(result.Success);
+            Assert.False(result.IsSuccess);
             Assert.Equal(Strings.Msg_ServiceDisabledError, result.Message);
         }
     }

@@ -1115,6 +1115,24 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Servy requires administrative privileges to manage system services..
+        /// </summary>
+        public static string Msg_SecurityWarningMessage {
+            get {
+                return ResourceManager.GetString("Msg_SecurityWarningMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Elevation Required.
+        /// </summary>
+        public static string Msg_SecurityWarningTitle {
+            get {
+                return ResourceManager.GetString("Msg_SecurityWarningTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to A service with this name already exists. Would you like to replace it?
         ///
         ///If the service is disabled and marked for deletion, the installation will fail until you restart your PC..
@@ -1194,6 +1212,24 @@ namespace Servy.Resources {
         public static string Msg_ServiceStopped {
             get {
                 return ResourceManager.GetString("Msg_ServiceStopped", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Critical Security Risk: Your system is using an outdated SQLite engine ({0}). This version of the application requires SQLite {1} or higher to mitigate CVE-2025-6965..
+        /// </summary>
+        public static string Msg_SqliteVersionWarningMessage {
+            get {
+                return ResourceManager.GetString("Msg_SqliteVersionWarningMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Security Alert.
+        /// </summary>
+        public static string Msg_SqliteVersionWarningTitle {
+            get {
+                return ResourceManager.GetString("Msg_SqliteVersionWarningTitle", resourceCulture);
             }
         }
         
@@ -1315,47 +1351,11 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Servy requires administrative privileges to manage system services..
-        /// </summary>
-        public static string SecurityWarningMessage {
-            get {
-                return ResourceManager.GetString("SecurityWarningMessage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Elevation Required.
-        /// </summary>
-        public static string SecurityWarningTitle {
-            get {
-                return ResourceManager.GetString("SecurityWarningTitle", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Loading Servy....
         /// </summary>
         public static string Splash_Text {
             get {
                 return ResourceManager.GetString("Splash_Text", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Critical Security Risk: Your system is using an outdated SQLite engine ({0}). This version of the application requires SQLite {1} or higher to mitigate CVE-2025-6965..
-        /// </summary>
-        public static string SqliteVersionWarningMessage {
-            get {
-                return ResourceManager.GetString("SqliteVersionWarningMessage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Security Alert.
-        /// </summary>
-        public static string SqliteVersionWarningTitle {
-            get {
-                return ResourceManager.GetString("SqliteVersionWarningTitle", resourceCulture);
             }
         }
         

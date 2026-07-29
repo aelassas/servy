@@ -178,10 +178,10 @@ namespace Servy.Manager
             {
                 LogFileName = "Servy.Manager.log",
                 ResourcesNamespace = ResourcesNamespace,
-                SecurityWarningTitle = Strings.SecurityWarningTitle,
-                SecurityWarningMessage = Strings.SecurityWarningMessage,
-                SqliteVersionWarningTitle = Strings.SqliteVersionWarningTitle,
-                SqliteVersionWarningMessageFormat = Strings.SqliteVersionWarningMessage,
+                SecurityWarningTitle = Strings.Msg_SecurityWarningTitle,
+                SecurityWarningMessage = Strings.Msg_SecurityWarningMessage,
+                SqliteVersionWarningTitle = Strings.Msg_SqliteVersionWarningTitle,
+                SqliteVersionWarningMessageFormat = Strings.Msg_SqliteVersionWarningMessage,
                 SplashWindowFactory = () => new SplashWindow(),
                 // CRITICAL: The composition root is here, not in the View.
                 MainWindowFactoryAsync = (serviceName) =>
