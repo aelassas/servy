@@ -42,6 +42,13 @@ jobs:
       - name: Install komac
         run: cargo binstall komac -y
 
+      - name: Clean up stale fork branches
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        run: |
+          komac cleanup
+
       - name: Fetch Release Asset URLs
         shell: pwsh
         env:
