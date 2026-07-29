@@ -63,28 +63,44 @@ jobs:
         run: |
           $InstallerDir = "$env:GITHUB_WORKSPACE\_installer"
           New-Item -ItemType Directory -Force -Path $InstallerDir | Out-Null
-          $url = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
-          $out = "$InstallerDir\servy-${env:VERSION}-x64-installer.exe"
-          Write-Host "Staging Scoop asset lookup path from $url"
-          Add-Content -Path $env:GITHUB_ENV -Value "SCOOP_DOWNLOAD_URL=$url"
-          Add-Content -Path $env:GITHUB_ENV -Value "SCOOP_DOWNLOAD_OUT=$out"
+          $urlX64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
+          $outX64 = "$InstallerDir\servy-${env:VERSION}-x64-installer.exe"
+          $urlArm64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-arm64-installer.exe"
+          $outArm64 = "$InstallerDir\servy-${env:VERSION}-arm64-installer.exe"
 
-      - name: Download installer
+          Write-Host "Staging Scoop asset lookup paths for x64 ($urlX64) and arm64 ($urlArm64)"
+          Add-Content -Path $env:GITHUB_ENV -Value "SCOOP_DOWNLOAD_URL_X64=$urlX64"
+          Add-Content -Path $env:GITHUB_ENV -Value "SCOOP_DOWNLOAD_OUT_X64=$outX64"
+          Add-Content -Path $env:GITHUB_ENV -Value "SCOOP_DOWNLOAD_URL_ARM64=$urlArm64"
+          Add-Content -Path $env:GITHUB_ENV -Value "SCOOP_DOWNLOAD_OUT_ARM64=$outArm64"
+
+      - name: Download x64 installer
         uses: ./.github/actions/download-with-retry
         with:
-          url: ${{ env.SCOOP_DOWNLOAD_URL }}
-          output_path: ${{ env.SCOOP_DOWNLOAD_OUT }}
-          asset_name: 'Servy Release Installer for Scoop'
+          url: ${{ env.SCOOP_DOWNLOAD_URL_X64 }}
+          output_path: ${{ env.SCOOP_DOWNLOAD_OUT_X64 }}
+          asset_name: 'Servy x64 Release Installer for Scoop'
+          max_retries: ${{ env.MAX_RETRIES }}
+
+      - name: Download arm64 installer
+        uses: ./.github/actions/download-with-retry
+        with:
+          url: ${{ env.SCOOP_DOWNLOAD_URL_ARM64 }}
+          output_path: ${{ env.SCOOP_DOWNLOAD_OUT_ARM64 }}
+          asset_name: 'Servy arm64 Release Installer for Scoop'
           max_retries: ${{ env.MAX_RETRIES }}
 
       - name: Compute SHA256
         shell: pwsh
         run: |
-          $InstallerPath = $env:SCOOP_DOWNLOAD_OUT
-          $HASH = Get-FileHash $InstallerPath -Algorithm SHA256
-          $LOWER = $HASH.Hash.ToLower()
-          Add-Content -Path $env:GITHUB_ENV -Value "HASH=$LOWER"
-          Remove-Item $InstallerPath
+          $hashX64 = (Get-FileHash $env:SCOOP_DOWNLOAD_OUT_X64 -Algorithm SHA256).Hash.ToLower()
+          $hashArm64 = (Get-FileHash $env:SCOOP_DOWNLOAD_OUT_ARM64 -Algorithm SHA256).Hash.ToLower()
+
+          Add-Content -Path $env:GITHUB_ENV -Value "HASH_X64=$hashX64"
+          Add-Content -Path $env:GITHUB_ENV -Value "HASH_ARM64=$hashArm64"
+
+          Remove-Item $env:SCOOP_DOWNLOAD_OUT_X64
+          Remove-Item $env:SCOOP_DOWNLOAD_OUT_ARM64
 
       - name: Create PowerShell utility
         shell: pwsh
@@ -93,12 +109,12 @@ jobs:
           function Write-ScoopManifest {
               param($jsonObj, $jsonPath)
               if ($null -eq $jsonObj) { throw "jsonObj cannot be null" }
-               
+                
               $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
-               
+                
               # Split lines correctly using regex
               $lines = [regex]::Split($jsonString, "\r?\n")
-               
+                
               # Normalize indentation: pwsh 7's ConvertTo-Json uses a 2-space baseline; map it to 4-space indents.
               $lines = $lines | ForEach-Object {
                   [regex]::Replace($_, '^( +)', {
@@ -107,10 +123,10 @@ jobs:
                       ' ' * (4 * $level)
                   })
               }
-               
+                
               # Join lines back together with a standardized Unix trailing newline
               $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
-               
+                
               # Write to file using BOM-less UTF-8 encoding
               $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
               [System.IO.File]::WriteAllText($jsonPath, $jsonString, $utf8NoBom)
@@ -131,8 +147,31 @@ jobs:
           # Load and update JSON
           $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
           $jsonObj.version = $env:VERSION
-          $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
-          $jsonObj.architecture.'64bit'.hash = $env:HASH
+
+          # Ensure 64bit & arm64 architecture structures exist
+          $urlX64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
+          $urlArm64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-arm64-installer.exe"
+
+          $jsonObj.architecture.'64bit'.url = $urlX64
+          $jsonObj.architecture.'64bit'.hash = $env:HASH_X64
+
+          if (-not $jsonObj.architecture.PSObject.Properties['arm64']) {
+              $jsonObj.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $urlArm64; hash = $env:HASH_ARM64 })
+          } else {
+              $jsonObj.architecture.'arm64'.url = $urlArm64
+              $jsonObj.architecture.'arm64'.hash = $env:HASH_ARM64
+          }
+
+          if ($jsonObj.autoupdate -and $jsonObj.autoupdate.architecture) {
+              $autoUrlX64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-x64-installer.exe"
+              $autoUrlArm64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-arm64-installer.exe"
+              $jsonObj.autoupdate.architecture.'64bit'.url = $autoUrlX64
+              if (-not $jsonObj.autoupdate.architecture.PSObject.Properties['arm64']) {
+                  $jsonObj.autoupdate.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $autoUrlArm64 })
+              } else {
+                  $jsonObj.autoupdate.architecture.'arm64'.url = $autoUrlArm64
+              }
+          }
 
           Write-ScoopManifest -jsonObj $jsonObj -jsonPath (Resolve-Path $manifestPath)
 
@@ -153,7 +192,8 @@ jobs:
       - name: Update servy.json in scoop-bucket and push
         shell: pwsh
         env:
-          HASH: ${{ env.HASH }}
+          HASH_X64: ${{ env.HASH_X64 }}
+          HASH_ARM64: ${{ env.HASH_ARM64 }}
           VERSION: ${{ env.VERSION }}
           GH_PAT: ${{ secrets.PAT }}
         run: |
@@ -161,15 +201,37 @@ jobs:
           . "$env:RUNNER_TEMP\ScoopUtils.ps1"
           Invoke-Git clone https://github.com/aelassas/scoop-bucket.git scoop-bucket
           Set-Location scoop-bucket
-           
+            
           Invoke-Git config url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
-           
+            
           $manifestPath = "servy.json"
           $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
           $jsonObj.version = $env:VERSION
-          $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
-          $jsonObj.architecture.'64bit'.hash = $env:HASH
-           
+
+          $urlX64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
+          $urlArm64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-arm64-installer.exe"
+
+          $jsonObj.architecture.'64bit'.url = $urlX64
+          $jsonObj.architecture.'64bit'.hash = $env:HASH_X64
+
+          if (-not $jsonObj.architecture.PSObject.Properties['arm64']) {
+              $jsonObj.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $urlArm64; hash = $env:HASH_ARM64 })
+          } else {
+              $jsonObj.architecture.'arm64'.url = $urlArm64
+              $jsonObj.architecture.'arm64'.hash = $env:HASH_ARM64
+          }
+
+          if ($jsonObj.autoupdate -and $jsonObj.autoupdate.architecture) {
+              $autoUrlX64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-x64-installer.exe"
+              $autoUrlArm64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-arm64-installer.exe"
+              $jsonObj.autoupdate.architecture.'64bit'.url = $autoUrlX64
+              if (-not $jsonObj.autoupdate.architecture.PSObject.Properties['arm64']) {
+                  $jsonObj.autoupdate.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $autoUrlArm64 })
+              } else {
+                  $jsonObj.autoupdate.architecture.'arm64'.url = $autoUrlArm64
+              }
+          }
+            
           Write-ScoopManifest -jsonObj $jsonObj -jsonPath (Join-Path (Get-Location) $manifestPath)
 
           Invoke-Git config user.name "github-actions[bot]"
@@ -218,15 +280,17 @@ jobs:
           Invoke-Git remote add upstream https://github.com/ScoopInstaller/Extras.git
           Invoke-Git fetch upstream master
           Invoke-Git checkout -B master upstream/master
-           
+            
           if (Invoke-Git rev-parse --verify --quiet "refs/heads/$branchName" 2>$null) {
               Invoke-Git branch -D $branchName
           }
           Invoke-Git checkout -b $branchName
-           
+            
           $manifestPath = "bucket/servy.json"
           $fullPath = Join-Path (Get-Location) $manifestPath
-          $installerUrl = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
+          $installerUrlX64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
+          $installerUrlArm64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-arm64-installer.exe"
+
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
 
@@ -243,8 +307,12 @@ jobs:
                   license      = $canonicalObj.license
                   architecture = @{
                       '64bit' = @{
-                          url  = $installerUrl
-                          hash = $env:HASH
+                          url  = $installerUrlX64
+                          hash = $env:HASH_X64
+                      }
+                      'arm64' = @{
+                          url  = $installerUrlArm64
+                          hash = $env:HASH_ARM64
                       }
                   }
                   innosetup  = $canonicalObj.innosetup
@@ -260,11 +328,29 @@ jobs:
               # Update existing manifest
               $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
               $jsonObj.version = $env:VERSION
-              $jsonObj.architecture.'64bit'.url = $installerUrl
-              $jsonObj.architecture.'64bit'.hash = $env:HASH
+              $jsonObj.architecture.'64bit'.url = $installerUrlX64
+              $jsonObj.architecture.'64bit'.hash = $env:HASH_X64
+
+              if (-not $jsonObj.architecture.PSObject.Properties['arm64']) {
+                  $jsonObj.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $installerUrlArm64; hash = $env:HASH_ARM64 })
+              } else {
+                  $jsonObj.architecture.'arm64'.url = $installerUrlArm64
+                  $jsonObj.architecture.'arm64'.hash = $env:HASH_ARM64
+              }
+
+              if ($jsonObj.autoupdate -and $jsonObj.autoupdate.architecture) {
+                  $autoUrlX64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-x64-installer.exe"
+                  $autoUrlArm64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-arm64-installer.exe"
+                  $jsonObj.autoupdate.architecture.'64bit'.url = $autoUrlX64
+                  if (-not $jsonObj.autoupdate.architecture.PSObject.Properties['arm64']) {
+                      $jsonObj.autoupdate.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $autoUrlArm64 })
+                  } else {
+                      $jsonObj.autoupdate.architecture.'arm64'.url = $autoUrlArm64
+                  }
+              }
 
               Write-ScoopManifest -jsonObj $jsonObj -jsonPath $fullPath
-           
+            
               if (Invoke-Git status --porcelain $manifestPath) {
                   Invoke-Git add $manifestPath
                   Invoke-Git commit -m "servy: Update to version $env:VERSION"
@@ -272,21 +358,21 @@ jobs:
           }
           Invoke-Git push origin $branchName --force-with-lease
           if ($LASTEXITCODE -ne 0) { throw "git push failed (exit $LASTEXITCODE)" }
-         
-          - name: Open Pull Request in ScoopInstaller/Extras
-          if: env.RUN_EXTRAS_PR == 'true' && env.SKIP_PR_CREATE != 'true'
-          shell: pwsh
-          env:
-            GH_TOKEN: ${{ secrets.PAT }}
-          run: |
-            Set-Location extras
-            $branchExists = git ls-remote --heads origin "update-servy-$env:VERSION"
-            if ($LASTEXITCODE -ne 0) { throw "git ls-remote failed with exit code $LASTEXITCODE" }
-            if ($branchExists) {
-                gh pr create `
-                  --title "servy: Update to version $env:VERSION" `
-                  --body "Update Servy to version $env:VERSION." `
-                  --base master `
-                  --head "aelassas:update-servy-$env:VERSION" `
-                  --repo ScoopInstaller/Extras
-            }
+          
+      - name: Open Pull Request in ScoopInstaller/Extras
+        if: env.RUN_EXTRAS_PR == 'true' && env.SKIP_PR_CREATE != 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+        run: |
+          Set-Location extras
+          $branchExists = git ls-remote --heads origin "update-servy-$env:VERSION"
+          if ($LASTEXITCODE -ne 0) { throw "git ls-remote failed with exit code $LASTEXITCODE" }
+          if ($branchExists) {
+              gh pr create `
+                --title "servy: Update to version $env:VERSION" `
+                --body "Update Servy to version $env:VERSION." `
+                --base master `
+                --head "aelassas:update-servy-$env:VERSION" `
+                --repo ScoopInstaller/Extras
+          }

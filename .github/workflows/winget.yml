@@ -39,5 +39,5 @@ jobs:
         with:
           identifier: aelassas.Servy
           token: ${{ secrets.WINGET_TOKEN }}
-          installers-regex: "servy-\\d+\\.\\d+-x64-installer\\.exe$"
+          installers-regex: "servy-\\d+\\.\\d+-(x64|arm64)-installer\\.exe$"
           release-tag: ${{ env.TAG }}
