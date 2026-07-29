@@ -55,29 +55,44 @@ jobs:
           manual_tag: ${{ github.event.inputs.tag }}
           release_tag: ${{ github.event.release.tag_name }}
 
-      - name: Stage Installer Download Target
+      - name: Stage Installer Download Targets
         shell: pwsh
         run: |
-          $url = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
-          $out = "servy-${env:VERSION}-x64-installer.exe"
-          Write-Host "Staging Chocolatey asset lookup path from $url"
-          Add-Content -Path $env:GITHUB_ENV -Value "CHOCO_DOWNLOAD_URL=$url"
-          Add-Content -Path $env:GITHUB_ENV -Value "CHOCO_DOWNLOAD_OUT=$out"
+          $url64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
+          $out64 = "servy-${env:VERSION}-x64-installer.exe"
+          $urlArm64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-arm64-installer.exe"
+          $outArm64 = "servy-${env:VERSION}-arm64-installer.exe"
 
-      - name: Download installer
+          Write-Host "Staging Chocolatey asset lookup paths for x64 ($url64) and arm64 ($urlArm64)"
+          Add-Content -Path $env:GITHUB_ENV -Value "CHOCO_DOWNLOAD_URL_64=$url64"
+          Add-Content -Path $env:GITHUB_ENV -Value "CHOCO_DOWNLOAD_OUT_64=$out64"
+          Add-Content -Path $env:GITHUB_ENV -Value "CHOCO_DOWNLOAD_URL_ARM64=$urlArm64"
+          Add-Content -Path $env:GITHUB_ENV -Value "CHOCO_DOWNLOAD_OUT_ARM64=$outArm64"
+
+      - name: Download x64 installer
         uses: ./.github/actions/download-with-retry
         with:
-          url: ${{ env.CHOCO_DOWNLOAD_URL }}
-          output_path: ${{ env.CHOCO_DOWNLOAD_OUT }}
-          asset_name: 'Servy Release Installer for Chocolatey'
+          url: ${{ env.CHOCO_DOWNLOAD_URL_64 }}
+          output_path: ${{ env.CHOCO_DOWNLOAD_OUT_64 }}
+          asset_name: 'Servy x64 Release Installer for Chocolatey'
+          max_retries: ${{ env.MAX_RETRIES }}
+
+      - name: Download arm64 installer
+        uses: ./.github/actions/download-with-retry
+        with:
+          url: ${{ env.CHOCO_DOWNLOAD_URL_ARM64 }}
+          output_path: ${{ env.CHOCO_DOWNLOAD_OUT_ARM64 }}
+          asset_name: 'Servy arm64 Release Installer for Chocolatey'
           max_retries: ${{ env.MAX_RETRIES }}
 
       - name: Compute SHA256
         shell: pwsh
         run: |
-          $HASH = Get-FileHash "servy-${env:VERSION}-x64-installer.exe" -Algorithm SHA256
-          $UPPER = $HASH.Hash.ToUpper()
-          Add-Content -Path $env:GITHUB_ENV -Value "HASH=$UPPER"
+          $HASH64 = (Get-FileHash "servy-${env:VERSION}-x64-installer.exe" -Algorithm SHA256).Hash.ToUpper()
+          $HASHARM64 = (Get-FileHash "servy-${env:VERSION}-arm64-installer.exe" -Algorithm SHA256).Hash.ToUpper()
+
+          Add-Content -Path $env:GITHUB_ENV -Value "HASH_64=$HASH64"
+          Add-Content -Path $env:GITHUB_ENV -Value "HASH_ARM64=$HASHARM64"
 
       - name: Update nuspec version and release notes
         shell: pwsh
@@ -106,21 +121,33 @@ jobs:
           $file = "setup/choco/servy/tools/chocolateyinstall.ps1"
           $content = Get-Content $file -Raw
 
-          # Build replacement strings
-          $urlReplacement = "`$url64         = 'https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe'"
-          $checksumReplacement = "`$checksum64    = '${env:HASH}'"
+          # Build replacement strings for x64 and arm64 architectures
+          $url64Replacement = "`$url64         = 'https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe'"
+          $checksum64Replacement = "`$checksum64    = '${env:HASH_64}'"
+          $urlArm64Replacement = "`$urlArm64      = 'https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-arm64-installer.exe'"
+          $checksumArm64Replacement = "`$checksumArm64 = '${env:HASH_ARM64}'"
 
-          Write-Host "URL: $urlReplacement"
-          Write-Host "HASH: $checksumReplacement"
+          Write-Host "URL64: $url64Replacement"
+          Write-Host "HASH64: $checksum64Replacement"
+          Write-Host "URLARM64: $urlArm64Replacement"
+          Write-Host "HASHARM64: $checksumArm64Replacement"
 
           # Assert match before replacing to avoid silent no-op failures
-          $urlPattern = [regex]::Escape('$url64') + '\s*=.*'
-          if (-not [regex]::IsMatch($content, $urlPattern)) { throw "Pattern '$urlPattern' not found in $file - aborting to avoid publishing a stale url64." }
-          $content = [regex]::Replace($content, $urlPattern, $urlReplacement)
+          $url64Pattern = [regex]::Escape('$url64') + '\s*=.*'
+          if (-not [regex]::IsMatch($content, $url64Pattern)) { throw "Pattern '$url64Pattern' not found in $file - aborting to avoid publishing a stale url64." }
+          $content = [regex]::Replace($content, $url64Pattern, $url64Replacement)
 
-          $checksumPattern = [regex]::Escape('$checksum64') + '\s*=.*'
-          if (-not [regex]::IsMatch($content, $checksumPattern)) { throw "Pattern '$checksumPattern' not found in $file - aborting to avoid publishing a stale checksum64." }
-          $content = [regex]::Replace($content, $checksumPattern, $checksumReplacement)
+          $checksum64Pattern = [regex]::Escape('$checksum64') + '\s*=.*'
+          if (-not [regex]::IsMatch($content, $checksum64Pattern)) { throw "Pattern '$checksum64Pattern' not found in $file - aborting to avoid publishing a stale checksum64." }
+          $content = [regex]::Replace($content, $checksum64Pattern, $checksum64Replacement)
+
+          $urlArm64Pattern = [regex]::Escape('$urlArm64') + '\s*=.*'
+          if (-not [regex]::IsMatch($content, $urlArm64Pattern)) { throw "Pattern '$urlArm64Pattern' not found in $file - aborting to avoid publishing a stale urlArm64." }
+          $content = [regex]::Replace($content, $urlArm64Pattern, $urlArm64Replacement)
+
+          $checksumArm64Pattern = [regex]::Escape('$checksumArm64') + '\s*=.*'
+          if (-not [regex]::IsMatch($content, $checksumArm64Pattern)) { throw "Pattern '$checksumArm64Pattern' not found in $file - aborting to avoid publishing a stale checksumArm64." }
+          $content = [regex]::Replace($content, $checksumArm64Pattern, $checksumArm64Replacement)
 
           # Write content back without extra newline
           [System.IO.File]::WriteAllText($file, $content)
@@ -131,8 +158,7 @@ jobs:
           . "$env:RUNNER_TEMP\git-helpers.ps1"
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
-          Invoke-Git add setup/choco/servy/*
-           
+
           # Check if there is actually anything to commit
           $hasChanges = (Invoke-Git status --porcelain setup/choco/servy/*) -join "`n"
           if ([string]::IsNullOrWhiteSpace($hasChanges)) {
@@ -140,18 +166,18 @@ jobs:
               exit 0
           }
 
+          Invoke-Git add setup/choco/servy/*
+
           git diff --staged --quiet
           if ($LASTEXITCODE -ne 0) {
-              Invoke-Git commit -m "chore: update Chocolatey package definitions"
+              Invoke-Git commit -m "chore(choco): update package for version ${env:VERSION}"
+
+              # Env vars are strings; -MaxRetries is [int]
+              $maxRetries = [int]$env:MAX_RETRIES
+              Invoke-PushWithRetry -PullRef 'main' -PushRef 'HEAD:main' -MaxRetries $maxRetries
           } else {
-              Write-Host "Index is clean after staging. Skipping commit."
+              Write-Host "Index is clean after staging. Skipping commit and push."
           }
-
-          Invoke-Git commit -m "chore(choco): update package for version ${env:VERSION}"
-
-          # Env vars are strings; -MaxRetries is [int]
-          $maxRetries = [int]$env:MAX_RETRIES
-          Invoke-PushWithRetry -PullRef 'main' -PushRef 'HEAD:main' -MaxRetries $maxRetries
 
       - name: Check Chocolatey version
         shell: pwsh
