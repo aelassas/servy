@@ -103,6 +103,7 @@ Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: i
 
 ; Manager
 Source: "..\src\Servy.Manager\bin\x64\Release\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_manager
+; Source: "..\src\Servy.Manager\bin\x64\Release\Servy.Manager.exe.config"; DestDir: "{app}"; DestName:"Servy.Manager.exe.config"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_manager
 Source: "..\src\Servy.Manager\bin\x64\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: install_manager
 
 ; taskschd
