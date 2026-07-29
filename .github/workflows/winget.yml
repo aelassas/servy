@@ -67,5 +67,4 @@ jobs:
           komac update aelassas.Servy `
             --version $env:VERSION `
             --urls $env:INSTALLER_URLS.Split(' ') `
-            --submit `
-            --fork-owner aelassas
+            --submit
