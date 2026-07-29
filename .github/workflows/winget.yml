@@ -4,6 +4,7 @@
 # Publishes the latest Servy release to WinGet
 # when a new release is published.
 # ===========================================
+
 name: winget
 
 on:
@@ -36,42 +37,10 @@ jobs:
           manual_tag: ${{ github.event.inputs.tag }}
           release_tag: ${{ github.event.release.tag_name }}
 
-      - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@e00d2c94cc0067b77737821097a62d91c0301baa #v1.21.1
-
-      - name: Install komac
-        run: cargo binstall komac -y
-
-      - name: Clean up stale fork branches
-        shell: pwsh
-        env:
-          GITHUB_TOKEN: ${{ secrets.WINGET_TOKEN }}
-        run: |
-          komac cleanup
-
-      - name: Fetch Release Asset URLs
-        shell: pwsh
-        env:
-          GITHUB_TOKEN: ${{ secrets.WINGET_TOKEN }}
-        run: |
-          $ReleaseInfo = Invoke-RestMethod `
-            -Uri "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/tags/$env:TAG" `
-            -Headers @{ Authorization = "token $env:GITHUB_TOKEN" }
-          
-          $urls = $ReleaseInfo.assets.Where({ $_.name -match 'servy-\d+\.\d+-(x64|arm64)-installer\.exe$' }).browser_download_url
-          if ($urls.Count -eq 0) {
-              throw "No matching x64/arm64 installer executables found in release assets for tag '$env:TAG'."
-          }
-          
-          Write-Host "Found installer URLs:`n$($urls -join "`n")"
-          Add-Content -Path $env:GITHUB_ENV -Value "INSTALLER_URLS=$($urls -join ' ')"
-
       - name: Publish Servy to WinGet
-        shell: pwsh
-        env:
-          GITHUB_TOKEN: ${{ secrets.WINGET_TOKEN }}
-        run: |
-          komac update aelassas.Servy `
-            --version $env:VERSION `
-            --urls $env:INSTALLER_URLS.Split(' ') `
-            --submit
+        uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e #v2
+        with:
+          identifier: aelassas.Servy
+          token: ${{ secrets.WINGET_TOKEN }}
+          installers-regex: "servy-\\d+\\.\\d+-(x64|arm64)-installer\\.exe$"
+          release-tag: ${{ env.TAG }}
