@@ -360,6 +360,7 @@ namespace Servy.Core.Services
                             Parameters = options.RealArgs,
                             StartupType = (int)options.StartType,
                             Priority = (int)options.ProcessPriority,
+                            CpuAffinity = options.CpuAffinity,
                             EnableConsoleUI = options.EnableConsoleUI,
                             StdoutPath = options.StdoutPath,
                             StderrPath = options.StderrPath,

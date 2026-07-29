@@ -6,6 +6,7 @@
   "Parameters": "-arg1 -arg2",
   "StartupType": 2,
   "Priority": 1,
+  "CpuAffinity": "0x1",
   "StdoutPath": "C:\\Logs\\TestService_out.log",
   "StderrPath": "C:\\Logs\\TestService_err.log",
   "EnableRotation": true,

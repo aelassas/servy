@@ -117,6 +117,11 @@ namespace Servy.Core.Domain
         public ProcessPriority Priority { get; set; } = AppConfig.DefaultProcessPriority;
 
         /// <summary>
+        /// Gets or sets the logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00').
+        /// </summary>
+        public string CpuAffinity { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether to enable the console user interface for the service.
         /// When enabled, stdout/stderr redirection is disabled, and the service runs in a console window.
         /// </summary>
@@ -540,6 +545,7 @@ namespace Servy.Core.Domain
                 RealArgs = Parameters ?? string.Empty,
                 StartType = StartupType,
                 ProcessPriority = Priority,
+                CpuAffinity = CpuAffinity,
                 EnableConsoleUI = EnableConsoleUI,
                 StdoutPath = StdoutPath,
                 StderrPath = StderrPath,

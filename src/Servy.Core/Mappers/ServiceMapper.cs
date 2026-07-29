@@ -40,6 +40,8 @@ namespace Servy.Core.Mappers
                 StartupType = ConfigParser.ParseEnum(dto.StartupType, AppConfig.DefaultStartupType),
                 Priority = ConfigParser.ParseEnum(dto.Priority, AppConfig.DefaultProcessPriority),
 
+                CpuAffinity = dto.CpuAffinity,
+
                 EnableConsoleUI = dto.EnableConsoleUI.Value,
 
                 StdoutPath = dto.StdoutPath,

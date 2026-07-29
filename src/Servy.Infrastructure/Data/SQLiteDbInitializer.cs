@@ -19,7 +19,7 @@ namespace Servy.Infrastructure.Data
         /// <summary>
         /// Single Source of Truth for the absolute latest schema migration version sequence.
         /// </summary>
-        public const int LatestSchemaVersion = 7;
+        public const int LatestSchemaVersion = 8;
 
         private static readonly char[] SplitWhitespaceChars = { ' ', '\t' };
 
@@ -183,8 +183,16 @@ namespace Servy.Infrastructure.Data
                             currentVersion = 7;
                         }
 
+                        // Version 8 Migration to add CpuAffinity to support logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00')
+                        if (currentVersion < 8)
+                        {
+                            ApplyVersion8(connection, transaction);
+                            UpdateSchemaVersion(connection, 8, transaction);
+                            currentVersion = 8;
+                        }
+
                         // --- FUTURE MIGRATIONS GO HERE ---
-                        // if (currentVersion < 8) { ... }
+                        // if (currentVersion < 9) { ... }
 
                         // Double check that the final tracked migration index completely aligns with the central declaration
                         if (currentVersion != LatestSchemaVersion)
@@ -641,6 +649,16 @@ namespace Servy.Infrastructure.Data
             AddColumnIfMissing(connection, transaction, version, "HeartbeatUrl");
             AddColumnIfMissing(connection, transaction, version, "HeartbeatUrlTimeoutSeconds");
             AddColumnIfMissing(connection, transaction, version, "EnableHeartbeatUrlFlags");
+        }
+
+        /// <summary>
+        /// Applies the Version 8 schema migration, adding the 'CpuAffinity' column to support logical CPUs 
+        /// the process may run on (e.g., '0-3,8' or '0xFF00').
+        /// </summary>
+        private static void ApplyVersion8(DbConnection connection, DbTransaction transaction)
+        {
+            const int version = 8;
+            AddColumnIfMissing(connection, transaction, version, "CpuAffinity");
         }
 
         #endregion

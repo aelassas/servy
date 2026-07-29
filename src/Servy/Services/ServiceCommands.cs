@@ -174,6 +174,7 @@ namespace Servy.Services
                     RealArgs = dto.Parameters,
                     StartType = (ServiceStartType)(dto.StartupType ?? (int)AppConfig.DefaultStartupType),
                     ProcessPriority = (ProcessPriority)(dto.Priority ?? (int)AppConfig.DefaultProcessPriority),
+                    CpuAffinity = dto.CpuAffinity,
                     EnableConsoleUI = dto.EnableConsoleUI ?? AppConfig.DefaultEnableConsoleUI,
                     Username = dto.UserAccount,
                     Password = dto.Password,

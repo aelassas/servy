@@ -1129,6 +1129,38 @@ namespace Servy.Service
         {
             StartProcess(options.ExecutablePath, options.ExecutableArgs, options.WorkingDirectory, options.EnvironmentVariables, token);
             SetProcessPriority(options.Priority);
+            SetProcessCpuAffinity(options.CpuAffinity);
+        }
+
+        /// <summary>
+        /// Sets the processor affinity mask of the child process.
+        /// Logs info on success or a warning if it fails.
+        /// </summary>
+        /// <param name="affinityInput">The comma-separated core list, range, or hex mask string.</param>
+        public void SetProcessCpuAffinity(string affinityInput)
+        {
+            if (_childProcess == null)
+            {
+                _logger?.Warn("SetProcessAffinity called before child process was started; ignoring.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(affinityInput))
+                return;
+
+            try
+            {
+                IntPtr mask = AffinityHelper.ParseAffinity(affinityInput);
+                if (mask != IntPtr.Zero)
+                {
+                    _childProcess.ProcessorAffinity = mask;
+                    _logger?.Info($"Set process CPU affinity to 0x{mask.ToInt64():X} ({affinityInput}).");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.Warn($"Failed to set CPU affinity ('{affinityInput}'): {ex.Message}");
+            }
         }
 
         /// <summary>

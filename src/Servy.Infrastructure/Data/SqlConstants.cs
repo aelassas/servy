@@ -22,6 +22,7 @@ namespace Servy.Infrastructure.Data
             "Parameters",
             "StartupType",
             "Priority",
+            "CpuAffinity",
             "StartTimeout",
             "StopTimeout",
             "EnableConsoleUI",

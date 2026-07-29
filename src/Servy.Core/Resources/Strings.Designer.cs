@@ -124,6 +124,24 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Core index &apos;{0}&apos; is out of bounds (0-{1})..
+        /// </summary>
+        public static string Msg_CoreIndexOutOfBounds {
+            get {
+                return ResourceManager.GetString("Msg_CoreIndexOutOfBounds", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Core index in range &apos;{0}&apos; is out of bounds (0-{1})..
+        /// </summary>
+        public static string Msg_CoreIndexRangeOutOfBounds {
+            get {
+                return ResourceManager.GetString("Msg_CoreIndexRangeOutOfBounds", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Dependency &apos;{0}&apos; is not accessible (Access Denied)..
         /// </summary>
         public static string Msg_DependencyAccessDenied {
@@ -286,6 +304,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid core specification: &apos;{0}&apos;.
+        /// </summary>
+        public static string Msg_InvalidCoreSpecification {
+            get {
+                return ResourceManager.GetString("Msg_InvalidCoreSpecification", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The specified date rotation type is invalid. Options: Daily, Weekly, Monthly..
         /// </summary>
         public static string Msg_InvalidDateRotationType {
@@ -336,6 +363,15 @@ namespace Servy.Core.Resources {
         public static string Msg_InvalidHeartbeatUrlTimeout {
             get {
                 return ResourceManager.GetString("Msg_InvalidHeartbeatUrlTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid hex affinity format: {0}.
+        /// </summary>
+        public static string Msg_InvalidHexAffinityFormat {
+            get {
+                return ResourceManager.GetString("Msg_InvalidHexAffinityFormat", resourceCulture);
             }
         }
         

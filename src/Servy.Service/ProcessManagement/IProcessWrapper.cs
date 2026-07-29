@@ -78,6 +78,11 @@ namespace Servy.Service.ProcessManagement
         ProcessPriorityClass PriorityClass { get; set; }
 
         /// <summary>
+        /// Get or sets the logical CPUs the process may run on.
+        /// </summary>
+        IntPtr ProcessorAffinity { get; set; }
+
+        /// <summary>
         /// Gets the process start information, including the executable path, arguments, and other settings.
         /// </summary>
         ProcessStartInfo StartInfo { get; }

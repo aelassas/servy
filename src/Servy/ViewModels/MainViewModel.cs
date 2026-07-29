@@ -149,6 +149,15 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
+        /// Gets or sets the logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00').
+        /// </summary>
+        public string CpuAffinity
+        {
+            get => _config.CpuAffinity;
+            set => Set(() => _config.CpuAffinity, v => _config.CpuAffinity = v, value);
+        }
+
+        /// <summary>
         /// Gets or sets a value indicating whether to enable the console user interface for the service.
         /// </summary>
         public bool EnableConsoleUI
@@ -952,6 +961,7 @@ namespace Servy.ViewModels
             ProcessParameters = string.Empty;
             SelectedStartupType = DefaultStartupType;
             SelectedProcessPriority = DefaultProcessPriority;
+            CpuAffinity = string.Empty;
             EnableConsoleUI = DefaultEnableConsoleUI;
             EnableSizeRotation = DefaultEnableSizeRotation;
             RotationSize = DefaultRotationSizeMB.ToString();
@@ -1413,6 +1423,7 @@ namespace Servy.ViewModels
             ProcessParameters = dto.Parameters ?? string.Empty;
             SelectedStartupType = dto.StartupType == null ? DefaultStartupType : (ServiceStartType)dto.StartupType;
             SelectedProcessPriority = dto.Priority == null ? DefaultProcessPriority : (ProcessPriority)dto.Priority;
+            CpuAffinity = dto.CpuAffinity;
             EnableConsoleUI = dto.EnableConsoleUI ?? DefaultEnableConsoleUI;
             StdoutPath = dto.StdoutPath ?? string.Empty;
             StderrPath = dto.StderrPath ?? string.Empty;
@@ -1493,6 +1504,7 @@ namespace Servy.ViewModels
                 Parameters = ProcessParameters,
                 StartupType = (int)SelectedStartupType,
                 Priority = (int)SelectedProcessPriority,
+                CpuAffinity = CpuAffinity,
 
                 // Basic UI and Logging
                 EnableConsoleUI = EnableConsoleUI,

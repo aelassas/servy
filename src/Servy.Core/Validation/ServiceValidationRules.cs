@@ -79,6 +79,10 @@ namespace Servy.Core.Validation
                     result.Errors.Add(string.Format(Strings.Msg_ArgumentsLengthReachedForField, name, AppConfig.MaxArgumentLength));
             }
 
+            // CpuAffinity
+            if (!AffinityHelper.ValidateAffinity(dto.CpuAffinity, out string errorMessage) && errorMessage != null)
+                result.Errors.Add(errorMessage);
+
             // Paths
             if (!_processHelper.ValidatePath(dto.ExecutablePath))
                 result.Errors.Add(Strings.Msg_InvalidPath);

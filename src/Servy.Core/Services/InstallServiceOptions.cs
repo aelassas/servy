@@ -32,6 +32,9 @@ namespace Servy.Core.Services
         /// <summary>Optional process priority for the service. Defaults to <see cref="AppConfig.DefaultProcessPriority"/>.</summary>
         public ProcessPriority ProcessPriority { get; set; } = AppConfig.DefaultProcessPriority;
 
+        /// <summary>Logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00').</summary>
+        public string CpuAffinity { get; set; }
+
         /// <summary>Whether to enable the console user interface for the service.</summary>
         public bool EnableConsoleUI { get; set; } = AppConfig.DefaultEnableConsoleUI;
 
