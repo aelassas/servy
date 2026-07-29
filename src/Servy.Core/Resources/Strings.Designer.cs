@@ -268,6 +268,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to open configuration file for reading..
+        /// </summary>
+        public static string Msg_ImportReadFailure {
+            get {
+                return ResourceManager.GetString("Msg_ImportReadFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0} structure error: {1}.
         /// </summary>
         public static string Msg_ImportStructureError {

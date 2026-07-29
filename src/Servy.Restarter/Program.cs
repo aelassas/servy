@@ -52,9 +52,18 @@ namespace Servy.Restarter
                     return;
                 }
 
-                // 1. Ensure event source exists before doing anything else
-                Helper.EnsureEventSourceExists();
-                rootLogger = new EventLogLogger(AppConfig.EventSource);
+                // 1. Event Log source is best-effort: the file logger is already up, and a restart
+                //    must not be blocked by a reporting-channel failure.
+                try
+                {
+                    Helper.EnsureEventSourceExists();
+                    rootLogger = new EventLogLogger(AppConfig.EventSource);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn("Event Log source unavailable; continuing with file logging only.", ex);
+                    rootLogger = new EventLogLogger(AppConfig.EventSource, isEventLogEnabled: false);
+                }
 
                 // 2. Load configuration
                 var config = ConfigurationManager.AppSettings;
@@ -64,7 +73,9 @@ namespace Servy.Restarter
                 var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
                 // 3. Parse the restart timeout
-                var restartTimeout = int.TryParse(config["RestartTimeoutSeconds"], out var timeout) && timeout > 0 ? timeout : AppConfig.DefaultRestarterTimeoutSeconds;
+                var restartTimeout = ConfigParser.GetConfigInt(config, "RestartTimeoutSeconds",
+                                                  AppConfig.DefaultRestarterTimeoutSeconds,
+                                                  min: 1, max: AppConfig.MaxRestarterTimeoutSeconds);
 
                 // 4. PROMOTE / SCOPE the logger
                 // Using the instance logger ensures that 'serviceName' is prepended 
@@ -121,8 +132,7 @@ namespace Servy.Restarter
                 try { dbContext?.Dispose(); } catch (Exception ex) { Logger.Warn("Failed to dispose AppDbContext.", ex); }
                 try { scopedLogger?.Dispose(); } catch (Exception ex) { Logger.Warn("Failed to dispose scoped logger.", ex); }
                 try { rootLogger?.Dispose(); } catch (Exception ex) { Logger.Warn("Failed to dispose root EventLogLogger.", ex); }
-
-                Logger.Shutdown();
+                try { Logger.Shutdown(); } catch { /* nothing left to log with */ }
             }
 
         }

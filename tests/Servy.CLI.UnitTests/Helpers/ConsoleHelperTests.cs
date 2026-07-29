@@ -12,6 +12,13 @@ namespace Servy.CLI.UnitTests.Helpers
     {
         private const string RedirectedOverrideFieldName = "_isOutputRedirectedOverride";
 
+        [Fact]
+        public async Task RunWithLoadingAnimation_NullAction()
+        {
+            // Arrange, Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => ConsoleHelper.RunWithLoadingAnimation(null));
+        }
+
         /// <summary>
         /// Covers the branch where Console.IsOutputRedirected is true.
         /// The loading animation task should exit early, and the safe line clearing block 

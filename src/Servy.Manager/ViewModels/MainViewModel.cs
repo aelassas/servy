@@ -144,16 +144,21 @@ namespace Servy.Manager.ViewModels
                 {
                     _isUpdatingSelectAll = true;
 
-                    bool targetState = value == true;
-
-                    // Apply the target check-state to every row in a single pass.
-                    foreach (var service in _services)
+                    try
                     {
-                        service.IsChecked = targetState;
-                        service.IsSelected = false;
-                    }
+                        bool targetState = value == true;
 
-                    _isUpdatingSelectAll = false;
+                        // Apply the target check-state to every row in a single pass.
+                        foreach (var service in _services)
+                        {
+                            service.IsChecked = targetState;
+                            service.IsSelected = false;
+                        }
+                    }
+                    finally
+                    {
+                        _isUpdatingSelectAll = false;
+                    }
 
                     // This updates the header state based on the children's new values
                     UpdateSelectAllState();
@@ -1093,6 +1098,8 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void RemoveService(string serviceName)
         {
+            if (string.IsNullOrWhiteSpace(serviceName)) return;
+
             Action action = () =>
             {
                 var stopwatch = Stopwatch.StartNew();

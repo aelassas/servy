@@ -194,6 +194,9 @@
 	<data name="Msg_StartupError_Format" xml:space="preserve">
     <value>Startup error: {0}</value>
   </data>
+	<data name="Msg_ImportReadFailure" xml:space="preserve">
+    <value>Failed to open configuration file for reading.</value>
+  </data>
 	<data name="Msg_ImportInputEmptyOrWhitespace" xml:space="preserve">
     <value>{0} input cannot be empty or whitespace.</value>
   </data>

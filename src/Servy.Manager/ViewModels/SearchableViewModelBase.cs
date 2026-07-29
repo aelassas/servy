@@ -155,7 +155,7 @@ namespace Servy.Manager.ViewModels
         protected virtual Task HandleSearchExceptionAsync(Exception ex) => Task.CompletedTask;
 
         /// <summary>
-        /// Safely terminates ongoing script execution channels and tears down backing components.
+        /// Cancels the active search token and restores UI state (cursor, button text, busy flag).
         /// </summary>
         protected void ClearActiveSearchContext()
         {
@@ -163,6 +163,11 @@ namespace Servy.Manager.ViewModels
             if (oldCts != null)
             {
                 Helpers.Helper.CancelAndDisposeSafely(oldCts);
+
+                // No successor search will run the Step 7 restore — do it here.
+                _cursorService.ResetCursor();
+                SearchButtonText = Strings.Button_Search;
+                IsBusy = false;
             }
         }
 

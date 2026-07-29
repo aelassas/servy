@@ -31,6 +31,8 @@ namespace Servy.CLI.Helpers
         /// </remarks>
         public static async Task RunWithLoadingAnimation(Func<Task> action, string message = null)
         {
+            if (action == null) throw new ArgumentNullException(nameof(action));
+
             message = message ?? Strings.Msg_PreparingEnvironment;
             var spinnerChars = new[] { '|', '/', '-', '\\' };
             var spinnerIndex = 0;
