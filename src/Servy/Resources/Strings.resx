@@ -119,7 +119,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Display Name</value>
   </data>
 	<data name="Info_ServiceDisplayName" xml:space="preserve">
-    <value>The human-readable name shown in the Windows Services console (services.msc). If left empty, the service name will be used instead.</value>
+    <value>The human-readable name shown in the Windows Services console (services.msc).</value>
   </data>
 	<data name="Label_ServiceDescription" xml:space="preserve">
     <value>Service Description</value>
@@ -140,8 +140,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Process Parameters</value>
   </data>
 	<data name="Info_ProcessParameters" xml:space="preserve">
-    <value>Process parameters support environment variable expansion. Example:
---param="%ProgramData%\MyApp" --param="%MY_VAR%\bin"</value>
+    <value>Supports environment variable expansion. Example: --param="%MY_VAR%\bin"</value>
   </data>
 	<data name="Label_RequiredFields" xml:space="preserve">
     <value>* Required fields</value>
@@ -193,6 +192,14 @@ Copyright © {2} Akram El Assas. All rights reserved.
   </data>
 	<data name="ProcessPriority_RealTime" xml:space="preserve">
     <value>Real Time (use with caution)</value>
+  </data>
+
+	<!--Cpu Affinity-->
+	<data name="Label_CpuAffinity" xml:space="preserve">
+    <value>Cpu Affinity</value>
+  </data>
+	<data name="Info_CpuAffinity" xml:space="preserve">
+    <value>Logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00').</value>
   </data>
 
 	<!--EnableConsoleUI-->

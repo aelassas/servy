@@ -65,6 +65,8 @@ namespace Servy.Service.CommandLine
                 // This prevents undefined enum values from entering the process mapping logic.
                 Priority = MapPriority(ConfigParser.ParseEnum(serviceDto.Priority, AppConfig.DefaultProcessPriority)),
 
+                CpuAffinity = serviceDto.CpuAffinity,
+
                 EnableConsoleUI = serviceDto.EnableConsoleUI ?? AppConfig.DefaultEnableConsoleUI,
 
                 // Logging

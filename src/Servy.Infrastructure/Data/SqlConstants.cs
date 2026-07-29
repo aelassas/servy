@@ -20,6 +20,7 @@
             "Parameters",
             "StartupType",
             "Priority",
+            "CpuAffinity",
             "StartTimeout",
             "StopTimeout",
             "EnableConsoleUI",

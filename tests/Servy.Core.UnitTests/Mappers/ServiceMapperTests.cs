@@ -45,6 +45,7 @@ namespace Servy.Core.UnitTests.Mappers
                 Parameters = "-arg1 -arg2",
                 StartupType = (int)ServiceStartType.Manual,
                 Priority = (int)ProcessPriority.BelowNormal,
+                CpuAffinity = "0x1",
                 EnableConsoleUI = true,
                 StdoutPath = "stdout.log",
                 StderrPath = "stderr.log",
@@ -111,6 +112,7 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(dto.Parameters, service.Parameters);
             Assert.Equal((ServiceStartType)dto.StartupType!, service.StartupType);
             Assert.Equal((ProcessPriority)dto.Priority!, service.Priority);
+            Assert.Equal(dto.CpuAffinity, service.CpuAffinity);
             Assert.Equal(dto.EnableConsoleUI, service.EnableConsoleUI);
             Assert.Equal(dto.StdoutPath, service.StdoutPath);
             Assert.Equal(dto.StderrPath, service.StderrPath);

@@ -34,6 +34,11 @@ namespace Servy.Service.CommandLine
         public ProcessPriorityClass Priority { get; set; } = StartOptionsParser.MapPriority(AppConfig.DefaultProcessPriority);
 
         /// <summary>
+        /// Gets or sets the logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00').
+        /// </summary>
+        public string? CpuAffinity { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether to enable the console user interface for the service.
         /// </summary>
         public bool EnableConsoleUI { get; set; } = AppConfig.DefaultEnableConsoleUI;

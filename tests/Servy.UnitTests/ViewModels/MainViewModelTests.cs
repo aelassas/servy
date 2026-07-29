@@ -118,6 +118,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.ProcessPath = "C:\\test.exe";
             _viewModel.StartupDirectory = "C:\\";
             _viewModel.ProcessParameters = "--flag";
+            _viewModel.CpuAffinity = "0x1";
             _viewModel.StdoutPath = "out.log";
             _viewModel.StderrPath = "err.log";
             _viewModel.EnableSizeRotation = true;
@@ -192,6 +193,7 @@ namespace Servy.UnitTests.ViewModels
                     c.Parameters == _viewModel.ProcessParameters &&
                     c.StartupType == _viewModel.SelectedStartupType &&
                     c.Priority == _viewModel.SelectedProcessPriority &&
+                    c.CpuAffinity == _viewModel.CpuAffinity &&
                     c.StdoutPath == _viewModel.StdoutPath &&
                     c.StderrPath == _viewModel.StderrPath &&
                     c.EnableSizeRotation == _viewModel.EnableSizeRotation &&
@@ -371,6 +373,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.ProcessParameters = "--args";
             _viewModel.SelectedStartupType = ServiceStartType.Disabled;
             _viewModel.SelectedProcessPriority = ProcessPriority.RealTime;
+            _viewModel.CpuAffinity = "0x1";
             _viewModel.EnableConsoleUI = !DefaultEnableConsoleUI;
             _viewModel.EnableSizeRotation = !DefaultEnableSizeRotation;
             _viewModel.RotationSize = "999";
@@ -437,6 +440,7 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(string.Empty, _viewModel.ProcessParameters);
             Assert.Equal(DefaultStartupType, _viewModel.SelectedStartupType);
             Assert.Equal(DefaultProcessPriority, _viewModel.SelectedProcessPriority);
+            Assert.Equal(string.Empty, _viewModel.CpuAffinity);
             Assert.Equal(DefaultEnableConsoleUI, _viewModel.EnableConsoleUI);
 
             // Rotation and Logs configuration
@@ -671,6 +675,7 @@ namespace Servy.UnitTests.ViewModels
                 Parameters = "--args",
                 StartupType = (int)ServiceStartType.Disabled,
                 Priority = (int)ProcessPriority.RealTime,
+                CpuAffinity = "0x1",
                 EnableConsoleUI = true,
                 StdoutPath = "out.log",
                 StderrPath = "err.log",
@@ -734,6 +739,7 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(dto.Parameters, _viewModel.ProcessParameters);
             Assert.Equal(ServiceStartType.Disabled, _viewModel.SelectedStartupType);
             Assert.Equal(ProcessPriority.RealTime, _viewModel.SelectedProcessPriority);
+            Assert.Equal(dto.CpuAffinity, _viewModel.CpuAffinity);
             Assert.True(_viewModel.EnableConsoleUI);
             Assert.Equal(dto.StdoutPath, _viewModel.StdoutPath);
             Assert.Equal(dto.StderrPath, _viewModel.StderrPath);
@@ -798,6 +804,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.ProcessParameters = "--run";
             _viewModel.SelectedStartupType = ServiceStartType.Automatic;
             _viewModel.SelectedProcessPriority = ProcessPriority.Normal;
+            _viewModel.CpuAffinity = "0x1";
             _viewModel.EnableConsoleUI = false;
             _viewModel.StdoutPath = "stdout.txt";
             _viewModel.StderrPath = "stderr.txt";
@@ -860,6 +867,7 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(_viewModel.ProcessParameters, dto.Parameters);
             Assert.Equal((int)ServiceStartType.Automatic, dto.StartupType);
             Assert.Equal((int)ProcessPriority.Normal, dto.Priority);
+            Assert.Equal(_viewModel.CpuAffinity, dto.CpuAffinity);
             Assert.False(dto.EnableConsoleUI);
             Assert.Equal(_viewModel.StdoutPath, dto.StdoutPath);
             Assert.Equal(_viewModel.StderrPath, dto.StderrPath);

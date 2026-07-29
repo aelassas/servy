@@ -467,6 +467,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             public ProcessStartInfo StartInfo => new ProcessStartInfo();
             public IntPtr MainWindowHandle => IntPtr.Zero;
             public ProcessPriorityClass PriorityClass { get; set; }
+            public IntPtr ProcessorAffinity { get; set; }
             public event DataReceivedEventHandler? OutputDataReceived { add { } remove { } }
             public event DataReceivedEventHandler? ErrorDataReceived { add { } remove { } }
             public event EventHandler? Exited { add { } remove { } }

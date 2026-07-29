@@ -112,6 +112,7 @@ namespace Servy.CLI.Validation
                 Parameters = opts.ProcessParameters,
                 StartupType = startupType,
                 Priority = priority,
+                CpuAffinity = opts.CpuAffinity,
                 StdoutPath = opts.StdoutPath,
                 StderrPath = opts.StderrPath,
                 EnableConsoleUI = opts.EnableConsoleUI,

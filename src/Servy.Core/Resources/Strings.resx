@@ -196,7 +196,7 @@
   </data>
 	<data name="Msg_ImportReadFailure" xml:space="preserve">
     <value>Failed to open configuration file for reading.</value>
-  </data>	
+  </data>
 	<data name="Msg_ImportInputEmptyOrWhitespace" xml:space="preserve">
     <value>{0} input cannot be empty or whitespace.</value>
   </data>
@@ -322,5 +322,18 @@
   </data>
 	<data name="Msg_DependencyAccessDenied" xml:space="preserve">
     <value>Dependency '{0}' is not accessible (Access Denied).</value>
+  </data>
+
+	<data name="Msg_InvalidHexAffinityFormat" xml:space="preserve">
+    <value>Invalid hex affinity format: {0}</value>
+  </data>
+	<data name="Msg_CoreIndexRangeOutOfBounds" xml:space="preserve">
+    <value>Core index in range '{0}' is out of bounds (0-{1}).</value>
+  </data>
+	<data name="Msg_CoreIndexOutOfBounds" xml:space="preserve">
+    <value>Core index '{0}' is out of bounds (0-{1}).</value>
+  </data>
+	<data name="Msg_InvalidCoreSpecification" xml:space="preserve">
+    <value>Invalid core specification: '{0}'</value>
   </data>
 </root>

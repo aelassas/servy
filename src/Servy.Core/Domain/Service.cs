@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Common;
 using Servy.Core.Config;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Services;
 using System.ComponentModel;
@@ -111,6 +112,11 @@ namespace Servy.Core.Domain
         /// Gets or sets the process priority for the service.
         /// </summary>
         public ProcessPriority Priority { get; set; } = AppConfig.DefaultProcessPriority;
+
+        /// <summary>
+        /// Gets or sets the logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00').
+        /// </summary>
+        public string? CpuAffinity { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to enable the console user interface for the service.
@@ -536,6 +542,7 @@ namespace Servy.Core.Domain
                 RealArgs = Parameters ?? string.Empty,
                 StartType = StartupType,
                 ProcessPriority = Priority,
+                CpuAffinity = CpuAffinity,
                 EnableConsoleUI = EnableConsoleUI,
                 StdoutPath = StdoutPath,
                 StderrPath = StderrPath,

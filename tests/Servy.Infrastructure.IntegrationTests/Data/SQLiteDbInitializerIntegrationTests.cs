@@ -59,6 +59,9 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 Assert.Contains("HeartbeatUrlTimeoutSeconds", columns);
                 Assert.Contains("EnableHeartbeatUrlFlags", columns);
 
+                // Assert Version 8 CpuAffinity column exists on a fresh installation
+                Assert.Contains("CpuAffinity", columns);
+
                 // Verify the structural index details map directly to the modern COLLATE UNICODE_NOCASE layout rules (Applied by V6)
                 var indexList = conn.Query("PRAGMA index_list('Services');")
                                     .Select(x => (IDictionary<string, object>)x)
@@ -456,6 +459,42 @@ namespace Servy.Infrastructure.IntegrationTests.Data
 
         #endregion
 
+        #region V8 CPU Affinity Migration Branches
+
+        [Fact]
+        public void ApplyVersion8_UpgradesFromVersion7_AppendsCpuAffinityColumnCleanly()
+        {
+            // Arrange: Establish schema explicitly at target Version 7 configuration checkpoint
+            using (var conn = CreateConnection())
+            {
+                SeedSchemaInfo(conn, 7);
+
+                // Build a pristine pre-v8 database using modern collation logic
+                var baseColumns = new List<string> { "Id INTEGER PRIMARY KEY AUTOINCREMENT", "Name TEXT COLLATE UNICODE_NOCASE NOT NULL" };
+                var seedData = new Dictionary<string, string> { { "Name", "'CpuAffinityMonitoredApp'" } };
+
+                CreateLegacyServicesTable(conn, baseColumns, seedData, "Name");
+
+                // Act: Run full initialization loop to trigger the V7 -> V8 ApplyVersion8 schema migration pipeline
+                SQLiteDbInitializer.Initialize(conn);
+
+                // Assert
+                var version = conn.QuerySingle<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
+                Assert.Equal(SQLiteDbInitializer.LatestSchemaVersion, version);
+
+                var columns = conn.Query("PRAGMA table_info(Services);").Select(r => (string)r.name).ToList();
+
+                // Confirm the structural migration successfully appended the CpuAffinity property
+                Assert.Contains("CpuAffinity", columns);
+
+                // Verify that default values for the fresh migration column resolve safely to NULL for historical records
+                var migratedRow = conn.QuerySingle($"SELECT CpuAffinity FROM {SqlConstants.ServicesTableName} WHERE Id = 1;");
+                Assert.Null(migratedRow.CpuAffinity);
+            }
+        }
+
+        #endregion
+
         #region Reconciliation Self-Healing (Missing, Orphans, Mismatches)
 
         [Fact]
@@ -474,7 +513,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
                 // We rebuild it, intentionally omitting the second column (usually 'Name' or 'ServiceName')
                 // We change the type of 'EnableSizeRotation' to TEXT to force a Type Mismatch.
                 // We add an 'OrphanColumn' to force the Orphan branch.
-                var missingColumn = expectedColumns.First(c => c != "Id" && !c.Contains("Rotation") && c != "HeartbeatUrl");
+                var missingColumn = expectedColumns.First(c => c != "Id" && !c.Contains("Rotation") && c != "HeartbeatUrl" && c != "CpuAffinity");
 
                 var corruptedTableDef = new List<string> { "Id INTEGER PRIMARY KEY", "OrphanColumn TEXT" };
                 foreach (var col in expectedColumns)

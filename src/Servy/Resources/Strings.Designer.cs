@@ -196,6 +196,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Logical CPUs the process may run on (e.g., &apos;0-3,8&apos; or &apos;0xFF00&apos;)..
+        /// </summary>
+        public static string Info_CpuAffinity {
+            get {
+                return ResourceManager.GetString("Info_CpuAffinity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to When both size-based and date-based rotation are enabled, size rotation takes precedence..
         /// </summary>
         public static string Info_DateRotation {
@@ -349,8 +358,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Process parameters support environment variable expansion. Example:
-        ///--param=&quot;%ProgramData%\MyApp&quot; --param=&quot;%MY_VAR%\bin&quot;.
+        ///   Looks up a localized string similar to Supports environment variable expansion. Example: --param=&quot;%MY_VAR%\bin&quot;.
         /// </summary>
         public static string Info_ProcessParameters {
             get {
@@ -395,7 +403,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The human-readable name shown in the Windows Services console (services.msc). If left empty, the service name will be used instead..
+        ///   Looks up a localized string similar to The human-readable name shown in the Windows Services console (services.msc)..
         /// </summary>
         public static string Info_ServiceDisplayName {
             get {
@@ -472,6 +480,15 @@ namespace Servy.Resources {
         public static string Label_ConfirmPassword {
             get {
                 return ResourceManager.GetString("Label_ConfirmPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cpu Affinity.
+        /// </summary>
+        public static string Label_CpuAffinity {
+            get {
+                return ResourceManager.GetString("Label_CpuAffinity", resourceCulture);
             }
         }
         

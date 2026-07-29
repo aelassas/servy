@@ -82,6 +82,12 @@ namespace Servy.Core.DTOs
         public int? Priority { get; set; }
 
         /// <summary>
+        /// Logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00').
+        /// </summary>
+        [SqlColumn("TEXT")]
+        public string? CpuAffinity { get; set; }
+
+        /// <summary>
         /// Whether to enable the console user interface for the service.
         /// </summary>
         [SqlColumn("INTEGER")]
@@ -470,6 +476,7 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeParameters() => !string.IsNullOrWhiteSpace(Parameters);
         public bool ShouldSerializeStartupType() => StartupType.HasValue;
         public bool ShouldSerializePriority() => Priority.HasValue;
+        public bool ShouldSerializeCpuAffinity() => !string.IsNullOrWhiteSpace(CpuAffinity);
         public bool ShouldSerializeEnableConsoleUI() => EnableConsoleUI.HasValue;
         public bool ShouldSerializeStdoutPath() => !string.IsNullOrWhiteSpace(StdoutPath);
         public bool ShouldSerializeStderrPath() => !string.IsNullOrWhiteSpace(StderrPath);

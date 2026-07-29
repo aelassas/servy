@@ -36,6 +36,7 @@ $installParams = @{
     Params                    = "--param 2000"
     StartupType               = "Manual"
     Priority                  = "BelowNormal"
+    CpuAffinity               = "0x1"
     StartTimeout              = 15
     StopTimeout               = 10
     EnableConsoleUI           = $false

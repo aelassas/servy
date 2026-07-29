@@ -103,6 +103,7 @@ namespace Servy.CLI.Commands
                     RealArgs = opts.ProcessParameters ?? string.Empty,
                     StartType = startupType,
                     ProcessPriority = processPriority,
+                    CpuAffinity = opts.CpuAffinity,
                     EnableConsoleUI = opts.EnableConsoleUI,
                     StdoutPath = opts.StdoutPath,
                     StderrPath = opts.StderrPath,

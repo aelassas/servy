@@ -167,6 +167,21 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <inheritdoc/>
+        public IntPtr ProcessorAffinity
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.ProcessorAffinity;
+            }
+            set
+            {
+                ThrowIfDisposed();
+                _process.ProcessorAffinity = value;
+            }
+        }
+
+        /// <inheritdoc/>
         public StreamReader StandardOutput
         {
             get

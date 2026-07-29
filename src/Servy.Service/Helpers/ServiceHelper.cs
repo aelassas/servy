@@ -160,6 +160,7 @@ namespace Servy.Service.Helpers
                   $"- realExePath: {options.ExecutablePath}\n" +
                   $"- workingDir: {options.WorkingDirectory}\n" +
                   $"- priority: {options.Priority}\n" +
+                  $"- cpuAffinity: {options.CpuAffinity}\n" +
                   $"- startTimeoutInSeconds: {options.StartTimeoutInSeconds}\n" +
                   $"- stopTimeoutInSeconds: {options.StopTimeoutInSeconds}\n" +
                   $"- enableConsoleUI: {options.EnableConsoleUI}\n\n" +

@@ -780,6 +780,9 @@ function Install-ServyService {
     .PARAMETER Priority
         Process priority. Options: Idle, BelowNormal, Normal, AboveNormal, High, RealTime. Optional.
 
+    .PARAMETER CpuAffinity
+        Logical CPUs the process may run on (e.g., '0-3,8' or '0xFF00'). Optional.
+
     .PARAMETER EnableConsoleUI
         Switch to enable the console user interface for the service. When enabled, stdout/stderr redirection is disabled.
 
@@ -1021,6 +1024,8 @@ function Install-ServyService {
     [ValidateSet("Idle", "BelowNormal", "Normal", "AboveNormal", "High", "RealTime")]
     [string] $Priority,
 
+    [string] $CpuAffinity,
+
     [switch] $EnableConsoleUI,
 
     # Logging
@@ -1235,6 +1240,7 @@ function Install-ServyService {
       "--startupDir"                 = "StartupDir"
       "--startupType"                = "StartupType"
       "--priority"                   = "Priority"
+      "--cpuAffinity"                = "CpuAffinity"
       "--stdout"                     = "Stdout"
       "--stderr"                     = "Stderr"
       "--startTimeout"               = "StartTimeout"

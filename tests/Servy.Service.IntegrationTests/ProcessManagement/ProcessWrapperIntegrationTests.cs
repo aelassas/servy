@@ -83,6 +83,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
             Assert.Throws<ObjectDisposedException>(() => wrapper.StartTime);
             Assert.Throws<ObjectDisposedException>(() => wrapper.PriorityClass);
             Assert.Throws<ObjectDisposedException>(() => wrapper.PriorityClass = ProcessPriorityClass.Normal);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.ProcessorAffinity);
+            Assert.Throws<ObjectDisposedException>(() => wrapper.ProcessorAffinity = new IntPtr(21L));
             Assert.Throws<ObjectDisposedException>(() => wrapper.StandardOutput);
             Assert.Throws<ObjectDisposedException>(() => wrapper.StandardError);
             Assert.Throws<ObjectDisposedException>(() => wrapper.StartInfo);
@@ -165,6 +167,11 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.PriorityClass = ProcessPriorityClass.BelowNormal;
                 Assert.Equal(ProcessPriorityClass.BelowNormal, wrapper.UnderlyingProcess.PriorityClass);
 
+                // Act & Assert ProcessorAffinity
+                IntPtr cpuAffinity = new IntPtr(21L);
+                wrapper.ProcessorAffinity = cpuAffinity;
+                Assert.Equal(cpuAffinity, wrapper.UnderlyingProcess.ProcessorAffinity);
+
                 // Act & Assert EnableRaisingEvents
                 wrapper.EnableRaisingEvents = false;
                 Assert.False(wrapper.UnderlyingProcess.EnableRaisingEvents);
@@ -189,6 +196,25 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 // Assert
                 // Verify the getter correctly retrieves the active priority assigned by the OS scheduler
                 Assert.Equal(wrapper.UnderlyingProcess.PriorityClass, priority);
+
+                // Cleanup
+                wrapper.Kill(entireProcessTree: true);
+                wrapper.WaitForExit(1000);
+            }
+        }
+
+        [Fact]
+        public void ProcessorAffinity_Get_ReturnsValidProcessorAffinity()
+        {
+            // Arrange
+            using (var wrapper = CreateWrapper("powershell.exe", "-NoProfile -Command \"Start-Sleep -Seconds 2\""))
+            {
+                wrapper.Start();
+
+                // Assert
+                // Verify the wrapper property returns the native process affinity bitmask assigned by the OS scheduler
+                Assert.Equal(wrapper.UnderlyingProcess.ProcessorAffinity, wrapper.ProcessorAffinity);
+                Assert.NotEqual(IntPtr.Zero, wrapper.ProcessorAffinity);
 
                 // Cleanup
                 wrapper.Kill(entireProcessTree: true);
