@@ -134,7 +134,8 @@ jobs:
           Invoke-Git add setup/choco/servy/*
            
           # Check if there is actually anything to commit
-          if (-not (Invoke-Git status --porcelain setup/choco/servy/*)) {
+          $hasChanges = Invoke-Git status --porcelain setup/choco/servy/*
+          if (-not $hasChanges) {
               Write-Host "No changes to commit. Skipping push."
               exit 0
           }

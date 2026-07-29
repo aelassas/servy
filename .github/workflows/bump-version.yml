@@ -97,7 +97,8 @@ jobs:
               if ($LASTEXITCODE -ne 0) { throw "bump-version.ps1 failed with exit $LASTEXITCODE on branch $branch" }
 
               # Using porcelain check consistently to prevent silent skips across branches.
-              if (Invoke-Git status --porcelain) {
+              $hasChanges = Invoke-Git status --porcelain
+              if ($hasChanges) {
                   Invoke-Git add --all
                   Invoke-Git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
                   Invoke-Git push origin $branch

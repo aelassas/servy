@@ -178,7 +178,9 @@ jobs:
           # Commit and push back to aelassas/servy
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
-          if (Invoke-Git status --porcelain $manifestPath) {
+          
+          $hasChanges = Invoke-Git status --porcelain $manifestPath
+          if ($hasChanges) {
             Invoke-Git add $manifestPath
             Invoke-Git commit -m "chore: update setup/scoop/servy.json to version $env:VERSION"
             
@@ -236,7 +238,9 @@ jobs:
 
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
-          if (Invoke-Git status --porcelain $manifestPath) {
+          
+          $hasChanges = Invoke-Git status --porcelain $manifestPath
+          if ($hasChanges) {
             Invoke-Git add $manifestPath
             Invoke-Git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
             
@@ -351,7 +355,8 @@ jobs:
 
               Write-ScoopManifest -jsonObj $jsonObj -jsonPath $fullPath
             
-              if (Invoke-Git status --porcelain $manifestPath) {
+              $hasChanges = Invoke-Git status --porcelain $manifestPath
+              if ($hasChanges) {
                   Invoke-Git add $manifestPath
                   Invoke-Git commit -m "servy: Update to version $env:VERSION"
               }

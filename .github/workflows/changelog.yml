@@ -176,7 +176,8 @@ jobs:
           Invoke-Git add CHANGELOG.md
           
           # Scope the check to CHANGELOG.md so unrelated working-tree changes don't trigger a commit
-          if (-not (Invoke-Git status --porcelain CHANGELOG.md)) {
+          $hasChanges = Invoke-Git status --porcelain CHANGELOG.md
+          if (-not $hasChanges) {
               Write-Host "No changes detected in CHANGELOG.md. Nothing to update."
               exit 0
           }
