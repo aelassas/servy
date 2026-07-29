@@ -33,6 +33,7 @@ jobs:
             upload_coverage: false
 
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
 
     env:
       REPORTGENERATOR_VERSION: "5.5.10"

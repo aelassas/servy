@@ -63,6 +63,7 @@ function Get-FileEncoding {
         return [System.Text.Encoding]::BigEndianUnicode
     }
 
-    # Default: UTF-8 without BOM (Standard for modern .NET and Git)
-    return New-Object System.Text.UTF8Encoding($false)
+    # Default: UTF-8 without BOM; throwOnInvalidBytes=true so a legacy-ANSI file
+    # fails loudly instead of being silently rewritten with U+FFFD replacements
+    return New-Object System.Text.UTF8Encoding($false, $true)
 }

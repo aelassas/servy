@@ -126,6 +126,13 @@ namespace Servy.Service.ProcessManagement
                         // Queue the validated child for the next level of BFS
                         queue.Enqueue((childPid, validChild.StartTime));
                     }
+                    else if (byParent.ContainsKey(childPid))
+                    {
+                        // The node itself could not be resolved (exited between snapshot and lookup, access
+                        // denied, or rejected as a PID reuse) but the snapshot still holds its subtree.
+                        // Keep walking with the parent's start time so grandchildren are not silently dropped.
+                        queue.Enqueue((childPid, current.StartTime));
+                    }
                 }
             }
 
@@ -149,8 +156,8 @@ namespace Servy.Service.ProcessManagement
                 var startUtc = child.StartTime.ToUniversalTime();
 
                 // Legitimate child must:
-                //   (a) have started no earlier than the current parent level, AND
-                //   (b) have started no later than when we observed it in the snapshot.
+                //    (a) have started no earlier than the current parent level, AND
+                //    (b) have started no later than when we observed it in the snapshot.
                 bool startedAfterParent = startUtc >= parentStartTime.ToUniversalTime().AddSeconds(-AppConfig.PidReuseToleranceSeconds);
                 bool startedBeforeSnapshot = startUtc <= snapshotTime.AddSeconds(AppConfig.PidReuseToleranceSeconds);
 

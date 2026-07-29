@@ -42,6 +42,7 @@ permissions:
 jobs:
   check-release-workflows:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Check release workflows status
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd #v8.0.0

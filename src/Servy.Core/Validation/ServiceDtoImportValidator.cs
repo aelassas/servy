@@ -51,6 +51,7 @@ namespace Servy.Core.Validation
             if (string.IsNullOrWhiteSpace(content))
             {
                 errorMessage = string.Format(Strings.Msg_ImportInputEmptyOrWhitespace, FormatName);
+                Logger.Warn($"{FormatName} Import Blocked: input was empty or whitespace.");
                 return false;
             }
 
@@ -76,19 +77,20 @@ namespace Servy.Core.Validation
             catch (Exception ex) when (ex is TException || (ex is InvalidOperationException && ex.InnerException is TException))
             {
                 errorMessage = string.Format(Strings.Msg_ImportInvalidStructure, FormatName, ex.Message);
-                Logger.Error($"{FormatName} parsing error during import", ex);
+                Logger.Error($"{FormatName} import rejected: malformed document structure", ex);
                 return false;
             }
             catch (Exception ex) // Catch-all for unexpected parser exceptions
             {
                 errorMessage = string.Format(Strings.Msg_ImportStructureError, FormatName, ex.Message);
-                Logger.Error($"{FormatName} parsing error during import", ex);
+                Logger.Error($"{FormatName} import failed with an unexpected parser exception ({ex.GetType().Name})", ex);
                 return false;
             }
 
             if (dto == null)
             {
                 errorMessage = string.Format(Strings.Msg_ImportEmptyDefinition, FormatName);
+                Logger.Warn($"{FormatName} Import Blocked: parser returned no service definition.");
                 return false;
             }
 

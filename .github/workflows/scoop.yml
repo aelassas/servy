@@ -37,6 +37,7 @@ permissions:
 jobs:
   scoop:
     runs-on: windows-latest
+    timeout-minutes: 15
     permissions:
       contents: write # Needed here to push commits back
       
@@ -136,11 +137,11 @@ jobs:
           Write-ScoopManifest -jsonObj $jsonObj -jsonPath (Resolve-Path $manifestPath)
 
           # Commit and push back to aelassas/servy
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if (git status --porcelain $manifestPath) {
-            git add $manifestPath
-            git commit -m "chore: update setup/scoop/servy.json to version $env:VERSION"
+          Invoke-Git config user.name "github-actions[bot]"
+          Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
+          if (Invoke-Git status --porcelain $manifestPath) {
+            Invoke-Git add $manifestPath
+            Invoke-Git commit -m "chore: update setup/scoop/servy.json to version $env:VERSION"
             
             # Env vars are strings; -MaxRetries is [int]
             $maxRetries = [int]$env:MAX_RETRIES
@@ -158,10 +159,10 @@ jobs:
         run: |
           . "$env:RUNNER_TEMP\git-helpers.ps1"
           . "$env:RUNNER_TEMP\ScoopUtils.ps1"
-          git clone https://github.com/aelassas/scoop-bucket.git scoop-bucket
+          Invoke-Git clone https://github.com/aelassas/scoop-bucket.git scoop-bucket
           Set-Location scoop-bucket
            
-          git config url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
+          Invoke-Git config url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
            
           $manifestPath = "servy.json"
           $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
@@ -171,11 +172,11 @@ jobs:
            
           Write-ScoopManifest -jsonObj $jsonObj -jsonPath (Join-Path (Get-Location) $manifestPath)
 
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if (git status --porcelain $manifestPath) {
-            git add $manifestPath
-            git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
+          Invoke-Git config user.name "github-actions[bot]"
+          Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
+          if (Invoke-Git status --porcelain $manifestPath) {
+            Invoke-Git add $manifestPath
+            Invoke-Git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
             
             # Env vars are strings; -MaxRetries is [int]
             $maxRetries = [int]$env:MAX_RETRIES
@@ -191,11 +192,12 @@ jobs:
           GH_PAT: ${{ secrets.PAT }}    # Used for Git URL injection
           GH_TOKEN: ${{ secrets.PAT }}  # Used for GH CLI authentication
         run: |
+          . "$env:RUNNER_TEMP\git-helpers.ps1"
           . "$env:RUNNER_TEMP\ScoopUtils.ps1"
-          git clone https://github.com/aelassas/Extras.git extras
+          Invoke-Git clone https://github.com/aelassas/Extras.git extras
           Set-Location extras
 
-          git config url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
+          Invoke-Git config url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
           $branchName = "update-servy-$env:VERSION"
 
           # Check for an existing PR (merged or open) for this version's branch so we don't recreate it
@@ -213,20 +215,20 @@ jobs:
               }
           }
 
-          git remote add upstream https://github.com/ScoopInstaller/Extras.git
-          git fetch upstream master
-          git checkout -B master upstream/master
+          Invoke-Git remote add upstream https://github.com/ScoopInstaller/Extras.git
+          Invoke-Git fetch upstream master
+          Invoke-Git checkout -B master upstream/master
            
-          if (git rev-parse --verify --quiet "refs/heads/$branchName" 2>$null) {
-              git branch -D $branchName
+          if (Invoke-Git rev-parse --verify --quiet "refs/heads/$branchName" 2>$null) {
+              Invoke-Git branch -D $branchName
           }
-          git checkout -b $branchName
+          Invoke-Git checkout -b $branchName
            
           $manifestPath = "bucket/servy.json"
           $fullPath = Join-Path (Get-Location) $manifestPath
           $installerUrl = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          Invoke-Git config user.name "github-actions[bot]"
+          Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
 
           if (-Not (Test-Path $manifestPath)) {
               # Source canonical metadata fields directly from the updated reference file in the workspace
@@ -252,8 +254,8 @@ jobs:
                   autoupdate = $canonicalObj.autoupdate
               }
               Write-ScoopManifest -jsonObj $jsonObj -jsonPath $fullPath
-              git add $manifestPath
-              git commit -m "servy: Update to version $env:VERSION"
+              Invoke-Git add $manifestPath
+              Invoke-Git commit -m "servy: Update to version $env:VERSION"
           } else {
               # Update existing manifest
               $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
@@ -263,27 +265,28 @@ jobs:
 
               Write-ScoopManifest -jsonObj $jsonObj -jsonPath $fullPath
            
-              if (git status --porcelain $manifestPath) {
-                  git add $manifestPath
-                  git commit -m "servy: Update to version $env:VERSION"
+              if (Invoke-Git status --porcelain $manifestPath) {
+                  Invoke-Git add $manifestPath
+                  Invoke-Git commit -m "servy: Update to version $env:VERSION"
               }
           }
-          git push origin $branchName --force-with-lease
+          Invoke-Git push origin $branchName --force-with-lease
           if ($LASTEXITCODE -ne 0) { throw "git push failed (exit $LASTEXITCODE)" }
          
-      - name: Open Pull Request in ScoopInstaller/Extras
-        if: env.RUN_EXTRAS_PR == 'true' && env.SKIP_PR_CREATE != 'true'
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.PAT }}
-        run: |
-          Set-Location extras
-          $branchExists = git ls-remote --heads origin "update-servy-$env:VERSION"
-          if ($branchExists) {
-              gh pr create `
-                --title "servy: Update to version $env:VERSION" `
-                --body "Update Servy to version $env:VERSION." `
-                --base master `
-                --head "aelassas:update-servy-$env:VERSION" `
-                --repo ScoopInstaller/Extras
-          }
+          - name: Open Pull Request in ScoopInstaller/Extras
+          if: env.RUN_EXTRAS_PR == 'true' && env.SKIP_PR_CREATE != 'true'
+          shell: pwsh
+          env:
+            GH_TOKEN: ${{ secrets.PAT }}
+          run: |
+            Set-Location extras
+            $branchExists = git ls-remote --heads origin "update-servy-$env:VERSION"
+            if ($LASTEXITCODE -ne 0) { throw "git ls-remote failed with exit code $LASTEXITCODE" }
+            if ($branchExists) {
+                gh pr create `
+                  --title "servy: Update to version $env:VERSION" `
+                  --body "Update Servy to version $env:VERSION." `
+                  --base master `
+                  --head "aelassas:update-servy-$env:VERSION" `
+                  --repo ScoopInstaller/Extras
+            }

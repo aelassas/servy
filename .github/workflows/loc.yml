@@ -26,6 +26,7 @@ env:
 jobs:
   loc_job:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     name: Generate LoC badges
 
     steps:
@@ -92,7 +93,7 @@ jobs:
           echo "URL: ${URL}"
 
           # Fail step on HTTP errors (-f) and show errors (-S) to prevent publishing garbage
-          curl -fsS -o ./output/loc-total.svg "${URL}"
+          curl -fsS --retry 3 --retry-delay 3 --retry-all-errors -o ./output/loc-total.svg "${URL}"
 
       # ----------------------------
       # Summary

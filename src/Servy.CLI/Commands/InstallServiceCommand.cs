@@ -197,10 +197,34 @@ namespace Servy.CLI.Commands
         /// <summary>
         /// Helper method to securely resolve sensitive fields by prioritizing environment variables over CLI options.
         /// </summary>
+        /// <param name="optionValue">The explicit option value passed via the command-line interface.</param>
+        /// <param name="envVarName">The name of the environment variable to inspect for an override value.</param>
+        /// <returns>
+        /// The non-whitespace environment variable value if set; otherwise, falls back to <paramref name="optionValue"/>.
+        /// </returns>
         private static string? GetSecureValue(string? optionValue, string envVarName)
         {
             var envValue = Environment.GetEnvironmentVariable(envVarName);
-            return !string.IsNullOrEmpty(envValue) ? envValue : optionValue;
+
+            // If the environment variable exists but is only whitespace, warn and ignore it
+            if (envValue != null && string.IsNullOrWhiteSpace(envValue))
+            {
+                Logger.Warn($"Environment variable '{envVarName}' contains only whitespace and will be ignored.");
+                return optionValue;
+            }
+
+            if (!string.IsNullOrEmpty(envValue))
+            {
+                if (!string.IsNullOrEmpty(optionValue) && !string.Equals(envValue, optionValue, StringComparison.Ordinal))
+                {
+                    Logger.Warn($"Environment variable '{envVarName}' is overriding the explicitly provided command-line option.");
+                }
+
+                Logger.Info($"Using value from environment variable '{envVarName}'.");
+                return envValue;
+            }
+
+            return optionValue;
         }
     }
 }

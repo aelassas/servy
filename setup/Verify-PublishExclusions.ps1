@@ -11,15 +11,16 @@
 $ScriptDir = Split-Path -Path $MyInvocation.MyCommand.Definition -Parent
 
 Push-Location -Path $ScriptDir
-try {
-    # ---------------------------------------------------------------------
-    # SETUP TEMPORARY SANDBOX ENVIRONMENT
-    # ---------------------------------------------------------------------
-    $SandboxRoot = Join-Path $ScriptDir "PublishTestSandbox"
-    $sourcePath  = Join-Path $SandboxRoot "setup_taskschd"
-    $pkg         = Join-Path $SandboxRoot "staging_out"
-    $destPath    = Join-Path $pkg "taskschd"
 
+# ---------------------------------------------------------------------
+# SETUP TEMPORARY SANDBOX ENVIRONMENT
+# ---------------------------------------------------------------------
+$SandboxRoot = Join-Path $ScriptDir "PublishTestSandbox"
+$sourcePath  = Join-Path $SandboxRoot "setup_taskschd"
+$pkg         = Join-Path $SandboxRoot "staging_out"
+$destPath    = Join-Path $pkg "taskschd"
+
+try {
     if (Test-Path $SandboxRoot) { Remove-Item -Path $SandboxRoot -Recurse -Force -ErrorAction SilentlyContinue }
 
     New-Item -Path $sourcePath -ItemType Directory -Force | Out-Null
@@ -119,9 +120,9 @@ try {
         Write-Host "EXCLUSION FAILURES DETECTED: $Passed Passed, $Failed Failed." -ForegroundColor Red
     }
 
-    if (Test-Path $SandboxRoot) { Remove-Item -Path $SandboxRoot -Recurse -Force | Out-Null }
     Write-Host "==========================================================" -ForegroundColor Cyan
 }
 finally {
+    if (Test-Path $SandboxRoot) { Remove-Item -Path $SandboxRoot -Recurse -Force | Out-Null }
     Pop-Location
 }

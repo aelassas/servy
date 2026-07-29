@@ -32,6 +32,7 @@ permissions:
 jobs:
   bump-version:
     runs-on: windows-latest
+    timeout-minutes: 15
     # Logic: Only run if manually triggered OR if the automated upstream 'choco' run succeeded.
     if: >
       github.event_name == 'workflow_dispatch' || 
@@ -42,9 +43,11 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
         with:
           fetch-depth: 0
+
       # 1a. Write shared git helper to disk for use in subsequent steps
       - name: Initialize Git Script Helpers
         uses: ./.github/actions/setup-git-helpers
+        
       # 2. Determine the tag/version to use, support multiple trigger sources via composite action
       - name: Set version vars
         uses: ./.github/actions/resolve-version
@@ -94,7 +97,7 @@ jobs:
               if ($LASTEXITCODE -ne 0) { throw "bump-version.ps1 failed with exit $LASTEXITCODE on branch $branch" }
 
               # Using porcelain check consistently to prevent silent skips across branches.
-              if (git status --porcelain) {
+              if (Invoke-Git status --porcelain) {
                   Invoke-Git add --all
                   Invoke-Git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
                   Invoke-Git push origin $branch

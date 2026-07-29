@@ -43,6 +43,7 @@ permissions:
 jobs:
   sbom:
     runs-on: windows-latest
+    timeout-minutes: 20
     env:
       # Mapping the input to an environment variable prevents Expression Injection.
       # The shell will now treat this as a literal string.

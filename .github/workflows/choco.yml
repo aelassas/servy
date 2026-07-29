@@ -35,6 +35,7 @@ permissions:
 jobs:
   choco:
     runs-on: windows-latest
+    timeout-minutes: 15
     permissions:
       contents: write # Needed here to push commits back        
     env:
@@ -44,6 +45,7 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
+        
       - name: Initialize Git Script Helpers
         uses: ./.github/actions/setup-git-helpers
 
@@ -83,9 +85,17 @@ jobs:
           $file = "setup/choco/servy/servy.nuspec"
           $content = Get-Content $file -Raw
 
-          $content = $content -replace '<version>.*?</version>', "<version>${env:VERSION}.0</version>"
-          $content = $content -replace '(?s)<releaseNotes>.*?</releaseNotes>', "<releaseNotes>Release for version ${env:VERSION}.0. See https://github.com/aelassas/servy/releases/tag/${env:TAG}</releaseNotes>"
-          $content = $content -replace '<iconUrl>.*?</iconUrl>', "<iconUrl>https://cdn.jsdelivr.net/gh/aelassas/servy@${env:TAG}/src/Servy/servy.ico</iconUrl>"
+          $versionPattern = '<version>.*?</version>'
+          if (-not [regex]::IsMatch($content, $versionPattern)) { throw "Pattern '$versionPattern' not found in $file - aborting to avoid publishing stale version." }
+          $content = $content -replace $versionPattern, "<version>${env:VERSION}.0</version>"
+
+          $notesPattern = '(?s)<releaseNotes>.*?</releaseNotes>'
+          if (-not [regex]::IsMatch($content, $notesPattern)) { throw "Pattern '$notesPattern' not found in $file - aborting to avoid publishing stale release notes." }
+          $content = $content -replace $notesPattern, "<releaseNotes>Release for version ${env:VERSION}.0. See https://github.com/aelassas/servy/releases/tag/${env:TAG}</releaseNotes>"
+
+          $iconPattern = '<iconUrl>.*?</iconUrl>'
+          if (-not [regex]::IsMatch($content, $iconPattern)) { throw "Pattern '$iconPattern' not found in $file - aborting to avoid publishing stale iconUrl." }
+          $content = $content -replace $iconPattern, "<iconUrl>https://cdn.jsdelivr.net/gh/aelassas/servy@${env:TAG}/src/Servy/servy.ico</iconUrl>"
 
           # Write without adding extra newline
           [System.IO.File]::WriteAllText($file, $content)
@@ -103,9 +113,14 @@ jobs:
           Write-Host "URL: $urlReplacement"
           Write-Host "HASH: $checksumReplacement"
 
-          # Use [regex]::Replace to handle $ literally
-          $content = [regex]::Replace($content, [regex]::Escape('$url64') + '\s*=.*', $urlReplacement)
-          $content = [regex]::Replace($content, [regex]::Escape('$checksum64') + '\s*=.*', $checksumReplacement)
+          # Assert match before replacing to avoid silent no-op failures
+          $urlPattern = [regex]::Escape('$url64') + '\s*=.*'
+          if (-not [regex]::IsMatch($content, $urlPattern)) { throw "Pattern '$urlPattern' not found in $file - aborting to avoid publishing a stale url64." }
+          $content = [regex]::Replace($content, $urlPattern, $urlReplacement)
+
+          $checksumPattern = [regex]::Escape('$checksum64') + '\s*=.*'
+          if (-not [regex]::IsMatch($content, $checksumPattern)) { throw "Pattern '$checksumPattern' not found in $file - aborting to avoid publishing a stale checksum64." }
+          $content = [regex]::Replace($content, $checksumPattern, $checksumReplacement)
 
           # Write content back without extra newline
           [System.IO.File]::WriteAllText($file, $content)
@@ -114,17 +129,17 @@ jobs:
         shell: pwsh
         run: |
           . "$env:RUNNER_TEMP\git-helpers.ps1"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add setup/choco/servy/*
+          Invoke-Git config user.name "github-actions[bot]"
+          Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
+          Invoke-Git add setup/choco/servy/*
            
           # Check if there is actually anything to commit
-          if (-not (git status --porcelain setup/choco/servy/*)) {
+          if (-not (Invoke-Git status --porcelain setup/choco/servy/*)) {
               Write-Host "No changes to commit. Skipping push."
               exit 0
           }
 
-          git commit -m "chore(choco): update package for version ${env:VERSION}"
+          Invoke-Git commit -m "chore(choco): update package for version ${env:VERSION}"
 
           # Env vars are strings; -MaxRetries is [int]
           $maxRetries = [int]$env:MAX_RETRIES

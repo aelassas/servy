@@ -26,6 +26,7 @@ permissions:
 jobs:
   publish:
     runs-on: windows-latest
+    timeout-minutes: 20
     steps:
       - name: Resolve release version
         uses: ./.github/actions/resolve-version

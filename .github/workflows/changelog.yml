@@ -37,6 +37,7 @@ permissions:
 jobs:
   changelog:
     runs-on: windows-latest
+    timeout-minutes: 15
     # Logic: Only run if manually triggered OR if the automated upstream 'bump-version' run succeeded.
     if: >
       github.event_name == 'workflow_dispatch' || 
@@ -168,18 +169,18 @@ jobs:
         shell: pwsh
         run: |
           . "$env:RUNNER_TEMP\git-helpers.ps1"
-          git config core.autocrlf false
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          Invoke-Git config core.autocrlf false
+          Invoke-Git config user.name "github-actions[bot]"
+          Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add CHANGELOG.md
+          Invoke-Git add CHANGELOG.md
           
           # Scope the check to CHANGELOG.md so unrelated working-tree changes don't trigger a commit
-          if (-not (git status --porcelain CHANGELOG.md)) {
+          if (-not (Invoke-Git status --porcelain CHANGELOG.md)) {
               Write-Host "No changes detected in CHANGELOG.md. Nothing to update."
               exit 0
           }
-          git commit -m "docs: auto-update CHANGELOG.md"
+          Invoke-Git commit -m "docs: auto-update CHANGELOG.md"
 
           # Env vars are strings; -MaxRetries is [int]
           $maxRetries = [int]$env:MAX_RETRIES

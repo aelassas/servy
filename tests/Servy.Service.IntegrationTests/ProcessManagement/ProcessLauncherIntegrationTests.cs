@@ -69,7 +69,7 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
         [Theory]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         [InlineData(null)]
         public void Start_EmptyExecutable_ThrowsArgumentException(string? exePath)
         {
@@ -91,6 +91,20 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             // Assert
             Assert.Contains("Synchronous launch requires TimeoutMs > 0", ex.Message);
+        }
+
+        [Fact]
+        public void Start_SynchronousWithZeroWaitChunk_ThrowsArgumentException()
+        {
+            // Arrange
+            var options = CreateOptions("powershell.exe", "-NoProfile -Command \"exit 0\"", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
+            options.WaitChunkMs = 0; // Violate rule requirement: WaitChunkMs <= 0
+
+            // Act
+            var ex = Assert.Throws<ArgumentException>(() => ProcessLauncher.Start(options, _realFactory, _logger));
+
+            // Assert
+            Assert.Contains("Synchronous launch requires WaitChunkMs > 0", ex.Message);
         }
 
         #endregion
@@ -189,26 +203,6 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
 
             // Symmetric Exclusion Check: Verifies that the warning configuration didn't leak down or duplicate onto the Error channel
             Assert.DoesNotContain(warnLogger.Errors, m => m.Contains("timed out after"));
-        }
-
-        [Fact]
-        public void WaitForExitWithHeartbeat_InvalidWaitChunk_ThrowsArgumentException()
-        {
-            // Arrange
-            var options = CreateOptions("powershell.exe", "-NoProfile", fireAndForget: false, timeoutMs: TestTimeouts.ProcessLauncherTimeoutMs);
-            options.WaitChunkMs = 0; // Violate rule requirement: WaitChunkMs <= 0
-
-            using (var mockWrapper = new MockFailingProcessWrapper())
-            {
-                // Act
-                var argumentException = Assert.Throws<ArgumentException>(() =>
-                          TestReflection.InvokeNonPublicStatic(typeof(ProcessLauncher), "WaitForExitWithHeartbeat", mockWrapper, options, _logger));
-
-                // Assert
-                Assert.NotNull(argumentException);
-                Assert.IsType<ArgumentException>(argumentException);
-                Assert.Contains("Synchronous launch requires WaitChunkMs > 0", argumentException.Message);
-            }
         }
 
         #endregion
