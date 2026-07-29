@@ -68,5 +68,4 @@ jobs:
             --version $env:VERSION `
             --urls $env:INSTALLER_URLS.Split(' ') `
             --submit `
-            --force `
             --fork-owner aelassas
