@@ -167,8 +167,8 @@ namespace Servy.Service.IntegrationTests.ProcessManagement
                 wrapper.PriorityClass = ProcessPriorityClass.BelowNormal;
                 Assert.Equal(ProcessPriorityClass.BelowNormal, wrapper.UnderlyingProcess.PriorityClass);
 
-                // Act & Assert ProcessorAffinity
-                IntPtr cpuAffinity = new IntPtr(21L);
+                // Act & Assert ProcessorAffinity (Use CPU 0 / bitmask 1 to guarantee validity across all CI core counts)
+                IntPtr cpuAffinity = new IntPtr(1L);
                 wrapper.ProcessorAffinity = cpuAffinity;
                 Assert.Equal(cpuAffinity, wrapper.UnderlyingProcess.ProcessorAffinity);
 
