@@ -846,6 +846,13 @@ namespace Servy.Manager.Services
 
                 if (!await _serviceConfigurationValidator.ValidateAsync(dto, importMode: true, cancellationToken: cancellationToken)) return;
 
+                var existing = await _serviceRepository.GetByNameAsync(dto.Name, decrypt: false, cancellationToken);
+                if (existing != null)
+                {
+                    var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ImportServiceConfirmation, UiAppConfig.Caption);
+                    if (!confirm) return;
+                }
+
                 var res = await ExecuteLockedAsync(dto.Name, () =>
                     _serviceRepository.UpsertAsync(
                         dto,
