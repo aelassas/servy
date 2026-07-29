@@ -1,5 +1,4 @@
-﻿using Servy.Core.Config;
-using Servy.Core.Enums;
+﻿using Servy.Core.Enums;
 
 namespace Servy.Models
 {
@@ -138,12 +137,12 @@ namespace Servy.Models
         public string? HeartbeatUrl { get; set; }
 
         /// <summary>
-        /// Gets or sets the maximum time context in seconds allowed for the external heartbeat URL request to complete before cancellation.
+        /// Gets or sets the maximum time in seconds allowed for the heartbeat URL request to complete before it is cancelled.
         /// </summary>
         public string? HeartbeatUrlTimeoutSeconds { get; set; }
 
         /// <summary>
-        /// Gets or sets a flag indicating whether extended operational lifecycle state tracking flags are appended to the heartbeat base URL destination.
+        /// Gets or sets a value indicating whether start/fail status suffixes are appended to the heartbeat URL.
         /// </summary>
         public bool EnableHeartbeatUrlFlags { get; set; }
 
