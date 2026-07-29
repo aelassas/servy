@@ -1,5 +1,6 @@
 ﻿using Servy.CLI.Helpers;
 using Servy.Testing;
+using System.ComponentModel.DataAnnotations;
 
 namespace Servy.CLI.UnitTests.Helpers
 {
@@ -7,6 +8,13 @@ namespace Servy.CLI.UnitTests.Helpers
     public class ConsoleHelperTests
     {
         private const string RedirectedOverrideFieldName = "_isOutputRedirectedOverride";
+
+        [Fact]
+        public async Task RunWithLoadingAnimation_NullAction()
+        {
+            // Arrange, Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => ConsoleHelper.RunWithLoadingAnimation(null!));
+        }
 
         /// <summary>
         /// Covers the branch where Console.IsOutputRedirected is true.

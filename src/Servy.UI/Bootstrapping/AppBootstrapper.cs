@@ -494,6 +494,7 @@ namespace Servy.UI.Bootstrapping
                 }
                 catch (TaskCanceledException)
                 {
+                    CleanupAvailabilityWatcher();
                     return;
                 }
                 catch (Exception ex)
@@ -501,7 +502,7 @@ namespace Servy.UI.Bootstrapping
                     Logger.Error($"Availability monitor cycle failed for {fileName}; restarting after delay", ex);
                     try { CleanupAvailabilityWatcher(); } catch { /* ignore */ }
                     try { await Task.Delay(AppConfig.AppAvailabilityPollIntervalMs, _appLifetimeCts.Token); }
-                    catch (TaskCanceledException) { return; }
+                    catch (TaskCanceledException) { CleanupAvailabilityWatcher(); return; }
                 }
             }
         }
@@ -557,8 +558,11 @@ namespace Servy.UI.Bootstrapping
         /// <param name="e">The <see cref="ExitEventArgs"/> containing the event data.</param>
         public void OnExit(ExitEventArgs e)
         {
-            TryRun(CleanupAvailabilityWatcher, nameof(CleanupAvailabilityWatcher));
+            // Stop the monitor first - it re-creates and re-arms _availabilityWatcher on every
+            // Phase 2 pass, so cleaning up before cancelling lets it attach a fresh watcher
+            // that nothing will ever dispose.
             TryRun(() => _appLifetimeCts.Cancel(), nameof(_appLifetimeCts));
+            TryRun(CleanupAvailabilityWatcher, nameof(CleanupAvailabilityWatcher));
             // Do NOT dispose _appLifetimeCts here - the async Task monitor (StartAvailabilityMonitorAsync)
             // still accesses .Token. Let the GC reclaim it after the monitor unwinds.
 

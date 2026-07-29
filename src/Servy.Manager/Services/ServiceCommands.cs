@@ -259,6 +259,12 @@ namespace Servy.Manager.Services
 
                 using (StartProcess(psi)) { }
             }
+            catch (OperationCanceledException)
+            {
+                string serviceName = service?.Name ?? "<unknown>";
+                Logger.Debug($"Operation on {serviceName} was cancelled.");
+                throw;
+            }
             catch (Exception ex)
             {
                 string serviceName = service?.Name ?? "<unknown>";
@@ -319,6 +325,12 @@ namespace Servy.Manager.Services
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceInstalled, UiAppConfig.Caption);
                     return true;
                 }
+                catch (OperationCanceledException)
+                {
+                    string serviceName = service?.Name ?? "<unknown>";
+                    Logger.Debug($"Operation on {serviceName} was cancelled.");
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     Logger.Error($"Failed to install {service.Name}.", ex);
@@ -360,6 +372,12 @@ namespace Servy.Manager.Services
 
                     RemoveService(service);
                     return true;
+                }
+                catch (OperationCanceledException)
+                {
+                    string serviceName = service?.Name ?? "<unknown>";
+                    Logger.Debug($"Operation on {serviceName} was cancelled.");
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -408,6 +426,12 @@ namespace Servy.Manager.Services
                     }
 
                     return success;
+                }
+                catch (OperationCanceledException)
+                {
+                    string serviceName = service?.Name ?? "<unknown>";
+                    Logger.Debug($"Operation on {serviceName} was cancelled.");
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -519,6 +543,12 @@ namespace Servy.Manager.Services
                     Logger.Warn($"Failed to copy PID {pidValue} for {serviceName} after {AppConfig.ClipboardComMaxRetries} attempts.");
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_PidCopyFailed, UiAppConfig.Caption);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                string serviceName = service?.Name ?? "<unknown>";
+                Logger.Debug($"Operation on {serviceName} was cancelled.");
+                throw;
             }
             catch (Exception ex)
             {
@@ -646,6 +676,12 @@ namespace Servy.Manager.Services
                         }
                     }
                 }
+                catch (OperationCanceledException)
+                {
+                    string serviceName = service?.Name ?? "<unknown>";
+                    Logger.Debug($"Operation on {serviceName} was cancelled.");
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     Logger.Error($"Failed to execute operation on {service.Name}.", ex);
@@ -730,6 +766,12 @@ namespace Servy.Manager.Services
                 Logger.Info($"Service configuration exported to {formatName} at: {path}");
                 await _messageBoxService.ShowInfoAsync(successMessage, UiAppConfig.Caption);
             }
+            catch (OperationCanceledException)
+            {
+                string serviceName = service?.Name ?? "<unknown>";
+                Logger.Debug($"Operation on {serviceName} was cancelled.");
+                throw;
+            }
             catch (Exception ex)
             {
                 Logger.Error($"Failed to export {formatName} of {service?.Name}.", ex);
@@ -779,9 +821,12 @@ namespace Servy.Manager.Services
 
                 // Defense-in-depth: Run the security guards FIRST before touching the disk via size validation
                 var guardResult = ImportGuard.ValidatePathSecurityAndSize(path, out string? content);
-                if (!guardResult.IsValid || guardResult.ValidPath == null || content == null)
+                if (!guardResult.IsValid || content == null)
                 {
-                    await _messageBoxService.ShowErrorAsync(guardResult.ErrorMessage, UiAppConfig.Caption);
+                    var msg = !string.IsNullOrWhiteSpace(guardResult.ErrorMessage)
+                        ? guardResult.ErrorMessage
+                        : Strings.Msg_UnexpectedError;
+                    await _messageBoxService.ShowErrorAsync(msg, UiAppConfig.Caption);
                     return;
                 }
 
@@ -839,7 +884,8 @@ namespace Servy.Manager.Services
         private void RemoveService(Service? service)
         {
             if (service == null) throw new ArgumentNullException(nameof(service));
-            _removeServiceCallback.Invoke(service.Name!);
+            if (string.IsNullOrWhiteSpace(service.Name)) throw new ArgumentException("Service name is required.", nameof(service));
+            _removeServiceCallback.Invoke(service.Name);
         }
 
         /// <summary>

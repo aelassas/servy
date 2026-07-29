@@ -1895,8 +1895,10 @@ namespace Servy.Service
                 }
                 finally
                 {
-                    // ALWAYS release the semaphore in a finally block
-                    _healthCheckSemaphore.Release();
+                    // ALWAYS release the semaphore in a finally block.
+                    // Teardown may have disposed it while we were inside the guarded region.
+                    try { _healthCheckSemaphore.Release(); }
+                    catch (ObjectDisposedException) { /* Ignored during teardown */ }
                 }
 
                 // Safely parse heartbeat metadata without NullReferenceException exposures
@@ -2121,7 +2123,8 @@ namespace Servy.Service
                 }
                 finally
                 {
-                    _healthCheckSemaphore.Release();
+                    try { _healthCheckSemaphore.Release(); }
+                    catch (ObjectDisposedException) { /* Ignored during teardown */ }
                 }
 
                 // Actions outside the critical section

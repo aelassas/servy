@@ -1,4 +1,5 @@
-﻿using Servy.Core.Logging;
+﻿using Microsoft.Extensions.Configuration;
+using Servy.Core.Logging;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
@@ -211,6 +212,36 @@ namespace Servy.Core.Helpers
 
             // 4. Log the failure and return the default value to prevent service interruption
             Logger.Warn($"Undefined or malformed enum value '{value}' for {enumType.Name} ({fieldName}). Falling back to default: {defaultValue}.");
+            return defaultValue;
+        }
+
+        /// <summary>
+        /// Extracts an integer from configuration with bounds checking.
+        /// </summary>
+        /// <param name="configuration">The configuration provider to read from.</param>
+        /// <param name="key">The configuration key to retrieve.</param>
+        /// <param name="defaultValue">The fallback value to return if parsing fails or the value is out of bounds.</param>
+        /// <param name="min">The minimum acceptable integer value inclusive.</param>
+        /// <param name="max">The maximum acceptable integer value inclusive.</param>
+        /// <returns>The parsed integer within [<paramref name="min"/>, <paramref name="max"/>], or <paramref name="defaultValue"/> if invalid or missing.</returns>
+        public static int GetConfigInt(IConfiguration configuration, string key, int defaultValue, int min, int max)
+        {
+            string? value = configuration[key];
+
+            if (int.TryParse(value, out var parsedValue))
+            {
+                if (parsedValue >= min && parsedValue <= max)
+                {
+                    return parsedValue;
+                }
+
+                Logger.Warn($"Configuration value '{parsedValue}' for '{key}' is out of the safe range [{min}-{max}]. Falling back to default: {defaultValue}.");
+            }
+            else if (value != null)
+            {
+                Logger.Warn($"Invalid configuration entry '{value}' for '{key}'. Using default: {defaultValue}.");
+            }
+
             return defaultValue;
         }
     }

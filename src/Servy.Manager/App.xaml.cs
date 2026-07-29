@@ -257,70 +257,45 @@ namespace Servy.Manager
                 CustomConfigAction = (config) =>
                 {
                     // Extract Manager-specific polling and refresh intervals with strict centralized bounds-checking
-                    RefreshIntervalInSeconds = GetConfigInt(config, "RefreshIntervalInSeconds",
+                    RefreshIntervalInSeconds = ConfigParser.GetConfigInt(config, "RefreshIntervalInSeconds",
                         AppConfig.DefaultRefreshIntervalInSeconds,
                         AppConfig.MinRefreshIntervalInSeconds,
                         AppConfig.MaxRefreshIntervalInSeconds);
 
-                    PerformanceRefreshIntervalInMs = GetConfigInt(config, "PerformanceRefreshIntervalInMs",
+                    PerformanceRefreshIntervalInMs = ConfigParser.GetConfigInt(config, "PerformanceRefreshIntervalInMs",
                         AppConfig.DefaultPerformanceRefreshIntervalInMs,
                         AppConfig.MinPerformanceRefreshIntervalInMs,
                         AppConfig.MaxPerformanceRefreshIntervalInMs);
 
-                    ConsoleRefreshIntervalInMs = GetConfigInt(config, "ConsoleRefreshIntervalInMs",
+                    ConsoleRefreshIntervalInMs = ConfigParser.GetConfigInt(config, "ConsoleRefreshIntervalInMs",
                         AppConfig.DefaultConsoleRefreshIntervalInMs,
                         AppConfig.MinConsoleRefreshIntervalInMs,
                         AppConfig.MaxConsoleRefreshIntervalInMs);
 
-                    ConsoleMaxLines = GetConfigInt(config, "ConsoleMaxLines",
+                    ConsoleMaxLines = ConfigParser.GetConfigInt(config, "ConsoleMaxLines",
                         AppConfig.DefaultConsoleMaxLines,
                         AppConfig.MinConsoleMaxLines,
                         AppConfig.MaxConsoleMaxLines);
 
-                    DependenciesRefreshIntervalInMs = GetConfigInt(config, "DependenciesRefreshIntervalInMs",
+                    DependenciesRefreshIntervalInMs = ConfigParser.GetConfigInt(config, "DependenciesRefreshIntervalInMs",
                         AppConfig.DefaultDependenciesRefreshIntervalInMs,
                         AppConfig.MinDependenciesRefreshIntervalInMs,
                         AppConfig.MaxDependenciesRefreshIntervalInMs);
 
-                    SearchDebounceDelayMs = GetConfigInt(config, "SearchDebounceDelayMs",
+                    SearchDebounceDelayMs = ConfigParser.GetConfigInt(config, "SearchDebounceDelayMs",
                         AppConfig.DefaultSearchDebounceDelayMs,
                         AppConfig.MinSearchDebounceDelayMs,
                         AppConfig.MaxSearchDebounceDelayMs);
 
-                    MaxBulkOperationParallelism = GetConfigInt(config, "MaxBulkOperationParallelism",
+                    MaxBulkOperationParallelism = ConfigParser.GetConfigInt(config, "MaxBulkOperationParallelism",
                         AppConfig.DefaultMaxBulkOperationParallelism,
                         AppConfig.MinMaxBulkOperationParallelism,
                         AppConfig.MaxMaxBulkOperationParallelism);
 
-                    LogsWindowDays = GetConfigInt(config, "LogsWindowDays",
+                    LogsWindowDays = ConfigParser.GetConfigInt(config, "LogsWindowDays",
                         AppConfig.DefaultLogsWindowDays,
                         AppConfig.MinLogsWindowDays,
                         AppConfig.MaxLogsWindowDays);
-
-                    //
-                    // Extracts an integer from configuration with professional-grade bounds checking.
-                    // Prevents UI thread starvation and memory issues from malformed config values.
-                    //
-                    int GetConfigInt(IConfiguration configuration, string key, int defaultValue, int min, int max)
-                    {
-                        string? value = configuration[key];
-
-                        if (int.TryParse(value, out var parsedValue))
-                        {
-                            if (parsedValue >= min && parsedValue <= max)
-                            {
-                                return parsedValue;
-                            }
-
-                            Logger.Warn($"Configuration value '{parsedValue}' for '{key}' is out of the safe range [{min}-{max}]. Falling back to default: {defaultValue}.");
-                        }
-                        else if (value != null)
-                        {
-                            Logger.Warn($"Invalid configuration entry '{value}' for '{key}'. Using default: {defaultValue}.");
-                        }
-
-                        return defaultValue;
-                    }
 
                     LogLevel = ConfigParser.ParseEnum(config["LogLevel"], AppConfig.DefaultLogLevel, "LogLevel");
 

@@ -79,7 +79,7 @@ namespace Servy.Services
             IServiceConfigurationValidator serviceConfigurationValidator,
             IXmlServiceValidator xmlServiceValidator,
             IJsonServiceValidator jsonServiceValidator,
-            IAppConfiguration? appConfig,
+            IAppConfiguration appConfig,
             ICursorService cursorService,
             IXmlServiceSerializer xmlServiceSerializer,
             IJsonServiceSerializer jsonServiceSerializer,
@@ -345,7 +345,8 @@ namespace Servy.Services
                 () => _dialogService.SaveXml(Strings.SaveFileDialog_XmlTitle),
                 ServiceExporter.ExportXml,
                 "XML",
-                Strings.ExportXml_Success);
+                Strings.ExportXml_Success,
+                cancellationToken);
 
         /// <inheritdoc/>
         public Task ExportJsonConfig(string? confirmPassword, CancellationToken cancellationToken = default) =>
@@ -354,7 +355,8 @@ namespace Servy.Services
                 () => _dialogService.SaveJson(Strings.SaveFileDialog_JsonTitle),
                 ServiceExporter.ExportJson,
                 "JSON",
-                Strings.ExportJson_Success);
+                Strings.ExportJson_Success,
+                cancellationToken);
 
         /// <inheritdoc/>
         public Task ImportXmlConfig(CancellationToken cancellationToken = default) =>
@@ -363,7 +365,8 @@ namespace Servy.Services
                 (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
                 (content) => _xmlServiceSerializer.Deserialize(content),
                 "XML",
-                Strings.Msg_FailedToLoadXml);
+                Strings.Msg_FailedToLoadXml,
+                cancellationToken);
 
         /// <inheritdoc/>
         public Task ImportJsonConfig(CancellationToken cancellationToken = default) =>
@@ -372,7 +375,8 @@ namespace Servy.Services
                 (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
                 (content) => _jsonServiceSerializer.Deserialize(content),
                 "JSON",
-                Strings.Msg_FailedToLoadJson);
+                Strings.Msg_FailedToLoadJson,
+                cancellationToken);
 
         /// <inheritdoc/>
         public async Task OpenManager(CancellationToken cancellationToken = default)
@@ -609,7 +613,7 @@ namespace Servy.Services
 
                 // Defense-in-depth: Run the security guards FIRST before touching the disk via size validation
                 var guardResult = ImportGuard.ValidatePathSecurityAndSize(path, out string? content);
-                if (!guardResult.IsValid || guardResult.ValidPath == null || content == null)
+                if (!guardResult.IsValid || content == null)
                 {
                     await _messageBoxService.ShowErrorAsync(guardResult.ErrorMessage, Caption);
                     return;

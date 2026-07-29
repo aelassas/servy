@@ -57,6 +57,9 @@ runs:
         if (-not $tag) { throw "No tag provided or fallback found. Set tag via input, trigger a release, or push a tag." }
 
         $version = $tag -replace '^[vV]', ''         # e.g. v1.1 / V1.1 -> 1.1
+        if ($version -notmatch '^\d+\.\d+$') {
+            throw "Resolved version '$version' (from tag '$tag') does not match the required Major.Minor format."
+        }
         Write-Host "Using resolved tag: $tag"
         Write-Host "Using computed version: $version"
 

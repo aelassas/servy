@@ -1351,6 +1351,11 @@ namespace Servy.Core.Config
         /// </summary>
         public const int MaxPreLaunchRetryAttempts = 100_000;
 
+        /// <summary>
+        /// Maximum timeout, in seconds, for service restart operations within the wrapper service.
+        /// </summary>
+        public const int MaxRestarterTimeoutSeconds = 86_400;
+
         #endregion
 
         #region Timing & Retry Policies

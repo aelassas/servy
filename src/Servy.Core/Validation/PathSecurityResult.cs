@@ -1,4 +1,6 @@
-﻿namespace Servy.Core.Validation
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Servy.Core.Validation
 {
     /// <summary>
     /// Specifies the high-level classification category of a path validation failure.
@@ -51,6 +53,8 @@
         /// <summary>
         /// Gets a value indicating whether the path successfully passed all security validation checks.
         /// </summary>
+        [MemberNotNullWhen(true, nameof(ValidPath))]
+        [MemberNotNullWhen(false, nameof(ErrorMessage))]
         public bool IsValid { get; }
 
         /// <summary>

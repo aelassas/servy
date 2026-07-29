@@ -22,16 +22,15 @@ namespace Servy.Core.Validation
 
             // Invoke the shared security gate using read intent semantics
             var securityCheck = PathSecurityGuard.ValidatePath(path, FileMode.Open, FileAccess.Read, FileShare.Read, out var fileStream);
-            if (!securityCheck.IsValid || fileStream == null)
-            {
-                return securityCheck;
-            }
+            if (!securityCheck.IsValid) return securityCheck;
+            if (fileStream == null)
+                return PathSecurityResult.Fail(PathSecurityFailureKind.InvalidArgument, Strings.Msg_ImportReadFailure);
 
             using (fileStream)
             {
                 if (fileStream.Length > AppConfig.MaxConfigFileSizeBytes)
                 {
-                    var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, securityCheck.ValidPath!.ResolvedPath, AppConfig.MaxConfigFileSizeMB);
+                    var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, securityCheck.ValidPath.ResolvedPath, AppConfig.MaxConfigFileSizeMB);
                     Logger.Error(errorMsg);
                     return PathSecurityResult.Fail(PathSecurityFailureKind.InvalidArgument, errorMsg);
                 }

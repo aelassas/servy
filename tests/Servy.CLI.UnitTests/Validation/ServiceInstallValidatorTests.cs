@@ -31,6 +31,17 @@ namespace Servy.CLI.UnitTests.Validation
 
         #endregion
 
+        #region Validate Null Options
+
+        [Fact]
+        public void Validate_NullOptions()
+        {
+            // Arrange, Act & Assert
+            Assert.Throws<ArgumentNullException>(() => _validator.Validate(null!));
+        }
+
+        #endregion
+
         #region TryMapToDto Parsing Error Short-Circuit Tests
 
         [Fact]
