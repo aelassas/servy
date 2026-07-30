@@ -1067,7 +1067,7 @@ namespace Servy.Core.UnitTests.IO
             {
                 writer.Write("init"); // Ensure file and writer exist
 
-                // FIX: Differentiate local vs UTC time variants across the branches to resolve the redundant ternary smell.
+                // Differentiate local vs UTC time variants across the branches to resolve the redundant ternary smell.
                 DateTime fakePast = useLocal ? DateTime.Now.AddDays(-2) : DateTime.UtcNow.AddDays(-2);
                 TestReflection.SetField(writer, "_lastRotationDate", fakePast);
 

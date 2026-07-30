@@ -12,11 +12,19 @@
 .PARAMETER Version
     The new version to apply in 'Major.Minor' format (e.g., "8.0").
 
+.PARAMETER DryRun
+    If specified, previews the files that would be modified without performing any writes to disk.
+
 .EXAMPLE
     .\bump-version.ps1 -Version 4.0
     .\bump-version.ps1 4.0
 
 Updates all relevant files to version 4.0.
+
+.EXAMPLE
+    .\bump-version.ps1 -Version 4.0 -DryRun
+
+Previews all version modifications that would be applied for version 4.0 without writing changes to disk.
 
 .NOTES
     - The script overwrites files in-place.
@@ -26,7 +34,8 @@ Updates all relevant files to version 4.0.
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [ValidatePattern("^\d+\.\d+$")]
-    [string]$Version
+    [string]$Version,
+    [switch]$DryRun
 )
 
 $ErrorActionPreference = "Stop"
@@ -58,7 +67,11 @@ $script:totalReplacements = 0
 $fullVersion = "$Version.0"
 $fileVersion = "$Version.0.0"
 
-Write-Host "Updating Servy version to $Version..."
+if ($DryRun) {
+    Write-Host "DRY-RUN: Previewing Servy version update to $Version..." -ForegroundColor Yellow
+} else {
+    Write-Host "Updating Servy version to $Version..."
+}
 
 # -----------------------------
 # 1. Update setup\build-config.ps1
@@ -68,7 +81,8 @@ Update-FilesContent `
     -Files @($buildConfigPath) `
     -Pattern '(Version\s*=\s*")[^"]*(")' `
     -Replacement { param($m) "$($m.Groups[1].Value)$Version$($m.Groups[2].Value)" } `
-    -ExpectMatch
+    -ExpectMatch `
+    -DryRun:$DryRun
 
 # -----------------------------
 # 2. Update all *.csproj files recursively
@@ -104,10 +118,14 @@ Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyCont
         }
 
         if ($totalReplacements -gt 0) {
-            [System.IO.File]::WriteAllText($csproj, $content, $encoding)
+            if (-not $DryRun) {
+                [System.IO.File]::WriteAllText($csproj, $content, $encoding)
+                Write-Host "UPDATED ($($encoding.BodyName)): $csproj" -ForegroundColor Green
+            } else {
+                Write-Host "DRY-RUN: Would update ($($encoding.BodyName)): $csproj ($totalReplacements matches)" -ForegroundColor Yellow
+            }
             $script:filesModified++
             $script:totalReplacements += $totalReplacements
-            Write-Host "UPDATED ($($encoding.BodyName)): $csproj" -ForegroundColor Green
         } else {
             Write-Warning "Skipped project: No versioning identifiers found in $csproj. Verify if this project requires version metadata."
         }
@@ -128,11 +146,16 @@ Update-FilesContent `
     -Files @($psd1Path) `
     -Pattern "(ModuleVersion\s*=\s*')[^']*(')" `
     -Replacement { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" } `
-    -ExpectMatch
+    -ExpectMatch `
+    -DryRun:$DryRun
 
 if ($script:HadFailure) {
     Write-Host "Version update process completed with errors." -ForegroundColor Red
     exit 1
 }
 
-Write-Host "All version updates completed successfully." -ForegroundColor Green
+if ($DryRun) {
+    Write-Host "DRY-RUN: Version update preview completed successfully." -ForegroundColor Yellow
+} else {
+    Write-Host "All version updates completed successfully." -ForegroundColor Green
+}

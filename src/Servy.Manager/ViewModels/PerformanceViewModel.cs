@@ -247,10 +247,10 @@ namespace Servy.Manager.ViewModels
                 currentSelection.Pid = currentPid;
                 ResetGraphs();
                 CopyPidCommand?.RaiseCanExecuteChanged();
+                SetPidText(currentSelection);
             }
 
             int pid = currentSelection.Pid.Value;
-            SetPidText(currentSelection);
 
             var processMetrics = await Task.Run(() =>
             {
@@ -282,9 +282,18 @@ namespace Servy.Manager.ViewModels
         private void ResetGraphs()
         {
             // 1. Reset display values
-            Pid = UiConstants.NotAvailable;
             CpuUsage = UiConstants.NotAvailable;
             RamUsage = UiConstants.NotAvailable;
+
+            // Set PID text to match current selection
+            if (_selectedService != null)
+            {
+                SetPidText(_selectedService);
+            }
+            else
+            {
+                Pid = UiConstants.NotAvailable;
+            }
 
             // 2. Clear and SEED the data history with PerformanceHistoryCapacity zeros
             // This ensures the graph line spans the whole width immediately
@@ -316,16 +325,13 @@ namespace Servy.Manager.ViewModels
             }
 
             double currentMax = 0;
-            if (valueHistory.Count > 0)
+            // A foreach over a Queue<T> uses a struct enumerator (0 bytes allocated).
+            // This is microscopically fast for 100 items and guarantees perfect accuracy.
+            foreach (var val in valueHistory)
             {
-                // A foreach over a Queue<T> uses a struct enumerator (0 bytes allocated).
-                // This is microscopically fast for 100 items and guarantees perfect accuracy.
-                foreach (var val in valueHistory)
+                if (val > currentMax)
                 {
-                    if (val > currentMax)
-                    {
-                        currentMax = val;
-                    }
+                    currentMax = val;
                 }
             }
 
@@ -357,12 +363,8 @@ namespace Servy.Manager.ViewModels
             }
 
             // Close the fill polygon
-            // Use valueHistory.Count to satisfy static analysis; if we have data, we have points
-            if (valueHistory.Count > 0)
-            {
-                fillBuffer.Add(new Point(fillBuffer[fillBuffer.Count - 1].X, GraphHeight));
-                fillBuffer.Add(new Point(fillBuffer[0].X, GraphHeight));
-            }
+            fillBuffer.Add(new Point(fillBuffer[fillBuffer.Count - 1].X, GraphHeight));
+            fillBuffer.Add(new Point(fillBuffer[0].X, GraphHeight));
 
             // Update the UI-bound collections
             if (isCpu)

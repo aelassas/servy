@@ -81,6 +81,7 @@ namespace Servy.Manager.ViewModels
             get => _consoleSearchText;
             set
             {
+                if (_consoleSearchText == value) return;
                 _consoleSearchText = value;
                 OnPropertyChanged(nameof(ConsoleSearchText));
 
@@ -268,9 +269,8 @@ namespace Servy.Manager.ViewModels
 
                 _ = SwitchServiceAsync(stateSnapshot.ActiveStdoutPath, stateSnapshot.ActiveStderrPath);
                 CopyPidCommand.RaiseCanExecuteChanged();
+                SetPidText(currentSelection);
             }
-
-            SetPidText(currentSelection);
         }
 
         #endregion
@@ -553,7 +553,8 @@ namespace Servy.Manager.ViewModels
             _ = tailer.RunFromPosition(path, type, pos, created, cancellationToken)
                 .ContinueWith(t =>
                 {
-                    var innerEx = t.Exception?.Flatten().InnerException;
+                    // OnlyOnFaulted guarantees t.IsFaulted, so t.Exception is non-null here.
+                    var innerEx = t.Exception!.Flatten().InnerException;
 
                     if (innerEx is ObjectDisposedException)
                     {
@@ -561,10 +562,7 @@ namespace Servy.Manager.ViewModels
                         return;
                     }
 
-                    if (t.IsFaulted)
-                    {
-                        Logger.Warn($"Log tailing failed: {innerEx?.Message}");
-                    }
+                    Logger.Warn($"Log tailing failed: {innerEx?.Message}");
                 }, TaskContinuationOptions.OnlyOnFaulted);
         }
 

@@ -181,9 +181,8 @@ namespace Servy.Manager.ViewModels
             {
                 currentSelection.Pid = currentPid;
                 CopyPidCommand.RaiseCanExecuteChanged();
+                SetPidText(currentSelection);
             }
-
-            SetPidText(currentSelection);
         }
 
         #endregion
