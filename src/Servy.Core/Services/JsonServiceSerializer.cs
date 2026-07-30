@@ -29,18 +29,24 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         protected override string FormatLineInfo(Exception ex)
         {
-            if (ex is JsonException jsonEx)
-            {
-                // Newtonsoft's base JsonException does not carry line info.
-                // We cast to IJsonLineInfo to safely access coordinates if the exception provides them.
-                var lineInfo = jsonEx as IJsonLineInfo;
-                int lineNumber = (lineInfo != null && lineInfo.HasLineInfo()) ? lineInfo.LineNumber : 0;
-                int linePosition = (lineInfo != null && lineInfo.HasLineInfo()) ? lineInfo.LinePosition : 0;
+            int lineNumber = 0;
+            int linePosition = 0;
 
-                if (lineNumber > 0 && linePosition > 0)
-                {
-                    return $" at line {lineNumber}, position {linePosition}";
-                }
+            switch (ex)
+            {
+                case JsonReaderException readerEx:
+                    lineNumber = readerEx.LineNumber;
+                    linePosition = readerEx.LinePosition;
+                    break;
+                case JsonSerializationException serializationEx:
+                    lineNumber = serializationEx.LineNumber;
+                    linePosition = serializationEx.LinePosition;
+                    break;
+            }
+
+            if (lineNumber > 0 && linePosition > 0)
+            {
+                return $" at line {lineNumber}, position {linePosition}";
             }
 
             return string.Empty;
