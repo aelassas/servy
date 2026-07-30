@@ -4,7 +4,7 @@
 # Automates the update of Servy’s Scoop manifest.
 # When a new release is published (or triggered
 # manually), this workflow:
-#          • Downloads the latest installer
+#          • Downloads the latest portable archive
 #          • Computes its SHA256 hash
 #          • Updates the manifest in `aelassas/scoop-bucket`
 #          • Optionally creates a PR to update the manifest
@@ -63,10 +63,10 @@ jobs:
         run: |
           $InstallerDir = "$env:GITHUB_WORKSPACE\_installer"
           New-Item -ItemType Directory -Force -Path $InstallerDir | Out-Null
-          $urlX64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
-          $outX64 = "$InstallerDir\servy-${env:VERSION}-x64-installer.exe"
-          $urlArm64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-arm64-installer.exe"
-          $outArm64 = "$InstallerDir\servy-${env:VERSION}-arm64-installer.exe"
+          $urlX64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-portable.7z"
+          $outX64 = "$InstallerDir\servy-${env:VERSION}-x64-portable.7z"
+          $urlArm64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-arm64-portable.7z"
+          $outArm64 = "$InstallerDir\servy-${env:VERSION}-arm64-portable.7z"
 
           Write-Host "Staging Scoop asset lookup paths for x64 ($urlX64) and arm64 ($urlArm64)"
           Add-Content -Path $env:GITHUB_ENV -Value "SCOOP_DOWNLOAD_URL_X64=$urlX64"
@@ -74,20 +74,20 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "SCOOP_DOWNLOAD_URL_ARM64=$urlArm64"
           Add-Content -Path $env:GITHUB_ENV -Value "SCOOP_DOWNLOAD_OUT_ARM64=$outArm64"
 
-      - name: Download x64 installer
+      - name: Download x64 portable archive
         uses: ./.github/actions/download-with-retry
         with:
           url: ${{ env.SCOOP_DOWNLOAD_URL_X64 }}
           output_path: ${{ env.SCOOP_DOWNLOAD_OUT_X64 }}
-          asset_name: 'Servy x64 Release Installer for Scoop'
+          asset_name: 'Servy x64 Release Portable Archive for Scoop'
           max_retries: ${{ env.MAX_RETRIES }}
 
-      - name: Download arm64 installer
+      - name: Download arm64 portable archive
         uses: ./.github/actions/download-with-retry
         with:
           url: ${{ env.SCOOP_DOWNLOAD_URL_ARM64 }}
           output_path: ${{ env.SCOOP_DOWNLOAD_OUT_ARM64 }}
-          asset_name: 'Servy arm64 Release Installer for Scoop'
+          asset_name: 'Servy arm64 Release Portable Archive for Scoop'
           max_retries: ${{ env.MAX_RETRIES }}
 
       - name: Compute SHA256
@@ -149,27 +149,37 @@ jobs:
           $jsonObj.version = $env:VERSION
 
           # Ensure 64bit & arm64 architecture structures exist
-          $urlX64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
-          $urlArm64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-arm64-installer.exe"
+          $urlX64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-portable.7z"
+          $urlArm64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-arm64-portable.7z"
+          $extractX64 = "servy-${env:VERSION}-x64-portable"
+          $extractArm64 = "servy-${env:VERSION}-arm64-portable"
 
           $jsonObj.architecture.'64bit'.url = $urlX64
           $jsonObj.architecture.'64bit'.hash = $env:HASH_X64
+          $jsonObj.architecture.'64bit'.extract_dir = $extractX64
 
           if (-not $jsonObj.architecture.PSObject.Properties['arm64']) {
-              $jsonObj.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $urlArm64; hash = $env:HASH_ARM64 })
+              $jsonObj.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $urlArm64; hash = $env:HASH_ARM64; extract_dir = $extractArm64 })
           } else {
               $jsonObj.architecture.'arm64'.url = $urlArm64
               $jsonObj.architecture.'arm64'.hash = $env:HASH_ARM64
+              $jsonObj.architecture.'arm64'.extract_dir = $extractArm64
           }
 
           if ($jsonObj.autoupdate -and $jsonObj.autoupdate.architecture) {
-              $autoUrlX64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-x64-installer.exe"
-              $autoUrlArm64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-arm64-installer.exe"
+              $autoUrlX64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-x64-portable.7z"
+              $autoUrlArm64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-arm64-portable.7z"
+              $autoExtractX64 = "servy-`$version-x64-portable"
+              $autoExtractArm64 = "servy-`$version-arm64-portable"
+
               $jsonObj.autoupdate.architecture.'64bit'.url = $autoUrlX64
+              $jsonObj.autoupdate.architecture.'64bit'.extract_dir = $autoExtractX64
+
               if (-not $jsonObj.autoupdate.architecture.PSObject.Properties['arm64']) {
-                  $jsonObj.autoupdate.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $autoUrlArm64 })
+                  $jsonObj.autoupdate.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $autoUrlArm64; extract_dir = $autoExtractArm64 })
               } else {
                   $jsonObj.autoupdate.architecture.'arm64'.url = $autoUrlArm64
+                  $jsonObj.autoupdate.architecture.'arm64'.extract_dir = $autoExtractArm64
               }
           }
 
@@ -214,27 +224,37 @@ jobs:
           $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
           $jsonObj.version = $env:VERSION
 
-          $urlX64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
-          $urlArm64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-arm64-installer.exe"
+          $urlX64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-portable.7z"
+          $urlArm64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-arm64-portable.7z"
+          $extractX64 = "servy-${env:VERSION}-x64-portable"
+          $extractArm64 = "servy-${env:VERSION}-arm64-portable"
 
           $jsonObj.architecture.'64bit'.url = $urlX64
           $jsonObj.architecture.'64bit'.hash = $env:HASH_X64
+          $jsonObj.architecture.'64bit'.extract_dir = $extractX64
 
           if (-not $jsonObj.architecture.PSObject.Properties['arm64']) {
-              $jsonObj.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $urlArm64; hash = $env:HASH_ARM64 })
+              $jsonObj.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $urlArm64; hash = $env:HASH_ARM64; extract_dir = $extractArm64 })
           } else {
               $jsonObj.architecture.'arm64'.url = $urlArm64
               $jsonObj.architecture.'arm64'.hash = $env:HASH_ARM64
+              $jsonObj.architecture.'arm64'.extract_dir = $extractArm64
           }
 
           if ($jsonObj.autoupdate -and $jsonObj.autoupdate.architecture) {
-              $autoUrlX64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-x64-installer.exe"
-              $autoUrlArm64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-arm64-installer.exe"
+              $autoUrlX64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-x64-portable.7z"
+              $autoUrlArm64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-arm64-portable.7z"
+              $autoExtractX64 = "servy-`$version-x64-portable"
+              $autoExtractArm64 = "servy-`$version-arm64-portable"
+
               $jsonObj.autoupdate.architecture.'64bit'.url = $autoUrlX64
+              $jsonObj.autoupdate.architecture.'64bit'.extract_dir = $autoExtractX64
+
               if (-not $jsonObj.autoupdate.architecture.PSObject.Properties['arm64']) {
-                  $jsonObj.autoupdate.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $autoUrlArm64 })
+                  $jsonObj.autoupdate.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $autoUrlArm64; extract_dir = $autoExtractArm64 })
               } else {
                   $jsonObj.autoupdate.architecture.'arm64'.url = $autoUrlArm64
+                  $jsonObj.autoupdate.architecture.'arm64'.extract_dir = $autoExtractArm64
               }
           }
             
@@ -302,8 +322,10 @@ jobs:
             
           $manifestPath = "bucket/servy.json"
           $fullPath = Join-Path (Get-Location) $manifestPath
-          $installerUrlX64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
-          $installerUrlArm64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-arm64-installer.exe"
+          $installerUrlX64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-portable.7z"
+          $installerUrlArm64 = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-arm64-portable.7z"
+          $extractX64 = "servy-${env:VERSION}-x64-portable"
+          $extractArm64 = "servy-${env:VERSION}-arm64-portable"
 
           Invoke-Git config user.name "github-actions[bot]"
           Invoke-Git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -321,15 +343,16 @@ jobs:
                   license      = $canonicalObj.license
                   architecture = @{
                       '64bit' = @{
-                          url  = $installerUrlX64
-                          hash = $env:HASH_X64
+                          url         = $installerUrlX64
+                          hash        = $env:HASH_X64
+                          extract_dir = $extractX64
                       }
                       'arm64' = @{
-                          url  = $installerUrlArm64
-                          hash = $env:HASH_ARM64
+                          url         = $installerUrlArm64
+                          hash        = $env:HASH_ARM64
+                          extract_dir = $extractArm64
                       }
                   }
-                  innosetup  = $canonicalObj.innosetup
                   bin        = $canonicalObj.bin
                   shortcuts  = $canonicalObj.shortcuts
                   checkver   = $canonicalObj.checkver
@@ -344,22 +367,30 @@ jobs:
               $jsonObj.version = $env:VERSION
               $jsonObj.architecture.'64bit'.url = $installerUrlX64
               $jsonObj.architecture.'64bit'.hash = $env:HASH_X64
+              $jsonObj.architecture.'64bit'.extract_dir = $extractX64
 
               if (-not $jsonObj.architecture.PSObject.Properties['arm64']) {
-                  $jsonObj.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $installerUrlArm64; hash = $env:HASH_ARM64 })
+                  $jsonObj.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $installerUrlArm64; hash = $env:HASH_ARM64; extract_dir = $extractArm64 })
               } else {
                   $jsonObj.architecture.'arm64'.url = $installerUrlArm64
                   $jsonObj.architecture.'arm64'.hash = $env:HASH_ARM64
+                  $jsonObj.architecture.'arm64'.extract_dir = $extractArm64
               }
 
               if ($jsonObj.autoupdate -and $jsonObj.autoupdate.architecture) {
-                  $autoUrlX64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-x64-installer.exe"
-                  $autoUrlArm64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-arm64-installer.exe"
+                  $autoUrlX64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-x64-portable.7z"
+                  $autoUrlArm64 = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-arm64-portable.7z"
+                  $autoExtractX64 = "servy-`$version-x64-portable"
+                  $autoExtractArm64 = "servy-`$version-arm64-portable"
+
                   $jsonObj.autoupdate.architecture.'64bit'.url = $autoUrlX64
+                  $jsonObj.autoupdate.architecture.'64bit'.extract_dir = $autoExtractX64
+
                   if (-not $jsonObj.autoupdate.architecture.PSObject.Properties['arm64']) {
-                      $jsonObj.autoupdate.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $autoUrlArm64 })
+                      $jsonObj.autoupdate.architecture | Add-Member -MemberType NoteProperty -Name 'arm64' -Value ([PSCustomObject]@{ url = $autoUrlArm64; extract_dir = $autoExtractArm64 })
                   } else {
                       $jsonObj.autoupdate.architecture.'arm64'.url = $autoUrlArm64
+                      $jsonObj.autoupdate.architecture.'arm64'.extract_dir = $autoExtractArm64
                   }
               }
 
