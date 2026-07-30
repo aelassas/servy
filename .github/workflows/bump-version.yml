@@ -92,7 +92,6 @@ jobs:
               Invoke-Git checkout -B $branch
               Invoke-Git reset --hard "origin/$branch"
               
-              Invoke-Git update-index --chmod=+x ./bump-version.ps1
               ./bump-version.ps1 -Version $env:NEXT_VERSION
               if ($LASTEXITCODE -ne 0) { throw "bump-version.ps1 failed with exit $LASTEXITCODE on branch $branch" }
 

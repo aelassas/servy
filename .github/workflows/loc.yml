@@ -117,6 +117,7 @@ jobs:
         with:
           publish_dir: ./output
           publish_branch: loc
+          force_orphan: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
           user_name: github-actions[bot]
           user_email: github-actions[bot]@users.noreply.github.com

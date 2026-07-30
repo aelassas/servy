@@ -23,7 +23,6 @@ runs:
   using: 'composite'
   steps:
     - name: Resolve Tag and Strip Prefix
-      id: resolve
       shell: pwsh
       env:
         INPUT_MANUAL_TAG: ${{ inputs.manual_tag }}
