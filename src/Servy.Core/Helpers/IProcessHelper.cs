@@ -90,8 +90,8 @@ namespace Servy.Core.Helpers
         /// </returns>
         /// <remarks>
         /// This method never throws exceptions.
-        /// Any failure during resolution (such as unexpanded environment variables,
-        /// relative paths, or invalid paths) results in a false return value.
+        /// Any failure during resolution (relative paths, or invalid paths) results 
+        /// in a false return value.
         /// </remarks>
         bool ValidatePath(string? path, bool isFile = true);
 
