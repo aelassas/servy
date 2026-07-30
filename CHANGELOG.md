@@ -1,5 +1,44 @@
 # Changelog
 
+## [Servy 8.9](https://github.com/aelassas/servy/releases/tag/v8.9)
+
+**Date:** 2026-07-30 | **Tag:** [`v8.9`](https://github.com/aelassas/servy/tree/v8.9)
+
+* fix(core): JsonServiceSerializer.cs - FormatLineInfo casts the exception to IJsonLineInfo, which no Newtonsoft exception implements, so JSON parse errors never report line/position (#4459)
+* fix(core): ServiceControllerWrapper.cs - the 'if (deps != null)' guard in BuildDependencyTree's disposal finally is provably always true (#4460)
+* fix(core): ServiceDtoImportValidator.cs - the manual CR/LF strip duplicates Logger's central SanitizeToSingleLine, and renders the same name differently from every other log line (#4463)
+* fix(service): ProcessLauncher.cs - three provably-always-true path-emptiness terms at lines 205, 239 and 249, already folded into psi.RedirectStandardOutput/Error at 148-149 (#4404)
+* fix(ui): AppBootstrapper.cs - critical-configuration failure tells operators to check an appsettings.json file that no app ships (#4437)
+* fix(desktop): MainViewModel.cs (Servy) - three minor items: ManagerCommand is the only busy-block command without the !IsBusy guard, LoadServiceConfiguration missed the #3858 Async rename, trailing whitespace at 915 (#4447)
+* fix(desktop,manager): DesignTimeAppConfig.cs / DesignTimeMocks.cs / DesignTimeServiceCommands.cs - the five design-time stand-ins follow four different implementation and documentation conventions (#4440)
+* fix(manager): ConsoleViewModel.cs - t.IsFaulted is provably always true inside a TaskContinuationOptions.OnlyOnFaulted continuation (#4347)
+* fix(manager): ConsoleViewModel.cs - ConsoleSearchText setter lacks the equality guard every sibling setter uses; a no-op write cancels the in-flight debounce and re-filters the whole buffer (#4349)
+* fix(manager): Console/DependenciesViewModel.cs - SetPidText runs on every monitoring tick, defeating the change-detection branch immediately above it (#4353)
+* fix(manager): MainViewModel.cs (Manager) - Select All raises HasSelectedServices once per row; the _isUpdatingSelectAll guard covers UpdateSelectAllState but not the notification (O(N²)) (#4367)
+* fix(manager): PerformanceViewModel.cs - AddPoint's two 'valueHistory.Count > 0' guards (319, 361) are provably always true after the unconditional Enqueue at 311 (#4373)
+* fix(cli): UninstallServiceCommand.cs - when the SCM service is already gone, the pipeline fails before onSuccess, so the repository row can never be cleaned from the CLI (#4235)
+* fix(cli): Program.cs (Servy.CLI) - status/export still run the full runtime bootstrap (wrapper-exe extraction, event source, DB init); a corrupt servy.db breaks even 'status' (follow-up to #1760) (#4242)
+* fix: linker.shared.xml - three trimmer roots preserve capabilities the trimmed projects do not have (Claims unused, FileSystemWatcher only in an untrimmed project, no STA code at all) (#4445)
+* ci: resolve-version/action.yml - unused step 'id: resolve' left over from the removed outputs block (#2832) (#4172)
+* ci: bump-version.yml - 'update-index --chmod=+x bump-version.ps1' is a no-op (mode already 100755, and Windows execution never needs it) (#4174)
+* ci: loc.yml - badge deploy lacks force_orphan, so the loc branch accumulates one junk commit per push to main forever (#4177)
+* ci: scoop.yml - step env re-maps HASH/VERSION to themselves; sibling Extras step proves the mapping is unnecessary (#4191)
+* ci: bump-version.ps1 - no -DryRun preview mode, unlike sibling bump-runtime.ps1 (#4202)
+
+### Downloads
+* [servy-8.9-arm64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-arm64-installer.exe) - 76.19 MB
+* [servy-8.9-arm64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-arm64-portable.7z) - 77.51 MB
+* [servy-8.9-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-net48-sbom.xml) - 0.03 MB
+* [servy-8.9-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-net48-x64-installer.exe) - 4.31 MB
+* [servy-8.9-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-net48-x64-portable.7z) - 2.07 MB
+* [servy-8.9-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-sbom.xml) - 0.04 MB
+* [servy-8.9-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-x64-installer.exe) - 82.22 MB
+* [servy-8.9-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.9/servy-8.9-x64-portable.7z) - 80.1 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v8.9.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v8.9.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v8.8...v8.9
+
 ## [Servy 8.8](https://github.com/aelassas/servy/releases/tag/v8.8)
 
 **Date:** 2026-07-29 | **Tag:** [`v8.8`](https://github.com/aelassas/servy/tree/v8.8)
