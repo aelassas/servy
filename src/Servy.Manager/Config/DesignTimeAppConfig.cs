@@ -11,28 +11,21 @@ namespace Servy.Manager.Config
     /// </remarks>
     public class DesignTimeAppConfig : IAppConfiguration
     {
-        // UI visibility and state
-        bool IAppConfiguration.IsDesktopAppAvailable => true;
-        bool IAppConfiguration.ForceSoftwareRendering => false;
+        public bool IsDesktopAppAvailable => true;
+        public bool ForceSoftwareRendering => false;
 
-        // Refresh Intervals (aligned with AppConfig defaults)
-        int IAppConfiguration.RefreshIntervalInSeconds => Core.Config.AppConfig.DefaultRefreshIntervalInSeconds;
-        int IAppConfiguration.PerformanceRefreshIntervalInMs => Core.Config.AppConfig.DefaultPerformanceRefreshIntervalInMs;
-        int IAppConfiguration.ConsoleRefreshIntervalInMs => Core.Config.AppConfig.DefaultConsoleRefreshIntervalInMs;
-        int IAppConfiguration.DependenciesRefreshIntervalInMs => Core.Config.AppConfig.DefaultDependenciesRefreshIntervalInMs;
+        public int RefreshIntervalInSeconds => Core.Config.AppConfig.DefaultRefreshIntervalInSeconds;
+        public int PerformanceRefreshIntervalInMs => Core.Config.AppConfig.DefaultPerformanceRefreshIntervalInMs;
+        public int ConsoleRefreshIntervalInMs => Core.Config.AppConfig.DefaultConsoleRefreshIntervalInMs;
+        public int DependenciesRefreshIntervalInMs => Core.Config.AppConfig.DefaultDependenciesRefreshIntervalInMs;
 
-        // Limits and Thresholds
-        int IAppConfiguration.ConsoleMaxLines => Core.Config.AppConfig.DefaultConsoleMaxLines;
-        int IAppConfiguration.LogsWindowDays => Core.Config.AppConfig.DefaultLogsWindowDays;
-        int IAppConfiguration.SearchDebounceDelayMs => Core.Config.AppConfig.DefaultSearchDebounceDelayMs; // Standard UI responsiveness delay
-        int IAppConfiguration.MaxBulkOperationParallelism => Core.Config.AppConfig.DefaultMaxBulkOperationParallelism;
+        public int ConsoleMaxLines => Core.Config.AppConfig.DefaultConsoleMaxLines;
+        public int LogsWindowDays => Core.Config.AppConfig.DefaultLogsWindowDays;
+        public int SearchDebounceDelayMs => Core.Config.AppConfig.DefaultSearchDebounceDelayMs; // Standard UI responsiveness delay
+        public int MaxBulkOperationParallelism => Core.Config.AppConfig.DefaultMaxBulkOperationParallelism;
 
-        // Paths
         string? IAppConfiguration.DesktopAppPublishPath => Core.Config.AppConfig.DefaultDesktopAppPublishPath;
 
-        /// <summary>
-        /// No-op implementation of PropertyChanged for design-time.
-        /// </summary>
         public event PropertyChangedEventHandler? PropertyChanged
         {
             add { }

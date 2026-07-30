@@ -21,9 +21,6 @@ namespace Servy.UI.Design
     /// </remarks>
     public class DesignTimeProcessHelper : ProcessHelper
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DesignTimeProcessHelper"/> class.
-        /// </summary>
         public DesignTimeProcessHelper()
         {
             // Empty constructor to allow instantiation by the XAML designer.
@@ -98,56 +95,29 @@ namespace Servy.UI.Design
     /// </remarks>
     public class DesignTimeServiceManager : IServiceManager
     {
-        /// <summary>
-        /// Returns a successful operation result for design-time installation simulation.
-        /// </summary>
         public Task<OperationResult> InstallServiceAsync(InstallServiceOptions options, CancellationToken cancellationToken = default)
             => Task.FromResult(OperationResult.Success());
 
-        /// <summary>
-        /// Returns a successful operation result for design-time uninstallation simulation.
-        /// </summary>
         public Task<OperationResult> UninstallServiceAsync(string? serviceName, CancellationToken cancellationToken = default)
             => Task.FromResult(OperationResult.Success());
 
-        /// <summary>
-        /// Returns a successful operation result for design-time start simulation.
-        /// </summary>
         public Task<OperationResult> StartServiceAsync(string? serviceName, bool logSuccessfulStart = true, CancellationToken cancellationToken = default)
             => Task.FromResult(OperationResult.Success());
 
-        /// <summary>
-        /// Returns a successful operation result for design-time stop simulation.
-        /// </summary>
         public Task<OperationResult> StopServiceAsync(string? serviceName, bool logSuccessfulStop = true, CancellationToken cancellationToken = default)
             => Task.FromResult(OperationResult.Success());
 
-        /// <summary>
-        /// Returns a successful operation result for design-time restart simulation.
-        /// </summary>
         public Task<OperationResult> RestartServiceAsync(string? serviceName, bool logSuccessfulRestart = true, CancellationToken cancellationToken = default)
             => Task.FromResult(OperationResult.Success());
 
-        /// <summary>
-        /// Returns a default "Stopped" status for design-time display.
-        /// </summary>
         public ServiceControllerStatus? GetServiceStatus(string? serviceName, CancellationToken cancellationToken = default)
             => ServiceControllerStatus.Stopped;
 
-        /// <summary>
-        /// Returns false for design-time checks to simplify the initial layout.
-        /// </summary>
         public bool IsServiceInstalled(string? serviceName, CancellationToken cancellationToken = default) => false;
 
-        /// <summary>
-        /// Returns Manual startup type as a safe default for design-time.
-        /// </summary>
         public ServiceStartType GetServiceStartupType(string? serviceName, CancellationToken cancellationToken = default)
             => ServiceStartType.Manual;
 
-        /// <summary>
-        /// Returns an empty list to avoid rendering overhead in the designer.
-        /// </summary>
         public List<ServiceInfo> GetAllServices(CancellationToken cancellationToken = default)
             => new List<ServiceInfo>();
 
@@ -162,25 +132,16 @@ namespace Servy.UI.Design
     /// </summary>
     public class DesignTimeHelpService : IHelpService
     {
-        /// <summary>
-        /// No-op implementation for opening documentation with a specific caption.
-        /// </summary>
         public Task OpenDocumentationAsync(string caption)
         {
             return Task.CompletedTask;
         }
 
-        /// <summary>
-        /// No-op implementation for update checks triggered by the designer.
-        /// </summary>
         public Task CheckUpdatesAsync(string caption)
         {
             return Task.CompletedTask;
         }
 
-        /// <summary>
-        /// No-op implementation for the about dialog preview.
-        /// </summary>
         public Task OpenAboutDialogAsync(string about, string caption)
         {
             return Task.CompletedTask;
@@ -220,9 +181,6 @@ namespace Servy.UI.Design
     /// </remarks>
     public class DesignTimeMessageBoxService : IMessageBoxService
     {
-        /// <summary>
-        /// Returns a successful confirmation result by default to allow designer logic to proceed.
-        /// </summary>
         public Task<bool> ShowConfirmAsync(string? message, string caption)
         {
             return Task.FromResult(true);
@@ -249,14 +207,8 @@ namespace Servy.UI.Design
     /// </summary>
     public class DesignTimeCursorService : ICursorService
     {
-        /// <summary>
-        /// No-op implementation for the designer.
-        /// </summary>
         public void ResetCursor() { /* no-op */ }
 
-        /// <summary>
-        /// No-op implementation for the designer.
-        /// </summary>
         public void SetWaitCursor() { /* no-op */ }
     }
 
@@ -270,30 +222,10 @@ namespace Servy.UI.Design
     /// </remarks>
     public class DesignTimeUiDispatcher : IUiDispatcher
     {
-        /// <summary>
-        /// No-op implementation of <see cref="IUiDispatcher.InvokeAsync(Action)"/> 
-        /// that returns a completed task without executing the action.
-        /// </summary>
-        /// <param name="action">The action to ignore during design-time.</param>
-        /// <returns>A completed <see cref="Task"/>.</returns>
         public Task InvokeAsync(Action action) => Task.CompletedTask;
 
-        /// <summary>
-        /// No-op implementation of <see cref="IUiDispatcher.InvokeAsync(Action, DispatcherPriority)"/> 
-        /// that returns a completed task without executing the action.
-        /// </summary>
-        /// <param name="action">The action to ignore during design-time.</param>
-        /// <param name="priority">The priority that determines the order in which the action is executed relative to other pending operations in the dispatcher queue.</param>
-        /// <returns>A completed <see cref="Task"/>.</returns>
         public Task InvokeAsync(Action action, DispatcherPriority priority) => Task.CompletedTask;
 
-        /// <summary>
-        /// No-op implementation of <see cref="IUiDispatcher.InvokeAsync{T}(Func{T})"/> 
-        /// that returns the default value of <typeparamref name="T"/>.
-        /// </summary>
-        /// <typeparam name="T">The type of the return value.</typeparam>
-        /// <param name="callback">The function to ignore during design-time.</param>
-        /// <returns>A task containing <c>default(T)</c>.</returns>
         public Task<T> InvokeAsync<T>(Func<T> callback)
         {
             // Task.FromResult requires a value. 
@@ -301,11 +233,6 @@ namespace Servy.UI.Design
             return Task.FromResult(default(T)!);
         }
 
-        /// <summary>
-        /// Immediately returns a completed task to satisfy the yielding requirement 
-        /// without disrupting the design-time environment.
-        /// </summary>
-        /// <returns>A completed <see cref="Task"/>.</returns>
         public Task YieldAsync() => Task.CompletedTask;
     }
 
