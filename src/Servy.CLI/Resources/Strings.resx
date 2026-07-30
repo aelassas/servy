@@ -82,6 +82,9 @@
   <data name="Msg_StopSuccess" xml:space="preserve">
     <value>Service '{0}' stopped successfully.</value>
   </data>
+	<data name="Msg_UninstallServiceNotInstalled" xml:space="preserve">
+    <value>Service '{0}' was not installed in Windows SCM; removed leftover database configuration.</value>
+  </data>
   <data name="Msg_UninstallSuccess" xml:space="preserve">
     <value>Service '{0}' uninstalled successfully.</value>
   </data>
