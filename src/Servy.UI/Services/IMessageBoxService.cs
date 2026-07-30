@@ -12,6 +12,7 @@ namespace Servy.UI.Services
         /// </summary>
         /// <param name="message">The message text to display.</param>
         /// <param name="caption">The caption/title of the message box.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task ShowInfoAsync(string message, string caption);
 
         /// <summary>
@@ -19,6 +20,7 @@ namespace Servy.UI.Services
         /// </summary>
         /// <param name="message">The warning message text to display.</param>
         /// <param name="caption">The caption/title of the message box.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task ShowWarningAsync(string message, string caption);
 
         /// <summary>
@@ -26,6 +28,7 @@ namespace Servy.UI.Services
         /// </summary>
         /// <param name="message">The error message text to display.</param>
         /// <param name="caption">The caption/title of the message box.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task ShowErrorAsync(string message, string caption);
 
         /// <summary>

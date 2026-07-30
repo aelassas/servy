@@ -49,7 +49,7 @@ namespace Servy.CLI.Commands
 
             return await ExecuteWithHandlingAsync("install", action, suggestion, async () =>
             {
-                // Separate from BaseCommand's field because install runs its own pre-flight check.
+                // Install performs its own pre-flight elevation check, ahead of the one in ExecuteServiceOperationAsync.
                 if (!BypassElevationCheck)
                 {
                     SecurityHelper.EnsureAdministrator();
