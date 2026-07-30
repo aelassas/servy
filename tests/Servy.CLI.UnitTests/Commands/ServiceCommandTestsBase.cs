@@ -3,7 +3,6 @@ using Servy.CLI.Commands;
 using Servy.CLI.Models;
 using Servy.CLI.Resources;
 using Servy.Core.Services;
-using Servy.Testing;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

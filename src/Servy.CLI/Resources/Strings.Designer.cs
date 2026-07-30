@@ -439,6 +439,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Service &apos;{0}&apos; was not installed in Windows SCM; removed leftover database configuration..
+        /// </summary>
+        public static string Msg_UninstallServiceNotInstalled {
+            get {
+                return ResourceManager.GetString("Msg_UninstallServiceNotInstalled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Ensure the service is stopped before uninstalling and that you are running this command as an Administrator..
         /// </summary>
         public static string Msg_UninstallServiceSuggestion {
