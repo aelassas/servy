@@ -44,3 +44,4 @@ jobs:
           token: ${{ secrets.WINGET_TOKEN }}
           installers-regex: "servy-\\d+\\.\\d+-(x64|arm64)-installer\\.exe$"
           release-tag: ${{ env.TAG }}
+          fork-user: aelassas
