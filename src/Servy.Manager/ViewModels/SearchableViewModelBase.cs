@@ -161,7 +161,7 @@ namespace Servy.Manager.ViewModels
             {
                 Helpers.Helper.CancelAndDisposeSafely(oldCts);
 
-                // No successor search will run the Step 7 restore — do it here.
+                // No successor search will run the Step 7 restore - do it here.
                 _cursorService.ResetCursor();
                 SearchButtonText = Strings.Button_Search;
                 IsBusy = false;
