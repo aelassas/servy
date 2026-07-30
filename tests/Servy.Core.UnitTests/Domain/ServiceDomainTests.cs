@@ -203,6 +203,7 @@ namespace Servy.Core.UnitTests.Domain
                 Parameters = "--arg1",
                 StartupType = ServiceStartType.Automatic,
                 Priority = ProcessPriority.Normal,
+                CpuAffinity = "0-3",
                 EnableConsoleUI = false,
                 StdoutPath = "C:\\stdout.log",
                 StderrPath = "C:\\stderr.log",
@@ -215,6 +216,9 @@ namespace Servy.Core.UnitTests.Domain
                 EnableHealthMonitoring = false,
                 HeartbeatInterval = 30,
                 MaxFailedChecks = 3,
+                HeartbeatUrl = "http://localhost:8080/health",
+                HeartbeatUrlTimeoutSeconds = 10,
+                EnableHeartbeatUrlFlags = true,
                 RecoveryAction = RecoveryAction.None,
                 RecoveryOnCleanExit = false,
                 MaxRestartAttempts = 3,
@@ -251,71 +255,130 @@ namespace Servy.Core.UnitTests.Domain
                 PostStopParameters = "--postStopArg",
             };
 
+            InstallServiceOptions? captured = null;
             _serviceManagerMock
-                 .Setup(s => s.InstallServiceAsync(It.Is<InstallServiceOptions>(o =>
-                     o.ServiceName == service.Name &&
-                     o.DisplayName == service.DisplayName &&
-                     o.Description == service.Description &&
-                     o.RealExePath == service.ExecutablePath &&
-                     o.WorkingDirectory == service.StartupDirectory &&
-                     o.RealArgs == service.Parameters &&
-                     o.StartType == service.StartupType &&
-                     o.ProcessPriority == service.Priority &&
-                     o.EnableConsoleUI == service.EnableConsoleUI &&
-                     o.StdoutPath == service.StdoutPath &&
-                     o.StderrPath == service.StderrPath &&
-                     o.EnableSizeRotation == service.EnableSizeRotation &&
-                     o.RotationSizeInBytes == 3 * 1024L * 1024L &&
-                     o.EnableDateRotation == service.EnableDateRotation &&
-                     o.DateRotationType == service.DateRotationType &&
-                     o.MaxRotations == service.MaxRotations &&
-                     o.UseLocalTimeForRotation == service.UseLocalTimeForRotation &&
-                     o.EnableHealthMonitoring == service.EnableHealthMonitoring &&
-                     o.HeartbeatInterval == service.HeartbeatInterval &&
-                     o.MaxFailedChecks == service.MaxFailedChecks &&
-                     o.RecoveryAction == service.RecoveryAction &&
-                     o.RecoveryOnCleanExit == service.RecoveryOnCleanExit &&
-                     o.MaxRestartAttempts == service.MaxRestartAttempts &&
-                     o.Username == service.UserAccount &&
-                     o.Password == service.Password &&
-                     o.PreLaunchExePath == service.PreLaunchExecutablePath &&
-                     o.PreLaunchWorkingDirectory == service.PreLaunchStartupDirectory &&
-                     o.PreLaunchArgs == service.PreLaunchParameters &&
-                     o.PreLaunchEnvironmentVariables == service.PreLaunchEnvironmentVariables &&
-                     o.PreLaunchStdoutPath == service.PreLaunchStdoutPath &&
-                     o.PreLaunchStderrPath == service.PreLaunchStderrPath &&
-                     o.PreLaunchTimeout == service.PreLaunchTimeoutSeconds &&
-                     o.PreLaunchRetryAttempts == service.PreLaunchRetryAttempts &&
-                     o.PreLaunchIgnoreFailure == service.PreLaunchIgnoreFailure &&
-                     o.FailureProgramPath == service.FailureProgramPath &&
-                     o.FailureProgramWorkingDirectory == service.FailureProgramStartupDirectory &&
-                     o.FailureProgramArgs == service.FailureProgramParameters &&
-                     o.EnvironmentVariables == service.EnvironmentVariables &&
-                     o.ServiceDependencies == service.ServiceDependencies &&
-                     o.PostLaunchExePath == service.PostLaunchExecutablePath &&
-                     o.PostLaunchWorkingDirectory == service.PostLaunchStartupDirectory &&
-                     o.PostLaunchArgs == service.PostLaunchParameters &&
-                     o.EnableDebugLogs == service.EnableDebugLogs &&
-                     o.StartTimeout == service.StartTimeout &&
-                     o.StopTimeout == service.StopTimeout &&
-                     o.PreStopExePath == service.PreStopExecutablePath &&
-                     o.PreStopWorkingDirectory == service.PreStopStartupDirectory &&
-                     o.PreStopArgs == service.PreStopParameters &&
-                     o.PreStopTimeout == service.PreStopTimeoutSeconds &&
-                     o.PreStopLogAsError == service.PreStopLogAsError &&
-                     o.PostStopExePath == service.PostStopExecutablePath &&
-                     o.PostStopWorkingDirectory == service.PostStopStartupDirectory &&
-                     o.PostStopArgs == service.PostStopParameters
-                 ), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(OperationResult.Success())
-                 .Verifiable();
+                .Setup(s => s.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<InstallServiceOptions, CancellationToken>((o, _) => captured = o)
+                .ReturnsAsync(OperationResult.Success());
 
             // Act
             var result = await service.Install("C:\\wrapper", cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.True(result.IsSuccess);
-            _serviceManagerMock.Verify();
+            Assert.NotNull(captured);
+            Assert.Equal(service.Name, captured!.ServiceName);
+            Assert.Equal(service.DisplayName, captured.DisplayName);
+            Assert.Equal(service.Description, captured.Description);
+            Assert.Equal(service.ExecutablePath, captured.RealExePath);
+            Assert.Equal(service.StartupDirectory, captured.WorkingDirectory);
+            Assert.Equal(service.Parameters, captured.RealArgs);
+            Assert.Equal(service.StartupType, captured.StartType);
+            Assert.Equal(service.Priority, captured.ProcessPriority);
+            Assert.Equal(service.CpuAffinity, captured.CpuAffinity);
+            Assert.Equal(service.EnableConsoleUI, captured.EnableConsoleUI);
+            Assert.Equal(service.StdoutPath, captured.StdoutPath);
+            Assert.Equal(service.StderrPath, captured.StderrPath);
+            Assert.Equal(service.EnableSizeRotation, captured.EnableSizeRotation);
+            Assert.Equal(3 * 1024L * 1024L, captured.RotationSizeInBytes);
+            Assert.Equal(service.EnableDateRotation, captured.EnableDateRotation);
+            Assert.Equal(service.DateRotationType, captured.DateRotationType);
+            Assert.Equal(service.MaxRotations, captured.MaxRotations);
+            Assert.Equal(service.UseLocalTimeForRotation, captured.UseLocalTimeForRotation);
+            Assert.Equal(service.EnableHealthMonitoring, captured.EnableHealthMonitoring);
+            Assert.Equal(service.HeartbeatInterval, captured.HeartbeatInterval);
+            Assert.Equal(service.MaxFailedChecks, captured.MaxFailedChecks);
+            Assert.Equal(service.HeartbeatUrl, captured.HeartbeatUrl);
+            Assert.Equal(service.HeartbeatUrlTimeoutSeconds, captured.HeartbeatUrlTimeoutSeconds);
+            Assert.Equal(service.EnableHeartbeatUrlFlags, captured.EnableHeartbeatUrlFlags);
+            Assert.Equal(service.RecoveryAction, captured.RecoveryAction);
+            Assert.Equal(service.RecoveryOnCleanExit, captured.RecoveryOnCleanExit);
+            Assert.Equal(service.MaxRestartAttempts, captured.MaxRestartAttempts);
+            Assert.Equal(service.UserAccount, captured.Username);
+            Assert.Equal(service.Password, captured.Password);
+            Assert.Equal(service.PreLaunchExecutablePath, captured.PreLaunchExePath);
+            Assert.Equal(service.PreLaunchStartupDirectory, captured.PreLaunchWorkingDirectory);
+            Assert.Equal(service.PreLaunchParameters, captured.PreLaunchArgs);
+            Assert.Equal(service.PreLaunchEnvironmentVariables, captured.PreLaunchEnvironmentVariables);
+            Assert.Equal(service.PreLaunchStdoutPath, captured.PreLaunchStdoutPath);
+            Assert.Equal(service.PreLaunchStderrPath, captured.PreLaunchStderrPath);
+            Assert.Equal(service.PreLaunchTimeoutSeconds, captured.PreLaunchTimeout);
+            Assert.Equal(service.PreLaunchRetryAttempts, captured.PreLaunchRetryAttempts);
+            Assert.Equal(service.PreLaunchIgnoreFailure, captured.PreLaunchIgnoreFailure);
+            Assert.Equal(service.FailureProgramPath, captured.FailureProgramPath);
+            Assert.Equal(service.FailureProgramStartupDirectory, captured.FailureProgramWorkingDirectory);
+            Assert.Equal(service.FailureProgramParameters, captured.FailureProgramArgs);
+            Assert.Equal(service.EnvironmentVariables, captured.EnvironmentVariables);
+            Assert.Equal(service.ServiceDependencies, captured.ServiceDependencies);
+            Assert.Equal(service.PostLaunchExecutablePath, captured.PostLaunchExePath);
+            Assert.Equal(service.PostLaunchStartupDirectory, captured.PostLaunchWorkingDirectory);
+            Assert.Equal(service.PostLaunchParameters, captured.PostLaunchArgs);
+            Assert.Equal(service.EnableDebugLogs, captured.EnableDebugLogs);
+            Assert.Equal(service.StartTimeout, captured.StartTimeout);
+            Assert.Equal(service.StopTimeout, captured.StopTimeout);
+            Assert.Equal(service.PreStopExecutablePath, captured.PreStopExePath);
+            Assert.Equal(service.PreStopStartupDirectory, captured.PreStopWorkingDirectory);
+            Assert.Equal(service.PreStopParameters, captured.PreStopArgs);
+            Assert.Equal(service.PreStopTimeoutSeconds, captured.PreStopTimeout);
+            Assert.Equal(service.PreStopLogAsError, captured.PreStopLogAsError);
+            Assert.Equal(service.PostStopExecutablePath, captured.PostStopExePath);
+            Assert.Equal(service.PostStopStartupDirectory, captured.PostStopWorkingDirectory);
+            Assert.Equal(service.PostStopParameters, captured.PostStopArgs);
+        }
+
+        [Fact]
+        public async Task Install_WithWrapperExeDir_HonoursItInDebugAndIgnoresItInRelease()
+        {
+            // Arrange
+            var service = CreateService();
+            InstallServiceOptions? captured = null;
+
+            _serviceManagerMock
+                .Setup(s => s.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<InstallServiceOptions, CancellationToken>((o, _) => captured = o)
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await service.Install(@"C:\customWrapper", cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(captured);
+
+#if DEBUG
+            Assert.Equal(Path.Combine(@"C:\customWrapper", AppConfig.ServyServiceUIExe), captured!.WrapperExePath);
+#else
+            Assert.Equal(Path.Combine(AppConfig.ProgramDataPath, AppConfig.ServyServiceUIExe), captured!.WrapperExePath);
+#endif
+        }
+
+        [Fact]
+        public async Task Install_WithRunAsLocalSystem_DoesNotForwardCredentials()
+        {
+            // Arrange
+            var service = new Service(_serviceManagerMock.Object)
+            {
+                Name = "LocalSystemService",
+                ExecutablePath = @"C:\real.exe",
+                RunAsLocalSystem = true,
+                UserAccount = @".\user",
+                Password = "secretPassword"
+            };
+
+            InstallServiceOptions? captured = null;
+            _serviceManagerMock
+                .Setup(s => s.InstallServiceAsync(It.IsAny<InstallServiceOptions>(), It.IsAny<CancellationToken>()))
+                .Callback<InstallServiceOptions, CancellationToken>((o, _) => captured = o)
+                .ReturnsAsync(OperationResult.Success());
+
+            // Act
+            var result = await service.Install(cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(captured);
+            Assert.Null(captured!.Username);
+            Assert.Null(captured.Password);
         }
 
         [Fact]

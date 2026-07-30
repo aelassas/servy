@@ -1,7 +1,5 @@
 ﻿using Servy.Core.Helpers;
 using Servy.Core.Resources;
-using System;
-using Xunit;
 
 namespace Servy.Core.UnitTests.Helpers
 {
@@ -42,11 +40,8 @@ namespace Servy.Core.UnitTests.Helpers
         public void ParseAffinity_Valid(string input, long expectedMask, int requiredCores)
         {
             int maxCores = Math.Min(Environment.ProcessorCount, 64);
-            if (maxCores < requiredCores)
-            {
-                // Skip execution if host lacks required core count for input validation
-                return;
-            }
+            Assert.SkipWhen(maxCores < requiredCores,
+                $"Host has {maxCores} usable cores; this case needs {requiredCores}.");
 
             // Act
             IntPtr result = AffinityHelper.ParseAffinity(input);
@@ -73,7 +68,7 @@ namespace Servy.Core.UnitTests.Helpers
         public void ParseAffinity_ValidSingleCoresAndRanges_ReturnsExpectedBitmask()
         {
             int maxCores = Math.Min(Environment.ProcessorCount, 64);
-            if (maxCores < 2) return; // Guard for single-core execution environments
+            Assert.SkipWhen(maxCores < 2, "Guard for single-core execution environments.");
 
             // Act: Core 0 and Core 1 -> (1 << 0) | (1 << 1) = 3
             IntPtr result = AffinityHelper.ParseAffinity("0, 1");
@@ -94,32 +89,24 @@ namespace Servy.Core.UnitTests.Helpers
             int maxCores = Math.Min(Environment.ProcessorCount, 64);
 
             // Test case: "0,2,4" -> (1<<0) | (1<<2) | (1<<4) = 1 + 4 + 16 = 21
-            if (maxCores >= 5)
-            {
-                IntPtr result = AffinityHelper.ParseAffinity("0,2,4");
-                Assert.Equal(new IntPtr(21L), result);
-            }
+            Assert.SkipWhen(maxCores < 5, $"Host has {maxCores} usable cores; complex range tests require at least 5 cores.");
 
-            // Test case: "0-3,8" -> (1<<0 | 1<<1 | 1<<2 | 1<<3) | (1<<8) = 15 + 256 = 271
-            if (maxCores >= 9)
-            {
-                IntPtr result = AffinityHelper.ParseAffinity("0-3,8");
-                Assert.Equal(new IntPtr(271L), result);
-            }
-
-            // Test case: "0-1, 2-3" with spaces -> 15
-            if (maxCores >= 4)
-            {
-                IntPtr result = AffinityHelper.ParseAffinity("0-1, 2-3");
-                Assert.Equal(new IntPtr(15L), result);
-            }
+            IntPtr result1 = AffinityHelper.ParseAffinity("0,2,4");
+            Assert.Equal(new IntPtr(21L), result1);
 
             // Test case: " 0-2 , 4 " with leading/trailing spaces -> 7 + 16 = 23
-            if (maxCores >= 5)
-            {
-                IntPtr result = AffinityHelper.ParseAffinity(" 0-2 , 4 ");
-                Assert.Equal(new IntPtr(23L), result);
-            }
+            IntPtr result2 = AffinityHelper.ParseAffinity(" 0-2 , 4 ");
+            Assert.Equal(new IntPtr(23L), result2);
+
+            // Test case: "0-1, 2-3" with spaces -> 15
+            IntPtr result3 = AffinityHelper.ParseAffinity("0-1, 2-3");
+            Assert.Equal(new IntPtr(15L), result3);
+
+            // Test case: "0-3,8" -> (1<<0 | 1<<1 | 1<<2 | 1<<3) | (1<<8) = 15 + 256 = 271
+            Assert.SkipWhen(maxCores < 9, $"Host has {maxCores} usable cores; high core index case (8) requires at least 9 cores.");
+
+            IntPtr result4 = AffinityHelper.ParseAffinity("0-3,8");
+            Assert.Equal(new IntPtr(271L), result4);
         }
 
         [Theory]
@@ -157,30 +144,26 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Contains(rangeExpectedPrefix, ex2.Message);
 
             // Inverted range (start > end)
-            if (maxAllowedCores >= 2)
-            {
-                var ex3 = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity("1-0"));
-                Assert.Contains(rangeExpectedPrefix, ex3.Message);
-            }
+            Assert.SkipWhen(maxAllowedCores < 2, $"Host has {maxAllowedCores} usable cores; inverted range validation requires at least 2 cores.");
+            var ex3 = Assert.Throws<ArgumentOutOfRangeException>(() => AffinityHelper.ParseAffinity("1-0"));
+            Assert.Contains(rangeExpectedPrefix, ex3.Message);
         }
 
         [Theory]
-        [InlineData(null)]
-        [InlineData("")]
-        [InlineData("   ")]
-        [InlineData("0")]
-        [InlineData("0x1")]
-        [InlineData("0,2,4")]
-        [InlineData("0-3,8")]
-        public void ValidateAffinity_ValidInput_ReturnsTrueAndNullErrorMessage(string? input)
+        [InlineData(null, 0)]
+        [InlineData("", 0)]
+        [InlineData("   ", 0)]
+        [InlineData("0", 1)]
+        [InlineData("0x1", 1)]
+        [InlineData("0,2,4", 5)]
+        [InlineData("0-3,8", 9)]
+        public void ValidateAffinity_ValidInput_ReturnsTrueAndNullErrorMessage(string? input, int requiredCores)
         {
             int maxCores = Math.Min(Environment.ProcessorCount, 64);
 
-            // Skip test cases if the current system lacks enough cores to evaluate the InlineData input
-            if ((input == "0,2,4" && maxCores < 5) || (input == "0-3,8" && maxCores < 9))
-            {
-                return;
-            }
+            // Skip test cases if the current system lacks enough cores to evaluate the input
+            Assert.SkipWhen(requiredCores > 0 && maxCores < requiredCores,
+                $"Host has {maxCores} usable cores; validating '{input}' requires at least {requiredCores} cores.");
 
             // Act
             bool isValid = AffinityHelper.ValidateAffinity(input, out string? errorMessage);
