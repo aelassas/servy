@@ -1,6 +1,6 @@
 [![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/aelassas/servy/actions/workflows/build.yml)
 [![test](https://github.com/aelassas/servy/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/aelassas/servy/actions/workflows/test.yml)
-[![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage&t=6)](https://codecov.io/gh/aelassas/servy)
+[![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage&t=7)](https://codecov.io/gh/aelassas/servy)
 [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
 
 <!--
@@ -9,7 +9,7 @@
 [![Build Status](https://aelassas.visualstudio.com/servy/_apis/build/status%2Faelassas.servy?branchName=main)](https://aelassas.visualstudio.com/servy/_build/latest?definitionId=4&branchName=main) 
 [![](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/badge.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml) 
 [![codecov](https://codecov.io/gh/aelassas/servy/graph/badge.svg?token=26WZX2V4BG)](https://codecov.io/gh/aelassas/servy)
-[![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage&t=6)](https://codecov.io/gh/aelassas/servy)
+[![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage&t=7)](https://codecov.io/gh/aelassas/servy)
 [![coveralls](https://coveralls.io/repos/github/aelassas/servy/badge.svg?branch=main)](https://coveralls.io/github/aelassas/servy?branch=main)
 
 [![security](https://github.com/aelassas/servy/actions/workflows/security.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/security.yml)
