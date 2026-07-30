@@ -28,7 +28,10 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(1.36, "1.4%")]   // rounding up
         public void FormatCpuUsage_ReturnsExpected(double input, string expected)
         {
+            // Arrange & Act
             var result = _processHelper.FormatCpuUsage(input);
+
+            // Assert
             Assert.Equal(expected, result);
         }
 
@@ -59,35 +62,47 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void ResolvePath_NullInput_ReturnsNull()
         {
+            // Arrange & Act
             var result = _processHelper.ResolvePath(null);
+
+            // Assert
             Assert.Null(result);
         }
 
         [Fact]
         public void ResolvePath_EmptyInput_ReturnsNull()
         {
+            // Arrange & Act
             var result = _processHelper.ResolvePath(string.Empty);
+
+            // Assert
             Assert.Null(result);
         }
 
         [Fact]
         public void ResolvePath_AbsolutePath_NoEnvVars_ReturnsNormalizedPath()
         {
+            // Arrange
             var tempDir = Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar);
             var input = tempDir + Path.DirectorySeparatorChar;
 
+            // Act
             var result = _processHelper.ResolvePath(input);
 
+            // Assert
             Assert.Equal(Path.GetFullPath(tempDir).TrimEnd(Path.DirectorySeparatorChar), result?.TrimEnd(Path.DirectorySeparatorChar));
         }
 
         [Fact]
         public void ResolvePath_AbsolutePath_WithEnvVar_ExpandsSuccessfully()
         {
+            // Arrange
             var input = "%TEMP%";
 
+            // Act
             var result = _processHelper.ResolvePath(input);
 
+            // Assert
             Assert.True(Path.IsPathRooted(result));
             Assert.Equal(Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar), result.TrimEnd(Path.DirectorySeparatorChar));
         }
@@ -95,8 +110,10 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void ResolvePath_RelativePath_ThrowsInvalidOperationException()
         {
+            // Arrange
             var input = @"relative\path\file.txt";
 
+            // Act & Assert
             var ex = Assert.Throws<InvalidOperationException>(() =>
                 _processHelper.ResolvePath(input));
 
@@ -106,11 +123,14 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void ResolvePath_NormalizesDotDotSegments()
         {
+            // Arrange
             var baseDir = Path.Combine(Path.GetTempPath(), "a", "b");
             var input = Path.Combine(baseDir, @"..\..\test");
 
+            // Act
             var result = _processHelper.ResolvePath(input);
 
+            // Assert
             Assert.Equal(
                 Path.GetFullPath(Path.Combine(Path.GetTempPath(), "test")),
                 result);
@@ -171,22 +191,26 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void ValidatePath_NullInput_ReturnsFalse()
         {
+            // Arrange & Act & Assert
             Assert.False(_processHelper.ValidatePath(null));
         }
 
         [Fact]
         public void ValidatePath_WhitespaceInput_ReturnsFalse()
         {
-            Assert.False(_processHelper.ValidatePath("   "));
+            // Arrange & Act & Assert
+            Assert.False(_processHelper.ValidatePath("    "));
         }
 
         [Fact]
         public void ValidatePath_ExistingFile_ReturnsTrue()
         {
+            // Arrange
             var file = Path.GetTempFileName();
 
             try
             {
+                // Act & Assert
                 Assert.True(_processHelper.ValidatePath(file, isFile: true));
             }
             finally
@@ -198,19 +222,23 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void ValidatePath_NonExistingFile_ReturnsFalse()
         {
+            // Arrange
             var file = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".txt");
 
+            // Act & Assert
             Assert.False(_processHelper.ValidatePath(file, isFile: true));
         }
 
         [Fact]
         public void ValidatePath_ExistingDirectory_ReturnsTrue()
         {
+            // Arrange
             var dir = Directory.CreateDirectory(
                 Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
 
             try
             {
+                // Act & Assert
                 Assert.True(_processHelper.ValidatePath(dir.FullName, isFile: false));
             }
             finally
@@ -222,30 +250,45 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void ValidatePath_NonExistingDirectory_ReturnsFalse()
         {
+            // Arrange
             var dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
+            // Act & Assert
             Assert.False(_processHelper.ValidatePath(dir, isFile: false));
         }
 
         [Fact]
-        public void ValidatePath_UnexpandedEnvVar_ReturnsFalse()
+        public void ValidatePath_UnexpandedEnvVar_IsTreatedAsLiteralSegment()
         {
-            var input = @"C:\%THIS_VAR_SHOULD_NOT_EXIST%\file.txt";
-
-            Assert.False(_processHelper.ValidatePath(input));
+            // Arrange
+            var dir = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "%THIS_VAR_SHOULD_NOT_EXIST%"));
+            try
+            {
+                // Act & Assert
+                // The literal '%...%' directory exists, so validation succeeds:
+                // the segment is a path component, not a failed expansion.
+                Assert.True(_processHelper.ValidatePath(dir.FullName, isFile: false));
+            }
+            finally
+            {
+                dir.Delete();
+            }
         }
 
         [Fact]
         public void ValidatePath_RelativePath_ReturnsFalse()
         {
+            // Arrange
             var input = @"relative\path\file.txt";
 
+            // Act & Assert
             Assert.False(_processHelper.ValidatePath(input));
         }
 
         [Fact]
         public void ValidatePath_EnvVar_File_ReturnsTrue()
         {
+            // Arrange
             var tempFile = Path.GetTempFileName();
 
             try
@@ -254,6 +297,7 @@ namespace Servy.Core.UnitTests.Helpers
                 var fileName = Path.GetFileName(tempFile);
                 var envPath = Path.Combine("%TEMP%", fileName);
 
+                // Act & Assert
                 Assert.True(_processHelper.ValidatePath(envPath, isFile: true));
             }
             finally
@@ -265,6 +309,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void ValidatePath_EnvVar_Directory_ReturnsTrue()
         {
+            // Arrange
             var dir = Directory.CreateDirectory(
                 Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
 
@@ -273,6 +318,7 @@ namespace Servy.Core.UnitTests.Helpers
                 var dirName = new DirectoryInfo(dir.FullName).Name;
                 var envPath = Path.Combine("%TEMP%", dirName);
 
+                // Act & Assert
                 Assert.True(_processHelper.ValidatePath(envPath, isFile: false));
             }
             finally

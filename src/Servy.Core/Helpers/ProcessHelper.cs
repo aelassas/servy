@@ -388,7 +388,8 @@ namespace Servy.Core.Helpers
             catch (Exception ex)
             {
                 Logger.Debug($"ValidatePath: could not resolve '{path}': {ex.Message}");
-                return false; // ResolvePath failed (unexpanded vars or relative path)
+                return false; // ResolvePath throws only for relative paths; unexpanded '%VAR%' segments
+                              // are kept literal and resolve normally (see #2082).
             }
         }
 
