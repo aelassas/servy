@@ -337,7 +337,8 @@ namespace Servy.UI.Bootstrapping
                 {
                     if (string.IsNullOrEmpty(ConnectionString) || string.IsNullOrEmpty(AESKeyFilePath) || string.IsNullOrEmpty(AESIVFilePath))
                     {
-                        throw new InvalidOperationException("Critical configuration values are missing. Ensure that the appsettings.json file is present and correctly configured.");
+                        throw new InvalidOperationException(
+                            $"Critical configuration values are missing. Ensure that the .exe.config file is present and correctly configured.");
                     }
 
                     var stopwatch = Stopwatch.StartNew();
