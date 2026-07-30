@@ -43,7 +43,7 @@ namespace Servy.Views
         {
             if (!string.IsNullOrWhiteSpace(serviceName))
             {
-                await _mainViewModel.LoadServiceConfiguration(serviceName);
+                await _mainViewModel.LoadServiceConfigurationAsync(serviceName);
             }
         }
 

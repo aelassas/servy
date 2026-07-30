@@ -163,7 +163,6 @@ namespace Servy.Core.Services
 
                     // 3. Add to path before diving deeper
                     currentPath.Add(serviceName);
-                    ServiceController[] deps = null;
 
                     try
                     {
@@ -171,7 +170,7 @@ namespace Servy.Core.Services
                         var childNodes = new List<ServiceDependencyNode>();
 
                         // Accessing this property can throw Win32Exception (Access Denied)
-                        deps = service.ServicesDependedOn;
+                        var deps = service.ServicesDependedOn;
 
                         try
                         {
@@ -185,12 +184,9 @@ namespace Servy.Core.Services
                         {
                             // ROBUSTNESS: Dispose all remaining handles if the foreach exited early due to an exception.
                             // ServiceController.Dispose() is idempotent, making this safe for previously disposed items.
-                            if (deps != null)
+                            foreach (var dep in deps)
                             {
-                                foreach (var dep in deps)
-                                {
-                                    try { dep.Dispose(); } catch { /* Ignore exceptions during disposal */ }
-                                }
+                                try { dep.Dispose(); } catch { /* Ignore exceptions during disposal */ }
                             }
                         }
 

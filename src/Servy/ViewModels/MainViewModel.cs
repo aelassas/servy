@@ -884,7 +884,7 @@ namespace Servy.ViewModels
             StopCommand = new AsyncCommand(StopServiceAsync, _ => !IsBusy, name: nameof(StopCommand));
             RestartCommand = new AsyncCommand(RestartServiceAsync, _ => !IsBusy, name: nameof(RestartCommand));
 
-            ManagerCommand = new AsyncCommand(OpenManagerAsync, name: nameof(ManagerCommand));
+            ManagerCommand = new AsyncCommand(OpenManagerAsync, _ => !IsBusy, name: nameof(ManagerCommand));
 
             ExportXmlCommand = new AsyncCommand(ExportXmlConfigAsync, _ => !IsBusy, name: nameof(ExportXmlCommand));
             ExportJsonCommand = new AsyncCommand(ExportJsonConfigAsync, _ => !IsBusy, name: nameof(ExportJsonCommand));
@@ -1240,7 +1240,15 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task OpenManagerAsync(object parameter)
         {
-            await ServiceCommands.OpenManager();
+            try
+            {
+                IsBusy = true;
+                await ServiceCommands.OpenManager();
+            }
+            finally
+            {
+                ResetIsBusy();
+            }
         }
 
         #endregion
@@ -1379,7 +1387,7 @@ namespace Servy.ViewModels
         /// </summary>
         /// <param name="serviceName">Service Name.</param>
         /// <returns>A task representing the asynchronous load operation.</returns>
-        public async Task LoadServiceConfiguration(string serviceName)
+        public async Task LoadServiceConfigurationAsync(string serviceName)
         {
             try
             {

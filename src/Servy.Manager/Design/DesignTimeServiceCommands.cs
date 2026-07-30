@@ -15,9 +15,6 @@ namespace Servy.Manager.Design
     /// </remarks>
     public class DesignTimeServiceCommands : IServiceCommands
     {
-        /// <summary>
-        /// Returns an empty list of services to satisfy design-time search bindings.
-        /// </summary>
         public Task<List<Service>> SearchServicesAsync(string searchText, bool calculatePerf, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(new List<Service>());
@@ -65,9 +62,6 @@ namespace Servy.Manager.Design
 
         public Task CopyPidAsync(Service service, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-        /// <summary>
-        /// No-op implementation of IDisposable for design-time.
-        /// </summary>
         public void Dispose()
         {
             // Nothing to release in design-time

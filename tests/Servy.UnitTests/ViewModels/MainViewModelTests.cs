@@ -623,7 +623,7 @@ namespace Servy.UnitTests.ViewModels
             _serviceRepository.Setup(r => r.GetByNameAsync("PolledService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(sampleDto);
 
             // Act
-            await _viewModel.LoadServiceConfiguration("PolledService");
+            await _viewModel.LoadServiceConfigurationAsync("PolledService");
 
             // Assert
             Assert.Equal("PolledService", _viewModel.ServiceName);
@@ -641,7 +641,7 @@ namespace Servy.UnitTests.ViewModels
             _serviceRepository.Setup(r => r.GetByNameAsync("MissingService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto)null);
 
             // Act
-            await _viewModel.LoadServiceConfiguration("MissingService");
+            await _viewModel.LoadServiceConfigurationAsync("MissingService");
 
             // Assert
             Assert.Equal("KeepThisName", _viewModel.ServiceName);
@@ -655,7 +655,7 @@ namespace Servy.UnitTests.ViewModels
             _serviceRepository.Setup(r => r.GetByNameAsync("ErrorService", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("DB Corrupt"));
 
             // Act
-            await _viewModel.LoadServiceConfiguration("ErrorService");
+            await _viewModel.LoadServiceConfigurationAsync("ErrorService");
 
             // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
