@@ -176,7 +176,7 @@ namespace Servy.CLI
                         processHelper
                         );
 
-                    async Task Run()
+                    void EnsureDatabase()
                     {
                         // Ensure db and security folders exist
                         AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
@@ -186,7 +186,10 @@ namespace Servy.CLI
 
                         // Initialize the database
                         DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+                    }
 
+                    async Task EnsureServiceBinariesAsync()
+                    {
                         var asm = Assembly.GetExecutingAssembly();
 
                         var sh = new ServiceHelper(serviceRepository);
@@ -241,11 +244,27 @@ namespace Servy.CLI
                         }
                     }
 
-                    // Helper to defer runtime execution (DB Init, Extraction) until AFTER successful argument parsing
-                    async Task<int> ExecuteWithRuntimeAsync(Func<Task<CommandResult>> commandAction)
+                    // Helper to defer targeted runtime initialization until AFTER successful argument parsing
+                    async Task<int> ExecuteWithRuntimeAsync(Func<Task<CommandResult>> commandAction, bool requireDatabase = true, bool requireBinaries = false)
                     {
-                        if (quiet) await Run();
-                        else await ConsoleHelper.RunWithLoadingAnimation(async () => { await Run(); });
+                        async Task BootstrapAsync()
+                        {
+                            if (requireDatabase) EnsureDatabase();
+                            if (requireBinaries) await EnsureServiceBinariesAsync();
+                        }
+
+                        if (!requireDatabase && !requireBinaries)
+                        {
+                            // Fast path: no initialization overhead needed
+                        }
+                        else if (quiet)
+                        {
+                            await BootstrapAsync();
+                        }
+                        else
+                        {
+                            await ConsoleHelper.RunWithLoadingAnimation(BootstrapAsync);
+                        }
 
                         return await PrintAndReturnAsync(commandAction());
                     }
@@ -266,14 +285,14 @@ namespace Servy.CLI
                         ImportServiceOptions
                         >(args)
                         .MapResult(
-                            async (Options.InstallServiceOptions opts) => await ExecuteWithRuntimeAsync(() => installCommand.ExecuteAsync(opts, cts.Token)),
-                            async (UninstallServiceOptions opts) => await ExecuteWithRuntimeAsync(() => uninstallCommand.ExecuteAsync(opts, cts.Token)),
-                            async (StartServiceOptions opts) => await ExecuteWithRuntimeAsync(() => startCommand.ExecuteAsync(opts, cts.Token)),
-                            async (StopServiceOptions opts) => await ExecuteWithRuntimeAsync(() => stopCommand.ExecuteAsync(opts, cts.Token)),
-                            async (RestartServiceOptions opts) => await ExecuteWithRuntimeAsync(() => restartCommand.ExecuteAsync(opts, cts.Token)),
-                            async (ServiceStatusOptions opts) => await ExecuteWithRuntimeAsync(() => Task.FromResult(serviceStatusCommand.Execute(opts, cts.Token))),
-                            async (ExportServiceOptions opts) => await ExecuteWithRuntimeAsync(() => exportCommand.ExecuteAsync(opts, cts.Token)),
-                            async (ImportServiceOptions opts) => await ExecuteWithRuntimeAsync(() => importCommand.ExecuteAsync(opts, cts.Token)),
+                            async (Options.InstallServiceOptions opts) => await ExecuteWithRuntimeAsync(() => installCommand.ExecuteAsync(opts, cts.Token), requireDatabase: true, requireBinaries: true),
+                            async (UninstallServiceOptions opts) => await ExecuteWithRuntimeAsync(() => uninstallCommand.ExecuteAsync(opts, cts.Token), requireDatabase: true, requireBinaries: false),
+                            async (StartServiceOptions opts) => await ExecuteWithRuntimeAsync(() => startCommand.ExecuteAsync(opts, cts.Token), requireDatabase: true, requireBinaries: true),
+                            async (StopServiceOptions opts) => await ExecuteWithRuntimeAsync(() => stopCommand.ExecuteAsync(opts, cts.Token), requireDatabase: true, requireBinaries: false),
+                            async (RestartServiceOptions opts) => await ExecuteWithRuntimeAsync(() => restartCommand.ExecuteAsync(opts, cts.Token), requireDatabase: true, requireBinaries: true),
+                            async (ServiceStatusOptions opts) => await ExecuteWithRuntimeAsync(() => Task.FromResult(serviceStatusCommand.Execute(opts, cts.Token)), requireDatabase: false, requireBinaries: false),
+                            async (ExportServiceOptions opts) => await ExecuteWithRuntimeAsync(() => exportCommand.ExecuteAsync(opts, cts.Token), requireDatabase: true, requireBinaries: false),
+                            async (ImportServiceOptions opts) => await ExecuteWithRuntimeAsync(() => importCommand.ExecuteAsync(opts, cts.Token), requireDatabase: true, requireBinaries: true),
                             // Wrap synchronous error result in Task
                             errs =>
                             {
@@ -288,7 +307,7 @@ namespace Servy.CLI
                 }
                 catch (OperationCanceledException)
                 {
-                    Console.Error.WriteLine("\nOperation cancelled by user.");  
+                    Console.Error.WriteLine("\nOperation cancelled by user.");
                     return (int)CliExitCode.Error;
                 }
                 catch (Exception ex)

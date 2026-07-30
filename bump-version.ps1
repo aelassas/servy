@@ -11,9 +11,16 @@
 .PARAMETER Version
     The new version to apply in 'Major.Minor' format (e.g., "8.0").
 
+.PARAMETER DryRun
+    If specified, previews the files that would be modified without performing any writes to disk.
+
 .EXAMPLE
-    ./Update-Version.ps1 1.4
+    ./bump-version.ps1 1.4
     Updates all version references to 1.4 / 1.4.0 / 1.4.0.0 depending on the file.
+
+.EXAMPLE
+    ./bump-version.ps1 -Version 1.4 -DryRun
+    Previews all version modifications that would be applied for version 1.4 without writing changes to disk.
 
 .NOTES
     Author: Akram El Assas
@@ -22,7 +29,8 @@
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [ValidatePattern("^\d+\.\d+$")]
-    [string]$Version
+    [string]$Version,
+    [switch]$DryRun
 )
 
 $ErrorActionPreference = "Stop"
@@ -32,7 +40,11 @@ $script:HadFailure     = $false
 $fullVersion = "$Version.0"
 $fileVersion = "$Version.0.0"
 
-Write-Host "Updating Servy version to $Version..."
+if ($DryRun) {
+    Write-Host "DRY-RUN: Previewing Servy version update to $Version..." -ForegroundColor Yellow
+} else {
+    Write-Host "Updating Servy version to $Version..."
+}
 
 # Base directory of the script
 $baseDir = $PSScriptRoot
@@ -42,6 +54,7 @@ $baseDir = $PSScriptRoot
 # ----------------------------------------------------------------------
 $helperFile = "Get-FileEncoding.ps1"
 $helperPath = Join-Path $baseDir $helperFile
+
 if (Test-Path $helperPath) {
     . $helperPath
 } else {
@@ -74,7 +87,7 @@ function Update-FileContent {
             # Count matches before attempting replacement
             $regexMatches = [regex]::Matches($content, $Pattern)
             if ($regexMatches.Count -eq 0) {
-                Write-Warning "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern" "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern"
+                Write-Warning "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern"
                 # A pattern missing exception is always treated as an unrecoverable run failure to keep the automated release pipeline safe.
                 $script:HadFailure = $true
                 return
@@ -85,8 +98,12 @@ function Update-FileContent {
                 param($m) "$($m.Groups[1].Value)$Replacement$($m.Groups[2].Value)" 
             })
         
-            [System.IO.File]::WriteAllText($Path, $newContent, $encoding)
-            Write-Host "Successfully updated ($($encoding.BodyName)): $Path ($($regexMatches.Count) replacements)" -ForegroundColor Green
+            if (-not $DryRun) {
+                [System.IO.File]::WriteAllText($Path, $newContent, $encoding)
+                Write-Host "Successfully updated ($($encoding.BodyName)): $Path ($($regexMatches.Count) replacements)" -ForegroundColor Green
+            } else {
+                Write-Host "DRY-RUN: Would update ($($encoding.BodyName)): $Path ($($regexMatches.Count) replacements)" -ForegroundColor Yellow
+            }
         } else {
             Write-Warning "Skipping missing file: $Path"
             # Missing files are now classified deterministically as build failures.
@@ -150,15 +167,19 @@ Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction Silen
         }
 
         if ($totalReplacements -gt 0) {
-            # Commit changes only if the file was actually modified
-            [System.IO.File]::WriteAllText($path, $content, $encoding)
-            Write-Host "Updated AssemblyInfo ($($encoding.BodyName)): $path ($totalReplacements replacements)" -ForegroundColor Green
+            if (-not $DryRun) {
+                # Commit changes only if the file was actually modified
+                [System.IO.File]::WriteAllText($path, $content, $encoding)
+                Write-Host "Updated AssemblyInfo ($($encoding.BodyName)): $path ($totalReplacements replacements)" -ForegroundColor Green
+            } else {
+                Write-Host "DRY-RUN: Would update AssemblyInfo ($($encoding.BodyName)): $path ($totalReplacements replacements)" -ForegroundColor Yellow
+            }
         } else {
             # LOG: Alert the operator if an AssemblyInfo file exists but lacks version metadata.
             Write-Warning "No version attributes found in: $path"
         }
     }
-        catch {
+    catch {
         # Non-terminating under Stop preference: use Write-Warning, not Write-Error
         Write-Warning "Failed to update file: $path. $($_.Exception.Message)"
         $script:HadFailure = $true
@@ -178,4 +199,8 @@ if ($script:HadFailure) {
     exit 1
 }
 
-Write-Host "All version updates completed successfully." -ForegroundColor Green
+if ($DryRun) {
+    Write-Host "DRY-RUN: Version update preview completed successfully." -ForegroundColor Yellow
+} else {
+    Write-Host "All version updates completed successfully." -ForegroundColor Green
+}

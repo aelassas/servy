@@ -162,6 +162,7 @@ namespace Servy.Manager.ViewModels
 
                     // This updates the header state based on the children's new values
                     UpdateSelectAllState();
+                    OnPropertyChanged(nameof(HasSelectedServices));
                 }
             }
         }
@@ -339,6 +340,7 @@ namespace Servy.Manager.ViewModels
         {
             if (e?.PropertyName == nameof(ServiceRowViewModel.IsChecked))
             {
+                if (_isUpdatingSelectAll) return;
                 UpdateSelectAllState();
                 OnPropertyChanged(nameof(HasSelectedServices));
             }

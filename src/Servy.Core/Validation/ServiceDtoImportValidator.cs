@@ -101,8 +101,7 @@ namespace Servy.Core.Validation
             {
                 errorMessage = string.Join("\n", validation.Errors);
 
-                var sanitizedName = (dto.Name ?? "Unknown").Replace("\r", "").Replace("\n", ""); // Sanitize the untrusted name to prevent log injection
-                Logger.Warn($"{FormatName} Import Blocked: Logical violation for service '{sanitizedName}'. Reason: {errorMessage}");
+                Logger.Warn($"{FormatName} Import Blocked: Logical violation for service '{dto.Name ?? "Unknown"}'. Reason: {errorMessage}");
                 return false;
             }
 

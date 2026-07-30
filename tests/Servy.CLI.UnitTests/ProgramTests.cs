@@ -125,9 +125,9 @@ namespace Servy.CLI.UnitTests
         public async Task Main_QuietFlagProvided_AltersExecutionToQuietPath()
         {
             // Arrange
-            // FIX: Supply the service name via the required explicit option switch (-n) 
-            // to satisfy the CommandLineParser constraints and successfully route into the quiet logic path.
-            string[] args = { "status", "-n", "NonExistentServiceForTestingOnly", "--quiet" };
+            // Use 'start' with a non-existent service name so execution fails (exit code 1)
+            // while ensuring no loading animation or output is written to the console buffer.
+            string[] args = { "start", "-n", "NonExistentServiceForTestingOnly", "--quiet" };
 
             // Act
             var result = await RunWithConsoleCaptureAsync(async () =>
@@ -136,11 +136,10 @@ namespace Servy.CLI.UnitTests
             });
 
             // Assert
-            // The parser succeeds, but the execution layer yields Error (1) due to the missing database entry,
-            // proving the application operational pipeline ran while maintaining complete silence.
+            // The command fails because the service is not found in the database/SCM, returning Error (1)
             Assert.Equal((int)CliExitCode.Error, result.ExitCode);
 
-            // Verify that no loading animation frames or status text fragments were written to the console buffer
+            // Verify that no loading animation frames or status text fragments were written to stdout/stderr
             Assert.True(string.IsNullOrEmpty(result.Output), "Console output should be completely suppressed when the --quiet flag is supplied.");
         }
 

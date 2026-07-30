@@ -215,7 +215,7 @@ namespace Servy.Service.ProcessManagement
                 string errPath = options.StderrPath;
 
                 // Setup StdOut Writer (Lazy Init)
-                if (psi.RedirectStandardOutput && !string.IsNullOrWhiteSpace(outPath))
+                if (psi.RedirectStandardOutput)
                 {
                     process.OutputDataReceived += (_, e) =>
                     {
@@ -249,7 +249,7 @@ namespace Servy.Service.ProcessManagement
                 }
 
                 // Setup StdErr Writer (Lazy Init)
-                if (psi.RedirectStandardError && !string.IsNullOrWhiteSpace(errPath))
+                if (psi.RedirectStandardError)
                 {
                     process.ErrorDataReceived += (_, e) =>
                     {
@@ -259,7 +259,7 @@ namespace Servy.Service.ProcessManagement
                         {
                             lock (stderrLock)
                             {
-                                if (pathsMatch && !string.IsNullOrWhiteSpace(outPath))
+                                if (pathsMatch)
                                 {
                                     // Multiplexing into the same file
                                     if (stdoutWriterFailed) return;
