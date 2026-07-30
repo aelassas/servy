@@ -18,7 +18,6 @@
 	<assembly fullname="System.Data.SQLite" preserve="all" />
 
 	<!-- Windows Security, ACL, and Principal marshalling used for service elevation & access control -->
-	<assembly fullname="System.Security.Claims" preserve="all" />
 	<assembly fullname="System.Security.Principal.Windows" preserve="all" />
 	<assembly fullname="System.Security.AccessControl" preserve="all" />
 	<assembly fullname="System.IO.FileSystem.AccessControl" preserve="all" />
@@ -27,11 +26,7 @@
 	<assembly fullname="System.IO.FileSystem" preserve="all" />
 	<assembly fullname="System.IO.FileSystem.DriveInfo" preserve="all" />
 	<assembly fullname="System.IO.FileSystem.Primitives" preserve="all" />
-	<assembly fullname="System.IO.FileSystem.Watcher" preserve="all" />
 
-	<!-- Immutable collections used in internal state snapshots -->
+	<!-- Immutable lookup tables: reserved device names, well-known service accounts -->
 	<assembly fullname="System.Collections.Immutable" preserve="all" />
-
-	<!-- STA thread marshalling and background thread management -->
-	<assembly fullname="System.Threading.Thread" preserve="all" />
 </linker>
