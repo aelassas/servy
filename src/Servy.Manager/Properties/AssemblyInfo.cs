@@ -49,7 +49,7 @@ using System.Windows;
 //      Numéro de build
 //      Révision
 //
-[assembly: AssemblyVersion("8.9.0.0")]
-[assembly: AssemblyFileVersion("8.9.0.0")]
+[assembly: AssemblyVersion("9.0.0.0")]
+[assembly: AssemblyFileVersion("9.0.0.0")]
 
 [assembly: InternalsVisibleTo("Servy.Manager.UnitTests")]
