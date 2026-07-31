@@ -190,6 +190,38 @@ namespace Servy.Testing
             }
         }
 
+        /// Safely executes a public static method on the specified target type, cleanly unwrapping TargetInvocationException exceptions.
+        /// </summary>
+        /// <param name="type">The declarative <see cref="Type"/> context metadata layer of the static target.</param>
+        /// <param name="methodName">The exact string signature identifier mapping of the public static method target.</param>
+        /// <param name="args">An optional array vector containing arguments passed sequentially down into the invocation layer.</param>
+        /// <returns>The functional return type payload evaluation block from the invoked static target, or null if void.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="type"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="methodName"/> cannot be bound onto the target class framework metadata description.</exception>
+        public static object? InvokePublicStatic(Type type, string methodName, params object?[]? args)
+        {
+            if (type == null) throw new ArgumentNullException(nameof(type));
+
+            var method = type.GetMethod(methodName, PublicStaticFlags);
+            if (method == null)
+            {
+                throw new ArgumentException($"Public static method '{methodName}' could not be found on type {type.Name}.");
+            }
+
+            try
+            {
+                return method.Invoke(null, args);
+            }
+            catch (TargetInvocationException ex)
+            {
+                if (ex.InnerException != null)
+                {
+                    ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+                }
+                throw;
+            }
+        }
+
         /// <summary>
         /// Safely executes a PUBLIC static method on the specified target type, cleanly unwrapping TargetInvocationException lines.
         /// </summary>

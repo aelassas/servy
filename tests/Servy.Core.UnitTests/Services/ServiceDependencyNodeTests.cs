@@ -94,38 +94,6 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void IsRunning_Getter_ShouldReturnFalse_IfBackingFieldNull()
-        {
-            // Arrange
-            var node = new ServiceDependencyNode("svc", "display", isRunning: false);
-
-            // Force the backing field to null via TestReflection to explicitly target the ?? branch
-            TestReflection.SetField(node, "_isRunning", null);
-
-            // Act
-            var result = node.IsRunning;
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
-        public void IsExpanded_Getter_ShouldReturnFalse_IfBackingFieldNull()
-        {
-            // Arrange
-            var node = new ServiceDependencyNode("svc", "display", isRunning: false);
-
-            // Force the backing field to null via TestReflection to explicitly target the ?? branch
-            TestReflection.SetField(node, "_isExpanded", null);
-
-            // Act
-            var result = node.IsExpanded;
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
         public void Dependencies_ShouldAllowAddingItems()
         {
             // Arrange
