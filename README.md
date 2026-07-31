@@ -105,7 +105,7 @@ servy-cli start --name="MyService"
 
 Or from an **elevated** Command Prompt:
 
-```cmd
+```
 sc.exe start MyService
 ```
 
