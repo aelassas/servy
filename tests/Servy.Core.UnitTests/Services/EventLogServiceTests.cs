@@ -193,7 +193,6 @@ namespace Servy.Core.UnitTests.Services
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(3, 4, DateTime.UtcNow, "[service] info");
 
-            // Register an open expectation trap on the interface execution block
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()))
                       .Returns(new[] { fakeEvt });
 
@@ -209,8 +208,6 @@ namespace Servy.Core.UnitTests.Services
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Information, entry.Level);
 
-            // PLATFORM BOUNDARY ASSERTS: Verify that the contract successfully negotiated 
-            // the parameters and triggered the read sequence exactly once without faulting.
             mockReader.Verify(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()), Times.Once);
         }
 
@@ -235,8 +232,6 @@ namespace Servy.Core.UnitTests.Services
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Information, entry.Level);
 
-            // PLATFORM BOUNDARY ASSERTS: Verify that the contract successfully negotiated 
-            // the parameters and triggered the read sequence exactly once without faulting.
             mockReader.Verify(r => r.ReadEvents(It.IsAny<EventLogQuery>(), It.IsAny<int>()), Times.Once);
         }
 
@@ -429,8 +424,7 @@ namespace Servy.Core.UnitTests.Services
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
 
-            // MaxResults is 10,000 in EventLogService class.
-            // We provide 10,001 items to force the 'break' to trigger.
+            // One more than the service's cap, so the 'break' is forced.
             const int limit = AppConfig.EventLogMaxResults;
 
             // Use ascending time values (+i) to provide unsorted mock data.
@@ -457,7 +451,6 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(limit, resultsList.Count);
 
             // 2. Verify the list is fully ordered (covers the .OrderByDescending branch rigorously)
-            // Monotonic evaluation loop ensures no rogue elements breach sequence constraints down the array surface.
             for (int k = 1; k < resultsList.Count; k++)
             {
                 Assert.True(resultsList[k - 1].Time >= resultsList[k].Time,

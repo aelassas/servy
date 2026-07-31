@@ -71,9 +71,6 @@ namespace Servy.Core.UnitTests.IO
             }
 
             // Assert
-            /// <summary>
-            /// Verifies that directory creation auto-runs during instantiation.
-            /// </summary>
             Assert.True(Directory.Exists(newDir));
         }
 

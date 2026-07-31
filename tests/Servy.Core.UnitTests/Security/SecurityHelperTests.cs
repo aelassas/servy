@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Security;
+using Servy.Testing;
 using System;
 using System.IO;
 using System.Linq;
@@ -238,20 +239,7 @@ namespace Servy.Core.UnitTests.Security
         /// <param name="sid">The identity reference SID target.</param>
         /// <param name="breakInheritance"><c>true</c> to break DACL cascading.</param>
         private void InvokeApplySecurityRules(DirectorySecurity security, IdentityReference sid, bool breakInheritance = true)
-        {
-            // Arrange & Act: Search across both Public and NonPublic bindings to ensure resolution matches the public core
-            var method = typeof(SecurityHelper)
-                .GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
-                .FirstOrDefault(m => m.Name == "ApplySecurityRules" && m.GetParameters().Length == 3);
-
-            if (method == null)
-            {
-                throw new InvalidOperationException("Could not locate the 'ApplySecurityRules' method on SecurityHelper via reflection hooks.");
-            }
-
-            // Assert & Execute
-            method.Invoke(null, new object[] { security, sid, breakInheritance });
-        }
+            => TestReflection.InvokePublicStatic(typeof(SecurityHelper), "ApplySecurityRules", security, sid, breakInheritance);
 
         public void Dispose()
         {

@@ -11,27 +11,27 @@ using Xunit;
 namespace Servy.CLI.UnitTests.Commands
 {
     /// <summary>
-    /// Centralized base test harness to standardize skeleton verifications for service management CLI operations.
-    /// Optimized for modern runtime features.
+    /// Shared base for CLI service command tests: builds the IServiceManager mock, creates the command under test,
+    /// and runs the standard test suite shared across service CLI operations.
     /// </summary>
-    /// <typeparam name="TCommand">The explicit runtime type of the command service wrapper under validation.</typeparam>
-    /// <typeparam name="TOptions">The user configuration options model matching the signature parameters of the target execution action.</typeparam>
+    /// <typeparam name="TCommand">The command type under test.</typeparam>
+    /// <typeparam name="TOptions">The CLI options type accepted by the command.</typeparam>
     public abstract class ServiceCommandTestsBase<TCommand, TOptions>
         where TOptions : class, new()
     {
         /// <summary>
-        /// Gets the mocked service manager instance used to orchestrate SCM simulation behaviors.
+        /// Gets the mock service manager used to simulate Windows Service Control Manager (SCM) behavior.
         /// </summary>
         protected readonly Mock<IServiceManager> MockServiceManager;
 
         /// <summary>
-        /// Gets the concrete command instance context layer under test.
+        /// Gets the command instance under test.
         /// </summary>
         protected readonly TCommand Command;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceCommandTestsBase{TCommand, TOptions}"/> class.
-        /// Configures the core isolation layers and invokes the internal component factory hook context.
+        /// Sets up the mock service manager and instantiates the command under test.
         /// </summary>
         protected ServiceCommandTestsBase()
         {
@@ -42,76 +42,76 @@ namespace Servy.CLI.UnitTests.Commands
         #region Extensibility Template Hooks
 
         /// <summary>
-        /// When overridden in a derived class, instantiates the exact command system element intended for unit analysis.
+        /// When overridden in a derived class, instantiates the command under test using the default mock manager.
         /// </summary>
-        /// <returns>A fully configured, target execution layer instance of <typeparamref name="TCommand"/>.</returns>
+        /// <returns>An instance of <typeparamref name="TCommand"/>.</returns>
         protected abstract TCommand CreateCommandInstance();
 
         /// <summary>
-        /// When overridden in a derived class, instantiates the exact command system element using a custom manager instance to verify constructor guards.
+        /// When overridden in a derived class, instantiates the command under test with a specific service manager instance (used to test constructor guards).
         /// </summary>
-        /// <param name="serviceManager">The explicit service manager instance (can be null).</param>
-        /// <returns>A newly configured instance of <typeparamref name="TCommand"/>.</returns>
+        /// <param name="serviceManager">The service manager instance to pass to the constructor (may be null).</param>
+        /// <returns>An instance of <typeparamref name="TCommand"/>.</returns>
         protected abstract TCommand CreateCommandInstanceWithManager(IServiceManager serviceManager);
 
         /// <summary>
-        /// When overridden in a derived class, builds a valid parameter dataset populated with a service name indicator.
+        /// When overridden in a derived class, creates a valid options instance containing the specified service name.
         /// </summary>
-        /// <param name="serviceName">The unique identifying target name context applied to the DTO instance properties.</param>
-        /// <returns>A valid runtime input instance parameter of type <typeparamref name="TOptions"/>.</returns>
+        /// <param name="serviceName">The service name to set on the options instance.</param>
+        /// <returns>A valid options instance of type <typeparamref name="TOptions"/>.</returns>
         protected abstract TOptions CreateValidOptions(string serviceName);
 
         /// <summary>
-        /// When overridden in a derived class, initializes an unpopulated options payload designed to test short-circuiting validation blocks.
+        /// When overridden in a derived class, creates an options instance containing the given (invalid) service name to test input validation guards.
         /// </summary>
-        /// <param name="serviceName">The malformed service name input to test (null, empty, or whitespace-only).</param>
-        /// <returns>An structurally empty configuration instance of type <typeparamref name="TOptions"/>.</returns>
+        /// <param name="serviceName">The malformed service name to test (null, empty, or whitespace-only).</param>
+        /// <returns>An options instance of type <typeparamref name="TOptions"/>.</returns>
         protected abstract TOptions CreateEmptyOptions(string serviceName);
 
         /// <summary>
-        /// When overridden in a derived class, returns the exact success notification message string expected from the pipeline output.
+        /// When overridden in a derived class, returns the expected success message string for the command.
         /// </summary>
-        /// <param name="serviceName">The name of the target configuration entity evaluated during the transaction lifecycle.</param>
-        /// <returns>The fully formatted exact success validation match text string.</returns>
+        /// <param name="serviceName">The target service name.</param>
+        /// <returns>The expected success message.</returns>
         protected abstract string ExpectedSuccessMessage(string serviceName);
 
         /// <summary>
-        /// When overridden in a derived class, provides the expected fallback error segment mapped inside the generic exception handler template logic.
+        /// When overridden in a derived class, returns the expected error message fragment included in generic exception responses.
         /// </summary>
-        /// <param name="serviceName">The identifier of the component target under context analysis.</param>
-        /// <returns>The descriptive structural operation action string fragment.</returns>
+        /// <param name="serviceName">The target service name.</param>
+        /// <returns>The expected error message fragment.</returns>
         protected abstract string ExpectedGenericActionMessage(string serviceName);
 
         /// <summary>
-        /// When overridden in a derived class, targets mock interface expressions to evaluate a successful operational runtime workflow path.
+        /// When overridden in a derived class, configures the mock service manager to return success for the specified service name.
         /// </summary>
-        /// <param name="mockManager">The mock object infrastructure managing the core service interaction behavior.</param>
-        /// <param name="serviceName">The exact tracking identity argument value targeted by the mock assertion loop.</param>
+        /// <param name="mockManager">The mock service manager.</param>
+        /// <param name="serviceName">The target service name.</param>
         protected abstract void SetupServiceManagerSuccess(Mock<IServiceManager> mockManager, string serviceName);
 
         /// <summary>
-        /// When overridden in a derived class, targets mock interface expressions to evaluate an explicit logic failure workflow condition.
+        /// When overridden in a derived class, configures the mock service manager to return a failure result with the given error message.
         /// </summary>
-        /// <param name="mockManager">The mock object infrastructure managing the core service interaction behavior.</param>
-        /// <param name="serviceName">The exact tracking identity argument value targeted by the mock assertion loop.</param>
-        /// <param name="errorMsg">The descriptive failure message payload configured to return from the mock layer.</param>
+        /// <param name="mockManager">The mock service manager.</param>
+        /// <param name="serviceName">The target service name.</param>
+        /// <param name="errorMsg">The error message payload to return from the mock.</param>
         protected abstract void SetupServiceManagerFailure(Mock<IServiceManager> mockManager, string serviceName, string errorMsg);
 
         /// <summary>
-        /// When overridden in a derived class, intercepts standard SCM queries to inject terminal framework exception instances directly.
+        /// When overridden in a derived class, configures the mock service manager to throw an exception of type <typeparamref name="TException"/>.
         /// </summary>
-        /// <typeparam name="TException">The specific runtime <see cref="Exception"/> subtype context targeted to drop out of the mock matrix.</typeparam>
-        /// <param name="mockManager">The mock object infrastructure managing the core service interaction behavior.</param>
-        /// <param name="serviceName">The exact tracking identity argument value targeted by the mock assertion loop.</param>
+        /// <typeparam name="TException">The exception type to throw from the mock.</typeparam>
+        /// <param name="mockManager">The mock service manager.</param>
+        /// <param name="serviceName">The target service name.</param>
         protected abstract void SetupServiceManagerException<TException>(Mock<IServiceManager> mockManager, string serviceName) where TException : Exception, new();
 
         /// <summary>
-        /// Routes the command processing context to modern runtime execution lanes dynamically via structural duck-typing.
-        /// Automatically checks for asynchronous signatures before falling back to synchronous handlers.
+        /// Executes the command under test with the provided options.
+        /// Checks for an asynchronous <c>ExecuteAsync</c> method via dynamic dispatch, falling back to synchronous <c>Execute</c>.
         /// </summary>
-        /// <param name="command">The specific system target layer component executing the required user operation.</param>
-        /// <param name="options">The primary properties parameter criteria passing configuration keys to the processor context.</param>
-        /// <returns>An asynchronous task returning a definitive runtime verification <see cref="CommandResult"/> wrapper state.</returns>
+        /// <param name="command">The command instance to execute.</param>
+        /// <param name="options">The options instance to pass to the command.</param>
+        /// <returns>The resulting <see cref="CommandResult"/>.</returns>
         protected virtual async Task<CommandResult> ExecuteCommandAsync(TCommand command, TOptions options)
         {
             dynamic cmd = command;
@@ -133,7 +133,7 @@ namespace Servy.CLI.UnitTests.Commands
         #region Base Core Test Suite Skeleton
 
         /// <summary>
-        /// Validates that the constructor properly throws an ArgumentNullException when the required IServiceManager dependency is missing.
+        /// Validates that the constructor throws an <see cref="ArgumentNullException"/> when the required <see cref="IServiceManager"/> dependency is missing.
         /// </summary>
         [Fact]
         public virtual void Constructor_NullServiceManager_ThrowsArgumentNullException()
@@ -147,7 +147,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         /// <summary>
-        /// Validates that perfectly matching inputs and valid setup returns a successful result with the proper text payload.
+        /// Validates that passing valid options and setting up a successful mock manager call returns a successful result with the expected success message.
         /// </summary>
         [Fact]
         public virtual async Task Execute_ValidOptions_ReturnsSuccess()
@@ -166,7 +166,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         /// <summary>
-        /// Validates that passing empty, null, or whitespace-only service identifiers directly terminates processing with a structured failure error response string.
+        /// Validates that passing null, empty, or whitespace service names returns a validation failure result indicating that a service name is required.
         /// </summary>
         [Theory]
         [InlineData(null)]
@@ -186,7 +186,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         /// <summary>
-        /// Validates that operational failures reported explicitly by the service manager layer are translated into a failure response cleanly.
+        /// Validates that operational failures returned by the service manager are propagated as failure command results.
         /// </summary>
         [Fact]
         public virtual async Task Execute_ServiceManagerFails_ReturnsFailure()
@@ -206,7 +206,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         /// <summary>
-        /// Validates that intercepting security constraints and lack of privileges formats a predictable, informative administrator elevation notification.
+        /// Validates that an <see cref="UnauthorizedAccessException"/> thrown by the service manager is caught and returns an "Access Denied" failure result.
         /// </summary>
         [Fact]
         public virtual async Task Execute_UnauthorizedAccessException_ReturnsFailure()
@@ -225,7 +225,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         /// <summary>
-        /// Validates that unexpected runtime environment exceptions are gracefully caught and map cleanly back into safe localized generic diagnostic outputs.
+        /// Validates that unexpected runtime exceptions thrown by the service manager are caught and translated into generic error messages.
         /// </summary>
         [Fact]
         public virtual async Task Execute_GenericException_ReturnsFailure()
@@ -244,7 +244,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         /// <summary>
-        /// Validates that requesting execution on a service that is not currently installed inside the SCM returns a dedicated target error response.
+        /// Validates that attempting to execute an operation on an uninstalled service returns a "service not found" failure result.
         /// </summary>
         [Fact]
         public virtual async Task Execute_ServiceNotInstalled_ReturnsServiceNotFoundError()
