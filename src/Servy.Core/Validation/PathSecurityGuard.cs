@@ -16,6 +16,9 @@ namespace Servy.Core.Validation
     /// </summary>
     public static class PathSecurityGuard
     {
+        private const string ExtendedPrefix = @"\\?\";
+        private const string ExtendedUncPrefix = @"\\?\UNC\";
+
         /// <summary>
         /// Enforces unified validation layers shared across both input and output operations.
         /// Guarantees that any defensive hardening immediately benefits both import and export workflows.
@@ -156,7 +159,6 @@ namespace Servy.Core.Validation
 
                 if (safeHandle.IsInvalid)
                 {
-                    fileStream.Dispose();
                     return PathSecurityResult.Fail(PathSecurityFailureKind.Security, Strings.Msg_SecurityHandleInvalid);
                 }
 
@@ -188,14 +190,14 @@ namespace Servy.Core.Validation
                 string normalizedPath = finalPathName;
                 bool unwrappedUnc = false;
 
-                if (normalizedPath.StartsWith(@"\\?\UNC\", StringComparison.OrdinalIgnoreCase))
+                if (normalizedPath.StartsWith(ExtendedUncPrefix, StringComparison.OrdinalIgnoreCase))
                 {
-                    normalizedPath = @"\\" + normalizedPath.Substring(@"\\?\UNC\".Length);
+                    normalizedPath = @"\\" + normalizedPath.Substring(ExtendedUncPrefix.Length);
                     unwrappedUnc = true;
                 }
-                else if (normalizedPath.StartsWith(@"\\?\", StringComparison.Ordinal))
+                else if (normalizedPath.StartsWith(ExtendedPrefix, StringComparison.OrdinalIgnoreCase))
                 {
-                    normalizedPath = normalizedPath.Substring(4);
+                    normalizedPath = normalizedPath.Substring(ExtendedPrefix.Length);
                 }
 
                 bool finalIsUnc = unwrappedUnc || (Uri.TryCreate(normalizedPath, UriKind.Absolute, out var finalUri) && finalUri.IsUnc);
