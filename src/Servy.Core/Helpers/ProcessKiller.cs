@@ -79,7 +79,7 @@ namespace Servy.Core.Helpers
 
         #region Public Interface: Child Termination
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void KillChildren(int parentPid)
         {
             int selfPid;
@@ -182,7 +182,7 @@ namespace Servy.Core.Helpers
 
         #region Public Interface: Tree & Parent Termination
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool KillProcessTreeAndParents(string processName, bool killParents = true)
         {
             try
@@ -280,7 +280,7 @@ namespace Servy.Core.Helpers
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool KillProcessTreeAndParents(int pid, bool killParents = true)
         {
             if (pid <= 0) return false;
@@ -395,7 +395,7 @@ namespace Servy.Core.Helpers
 
         #region File-Lock Integration
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool KillProcessesUsingFile(string filePath)
         {
             if (!File.Exists(filePath))

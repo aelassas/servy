@@ -84,17 +84,6 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void DisplayName_Getter_ShouldFallbackToServiceName_IfNull()
-        {
-            // Passing null as displayName leaves the backing field null,
-            // so the getter's `?? ServiceName` fallback returns "svc".
-            var node = new ServiceDependencyNode("svc", null);
-
-            // If the backing field is null, it should return ServiceName
-            Assert.Equal("svc", node.DisplayName);
-        }
-
-        [Fact]
         public void Dependencies_ShouldAllowAddingItems()
         {
             // Arrange

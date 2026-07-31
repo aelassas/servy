@@ -22,35 +22,35 @@ namespace Servy.Service.Timers
             _timer = new Timer(interval);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public event ElapsedEventHandler Elapsed
         {
             add { ThrowIfDisposed(); _timer.Elapsed += value; }
             remove { ThrowIfDisposed(); _timer.Elapsed -= value; }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool AutoReset
         {
             get { ThrowIfDisposed(); return _timer.AutoReset; }
             set { ThrowIfDisposed(); _timer.AutoReset = value; }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void Start()
         {
             ThrowIfDisposed();
             _timer.Start();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void Stop()
         {
             ThrowIfDisposed();
             _timer.Stop();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void Dispose()
         {
             Dispose(disposing: true);

@@ -2,8 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.ServiceProcess;
 using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Services
@@ -128,7 +126,7 @@ namespace Servy.Core.Services
 
         // --- QueryServiceConfig2 Overloads ---
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         [ExcludeFromCodeCoverage]
         public bool QueryServiceConfig2(
             SafeServiceHandle hService,

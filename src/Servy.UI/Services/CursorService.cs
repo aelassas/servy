@@ -10,10 +10,10 @@ namespace Servy.UI.Services
     /// </summary>
     public class CursorService : ICursorService
     {
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void SetWaitCursor() => SetCursorSafe(Cursors.Wait);
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void ResetCursor() => SetCursorSafe(null);
 
         /// <summary>

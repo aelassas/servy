@@ -12,7 +12,7 @@ namespace Servy.Core.Logging
     /// </summary>
     public class EventLogReader : IEventLogReader
     {
-        /// <inheritdoc/>
+        /// <inheritdoc />
         [ExcludeFromCodeCoverage]
         public IEnumerable<ServyEventLogEntry> ReadEvents(EventLogQuery query, int maxReadCount)
         {

@@ -22,10 +22,10 @@ namespace Servy.Core.Services
         {
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override string FormatName => "JSON";
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override ServiceDto Parse(string content)
         {
             return JsonConvert.DeserializeObject<ServiceDto>(content, JsonSecurity.UntrustedDataSettings);

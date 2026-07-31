@@ -341,7 +341,7 @@ namespace Servy.Services
                 checkDisabled: true,
                 cancellationToken: cancellationToken);
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public Task ExportXmlConfigAsync(string confirmPassword, CancellationToken cancellationToken = default) =>
             ExportConfigAsync(
                 confirmPassword,
@@ -351,7 +351,7 @@ namespace Servy.Services
                 Strings.ExportXml_Success,
                 cancellationToken);
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public Task ExportJsonConfigAsync(string confirmPassword, CancellationToken cancellationToken = default) =>
             ExportConfigAsync(
                 confirmPassword,
@@ -361,7 +361,7 @@ namespace Servy.Services
                 Strings.ExportJson_Success,
                 cancellationToken);
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public Task ImportXmlConfigAsync(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
                 _dialogService.OpenXml,
@@ -371,7 +371,7 @@ namespace Servy.Services
                 Strings.Msg_FailedToLoadXml,
                 cancellationToken);
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public Task ImportJsonConfigAsync(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
                 _dialogService.OpenJson,
@@ -381,7 +381,7 @@ namespace Servy.Services
                 Strings.Msg_FailedToLoadJson,
                 cancellationToken);
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task OpenManagerAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();

@@ -337,11 +337,12 @@ namespace Servy.Core.Helpers
         /// <param name="configuredTimeout">The timeout value from the service configuration.</param>
         /// <param name="previousStopTimeout">The last recorded successful stop duration.</param>
         /// <param name="preStopTimeout">The timeout for the pre-stop executable hook, if any.</param>
+        /// <param name="floorOverride">Optional floor override.</param>
         /// <returns>The calculated timeout in seconds, including safety buffers.</returns>
-        public static int CalculateStopTimeout(int? configuredTimeout, int? previousStopTimeout, int preStopTimeout = 0)
+        public static int CalculateStopTimeout(int? configuredTimeout, int? previousStopTimeout, int preStopTimeout = 0, int? floorOverride = null)
         {
             // Standardize the floor using the default stop timeout
-            int floor = AppConfig.DefaultStopTimeout;
+            int floor = floorOverride ?? AppConfig.DefaultStopTimeout;
 
             // Determine the baseline: highest of configured or historical duration (respecting the floor)
             int previousCapped = previousStopTimeout.HasValue

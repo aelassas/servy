@@ -277,7 +277,7 @@ namespace Servy.Core.IntegrationTests.Security
 
         [Theory]
         [InlineData("key", "Failed to unprotect encryption key")]
-        [InlineData("iv", "Failed to unprotect encryption key")]
+        [InlineData("iv", "Failed to unprotect encryption IV")]
         public void GetMaterial_CorruptedFile_ThrowsInvalidOperationException(string targetType, string expectedMessageToken)
         {
             // Arrange

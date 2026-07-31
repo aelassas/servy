@@ -44,25 +44,25 @@ namespace Servy.UI.Services
             });
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public Task ShowInfoAsync(string message, string caption)
         {
             return ShowAsync(message, caption, MessageBoxImage.Information, "INFO");
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public Task ShowWarningAsync(string message, string caption)
         {
             return ShowAsync(message, caption, MessageBoxImage.Warning, "WARNING");
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public Task ShowErrorAsync(string message, string caption)
         {
             return ShowAsync(message, caption, MessageBoxImage.Error, "ERROR");
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task<bool> ShowConfirmAsync(string message, string caption)
         {
             if (UiHeadless.IsEnabled)

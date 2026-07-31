@@ -101,22 +101,22 @@ namespace Servy.Manager
         /// </summary>
         public string AESIVFilePath => _bootstrapper.AESIVFilePath;
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int RefreshIntervalInSeconds { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int PerformanceRefreshIntervalInMs { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int ConsoleRefreshIntervalInMs { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int ConsoleMaxLines { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public string DesktopAppPublishPath { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool IsDesktopAppAvailable
         {
             get => _isDesktopAppAvailable;
@@ -130,10 +130,10 @@ namespace Servy.Manager
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int DependenciesRefreshIntervalInMs { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool ForceSoftwareRendering => _bootstrapper.ForceSoftwareRendering;
 
         /// <summary>
@@ -141,13 +141,13 @@ namespace Servy.Manager
         /// </summary>
         public LogLevel LogLevel { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int LogsWindowDays { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int SearchDebounceDelayMs { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int MaxBulkOperationParallelism { get; private set; }
 
         #endregion
