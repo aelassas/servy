@@ -55,7 +55,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 
 ## Demo Video
 
-This video demonstrates Servy 1.0. While Servy has evolved with many features like real-time CPU/RAM monitoring, stdout/stderr streaming, heartbeat pings, notifications, and CPU affinity, the core concept remains the same.
+This video demonstrates Servy 1.0. While Servy has evolved significantly since then with major features like real-time CPU/RAM monitoring, stdout/stderr log streaming, heartbeat pings, notifications, and CPU affinity, the core concept remains the same.
 
 [![Servy Demo Video](https://github.com/user-attachments/assets/183a48eb-0763-46b5-aba2-7db01857c942)](https://www.youtube.com/watch?v=biHq17j4RbI)
 
