@@ -106,7 +106,7 @@ namespace Servy.Infrastructure.Data
             return transaction is WrappedDbTransaction wrapper ? wrapper.Transaction : transaction;
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public IDbTransaction BeginTransaction()
         {
             var connection = _dbContext.CreateConnection();
@@ -231,7 +231,7 @@ namespace Servy.Infrastructure.Data
 
         #region Synchronous Methods
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public T? ExecuteScalar<T>(string sql, object? param = null, IDbTransaction? transaction = null)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
@@ -253,7 +253,7 @@ namespace Servy.Infrastructure.Data
             }, sql);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int Execute(string sql, object? param = null, IDbTransaction? transaction = null)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
@@ -275,7 +275,7 @@ namespace Servy.Infrastructure.Data
             }, sql);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public IEnumerable<T> Query<T>(string sql, object? param = null, IDbTransaction? transaction = null)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
@@ -297,7 +297,7 @@ namespace Servy.Infrastructure.Data
             }, sql) ?? Enumerable.Empty<T>();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public T? QuerySingleOrDefault<T>(string sql, object? param = null, IDbTransaction? transaction = null)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
@@ -323,7 +323,7 @@ namespace Servy.Infrastructure.Data
 
         #region Asynchronous Methods
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task<IDbTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
         {
             var connection = _dbContext.CreateConnection();
@@ -340,7 +340,7 @@ namespace Servy.Infrastructure.Data
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task<T?> ExecuteScalarAsync<T>(string sql, object? param = null, IDbTransaction? transaction = null, CancellationToken cancellationToken = default)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
@@ -365,7 +365,7 @@ namespace Servy.Infrastructure.Data
             }, cancellationToken, sql);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task<int> ExecuteAsync(string sql, object? param = null, IDbTransaction? transaction = null, CancellationToken cancellationToken = default)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
@@ -392,7 +392,7 @@ namespace Servy.Infrastructure.Data
             return result ?? 0;
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task<IEnumerable<T>> QueryAsync<T>(CommandDefinition command)
         {
             var actualTx = Unwrap(command.Transaction);
@@ -422,7 +422,7 @@ namespace Servy.Infrastructure.Data
             }, command.CancellationToken, command.CommandText) ?? Enumerable.Empty<T>();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object? param = null, IDbTransaction? transaction = null, CancellationToken cancellationToken = default)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
@@ -431,7 +431,7 @@ namespace Servy.Infrastructure.Data
             return await QueryAsync<T>(new CommandDefinition(sql, param, transaction, cancellationToken: cancellationToken));
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task<T?> QuerySingleOrDefaultAsync<T>(string sql, object? param = null, IDbTransaction? transaction = null, CancellationToken cancellationToken = default)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
@@ -440,7 +440,7 @@ namespace Servy.Infrastructure.Data
             return await QuerySingleOrDefaultAsync<T>(new CommandDefinition(sql, param, transaction, cancellationToken: cancellationToken));
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task<T?> QuerySingleOrDefaultAsync<T>(CommandDefinition command)
         {
             var actualTx = Unwrap(command.Transaction);
@@ -470,7 +470,7 @@ namespace Servy.Infrastructure.Data
             }, command.CancellationToken, command.CommandText);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task<T?> QueryFirstOrDefaultAsync<T>(CommandDefinition command)
         {
             var actualTx = Unwrap(command.Transaction);
@@ -501,7 +501,7 @@ namespace Servy.Infrastructure.Data
             }, command.CancellationToken, command.CommandText);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task<T?> QueryFirstOrDefaultAsync<T>(string sql, object? param = null, IDbTransaction? transaction = null, CancellationToken cancellationToken = default)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));

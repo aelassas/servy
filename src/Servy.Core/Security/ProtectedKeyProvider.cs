@@ -87,18 +87,18 @@ namespace Servy.Core.Security
 
         #region IProtectedKeyProvider Implementation
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public byte[] GetKey()
         {
             ThrowIfDisposed();
-            return GetCachedOrGenerate(ref _cachedKey, _keyFilePath, 32);
+            return GetCachedOrGenerate(ref _cachedKey, _keyFilePath, 32, "encryption key");
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public byte[] GetIV()
         {
             ThrowIfDisposed();
-            return GetCachedOrGenerate(ref _cachedIv, _ivFilePath, 16);
+            return GetCachedOrGenerate(ref _cachedIv, _ivFilePath, 16, "encryption IV");
         }
 
         #endregion
@@ -112,8 +112,9 @@ namespace Servy.Core.Security
         /// <param name="cacheField">A reference to the backing field (e.g., _cachedKey or _cachedIv).</param>
         /// <param name="path">The filesystem path to the protected file.</param>
         /// <param name="length">The expected length of the key material.</param>
+        /// <param name="materialName">A label for the material.</param>
         /// <returns>A clone of the decrypted key material.</returns>
-        private byte[] GetCachedOrGenerate(ref byte[]? cacheField, string path, int length)
+        private byte[] GetCachedOrGenerate(ref byte[]? cacheField, string path, int length, string materialName)
         {
             lock (_cacheLock)
             {
@@ -128,7 +129,7 @@ namespace Servy.Core.Security
 
                 // 2. GENERATE: Materialize and cache the keys.
                 // GetOrGenerate handles its own internal migration/rotation logic.
-                byte[] decrypted = GetOrGenerate(path, length);
+                byte[] decrypted = GetOrGenerate(path, length, materialName);
 
                 // Capture ownership of the freshly generated key material directly without 
                 // executing an extra intermediate cloning pass. This prevents un-zeroed plaintext 
@@ -281,6 +282,7 @@ namespace Servy.Core.Security
         /// </summary>
         /// <param name="path">The full filesystem path where the protected data is stored.</param>
         /// <param name="length">The number of random bytes to generate if the file is missing.</param>
+        /// <param name="materialName">A label for the material.</param>
         /// <returns>
         /// A decrypted byte array containing the raw keying material.
         /// </returns>
@@ -292,7 +294,7 @@ namespace Servy.Core.Security
         /// Thrown when the data cannot be unprotected. This usually occurs if the file was created 
         /// on a different machine or under a different security context that DPAPI cannot resolve.
         /// </exception>
-        private byte[] GetOrGenerate(string path, int length)
+        private byte[] GetOrGenerate(string path, int length, string materialName)
         {
             // Double-check locking pattern to ensure only one process or thread generates the file
             if (!File.Exists(path))
@@ -411,7 +413,7 @@ namespace Servy.Core.Security
             catch (CryptographicException ex)
             {
                 // DPAPI is machine-specific; moving the file to another server will trigger this exception.
-                string errorMsg = $"Failed to unprotect encryption key at '{path}'. The file may have been moved from another machine or restored from an image.";
+                string errorMsg = $"Failed to unprotect {materialName} at '{path}'. The file may have been moved from another machine or restored from an image.";
 
                 string workaround = "Workaround:\n" +
                                     "1. (If possible) Export service configurations to XML or JSON on the original machine.\n" +

@@ -26,7 +26,7 @@ namespace Servy.Core.Validation
             _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public ValidationResult Validate(ServiceDto? dto, string? wrapperExePath = null, string? confirmPassword = null, bool importMode = false)
         {
             var result = new ValidationResult();

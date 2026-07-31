@@ -755,7 +755,7 @@ Servy 8.5 focuses on stability, security, and maintainability, with a large numb
 * fix(manager): LogsViewModel.cs - ToDate setter raises redundant/spurious OnPropertyChanged(nameof(FromDateMaxDate)) (#2264)
 * fix(manager): LogTailer.RunFromPosition - per-line byte-offset estimation (incl. unused 'charCount' and per-line GetByteCount) is dead; lastPosition is always overwritten by fs.Position at EOF (#2283)
 * fix(manager): DesignTimeAppConfig.cs - SearchDebounceDelayMs hardcodes literal 300 instead of referencing AppConfig.DefaultSearchDebounceDelayMs (#2325)
-* fix(manager): App.xaml.cs (Manager) - LogLevel uses <inheritdoc/> but IAppConfiguration has no LogLevel member, so docs resolve to nothing (#2333)
+* fix(manager): App.xaml.cs (Manager) - LogLevel uses <inheritdoc /> but IAppConfiguration has no LogLevel member, so docs resolve to nothing (#2333)
 * fix(manager): DesignTimeAppConfig.cs - MaxBulkOperationParallelism declared public while all other IAppConfiguration members use explicit interface implementation (#2335)
 * fix(manager): IServiceCommands.cs / ServiceCommands.cs - ExportServiceToXml/JsonAsync lack CancellationToken (asymmetric with Import and every other async command) (#2336)
 * fix(manager): LogsViewModel.cs - Search() XML doc references nonexistent <see cref="Logs"/> member (#2337)

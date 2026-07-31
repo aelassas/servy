@@ -8,7 +8,7 @@ namespace Servy.Service.ProcessManagement
     /// </summary>
     public class ProcessFactory : IProcessFactory
     {
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public IProcessWrapper Create(ProcessStartInfo startInfo, IServyLogger? logger)
         {
             return new ProcessWrapper(startInfo, logger);

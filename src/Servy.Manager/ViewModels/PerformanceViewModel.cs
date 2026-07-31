@@ -204,25 +204,25 @@ namespace Servy.Manager.ViewModels
 
         #region MonitoringViewModelBase Implementation
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override ServiceItemBase? SelectedServiceItem => SelectedService;
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override int RefreshIntervalMs => _appConfig.PerformanceRefreshIntervalInMs;
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override ServiceItemBase CreateServiceItem(Service? service)
         {
             return new PerformanceService { Name = service?.Name, Pid = service?.Pid };
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override void ResetMonitoringState()
         {
             ResetGraphs();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override async Task ApplyTickAsync(ServiceItemBase selection, CancellationToken token)
         {
             var currentSelection = (PerformanceService)selection;

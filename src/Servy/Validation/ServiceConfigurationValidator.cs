@@ -26,7 +26,7 @@ namespace Servy.Validation
             _serviceValidationRules = serviceValidationRules ?? throw new ArgumentNullException(nameof(serviceValidationRules));
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         /// <remarks>
         /// This implementation follows a fail-fast approach, showing only the first identified 
         /// error to prevent overwhelming the user with multiple dialog boxes.

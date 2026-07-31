@@ -22,10 +22,10 @@ namespace Servy.Core.Services
         {
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override string FormatName => "XML";
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override ServiceDto? Parse(string content)
         {
             var serializer = new XmlSerializer(typeof(ServiceDto));
