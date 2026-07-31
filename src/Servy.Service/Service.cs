@@ -921,7 +921,7 @@ namespace Servy.Service
 
                 var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger);
 
-                if (process?.UnderlyingProcess is Process nativeProcess)
+                if (process.UnderlyingProcess is Process nativeProcess)
                 {
                     lock (_trackedHooks)
                     {
@@ -1101,9 +1101,9 @@ namespace Servy.Service
             // Only create stderr writer if a path is provided
             if (!string.IsNullOrWhiteSpace(options.StderrPath))
             {
-                if (_stdoutWriter != null && !string.IsNullOrWhiteSpace(options.StdoutPath) &&
-                    _pathValidator.IsValidPath(options.StderrPath) &&
-                    _pathValidator.IsValidPath(options.StdoutPath))
+                // A non-null _stdoutWriter already implies StdoutPath is non-blank and passed IsValidPath
+                // (CreateWriter returns null otherwise), so only StderrPath still needs validating here.
+                if (_stdoutWriter != null && _pathValidator.IsValidPath(options.StderrPath))
                 {
                     var canonStdErr = Helper.NormalizePath(options.StderrPath);
                     var canonStdOut = Helper.NormalizePath(options.StdoutPath);
@@ -1440,7 +1440,7 @@ namespace Servy.Service
                 };
                 _logger?.Info($"Running {hookName} program: {launchOptions.ExecutablePath}");
                 var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger);
-                if (track && process?.UnderlyingProcess is Process p)
+                if (track && process.UnderlyingProcess is Process p)
                     lock (_trackedHooks) _trackedHooks.Add(new Hook { OperationName = hookName, Process = p });
                 else process?.Dispose();
             }
@@ -2658,7 +2658,7 @@ namespace Servy.Service
                     while (true)
                     {
                         try { waitCompleted = stopTask.Wait(AppConfig.SafeKillProcessPulseIntervalMs); }
-                        catch (AggregateException) { waitCompleted = true; break; } // task finished with fault/cancel
+                        catch (AggregateException) { break; } // task finished with fault/cancel
                         if (waitCompleted) break;
                         if (sw.Elapsed > maxWaitTime)
                         {
@@ -2761,12 +2761,10 @@ namespace Servy.Service
         /// </remarks>
         private void CleanupTrackedHooks()
         {
-            if (_trackedHooks == null) return;
-
             foreach (var hook in _trackedHooks)
             {
                 // Safely dispose each hook to release native handles
-                try { hook?.Dispose(); }
+                try { hook.Dispose(); }
                 catch (Exception ex)
                 {
                     _logger?.Warn($"Failed to dispose tracked hook: {ex.Message}");
@@ -2774,8 +2772,7 @@ namespace Servy.Service
             }
 
             // Clear the collection while still under the lock
-            try { _trackedHooks.Clear(); }
-            catch (Exception ex) { _logger?.Warn($"Failed to clear tracked hooks: {ex.Message}"); }
+            _trackedHooks.Clear();
         }
 
         /// <summary>

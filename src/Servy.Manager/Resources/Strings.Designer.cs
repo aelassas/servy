@@ -421,7 +421,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to No logs found in {0}.
+        ///   Looks up a localized string similar to No logs found in {1}.
         /// </summary>
         public static string Footer_Log_None {
             get {
@@ -430,7 +430,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Found 1 log in {0}.
+        ///   Looks up a localized string similar to Found 1 log in {1}.
         /// </summary>
         public static string Footer_Log_One {
             get {
@@ -457,7 +457,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to No services loaded in {0}.
+        ///   Looks up a localized string similar to No services loaded in {1}.
         /// </summary>
         public static string Footer_Service_None {
             get {
@@ -466,7 +466,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Loaded 1 service in {0}.
+        ///   Looks up a localized string similar to Loaded 1 service in {1}.
         /// </summary>
         public static string Footer_Service_One {
             get {
