@@ -133,6 +133,7 @@ namespace Servy.Core.UnitTests.Native
         [Theory]
         [InlineData(null)]
         [InlineData("")]
+        [InlineData("   ")]
         public void AtomicSecureMove_NullOrEmptySource_ThrowsArgumentException(string source)
         {
             Assert.Throws<ArgumentException>("source", () => NativeMethodsHelpers.AtomicSecureMove(source, "dest.txt"));

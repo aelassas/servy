@@ -1,6 +1,8 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Resources;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Servy.Core.ServiceDependencies
@@ -33,7 +35,7 @@ namespace Servy.Core.ServiceDependencies
             }
 
             // Validate each dependency name produced by the shared tokenizer.
-            foreach (string serviceName in ServiceDependenciesParser.Tokenize(input))
+            foreach (string serviceName in ServiceDependenciesParser.Tokenize(input).Distinct(StringComparer.OrdinalIgnoreCase))
             {
                 if (!ValidServiceNameRegex.IsMatch(serviceName))
                 {
