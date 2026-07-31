@@ -218,9 +218,9 @@ namespace Servy.Core.Native
         public static void AtomicSecureMove(string source, string destination)
         {
             if (string.IsNullOrWhiteSpace(source))
-                throw new ArgumentException("Source path cannot be null or empty.", nameof(source));
+                throw new ArgumentException("Source path cannot be empty or whitespace.", nameof(source));
             if (string.IsNullOrWhiteSpace(destination))
-                throw new ArgumentException("Destination path cannot be null or empty.", nameof(destination));
+                throw new ArgumentException("Destination path cannot be empty or whitespace.", nameof(destination));
 
             if (!MoveFileEx(source, destination, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
             {

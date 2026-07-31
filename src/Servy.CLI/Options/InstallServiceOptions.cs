@@ -222,7 +222,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the absolute URL used to send out-of-band diagnostic heartbeat pings (e.g., healthchecks.io).
         /// While the process is healthy, Servy periodically pings this endpoint to confirm service vitality.
         /// </summary>
-        [Option("heartbeatUrl", HelpText = "Absolute URL for out-of-band diagnostic heartbeat pings.")]
+        [Option("heartbeatUrl", HelpText = "Absolute URL for out-of-band diagnostic heartbeat pings. Only used when health monitoring is enabled.")]
         public string? HeartbeatUrl { get; set; }
 
         /// <summary>
