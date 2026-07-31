@@ -53,7 +53,8 @@ namespace Servy.CLI.UnitTests.Options
             }
 
             // Sanity check to confirm our naming convention pattern scanner is actively intercepting fields
-            Assert.True(foundAnySensitiveFields, "The sensitive options regex heuristic failed to intercept any matching property definitions across the target assembly.");
+            Assert.True(foundAnySensitiveFields,
+                "The sensitive option name heuristic (params/env/envvars/password) matched no properties across the target assembly.");
         }
     }
 }
