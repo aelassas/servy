@@ -1,8 +1,6 @@
 ﻿using CommandLine;
 using Servy.CLI.Options;
-using Servy.Testing;
 using System.Reflection;
-using System.Text.RegularExpressions;
 
 namespace Servy.CLI.UnitTests.Options
 {

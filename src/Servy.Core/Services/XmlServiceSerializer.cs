@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Text;
+﻿using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 using Servy.Core.DTOs;

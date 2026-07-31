@@ -10,12 +10,6 @@ using Servy.Manager.Resources;
 using Servy.Manager.ViewModels;
 using Servy.Testing;
 using Servy.UI.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 using Helper = Servy.Testing.Helper;
 
 namespace Servy.Manager.UnitTests.ViewModels

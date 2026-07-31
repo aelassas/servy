@@ -12,7 +12,7 @@ namespace Servy.Core.Services
     {
         #region Fields
 
-        private string? _displayName;
+        private string _displayName;
         private bool _isRunning;
         private bool _isExpanded;
 

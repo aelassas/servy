@@ -1,5 +1,4 @@
-﻿using Servy.Manager.ViewModels;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace Servy.Manager.Views
 {

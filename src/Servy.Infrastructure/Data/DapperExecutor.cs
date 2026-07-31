@@ -3,7 +3,6 @@ using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Logging;
 using System.Data;
-using System.Data.Common;
 using System.Data.SQLite;
 
 namespace Servy.Infrastructure.Data

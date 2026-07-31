@@ -1,6 +1,5 @@
 ﻿using Servy.Core.Helpers;
 using Servy.Testing;
-using System.Diagnostics;
 
 namespace Servy.Core.UnitTests.Helpers
 {
