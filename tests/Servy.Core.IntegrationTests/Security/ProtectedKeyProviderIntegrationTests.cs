@@ -3,7 +3,6 @@ using Servy.Testing;
 using System;
 using System.IO;
 using System.Security.Cryptography;
-using System.Threading;
 using Xunit;
 
 namespace Servy.Core.IntegrationTests.Security

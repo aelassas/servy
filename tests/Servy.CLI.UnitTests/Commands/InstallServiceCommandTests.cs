@@ -6,7 +6,6 @@ using Servy.CLI.Validation;
 using Servy.Core.Common;
 using Servy.Core.Config;
 using Servy.Core.Services;
-using Servy.Testing;
 using System;
 using System.IO;
 using System.Threading;

@@ -1,12 +1,8 @@
 ﻿using CommandLine;
 using Servy.CLI.Options;
-using Servy.Core.Config;
-using Servy.Testing;
 using System;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using Xunit;
 
 namespace Servy.CLI.UnitTests.Options

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Servy.Core.EnvironmentVariables;
 using Xunit;
 

@@ -1,5 +1,4 @@
 ﻿using Servy.Core.Services;
-using Servy.Testing;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Services
