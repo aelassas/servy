@@ -297,7 +297,9 @@ namespace Servy.Service.Helpers
                 }
 
                 return PercentEscapeToken + varName + PercentEscapeToken;
-            });
+            },
+            RegexOptions.None,
+            AppConfig.InputRegexTimeout);
         }
 
         /// <summary>

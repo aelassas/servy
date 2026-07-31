@@ -124,7 +124,7 @@ namespace Servy.UnitTests.Services
                 if (File.Exists(wrapperPath)) File.Move(wrapperPath, backup);
 
                 // Act
-                var result = await sut.InstallService(config, CancellationToken.None);
+                var result = await sut.InstallServiceAsync(config, CancellationToken.None);
 
                 // Assert
                 Assert.False(result);
@@ -153,7 +153,7 @@ namespace Servy.UnitTests.Services
             _modelToServiceDtoMock.Setup(m => m()).Returns((ServiceDto?)null);
 
             // Act
-            var result = await sut.InstallService(config, CancellationToken.None);
+            var result = await sut.InstallServiceAsync(config, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -171,7 +171,7 @@ namespace Servy.UnitTests.Services
             _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), "abc", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             // Act
-            await sut.InstallService(config, CancellationToken.None);
+            await sut.InstallServiceAsync(config, CancellationToken.None);
 
             // Assert
             Assert.Null(dto.UserAccount);
@@ -190,7 +190,7 @@ namespace Servy.UnitTests.Services
             _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             // Act
-            var result = await sut.InstallService(config, CancellationToken.None);
+            var result = await sut.InstallServiceAsync(config, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -211,7 +211,7 @@ namespace Servy.UnitTests.Services
             _messageBoxService.Setup(m => m.ShowConfirmAsync(Resources.Strings.Msg_ServiceAlreadyExists, UiAppConfig.Caption)).ReturnsAsync(false);
 
             // Act
-            var result = await sut.InstallService(config, CancellationToken.None);
+            var result = await sut.InstallServiceAsync(config, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -232,7 +232,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Failure("Access Denied OS Driver Error"));
 
             // Act
-            var result = await sut.InstallService(config, CancellationToken.None);
+            var result = await sut.InstallServiceAsync(config, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -253,7 +253,7 @@ namespace Servy.UnitTests.Services
                 .ThrowsAsync(new UnauthorizedAccessException());
 
             // Act
-            var result = await sut.InstallService(config, CancellationToken.None);
+            var result = await sut.InstallServiceAsync(config, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -274,7 +274,7 @@ namespace Servy.UnitTests.Services
                 .ThrowsAsync(new Exception("Fatal Kernel Loop"));
 
             // Act
-            var result = await sut.InstallService(config, CancellationToken.None);
+            var result = await sut.InstallServiceAsync(config, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -297,7 +297,7 @@ namespace Servy.UnitTests.Services
             _appConfigMock.Setup(c => c.ManagerAppPublishPath).Returns(path);
 
             // Act
-            await sut.OpenManager(cancellationToken: TestContext.Current.CancellationToken);
+            await sut.OpenManagerAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_ManagerAppNotFound, UiAppConfig.Caption), Times.Once);
@@ -325,7 +325,7 @@ namespace Servy.UnitTests.Services
             try
             {
                 // Act
-                await sut.OpenManager(cancellationToken: TestContext.Current.CancellationToken);
+                await sut.OpenManagerAsync(cancellationToken: TestContext.Current.CancellationToken);
 
                 // Assert
                 // Verify that the UI correctly intercepts the failure and displays the targeted error message text
@@ -357,7 +357,7 @@ namespace Servy.UnitTests.Services
             _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
 
             // Act
-            var result = await sut.StartService(serviceName, CancellationToken.None);
+            var result = await sut.StartServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -374,7 +374,7 @@ namespace Servy.UnitTests.Services
             _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Disabled);
 
             // Act - StartService sets checkDisabled to true
-            var result = await sut.StartService(serviceName, CancellationToken.None);
+            var result = await sut.StartServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -392,7 +392,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Failure("Service is deadlocked. Control failed."));
 
             // Act - StopService leaves checkDisabled as false
-            var result = await sut.StopService(serviceName, CancellationToken.None);
+            var result = await sut.StopServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -410,7 +410,7 @@ namespace Servy.UnitTests.Services
                 .ThrowsAsync(new UnauthorizedAccessException());
 
             // Act
-            var result = await sut.StartService(serviceName, CancellationToken.None);
+            var result = await sut.StartServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -428,7 +428,7 @@ namespace Servy.UnitTests.Services
                 .ThrowsAsync(new InvalidOperationException("RPC Server Unavailable"));
 
             // Act
-            var result = await sut.StartService(serviceName, CancellationToken.None);
+            var result = await sut.StartServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -452,7 +452,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await sut.StartService(serviceName, CancellationToken.None);
+            var result = await sut.StartServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.True(result);
@@ -472,7 +472,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await sut.StopService(serviceName, CancellationToken.None);
+            var result = await sut.StopServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.True(result);
@@ -496,7 +496,7 @@ namespace Servy.UnitTests.Services
             var sut = CreateSut();
 
             // Act
-            var result = await sut.UninstallService(serviceName, CancellationToken.None);
+            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -516,7 +516,7 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.SaveXml(It.IsAny<string>())).Returns(string.Empty);
 
             // Act
-            await sut.ExportXmlConfig("password", cancellationToken: TestContext.Current.CancellationToken);
+            await sut.ExportXmlConfigAsync("password", cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             _modelToServiceDtoMock.Verify(m => m(), Times.Never);
@@ -535,7 +535,7 @@ namespace Servy.UnitTests.Services
             _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "password", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             // Act
-            await sut.ExportXmlConfig("password", cancellationToken: TestContext.Current.CancellationToken);
+            await sut.ExportXmlConfigAsync("password", cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(File.Exists(path));
@@ -554,7 +554,7 @@ namespace Servy.UnitTests.Services
             _modelToServiceDtoMock.Setup(m => m()).Throws(new IOException("Disk Full / Access Denied"));
 
             // Act
-            await sut.ExportXmlConfig("password", cancellationToken: TestContext.Current.CancellationToken);
+            await sut.ExportXmlConfigAsync("password", cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
@@ -575,7 +575,7 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(returnedPath!);
 
             // Act
-            await sut.ImportXmlConfig(cancellationToken: TestContext.Current.CancellationToken);
+            await sut.ImportXmlConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             _xmlServiceValidatorMock.Verify(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny), Times.Never);
@@ -591,7 +591,7 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(uncPath);
 
             // Act
-            await sut.ImportXmlConfig(cancellationToken: TestContext.Current.CancellationToken);
+            await sut.ImportXmlConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(Core.Resources.Strings.Msg_SecurityUncPathProhibited, UiAppConfig.Caption), Times.Once);
@@ -612,7 +612,7 @@ namespace Servy.UnitTests.Services
             try
             {
                 // Act
-                await sut.ImportJsonConfig(cancellationToken: TestContext.Current.CancellationToken);
+                await sut.ImportJsonConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
 
                 // Assert
                 _messageBoxService.Verify(m => m.ShowErrorAsync("Missing closing brace delimiter.", UiAppConfig.Caption), Times.Once);
@@ -639,7 +639,7 @@ namespace Servy.UnitTests.Services
             try
             {
                 // Act
-                await sut.ImportXmlConfig(cancellationToken: TestContext.Current.CancellationToken);
+                await sut.ImportXmlConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
 
                 // Assert
                 _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_FailedToLoadXml, UiAppConfig.Caption), Times.Once);
@@ -670,7 +670,7 @@ namespace Servy.UnitTests.Services
             try
             {
                 // Act
-                await sut.ImportJsonConfig(cancellationToken: TestContext.Current.CancellationToken);
+                await sut.ImportJsonConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.False(bindCalled);
@@ -689,7 +689,7 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.OpenXml()).Throws(new IOException("Hardware File Lock Denied"));
 
             // Act
-            await sut.ImportXmlConfig(cancellationToken: TestContext.Current.CancellationToken);
+            await sut.ImportXmlConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
@@ -709,7 +709,7 @@ namespace Servy.UnitTests.Services
             _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName, It.IsAny<CancellationToken>())).Returns(false);
 
             // Act
-            var result = await sut.UninstallService(serviceName, CancellationToken.None);
+            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -728,7 +728,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Failure("Service marked for deletion."));
 
             // Act
-            var result = await sut.UninstallService(serviceName, CancellationToken.None);
+            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -746,7 +746,7 @@ namespace Servy.UnitTests.Services
                 .ThrowsAsync(new UnauthorizedAccessException());
 
             // Act
-            var result = await sut.UninstallService(serviceName, CancellationToken.None);
+            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -764,7 +764,7 @@ namespace Servy.UnitTests.Services
                 .ThrowsAsync(new Exception("WMI Registry Failure"));
 
             // Act
-            var result = await sut.UninstallService(serviceName, CancellationToken.None);
+            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -789,7 +789,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await sut.UninstallService(serviceName, CancellationToken.None);
+            var result = await sut.UninstallServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.True(result);
@@ -816,7 +816,7 @@ namespace Servy.UnitTests.Services
                 .ReturnsAsync(OperationResult.Success());
 
             // Act
-            var result = await sut.RestartService(serviceName, CancellationToken.None);
+            var result = await sut.RestartServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.True(result);
@@ -833,7 +833,7 @@ namespace Servy.UnitTests.Services
             _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Disabled);
 
             // Act
-            var result = await sut.RestartService(serviceName, CancellationToken.None);
+            var result = await sut.RestartServiceAsync(serviceName, CancellationToken.None);
 
             // Assert
             Assert.False(result);
@@ -853,7 +853,7 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(string.Empty);
 
             // Act
-            await sut.ExportJsonConfig("secretPassword", cancellationToken: TestContext.Current.CancellationToken);
+            await sut.ExportJsonConfigAsync("secretPassword", cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             _modelToServiceDtoMock.Verify(m => m(), Times.Never);
@@ -872,7 +872,7 @@ namespace Servy.UnitTests.Services
             _serviceConfigurationValidator.Setup(v => v.ValidateAsync(dto, null, "secretPassword", It.IsAny<bool>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             // Act
-            await sut.ExportJsonConfig("secretPassword", cancellationToken: TestContext.Current.CancellationToken);
+            await sut.ExportJsonConfigAsync("secretPassword", cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.False(File.Exists(path));
@@ -891,7 +891,7 @@ namespace Servy.UnitTests.Services
             _modelToServiceDtoMock.Setup(m => m()).Throws(new UnauthorizedAccessException("I/O Lock Encountered"));
 
             // Act
-            await sut.ExportJsonConfig("secretPassword", cancellationToken: TestContext.Current.CancellationToken);
+            await sut.ExportJsonConfigAsync("secretPassword", cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(Resources.Strings.Msg_UnexpectedError, UiAppConfig.Caption), Times.Once);
@@ -986,7 +986,7 @@ namespace Servy.UnitTests.Services
             try
             {
                 // Act
-                await sut.ImportXmlConfig(cancellationToken: TestContext.Current.CancellationToken);
+                await sut.ImportXmlConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.True(bindActionWasExecuted, "The _bindServiceDtoToModel(dto) logic line was not executed.");
@@ -1029,7 +1029,7 @@ namespace Servy.UnitTests.Services
             try
             {
                 // Act
-                await sut.ImportJsonConfig(cancellationToken: TestContext.Current.CancellationToken);
+                await sut.ImportJsonConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
 
                 // Assert
                 Assert.True(bindActionWasExecuted, "The _bindServiceDtoToModel(dto) logic line was not executed.");

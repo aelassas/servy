@@ -250,7 +250,7 @@ namespace Servy.Core.Services
             {
                 Logger.Info($"Unicode name variance detected during update sequence ('{existingDbService.Name}' -> '{options.ServiceName}'). Executing full uninstallation sequence for the legacy casing variant from SCM and Database.");
 
-                if (IsServiceInstalled(existingDbService.Name))
+                if (IsServiceInstalled(existingDbService.Name, cancellationToken: cancellationToken))
                 {
                     try
                     {

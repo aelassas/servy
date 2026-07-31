@@ -287,7 +287,7 @@ namespace Servy.Manager.Services
             {
                 try
                 {
-                    var exists = await Task.Run(() => _serviceManager.IsServiceInstalled(service.Name), cancellationToken);
+                    var exists = await Task.Run(() => _serviceManager.IsServiceInstalled(service.Name, cancellationToken: cancellationToken), cancellationToken);
 
                     if (exists)
                     {

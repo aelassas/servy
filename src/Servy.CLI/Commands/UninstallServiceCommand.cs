@@ -40,7 +40,7 @@ namespace Servy.CLI.Commands
             var suggestion = Strings.Msg_UninstallServiceSuggestion;
 
             // Handle the case where the Windows service is already removed from SCM, but leftover database records remain.
-            if (!_serviceManager.IsServiceInstalled(opts.ServiceName))
+            if (!_serviceManager.IsServiceInstalled(opts.ServiceName, cancellationToken: cancellationToken))
             {
                 var existingDbService = await _serviceRepository.GetByNameAsync(opts.ServiceName, decrypt: false, cancellationToken: cancellationToken);
                 if (existingDbService != null)
