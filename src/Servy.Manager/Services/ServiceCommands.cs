@@ -16,7 +16,6 @@ using Servy.UI.Services;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -293,7 +292,7 @@ namespace Servy.Manager.Services
             {
                 try
                 {
-                    var exists = await Task.Run(() => _serviceManager.IsServiceInstalled(service.Name), cancellationToken);
+                    var exists = await Task.Run(() => _serviceManager.IsServiceInstalled(service.Name, cancellationToken: cancellationToken), cancellationToken);
 
                     if (exists)
                     {

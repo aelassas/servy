@@ -187,7 +187,7 @@ namespace Servy.UnitTests.ViewModels
             await _viewModel.InstallCommand.ExecuteAsync(null);
 
             // Assert
-            _serviceCommandsMock.Verify(s => s.InstallService(
+            _serviceCommandsMock.Verify(s => s.InstallServiceAsync(
                 It.Is<ServiceConfiguration>(c =>
                     c.Name == _viewModel.ServiceName &&
                     c.DisplayName == _viewModel.ServiceDisplayName &&
@@ -257,7 +257,7 @@ namespace Servy.UnitTests.ViewModels
         {
             _viewModel.ServiceName = "MyService";
             await _viewModel.StartCommand.ExecuteAsync(null);
-            _serviceCommandsMock.Verify(s => s.StartService("MyService", It.IsAny<CancellationToken>()), Times.Once);
+            _serviceCommandsMock.Verify(s => s.StartServiceAsync("MyService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -265,7 +265,7 @@ namespace Servy.UnitTests.ViewModels
         {
             _viewModel.ServiceName = "MyService";
             await _viewModel.StopCommand.ExecuteAsync(null);
-            _serviceCommandsMock.Verify(s => s.StopService("MyService", It.IsAny<CancellationToken>()), Times.Once);
+            _serviceCommandsMock.Verify(s => s.StopServiceAsync("MyService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -273,7 +273,7 @@ namespace Servy.UnitTests.ViewModels
         {
             _viewModel.ServiceName = "MyService";
             await _viewModel.RestartCommand.ExecuteAsync(null);
-            _serviceCommandsMock.Verify(s => s.RestartService("MyService", It.IsAny<CancellationToken>()), Times.Once);
+            _serviceCommandsMock.Verify(s => s.RestartServiceAsync("MyService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -281,14 +281,14 @@ namespace Servy.UnitTests.ViewModels
         {
             _viewModel.ServiceName = "MyService";
             await _viewModel.UninstallCommand.ExecuteAsync(null);
-            _serviceCommandsMock.Verify(s => s.UninstallService("MyService", It.IsAny<CancellationToken>()), Times.Once);
+            _serviceCommandsMock.Verify(s => s.UninstallServiceAsync("MyService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task ManagerCommand_Calls_OpenManager()
         {
             await _viewModel.ManagerCommand.ExecuteAsync(null);
-            _serviceCommandsMock.Verify(s => s.OpenManager(It.IsAny<CancellationToken>()), Times.Once);
+            _serviceCommandsMock.Verify(s => s.OpenManagerAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         #endregion
@@ -545,7 +545,7 @@ namespace Servy.UnitTests.ViewModels
         {
             _viewModel.ConfirmPassword = "SecretPassword123";
             await _viewModel.ExportXmlCommand.ExecuteAsync(null);
-            _serviceCommandsMock.Verify(m => m.ExportXmlConfig("SecretPassword123", It.IsAny<CancellationToken>()), Times.Once);
+            _serviceCommandsMock.Verify(m => m.ExportXmlConfigAsync("SecretPassword123", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -553,21 +553,21 @@ namespace Servy.UnitTests.ViewModels
         {
             _viewModel.ConfirmPassword = "SecretPassword123";
             await _viewModel.ExportJsonCommand.ExecuteAsync(null);
-            _serviceCommandsMock.Verify(m => m.ExportJsonConfig("SecretPassword123", It.IsAny<CancellationToken>()), Times.Once);
+            _serviceCommandsMock.Verify(m => m.ExportJsonConfigAsync("SecretPassword123", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task ImportXmlCommand_Calls_ImportXmlConfig()
         {
             await _viewModel.ImportXmlCommand.ExecuteAsync(null);
-            _serviceCommandsMock.Verify(m => m.ImportXmlConfig(It.IsAny<CancellationToken>()), Times.Once);
+            _serviceCommandsMock.Verify(m => m.ImportXmlConfigAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task ImportJsonCommand_Calls_ImportJsonConfig()
         {
             await _viewModel.ImportJsonCommand.ExecuteAsync(null);
-            _serviceCommandsMock.Verify(m => m.ImportJsonConfig(It.IsAny<CancellationToken>()), Times.Once);
+            _serviceCommandsMock.Verify(m => m.ImportJsonConfigAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         #endregion

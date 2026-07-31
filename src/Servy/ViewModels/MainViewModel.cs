@@ -1156,14 +1156,14 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Calls <see cref="IServiceCommands.InstallService"/> with the current property values.
+        /// Calls <see cref="IServiceCommands.InstallServiceAsync"/> with the current property values.
         /// </summary>
         private async Task InstallServiceAsync(object parameter)
         {
             try
             {
                 IsBusy = true;
-                await Task.Run(() => ServiceCommands.InstallService(_config));
+                await Task.Run(() => ServiceCommands.InstallServiceAsync(_config));
             }
             finally
             {
@@ -1172,14 +1172,14 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Calls <see cref="IServiceCommands.UninstallService"/> for the current <see cref="ServiceName"/>.
+        /// Calls <see cref="IServiceCommands.UninstallServiceAsync"/> for the current <see cref="ServiceName"/>.
         /// </summary>
         private async Task UninstallServiceAsync(object parameter)
         {
             try
             {
                 IsBusy = true;
-                await Task.Run(() => ServiceCommands.UninstallService(ServiceName));
+                await Task.Run(() => ServiceCommands.UninstallServiceAsync(ServiceName));
             }
             finally
             {
@@ -1188,14 +1188,14 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Calls <see cref="IServiceCommands.StartService"/> for the current <see cref="ServiceName"/>.
+        /// Calls <see cref="IServiceCommands.StartServiceAsync"/> for the current <see cref="ServiceName"/>.
         /// </summary>
         private async Task StartServiceAsync(object parameter)
         {
             try
             {
                 IsBusy = true;
-                await Task.Run(() => ServiceCommands.StartService(ServiceName));
+                await Task.Run(() => ServiceCommands.StartServiceAsync(ServiceName));
             }
             finally
             {
@@ -1204,14 +1204,14 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Calls <see cref="IServiceCommands.StopService"/> for the current <see cref="ServiceName"/>.
+        /// Calls <see cref="IServiceCommands.StopServiceAsync"/> for the current <see cref="ServiceName"/>.
         /// </summary>
         private async Task StopServiceAsync(object parameter)
         {
             try
             {
                 IsBusy = true;
-                await Task.Run(() => ServiceCommands.StopService(ServiceName));
+                await Task.Run(() => ServiceCommands.StopServiceAsync(ServiceName));
             }
             finally
             {
@@ -1220,14 +1220,14 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Calls <see cref="IServiceCommands.RestartService"/> for the current <see cref="ServiceName"/>.
+        /// Calls <see cref="IServiceCommands.RestartServiceAsync"/> for the current <see cref="ServiceName"/>.
         /// </summary>
         private async Task RestartServiceAsync(object parameter)
         {
             try
             {
                 IsBusy = true;
-                await Task.Run(() => ServiceCommands.RestartService(ServiceName));
+                await Task.Run(() => ServiceCommands.RestartServiceAsync(ServiceName));
             }
             finally
             {
@@ -1236,14 +1236,14 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Calls <see cref="IServiceCommands.OpenManager"/> to open the Servy Manager application.
+        /// Calls <see cref="IServiceCommands.OpenManagerAsync"/> to open the Servy Manager application.
         /// </summary>
         private async Task OpenManagerAsync(object parameter)
         {
             try
             {
                 IsBusy = true;
-                await ServiceCommands.OpenManager();
+                await ServiceCommands.OpenManagerAsync();
             }
             finally
             {
@@ -1282,7 +1282,7 @@ namespace Servy.ViewModels
             try
             {
                 IsBusy = true;
-                await ServiceCommands.ExportXmlConfig(ConfirmPassword);
+                await ServiceCommands.ExportXmlConfigAsync(ConfirmPassword);
             }
             finally
             {
@@ -1298,7 +1298,7 @@ namespace Servy.ViewModels
             try
             {
                 IsBusy = true;
-                await ServiceCommands.ExportJsonConfig(ConfirmPassword);
+                await ServiceCommands.ExportJsonConfigAsync(ConfirmPassword);
             }
             finally
             {
@@ -1317,7 +1317,7 @@ namespace Servy.ViewModels
             try
             {
                 IsBusy = true;
-                await ServiceCommands.ImportXmlConfig();
+                await ServiceCommands.ImportXmlConfigAsync();
             }
             finally
             {
@@ -1336,7 +1336,7 @@ namespace Servy.ViewModels
             try
             {
                 IsBusy = true;
-                await ServiceCommands.ImportJsonConfig();
+                await ServiceCommands.ImportJsonConfigAsync();
             }
             finally
             {

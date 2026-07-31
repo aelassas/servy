@@ -108,7 +108,7 @@ namespace Servy.Services
         #region IServiceCommands Implementation
 
         /// <inheritdoc />
-        public async Task<bool> InstallService(ServiceConfiguration config, CancellationToken cancellationToken = default)
+        public async Task<bool> InstallServiceAsync(ServiceConfiguration config, CancellationToken cancellationToken = default)
         {
             var wrapperExePath = AppConfig.GetServyUIServicePath();
 
@@ -140,7 +140,7 @@ namespace Servy.Services
 
             // 3. Validate the DTO
             // We pass config.ConfirmPassword directly to the validator as it is a UI-only field
-            if (!await _serviceConfigurationValidator.ValidateAsync(dto, wrapperExePath: wrapperExePath, confirmPassword: config.ConfirmPassword))
+            if (!await _serviceConfigurationValidator.ValidateAsync(dto, wrapperExePath: wrapperExePath, confirmPassword: config.ConfirmPassword, cancellationToken: cancellationToken))
             {
                 return false;
             }
@@ -267,9 +267,9 @@ namespace Servy.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> UninstallService(string serviceName, CancellationToken cancellationToken = default)
+        public async Task<bool> UninstallServiceAsync(string serviceName, CancellationToken cancellationToken = default)
         {
-            if (!await IsServiceNameValid(serviceName))
+            if (!await IsServiceNameValidAsync(serviceName))
             {
                 return false;
             }
@@ -315,7 +315,7 @@ namespace Servy.Services
         }
 
         /// <inheritdoc />
-        public Task<bool> StartService(string serviceName, CancellationToken cancellationToken = default) =>
+        public Task<bool> StartServiceAsync(string serviceName, CancellationToken cancellationToken = default) =>
             ExecuteServiceCommandAsync(
                 serviceName,
                 (name) => _serviceManager.StartServiceAsync(name, logSuccessfulStart: true, cancellationToken: cancellationToken),
@@ -324,7 +324,7 @@ namespace Servy.Services
                 cancellationToken: cancellationToken);
 
         /// <inheritdoc />
-        public Task<bool> StopService(string serviceName, CancellationToken cancellationToken = default) =>
+        public Task<bool> StopServiceAsync(string serviceName, CancellationToken cancellationToken = default) =>
             ExecuteServiceCommandAsync(
                 serviceName,
                 (name) => _serviceManager.StopServiceAsync(name, logSuccessfulStop: true, cancellationToken: cancellationToken),
@@ -333,7 +333,7 @@ namespace Servy.Services
                 cancellationToken: cancellationToken);
 
         /// <inheritdoc />
-        public Task<bool> RestartService(string serviceName, CancellationToken cancellationToken = default) =>
+        public Task<bool> RestartServiceAsync(string serviceName, CancellationToken cancellationToken = default) =>
             ExecuteServiceCommandAsync(
                 serviceName,
                 (name) => _serviceManager.RestartServiceAsync(name, logSuccessfulRestart: true, cancellationToken: cancellationToken),
@@ -342,7 +342,7 @@ namespace Servy.Services
                 cancellationToken: cancellationToken);
 
         /// <inheritdoc/>
-        public Task ExportXmlConfig(string confirmPassword, CancellationToken cancellationToken = default) =>
+        public Task ExportXmlConfigAsync(string confirmPassword, CancellationToken cancellationToken = default) =>
             ExportConfigAsync(
                 confirmPassword,
                 () => _dialogService.SaveXml(Strings.SaveFileDialog_XmlTitle),
@@ -352,7 +352,7 @@ namespace Servy.Services
                 cancellationToken);
 
         /// <inheritdoc/>
-        public Task ExportJsonConfig(string confirmPassword, CancellationToken cancellationToken = default) =>
+        public Task ExportJsonConfigAsync(string confirmPassword, CancellationToken cancellationToken = default) =>
             ExportConfigAsync(
                 confirmPassword,
                 () => _dialogService.SaveJson(Strings.SaveFileDialog_JsonTitle),
@@ -362,7 +362,7 @@ namespace Servy.Services
                 cancellationToken);
 
         /// <inheritdoc/>
-        public Task ImportXmlConfig(CancellationToken cancellationToken = default) =>
+        public Task ImportXmlConfigAsync(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
                 _dialogService.OpenXml,
                 (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
@@ -372,7 +372,7 @@ namespace Servy.Services
                 cancellationToken);
 
         /// <inheritdoc/>
-        public Task ImportJsonConfig(CancellationToken cancellationToken = default) =>
+        public Task ImportJsonConfigAsync(CancellationToken cancellationToken = default) =>
             ImportConfigAsync(
                 _dialogService.OpenJson,
                 (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
@@ -382,7 +382,7 @@ namespace Servy.Services
                 cancellationToken);
 
         /// <inheritdoc/>
-        public async Task OpenManager(CancellationToken cancellationToken = default)
+        public async Task OpenManagerAsync(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -456,7 +456,7 @@ namespace Servy.Services
         {
             try
             {
-                if (!await IsServiceNameValid(serviceName)) return false;
+                if (!await IsServiceNameValidAsync(serviceName)) return false;
 
                 if (!_serviceManager.IsServiceInstalled(serviceName, cancellationToken))
                 {
@@ -508,7 +508,7 @@ namespace Servy.Services
         /// </summary>
         /// <param name="serviceName">Service name.</param>
         /// <returns>Returns true if valid; otherwise, false.</returns>
-        private async Task<bool> IsServiceNameValid(string serviceName)
+        private async Task<bool> IsServiceNameValidAsync(string serviceName)
         {
             var (isValid, errorMsg) = Core.Helpers.Helper.IsServiceNameValid(serviceName);
 

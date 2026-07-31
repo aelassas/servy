@@ -40,7 +40,7 @@ namespace Servy.Services
         /// </remarks>
         /// <exception cref="UnauthorizedAccessException">Thrown if the application lacks the administrative privileges required to install a service.</exception>
         /// <exception cref="Exception">Thrown if an unexpected error occurs during the SCM communication or file I/O.</exception>
-        Task<bool> InstallService(ServiceConfiguration config, CancellationToken cancellationToken = default);
+        Task<bool> InstallServiceAsync(ServiceConfiguration config, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Uninstalls the specified Windows service.
@@ -48,7 +48,7 @@ namespace Servy.Services
         /// <param name="serviceName">The name of the service to uninstall.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task representing the asynchronous uninstallation operation.</returns>
-        Task<bool> UninstallService(string serviceName, CancellationToken cancellationToken = default);
+        Task<bool> UninstallServiceAsync(string serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Starts the specified Windows service.
@@ -56,7 +56,7 @@ namespace Servy.Services
         /// <param name="serviceName">The name of the service to start.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task representing the asynchronous start operation.</returns>
-        Task<bool> StartService(string serviceName, CancellationToken cancellationToken = default);
+        Task<bool> StartServiceAsync(string serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Stops the specified Windows service.
@@ -64,7 +64,7 @@ namespace Servy.Services
         /// <param name="serviceName">The name of the service to stop.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task representing the asynchronous stop operation.</returns>
-        Task<bool> StopService(string serviceName, CancellationToken cancellationToken = default);
+        Task<bool> StopServiceAsync(string serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Restarts the specified Windows service.
@@ -72,7 +72,7 @@ namespace Servy.Services
         /// <param name="serviceName">The name of the service to restart.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task representing the asynchronous restart operation.</returns>
-        Task<bool> RestartService(string serviceName, CancellationToken cancellationToken = default);
+        Task<bool> RestartServiceAsync(string serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Exports the service configuration to an XML file selected by the user.
@@ -80,7 +80,7 @@ namespace Servy.Services
         /// <param name="confirmPassword">The confirmation of the service account password.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        Task ExportXmlConfig(string confirmPassword, CancellationToken cancellationToken = default);
+        Task ExportXmlConfigAsync(string confirmPassword, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Exports the service configuration to a JSON file selected by the user.
@@ -88,7 +88,7 @@ namespace Servy.Services
         /// <param name="confirmPassword">The confirmation of the service account password.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        Task ExportJsonConfig(string confirmPassword, CancellationToken cancellationToken = default);
+        Task ExportJsonConfigAsync(string confirmPassword, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Opens a file dialog to select an XML configuration file for a service,
@@ -98,7 +98,7 @@ namespace Servy.Services
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        Task ImportXmlConfig(CancellationToken cancellationToken = default);
+        Task ImportXmlConfigAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Opens a file dialog to select a JSON configuration file for a service,
@@ -108,13 +108,13 @@ namespace Servy.Services
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        Task ImportJsonConfig(CancellationToken cancellationToken = default);
+        Task ImportJsonConfigAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Opens Servy Manager to manage services.
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        Task OpenManager(CancellationToken cancellationToken = default);
+        Task OpenManagerAsync(CancellationToken cancellationToken = default);
     }
 }
