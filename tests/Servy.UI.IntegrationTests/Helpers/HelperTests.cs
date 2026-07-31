@@ -78,17 +78,24 @@ namespace Servy.UI.IntegrationTests.Helpers
         #region FormatDuration Tests
 
         [Theory]
-        [InlineData(0, 0, 0, 0, "0ms")]                  // Branch: parts.Count == 0
+        [InlineData(0, 0, 0, 0, "0ms")]                  // Branch: Zero duration
         [InlineData(0, 0, 0, 500, "500ms")]              // Branch: Milliseconds > 0
         [InlineData(0, 0, 30, 0, "30s")]                 // Branch: Seconds > 0
         [InlineData(0, 45, 0, 0, "45m")]                 // Branch: Minutes > 0
         [InlineData(5, 0, 0, 0, "5h")]                   // Branch: TotalHours > 0
         [InlineData(26, 10, 5, 1, "26h 10m 5s 1ms")]     // Branch: All components > 0
+        [InlineData(0, 0, 0, -500, "-500ms")]            // Branch: Negative milliseconds
+        [InlineData(0, -45, -15, 0, "-45m 15s")]         // Branch: Negative compound duration
         public void FormatDuration_VariousTimeSpans_ReturnsExpectedFormat(
             int hours, int minutes, int seconds, int milliseconds, string expected)
         {
+            // Arrange
             var duration = new TimeSpan(0, hours, minutes, seconds, milliseconds);
+
+            // Act
             var result = UI.Helpers.Helper.FormatDuration(duration);
+
+            // Assert
             Assert.Equal(expected, result);
         }
 
@@ -116,8 +123,8 @@ namespace Servy.UI.IntegrationTests.Helpers
 
         #region GetRowsInfo Tests
 
-        private const string None = "None: {0}";
-        private const string One = "One: {0}";
+        private const string None = "None: {1}";
+        private const string One = "One: {1}";
         private const string Many = "Many: {0} {1}";
 
         [Fact]

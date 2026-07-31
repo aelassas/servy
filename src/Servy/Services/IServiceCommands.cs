@@ -17,7 +17,10 @@ namespace Servy.Services
         /// startup parameters, and lifecycle hook settings.
         /// </param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>A task representing the asynchronous installation operation.</returns>
+        /// <returns>
+        /// A task representing the asynchronous installation operation, returning <c>true</c> if the service was installed successfully;
+        /// otherwise, <c>false</c> when installation fails - including due to insufficient administrative privileges or unexpected SCM and file I/O errors - after reporting the error to the user.
+        /// </returns>
         /// <remarks>
         /// <para>
         /// This method serves as the primary controller for the service installation workflow. 
@@ -36,8 +39,6 @@ namespace Servy.Services
         /// before being stored in the repository.
         /// </para>
         /// </remarks>
-        /// <exception cref="UnauthorizedAccessException">Thrown if the application lacks the administrative privileges required to install a service.</exception>
-        /// <exception cref="Exception">Thrown if an unexpected error occurs during the SCM communication or file I/O.</exception>
         Task<bool> InstallServiceAsync(ServiceConfiguration config, CancellationToken cancellationToken = default);
 
         /// <summary>
