@@ -4,7 +4,6 @@ using Servy.Core.Logging;
 using System.Collections.Immutable;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Xml;
 
 namespace Servy.Core.Config
 {
