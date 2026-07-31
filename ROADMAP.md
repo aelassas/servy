@@ -32,6 +32,7 @@
 * [x] Keep SCM responsive while stopping the main wrapped process and its process tree
 * [x] Provide ARM64 binaries ([#2243](https://github.com/aelassas/servy/issues/2243))
 * [x] External Heartbeat Ping URL ([#2700](https://github.com/aelassas/servy/issues/2700))
+* [x] Allow configuring CPU affinity in service definitions ([#4436](https://github.com/aelassas/servy/issues/4436))
 * [ ] Add a REST API for management-only API for status, health metrics, and lifecycle control (start/stop/restart)
 * [ ] Add a web dashboard for remote service control and real-time performance graphs
 * [ ] Add Servy Agent mode to manage multiple remote servers from a single instance
