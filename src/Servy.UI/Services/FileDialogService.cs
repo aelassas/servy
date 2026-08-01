@@ -1,5 +1,4 @@
-﻿using Microsoft.Win32;
-using Servy.Core.Resources;
+﻿using Servy.Core.Resources;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Servy.UI.Services
@@ -20,7 +19,7 @@ namespace Servy.UI.Services
         /// <returns>The full path of the selected file if the user clicks OK; otherwise, <see langword="null"/>.</returns>
         private static string? ShowOpenDialog(string filter, string title)
         {
-            var dlg = new OpenFileDialog
+            var dlg = new Microsoft.Win32.OpenFileDialog
             {
                 Filter = filter,
                 Title = title
@@ -36,7 +35,7 @@ namespace Servy.UI.Services
         /// <returns>The full path where the file should be saved if the user clicks OK; otherwise, <see langword="null"/>.</returns>
         private static string? ShowSaveDialog(string filter, string title)
         {
-            var dlg = new SaveFileDialog
+            var dlg = new Microsoft.Win32.SaveFileDialog
             {
                 Filter = filter,
                 Title = title
@@ -47,25 +46,28 @@ namespace Servy.UI.Services
         #endregion
 
         /// <inheritdoc />
-        public string? OpenExecutable() =>
-            ShowOpenDialog(Strings.FileFilter_Executable, Strings.Title_SelectExecutable);
+        public string? OpenExecutable(string? title = null) =>
+            ShowOpenDialog(Strings.FileFilter_Executable, title ?? Strings.Title_SelectExecutable);
 
         /// <inheritdoc />
-        public string? OpenXml() =>
-            ShowOpenDialog(Strings.FileFilter_Xml, Strings.Title_SelectXml);
+        public string? OpenXml(string? title = null) =>
+            ShowOpenDialog(Strings.FileFilter_Xml, title ?? Strings.Title_SelectXml);
 
         /// <inheritdoc />
-        public string? OpenJson() =>
-            ShowOpenDialog(Strings.FileFilter_Json, Strings.Title_SelectJson);
+        public string? OpenJson(string? title = null) =>
+            ShowOpenDialog(Strings.FileFilter_Json, title ?? Strings.Title_SelectJson);
 
         /// <inheritdoc />
-        public string? OpenFolder()
+        public string? OpenFolder(string? title = null)
         {
-            var dlg = new OpenFolderDialog
+            using (var dlg = new System.Windows.Forms.FolderBrowserDialog
             {
-                Title = Strings.Title_SelectStartupDirectory,
-            };
-            return dlg.ShowDialog() == true ? dlg.FolderName : null;
+                Description = title ?? Strings.Title_SelectStartupDirectory,
+                ShowNewFolderButton = true
+            })
+            {
+                return dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK ? dlg.SelectedPath : null;
+            }
         }
 
         /// <inheritdoc />

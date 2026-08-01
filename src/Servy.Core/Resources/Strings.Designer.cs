@@ -277,6 +277,33 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to deserialize service configuration from JSON content..
+        /// </summary>
+        public static string Msg_ImportJsonDeserializationFailed {
+            get {
+                return ResourceManager.GetString("Msg_ImportJsonDeserializationFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to import service from JSON: {0}.
+        /// </summary>
+        public static string Msg_ImportJsonFailed {
+            get {
+                return ResourceManager.GetString("Msg_ImportJsonFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to JSON content cannot be null or empty..
+        /// </summary>
+        public static string Msg_ImportJsonNullOrEmpty {
+            get {
+                return ResourceManager.GetString("Msg_ImportJsonNullOrEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0} payload exceeds the maximum allowed size of {1} MB..
         /// </summary>
         public static string Msg_ImportPayloadTooLarge {
@@ -304,20 +331,38 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to deserialize service configuration from XML content..
+        /// </summary>
+        public static string Msg_ImportXmlDeserializationFailed {
+            get {
+                return ResourceManager.GetString("Msg_ImportXmlDeserializationFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to import service from XML: {0}.
+        /// </summary>
+        public static string Msg_ImportXmlFailed {
+            get {
+                return ResourceManager.GetString("Msg_ImportXmlFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to XML content cannot be null or empty..
+        /// </summary>
+        public static string Msg_ImportXmlNullOrEmpty {
+            get {
+                return ResourceManager.GetString("Msg_ImportXmlNullOrEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Invalid core specification: &apos;{0}&apos;.
         /// </summary>
         public static string Msg_InvalidCoreSpecification {
             get {
                 return ResourceManager.GetString("Msg_InvalidCoreSpecification", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The specified date rotation type is invalid. Options: Daily, Weekly, Monthly..
-        /// </summary>
-        public static string Msg_InvalidDateRotationType {
-            get {
-                return ResourceManager.GetString("Msg_InvalidDateRotationType", resourceCulture);
             }
         }
         
@@ -538,33 +583,6 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The specified process priority is invalid. Options: Idle, BelowNormal, Normal, AboveNormal, High, RealTime..
-        /// </summary>
-        public static string Msg_InvalidProcessPriority {
-            get {
-                return ResourceManager.GetString("Msg_InvalidProcessPriority", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The specified recovery action is invalid. Options: None, RestartService, RestartProcess, RestartComputer..
-        /// </summary>
-        public static string Msg_InvalidRecoveryAction {
-            get {
-                return ResourceManager.GetString("Msg_InvalidRecoveryAction", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Recovery actions and restart attempts cannot be configured unless --enableHealth is set to true..
-        /// </summary>
-        public static string Msg_InvalidRecoveryConfig {
-            get {
-                return ResourceManager.GetString("Msg_InvalidRecoveryConfig", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Rotation size must be a number of Megabytes (MB) between {0} and {1}..
         /// </summary>
         public static string Msg_InvalidRotationSize {
@@ -606,15 +624,6 @@ namespace Servy.Core.Resources {
         public static string Msg_InvalidStartupDirectory {
             get {
                 return ResourceManager.GetString("Msg_InvalidStartupDirectory", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The specified startup type is invalid. Options: Automatic, AutomaticDelayedStart, Manual, Disabled..
-        /// </summary>
-        public static string Msg_InvalidStartupType {
-            get {
-                return ResourceManager.GetString("Msg_InvalidStartupType", resourceCulture);
             }
         }
         

@@ -8,26 +8,30 @@
         /// <summary>
         /// Opens a file dialog to select an executable file.
         /// </summary>
+        /// <param name="title">Optional custom title for the dialog.</param>
         /// <returns>The selected file path or null if canceled.</returns>
-        string? OpenExecutable();
+        string? OpenExecutable(string? title = null);
 
         /// <summary>
         /// Opens a file dialog to select an XML configuration file.
         /// </summary>
+        /// <param name="title">Optional custom title for the dialog.</param>
         /// <returns>The selected file path or null if canceled.</returns>
-        string? OpenXml();
+        string? OpenXml(string? title = null);
 
         /// <summary>
         /// Opens a file dialog to select a JSON configuration file.
         /// </summary>
+        /// <param name="title">Optional custom title for the dialog.</param>
         /// <returns>The selected file path or null if canceled.</returns>
-        string? OpenJson();
+        string? OpenJson(string? title = null);
 
         /// <summary>
         /// Opens a folder browser dialog to select a startup directory.
         /// </summary>
+        /// <param name="title">Optional custom description/title for the folder browser dialog.</param>
         /// <returns>The selected folder path or null if canceled.</returns>
-        string? OpenFolder();
+        string? OpenFolder(string? title = null);
 
         /// <summary>
         /// Opens a save file dialog with a specified title.
@@ -50,5 +54,4 @@
         /// <returns>The selected file path or null if canceled.</returns>
         string? SaveJson(string title);
     }
-
 }

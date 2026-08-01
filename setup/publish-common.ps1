@@ -185,3 +185,20 @@ function New-PortablePackage {
 
     Write-Host "Success: $OutputZip" -ForegroundColor Green
 }
+
+<#
+.SYNOPSIS
+    Validates that a provided version string conforms to the Servy version format.
+#>
+function Assert-ServyVersion {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Version
+    )
+
+    $versionPattern = "^\d+\.\d+$"
+    if ($Version -notmatch $versionPattern) {
+        throw "Version must match pattern '$versionPattern'. Provided: '$Version'"
+    }
+}

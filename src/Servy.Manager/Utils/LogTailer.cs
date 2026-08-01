@@ -69,6 +69,27 @@ namespace Servy.Manager.Utils
             info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition;
 
         /// <summary>
+        /// Probes the end of a file stream to determine if it terminates with a trailing newline byte.
+        /// Restores the original stream position upon completion.
+        /// </summary>
+        /// <param name="fs">The open file stream to inspect.</param>
+        /// <returns><c>true</c> if the file is empty or ends with <c>\n</c>; otherwise, <c>false</c>.</returns>
+        private static bool EndsWithNewline(FileStream fs)
+        {
+            if (fs.Length == 0) return true;
+            long saved = fs.Position;
+            try
+            {
+                fs.Seek(-1, SeekOrigin.End);
+                return fs.ReadByte() == (byte)'\n';
+            }
+            finally
+            {
+                fs.Position = saved;
+            }
+        }
+
+        /// <summary>
         /// Starts a continuous tailing loop for a specific file, beginning at a designated position.
         /// This method handles file rotation detection and batched UI updates.
         /// </summary>
@@ -164,10 +185,10 @@ namespace Servy.Manager.Utils
                             {
                                 try
                                 {
+                                    LoopStartedSignal.TrySetResult(true);
+
                                     while (!linkedToken.IsCancellationRequested)
                                     {
-                                        LoopStartedSignal.TrySetResult(true);
-
                                         List<LogLine> batch = new List<LogLine>();
                                         string? line;
                                         string? lastSuccessfullyReadLine = null;
@@ -200,10 +221,7 @@ namespace Servy.Manager.Utils
                                         //     check the trailing byte on disk rather than inferring from the reader's position.
                                         if (lastSuccessfullyReadLine != null && fs.Length > 0)
                                         {
-                                            fs.Seek(-1, SeekOrigin.End);
-                                            int lastByte = fs.ReadByte();
-
-                                            if (lastByte != (byte)'\n')
+                                            if (!EndsWithNewline(fs))
                                             {
                                                 // The file does not terminate with a newline. The writer process was caught
                                                 // mid-flush. Pop the untracked line out of the batch to preserve boundary isolation.
@@ -369,9 +387,7 @@ namespace Servy.Manager.Utils
                     // Pre-increment the line count if the file does not end with a trailing newline.
                     // This ensures the backward scanner accurately bounds the "last N lines" even when
                     // catching a live log file mid-flush.
-                    fs.Seek(-1, SeekOrigin.End);
-                    int lastByte = fs.ReadByte();
-                    int count = (lastByte == (byte)'\n') ? 0 : 1;
+                    int count = EndsWithNewline(fs) ? 0 : 1;
 
                     long pos = fs.Length;
                     byte[] buffer = new byte[AppConfig.LogTailerHistoryScanBufferSize];

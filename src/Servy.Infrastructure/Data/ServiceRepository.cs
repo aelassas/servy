@@ -1,7 +1,9 @@
-﻿using Servy.Core.Config;
+﻿using Servy.Core.Common;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
+using Servy.Core.Resources;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using System.Data;
@@ -25,7 +27,7 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         private static readonly (Func<ServiceDto, string?> Get, Action<ServiceDto, string?> Set, string Name)[] SensitiveFields =
         {
-            (d => d.Parameters,                    (d, v) => d.Parameters = v,                    nameof(ServiceDto.Parameters)),
+            (d => d.Parameters,                     (d, v) => d.Parameters = v,                     nameof(ServiceDto.Parameters)),
             (d => d.FailureProgramParameters,      (d, v) => d.FailureProgramParameters = v,      nameof(ServiceDto.FailureProgramParameters)),
             (d => d.PreLaunchParameters,           (d, v) => d.PreLaunchParameters = v,           nameof(ServiceDto.PreLaunchParameters)),
             (d => d.PostLaunchParameters,          (d, v) => d.PostLaunchParameters = v,          nameof(ServiceDto.PostLaunchParameters)),
@@ -377,14 +379,16 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<bool> ImportXmlAsync(string xml, CancellationToken cancellationToken = default)
+        public virtual async Task<OperationResult> ImportXmlAsync(string xml, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(xml)) return false;
+            if (string.IsNullOrWhiteSpace(xml))
+                return OperationResult.Failure(Strings.Msg_ImportXmlNullOrEmpty);
 
             try
             {
                 var service = _xmlServiceSerializer.Deserialize(xml);
-                if (service == null) return false;
+                if (service == null)
+                    return OperationResult.Failure(Strings.Msg_ImportXmlDeserializationFailed);
 
                 // Preserve runtime state (PID, ActiveStdoutPath/ActiveStderrPath paths) if the service exists and is running.
                 await UpsertAsync(
@@ -393,7 +397,7 @@ namespace Servy.Infrastructure.Data
                     preserveExistingCredentials: true,
                     cancellationToken: cancellationToken
                     );
-                return true;
+                return OperationResult.Success();
             }
             catch (OperationCanceledException)
             {
@@ -402,7 +406,7 @@ namespace Servy.Infrastructure.Data
             catch (Exception ex)
             {
                 Logger.Error("Failed to import service from XML.", ex);
-                return false;
+                return OperationResult.Failure(string.Format(Strings.Msg_ImportXmlFailed, ex.Message));
             }
         }
 
@@ -417,14 +421,16 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<bool> ImportJsonAsync(string json, CancellationToken cancellationToken = default)
+        public virtual async Task<OperationResult> ImportJsonAsync(string json, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(json)) return false;
+            if (string.IsNullOrWhiteSpace(json))
+                return OperationResult.Failure(Strings.Msg_ImportJsonNullOrEmpty);
 
             try
             {
                 var service = _jsonServiceSerializer.Deserialize(json);
-                if (service == null) return false;
+                if (service == null)
+                    return OperationResult.Failure(Strings.Msg_ImportJsonDeserializationFailed);
 
                 await UpsertAsync(
                     service,
@@ -432,7 +438,7 @@ namespace Servy.Infrastructure.Data
                     preserveExistingCredentials: true,
                     cancellationToken: cancellationToken
                     );
-                return true;
+                return OperationResult.Success();
             }
             catch (OperationCanceledException)
             {
@@ -441,7 +447,7 @@ namespace Servy.Infrastructure.Data
             catch (Exception ex)
             {
                 Logger.Error("Failed to import service from JSON.", ex);
-                return false;
+                return OperationResult.Failure(string.Format(Strings.Msg_ImportJsonFailed, ex.Message));
             }
         }
 

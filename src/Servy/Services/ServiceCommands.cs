@@ -595,7 +595,7 @@ namespace Servy.Services
         /// Only after passing all gates is the UI model updated.
         /// </remarks>
         private async Task ImportConfigAsync(
-            Func<string?> getFilePath,
+            Func<string?, string?> getFilePath,
             Func<string, (bool IsValid, string? ErrorMsg)> validateContent,
             Func<string, ServiceDto?> deserialize,
             string formatName,
@@ -606,7 +606,7 @@ namespace Servy.Services
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var path = getFilePath();
+                var path = getFilePath(null);
                 if (string.IsNullOrEmpty(path)) return;
 
                 _cursorService.SetWaitCursor();

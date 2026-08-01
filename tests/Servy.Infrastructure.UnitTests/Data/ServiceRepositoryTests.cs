@@ -2,6 +2,7 @@ using Dapper;
 using Moq;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
+using Servy.Core.Resources;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
@@ -146,6 +147,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task AddAsync_FullSecurityAudit_EncryptsAllNineSensitiveFields()
         {
+            // Arrange & Act & Assert
             await ExecuteFullSecurityAuditTestAsync(
                 async (repo, dto) =>
                 {
@@ -164,6 +166,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task UpdateAsync_FullSecurityAudit_EncryptsAllNineSensitiveFields()
         {
+            // Arrange & Act & Assert
             await ExecuteFullSecurityAuditTestAsync(
                 async (repo, dto) => await repo.UpdateAsync(dto, false, false, TestContext.Current.CancellationToken),
                 captureAction => _mockDapper
@@ -176,6 +179,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task Update_FullSecurityAudit_EncryptsAllNineSensitiveFields()
         {
+            // Arrange & Act & Assert
             await ExecuteFullSecurityAuditTestAsync(
                 (repo, dto) => Task.FromResult<object>(repo.Update(dto, false, false)),
                 captureAction => _mockDapper
@@ -700,7 +704,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             // Assert
             _mockDapper.Verify(e => e.QuerySingleOrDefaultAsync<int?>(
                 It.IsAny<string>(),
-                It.IsAny<object>(), 
+                It.IsAny<object>(),
                 It.IsAny<IDbTransaction>(),
                 It.Is<CancellationToken>(t => t == TestContext.Current.CancellationToken)), Times.Once);
         }
@@ -952,7 +956,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportXML_ValidXml_ReturnsTrue()
+        public async Task ImportXML_ValidXml_ReturnsSuccess()
         {
             // Arrange
             var dto = new ServiceDto { Name = "A" };
@@ -967,11 +971,11 @@ namespace Servy.Infrastructure.UnitTests.Data
             var result = await repo.ImportXmlAsync(xml, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result);
+            Assert.True(result.IsSuccess);
         }
 
         [Fact]
-        public async Task ImportXML_EmptyXml_ReturnsFalse()
+        public async Task ImportXML_EmptyXml_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();
@@ -981,26 +985,28 @@ namespace Servy.Infrastructure.UnitTests.Data
             var result = await repo.ImportXmlAsync(xml, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result);
+            Assert.False(result.IsSuccess);
+            Assert.Equal(Strings.Msg_ImportXmlNullOrEmpty, result.ErrorMessage);
         }
 
         [Fact]
-        public async Task ImportXML_InvalidXml_ReturnsFalse()
+        public async Task ImportXML_InvalidXml_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();
             var xml = "<ServiceDto><Name></Invalid></ServiceDto>";
-            _mockXmlServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Throws<Exception>();
+            _mockXmlServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Throws(new Exception("Parsing error"));
 
             // Act
             var result = await repo.ImportXmlAsync(xml, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result);
+            Assert.False(result.IsSuccess);
+            Assert.Equal(string.Format(Strings.Msg_ImportXmlFailed, "Parsing error"), result.ErrorMessage);
         }
 
         [Fact]
-        public async Task ImportXML_ServiceNull_ReturnsFalse()
+        public async Task ImportXML_ServiceNull_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();
@@ -1012,7 +1018,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             var result = await repo.ImportXmlAsync(xml, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result);
+            Assert.False(result.IsSuccess);
+            Assert.Equal(Strings.Msg_ImportXmlDeserializationFailed, result.ErrorMessage);
         }
 
         [Fact]
@@ -1058,7 +1065,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportJSON_ValidJson_ReturnsTrue()
+        public async Task ImportJSON_ValidJson_ReturnsSuccess()
         {
             // Arrange
             var dto = new ServiceDto { Name = "A" };
@@ -1073,11 +1080,11 @@ namespace Servy.Infrastructure.UnitTests.Data
             var result = await repo.ImportJsonAsync(json, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.True(result);
+            Assert.True(result.IsSuccess);
         }
 
         [Fact]
-        public async Task ImportJSON_EmptyJson_ReturnsFalse()
+        public async Task ImportJSON_EmptyJson_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();
@@ -1087,17 +1094,18 @@ namespace Servy.Infrastructure.UnitTests.Data
             var result = await repo.ImportJsonAsync(json, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result);
+            Assert.False(result.IsSuccess);
+            Assert.Equal(Strings.Msg_ImportJsonNullOrEmpty, result.ErrorMessage);
         }
 
         [Fact]
-        public async Task ImportJsonAsync_DeserializerReturnsNull_ReturnsFalse()
+        public async Task ImportJsonAsync_DeserializerReturnsNull_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();
             var jsonPayload = "{}";
 
-            // Explicitly set up the serializer layer to simulate a null payload translation result
+            // Explicitly set up the serializer layer to simulate a null! payload translation result
             _mockJsonServiceSerializer
                 .Setup(s => s.Deserialize(jsonPayload))
                 .Returns((ServiceDto?)null);
@@ -1106,7 +1114,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             var result = await repo.ImportJsonAsync(jsonPayload, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result);
+            Assert.False(result.IsSuccess);
+            Assert.Equal(Strings.Msg_ImportJsonDeserializationFailed, result.ErrorMessage);
 
             // Verify that execution short-circuited cleanly without touching the database infrastructure
             _mockDapper.Verify(
@@ -1115,18 +1124,19 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task ImportJSON_Throws_ReturnsFalse()
+        public async Task ImportJSON_Throws_ReturnsFailure()
         {
             // Arrange
             var repo = CreateRepository();
             var json = "{ invalid json }";
-            _mockJsonServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Throws<Exception>();
+            _mockJsonServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Throws(new Exception("Syntax error"));
 
             // Act
             var result = await repo.ImportJsonAsync(json, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.False(result);
+            Assert.False(result.IsSuccess);
+            Assert.Equal(string.Format(Strings.Msg_ImportJsonFailed, "Syntax error"), result.ErrorMessage);
         }
 
         #endregion

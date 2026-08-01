@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Servy.Core.Common;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Security;
@@ -85,9 +86,9 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         public override Task<string> ExportXmlAsync(string? name, CancellationToken token = default) => Task.FromResult("<xml></xml>");
-        public override Task<bool> ImportXmlAsync(string xml, CancellationToken token = default) => Task.FromResult(true);
+        public override Task<OperationResult> ImportXmlAsync(string xml, CancellationToken token = default) => Task.FromResult(OperationResult.Success());
         public override Task<string> ExportJsonAsync(string? name, CancellationToken token = default) => Task.FromResult("{ }");
-        public override Task<bool> ImportJsonAsync(string json, CancellationToken token = default) => Task.FromResult(true);
+        public override Task<OperationResult> ImportJsonAsync(string json, CancellationToken token = default) => Task.FromResult(OperationResult.Success());
     }
 
     // Dummy stubs for the constructor dependencies

@@ -76,14 +76,14 @@ namespace Servy.UI.Design
         public Task<string> ExportXmlAsync(string? name, CancellationToken cancellationToken = default)
             => Task.FromResult(string.Empty);
 
-        public Task<bool> ImportXmlAsync(string xml, CancellationToken cancellationToken = default)
-            => Task.FromResult(true);
+        public Task<OperationResult> ImportXmlAsync(string xml, CancellationToken cancellationToken = default)
+            => Task.FromResult(OperationResult.Success());
 
         public Task<string> ExportJsonAsync(string? name, CancellationToken cancellationToken = default)
             => Task.FromResult(string.Empty);
 
-        public Task<bool> ImportJsonAsync(string json, CancellationToken cancellationToken = default)
-            => Task.FromResult(true);
+        public Task<OperationResult> ImportJsonAsync(string json, CancellationToken cancellationToken = default)
+            => Task.FromResult(OperationResult.Success());
     }
 
     /// <summary>
@@ -157,13 +157,13 @@ namespace Servy.UI.Design
     /// </remarks>
     public class DesignTimeFileDialogService : IFileDialogService
     {
-        public string? OpenExecutable() => null;
+        public string? OpenExecutable(string? title = null) => null;
 
-        public string? OpenFolder() => null;
+        public string? OpenFolder(string? title = null) => null;
 
-        public string? OpenJson() => null;
+        public string? OpenJson(string? title = null) => null;
 
-        public string? OpenXml() => null;
+        public string? OpenXml(string? title = null) => null;
 
         public string? SaveFile(string title) => null;
 

@@ -30,10 +30,16 @@ param(
     [string]$Version = "",
     [switch]$Pause
 )
+
 $ErrorActionPreference = "Stop"
 
+$scriptDir = $PSScriptRoot
+
+# Import newly extracted common functions first to make Assert-ServyVersion available
+. (Join-Path $scriptDir "publish-common.ps1")
+
 # Load central defaults
-$configPath = Join-Path $PSScriptRoot "build-config.ps1"
+$configPath = Join-Path $scriptDir "build-config.ps1"
 if (Test-Path $configPath) {
     $buildConfig = & $configPath
     if (-not $Tfm) { $Tfm = $buildConfig.Tfm }
@@ -45,14 +51,12 @@ if (Test-Path $configPath) {
 }
 
 # Validate version format after defaults are applied
-if ($Version -notmatch "^\d+\.\d+$") {
-    throw "Version must match pattern '^\d+\.\d+$'. Provided: '$Version'"
-}
+Assert-ServyVersion -Version $Version
 
 # ========================
 # Configuration
 # ========================
-$scriptDir  = $PSScriptRoot
+
 # Resolve the root once at the start (this is safe as the script is running inside it)
 $rootDir    = (Resolve-Path (Join-Path $scriptDir "..")).Path
 $servyDir   = Join-Path $rootDir "src\Servy"
@@ -73,8 +77,6 @@ $installerPath = Join-Path $rootDir "setup\servy-$Version-$arch-installer.exe"
 try {
     # Import the resolution helper
     . (Join-Path $scriptDir "tools-config.ps1")
-    # Import the newly extracted common functions
-    . (Join-Path $scriptDir "publish-common.ps1")
 
     Write-Host "Resolving build tools..." -ForegroundColor Cyan
 

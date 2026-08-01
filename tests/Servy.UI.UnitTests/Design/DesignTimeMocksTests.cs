@@ -55,8 +55,8 @@ namespace Servy.UI.UnitTests.Design
 
             Assert.Equal(string.Empty, await repo.ExportXmlAsync("test", cancellationToken: ct));
             Assert.Equal(string.Empty, await repo.ExportJsonAsync("test", cancellationToken: ct));
-            Assert.True(await repo.ImportXmlAsync("<xml/>", cancellationToken: ct));
-            Assert.True(await repo.ImportJsonAsync("{}", cancellationToken: ct));
+            Assert.True((await repo.ImportXmlAsync("<xml/>", cancellationToken: ct)).IsSuccess);
+            Assert.True((await repo.ImportJsonAsync("{}", cancellationToken: ct)).IsSuccess);
 
             // Act & Assert - Void/Int branches
             repo.Upsert(new ServiceDto());

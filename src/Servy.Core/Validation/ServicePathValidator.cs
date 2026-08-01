@@ -17,32 +17,7 @@ namespace Servy.Core.Validation
         /// <param name="validatePath">A delegate function that verifies whether a path string exists/is valid for files or directories.</param>
         /// <returns>A <see cref="ServicePathViolation"/> detailing the failure, or <c>null</c> if valid.</returns>
         public static ServicePathViolation? FindFirstViolation<T>(T target, Func<string?, bool, bool> validatePath)
-        {
-            if (target == null) return null;
-
-            foreach (var property in typeof(T).GetProperties())
-            {
-                var attr = property.GetCustomAttribute<ServicePathAttribute>();
-                if (attr == null) continue;
-
-                var value = property.GetValue(target) as string;
-                bool isEmpty = string.IsNullOrWhiteSpace(value);
-
-                // 1. Mandatory presence check
-                if (attr.Required && isEmpty)
-                {
-                    return new ServicePathViolation(property, attr, value, isMissing: true);
-                }
-
-                // 2. File/Directory existence and syntax validity check
-                if (!isEmpty && !validatePath(value, attr.IsFile))
-                {
-                    return new ServicePathViolation(property, attr, value, isMissing: false);
-                }
-            }
-
-            return null;
-        }
+           => FindAllViolations(target, validatePath).FirstOrDefault();
 
         /// <summary>
         /// Evaluates all properties decorated with <see cref="ServicePathAttribute"/> on <paramref name="target"/>
@@ -68,7 +43,6 @@ namespace Servy.Core.Validation
                 if (attr.Required && isEmpty)
                 {
                     yield return new ServicePathViolation(property, attr, value, isMissing: true);
-                    continue;
                 }
 
                 // 2. File/Directory existence and syntax validity check

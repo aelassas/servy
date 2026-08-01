@@ -308,9 +308,9 @@ namespace Servy.UnitTests.ViewModels
         {
             // Arrange
             if (isFolder)
-                _dialogServiceMock.Setup(d => d.OpenFolder()).Returns(samplePath);
+                _dialogServiceMock.Setup(d => d.OpenFolder(It.IsAny<string?>())).Returns(samplePath);
             else
-                _dialogServiceMock.Setup(d => d.OpenExecutable()).Returns(samplePath);
+                _dialogServiceMock.Setup(d => d.OpenExecutable(It.IsAny<string?>())).Returns(samplePath);
 
             var command = (ICommand)typeof(MainViewModel).GetProperty(commandName)!.GetValue(_viewModel)!;
             var property = typeof(MainViewModel).GetProperty(propertyName)!;
@@ -348,7 +348,7 @@ namespace Servy.UnitTests.ViewModels
         {
             // Arrange
             _viewModel.ProcessPath = "C:\\Existing\\App.exe";
-            _dialogServiceMock.Setup(d => d.OpenExecutable()).Returns((string?)null);
+            _dialogServiceMock.Setup(d => d.OpenExecutable(It.IsAny<string?>())).Returns((string?)null);
 
             // Act
             _viewModel.BrowseProcessPathCommand.Execute(null);

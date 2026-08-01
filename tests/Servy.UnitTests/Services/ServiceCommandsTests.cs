@@ -572,7 +572,7 @@ namespace Servy.UnitTests.Services
         {
             // Arrange
             var sut = CreateSut();
-            _dialogServiceMock.Setup(d => d.OpenXml()).Returns(returnedPath!);
+            _dialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string?>())).Returns(returnedPath!);   
 
             // Act
             await sut.ImportXmlConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -588,7 +588,7 @@ namespace Servy.UnitTests.Services
             var sut = CreateSut();
             // Trigger UNC path block criteria explicitly
             var uncPath = @"\\MaliciousServer\Share\attack.xml";
-            _dialogServiceMock.Setup(d => d.OpenXml()).Returns(uncPath);
+            _dialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string?>())).Returns(uncPath);
 
             // Act
             await sut.ImportXmlConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -604,7 +604,7 @@ namespace Servy.UnitTests.Services
             var sut = CreateSut();
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
             File.WriteAllText(path, "{ invalid json structure }");
-            _dialogServiceMock.Setup(d => d.OpenJson()).Returns(path);
+            _dialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string?>())).Returns(path);
 
             string? errorOut = "Missing closing brace delimiter.";
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out errorOut)).Returns(false);
@@ -630,7 +630,7 @@ namespace Servy.UnitTests.Services
             var sut = CreateSut();
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.xml");
             File.WriteAllText(path, "<service />");
-            _dialogServiceMock.Setup(d => d.OpenXml()).Returns(path);
+            _dialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string?>())).Returns(path);
 
             string? errorOut = null;
             _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out errorOut)).Returns(true);
@@ -660,7 +660,7 @@ namespace Servy.UnitTests.Services
 
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
             File.WriteAllText(path, "{}");
-            _dialogServiceMock.Setup(d => d.OpenJson()).Returns(path);
+            _dialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string?>())).Returns(path);
 
             string? errorOut = null;
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out errorOut)).Returns(true);
@@ -686,7 +686,7 @@ namespace Servy.UnitTests.Services
         {
             // Arrange
             var sut = CreateSut();
-            _dialogServiceMock.Setup(d => d.OpenXml()).Throws(new IOException("Hardware File Lock Denied"));
+            _dialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string?>())).Throws(new IOException("Hardware File Lock Denied"));
 
             // Act
             await sut.ImportXmlConfigAsync(cancellationToken: TestContext.Current.CancellationToken);
@@ -964,7 +964,7 @@ namespace Servy.UnitTests.Services
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.xml");
             File.WriteAllText(path, "<service></service>"); // Setup local physical file context to satisfy Guard
 
-            _dialogServiceMock.Setup(d => d.OpenXml()).Returns(path);
+            _dialogServiceMock.Setup(d => d.OpenXml(It.IsAny<string?>())).Returns(path);
 
             string? validationError = null;
             _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out validationError)).Returns(true);
@@ -1008,7 +1008,7 @@ namespace Servy.UnitTests.Services
             var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.json");
             File.WriteAllText(path, "{}"); // Setup local physical file context to satisfy Guard
 
-            _dialogServiceMock.Setup(d => d.OpenJson()).Returns(path);
+            _dialogServiceMock.Setup(d => d.OpenJson(It.IsAny<string?>())).Returns(path);
 
             string? validationError = null;
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out validationError)).Returns(true);

@@ -150,9 +150,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task UpsertBatchAsync_LargeCollection_ExecutesWithinTransactionBoundaries()
         {
-            var cancellationToken = TestContext.Current.CancellationToken;
-
             // Arrange - Generate a genuinely large batch that exceeds default SQLite parameter/chunking limits
+            var cancellationToken = TestContext.Current.CancellationToken;
             const int batchSize = AppConfig.DbBatchIdSyncChunkSize + 150;
             var batch = new List<ServiceDto>();
             for (int i = 1; i <= batchSize; i++)
@@ -186,9 +185,8 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task UpsertBatchAsync_ExceptionThrownMidBatch_RollsBackEntireTransaction()
         {
-            var cancellationToken = TestContext.Current.CancellationToken;
-
             // Arrange - Get baseline count
+            var cancellationToken = TestContext.Current.CancellationToken;
             var initialCount = (await _repository.GetAllAsync(decrypt: true, cancellationToken)).Count();
 
             // Generate a mix of valid records and a guaranteed fatal record positioned at the end.
@@ -274,10 +272,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task DeleteAsync_ByNameAndId_RemovesTargetEntries()
         {
+            // Arrange
             var cancellationToken = TestContext.Current.CancellationToken;
 
             // --- 1. Verify "ByName" deletion path ---
-            // Arrange
             var serviceByName = new ServiceDto { Name = "KillMeByName", ExecutablePath = "kill_name.exe" };
             int nameId = await _repository.AddAsync(serviceByName, cancellationToken);
 
@@ -308,9 +306,9 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task SearchAsync_UsingKeywords_EvaluatesWildcardAndSqlEscapeMatchers()
         {
+            // Arrange
             var cancellationToken = TestContext.Current.CancellationToken;
 
-            // Arrange
             // 1. The target record containing literal % and _ characters
             await _repository.AddAsync(new ServiceDto { Name = "App_Development_%_Test", ExecutablePath = "a.exe" }, cancellationToken);
 
@@ -369,10 +367,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Null(await _repository.GetByNameAsync("RoundTripXmlService", decrypt: true, TestContext.Current.CancellationToken));
 
             // Act - Import the serialized XML record back into the repository engine
-            bool xmlImportResult = await _repository.ImportXmlAsync(xmlData, TestContext.Current.CancellationToken);
+            var xmlImportResult = await _repository.ImportXmlAsync(xmlData, TestContext.Current.CancellationToken);
 
             // Assert - Verify operational success state and complete field mapping data fidelity (#3041 Fix)
-            Assert.True(xmlImportResult);
+            Assert.True(xmlImportResult.IsSuccess);
 
             var recovered = await _repository.GetByNameAsync("RoundTripXmlService", decrypt: true, TestContext.Current.CancellationToken);
             Assert.NotNull(recovered);
@@ -397,10 +395,10 @@ namespace Servy.Infrastructure.IntegrationTests.Data
             Assert.Null(await _repository.GetByNameAsync("RoundTripJsonService", decrypt: true, TestContext.Current.CancellationToken));
 
             // Act - Import the serialized JSON record back into the repository engine
-            bool jsonImportResult = await _repository.ImportJsonAsync(jsonData, TestContext.Current.CancellationToken);
+            var jsonImportResult = await _repository.ImportJsonAsync(jsonData, TestContext.Current.CancellationToken);
 
             // Assert - Verify operational success state and complete field mapping data fidelity (#3041 Fix)
-            Assert.True(jsonImportResult);
+            Assert.True(jsonImportResult.IsSuccess);
 
             var recovered = await _repository.GetByNameAsync("RoundTripJsonService", decrypt: true, TestContext.Current.CancellationToken);
             Assert.NotNull(recovered);
@@ -480,7 +478,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task GetServicePidAsync_NullOrMissingService_ReturnsNull()
         {
-            // Act & Assert
+            // Arrange & Act & Assert
             Assert.Null(await _repository.GetServicePidAsync(null, TestContext.Current.CancellationToken));
             Assert.Null(await _repository.GetServicePidAsync("NonExistentService", TestContext.Current.CancellationToken));
         }
@@ -512,7 +510,7 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Fact]
         public async Task GetServiceConsoleStateAsync_NullOrMissingService_ReturnsNull()
         {
-            // Act & Assert
+            // Arrange & Act & Assert
             Assert.Null(await _repository.GetServiceConsoleStateAsync(null, TestContext.Current.CancellationToken));
             Assert.Null(await _repository.GetServiceConsoleStateAsync("MissingConsoleService", TestContext.Current.CancellationToken));
         }
@@ -536,20 +534,20 @@ namespace Servy.Infrastructure.IntegrationTests.Data
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void GetByName_NullOrEmptyInput_ReturnsNull(string? input)
         {
-            // Act & Assert
+            // Arrange & Act & Assert
             Assert.Null(_repository.GetByName(input, decrypt: false));
         }
 
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public async Task GetByNameAsync_NullOrEmptyInput_ReturnsNull(string? input)
         {
-            // Act & Assert
+            // Arrange & Act & Assert
             Assert.Null(await _repository.GetByNameAsync(input, decrypt: false, TestContext.Current.CancellationToken));
         }
 

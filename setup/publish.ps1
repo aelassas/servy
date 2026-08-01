@@ -26,10 +26,8 @@
         2. Inno Setup (ISCC.exe) installed and accessible.
         3. 7-Zip installed with `7z` available in PATH.
 #>
-
 # publish.ps1
 # Main setup bundle script for building the self-contained installer.
-
 param(
     [string]$Tfm     = "", 
     [string]$Version = ""
@@ -47,10 +45,9 @@ if (Test-Path $configPath) {
     throw "Central build configuration not found at $configPath"
 }
 
-# Validate version format after defaults are applied
-if ($Version -notmatch "^\d+\.\d+$") {
-    throw "Version must match pattern '^\d+\.\d+$'. Provided: '$Version'"
-}
+# Import common build functions and validate version format
+. (Join-Path $PSScriptRoot "publish-common.ps1")
+Assert-ServyVersion -Version $Version
 
 $scriptHadError = $false
 
@@ -95,7 +92,7 @@ try {
     # Build self-contained installer
     Invoke-Script -ScriptPath "publish-sc.ps1" -Params @{
         Version = $Version
-        Tfm      = $Tfm
+        Tfm     = $Tfm
     }
 
     # Calculate and display elapsed time
