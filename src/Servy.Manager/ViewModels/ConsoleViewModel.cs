@@ -214,25 +214,25 @@ namespace Servy.Manager.ViewModels
 
         #region MonitoringViewModelBase Implementation
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override ServiceItemBase SelectedServiceItem => SelectedService;
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override int RefreshIntervalMs => _appConfig.ConsoleRefreshIntervalInMs;
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override ServiceItemBase CreateServiceItem(Service service)
         {
             return new ConsoleService { Name = service.Name };
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override void ResetMonitoringState()
         {
             ResetConsole();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override async Task ApplyTickAsync(ServiceItemBase selection, CancellationToken token)
         {
             var currentSelection = (ConsoleService)selection;

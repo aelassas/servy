@@ -27,7 +27,7 @@ namespace Servy.Core.Services
             _controller = new ServiceController(serviceName);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public string ServiceName
         {
             get
@@ -37,7 +37,7 @@ namespace Servy.Core.Services
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         [ExcludeFromCodeCoverage]
         public ServiceControllerStatus Status
         {
@@ -48,7 +48,7 @@ namespace Servy.Core.Services
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         [ExcludeFromCodeCoverage]
         public ServiceStartMode StartType
         {
@@ -59,7 +59,7 @@ namespace Servy.Core.Services
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         [ExcludeFromCodeCoverage]
         public void Start()
         {
@@ -67,7 +67,7 @@ namespace Servy.Core.Services
             _controller.Start();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         [ExcludeFromCodeCoverage]
         public void Stop()
         {
@@ -75,7 +75,7 @@ namespace Servy.Core.Services
             _controller.Stop();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         [ExcludeFromCodeCoverage]
         public void Refresh()
         {
@@ -83,7 +83,7 @@ namespace Servy.Core.Services
             _controller.Refresh();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         [ExcludeFromCodeCoverage]
         public void WaitForStatus(ServiceControllerStatus desiredStatus, TimeSpan timeout)
         {
@@ -91,7 +91,7 @@ namespace Servy.Core.Services
             _controller.WaitForStatus(desiredStatus, timeout);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public ServiceDependencyNode GetDependencies(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
@@ -251,7 +251,7 @@ namespace Servy.Core.Services
             return false;
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void Dispose()
         {
             Dispose(disposing: true);

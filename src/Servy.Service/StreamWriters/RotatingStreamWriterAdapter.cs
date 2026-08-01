@@ -55,21 +55,21 @@ namespace Servy.Service.StreamWriters
                 useLocalTimeForRotation);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void WriteLine(string line)
         {
             ThrowIfDisposed();
             _inner.WriteLine(line);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void Write(string text)
         {
             ThrowIfDisposed();
             _inner.Write(text);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void Dispose()
         {
             Dispose(disposing: true);

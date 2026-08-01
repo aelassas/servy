@@ -42,7 +42,7 @@ namespace Servy.Core.Services
         /// </summary>
         public string DisplayName
         {
-            get => _displayName ?? ServiceName;
+            get => _displayName;
             set => SetProperty(ref _displayName, value);
         }
 
@@ -85,7 +85,7 @@ namespace Servy.Core.Services
         public ServiceDependencyNode(string serviceName, string displayName, bool isRunning = false, bool isCyclic = false)
         {
             ServiceName = serviceName ?? throw new ArgumentNullException(nameof(serviceName));
-            DisplayName = displayName;
+            _displayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
             IsRunning = isRunning;
             IsCyclic = isCyclic;
         }

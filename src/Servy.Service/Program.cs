@@ -1,6 +1,4 @@
-﻿using Servy.Core.Logging;
-using Servy.Core.Native;
-using System;
+﻿using Servy.Core.Native;
 using System.Diagnostics.CodeAnalysis;
 using System.ServiceProcess;
 

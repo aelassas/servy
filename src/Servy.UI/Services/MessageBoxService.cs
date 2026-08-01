@@ -27,55 +27,60 @@ namespace Servy.UI.Services
         }
 
         /// <summary>
-        /// Centralized unmanaged UI helper to abstract headless checks and handle cross-thread marshaling boundaries cleanly.
+        /// Shows a message box on the UI thread, or writes to the console when headless mode is enabled.
         /// </summary>
-        private Task ShowAsync(string message, string caption, MessageBoxImage image, string headlessTag)
+        /// <param name="message">The body text to display.</param>
+        /// <param name="caption">The title header for the dialog.</param>
+        /// <param name="image">The dialog icon classification.</param>
+        /// <param name="buttons">The button set presented on the dialog.</param>
+        /// <param name="headlessTag">The text label prefix printed in console output during headless execution.</param>
+        /// <param name="headlessResult">The default boolean return value provided during headless execution.</param>
+        /// <returns>A task returning <c>true</c> if the user confirmed (or auto-answered 'Yes' in headless mode); otherwise, <c>false</c>.</returns>
+        private Task<bool> ShowCoreAsync(
+            string message,
+            string caption,
+            MessageBoxImage image,
+            MessageBoxButton buttons,
+            string headlessTag,
+            bool headlessResult)
         {
             if (UiHeadless.IsEnabled)
             {
-                Console.WriteLine($"[HEADLESS {headlessTag}] {caption}: {message}");
-                return Task.CompletedTask;
+                string suffix = buttons == MessageBoxButton.YesNo ? " -> Auto-answering 'Yes'." : string.Empty;
+                Console.WriteLine($"[HEADLESS {headlessTag}] {caption}: {message}{suffix}");
+                return Task.FromResult(headlessResult);
             }
 
             // Use InvokeAsync to ensure the task doesn't complete until the dialog is closed.
             return _dispatcher.InvokeAsync(() =>
             {
-                MessageBox.Show(message, caption, MessageBoxButton.OK, image);
+                var result = MessageBox.Show(message, caption, buttons, image);
+                return buttons != MessageBoxButton.YesNo || result == MessageBoxResult.Yes;
             });
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public Task ShowInfoAsync(string message, string caption)
         {
-            return ShowAsync(message, caption, MessageBoxImage.Information, "INFO");
+            return ShowCoreAsync(message, caption, MessageBoxImage.Information, MessageBoxButton.OK, "INFO", true);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public Task ShowWarningAsync(string message, string caption)
         {
-            return ShowAsync(message, caption, MessageBoxImage.Warning, "WARNING");
+            return ShowCoreAsync(message, caption, MessageBoxImage.Warning, MessageBoxButton.OK, "WARNING", true);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public Task ShowErrorAsync(string message, string caption)
         {
-            return ShowAsync(message, caption, MessageBoxImage.Error, "ERROR");
+            return ShowCoreAsync(message, caption, MessageBoxImage.Error, MessageBoxButton.OK, "ERROR", true);
         }
 
-        /// <inheritdoc/>
-        public async Task<bool> ShowConfirmAsync(string message, string caption)
+        /// <inheritdoc />
+        public Task<bool> ShowConfirmAsync(string message, string caption)
         {
-            if (UiHeadless.IsEnabled)
-            {
-                Console.WriteLine($"[HEADLESS CONFIRM] {caption}: {message} -> Auto-answering 'Yes'.");
-                return true; // Default to 'Yes' to allow happy-path CI flows
-            }
-
-            return await _dispatcher.InvokeAsync(() =>
-            {
-                return MessageBox.Show(message, caption, MessageBoxButton.YesNo, MessageBoxImage.Question)
-                       == MessageBoxResult.Yes;
-            });
+            return ShowCoreAsync(message, caption, MessageBoxImage.Question, MessageBoxButton.YesNo, "CONFIRM", true);
         }
     }
 }

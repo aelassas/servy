@@ -33,7 +33,7 @@ namespace Servy.Core.Logging
 
         #region ILogger implementation
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public string Prefix { get; }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace Servy.Core.Logging
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public IServyLogger CreateScoped(string prefix)
         {
             if (string.IsNullOrWhiteSpace(prefix))
@@ -105,13 +105,13 @@ namespace Servy.Core.Logging
             return new ScopedEventLogLogger(this, combined, (LogLevel)_currentLogLevel, _isEventLogEnabled);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void SetLogLevel(LogLevel level)
         {
             _currentLogLevel = (int)level;
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void Debug(string message, Exception ex = null)
         {
             if (string.IsNullOrEmpty(message)) return;
@@ -124,19 +124,19 @@ namespace Servy.Core.Logging
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void Info(string message, Exception ex = null)
         {
             WriteLeveled(LogLevel.Info, EventLogEntryType.Information, EventIds.Info, message, ex, Format, _isEventLogEnabled, Logger.Info);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void Warn(string message, Exception ex = null)
         {
             WriteLeveled(LogLevel.Warn, EventLogEntryType.Warning, EventIds.Warning, message, ex, Format, _isEventLogEnabled, Logger.Warn);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void Error(string message, Exception ex = null)
         {
             WriteLeveled(LogLevel.Error, EventLogEntryType.Error, EventIds.Error, message, ex, Format, _isEventLogEnabled, Logger.Error);
@@ -344,7 +344,7 @@ namespace Servy.Core.Logging
             private volatile int _currentLogLevel;
             private volatile bool _isEventLogEnabled;
 
-            /// <inheritdoc/>
+            /// <inheritdoc />
             public string Prefix { get; }
 
             /// <summary>
@@ -365,7 +365,7 @@ namespace Servy.Core.Logging
                 _isEventLogEnabled = isEventLogEnabled;
             }
 
-            /// <inheritdoc/>
+            /// <inheritdoc />
             public void Debug(string message, Exception ex = null)
             {
                 if (string.IsNullOrEmpty(message)) return;
@@ -376,31 +376,31 @@ namespace Servy.Core.Logging
                 }
             }
 
-            /// <inheritdoc/>
+            /// <inheritdoc />
             public void Info(string message, Exception ex = null)
             {
                 _parent.WriteLeveled(LogLevel.Info, EventLogEntryType.Information, EventIds.Info, message, ex, Format, _isEventLogEnabled, Logger.Info);
             }
 
-            /// <inheritdoc/>
+            /// <inheritdoc />
             public void Warn(string message, Exception ex = null)
             {
                 _parent.WriteLeveled(LogLevel.Warn, EventLogEntryType.Warning, EventIds.Warning, message, ex, Format, _isEventLogEnabled, Logger.Warn);
             }
 
-            /// <inheritdoc/>
+            /// <inheritdoc />
             public void Error(string message, Exception ex = null)
             {
                 _parent.WriteLeveled(LogLevel.Error, EventLogEntryType.Error, EventIds.Error, message, ex, Format, _isEventLogEnabled, Logger.Error);
             }
 
-            /// <inheritdoc/>
+            /// <inheritdoc />
             public void SetLogLevel(LogLevel level)
             {
                 _currentLogLevel = (int)level;
             }
 
-            /// <inheritdoc/>
+            /// <inheritdoc />
             public void SetIsEventLogEnabled(bool isEnabled)
             {
                 if (isEnabled) _parent.SetIsEventLogEnabled(true);   // self-heal via parent
@@ -412,7 +412,7 @@ namespace Servy.Core.Logging
             /// </summary>
             public void Dispose() { /* no-op; parent owns the EventLog */ }
 
-            /// <inheritdoc/>
+            /// <inheritdoc />
             public IServyLogger CreateScoped(string prefix) => CreateScopedInstance(prefix);
 
             /// <summary>

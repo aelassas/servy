@@ -220,5 +220,103 @@ namespace Servy.Core.UnitTests.Helpers
             // Assert
             Assert.Equal(expectedTimeout, actualTimeout);
         }
+
+        #region CalculateStopTimeout Tests
+
+        [Fact]
+        public void CalculateStopTimeout_WithNullConfiguredAndNullPrevious_ReturnsFloorPlusBuffer()
+        {
+            // Arrange & Act
+            int expected = AppConfig.DefaultStopTimeout + AppConfig.ScmTimeoutBufferSeconds;
+            int actual = ServiceHelper.CalculateStopTimeout(null, null);
+
+            // Assert
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void CalculateStopTimeout_WithPreviousAboveMax_ClampsToMaxStopTimeout()
+        {
+            // Arrange
+            int expected = AppConfig.MaxStopTimeout + AppConfig.ScmTimeoutBufferSeconds;
+
+            // Act
+            int actual = ServiceHelper.CalculateStopTimeout(null, AppConfig.MaxStopTimeout + 600);
+
+            // Assert
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void CalculateStopTimeout_WithConfiguredExactlyEqualToFloor_UsesFloorBaseline()
+        {
+            // Arrange: Strict '>' boundary test when configuredTimeout equals the floor
+            int floor = AppConfig.DefaultStopTimeout;
+            int expected = floor + AppConfig.ScmTimeoutBufferSeconds;
+
+            // Act
+            int actual = ServiceHelper.CalculateStopTimeout(floor, null);
+
+            // Assert
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [InlineData(120, 30, 120)]  // Configured duration wins over historical
+        [InlineData(30, 120, 120)]  // Historical duration wins over configured
+        public void CalculateStopTimeout_UsesHigherOfConfiguredAndPrevious(int configured, int previous, int expectedBaseline)
+        {
+            // Arrange
+            int expected = expectedBaseline + AppConfig.ScmTimeoutBufferSeconds;
+
+            // Act
+            int actual = ServiceHelper.CalculateStopTimeout(configured, previous);
+
+            // Assert
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void CalculateStopTimeout_WithPreStopHookTimeout_IncludesPreStopInTotal()
+        {
+            // Arrange
+            int preStopTimeout = 15;
+            int expected = AppConfig.DefaultStopTimeout + AppConfig.ScmTimeoutBufferSeconds + preStopTimeout;
+
+            // Act
+            int actual = ServiceHelper.CalculateStopTimeout(null, null, preStopTimeout);
+
+            // Assert
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void CalculateStopTimeout_NegativePreStopTimeout_NormalizesToZero()
+        {
+            // Arrange
+            int expected = AppConfig.DefaultStopTimeout + AppConfig.ScmTimeoutBufferSeconds;
+
+            // Act
+            int actual = ServiceHelper.CalculateStopTimeout(null, null, -30);
+
+            // Assert
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void CalculateStopTimeout_WithFloorOverride_HonorsCustomFloor()
+        {
+            // Arrange
+            int floorOverride = 60;
+            int expected = floorOverride + AppConfig.ScmTimeoutBufferSeconds;
+
+            // Act
+            int actual = ServiceHelper.CalculateStopTimeout(null, null, preStopTimeout: 0, floorOverride: floorOverride);
+
+            // Assert
+            Assert.Equal(expected, actual);
+        }
+
+        #endregion
     }
 }

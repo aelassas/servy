@@ -92,25 +92,8 @@ namespace Servy.UI
             int removeCount = Items.Count - maxItems;
             if (removeCount <= 0) return;
 
-            bool wasModified = false;
-
-            try
-            {
-                // Items is guaranteed to be List<T> in ObservableCollection's implementation
-                if (Items is List<T> list)
-                {
-                    list.RemoveRange(0, removeCount);
-                    wasModified = true;
-                }
-            }
-            finally
-            {
-                // Only trigger the reset notification if we actually removed items
-                if (wasModified)
-                {
-                    RaiseResetNotifications();
-                }
-            }
+            ((List<T>)Items).RemoveRange(0, removeCount);
+            RaiseResetNotifications();
         }
 
         /// <summary>

@@ -1,6 +1,5 @@
 ﻿using Servy.Core.Enums;
 using Servy.UI.ViewModels; // Inheriting from the centralized UI ViewModel base
-using System.Runtime.CompilerServices;
 
 namespace Servy.Manager.Models
 {

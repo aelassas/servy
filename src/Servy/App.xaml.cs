@@ -99,10 +99,10 @@ namespace Servy
         /// </summary>
         public string AESIVFilePath => _bootstrapper.AESIVFilePath;
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public string ManagerAppPublishPath { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool IsManagerAppAvailable
         {
             get => _isManagerAppAvailable;
@@ -116,7 +116,7 @@ namespace Servy
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool ForceSoftwareRendering => _bootstrapper.ForceSoftwareRendering;
 
         #endregion

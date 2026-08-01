@@ -8,12 +8,6 @@ using Xunit;
 
 namespace Servy.Restarter.UnitTests
 {
-    [CollectionDefinition("RestarterProgramTests", DisableParallelization = true)]
-    public class RestarterProgramTestsCollection
-    {
-        // Enforces strict sequential isolation across the execution suite
-    }
-
     [Collection("RestarterProgramTests")]
     public class ProgramTests : IDisposable
     {
