@@ -23,7 +23,7 @@ namespace Servy.Manager.UnitTests.Views
         protected override string ViewName => ExpectedViewName;
     }
 
-    [Collection("Ambient AppServices Dependent Tests")]
+    [Collection(AmbientTestCollection.Name)]
     public class ServiceSearchUserControlTests
     {
         /// <summary>

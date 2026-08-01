@@ -19,7 +19,7 @@ using Helper = Servy.Testing.Helper;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
-    [Collection("Ambient AppServices Dependent Tests")]
+    [Collection(AmbientTestCollection.Name)]
     public class DependenciesViewModelTests
     {
         private readonly Mock<IServiceRepository> _mockServiceRepository;
