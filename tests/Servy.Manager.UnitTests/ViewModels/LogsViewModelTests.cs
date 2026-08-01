@@ -14,7 +14,7 @@ using Helper = Servy.Testing.Helper;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
-    [Collection("Ambient AppServices Dependent Tests")]
+    [Collection(AmbientTestCollection.Name)]
     public class LogsViewModelTests
     {
         private readonly Mock<IAppConfiguration> _appConfigurationMock;

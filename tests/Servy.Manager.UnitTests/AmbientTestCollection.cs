@@ -2,9 +2,10 @@
 {
     // This attribute defines the synchronization boundary name.
     // xUnit will NEVER run tests within the same collection concurrently.
-    [CollectionDefinition("Ambient AppServices Dependent Tests", DisableParallelization = true)]
+    [CollectionDefinition(Name, DisableParallelization = true)]
     public class AmbientTestCollection
     {
-        // This class has no code; it is solely a marker decoration for the attribute.
+        /// <summary>Collection name; reference this instead of repeating the string literal.</summary>
+        public const string Name = "AmbientAppServices";
     }
 }
