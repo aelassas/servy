@@ -20,8 +20,9 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         protected override string? SerializeCore(ServiceDto dto)
         {
-            // Use the exact same settings as deserialization to guarantee round-trip symmetry,
-            // while adding Formatting.Indented for human-readable output files.
+            // Reuse the hardened deserialization settings for consistent property handling,
+            // while adding Formatting.Indented for human-readable output files. Note that
+            // NullValueHandling.Ignore omits null properties from the generated JSON output.
             return JsonConvert.SerializeObject(dto, Formatting.Indented, JsonSecurity.UntrustedDataSettings);
         }
 

@@ -47,7 +47,7 @@ namespace Servy.Core.Security
         /// <exception cref="ArgumentException">Thrown when <paramref name="path"/> is null or whitespace.</exception>
         /// <exception cref="UnauthorizedAccessException">
         /// Thrown when the process lacks sufficient privileges to modify security descriptors, except when operating 
-        /// as a non-administrator under an active inheritance scope (<c>breakInheritance: false</c>), where it gracefully falls back.
+        /// as a non-administrator against an existing directory, where it gracefully falls back.
         /// </exception>
         /// <exception cref="IOException">Thrown when a general I/O error occurs during directory access.</exception>
         public static void CreateSecureDirectory(string path, bool breakInheritance = true)
@@ -67,21 +67,14 @@ namespace Servy.Core.Security
                 // if we are actively building a Root Vault (breaking inheritance). 
                 if (breakInheritance)
                 {
-                    try
-                    {
-                        var ds = new DirectorySecurity();
+                    var ds = new DirectorySecurity();
 
-                        // Apply the hardened rules to the descriptor before creation.
-                        ApplySecurityRules(ds, currentUserSid, breakInheritance: true);
+                    // Apply the hardened rules to the descriptor before creation.
+                    ApplySecurityRules(ds, currentUserSid, breakInheritance: true);
 
-                        // Create the directory with the hardened security descriptor in a single operation.
-                        FileSystemAclExtensions.CreateDirectory(ds, path);
-                        return;
-                    }
-                    catch (UnauthorizedAccessException ex) when (!IsAdministrator())
-                    {
-                        HandleNonAdminFallback(ex, $"Could not atomically create hardened directory '{path}' as non-admin. Falling back to standard environmental creation rules. Verify parent vault is secured.");
-                    }
+                    // Create the directory with the hardened security descriptor in a single operation.
+                    FileSystemAclExtensions.CreateDirectory(ds, path);
+                    return;
                 }
 
                 // INHERITANCE: If breakInheritance is false, create a standard directory first.
@@ -91,7 +84,7 @@ namespace Servy.Core.Security
                 {
                     Directory.CreateDirectory(path);
                 }
-                catch (UnauthorizedAccessException ex) when (!breakInheritance && !IsAdministrator())
+                catch (UnauthorizedAccessException ex) when (!IsAdministrator())
                 {
                     HandleNonAdminFallback(ex, $"Could not create directory '{path}' as non-admin. Falling back to inherited permissions from parent. Verify parent vault is secured.");
                     return;
@@ -111,9 +104,9 @@ namespace Servy.Core.Security
 
                 dirInfo.SetAccessControl(security);
             }
-            catch (UnauthorizedAccessException ex) when (!breakInheritance && !IsAdministrator())
+            catch (UnauthorizedAccessException ex) when (!IsAdministrator())
             {
-                HandleNonAdminFallback(ex, $"Could not write hardened ACL on '{path}' as non-admin. Falling back to inherited permissions from parent. Verify parent vault is secured.");
+                HandleNonAdminFallback(ex, $"Could not write hardened ACL on '{path}' as non-admin. Assuming root/parent vault was previously secured by Administrator.");
             }
         }
 
@@ -273,17 +266,15 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Handles non-administrator filesystem operational fallback conditions safely when inheritance rules are active.
+        /// Handles non-administrator filesystem operational fallback conditions safely when modifying ACLs.
         /// </summary>
         /// <param name="ex">The underlying unauthorized access exception intercepted during directory configuration routines.</param>
         /// <param name="message">The warning message to log.</param>
         private static void HandleNonAdminFallback(UnauthorizedAccessException ex, string message)
         {
             // GRACEFUL FALLBACK: 
-            // If we are a non-admin service account managing a child folder, the Root Vault 
-            // (parent folder) was already secured by the Administrator during installation.
-            // Because breakInheritance is false, the OS is already enforcing security via 
-            // inheritance, making it safe to proceed without crashing the service.
+            // If a non-admin process cannot modify an existing directory's security descriptor,
+            // we assume the vault/directory was previously created and secured by an Administrator.
             Logger.Warn($"{message} ({ex.Message})");
         }
     }

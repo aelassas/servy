@@ -50,16 +50,14 @@
         }
 
         /// <summary>
-        /// Releases the unmanaged resources used by the class and optionally releases the managed resources.
+        /// Zeroes the sensitive material exactly once, whether invoked explicitly or from the finalizer.
         /// </summary>
         /// <param name="disposing">
-        /// <see langword="true"/> to release both managed and unmanaged resources; 
-        /// <see langword="false"/> to release only unmanaged resources.
+        /// <see langword="true"/> when called from <see cref="Dispose()"/>, <see langword="false"/> when called
+        /// from the finalizer. This base implementation intentionally ignores it: <see cref="ZeroSensitiveData"/>
+        /// is finalizer-safe and must run on both paths. Overriders that release managed resources beyond key
+        /// material should honour it.
         /// </param>
-        /// <remarks>
-        /// This implementation uses <see cref="Interlocked.Exchange(ref int, int)"/> as an atomic guard to ensure memory 
-        /// zeroing occurs only once.
-        /// </remarks>
         protected virtual void Dispose(bool disposing)
         {
             // 1. ATOMIC GUARD: Flip the flag BEFORE wiping memory.

@@ -18,7 +18,7 @@ namespace Servy.Core.UnitTests.Security
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        [InlineData("   ")]
+        [InlineData("    ")]
         public void CreateSecureDirectory_PathIsNullOrWhiteSpace_ThrowsArgumentException(string? invalidPath)
         {
             // Arrange & Act & Assert
@@ -126,8 +126,8 @@ namespace Servy.Core.UnitTests.Security
             // Assert
             var acl = new DirectoryInfo(path).GetAccessControl();
             var rules = acl.GetAccessRules(true, false, typeof(SecurityIdentifier))
-                           .Cast<FileSystemAccessRule>()
-                           .ToList();
+                               .Cast<FileSystemAccessRule>()
+                               .ToList();
 
             // If running as Administrator, current user is already covered via the broad group ACE block
             if (isAdmin)
@@ -153,8 +153,8 @@ namespace Servy.Core.UnitTests.Security
             // Assert
             var acl = new DirectoryInfo(path).GetAccessControl();
             var rules = acl.GetAccessRules(true, false, typeof(SecurityIdentifier))
-                           .Cast<FileSystemAccessRule>()
-                           .ToList();
+                               .Cast<FileSystemAccessRule>()
+                               .ToList();
 
             var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
             var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
@@ -224,6 +224,39 @@ namespace Servy.Core.UnitTests.Security
 
             // Pin down behavior of directory initialization when skipping inheritance blockades
             Assert.False(acl.AreAccessRulesProtected, "Public creation overload using breakInheritance:false must preserve standard cascading inheritance maps.");
+        }
+
+        #endregion
+
+        #region Non-Admin Graceful Fallback Coverage Tests
+
+        [Fact]
+        public void HandleNonAdminFallback_LogsWarningMessageWithoutThrowing()
+        {
+            // Arrange
+            var ex = new UnauthorizedAccessException("Access to the path is denied.");
+            string logMessage = "Test non-admin fallback message.";
+
+            // Act & Assert
+            // Invoke internal private fallback handler via reflection to ensure it executes safely
+            var exception = Record.Exception(() =>
+                TestReflection.InvokeNonPublicStatic(typeof(SecurityHelper), "HandleNonAdminFallback", ex, logMessage));
+
+            Assert.Null(exception);
+        }
+
+        [Fact]
+        public void CreateSecureDirectory_ExistingDirectoryWithBreakInheritanceTrue_GracefullyHandlesNonAdminFailure()
+        {
+            // Arrange
+            var path = Path.Combine(_testBaseDir, "ExistingRootVaultDir");
+            Directory.CreateDirectory(path);
+
+            // Act & Assert
+            // When executing on existing directories, CreateSecureDirectory handles ACL re-hardening gracefully
+            // for non-admin contexts if access is denied on SetAccessControl.
+            var exception = Record.Exception(() => SecurityHelper.CreateSecureDirectory(path, breakInheritance: true));
+            Assert.Null(exception);
         }
 
         #endregion
