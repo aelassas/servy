@@ -56,7 +56,6 @@ function Invoke-WithRetry {
     }
 
     if (-not $success) {
-        Write-Error "$ErrorMessage (Failed after $MaxRetries attempts)"
         throw "$ErrorMessage (Failed after $MaxRetries attempts)"
     }
 }

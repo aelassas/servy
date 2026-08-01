@@ -441,9 +441,6 @@ If the service is disabled and marked for deletion, installation will fail until
   </data>
 
 	<!--Miscellaneous-->
-	<data name="Msg_ArgumentsLengthReached" xml:space="preserve">
-    <value>Arguments exceed the Windows command-line limit of {0} characters.</value>
-  </data>
 	<data name="Msg_InvalidServiceName" xml:space="preserve">
     <value>Invalid service name.</value>
   </data>

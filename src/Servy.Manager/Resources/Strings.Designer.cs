@@ -763,15 +763,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Arguments exceed the Windows command-line limit of {0} characters..
-        /// </summary>
-        public static string Msg_ArgumentsLengthReached {
-            get {
-                return ResourceManager.GetString("Msg_ArgumentsLengthReached", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Servy Desktop App not found..
         /// </summary>
         public static string Msg_DesktopAppNotFound {
