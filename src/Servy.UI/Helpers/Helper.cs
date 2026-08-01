@@ -1,10 +1,11 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 
 namespace Servy.UI.Helpers
 {
     /// <summary>
-    /// Provides utility methods for formatting durations, numbers, and row information.
+    /// Provides utility methods for WPF visual-tree traversal and for formatting durations, numbers, and row information.
     /// </summary>
     public static class Helper
     {
@@ -29,41 +30,55 @@ namespace Servy.UI.Helpers
 
         /// <summary>
         /// Formats a <see cref="TimeSpan"/> into a human-readable string, omitting zero-value components.
+        /// Prepends a negative sign <c>-</c> for negative durations.
         /// </summary>
         /// <param name="duration">The duration to format.</param>
         /// <returns>
-        /// A formatted string such as <c>1h 5s</c>, <c>15s</c>, or <c>0ms</c> if the duration is zero.
+        /// A formatted string such as <c>1h 5s</c>, <c>15s</c>, <c>-3m 10s</c>, or <c>0ms</c> if the duration is zero.
         /// </returns>
         public static string FormatDuration(TimeSpan duration)
         {
+            if (duration == TimeSpan.Zero)
+            {
+                return "0ms";
+            }
+
+            bool isNegative = duration < TimeSpan.Zero;
+            TimeSpan absDuration = duration.Duration(); // Gets absolute value
+
             var parts = new List<string>();
 
-            // 1. Capture total hours (handling durations > 24h if necessary)
-            if ((int)duration.TotalHours > 0)
+            // 1. Capture total hours (handling durations > 24h)
+            if ((int)absDuration.TotalHours > 0)
             {
-                parts.Add($"{(int)duration.TotalHours}h");
+                parts.Add($"{(int)absDuration.TotalHours}h");
             }
 
             // 2. Capture minutes (0-59)
-            if (duration.Minutes > 0)
+            if (absDuration.Minutes > 0)
             {
-                parts.Add($"{duration.Minutes}m");
+                parts.Add($"{absDuration.Minutes}m");
             }
 
             // 3. Capture seconds (0-59)
-            if (duration.Seconds > 0)
+            if (absDuration.Seconds > 0)
             {
-                parts.Add($"{duration.Seconds}s");
+                parts.Add($"{absDuration.Seconds}s");
             }
 
             // 4. Capture milliseconds (0-999)
-            if (duration.Milliseconds > 0)
+            if (absDuration.Milliseconds > 0)
             {
-                parts.Add($"{duration.Milliseconds}ms");
+                parts.Add($"{absDuration.Milliseconds}ms");
             }
 
-            // 5. Join parts with a space, or return "0ms" for zero/near-zero durations
-            return parts.Count > 0 ? string.Join(" ", parts) : "0ms";
+            if (parts.Count == 0)
+            {
+                return "0ms";
+            }
+
+            string formatted = string.Join(" ", parts);
+            return isNegative ? $"-{formatted}" : formatted;
         }
 
         /// <summary>
@@ -101,19 +116,20 @@ namespace Servy.UI.Helpers
             string manyFormat)
         {
             var durationText = FormatDuration(duration);
+            var countText = FormatNumber(count);
 
             if (count == 0)
             {
-                return string.Format(noneFormat, durationText);
+                return string.Format(noneFormat, countText, durationText);
             }
 
             if (count == 1)
             {
-                return string.Format(oneFormat, durationText);
+                return string.Format(oneFormat, countText, durationText);
             }
 
             // Pass the formatted count and the duration to the plural template
-            return string.Format(manyFormat, FormatNumber(count), durationText);
+            return string.Format(manyFormat, countText, durationText);
         }
 
     }

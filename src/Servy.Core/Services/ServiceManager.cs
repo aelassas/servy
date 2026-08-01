@@ -203,7 +203,7 @@ namespace Servy.Core.Services
             IntPtr ptr = IntPtr.Zero;
             try
             {
-                ptr = Marshal.AllocHGlobal(Marshal.SizeOf(info));
+                ptr = Marshal.AllocHGlobal(Marshal.SizeOf<SERVICE_PRE_SHUTDOWN_INFO>());
                 Marshal.StructureToPtr(info, ptr, false);
 
                 return _windowsServiceApi.ChangeServiceConfig2(
@@ -411,16 +411,12 @@ namespace Servy.Core.Services
                         var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName, decrypt: false, cancellationToken);
                         dto.Pid = serviceDto?.Pid;
 
-                        var totalWaitTime = (options.StopTimeout > AppConfig.ScmStopTimeoutFloorSeconds
-                            ? options.StopTimeout : AppConfig.ScmStopTimeoutFloorSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                        var previousWaitTime = (serviceDto?.PreviousStopTimeout != null && serviceDto.PreviousStopTimeout.Value > AppConfig.ScmStopTimeoutFloorSeconds
-                            ? serviceDto.PreviousStopTimeout.Value : AppConfig.ScmStopTimeoutFloorSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                        totalWaitTime = Math.Max(totalWaitTime, previousWaitTime);
+                        int totalWaitTime = ServiceHelper.CalculateStopTimeout(
+                            options.StopTimeout,
+                            serviceDto?.PreviousStopTimeout,
+                            string.IsNullOrEmpty(options.PreStopExePath) ? 0 : options.PreStopTimeout,
+                            floorOverride: AppConfig.ScmStopTimeoutFloorSeconds);
 
-                        if (!string.IsNullOrEmpty(options.PreStopExePath))
-                        {
-                            totalWaitTime += options.PreStopTimeout;
-                        }
                         uint finalTimeoutMs = (uint)totalWaitTime * AppConfig.MillisecondsPerSecond;
 
                         if (serviceCreated)
@@ -757,7 +753,7 @@ namespace Servy.Core.Services
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task<OperationResult> StartServiceAsync(string? serviceName, bool logSuccessfulStart = true, CancellationToken cancellationToken = default)
         {
             if (_serviceRepository == null)
@@ -980,15 +976,7 @@ namespace Servy.Core.Services
                 // Use ServiceController to grab the base StartType natively
                 using (var sc = _controllerFactory(serviceName))
                 {
-                    ServiceStartType startupType;
-
-                    switch (sc.StartType)
-                    {
-                        case ServiceStartMode.Automatic: startupType = ServiceStartType.Automatic; break;
-                        case ServiceStartMode.Manual: startupType = ServiceStartType.Manual; break;
-                        case ServiceStartMode.Disabled: startupType = ServiceStartType.Disabled; break;
-                        default: return ServiceStartType.Unknown;
-                    }
+                    var startupType = MapStartupType(sc);          // one switch, one Win32Exception policy
 
                     // If automatic, drill down with P/Invoke to check for Delayed Auto-Start
                     if (startupType == ServiceStartType.Automatic)
@@ -1001,7 +989,11 @@ namespace Servy.Core.Services
                             {
                                 using (var svcHandle = _windowsServiceApi.OpenService(scmHandle, serviceName, SERVICE_QUERY_CONFIG))
                                 {
-                                    if (!svcHandle.IsInvalid && IsDelayedStart(svcHandle))
+                                    if (svcHandle.IsInvalid)
+                                    {
+                                        Logger.Debug($"Could not open '{serviceName}' to check delayed auto-start (Win32 {_win32ErrorProvider.GetLastWin32Error()}); reporting Automatic.");
+                                    }
+                                    else if (IsDelayedStart(svcHandle))
                                     {
                                         startupType = ServiceStartType.AutomaticDelayedStart;
                                     }
@@ -1027,7 +1019,7 @@ namespace Servy.Core.Services
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public List<ServiceInfo> GetAllServices(CancellationToken cancellationToken = default)
         {
             var results = new ConcurrentBag<ServiceInfo>();
@@ -1114,7 +1106,7 @@ namespace Servy.Core.Services
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public ServiceDependencyNode? GetDependencies(string? serviceName, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -1302,7 +1294,7 @@ namespace Servy.Core.Services
             IntPtr ptr = Marshal.AllocHGlobal(bytesNeeded);
             try
             {
-                if (_windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, ptr, bytesNeeded, out int pcbBytesNeeded))
+                if (_windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, ptr, bytesNeeded, out _))
                 {
                     var descStruct = Marshal.PtrToStructure<SERVICE_DESCRIPTION>(ptr);
                     return Marshal.PtrToStringAuto(descStruct.lpDescription);
@@ -1325,14 +1317,14 @@ namespace Servy.Core.Services
         private bool IsDelayedStart(SafeServiceHandle svcHandle)
         {
             var info = new SERVICE_DELAYED_AUTO_START_INFO();
-            int structSize = Marshal.SizeOf(typeof(SERVICE_DELAYED_AUTO_START_INFO));
+            int structSize = Marshal.SizeOf<SERVICE_DELAYED_AUTO_START_INFO>();
 
             return _windowsServiceApi.QueryServiceConfig2(
                 svcHandle,
                 SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
                 ref info,
                 structSize,
-                out int bytesNeeded) && info.fDelayedAutostart;
+                out _) && info.fDelayedAutostart;
         }
 
         /// <summary>

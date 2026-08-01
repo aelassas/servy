@@ -427,7 +427,7 @@ namespace Servy.Service
                 }
 
                 // Ensure working directory is valid
-                _serviceHelper.EnsureValidWorkingDirectory(options, _logger!);
+                _serviceHelper.EnsureValidWorkingDirectory(options, _logger);
 
                 _serviceName = options.ServiceName;
                 _recoveryActionEnabled = options.EnableHealthMonitoring && options.HeartbeatIntervalInSeconds > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None;
@@ -976,7 +976,7 @@ namespace Servy.Service
 
                 var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger!);
 
-                if (process?.UnderlyingProcess is Process nativeProcess)
+                if (process.UnderlyingProcess is Process nativeProcess)
                 {
                     lock (_trackedHooks)
                     {
@@ -1156,9 +1156,9 @@ namespace Servy.Service
             // Only create stderr writer if a path is provided
             if (!string.IsNullOrWhiteSpace(options.StderrPath))
             {
-                if (_stdoutWriter != null && !string.IsNullOrWhiteSpace(options.StdoutPath) &&
-                    _pathValidator.IsValidPath(options.StderrPath) &&
-                    _pathValidator.IsValidPath(options.StdoutPath))
+                // A non-null _stdoutWriter already implies StdoutPath is non-blank and passed IsValidPath
+                // (CreateWriter returns null otherwise), so only StderrPath still needs validating here.
+                if (_stdoutWriter != null && _pathValidator.IsValidPath(options.StderrPath))
                 {
                     var canonStdErr = Helper.NormalizePath(options.StderrPath);
                     var canonStdOut = Helper.NormalizePath(options.StdoutPath);
@@ -1495,7 +1495,7 @@ namespace Servy.Service
                 };
                 _logger?.Info($"Running {hookName} program: {launchOptions.ExecutablePath}");
                 var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger!);
-                if (track && process?.UnderlyingProcess is Process p)
+                if (track && process.UnderlyingProcess is Process p)
                     lock (_trackedHooks) _trackedHooks.Add(new Hook { OperationName = hookName, Process = p });
                 else process?.Dispose();
             }
@@ -2125,7 +2125,7 @@ namespace Servy.Service
                         // PLACEMENT 1: Alert the external monitor immediately if we are escalating to full recovery action
                         if (needsRecovery && _options != null)
                         {
-                            EmitHeartbeatPing(_options!.HeartbeatUrl, AppConfig.HeartbeatUrlFailFlag, _options.HeartbeatUrlTimeoutInSeconds);
+                            EmitHeartbeatPing(_options.HeartbeatUrl, AppConfig.HeartbeatUrlFailFlag, _options.HeartbeatUrlTimeoutInSeconds);
                         }
                     }
                     else
@@ -2137,7 +2137,7 @@ namespace Servy.Service
 
                             // PLACEMENT 2: Send an explicit structural /start signal showing recovery completed
                             if (_options != null)
-                                EmitHeartbeatPing(_options!.HeartbeatUrl, AppConfig.HeartbeatUrlStartFlag, _options.HeartbeatUrlTimeoutInSeconds);
+                                EmitHeartbeatPing(_options.HeartbeatUrl, AppConfig.HeartbeatUrlStartFlag, _options.HeartbeatUrlTimeoutInSeconds);
 
                             // Always reset memory count immediately so we don't trigger recovery again unnecessarily
                             _failedChecks = 0;
@@ -2146,7 +2146,7 @@ namespace Servy.Service
                         {
                             // PLACEMENT 3: Standard routine operational tick (clean pass)
                             if (_options != null)
-                                EmitHeartbeatPing(_options!.HeartbeatUrl, string.Empty, _options.HeartbeatUrlTimeoutInSeconds);
+                                EmitHeartbeatPing(_options.HeartbeatUrl, string.Empty, _options.HeartbeatUrlTimeoutInSeconds);
                         }
 
                         // Flag to perform disk-bound stability check outside the lock
@@ -2814,7 +2814,7 @@ namespace Servy.Service
                     while (true)
                     {
                         try { waitCompleted = stopTask.Wait(AppConfig.SafeKillProcessPulseIntervalMs); }
-                        catch (AggregateException) { waitCompleted = true; break; } // task finished with fault/cancel
+                        catch (AggregateException) { break; } // task finished with fault/cancel
                         if (waitCompleted) break;
                         if (sw.Elapsed > maxWaitTime)
                         {
@@ -2918,12 +2918,10 @@ namespace Servy.Service
         /// </remarks>
         private void CleanupTrackedHooks()
         {
-            if (_trackedHooks == null) return;
-
             foreach (var hook in _trackedHooks)
             {
                 // Safely dispose each hook to release native handles
-                try { hook?.Dispose(); }
+                try { hook.Dispose(); }
                 catch (Exception ex)
                 {
                     _logger?.Warn($"Failed to dispose tracked hook: {ex.Message}");
@@ -2931,8 +2929,7 @@ namespace Servy.Service
             }
 
             // Clear the collection while still under the lock
-            try { _trackedHooks.Clear(); }
-            catch (Exception ex) { _logger?.Warn($"Failed to clear tracked hooks: {ex.Message}"); }
+            _trackedHooks.Clear();
         }
 
         /// <summary>

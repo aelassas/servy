@@ -31,7 +31,7 @@ namespace Servy.Service.ProcessManagement
 
         #region Properties and Events
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public event DataReceivedEventHandler OutputDataReceived
         {
             add
@@ -46,7 +46,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public event DataReceivedEventHandler ErrorDataReceived
         {
             add
@@ -61,7 +61,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public event EventHandler Exited
         {
             add
@@ -76,7 +76,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int Id
         {
             get
@@ -86,7 +86,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool HasExited
         {
             get
@@ -96,7 +96,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public IntPtr Handle
         {
             get
@@ -106,7 +106,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int ExitCode
         {
             get
@@ -116,7 +116,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public IntPtr MainWindowHandle
         {
             get
@@ -126,7 +126,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool EnableRaisingEvents
         {
             get
@@ -141,7 +141,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public DateTime StartTime
         {
             get
@@ -151,7 +151,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public ProcessPriorityClass PriorityClass
         {
             get
@@ -166,7 +166,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public IntPtr ProcessorAffinity
         {
             get
@@ -181,7 +181,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public StreamReader StandardOutput
         {
             get
@@ -191,7 +191,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public StreamReader StandardError
         {
             get
@@ -201,7 +201,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public ProcessStartInfo StartInfo
         {
             get
@@ -211,7 +211,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public Process UnderlyingProcess
         {
             get
@@ -223,14 +223,14 @@ namespace Servy.Service.ProcessManagement
 
         #endregion
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool Start()
         {
             ThrowIfDisposed();
             return _process.Start();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task<bool> WaitAndCheckStillRunningAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
@@ -250,7 +250,7 @@ namespace Servy.Service.ProcessManagement
             return !_process.HasExited;
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool? Stop(int timeoutMs)
         {
             ThrowIfDisposed();
@@ -378,7 +378,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void StopDescendants(int parentPid, DateTime parentStartTime, int timeoutMs)
         {
             ThrowIfDisposed();
@@ -403,14 +403,14 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public string Format()
         {
             ThrowIfDisposed();
             return _process.Format();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void Kill(bool entireProcessTree = false)
         {
             ThrowIfDisposed();
@@ -425,7 +425,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool WaitForExit(int milliseconds)
         {
             ThrowIfDisposed();
@@ -433,49 +433,49 @@ namespace Servy.Service.ProcessManagement
             return _process.WaitForExit(milliseconds);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void WaitForExit()
         {
             ThrowIfDisposed();
             _process.WaitForExit();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool CloseMainWindow()
         {
             ThrowIfDisposed();
             return _process.CloseMainWindow();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void BeginOutputReadLine()
         {
             ThrowIfDisposed();
             _process.BeginOutputReadLine();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void BeginErrorReadLine()
         {
             ThrowIfDisposed();
             _process.BeginErrorReadLine();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void CancelOutputRead()
         {
             ThrowIfDisposed();
             _process.CancelOutputRead();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void CancelErrorRead()
         {
             ThrowIfDisposed();
             _process.CancelErrorRead();
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void Dispose()
         {
             Dispose(disposing: true);

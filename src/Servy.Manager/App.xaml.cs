@@ -1,27 +1,25 @@
-﻿using Servy.Core.Data;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Servy.Core.Data;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
+using Servy.Core.Validation;
 using Servy.Infrastructure.Data;
+using Servy.Manager.Config;
 using Servy.Manager.Resources;
+using Servy.Manager.Services;
 using Servy.Manager.Validation;
 using Servy.Manager.ViewModels;
-using Servy.Manager.Services;
 using Servy.Manager.Views;
 using Servy.UI.Bootstrapping;
 using Servy.UI.Services;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.IO;
-using System.Windows;
-using Servy.Manager.Config;
-using AppConfig = Servy.Core.Config.AppConfig;
-using Servy.Manager.Converters;
-using Servy.Core.Helpers;
-using Microsoft.Extensions.DependencyInjection;
-using Servy.Core.Validation;
-using Microsoft.Extensions.Configuration;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Windows;
+using AppConfig = Servy.Core.Config.AppConfig;
 
 namespace Servy.Manager
 {
@@ -99,22 +97,22 @@ namespace Servy.Manager
         /// </summary>
         public string? AESIVFilePath => _bootstrapper.AESIVFilePath;
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int RefreshIntervalInSeconds { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int PerformanceRefreshIntervalInMs { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int ConsoleRefreshIntervalInMs { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int ConsoleMaxLines { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public string? DesktopAppPublishPath { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool IsDesktopAppAvailable
         {
             get => _isDesktopAppAvailable;
@@ -128,10 +126,10 @@ namespace Servy.Manager
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int DependenciesRefreshIntervalInMs { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public bool ForceSoftwareRendering => _bootstrapper.ForceSoftwareRendering;
 
         /// <summary>
@@ -139,13 +137,13 @@ namespace Servy.Manager
         /// </summary>
         public LogLevel LogLevel { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int LogsWindowDays { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int SearchDebounceDelayMs { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public int MaxBulkOperationParallelism { get; private set; }
 
         #endregion

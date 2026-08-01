@@ -345,7 +345,7 @@ namespace Servy.Manager.ViewModels
             _isDisposed = true;
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public void Dispose()
         {
             Dispose(disposing: true);

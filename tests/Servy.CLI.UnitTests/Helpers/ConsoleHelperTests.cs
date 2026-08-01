@@ -1,6 +1,5 @@
 ﻿using Servy.CLI.Helpers;
 using Servy.Testing;
-using System.ComponentModel.DataAnnotations;
 
 namespace Servy.CLI.UnitTests.Helpers
 {

@@ -450,10 +450,10 @@ If the service is disabled and marked for deletion, installation will fail until
 
 	<!-- Service Footer Templates -->
 	<data name="Footer_Service_None" xml:space="preserve">
-    <value>No services loaded in {0}</value>
+    <value>No services loaded in {1}</value>
   </data>
 	<data name="Footer_Service_One" xml:space="preserve">
-    <value>Loaded 1 service in {0}</value>
+    <value>Loaded 1 service in {1}</value>
   </data>
 	<data name="Footer_Service_Many" xml:space="preserve">
     <value>Loaded {0} services in {1}</value>
@@ -461,10 +461,10 @@ If the service is disabled and marked for deletion, installation will fail until
 
 	<!-- Log Footer Templates -->
 	<data name="Footer_Log_None" xml:space="preserve">
-    <value>No logs found in {0}</value>
+    <value>No logs found in {1}</value>
   </data>
 	<data name="Footer_Log_One" xml:space="preserve">
-    <value>Found 1 log in {0}</value>
+    <value>Found 1 log in {1}</value>
   </data>
 	<data name="Footer_Log_Many" xml:space="preserve">
     <value>Found {0} logs in {1}</value>

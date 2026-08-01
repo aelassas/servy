@@ -12,7 +12,6 @@ using Servy.Service.UnitTests.Helpers;
 using Servy.Service.Validation;
 using Servy.Testing;
 using System.Diagnostics;
-using System.Reflection;
 using IServiceHelper = Servy.Service.Helpers.IServiceHelper;
 using ITimer = Servy.Service.Timers.ITimer;
 

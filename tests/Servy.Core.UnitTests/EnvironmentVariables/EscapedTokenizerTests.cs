@@ -1,7 +1,4 @@
-﻿using System;
-using System.Linq;
-using Servy.Core.EnvironmentVariables;
-using Xunit;
+﻿using Servy.Core.EnvironmentVariables;
 
 namespace Servy.Core.UnitTests.EnvironmentVariables
 {

@@ -166,10 +166,10 @@ namespace Servy.UI.IntegrationTests.Services
             SetHandlerField(_targetClient, mockHandler);
         }
 
-        private static HttpMessageHandler GetHandlerField(HttpClient client)
+        private static HttpMessageHandler? GetHandlerField(HttpClient client)
         {
             var fieldInfo = GetHandlerFieldInfo(client);
-            return (HttpMessageHandler)fieldInfo.GetValue(client);
+            return (HttpMessageHandler?)fieldInfo.GetValue(client);
         }
 
         private static void SetHandlerField(HttpClient client, HttpMessageHandler mockHandler)

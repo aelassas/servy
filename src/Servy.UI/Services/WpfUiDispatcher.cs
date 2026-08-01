@@ -22,14 +22,14 @@ namespace Servy.UI.Services
             _dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task InvokeAsync(Action action)
         {
             if (action == null) throw new ArgumentNullException(nameof(action));
             await _dispatcher.InvokeAsync(action);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task InvokeAsync(Action action, DispatcherPriority priority)
         {
             if (action == null) throw new ArgumentNullException(nameof(action));
@@ -37,14 +37,14 @@ namespace Servy.UI.Services
             await _dispatcher.InvokeAsync(action, priority);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         public async Task<T> InvokeAsync<T>(Func<T> callback)
         {
             if (callback == null) throw new ArgumentNullException(nameof(callback));
             return await _dispatcher.InvokeAsync(callback);
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         /// <remarks>
         /// Uses <see cref="DispatcherPriority.Background"/> to ensure that the dispatcher 
         /// has finished processing layout and render passes before the calling task resumes.
